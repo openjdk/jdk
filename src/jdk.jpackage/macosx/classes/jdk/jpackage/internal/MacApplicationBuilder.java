@@ -24,7 +24,7 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.cli.StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER;
+import static jdk.jpackage.internal.cli.StandardValidator.IS_MAC_BUNDLE_IDENTIFIER;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -120,7 +120,7 @@ final class MacApplicationBuilder {
         validateAppContentDirs(app);
 
         final var mixin = new MacApplicationMixin.Stub(
-                validatedIcon(),
+                Optional.ofNullable(icon),
                 validatedBundleName(app),
                 validatedBundleIdentifier(app),
                 validatedCategory(),
@@ -248,13 +248,13 @@ final class MacApplicationBuilder {
                     })
                     .orElseGet(app::name);
 
-            if (!IS_VALID_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
+            if (!IS_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
                 // Derived bundle identifier is invalid. Try to adjust it by dropping all invalid characters.
                 derivedValue = derivedValue.codePoints()
                         .mapToObj(Character::toString)
-                        .filter(IS_VALID_MAC_BUNDLE_IDENTIFIER)
+                        .filter(IS_MAC_BUNDLE_IDENTIFIER)
                         .collect(Collectors.joining(""));
-                if (!IS_VALID_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
+                if (!IS_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
                     throw new ConfigException(
                             I18N.format("error.invalid-derived-bundle-identifier"),
                             I18N.format("error.invalid-derived-bundle-identifier.advice"));
@@ -268,10 +268,6 @@ final class MacApplicationBuilder {
 
     private String validatedCategory() {
         return "public.app-category." + Optional.ofNullable(category).orElseGet(DEFAULTS::category);
-    }
-
-    private Optional<Path> validatedIcon() {
-        return Optional.ofNullable(icon).map(LauncherBuilder::validateIcon);
     }
 
     private record Defaults(String category) {

@@ -24,16 +24,13 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.I18N.buildConfigException;
-
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.model.CustomLauncherIcon;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Launcher.Stub;
@@ -44,9 +41,6 @@ import jdk.jpackage.internal.util.PathUtils;
 final class LauncherBuilder {
 
     Launcher create() {
-        CustomLauncherIcon.fromLauncherIcon(icon)
-                .map(CustomLauncherIcon::path)
-                .ifPresent(LauncherBuilder::validateIcon);
 
         final var fa = createFileAssociations(faSources, Optional.ofNullable(faTraits).orElse(DEFAULT_FA_TRAITS));
 
@@ -59,7 +53,7 @@ final class LauncherBuilder {
                 isService,
                 Optional.ofNullable(description).orElse(nonNullName),
                 Optional.ofNullable(icon),
-                Optional.ofNullable(defaultIconResourceName).orElseGet(LauncherBuilder::defaultIconResourceName),
+                Objects.requireNonNull(defaultIconResourceName),
                 Optional.ofNullable(extraAppImageFileData).orElseGet(Map::of));
     }
 
@@ -122,31 +116,6 @@ final class LauncherBuilder {
                     .setCategory("icon");
     }
 
-    static Path validateIcon(Path icon) {
-        switch (OperatingSystem.current()) {
-            case WINDOWS -> {
-                if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
-                    throw buildConfigException().message("message.icon-not-ico", icon).create();
-                }
-            }
-            case LINUX -> {
-                if (!icon.getFileName().toString().endsWith(".png")) {
-                    throw buildConfigException().message("message.icon-not-png", icon).create();
-                }
-            }
-            case MACOS -> {
-                if (!icon.getFileName().toString().endsWith(".icns")) {
-                    throw buildConfigException().message("message.icon-not-icns", icon).create();
-                }
-            }
-            default -> {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        return icon;
-    }
-
     record FileAssociationTraits() {
     }
 
@@ -161,33 +130,15 @@ final class LauncherBuilder {
             final var scanResult = new FileAssociationScaner().scan(group.items());
 
             if (!scanResult.extensionsWithMultipleMimeTypes().isEmpty()) {
-                throw buildConfigException()
-                        .message("error.too-many-content-types-for-file-association", faID)
-                        .advice("error.too-many-content-types-for-file-association.advice", faID)
-                        .create();
+                throw new ConfigException(
+                        I18N.format("error.too-many-content-types-for-file-association", faID),
+                        I18N.format("error.too-many-content-types-for-file-association.advice", faID));
             }
 
             faID++;
         }
 
         return FileAssociationGroup.flatMap(groups.stream()).toList();
-    }
-
-    private static String defaultIconResourceName() {
-        switch (OperatingSystem.current()) {
-            case WINDOWS -> {
-                return "JavaApp.ico";
-            }
-            case LINUX -> {
-                return "JavaApp.png";
-            }
-            case MACOS -> {
-                return "JavaApp.icns";
-            }
-            default -> {
-                throw new UnsupportedOperationException();
-            }
-        }
     }
 
     private String name;

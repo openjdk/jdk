@@ -118,7 +118,7 @@ public class OptionsValidationFailTest {
             }
 
             private Result<JOptSimpleOptionsBuilder.OptionsBuilder> parse(String... args) {
-                return Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(args);
+                return Utils.buildParser(OperatingSystem.current()).create().apply(args);
             }
 
             private final CliBundlingEnvironment bundlingEnv = new CliBundlingEnvironment() {

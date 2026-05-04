@@ -24,14 +24,15 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.I18N.buildConfigException;
+import static jdk.jpackage.internal.cli.StandardValidator.IS_LINUX_DEB_PACKAGE_NAME;
+import static jdk.jpackage.internal.cli.StandardValidator.IS_LINUX_RPM_PACKAGE_NAME;
 
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
@@ -46,15 +47,15 @@ final class LinuxPackageBuilder {
     }
 
     LinuxPackage create() {
-        pkgBuilder.name(Optional.ofNullable(literalName).orElseGet(() -> {
-            // Lower case and turn spaces/underscores into dashes
+        pkgBuilder.name(Optional.ofNullable(linuxPackageName).orElseGet(() -> {
+            // Lower case and turn spaces/underscores into hyphens
             return pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-");
         }));
 
         final var tmpPkg = pkgBuilder.create();
 
         tmpPkg.asStandardPackageType().ifPresent(stdPkgType -> {
-            validatePackageName(tmpPkg.packageName(), stdPkgType);
+            validateDerivedPackageName(tmpPkg.packageName(), stdPkgType);
         });
 
         final AppImageLayout relativeInstalledLayout;
@@ -86,8 +87,8 @@ final class LinuxPackageBuilder {
                 arch.value()));
     }
 
-    LinuxPackageBuilder literalName(String v) {
-        literalName = v;
+    LinuxPackageBuilder linuxPackageName(String v) {
+        linuxPackageName = v;
         return this;
     }
 
@@ -138,53 +139,32 @@ final class LinuxPackageBuilder {
                 lib.resolve("lib/libapplauncher.so"));
     }
 
-    private static void validatePackageName(String packageName, StandardPackageType pkgType) {
+    private static void validateDerivedPackageName(String packageName, StandardPackageType pkgType) {
         switch (pkgType) {
             case LINUX_DEB -> {
-                //
-                // Debian rules for package naming are used here
-                // https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Source
-                //
-                // Package names must consist only of lower case letters (a-z),
-                // digits (0-9), plus (+) and minus (-) signs, and periods (.).
-                // They must be at least two characters long and
-                // must start with an alphanumeric character.
-                //
-                var regexp = Pattern.compile("^[a-z][a-z\\d\\+\\-\\.]+");
-                if (!regexp.matcher(packageName).matches()) {
-                    throw buildConfigException()
-                            .message("error.deb-invalid-value-for-package-name", packageName)
-                            .advice("error.deb-invalid-value-for-package-name.advice")
-                            .create();
+                if (!IS_LINUX_DEB_PACKAGE_NAME.test(packageName)) {
+                    throw new ConfigException(
+                            I18N.format("error.invalid-derived-deb-package-name", packageName),
+                            I18N.getString("error.invalid-derived-deb-package-name.advice"));
                 }
             }
             case LINUX_RPM -> {
-                //
-                // Fedora rules for package naming are used here
-                // https://fedoraproject.org/wiki/Packaging:NamingGuidelines?rd=Packaging/NamingGuidelines
-                //
-                // all Fedora packages must be named using only the following ASCII
-                // characters. These characters are displayed here:
-                //
-                // abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+
-                //
-                var regexp = Pattern.compile("[a-z\\d\\+\\-\\.\\_]+", Pattern.CASE_INSENSITIVE);
-                if (!regexp.matcher(packageName).matches()) {
-                    throw buildConfigException()
-                            .message("error.rpm-invalid-value-for-package-name", packageName)
-                            .advice("error.rpm-invalid-value-for-package-name.advice")
-                            .create();
+                if (!IS_LINUX_RPM_PACKAGE_NAME.test(packageName)) {
+                    throw new ConfigException(
+                            I18N.format("error.invalid-derived-rpm-package-name", packageName),
+                            I18N.getString("error.invalid-derived-rpm-package-name.advice"));
                 }
             }
             default -> {
+                throw new AssertionError();
             }
-        }
+        };
     }
 
     private record Defaults(String menuGroupName) {
     }
 
-    private String literalName;
+    private String linuxPackageName;
     private String menuGroupName;
     private String category;
     private String additionalDependencies;

@@ -66,8 +66,9 @@ import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
-import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.model.SelfContainedException;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.SetBuilder;
 
 /**
@@ -183,6 +184,53 @@ public final class StandardOption {
                 }
             })
             .inScope(LauncherProperty.VALUE)
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                var extension = switch (context.os()) {
+                    case WINDOWS -> ".ico";
+                    case MACOS -> ".icns";
+                    case LINUX -> ".png";
+                    default -> {
+                        throw new AssertionError();
+                    }
+                };
+
+                String errorKey;
+                if (context.asFileSource().isPresent()) {
+                    errorKey = switch (context.os()) {
+                        case WINDOWS -> "error.properties-parameter-not-ico-icon";
+                        case MACOS -> "error.properties-parameter-not-icns-icon";
+                        case LINUX -> "error.properties-parameter-not-png-icon";
+                        default -> {
+                            throw new AssertionError();
+                        }
+                    };
+                } else {
+                    errorKey = switch (context.os()) {
+                        case WINDOWS -> "error.parameter-not-ico-icon";
+                        case MACOS -> "error.parameter-not-icns-icon";
+                        case LINUX -> "error.parameter-not-png-icon";
+                        default -> {
+                            throw new AssertionError();
+                        }
+                    };
+                }
+
+                var fileValidator = b.createValidator().orElseThrow();
+                var extensionValidator = b
+                        .validatorExceptionFormatString(errorKey)
+                        .validator(new Predicate<>() {
+                            @Override
+                            public boolean test(Path path) {
+                                if (!path.toString().isEmpty()) {
+                                    return extension.equals(PathUtils.getSuffix(path));
+                                } else {
+                                    return true;
+                                }
+                            }
+                        })
+                        .createValidator().orElseThrow();
+                b.validator(Validator.andLazy(fileValidator, extensionValidator));
+            }))
             .create();
 
     public static final OptionValue<String> COPYRIGHT = stringOption("copyright").valuePattern("copyright string").create();
@@ -233,10 +281,17 @@ public final class StandardOption {
 
     public static final OptionValue<Path> INSTALL_DIR = pathOption("install-dir")
             .valuePattern("directory path")
+            .scope(CREATE_NATIVE).inScope(NOT_BUILDING_APP_IMAGE)
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.WINDOWS) {
                     b.description("help.option.install-dir" + resourceKeySuffix(context.os()));
                 }
+
+                context.bundlingOperation().ifPresent(bundlingOperation -> {
+                    b.validatorExceptionFormatString("error.parameter-not-install-dir");
+                    b.validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME);
+                    b.validator(StandardValidator.installDirValidator(bundlingOperation.packageType()));
+                });
             }))
             .create();
 
@@ -248,7 +303,7 @@ public final class StandardOption {
                     var directoryValidator = b.createValidator().orElseThrow();
                     var macBundleValidator = b
                             .validatorExceptionFormatString("error.parameter-not-mac-bundle")
-                            .validator(StandardValidator.IS_VALID_MAC_BUNDLE)
+                            .validator(StandardValidator.IS_MAC_BUNDLE)
                             .createValidator().orElseThrow();
                     // Use "lazy and" validator composition.
                     // If the value of the option is not a directory, we want only one error reported, not two:
@@ -307,7 +362,29 @@ public final class StandardOption {
 
     public static final OptionValue<String> LINUX_PACKAGE_NAME = stringOption("linux-package-name")
             .valuePattern("package name")
-            .scope(nativeBundling()).create();
+            .scope(nativeBundling())
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.bundlingOperation().ifPresent(op -> {
+                    switch (op) {
+                        case CREATE_LINUX_DEB -> {
+                            b.validator(StandardValidator.IS_LINUX_DEB_PACKAGE_NAME);
+                            b.mutate(validationErrorWithAdviceMutator(
+                                    "error.parameter-not-deb-package-name",
+                                    "error.parameter-not-deb-package-name.advice"));
+                        }
+                        case CREATE_LINUX_RPM -> {
+                            b.validator(StandardValidator.IS_LINUX_RPM_PACKAGE_NAME);
+                            b.mutate(validationErrorWithAdviceMutator(
+                                    "error.parameter-not-rpm-package-name",
+                                    "error.parameter-not-rpm-package-name.advice"));
+                        }
+                        default -> {
+                            // NOP
+                        }
+                    }
+                });
+            }))
+            .create();
 
     public static final OptionValue<String> LINUX_DEB_MAINTAINER_EMAIL = stringOption("linux-deb-maintainer")
             .valuePattern("email address")
@@ -354,11 +431,9 @@ public final class StandardOption {
 
     public static final OptionValue<String> MAC_BUNDLE_IDENTIFIER = stringOption("mac-package-identifier")
             .valuePattern("package identifier")
-            .validator(StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER)
-            .validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
-                return new ConfigException(message, I18N.format("error.parameter-not-mac-bundle-identifier.advice"), cause);
-            }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create())
-            .validatorExceptionFormatString("error.parameter-not-mac-bundle-identifier")
+            .validator(StandardValidator.IS_MAC_BUNDLE_IDENTIFIER)
+            .mutate(validationErrorWithAdviceMutator(
+                    "error.parameter-not-mac-bundle-identifier", "error.parameter-not-mac-bundle-identifier.advice"))
             .create();
 
     public static final OptionValue<String> MAC_BUNDLE_SIGNING_PREFIX = stringOption("mac-package-signing-prefix").scope(MAC_SIGNING).create();
@@ -628,6 +703,17 @@ public final class StandardOption {
                     // Otherwise, it will have `Path` type.
                     .mutate(createOptionSpecBuilderMutator((b, context) -> {
                     }));
+        };
+    }
+
+    private static <T> Consumer<OptionSpecBuilder<T>> validationErrorWithAdviceMutator(String messageFormatKey, String adviceKey) {
+        Objects.requireNonNull(messageFormatKey);
+        Objects.requireNonNull(adviceKey);
+        return builder -> {
+            builder.validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
+                return new ConfigException(message, I18N.format(adviceKey), cause);
+            }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create());
+            builder.validatorExceptionFormatString(messageFormatKey);
         };
     }
 

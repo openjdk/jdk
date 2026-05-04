@@ -167,7 +167,7 @@ public final class Main {
 
             final var bundlingEnv = bundlingEnvSupplier.get();
 
-            final var parseResult = Utils.buildParser(os, bundlingEnv).create().apply(mappedArgs.get());
+            final var parseResult = Utils.buildParser(os).create().apply(mappedArgs.get());
 
             return runner.run(() -> {
                 final var parsedOptionsBuilder = parseResult.orElseThrow();

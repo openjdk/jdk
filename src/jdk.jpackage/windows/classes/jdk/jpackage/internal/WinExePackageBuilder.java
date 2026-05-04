@@ -37,7 +37,7 @@ final class WinExePackageBuilder {
     }
 
     WinExePackage create() {
-        return WinExePackage.create(pkg, Optional.ofNullable(icon).map(LauncherBuilder::validateIcon));
+        return WinExePackage.create(pkg, Optional.ofNullable(icon));
     }
 
     WinExePackageBuilder icon(Path v) {

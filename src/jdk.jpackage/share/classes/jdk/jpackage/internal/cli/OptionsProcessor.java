@@ -52,7 +52,6 @@ import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.ConvertedOptionsBuilder;
 import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.OptionsBuilder;
-import jdk.jpackage.internal.model.BundlingEnvironment;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.util.Result;
@@ -99,7 +98,7 @@ final class OptionsProcessor {
         final var analyzer = analyzerResult.orElseThrow();
 
         // Validate the bundling operation.
-        final var bundlingOperationResult = validateBundlingOperation(analyzer.bundlingOperation()).map(op -> {
+        final var bundlingOperationResult = validateBundlingOperation(analyzer.bundlingOperation().descriptor()).map(op -> {
             return Map.entry(StandardOption.BUNDLING_OPERATION_DESCRIPTOR, op);
         });
 
@@ -118,8 +117,10 @@ final class OptionsProcessor {
         final Result<ValidatedOptions> validatedOptionsResult = optionsBuilder
                 // Command line structure is valid.
                 // Run value converters that will convert strings into objects (e.g.: String -> Path)
-                .convertedOptions().map(ConvertedOptionsBuilder::create).map(convertedOptions -> {
-                    return new ValidatedOptions(convertedOptions, analyzer.bundlingOperation());
+                .convertedOptions(Optional.of(optionSpecMapper(analyzer.bundlingOperation())))
+                .map(ConvertedOptionsBuilder::create)
+                .map(convertedOptions -> {
+                    return new ValidatedOptions(convertedOptions, analyzer.bundlingOperation().descriptor());
                 });
 
         validatedOptionsResult.peekErrors(allErrors::addAll);
@@ -209,18 +210,18 @@ final class OptionsProcessor {
         }
     }
 
-    private Result<BundlingOperationDescriptor> validateBundlingOperation(BundlingOperationDescriptor bundlingOperation) {
-        Objects.requireNonNull(bundlingOperation);
+    private Result<BundlingOperationDescriptor> validateBundlingOperation(BundlingOperationDescriptor bundlingOperationDescriptor) {
+        Objects.requireNonNull(bundlingOperationDescriptor);
         try {
-            var errors = bundlingEnv.configurationErrors(bundlingOperation);
+            var errors = bundlingEnv.configurationErrors(bundlingOperationDescriptor);
             if (errors.isEmpty()) {
-                return Result.ofValue(bundlingOperation);
+                return Result.ofValue(bundlingOperationDescriptor);
             } else {
                 return Result.ofErrors(errors);
             }
         } catch (NoSuchElementException ex) {
             // Bundling environment doesn't recognize the descriptor of a bundling operation.
-            return Result.ofError(new JPackageException(I18N.format("ERR_InvalidInstallerType", bundlingOperation.bundleType())));
+            return Result.ofError(new JPackageException(I18N.format("ERR_InvalidInstallerType", bundlingOperationDescriptor.bundleType())));
         }
     }
 
@@ -278,15 +279,23 @@ final class OptionsProcessor {
         });
     }
 
-    static UnaryOperator<OptionSpec<?>> optionSpecMapper(OperatingSystem os, BundlingEnvironment bundlingEnv) {
-        Objects.requireNonNull(os);
-        Objects.requireNonNull(bundlingEnv);
+    static UnaryOperator<OptionSpec<?>> optionSpecMapper(OperatingSystem os) {
+        return optionSpecMapper(new StandardOptionContext(os));
+    }
 
-        var context = new StandardOptionContext(os);
+    static UnaryOperator<OptionSpec<?>> optionSpecMapper(StandardBundlingOperation bundlingOperation) {
+        return optionSpecMapper(new StandardOptionContext(bundlingOperation));
+    }
+
+    private static UnaryOperator<OptionSpec<?>> optionSpecMapper(StandardOptionContext context) {
+        Objects.requireNonNull(context);
+        if (!OptionSource.isCommandLine(context.src())) {
+            throw new IllegalArgumentException();
+        }
 
         return optionSpec -> {
             if (optionSpec.name().equals(StandardOption.ADD_LAUNCHER_INTERNAL.getSpec().name())) {
-                final var options = filterForPlatform(os, StandardOption.launcherOptions());
+                final var options = filterForPlatform(context.os(), StandardOption.launcherOptions());
                 return optionSpec.copyWithConverter(new OptionsConverter<>(addLauncher -> {
                     var localContext = context.forFile(addLauncher.propertyFile());
                     var optionValues = processPropertyFile(addLauncher.propertyFile(), options, Optional.of(localContext::mapOptionSpec));
@@ -295,7 +304,7 @@ final class OptionsProcessor {
                     });
                 }, StandardOption.ADD_LAUNCHER_INTERNAL.getSpec()));
             } else if (optionSpec.name().equals(StandardOption.FILE_ASSOCIATIONS_INTERNAL.getSpec().name())) {
-                final var options = filterForPlatform(os, StandardFaOption.options());
+                final var options = filterForPlatform(context.os(), StandardFaOption.options());
                 return optionSpec.copyWithConverter(new OptionsConverter<>(fa -> {
                     var localContext = context.forFile(fa);
                     return processPropertyFile(fa, options, Optional.of(localContext::mapOptionSpec));

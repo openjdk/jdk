@@ -141,7 +141,13 @@ final class JOptSimpleOptionsBuilder {
         }
 
         Result<ConvertedOptionsBuilder> convertedOptions() {
-            return impl.toTypedOptions().map(ConvertedOptionsBuilder::new);
+            return convertedOptions(Optional.empty());
+        }
+
+        Result<ConvertedOptionsBuilder> convertedOptions(Optional<UnaryOperator<OptionSpec<?>>> optionSpecMapper) {
+            return optionSpecMapper.map(impl::mapOptionSpecs).orElse(impl)
+                    .toTypedOptions()
+                    .map(ConvertedOptionsBuilder::new);
         }
 
         Options create() {
@@ -362,6 +368,13 @@ final class JOptSimpleOptionsBuilder {
             }).collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)));
         }
 
+        private UntypedOptions(UntypedOptions other, UnaryOperator<OptionSpec<?>> optionSpecMapper) {
+            optionSet = other.optionSet;
+            mergerOptionSet = other.mergerOptionSet;
+            optionMap = mapOptionSpecs(other.optionMap, optionSpecMapper);
+            optionNames = other.optionNames;
+        }
+
         @Override
         public UntypedOptions copyWithout(Iterable<? extends OptionIdentifier> ids) {
             return new UntypedOptions(this, StreamSupport.stream(ids.spliterator(), false).toList());
@@ -391,6 +404,10 @@ final class JOptSimpleOptionsBuilder {
             }, e -> {
                 return find(e.getKey()).orElseThrow();
             })), optionNames::contains);
+        }
+
+        UntypedOptions mapOptionSpecs(UnaryOperator<OptionSpec<?>> optionSpecMapper) {
+            return new UntypedOptions(this, optionSpecMapper);
         }
 
         Result<TypedOptions> toTypedOptions() {
@@ -495,11 +512,56 @@ final class JOptSimpleOptionsBuilder {
             throw new AssertionError();
         }
 
+        private static Map<OptionIdentifier, ? extends OptionSpec<?>> mapOptionSpecs(
+                Map<OptionIdentifier, ? extends OptionSpec<?>> optionMap,
+                UnaryOperator<OptionSpec<?>> optionSpecMapper) {
+
+            Objects.requireNonNull(optionSpecMapper);
+
+            return optionMap.entrySet().stream().collect(toUnmodifiableMap(Map.Entry::getKey, e -> {
+                return mapOptionSpec(optionSpecMapper, e.getValue());
+            }));
+        }
+
+        private static OptionSpec<?> mapOptionSpec(UnaryOperator<OptionSpec<?>> optionSpecMapper, OptionSpec<?> spec) {
+            var mappedSpec = optionSpecMapper.apply(spec);
+
+            if (!Objects.equals(mappedSpec.names(), spec.names())) {
+                if (spec.names().size() == 1 && mappedSpec.names().contains(spec.name())) {
+                    mappedSpec = mappedSpec.copyWithName(spec.name());
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+            }
+
+            if (mappedSpec.defaultOptionalValue().isPresent() != spec.defaultOptionalValue().isPresent()) {
+                throw new UnsupportedOperationException();
+            }
+
+            if (!Objects.equals(mappedSpec.mergePolicy(), spec.mergePolicy())) {
+                throw new UnsupportedOperationException();
+            }
+
+            if (mappedSpec.converter().isPresent() != spec.converter().isPresent()) {
+                throw new UnsupportedOperationException();
+            } else {
+                mappedSpec.converter().ifPresent(mappedConverter -> {
+                    var converter = spec.converter().orElseThrow();
+
+                    if (!Objects.equals(mappedConverter.valueType(), converter.valueType())) {
+                        throw new UnsupportedOperationException();
+                    }
+                });
+            }
+
+            return mappedSpec;
+        }
+
         private static Object mergeArrayValues(OptionSpec.MergePolicy mergePolicy, List<?> value) {
-            switch (mergePolicy) {
+            return switch (mergePolicy) {
                 case USE_FIRST -> {
                     // Find the first non-empty array, get its first element and wrap it into one-element array.
-                    return value.stream().filter(arr -> {
+                    yield value.stream().filter(arr -> {
                         return Array.getLength(arr) > 0;
                     }).findFirst().map(arr -> {
                         return asArray(Array.get(arr, 0));
@@ -507,14 +569,14 @@ final class JOptSimpleOptionsBuilder {
                 }
                 case USE_LAST -> {
                     // Find the last non-empty array, get its last element and wrap it into one-element array.
-                    return value.reversed().stream().filter(arr -> {
+                    yield value.reversed().stream().filter(arr -> {
                         return Array.getLength(arr) > 0;
                     }).findFirst().map(arr -> {
                         return asArray(Array.get(arr, Array.getLength(arr) - 1));
                     }).orElseGet(value::getFirst);
                 }
                 case CONCATENATE -> {
-                    return value.stream().filter(arr -> {
+                    yield value.stream().filter(arr -> {
                         return Array.getLength(arr) > 0;
                     }).map(Object.class::cast).reduce((a, b) -> {
                         final var al = Array.getLength(a);
@@ -525,10 +587,7 @@ final class JOptSimpleOptionsBuilder {
                         return arr;
                     }).orElseGet(value::getFirst);
                 }
-                default -> {
-                    throw new AssertionError();
-                }
-            }
+            };
         }
 
         private static Object asArray(Object v) {
@@ -795,20 +854,17 @@ final class JOptSimpleOptionsBuilder {
         if (values.size() == 1) {
             return values;
         } else {
-            switch (mergePolicy) {
+            return switch (mergePolicy) {
                 case USE_LAST -> {
-                    return List.of(values.getLast());
+                    yield List.of(values.getLast());
                 }
                 case USE_FIRST -> {
-                    return List.of(values.getFirst());
+                    yield List.of(values.getFirst());
                 }
                 case CONCATENATE -> {
-                    return values;
+                    yield values;
                 }
-                default -> {
-                    throw new AssertionError();
-                }
-            }
+            };
         }
     }
 

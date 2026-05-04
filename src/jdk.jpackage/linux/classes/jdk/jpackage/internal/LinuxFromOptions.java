@@ -53,7 +53,9 @@ final class LinuxFromOptions {
 
     static LinuxApplication createLinuxApplication(Options options) {
 
-        final var launcherFromOptions = new LauncherFromOptions().faWithDefaultDescription();
+        final var launcherFromOptions = new LauncherFromOptions()
+                .defaultIconResourceName("JavaApp.png")
+                .faWithDefaultDescription();
 
         final var appBuilder = buildApplicationBuilder().create(options, launcherOptions -> {
 
@@ -119,7 +121,7 @@ final class LinuxFromOptions {
         LINUX_APP_CATEGORY.ifPresentIn(options, pkgBuilder::category);
         LINUX_MENU_GROUP.ifPresentIn(options, pkgBuilder::menuGroupName);
         LINUX_RELEASE.ifPresentIn(options, pkgBuilder::release);
-        LINUX_PACKAGE_NAME.ifPresentIn(options, pkgBuilder::literalName);
+        LINUX_PACKAGE_NAME.ifPresentIn(options, pkgBuilder::linuxPackageName);
 
         return pkgBuilder;
     }

@@ -210,7 +210,9 @@ final class MacFromOptions {
             predefinedRuntimeLayout.ifPresent(MacRuntimeValidator::validateRuntimeHasNoBinDir);
         }
 
-        final var launcherFromOptions = new LauncherFromOptions().faMapper(MacFromOptions::createMacFa);
+        final var launcherFromOptions = new LauncherFromOptions()
+                .defaultIconResourceName("JavaApp.icns")
+                .faMapper(MacFromOptions::createMacFa);
 
         final var superAppBuilder = buildApplicationBuilder()
                 .runtimeLayout(RUNTIME_BUNDLE_LAYOUT)

@@ -57,8 +57,8 @@ import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.OptionsBuilder;
 import jdk.jpackage.internal.cli.StandardOption.LauncherProperty;
 import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
-import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.util.RootedPath;
@@ -104,8 +104,14 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "icon"})
-    public void test_ICON(String name, @TempDir Path workDir) throws IOException {
+    @CsvSource(value = {
+        ",''",
+        ",icon",
+        "WINDOWS,icon.ico",
+        "MACOS,icon.icns",
+        "LINUX,icon.png",
+    })
+    public void test_ICON(OperatingSystem os, String name, @TempDir Path workDir) throws IOException {
 
         if (!name.isEmpty()) {
             var file = workDir.resolve(name);
@@ -115,37 +121,97 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
             name = file.toString();
         }
 
-        var spec = StandardOption.ICON.getSpec();
+        @SuppressWarnings("unchecked")
+        var spec = Optional.ofNullable(os).map(OptionsProcessor::optionSpecMapper).map(specMapper -> {
+            return (OptionSpec<Path>)specMapper.apply(StandardOption.ICON.getSpec());
+        }).orElseGet(StandardOption.ICON::getSpec);
 
         var result = spec.convert(spec.name(), StringToken.of(name));
 
         assertEquals(Path.of(name), result.orElseThrow());
     }
 
-    @Test
-    public void test_ICON_validator_fail(@TempDir Path workDir) {
+    @ParameterizedTest
+    @CsvSource(value = {
+        ",false",
+        "WINDOWS,false",
+        "MACOS,false",
+        "LINUX,false",
+        ",true",
+        "WINDOWS,true",
+        "MACOS,true",
+        "LINUX,true",
+    })
+    public void test_ICON_validator_fail(OperatingSystem os, boolean fileExists, @TempDir Path workDir) throws IOException {
 
-        var spec = StandardOption.ICON.getSpec();
+        @SuppressWarnings("unchecked")
+        var spec = Optional.ofNullable(os).map(OptionsProcessor::optionSpecMapper).map(specMapper -> {
+            return (OptionSpec<Path>)specMapper.apply(StandardOption.ICON.getSpec());
+        }).orElseGet(StandardOption.ICON::getSpec);
 
-        var result = spec.convert(spec.name(), StringToken.of(workDir.toString()));
+        Path iconPath;
+        if (os == null && fileExists) {
+            iconPath = workDir;
+        } else {
+            iconPath = workDir.resolve("icon");
+            if (os != null && fileExists) {
+                Files.write(iconPath, new byte[0]);
+            }
+        }
+
+        String errorKey;
+        if (os == null || !fileExists) {
+            errorKey = "error.parameter-not-file";
+        } else {
+            errorKey = switch (os) {
+                case WINDOWS -> "error.parameter-not-ico-icon";
+                case MACOS -> "error.parameter-not-icns-icon";
+                case LINUX -> "error.parameter-not-png-icon";
+                default -> throw new AssertionError();
+            };
+        }
+
+        var result = spec.convert(spec.name(), StringToken.of(iconPath.toString()));
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
-        assertEquals(I18N.format("error.parameter-not-file", workDir, "--icon"), ex.getMessage());
+        assertEquals(I18N.format(errorKey, iconPath, "--icon"), ex.getMessage());
     }
 
-    @Test
-    public void test_ICON_validator_fail_in_property_file(@TempDir Path workDir) {
+    @ParameterizedTest
+    @CsvSource(value = {
+        "WINDOWS,false",
+        "MACOS,false",
+        "LINUX,false",
+        "WINDOWS,true",
+        "MACOS,true",
+        "LINUX,true",
+    })
+    public void test_ICON_validator_fail_in_property_file(OperatingSystem os, boolean fileExists, @TempDir Path workDir) throws IOException {
 
         var propertyFile = Path.of("foo.properties");
 
-        var spec = new StandardOptionContext().forFile(propertyFile).mapOptionSpec(StandardOption.ICON.getSpec());
+        var spec = new StandardOptionContext(os).forFile(propertyFile).mapOptionSpec(StandardOption.ICON.getSpec());
 
-        var result = spec.convert(spec.name(), StringToken.of(workDir.toString()));
+        Path iconPath = workDir.resolve("icon");
+        String errorKey;
+        if (fileExists) {
+            Files.write(iconPath, new byte[0]);
+            errorKey = switch (os) {
+                case WINDOWS -> "error.properties-parameter-not-ico-icon";
+                case MACOS -> "error.properties-parameter-not-icns-icon";
+                case LINUX -> "error.properties-parameter-not-png-icon";
+                default -> throw new AssertionError();
+            };
+        } else {
+            errorKey = "error.properties-parameter-not-file";
+        }
+
+        var result = spec.convert(spec.name(), StringToken.of(iconPath.toString()));
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
-        assertEquals(I18N.format("error.properties-parameter-not-file", workDir, "icon", propertyFile), ex.getMessage());
+        assertEquals(I18N.format(errorKey, iconPath, "icon", propertyFile), ex.getMessage());
     }
 
     @ParameterizedTest
@@ -258,6 +324,38 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         ).map(key -> {
             return new JPackageException(I18N.format(key, token.value(), spec.name().formatForCommandLine()));
         }).toList(), result.errors());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void test_INSTALL_DIR_valid(StandardBundlingOperation bunldingOperation, String value, Path output) {
+
+        @SuppressWarnings("unchecked")
+        var spec = Optional.ofNullable(bunldingOperation).map(OptionsProcessor::optionSpecMapper).map(specMapper -> {
+            return (OptionSpec<Path>)specMapper.apply(StandardOption.INSTALL_DIR.getSpec());
+        }).orElseGet(StandardOption.INSTALL_DIR::getSpec);
+
+        var result = spec.convert(spec.name(), StringToken.of(value)).orElseThrow();
+
+        assertEquals(result, Optional.ofNullable(output).orElseGet(() -> {
+            return Path.of(value);
+        }));
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void test_INSTALL_DIR_invalid(StandardBundlingOperation bunldingOperation, String value) {
+
+        @SuppressWarnings("unchecked")
+        var spec = Optional.ofNullable(bunldingOperation).map(OptionsProcessor::optionSpecMapper).map(specMapper -> {
+            return (OptionSpec<Path>)specMapper.apply(StandardOption.INSTALL_DIR.getSpec());
+        }).orElseGet(StandardOption.INSTALL_DIR::getSpec);
+
+        var result = spec.convert(spec.name(), StringToken.of(value));
+
+        var ex = assertThrows(JPackageException.class, result::orElseThrow);
+
+        assertEquals(I18N.format("error.parameter-not-install-dir", value, "--install-dir"), ex.getMessage());
     }
 
     @ParameterizedTest
@@ -568,6 +666,48 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 Arguments.of("'\\' a ", List.of("' a")),
                 Arguments.of("\"" + "\\\"".repeat(10000) + "A", List.of("\"".repeat(10000) + "A"))
         );
+    }
+
+    private static Collection<Arguments> test_INSTALL_DIR_valid() {
+        var testCases = new ArrayList<Arguments>();
+
+        if (OperatingSystem.isWindows()) {
+            for (var bundlingOperation : StandardBundlingOperation.WINDOWS_CREATE_NATIVE) {
+                testCases.add(Arguments.of(bundlingOperation, "Foo", null));
+                testCases.add(Arguments.of(bundlingOperation, "Foo/\\/", "Foo"));
+            }
+        }
+
+        if (OperatingSystem.isMacOS()) {
+            for (var bundlingOperation : StandardBundlingOperation.MACOS_CREATE_NATIVE) {
+                testCases.add(Arguments.of(bundlingOperation, "/Application", null));
+                testCases.add(Arguments.of(bundlingOperation, "/Application//", "/Application"));
+            }
+        }
+
+        if (OperatingSystem.isLinux()) {
+            for (var bundlingOperation : StandardBundlingOperation.LINUX_CREATE_NATIVE) {
+                testCases.add(Arguments.of(bundlingOperation, "/opt", null));
+                testCases.add(Arguments.of(bundlingOperation, "/opt//", "/opt"));
+                testCases.add(Arguments.of(bundlingOperation, "/foo/bar///", "/foo/bar"));
+            }
+        }
+
+        return testCases;
+    }
+
+    private static Collection<Arguments> test_INSTALL_DIR_invalid() {
+        final var testCases = new ArrayList<Arguments>();
+
+        // Just a few invalid values. To ensure option spec converter thtows expected error.
+        // More thorough test coverage is in StandardValidatorTest.test_installDirValidator_invalid()
+        for (var bundlingOperation : StandardBundlingOperation.CREATE_NATIVE) {
+            testCases.add(Arguments.of(bundlingOperation, ""));
+            testCases.add(Arguments.of(bundlingOperation, "."));
+            testCases.add(Arguments.of(bundlingOperation, ".."));
+        }
+
+        return testCases;
     }
 
 

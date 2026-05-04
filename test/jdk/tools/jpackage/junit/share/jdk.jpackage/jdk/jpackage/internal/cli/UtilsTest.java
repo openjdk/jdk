@@ -29,15 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.model.BundlingEnvironment;
-import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
 import org.junit.jupiter.api.Test;
 
-public class UtilsTest {
+class UtilsTest {
 
     @Test
-    public void testInvalidOption() {
+    void testInvalidOption() {
         var errors = buildParser().create().apply(new String[] {"--foo"}).errors();
         assertEquals(1, errors.size());
 
@@ -48,7 +46,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testMissingValueOption() {
+    void testMissingValueOption() {
         var errors = buildParser().create().apply(new String[] {"--name"}).errors();
         assertEquals(1, errors.size());
 
@@ -59,7 +57,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void test_getOptionsWithSpecs() {
+    void test_getOptionsWithSpecs() {
 
         var options = Utils.getOptionsWithSpecs(UtilsTest.class).map(OptionValue::getOption).collect(toUnmodifiableSet());
 
@@ -81,11 +79,6 @@ public class UtilsTest {
     }
 
     private static JOptSimpleOptionsBuilder buildParser() {
-        return Utils.buildParser(OperatingSystem.LINUX, new BundlingEnvironment() {
-            @Override
-            public Optional<BundlingOperationDescriptor> defaultOperation() {
-                return Optional.empty();
-            }
-        });
+        return Utils.buildParser(OperatingSystem.LINUX);
     }
 }

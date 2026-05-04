@@ -37,6 +37,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.MacBundle;
@@ -140,13 +142,75 @@ public final class StandardValidator {
         return true;
     };
 
-    public static Predicate<Path> IS_VALID_MAC_BUNDLE = path -> {
+    public static Predicate<Path> IS_MAC_BUNDLE = path -> {
         return MacBundle.fromPath(path).isPresent();
     };
 
     // https://developer.apple.com/documentation/BundleResources/Information-Property-List/CFBundleIdentifier
-    public static final Predicate<String> IS_VALID_MAC_BUNDLE_IDENTIFIER = Pattern.compile("[\\p{Alnum}-\\.]+").asMatchPredicate();
+    public static final Predicate<String> IS_MAC_BUNDLE_IDENTIFIER = Pattern.compile("[\\p{Alnum}-\\.]+").asMatchPredicate();
 
+    //
+    // Debian rules for package naming are used here
+    // https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Source
+    //
+    // Package names must consist only of lower case letters (a-z),
+    // digits (0-9), plus (+) and minus (-) signs, and periods (.).
+    // They must be at least two characters long and
+    // must start with an alphanumeric character.
+    //
+    public static final Predicate<String> IS_LINUX_DEB_PACKAGE_NAME = Pattern.compile("^[a-z][a-z\\d\\+\\-\\.]+").asMatchPredicate();
+
+    //
+    // Fedora rules for package naming are used here
+    // https://fedoraproject.org/wiki/Packaging:NamingGuidelines?rd=Packaging/NamingGuidelines
+    //
+    // all Fedora packages must be named using only the following ASCII
+    // characters. These characters are displayed here:
+    //
+    // abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+
+    //
+    public static final Predicate<String> IS_LINUX_RPM_PACKAGE_NAME = Pattern.compile("[\\p{Alnum}-._+]+").asMatchPredicate();
+
+    public static Predicate<Path> installDirValidator(PackageType type) {
+        Objects.requireNonNull(type);
+        return installDir -> {
+            if (installDir.getNameCount() == 0) {
+                return false;
+            }
+
+            if (installDir.toString().isEmpty()) {
+                return false;
+            }
+
+            if (installDir.getName(0).equals(Path.of(".."))) {
+                // If the path starts with "../" name, Path.normalize() will leave it intact.
+                // So take care of this case explicitly.
+                return false;
+            }
+
+            if (type instanceof StandardPackageType stdType) {
+                switch (stdType) {
+                    case WIN_EXE, WIN_MSI -> {
+                        if (installDir.isAbsolute()) {
+                            return false;
+                        }
+                    }
+                    default -> {
+                        if (!installDir.isAbsolute()) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            if (!installDir.normalize().toString().equals(installDir.toString())) {
+                // Don't allow '..' or '.' in path components
+                return false;
+            }
+
+            return true;
+        };
+    }
 
     public static final class DirectoryListingIOException extends RuntimeException {
 

@@ -728,17 +728,14 @@ public class JOptSimpleOptionsBuilderTest {
             var theParse = new JOptSimpleOptionsBuilder().options(options).create();
             var builder = theParse.apply(args.toArray(String[]::new)).orElseThrow();
 
-            switch (mode) {
+            return switch (mode) {
                 case PARSE -> {
-                    return builder.create();
+                    yield builder.create();
                 }
                 case CONVERT -> {
-                    return builder.convertedOptions().orElseThrow().create();
+                    yield builder.convertedOptions().orElseThrow().create();
                 }
-                default -> {
-                    throw new AssertionError();
-                }
-            }
+            };
         };
 
         var optionValues = parse.apply(List.of(booleanOption, stringOption), List.of());
@@ -844,21 +841,17 @@ public class JOptSimpleOptionsBuilderTest {
                 "-a", "foo", "-b", "bar"
         }).orElseThrow();
 
-        Options optionsFromJoptSimple;
         var expectedOptions = expectOptions();
-        switch (mode) {
+        var optionsFromJoptSimple = switch (mode) {
             case PARSE -> {
-                optionsFromJoptSimple = parsedOptionBuilder.create();
                 expectedOptions.add(a, new String[] {"foo"});
+                yield parsedOptionBuilder.create();
             }
             case CONVERT -> {
-                optionsFromJoptSimple = parsedOptionBuilder.convertedOptions().orElseThrow().create();
                 expectedOptions.add(a, "foo");
+                yield parsedOptionBuilder.convertedOptions().orElseThrow().create();
             }
-            default -> {
-                throw new AssertionError();
-            }
-        }
+        };
 
         var options = Options.concat(Options.of(Map.of(b, "buz")), optionsFromJoptSimple, Options.of(Map.of(c, 100)));
 
@@ -878,21 +871,17 @@ public class JOptSimpleOptionsBuilderTest {
                 "-a", "foo", "-b", "bar"
         }).orElseThrow();
 
-        Options optionsFromJoptSimple;
         var expectedOptions = expectOptions();
-        switch (mode) {
+        var optionsFromJoptSimple = switch (mode) {
             case PARSE -> {
-                optionsFromJoptSimple = parsedOptionBuilder.create();
                 expectedOptions.add(a, new String[] {"foo"});
+                yield parsedOptionBuilder.create();
             }
             case CONVERT -> {
-                optionsFromJoptSimple = parsedOptionBuilder.convertedOptions().orElseThrow().create();
                 expectedOptions.add(a, "foo");
+                yield parsedOptionBuilder.convertedOptions().orElseThrow().create();
             }
-            default -> {
-                throw new AssertionError();
-            }
-        }
+        };
 
         var options = optionsFromJoptSimple.copyWith(a.id(), c.id());
 
@@ -960,37 +949,31 @@ public class JOptSimpleOptionsBuilderTest {
     }
 
     private static <T> T[] mergeArrayValues(List<T[]> values, MergePolicy mergePolicy) {
-        switch (mergePolicy) {
+        return switch (mergePolicy) {
             case USE_FIRST -> {
-                return values.getFirst();
+                yield values.getFirst();
             }
             case USE_LAST -> {
-                return values.getLast();
+                yield values.getLast();
             }
             case CONCATENATE -> {
-                return values.stream().map(Stream::of).flatMap(x -> x).toList().toArray(values.getFirst());
+                yield values.stream().map(Stream::of).flatMap(x -> x).toList().toArray(values.getFirst());
             }
-            default -> {
-                throw new IllegalArgumentException();
-            }
-        }
+        };
     }
 
     private static String[] mergeUntypedValues(List<String> values, MergePolicy mergePolicy) {
-        switch (mergePolicy) {
+        return switch (mergePolicy) {
             case USE_FIRST -> {
-                return values.subList(0, 1).toArray(String[]::new);
+                yield values.subList(0, 1).toArray(String[]::new);
             }
             case USE_LAST -> {
-                return values.subList(values.size() - 1, values.size()).toArray(String[]::new);
+                yield values.subList(values.size() - 1, values.size()).toArray(String[]::new);
             }
             case CONCATENATE -> {
-                return values.toArray(String[]::new);
+                yield values.toArray(String[]::new);
             }
-            default -> {
-                throw new IllegalArgumentException();
-            }
-        }
+        };
     }
 
     private static List<Object[]> testMergePolicy() {
@@ -1281,17 +1264,14 @@ public class JOptSimpleOptionsBuilderTest {
                 .map(OptionValue::getOption).toList()).create();
         return args -> {
             final var builder = parse.apply(args.toArray(String[]::new)).orElseThrow();
-            switch (mode) {
+            return switch (mode) {
                 case PARSE -> {
-                    return builder.create();
+                    yield builder.create();
                 }
                 case CONVERT -> {
-                    return builder.convertedOptions().orElseThrow().create();
+                    yield builder.convertedOptions().orElseThrow().create();
                 }
-                default -> {
-                    throw new IllegalArgumentException();
-                }
-            }
+            };
         };
     }
 

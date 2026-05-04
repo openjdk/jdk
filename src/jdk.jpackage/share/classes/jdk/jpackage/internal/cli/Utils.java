@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.function.IntPredicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.model.BundlingEnvironment;
 import jdk.jpackage.internal.model.SelfContainedException;
 
 final class Utils {
@@ -78,23 +77,16 @@ final class Utils {
         }).filter(Objects::nonNull);
     }
 
-    static JOptSimpleOptionsBuilder buildParser(OperatingSystem os, BundlingEnvironment bundlingEnv) {
+    static JOptSimpleOptionsBuilder buildParser(OperatingSystem os) {
+
         return new JOptSimpleOptionsBuilder()
                 .options(StandardOption.options())
-                .optionSpecMapper(OptionsProcessor.optionSpecMapper(os, bundlingEnv))
+                .optionSpecMapper(OptionsProcessor.optionSpecMapper(os))
                 .jOptSimpleParserErrorHandler(errDesc -> {
-                    final String formatId;
-                    switch (errDesc.type()) {
-                        case UNRECOGNIZED_OPTION -> {
-                            formatId = "ERR_InvalidOption";
-                        }
-                        case OPTION_MISSING_REQUIRED_ARGUMENT -> {
-                            formatId = "ERR_InvalidOption";
-                        }
-                        default -> {
-                            throw new AssertionError();
-                        }
-                    }
+                    final var formatId = switch (errDesc.type()) {
+                        case UNRECOGNIZED_OPTION -> "ERR_InvalidOption";
+                        case OPTION_MISSING_REQUIRED_ARGUMENT -> "ERR_InvalidOption";
+                    };
                     return new ParseException(I18N.format(formatId, errDesc.optionName().formatForCommandLine()));
                 });
     }
