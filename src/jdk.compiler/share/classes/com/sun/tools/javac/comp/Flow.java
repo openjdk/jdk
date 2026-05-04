@@ -666,7 +666,7 @@ public class Flow {
                 visitRecordPattern(rp);
             }
 
-            if (!checkExhaustiveSwitchProperty(tree.expr.pos(), tree.pattern, tree.expr.type).exhaustive()) {
+            if (!checkExhaustiveSwitchProperty(tree.expr.pos(), tree.pattern, tree.expr.type)) {
                 log.error(tree, Errors.EnhancedLocalVariableDeclarationNotExhaustiveOnType(tree.pattern.type, tree.expr.type));
             }
 
@@ -679,7 +679,7 @@ public class Flow {
             } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
                 visitRecordPattern(jcRecordPattern);
 
-                if (!checkExhaustiveSwitchProperty(tree.pos(), jcRecordPattern, tree.elementType).exhaustive()) {
+                if (!checkExhaustiveSwitchProperty(tree.pos(), jcRecordPattern, tree.elementType)) {
                     log.error(tree, Errors.ForeachNotExhaustiveOnType(jcRecordPattern.type, tree.elementType));
                 }
             }
@@ -964,7 +964,7 @@ public class Flow {
         }
     }
 
-    private ExhaustivenessResult checkExhaustiveSwitchProperty(DiagnosticPosition selectorPos, JCPattern patternTree, Type selectorType) {
+    private boolean checkExhaustiveSwitchProperty(DiagnosticPosition selectorPos, JCPattern patternTree, Type selectorType) {
         List<JCCase> singletonCaseList = List.of(make.Case(
                 CaseTree.CaseKind.STATEMENT,
                 List.of(make.PatternCaseLabel(patternTree)),
@@ -973,7 +973,7 @@ public class Flow {
                 null)
         );
 
-        return exhaustiveness.exhausts(selectorPos, selectorType, singletonCaseList);
+        return exhaustiveness.exhausts(selectorPos, selectorType, singletonCaseList).exhaustive();
     }
 
     /**
