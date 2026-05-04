@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,10 +118,24 @@ public class RedefineRunningMethodsWithBacktrace {
                     }
                     public static void infinite() {}
                     public static void throwable() {
-                        throw new RuntimeException("throwable called");
+                        throw new RuntimeException("throwable called"); /* line 13 */
                     }
                 }
                 """;
+
+    private static boolean matchSource(String source) {
+        // The first version is in this file, the second version was cleaned up.
+        return source == null ||
+               source.equals("RedefineRunningMethodsWithBacktrace.java") ||
+               source.equals("RedefineRunningMethodsWithBacktrace_B.java");
+    }
+
+    private static boolean matchLineNumber(int lineNumber) {
+        // Line number of the throw in the each version of the redefined class.
+        // The first version of this method is running so we have the line number,
+        // the second is cleaned up, so we don't, the third version is current so we do.
+        return lineNumber == 82 || lineNumber == -1 || lineNumber == 13;
+    }
 
     private static void touchRedefinedMethodInBacktrace(Throwable throwable) {
         System.out.println("touchRedefinedMethodInBacktrace: ");
@@ -131,8 +145,24 @@ public class RedefineRunningMethodsWithBacktrace {
         // Make sure that we can convert the backtrace, which is referring to
         // the redefined method, to a  StrackTraceElement[] without crashing.
         StackTraceElement[] stackTrace = throwable.getStackTrace();
-        for (int i = 0; i < stackTrace.length; i++) {
-            StackTraceElement frame = stackTrace[i];
+        StackTraceElement frame = stackTrace[0];
+        assertEquals(frame.getClassName(), "RedefineRunningMethodsWithBacktrace_B",
+              "\nTest failed: trace[0].getClassName() returned " + frame.getClassName());
+        assertEquals(frame.getMethodName(), "throwable",
+              "\nTest failed: trace[0].getMethodName() returned " + frame.getMethodName());
+        assertTrue(matchSource(frame.getFileName()),
+              "\nTest failed: trace[0].getFileName() returned " + frame.getFileName());
+        assertTrue(matchLineNumber(frame.getLineNumber()),
+              "\nTest failed: trace[0].getLineNumber() returned " + frame.getLineNumber());
+
+        frame = stackTrace[1];
+        assertEquals(frame.getClassName(), "RedefineRunningMethodsWithBacktrace",
+              "\nTest failed: trace[1].getClassName() returned " + frame.getClassName());
+        assertEquals(frame.getMethodName(), "getThrowableInB",
+              "\nTest failed: trace[1].getMethodName() returned " + frame.getMethodName());
+
+        for (int i = 2; i < stackTrace.length; i++) {
+            frame = stackTrace[i];
             assertNotNull(frame.getClassName(),
               "\nTest failed: trace[" + i + "].getClassName() returned null");
             assertNotNull(frame.getMethodName(),

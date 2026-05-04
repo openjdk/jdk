@@ -99,20 +99,6 @@ static inline int get_line_number(Method* method, int bci) {
   return line_number;
 }
 
-static inline Symbol* get_source_file_name(InstanceKlass* holder, int version) {
-  // RedefineClasses() currently permits redefine operations to
-  // happen in parallel using a "last one wins" philosophy. That
-  // spec laxness allows the constant pool entry associated with
-  // the source_file_name_index for any older constant pool version
-  // to be unstable so we shouldn't try to use it.
-  if (holder->constants()->version() != version) {
-    return nullptr;
-  } else {
-    return holder->source_file_name();
-  }
-}
-
-
 // java_lang_Throwable
 
 int java_lang_Throwable::_backtrace_offset;
@@ -435,7 +421,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   }
 
   char* source_file_name = nullptr;
-  Symbol* source = get_source_file_name(holder, version);
+  Symbol* source = holder->source_file_name(version);
   if (source != nullptr) {
     source_file_name = source->as_C_string();
   }
@@ -976,7 +962,7 @@ void java_lang_StackTraceElement::decode_file_and_line(Handle java_class,
                                                        oop& source_file,
                                                        int& line_number, TRAPS) {
   // Fill in source file name and line number.
-  source = get_source_file_name(holder, version);
+  source = holder->source_file_name(version);
   source_file = java_lang_Class::source_file(java_class());
   if (source != nullptr) {
     // Class was not redefined. We can trust its cache if set,

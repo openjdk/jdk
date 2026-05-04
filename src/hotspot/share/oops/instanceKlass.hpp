@@ -672,6 +672,7 @@ public:
   Symbol* source_file_name() const;
   u2 source_file_name_index() const;
   void set_source_file_name_index(u2 sourcefile_index);
+  Symbol* source_file_name(int version) const;
 
   // minor and major version numbers of class file
   u2 minor_version() const;
