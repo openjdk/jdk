@@ -646,6 +646,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _stub_id(StubId::NO_STUBID),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
+      _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
       _allow_macro_nodes(true),
@@ -922,6 +923,7 @@ Compile::Compile(ciEnv* ci_env,
       _stub_id(stub_id),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
+      _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
       _allow_macro_nodes(true),
@@ -2170,8 +2172,8 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   }
 
   while (_late_inlines.length() > 0) {
-    if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
-      if (low_live_nodes < (uint)LiveNodeCountInliningCutoff * 8 / 10) {
+    if (live_nodes() > node_count_inlining_cutoff()) {
+      if (low_live_nodes < node_count_inlining_cutoff() * 8 / 10) {
         TracePhase tp(_t_incrInline_ideal);
         // PhaseIdealLoop is expensive so we only try it once we are
         // out of live nodes and we only try it again if the previous
@@ -2182,7 +2184,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
         _major_progress = true;
       }
 
-      if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
+      if (live_nodes() > node_count_inlining_cutoff()) {
         bool do_print_inlining = print_inlining() || print_intrinsics();
         if (do_print_inlining || log() != nullptr) {
           // Print inlining message for candidates that we couldn't inline for lack of space.
