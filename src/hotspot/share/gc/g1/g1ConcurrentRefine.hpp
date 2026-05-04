@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 // Forward decl
 class G1CardTableClaimTable;
@@ -104,8 +105,10 @@ public:
 //      Calculates statistics about the process to be used in various parts of
 //      the garbage collection.
 //
-// All but step 4 are interruptible by safepoints. In case of a garbage collection,
-// the garbage collection will interrupt this process, and go to Idle state.
+// Steps 1, 2, 3, and 5 can be interrupted by safepoints. In case of a
+// garbage collection, the garbage collection will interrupt this process,
+// and go to Idle state.
+// Step 4 and 6 can not be interrupted.
 //
 class G1ConcurrentRefineSweepState {
 
@@ -137,19 +140,16 @@ class G1ConcurrentRefineSweepState {
   // Current heap snapshot.
   G1CardTableClaimTable* _sweep_table;
 
-  // Start times for all states.
+  // Entry timestamps for states in the current refinement cycle.
+  // The timestamp of a state is only valid if that state has been reached in
+  // this cycle. State transitions must update _state and _state_start together.
   Ticks _state_start[static_cast<uint>(State::Last)];
 
-  void set_state_start_time();
-  Tickspan get_duration(State start, State end);
+  void enter_state(State state, Ticks timestamp);
+  Tickspan get_duration(State start, State end) const;
+  Tickspan time_since_start(Ticks completion_time) const;
 
   G1ConcurrentRefineStats _stats;
-
-  // Advances the state to next_state if not interrupted by a changed epoch. Returns
-  // to Idle otherwise.
-  bool advance_state(State next_state);
-
-  void assert_state(State expected);
 
   void snapshot_heap_inner();
 
@@ -157,16 +157,22 @@ public:
   G1ConcurrentRefineSweepState(uint max_reserved_regions);
   ~G1ConcurrentRefineSweepState();
 
-  void start_work();
-
   bool swap_global_card_table();
   bool swap_java_threads_ct();
   bool swap_gc_threads_ct();
-  void snapshot_heap(bool concurrent = true);
-  void sweep_refinement_table_start();
-  bool sweep_refinement_table_step();
+  void snapshot_heap();
+  bool sweep_refinement_table(jlong& total_yield_duration);
 
-  bool complete_work(bool concurrent, bool print_log = true);
+  // Complete refinement for the current epoch. Finalizes the sweep state,
+  // records stats, and updates policy.
+  void complete_refinement(jlong total_yield_during_sweep_duration,
+                           jlong epoch_yield_duration,
+                           jlong next_epoch_start);
+
+  void cancel_refinement();
+  // Called at safepoint when refinement was interrupted and we need to merge state.
+  // Logs any accumulated stats and creates a snapshot if SweepRT was not reached.
+  void handle_ongoing_refinement_at_safepoint();
 
   G1CardTableClaimTable* sweep_table() { return _sweep_table; }
   G1ConcurrentRefineStats* stats() { return &_stats; }
@@ -174,7 +180,7 @@ public:
 
   void add_yield_during_sweep_duration(jlong duration);
 
-  bool is_in_progress() const;
+  bool is_in_progress() const { return _state != State::Idle; }
   bool are_java_threads_synched() const;
 };
 
