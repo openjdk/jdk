@@ -1898,7 +1898,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.ENHANCED_VARIABLE_DECLARATION; }
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public Tree getPattern() { return pattern; }
+        public PatternTree getPattern() { return pattern; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return expr; }
         @Override @DefinedBy(Api.COMPILER_TREE)

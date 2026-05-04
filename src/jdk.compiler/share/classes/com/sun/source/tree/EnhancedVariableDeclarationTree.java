@@ -46,7 +46,7 @@ public interface EnhancedVariableDeclarationTree extends StatementTree {
      * Returns the pattern for the enhanced local variable declaration statement.
      * @return pattern
      */
-    Tree getPattern();
+    PatternTree getPattern();
 
     /**
      * Returns the expression to be matched.
