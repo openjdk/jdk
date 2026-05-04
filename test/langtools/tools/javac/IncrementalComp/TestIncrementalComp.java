@@ -88,6 +88,42 @@ class TestIncrementalComp {
         invokeMainMethod(outDir, "org.moda", "org.moda.app.Main");
     }
 
+    @Test
+    public void testMultiModule() throws Throwable {
+        Path workDir = Path.of("testMultiModule");
+        // set up test sources
+        Path localTestModules = workDir.resolve("test_modules");
+        Path outDir = workDir.resolve("mods");
+        Files.createDirectories(localTestModules);
+        FileUtils.copyDirectory(TEST_MODULES_DIR.resolve("multi"), localTestModules);
+
+        Files.copy(ALTS_DIR.resolve("Lib_int.java"),
+                localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"));
+
+        // compile both modules explicitly
+        compile(
+                "-d", outDir.toString(),
+                "--module-source-path=" + localTestModules,
+                "--module=org.moda,org.modb");
+
+        invokeMainMethod(outDir, "org.modb", "org.modb.app.Main");
+
+        // modify sources
+        Files.copy(ALTS_DIR.resolve("Lib_long.java"),
+                localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"),
+                REPLACE_EXISTING);
+
+        // compile both modules again
+        // only moda was out of date, but modb should be recompiled as well
+        compile(
+                "-d", outDir.toString(),
+                "--module-source-path=" + localTestModules,
+                "--module=org.moda,org.modb");
+
+        // should work
+        invokeMainMethod(outDir, "org.modb", "org.modb.app.Main");
+    }
+
     private static void invokeMainMethod(Path modulePath, String moduleName, String mainClassName, String... args)
             throws ReflectiveOperationException {
         ModuleLayer boot = ModuleLayer.boot();
