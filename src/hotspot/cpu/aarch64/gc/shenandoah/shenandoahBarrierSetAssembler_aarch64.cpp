@@ -451,15 +451,15 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ bind(done);
 }
 
-#ifdef COMPILER2
-void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj,
-                                                                  Register tmp, Label& slow_path) {
-  assert_different_registers(obj, tmp);
+void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                                    Register tmp, Label& slow_path) {
+  assert_different_registers(weak_handle, tmp, noreg);
+  assert_different_registers(obj, tmp, noreg);
 
   Label done;
 
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, tmp, slow_path);
 
   // Check if the reference is null, and if it is, take the fast path.
   __ cbz(obj, done);
@@ -473,7 +473,6 @@ void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler
   __ tbnz(tmp, ShenandoahHeap::WEAK_ROOTS_BITPOS, slow_path);
   __ bind(done);
 }
-#endif
 
 // Special Shenandoah CAS implementation that handles false negatives due
 // to concurrent evacuation.  The service is more complex than a

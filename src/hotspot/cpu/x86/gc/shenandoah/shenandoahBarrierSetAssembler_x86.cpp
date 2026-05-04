@@ -630,12 +630,11 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ bind(done);
 }
 
-#ifdef COMPILER2
-void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
+void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath) {
   Label done;
 
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, slowpath);
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, slowpath);
 
   // Check if the reference is null, and if it is, take the fast path.
   __ testptr(obj, obj);
@@ -649,7 +648,6 @@ void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler
   __ jcc(Assembler::notZero, slowpath);
   __ bind(done);
 }
-#endif // COMPILER2
 
 // Special Shenandoah CAS implementation that handles false negatives
 // due to concurrent evacuation.
