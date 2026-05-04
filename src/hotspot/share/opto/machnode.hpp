@@ -320,7 +320,6 @@ public:
 
   // Return number of words used for double constants in this instruction
   virtual int   ins_num_consts() const { return 0; }
-  
   virtual int ins_toc_short_size() const { return 0; }
   // Hash and compare over operands.  Used to do GVN on machine Nodes.
   virtual uint  hash() const;
