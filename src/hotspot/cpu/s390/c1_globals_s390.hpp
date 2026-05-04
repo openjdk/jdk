@@ -58,5 +58,5 @@ define_pd_global(bool,     UseTypeProfile,               false);
 
 define_pd_global(bool,     OptimizeSinglePrecision,      false);
 define_pd_global(bool,     CSEArrayLength,               true);
-define_pd_global(size_t, ConstantTableSizeThreshold, 0); //Currently unused.
+
 #endif // CPU_S390_C1_GLOBALS_S390_HPP

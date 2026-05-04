@@ -73,6 +73,5 @@ define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on x86.
 
-
 define_pd_global(size_t, ConstantTableSizeThreshold, 0); //Currently unused.
 #endif // CPU_X86_C2_GLOBALS_X86_HPP
