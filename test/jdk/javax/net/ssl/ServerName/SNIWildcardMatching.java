@@ -120,7 +120,7 @@ public final class SNIWildcardMatching extends SSLSocketTemplate {
                     new SNIWildcardMatching(v[0], v[1], protocol).run();
                 } catch (Exception e) {
                     fail("Error running "
-                            + Arrays.toString(v) + ": " + e.getMessage());
+                            + Arrays.toString(v) + ": " + e);
                 }
             }
 
