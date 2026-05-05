@@ -144,12 +144,43 @@ public class RecordSourceOutput {
                 .writeAll();
         Path printed = classes.resolve("R.java");
         String printedContent = Files.readString(printed);
-        System.err.println(printedContent);
         Assertions.assertEquals("""
                                 public record R(int x, int y) {
                                     public R {
                                         x += 1;
                                         y += 1;
+                                    }
+                                }
+                                """.replaceAll("\\s+", " ").trim(),
+                printedContent.replaceAll("\\s+", " ").trim());
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(printed)
+                .run()
+                .writeAll();
+    }
+
+    @Test
+    void testExplicitAccessor() throws Exception {
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+        new JavacTask(tb)
+                .options("-d", classes.toString(), "-printsource")
+                .sources("""
+                         public record R(int x) {
+                             public int x() {
+                                 return x + 1;
+                             }
+                         }
+                         """)
+                .run()
+                .writeAll();
+        Path printed = classes.resolve("R.java");
+        String printedContent = Files.readString(printed);
+        Assertions.assertEquals("""
+                                public record R(int x) {
+                                    public int x() {
+                                        return x + 1;
                                     }
                                 }
                                 """.replaceAll("\\s+", " ").trim(),
