@@ -33,24 +33,23 @@ import java.awt.HeadlessException;
 import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.Window;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.Book;
-import java.awt.print.Pageable;
 import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterAbortException;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
-import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
-import sun.awt.image.ByteInterleavedRaster;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
@@ -69,8 +68,8 @@ import javax.print.attribute.ResolutionSyntax;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
-import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.DialogOwner;
+import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.Fidelity;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.JobSheets;
@@ -81,14 +80,16 @@ import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PageRanges;
+import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.PrinterState;
 import javax.print.attribute.standard.PrinterStateReason;
 import javax.print.attribute.standard.PrinterStateReasons;
-import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
+
+import sun.awt.image.ByteInterleavedRaster;
 
 import static sun.font.FontUtilities.isIgnorableWhitespace;
 
@@ -1613,8 +1614,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         } catch (PrinterException pe) {
             throw pe;
         } catch (Throwable printError) {
-            throw (PrinterException)
-                    new PrinterException().initCause(printError.getCause());
+            throw (PrinterException) new PrinterException().initCause(printError);
         } finally {
             // reset previousPaper in case this job is invoked again.
             previousPaper = null;

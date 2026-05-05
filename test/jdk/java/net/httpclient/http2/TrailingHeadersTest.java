@@ -28,7 +28,7 @@
  * @bug 8296410
  * @library /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- * @run junit/othervm -Djdk.httpclient.HttpClient.log=all TrailingHeadersTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.http2.OutgoingPushPromise;

@@ -234,7 +234,7 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
   EXPECT_FALSE(buffer->iterator().hasNext());
 
   delete output; // close file
-  FREE_C_HEAP_ARRAY(char, name);
+  FREE_C_HEAP_ARRAY(name);
 
   const char* strs[4];
   strs[0] = "a log line";

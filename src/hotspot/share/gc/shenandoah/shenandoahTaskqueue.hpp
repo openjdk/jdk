@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,8 @@ private:
   static const uintptr_t weak_extract_mask      = 1 << 1;
   static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
-  static const int chunk_range_mask = right_n_bits(chunk_bits);
-  static const int pow_range_mask   = right_n_bits(pow_bits);
+  static const int chunk_range_mask = right_n_bits<int>(chunk_bits);
+  static const int pow_range_mask   = right_n_bits<int>(pow_bits);
 
   inline oop decode_oop(uintptr_t val) const {
     STATIC_ASSERT(oop_shift == 0);
@@ -249,7 +249,7 @@ public:
   }
 
   static int chunk_size() {
-    return nth_bit(chunk_bits);
+    return nth_bit<int>(chunk_bits);
   }
 };
 #else
@@ -320,7 +320,7 @@ public:
     DEBUG_ONLY(_reserved = 0; )
   }
 
-  void clear_claimed() { _claimed_index = 0; }
+  void clear_claimed() { _claimed_index.store_relaxed(0); }
   T*   claim_next();
 
   // reserve queues that not for parallel claiming
