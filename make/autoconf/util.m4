@@ -359,6 +359,20 @@ AC_DEFUN([UTIL_ADD_JVM_ARG_IF_OK],
 ])
 
 ################################################################################
+# Test if the GC feature $4 is supported by the resulting JVM build,
+# and $1 a valid argument to $3 (often is $JAVA, passed as $3),
+# append $1 to $2
+# Also set JVM_ARG_OK to true/false depending on outcome.
+AC_DEFUN([UTIL_ADD_JVM_GC_ARG_IF_OK],
+[
+  if JVM_FEATURES_IS_ACTIVE([$4]); then
+    UTIL_ADD_JVM_ARG_IF_OK([$1], [$2], [$3])
+  else
+    JVM_ARG_OK=false
+  fi
+])
+
+################################################################################
 # Register a --with argument but mark it as deprecated
 # $1: The name of the with argument to deprecate, not including --with-
 AC_DEFUN([UTIL_DEPRECATED_ARG_WITH],
