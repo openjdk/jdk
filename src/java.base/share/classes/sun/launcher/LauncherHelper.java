@@ -98,6 +98,8 @@ public final class LauncherHelper {
             "javafx.application.Application";
     private static final String JAVAFX_FXHELPER_CLASS_NAME_SUFFIX =
             "sun.launcher.LauncherHelper$FXHelper";
+    private static final String JAVAFX_GRAPHICS_MODULE_NAME =
+            "javafx.graphics";
     private static final String LAUNCHER_AGENT_CLASS = "Launcher-Agent-Class";
     private static final String MAIN_CLASS = "Main-Class";
     private static final String ADD_EXPORTS = "Add-Exports";
@@ -770,7 +772,7 @@ public final class LauncherHelper {
          */
         if ((JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
                 doesExtendFXApplication(mainClass)) &&
-                ModuleLayer.boot().findModule(FXHelper.JAVAFX_GRAPHICS_MODULE_NAME).isPresent()) {
+                ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME).isPresent()) {
             // Will abort() if there are problems with FX runtime
             FXHelper.setFXLaunchParameters(what, mode);
             mainClass = FXHelper.class;
@@ -1083,9 +1085,6 @@ public final class LauncherHelper {
 
     static final class FXHelper {
 
-        private static final String JAVAFX_GRAPHICS_MODULE_NAME =
-                "javafx.graphics";
-
         private static final String JAVAFX_LAUNCHER_CLASS_NAME =
                 "com.sun.javafx.application.LauncherImpl";
 
@@ -1128,10 +1127,13 @@ public final class LauncherHelper {
             // find the module with the FX launcher
             // this method is only called if we can find the module
             // in the first place, so it will always be present
-            Module om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME).orElseThrow();
+            Optional<Module> om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
+            if (om.isEmpty()) {
+                abort(null, "java.launcher.cls.error3");
+            }
 
             // load the FX launcher class
-            fxLauncherClass = Class.forName(om, JAVAFX_LAUNCHER_CLASS_NAME);
+            fxLauncherClass = Class.forName(om.get(), JAVAFX_LAUNCHER_CLASS_NAME);
             if (fxLauncherClass == null) {
                 abort(null, "java.launcher.cls.error3");
             }
