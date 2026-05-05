@@ -35,8 +35,6 @@ class G1RefineRegionClosure : public G1HeapRegionClosure {
 
   uint _worker_id;
 
-  size_t _num_collections_at_start;
-
   bool has_work(G1HeapRegion* r) {
     return _scan_state->has_unclaimed_cards(r->hrm_index());
   }

@@ -70,11 +70,10 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
-  // Can be used in nmethods including native wrappers.
-  // Attention: obj will only be valid until next safepoint (no SATB barrier).
-  // TODO: maybe rename to try_peek_weak_handle on all platforms (try: operation may fail, peek: obj is not kept alive)
-  // (other platforms currently use it for C2 only: try_resolve_weak_handle_in_c2)
-  virtual void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
+  // See AS_NO_KEEPALIVE for peek semantics
+  // weak_handle and obj may alias
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                               Register tmp, Label& slow_path);
 
   virtual void barrier_stubs_init() {}
 

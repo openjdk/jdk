@@ -36,8 +36,8 @@ import java.util.zip.ZipFile;
 
 /*
  * @test
- * @bug 8342442 8345057
- * @summary Test default implementation.
+ * @bug 8342442 8345057 8378443 8351351
+ * @summary Test default implementation
  * @library /test/lib
  * @modules java.base/sun.security.provider
  *          java.base/sun.security.util
@@ -47,7 +47,7 @@ import java.util.zip.ZipFile;
 
 /*
  * @test
- * @bug 8342442 8345057
+ * @bug 8342442 8345057 8378443
  * @summary Test verifying the intrinsic implementation.
  * @library /test/lib
  * @modules java.base/sun.security.provider
@@ -94,6 +94,7 @@ public class Launcher {
     private static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
     // Zip archive entry name, do not update to use File.separator
     private static final String[] TEST_FILES = {
+            "gen-val/json-files/LMS-sigVer-1.0/internalProjection.json",
             "gen-val/json-files/ML-DSA-keyGen-FIPS204/internalProjection.json",
             "gen-val/json-files/ML-DSA-sigGen-FIPS204/internalProjection.json",
             "gen-val/json-files/ML-DSA-sigVer-FIPS204/internalProjection.json",
@@ -176,6 +177,10 @@ public class Launcher {
             }
             var alg = kat.get("algorithm").asString();
             switch (alg) {
+                case "LMS" -> {
+                    LMS_Test.run(kat, PROVIDER);
+                    count++;
+                }
                 case "ML-DSA" -> {
                     ML_DSA_Test.run(kat, PROVIDER);
                     count++;
