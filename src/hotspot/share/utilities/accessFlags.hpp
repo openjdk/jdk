@@ -53,11 +53,15 @@ class AccessFlags {
   bool is_strict      () const         { return (_flags & JVM_ACC_STRICT_INIT ) != 0; }
   bool is_synchronized() const         { return (_flags & JVM_ACC_SYNCHRONIZED) != 0; }
   bool is_volatile    () const         { return (_flags & JVM_ACC_VOLATILE    ) != 0; }
+  bool is_bridge      () const         { return (_flags & JVM_ACC_BRIDGE      ) != 0; }
   bool is_transient   () const         { return (_flags & JVM_ACC_TRANSIENT   ) != 0; }
+  bool is_varargs     () const         { return (_flags & JVM_ACC_VARARGS     ) != 0; }
   bool is_native      () const         { return (_flags & JVM_ACC_NATIVE      ) != 0; }
+  bool is_enum        () const         { return (_flags & JVM_ACC_ENUM        ) != 0; }
+  bool is_annotation  () const         { return (_flags & JVM_ACC_ANNOTATION  ) != 0; }
   bool is_interface   () const         { return (_flags & JVM_ACC_INTERFACE   ) != 0; }
   bool is_abstract    () const         { return (_flags & JVM_ACC_ABSTRACT    ) != 0; }
-  bool has_vararg     () const         { return (_flags & JVM_ACC_VARARGS     ) != 0; }
+  bool is_strictfp    () const         { return (_flags & JVM_ACC_STRICT      ) != 0; }
   bool is_identity_class  () const     { return (_flags & JVM_ACC_IDENTITY    ) != 0; }
 
   // Attribute flags
@@ -94,13 +98,6 @@ class AccessFlags {
     assert((_flags & JVM_RECOGNIZED_CLASS_MODIFIERS) == _flags, "only recognized flags");
     return _flags;
   }
-
-  // Printing/debugging
-#if INCLUDE_JVMTI
-  void print_on(outputStream* st) const;
-#else
-  void print_on(outputStream* st) const PRODUCT_RETURN;
-#endif
 };
 
 inline AccessFlags accessFlags_from(u2 flags) {

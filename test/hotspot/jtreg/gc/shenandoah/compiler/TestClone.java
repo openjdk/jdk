@@ -80,6 +80,73 @@
  */
 
 /*
+ * @test id=passive
+ * @summary Test clone barriers work correctly
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
+
+/*
+ * @test id=passive-verify
+ * @summary Test clone barriers work correctly
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -XX:+ShenandoahVerify
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -XX:+ShenandoahVerify
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahCloneBarrier
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
+
+/*
  * @test id=aggressive
  * @summary Test clone barriers work correctly
  * @requires vm.gc.Shenandoah
@@ -367,6 +434,9 @@ public class TestClone {
                 src[c] = new Object();
             }
             testWith(src);
+
+            testWithObject(new SmallObject());
+            testWithObject(new LargeObject());
         }
     }
 
@@ -381,7 +451,83 @@ public class TestClone {
             Object s = src[c];
             Object d = dst[c];
             if (s != d) {
-                throw new IllegalStateException("Elements do not match at " + c + ": " + s + " vs " + d);
+                throw new IllegalStateException("Elements do not match at " + c + ": " + s + " vs " + d + ", len = " + srcLen);
+            }
+        }
+    }
+
+    static void testWithObject(SmallObject src) {
+        SmallObject dst = src.clone();
+        if (dst.x1 != src.x1 ||
+            dst.x2 != src.x2 ||
+            dst.x3 != src.x3 ||
+            dst.x4 != src.x4) {
+            throw new IllegalStateException("Contents do not match");
+        }
+    }
+
+    static void testWithObject(LargeObject src) {
+        LargeObject dst = src.clone();
+        if (dst.x01 != src.x01 ||
+            dst.x02 != src.x02 ||
+            dst.x03 != src.x03 ||
+            dst.x04 != src.x04 ||
+            dst.x05 != src.x05 ||
+            dst.x06 != src.x06 ||
+            dst.x07 != src.x07 ||
+            dst.x08 != src.x08 ||
+            dst.x09 != src.x09 ||
+            dst.x10 != src.x10 ||
+            dst.x11 != src.x11 ||
+            dst.x12 != src.x12 ||
+            dst.x13 != src.x13 ||
+            dst.x14 != src.x14 ||
+            dst.x15 != src.x15 ||
+            dst.x16 != src.x16) {
+            throw new IllegalStateException("Contents do not match");
+        }
+    }
+
+    static class SmallObject implements Cloneable {
+        Object x1 = new Object();
+        Object x2 = new Object();
+        Object x3 = new Object();
+        Object x4 = new Object();
+
+        @Override
+        public SmallObject clone() {
+            try {
+                return (SmallObject) super.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new AssertionError();
+            }
+        }
+    }
+
+    static class LargeObject implements Cloneable {
+        Object x01 = new Object();
+        Object x02 = new Object();
+        Object x03 = new Object();
+        Object x04 = new Object();
+        Object x05 = new Object();
+        Object x06 = new Object();
+        Object x07 = new Object();
+        Object x08 = new Object();
+        Object x09 = new Object();
+        Object x10 = new Object();
+        Object x11 = new Object();
+        Object x12 = new Object();
+        Object x13 = new Object();
+        Object x14 = new Object();
+        Object x15 = new Object();
+        Object x16 = new Object();
+
+        @Override
+        public LargeObject clone() {
+            try {
+                return (LargeObject) super.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new AssertionError();
             }
         }
     }

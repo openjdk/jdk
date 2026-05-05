@@ -121,10 +121,10 @@ inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsC
   InstanceKlass::oop_oop_iterate_reverse<narrowOop>(obj, closure);
 }
 
-inline void PSPromotionManager::push_contents(oop obj) {
-  if (!obj->klass()->is_typeArray_klass()) {
+inline void PSPromotionManager::push_contents(oop obj, Klass* klass) {
+  if (!klass->is_typeArray_klass()) {
     PSPushContentsClosure pcc(this);
-    obj->oop_iterate_backwards(&pcc);
+    obj->oop_iterate_backwards(&pcc, klass);
   }
 }
 
@@ -303,7 +303,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       push_objArray(o, new_obj);
     } else {
       // we'll just push its contents
-      push_contents(new_obj);
+      push_contents(new_obj, klass);
 
       if (StringDedup::is_enabled_string(klass) &&
           psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {

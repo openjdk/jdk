@@ -22,33 +22,7 @@
  *
  */
 
-#include "oops/oop.inline.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/accessFlags.hpp"
-
-#if !defined(PRODUCT) || INCLUDE_JVMTI
-
-void AccessFlags::print_on(outputStream* st) const {
-  if (is_public      ()) st->print("public "      );
-  if (is_private     ()) st->print("private "     );
-  if (is_protected   ()) st->print("protected "   );
-  if (is_static      ()) st->print("static "      );
-  if (is_final       ()) st->print("final "       );
-  if (is_synchronized()) st->print("synchronized ");
-  if (is_volatile    ()) st->print("volatile "    );
-  if (is_transient   ()) st->print("transient "   );
-  if (is_native      ()) st->print("native "      );
-  if (is_interface   ()) st->print("interface "   );
-  if (is_abstract    ()) st->print("abstract "    );
-  if (is_synthetic   ()) st->print("synthetic "   );
-  if (Arguments::is_valhalla_enabled()) {
-    if (is_identity_class()) st->print("identity ");
-    if (!is_identity_class()) st->print("value "  );
-  }
-}
-
-#endif // !PRODUCT || INCLUDE_JVMTI
 
 void accessFlags_init() {
   assert(sizeof(AccessFlags) == sizeof(u2), "just checking size of flags");

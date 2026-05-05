@@ -50,7 +50,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @library /test/lib /test/jdk/java/lang/invoke/common
  * @enablePreview
  * @compile ObjectMethods.java
- * @run main/othervm -noverify runtime.valhalla.inlinetypes.ObjectMethods noverify
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BytecodeVerificationLocal -XX:-BytecodeVerificationRemote runtime.valhalla.inlinetypes.ObjectMethods noverify
  */
 
 public class ObjectMethods {

@@ -2365,11 +2365,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
 
     if (!ci_env.failing() && !task->is_success()) {
-      assert(ci_env.failure_reason() != nullptr, "expect failure reason");
-      assert(false, "compiler should always document failure: %s", ci_env.failure_reason());
-      // The compiler elected, without comment, not to register a result.
+      const char* reason = task->failure_reason();
+      assert(reason != nullptr, "compiler should always document failure");
       // Do not attempt further compilations of this method.
-      ci_env.record_method_not_compilable("compile failed");
+      ci_env.record_method_not_compilable(reason != nullptr ? reason : "compile failed: reason unknown");
     }
 
     // Copy this bit to the enclosing block:

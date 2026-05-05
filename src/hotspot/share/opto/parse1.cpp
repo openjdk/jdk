@@ -1425,7 +1425,7 @@ void Parse::do_method_entry() {
         Node* vt = InlineTypeNode::make_from_oop(this, parm, t->inline_klass());
         replace_in_map(parm, vt);
       }
-    } else if (UseTypeSpeculation && (i == (arg_size - 1)) && depth() == 1 && method()->has_vararg() && t->isa_aryptr()) {
+    } else if (UseTypeSpeculation && (i == (arg_size - 1)) && depth() == 1 && method()->is_varargs() && t->isa_aryptr()) {
       // Speculate on varargs Object array being the default array refined type. The assumption is
       // that a vararg method test(Object... o) is often called as test(o1, o2, o3). javac will
       // translate the call so that the caller will create a new default array of Object, put o1,

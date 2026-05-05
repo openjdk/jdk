@@ -59,7 +59,7 @@ public:
   bool is_native               () const { return _flags.is_native();       }
   bool is_interface            () const { return _flags.is_interface();    }
   bool is_abstract             () const { return _flags.is_abstract();     }
-  bool has_vararg              () const { return _flags.has_vararg();      }
+  bool is_varargs              () const { return _flags.is_varargs();      }
   bool is_identity             () const { return _flags.is_identity_class(); }
   bool is_strict               () const { return _flags.is_strict();       }
 

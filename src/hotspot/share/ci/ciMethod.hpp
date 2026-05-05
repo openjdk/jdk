@@ -347,7 +347,7 @@ class ciMethod : public ciMetadata {
   bool is_native      () const                   { return flags().is_native(); }
   bool is_interface   () const                   { return flags().is_interface(); }
   bool is_abstract    () const                   { return flags().is_abstract(); }
-  bool has_vararg     () const                   { return flags().has_vararg(); }
+  bool is_varargs     () const                   { return flags().is_varargs(); }
 
   // Other flags
   bool is_final_method() const                   { return is_final() || holder()->is_final(); }

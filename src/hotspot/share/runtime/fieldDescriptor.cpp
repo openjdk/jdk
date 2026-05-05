@@ -31,6 +31,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
@@ -110,8 +111,25 @@ void fieldDescriptor::reinitialize(const InstanceKlass* ik, const FieldInfo& fie
   guarantee(_fieldinfo.name_index() != 0 && _fieldinfo.signature_index() != 0, "bad constant pool index for fieldDescriptor");
 }
 
+void fieldDescriptor::print_access_flags(outputStream* st) const {
+  AccessFlags flags = access_flags();
+  if (flags.is_public   ()) st->print("public ");
+  if (flags.is_private  ()) st->print("private ");
+  if (flags.is_protected()) st->print("protected ");
+  if (flags.is_static   ()) st->print("static ");
+  if (flags.is_final    ()) st->print("final ");
+  if (flags.is_volatile ()) st->print("volatile ");
+  if (flags.is_transient()) st->print("transient ");
+  if (flags.is_enum     ()) st->print("enum ");
+  if (flags.is_synthetic()) st->print("synthetic ");
+  if (Arguments::is_valhalla_enabled()) {
+    if (flags.is_identity_class()) st->print("identity ");
+    if (!flags.is_identity_class()) st->print("value "  );
+  }
+}
+
 void fieldDescriptor::print_on(outputStream* st, int base_offset) const {
-  access_flags().print_on(st);
+  print_access_flags(st);
   if (field_flags().is_injected()) st->print("injected ");
   bool flat = field_flags().is_flat();
   if (flat) st->print("flat ");
