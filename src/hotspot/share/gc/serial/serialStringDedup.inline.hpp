@@ -29,8 +29,8 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-bool SerialStringDedup::is_candidate_from_evacuation(const Klass* klass,
-                                                     oop obj,
+bool SerialStringDedup::is_candidate_from_evacuation(oop obj,
+                                                     const Klass* klass,
                                                      bool obj_is_tenured) {
   return StringDedup::is_enabled_string(klass) &&
          (obj_is_tenured ?
