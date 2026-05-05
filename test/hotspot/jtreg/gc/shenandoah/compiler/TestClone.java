@@ -411,80 +411,80 @@
  *                   TestClone
  */
 
- /*
-  * @test id=generational-no-coops
-  * @key randomness
-  * @summary Test clone barriers work correctly
-  * @library /test/lib
-  * @requires vm.gc.Shenandoah
-  * @requires vm.bits == "64"
-  *
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   TestClone
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -Xint
-  *                   TestClone
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -XX:-TieredCompilation
-  *                   TestClone
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -XX:TieredStopAtLevel=1
-  *                   TestClone
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -XX:TieredStopAtLevel=4
-  *                   TestClone
-  */
-
- /*
-  * @test id=generational-no-coops-verify
-  * @key randomness
-  * @summary Test clone barriers work correctly
-  * @library /test/lib
-  * @requires vm.gc.Shenandoah
-  * @requires vm.bits == "64"
-  *
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -XX:+ShenandoahVerify
-  *                   TestClone
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -XX:+ShenandoahVerify
-  *                   -Xint
-  *                   TestClone
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -XX:+ShenandoahVerify
-  *                   -XX:-TieredCompilation
-  *                   TestClone
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -XX:+ShenandoahVerify
-  *                   -XX:TieredStopAtLevel=1
-  *                   TestClone
-  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
-  *                   -XX:-UseCompressedOops
-  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
-  *                   -XX:+ShenandoahVerify
-  *                   -XX:TieredStopAtLevel=4
-  *                   TestClone
-  */
+/*
+ * @test id=generational-no-coops
+ * @key randomness
+ * @summary Test clone barriers work correctly
+ * @library /test/lib
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
+/*
+ * @test id=generational-no-coops-verify
+ * @key randomness
+ * @summary Test clone barriers work correctly
+ * @library /test/lib
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
 
 import java.util.Random;
+
 import jdk.test.lib.Utils;
 
 public class TestClone {
@@ -498,21 +498,30 @@ public class TestClone {
     private static final Ref[][] ARRAY = new Ref[ENTRIES][];
 
     public static void main(String[] args) throws Exception {
+        // Seed
         for (int i = 0; i < ENTRIES; i++) {
             SMALL[i] = new SmallObject(i);
             LARGE[i] = new LargeObject(i);
             ARRAY[i] = newArray(i);
         }
 
+        // Random clone and verify
         for (int i = 0; i < ITERS; i++) {
             cloneAndVerify();
+        }
+
+        // Verify everything
+        for (int i = 0; i < ENTRIES; i++) {
+            verify(SMALL[i], i);
+            verify(LARGE[i], i);
+            verify(ARRAY[i], i);
         }
     }
 
     static void cloneAndVerify() {
         int r = RAND.nextInt(ENTRIES);
-        SMALL[r] = (SmallObject) SMALL[r].clone();
-        LARGE[r] = (LargeObject) LARGE[r].clone();
+        SMALL[r] = SMALL[r].clone();
+        LARGE[r] = LARGE[r].clone();
         ARRAY[r] = ARRAY[r].clone();
 
         // Verify will trigger LRB.
@@ -528,38 +537,38 @@ public class TestClone {
         int size = id % ARRAY_MAX_SIZE;
         Ref[] arr = new Ref[size];
         for (int i = 0; i < size; i++) {
-          arr[i] = new Ref(arrayElementValue(id, i));
+            arr[i] = new Ref(elementValue(id, i));
         }
         return arr;
     }
 
     static void verify(SmallObject src, int id) {
-        assertEquals(src.x1.x, id++);
-        assertEquals(src.x2.x, id++);
-        assertEquals(src.x3.x, id++);
-        assertEquals(src.x4.x, id++);
+        assertEquals(elementValue(id, 0), src.x1.x);
+        assertEquals(elementValue(id, 1), src.x2.x);
+        assertEquals(elementValue(id, 2), src.x3.x);
+        assertEquals(elementValue(id, 3), src.x4.x);
     }
 
     static void verify(LargeObject src, int id) {
-        assertEquals(src.x01.x, id++);
-        assertEquals(src.x02.x, id++);
-        assertEquals(src.x03.x, id++);
-        assertEquals(src.x04.x, id++);
-        assertEquals(src.x05.x, id++);
-        assertEquals(src.x06.x, id++);
-        assertEquals(src.x07.x, id++);
-        assertEquals(src.x08.x, id++);
-        assertEquals(src.x09.x, id++);
-        assertEquals(src.x10.x, id++);
-        assertEquals(src.x11.x, id++);
-        assertEquals(src.x12.x, id++);
-        assertEquals(src.x13.x, id++);
-        assertEquals(src.x14.x, id++);
-        assertEquals(src.x15.x, id++);
-        assertEquals(src.x16.x, id++);
+        assertEquals(elementValue(id, 0), src.x01.x);
+        assertEquals(elementValue(id, 1), src.x02.x);
+        assertEquals(elementValue(id, 2), src.x03.x);
+        assertEquals(elementValue(id, 3), src.x04.x);
+        assertEquals(elementValue(id, 4), src.x05.x);
+        assertEquals(elementValue(id, 5), src.x06.x);
+        assertEquals(elementValue(id, 6), src.x07.x);
+        assertEquals(elementValue(id, 7), src.x08.x);
+        assertEquals(elementValue(id, 8), src.x09.x);
+        assertEquals(elementValue(id, 9), src.x10.x);
+        assertEquals(elementValue(id, 10), src.x11.x);
+        assertEquals(elementValue(id, 11), src.x12.x);
+        assertEquals(elementValue(id, 12), src.x13.x);
+        assertEquals(elementValue(id, 13), src.x14.x);
+        assertEquals(elementValue(id, 14), src.x15.x);
+        assertEquals(elementValue(id, 15), src.x16.x);
     }
 
-    static void assertEquals(int actual, int expected) {
+    static void assertEquals(int expected, int actual) {
         if (actual != expected) {
             throw new IllegalStateException("Mismatch: expected=" + expected + ", actual=" + actual);
         }
@@ -572,7 +581,7 @@ public class TestClone {
             throw new IllegalStateException("Lengths do not match: " + srcLen + " vs " + expectedLen);
         }
         for (int i = 0; i < src.length; i++) {
-            int expectedVal = arrayElementValue(id, i);
+            int expectedVal = elementValue(id, i);
             int val = src[i].x;
             if (val != expectedVal) {
                 throw new IllegalStateException("Elements do not match at " + i + ": " + val + " vs " + expectedVal + ", len = " + srcLen);
@@ -580,9 +589,9 @@ public class TestClone {
         }
     }
 
-    static int arrayElementValue(int id, int offset) {
-        // Globally unique.
-        return ARRAY_MAX_SIZE * id + offset;
+    static int elementValue(int id, int offset) {
+        // Globally unique (per type).
+        return ENTRIES * id + offset;
     }
 
     static class Ref {
@@ -593,7 +602,7 @@ public class TestClone {
         }
     }
 
-    static abstract class DefaultClone<T> implements Cloneable {
+    abstract static class DefaultClone<T> implements Cloneable {
         @Override
         @SuppressWarnings("unchecked")
         public T clone() {
@@ -605,38 +614,38 @@ public class TestClone {
         }
     }
 
-    static class SmallObject extends DefaultClone {
+    static class SmallObject extends DefaultClone<SmallObject> {
         Ref x1, x2, x3, x4;
 
         SmallObject(int x) {
-            x1 = new Ref(x++);
-            x2 = new Ref(x++);
-            x3 = new Ref(x++);
-            x4 = new Ref(x++);
+            x1 = new Ref(elementValue(x, 0));
+            x2 = new Ref(elementValue(x, 1));
+            x3 = new Ref(elementValue(x, 2));
+            x4 = new Ref(elementValue(x, 3));
         }
     }
 
-    static class LargeObject extends DefaultClone {
+    static class LargeObject extends DefaultClone<LargeObject> {
         Ref x01, x02, x03, x04, x05, x06, x07, x08;
         Ref x09, x10, x11, x12, x13, x14, x15, x16;
 
         LargeObject(int x) {
-            x01 = new Ref(x++);
-            x02 = new Ref(x++);
-            x03 = new Ref(x++);
-            x04 = new Ref(x++);
-            x05 = new Ref(x++);
-            x06 = new Ref(x++);
-            x07 = new Ref(x++);
-            x08 = new Ref(x++);
-            x09 = new Ref(x++);
-            x10 = new Ref(x++);
-            x11 = new Ref(x++);
-            x12 = new Ref(x++);
-            x13 = new Ref(x++);
-            x14 = new Ref(x++);
-            x15 = new Ref(x++);
-            x16 = new Ref(x++);
+            x01 = new Ref(elementValue(x, 0));
+            x02 = new Ref(elementValue(x, 1));
+            x03 = new Ref(elementValue(x, 2));
+            x04 = new Ref(elementValue(x, 3));
+            x05 = new Ref(elementValue(x, 4));
+            x06 = new Ref(elementValue(x, 5));
+            x07 = new Ref(elementValue(x, 6));
+            x08 = new Ref(elementValue(x, 7));
+            x09 = new Ref(elementValue(x, 8));
+            x10 = new Ref(elementValue(x, 9));
+            x11 = new Ref(elementValue(x, 10));
+            x12 = new Ref(elementValue(x, 11));
+            x13 = new Ref(elementValue(x, 12));
+            x14 = new Ref(elementValue(x, 13));
+            x15 = new Ref(elementValue(x, 14));
+            x16 = new Ref(elementValue(x, 15));
         }
     }
 }
