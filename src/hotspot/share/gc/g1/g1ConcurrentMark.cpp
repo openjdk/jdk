@@ -1149,7 +1149,6 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
     // completing this work during GC.
     const uint num_workers = MIN2(num_remaining,
                                   _max_concurrent_workers);
-    guarantee(num_workers > 0, "no more remaining root regions to process");
 
     G1CMRootRegionScanTask task(this, concurrent);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
