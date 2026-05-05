@@ -4149,6 +4149,20 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
       igvn->hash_insert(use);
       record_for_optimizer(use);
       --i;
+    } else if (use->Opcode() == Op_AryEq || use->Opcode() == Op_StrComp || use->Opcode() == Op_CountPositives ||
+          use->Opcode() == Op_StrEquals || use->Opcode() == Op_StrIndexOf || use->Opcode() == Op_StrIndexOfChar) {
+      if (alias_idx == general_idx)
+        continue;
+      if (use->in(MemNode::Memory) == n) {
+        uint orig_uniq = C->unique();
+        Node* m = find_inst_mem(n, general_idx, orig_phis);
+        assert(orig_uniq == C->unique(), "no new nodes");
+        igvn->hash_delete(use);
+        imax -= use->replace_edge(n, m, igvn);
+        igvn->hash_insert(use);
+        record_for_optimizer(use);
+        --i;
+      }
 #ifdef ASSERT
     } else if (use->is_Mem()) {
       // Memory nodes should have new memory input.
