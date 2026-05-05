@@ -44,6 +44,16 @@ import java.util.Objects;
  * <p>
  * A stream consisting of more than one member is commonly referred to as concatenated GZIP stream.
  * This class is capable of reading a concatenated GZIP stream.
+ * <p>
+ * For concatenated GZIP streams, each invocation of {@link #read(byte[], int, int)} yields
+ * decompressed data from at most one member; data from multiple members is not combined
+ * in a single read operation.
+ * <p>
+ * When {@linkplain #read(byte[], int, int) reading}, this class may read ahead in the underlying
+ * stream while completing a member or determining whether another member follows. Consequently,
+ * an unspecified number of bytes beyond a member’s trailer may be consumed. If the bytes read
+ * ahead do not constitute a valid header for a subsequent member, the stream is considered to
+ * have reached end-of-stream, and {@code read()} returns {@code -1}.
  *
  * <h2><a id="thread_safety">Thread safety</a></h2>
  * {@code GZIPInputStream} is not safe for use by multiple concurrent threads. Any multithreaded
@@ -165,17 +175,6 @@ public class GZIPInputStream extends InflaterInputStream {
      * operation. If this method returns {@code -1} or throws an exception then
      * the content of {@code buf[off]} through {@code buf[off+}<i>len</i>{@code
      * -1]} is undefined.
-     * <p>
-     * When decompressing the data of a member or when checking for the presence of a subsequent
-     * member, this class may read additional bytes past a member's trailer from the underlying
-     * stream. The number of additional bytes read past a member's trailer are unspecified.
-     * If those additional bytes do not represent the header of a subsequent member, then this
-     * stream is considered to have reached end-of-stream and {@code -1} is returned.
-     * <p>
-     * When this method reads from a {@linkplain ##gzip_file_format concatenated GZIP stream},
-     * then the decompressed data written into the given {@code buf} will correspond to the data
-     * from one particular member i.e. a call to {@code read()} will not result in {@code buf}
-     * containing decompressed data from two or more members of a concatenated GZIP stream.
      *
      * @implSpec After reading a member trailer, this method calls {@link InputStream#available()}
      * on the underlying stream to determine whether additional data is available that may represent
@@ -184,8 +183,8 @@ public class GZIPInputStream extends InflaterInputStream {
      * @param buf the buffer into which the data is read
      * @param off the start offset in the destination array {@code buf}
      * @param len the maximum number of bytes to read into {@code buf}
-     * @return  the actual number of bytes decompressed, or -1 if the end of the
-     *          compressed input stream is reached
+     * @return  the actual number of bytes decompressed from a GZIP member, or -1 if the
+     *          end-of-stream is reached
      *
      * @throws     NullPointerException If {@code buf} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
@@ -194,6 +193,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    ZipException if the compressed input data is corrupt.
      * @throws    IOException if the stream is closed or an I/O error has occurred.
      *
+     * @see ##gzip_file_format GZIP file format
      */
     @Override
     public int read(byte[] buf, int off, int len) throws IOException {
