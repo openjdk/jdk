@@ -442,11 +442,11 @@ source %{
       // On architectures that do not support predicate, masks are stored in
       // general vector registers (TypeVect) with sizes ranging from TypeVectA
       // to TypeVectX based on the vector size in bytes.
-      assert(vt->isa_vectmask() == nullptr, "mask type is not matched");
+      assert(vt->isa_pvectmask() == nullptr, "mask type is not matched");
       return false;
     }
 
-    assert(vt->isa_vectmask() != nullptr, "expected TypeVectMask on SVE");
+    assert(vt->isa_pvectmask() != nullptr, "expected TypePVectMask on SVE");
     switch (opcode) {
       case Op_VectorMaskToLong:
       case Op_VectorLongToMask:
