@@ -532,7 +532,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
             for (List<String> args : customTagStrs) {
                 if (args.get(0).equals("-taglet")) {
-                    tagletManager.addCustomTag(args.get(1), fileManager);
+                    tagletManager.addUserTaglet(args.get(1), fileManager);
                     continue;
                 }
                 /* Since there are few constraints on the characters in a tag name,
@@ -543,23 +543,23 @@ public class HtmlConfiguration extends BaseConfiguration {
                 switch (tokens.size()) {
                     case 1 -> {
                         String tagName = args.get(1);
-                        if (tagletManager.isKnownCustomTag(tagName)) {
+                        if (tagletManager.isKnownTag(tagName)) {
                             //reorder a standard tag
-                            tagletManager.addNewCustomTag(tagName, null, "");
+                            tagletManager.addCustomTag(tagName, null, "");
                         } else {
                             //Create a simple tag with the heading that has the same name as the tag.
                             StringBuilder heading = new StringBuilder(tagName + ":");
                             heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
-                            tagletManager.addNewCustomTag(tagName, heading.toString(), "a");
+                            tagletManager.addCustomTag(tagName, heading.toString(), "a");
                         }
                     }
 
                     case 2 ->
                         //Add simple taglet without heading, probably to excluding it in the output.
-                            tagletManager.addNewCustomTag(tokens.get(0), tokens.get(1), "");
+                            tagletManager.addCustomTag(tokens.get(0), tokens.get(1), "");
 
                     case 3 ->
-                            tagletManager.addNewCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
+                            tagletManager.addCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
 
                     default ->
                             messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));

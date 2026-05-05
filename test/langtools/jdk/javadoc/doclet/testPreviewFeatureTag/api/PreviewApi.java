@@ -24,25 +24,11 @@
 package api;
 
 /**
- * Non-preview class with a preview members.
+ * This is a preview API marked by javadoc tags.
+ *
+ * @previewFeature [title="First preview feature" url="http://example.org/first-preview-feature"]
+ * Alternative preview note. {@link PreviewApi} is a preview API.
  */
-public class OtherApi {
-
-   /**
-    * This is a preview method.
-    *
-    * @previewFeature  First preview feature
-    * @previewNote     Alternative preview note. {@link PreviewApi} is a preview API.
-    */
-    public void previewMethod() {}
-
-   /**
-    * This is another preview method.
-    *
-    * @previewFeature Second preview feature
-    * @previewNote    Alternative preview note for second preview feature.
-    * @previewNote    Extra note tag triggers a warning
-    */
-    public void otherPreviewMethod() {}
-
+public class PreviewApi {
+    private PreviewApi() {}
 }

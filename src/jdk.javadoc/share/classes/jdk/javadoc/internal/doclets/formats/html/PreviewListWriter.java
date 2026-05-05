@@ -86,15 +86,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
             target.add(HtmlTree.P(contents.getContent("doclet.Preview_API_Checkbox_Label")));
             Content list = HtmlTree.UL(HtmlStyles.previewFeatureList).addStyle(HtmlStyles.checkboxes);
             for (var jep : jeps) {
-                Content label;
-                if (jep.number() != 0) {
-                    String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
-                    label = new ContentBuilder(Text.of(jep.number() + ": "))
-                            .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
-                } else {
-                    // Pseudo-JEP created from javadoc tag - use description as label
-                    label = Text.of(jep.title());
-                }
+                Content label = getLabel(jep);
                 list.add(HtmlTree.LI(getCheckbox(label, String.valueOf(index++), "feature-")));
             }
             Content label = contents.getContent("doclet.Preview_API_Checkbox_Toggle_All");
@@ -162,5 +154,18 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
     @Override
     protected HtmlStyle[] getColumnStyles() {
         return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
+    }
+
+    private Content getLabel(PreviewAPIListBuilder.JEP jep) {
+        var label = new ContentBuilder();
+        if (jep.number() != 0) {
+            label.add(jep.number() + ": ");
+        }
+        if (jep.url().isBlank()) {
+            label.add(Text.of(jep.titleAndStatus()));
+        } else {
+            label.add(HtmlTree.A(jep.url(), Text.of(jep.titleAndStatus())));
+        }
+        return label;
     }
 }
