@@ -22,6 +22,7 @@
  */
 
 import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.fail;
 import static jdk.test.lib.Utils.runAndCheckException;
 
 import java.io.IOException;
@@ -118,7 +119,7 @@ public final class SNIWildcardMatching extends SSLSocketTemplate {
                 try {
                     new SNIWildcardMatching(v[0], v[1], protocol).run();
                 } catch (Exception e) {
-                    System.err.println("Error running "
+                    fail("Error running "
                             + Arrays.toString(v) + ": " + e.getMessage());
                 }
             }
