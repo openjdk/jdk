@@ -29,33 +29,14 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "utilities/numberSeq.hpp"
 
 class ShenandoahCycleDuration {
-
-  const static size_t GC_TIME_SAMPLE_SIZE;
-
-  // Keep track of GC_TIME_SAMPLE_SIZE most recent concurrent GC cycle times
-  uint _gc_time_first_sample_index;
-  uint _gc_time_num_samples;
-  double* const _gc_time_timestamps;
-  double* const _gc_time_samples;
-  double* const _gc_time_xy;    // timestamp * sample
-  double* const _gc_time_xx;    // timestamp squared
-  double _gc_time_sum_of_timestamps;
-  double _gc_time_sum_of_samples;
-  double _gc_time_sum_of_xy;
-  double _gc_time_sum_of_xx;
-
-  double _gc_time_m;            // slope
-  double _gc_time_b;            // y-intercept
-  double _gc_time_sd;           // sd on deviance from prediction
+  ShenandoahWeightedSeq _gc_times;
 
 public:
-
   ShenandoahCycleDuration();
-  ~ShenandoahCycleDuration();
-
   void record_duration(double timestamp_at_start, double duration);
   double predict_duration(double timestamp_at_start, double margin_of_error) const;
 };

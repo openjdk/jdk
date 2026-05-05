@@ -35,13 +35,13 @@ class ShenandoahWeightedSeq {
   double* const _x_values;
   double* const _y_values;
   double* const _weights;
-  double _sum_of_x_values;
-  double _sum_of_y_values;
-  double _sum_of_weighted_y_values;
-  double _sum_of_weights;
-  double _sum_of_weighted_yy;
-  double _sum_of_xy;
-  double _sum_of_xx;
+  double _x_sum;
+  double _y_sum;
+  double _weighted_y_sum;
+  double _weighted_sum;
+  double _weighted_yy_sum;
+  double _xy_sum;
+  double _xx_sum;
 
   double _slope;            // slope
   double _y_intercept;      // y-intercept
@@ -52,20 +52,34 @@ public:
   explicit ShenandoahWeightedSeq(uint size);
   ~ShenandoahWeightedSeq();
 
+  double latest() const {
+    if (_num_samples == 0) {
+      return 0.0;
+    }
+
+    const uint index = (_first_sample_index + _num_samples - 1) % _size;
+    return _x_values[index];
+  }
+
   void add(double x, double y);
   void add(double x, double y, double weight);
   double predict(double x, double margin_of_error) const;
   double residual_sd() const { return _residual_sd; }
-  double average() const { return _sum_of_y_values / MAX2(_num_samples, 1u); }
-  double weighted_average() const { return _sum_of_weighted_y_values / MAX2(_sum_of_weights, 1.0); }
+  double average() const { return _y_sum / MAX2(_num_samples, 1u); }
+  double weighted_average() const { return _weighted_y_sum / MAX2(_weighted_sum, 1.0); }
   double weighted_sd() const {
-    if (_sum_of_weights <= 0.0) {
+    if (_weighted_sum <= 0.0) {
       return 0.0;
     }
 
-    const double weighted_mean = _sum_of_weighted_y_values / _sum_of_weights;
-    const double variance = _sum_of_weighted_yy / _sum_of_weights - weighted_mean * weighted_mean;
+    const double weighted_mean = _weighted_y_sum / _weighted_sum;
+    const double variance = _weighted_yy_sum / _weighted_sum - weighted_mean * weighted_mean;
     return sqrt(MAX2(variance, 0.0));
+  }
+
+  void fit_line(double& slope, double& intercept) const {
+    slope = _slope;
+    intercept = _y_intercept;
   }
 };
 

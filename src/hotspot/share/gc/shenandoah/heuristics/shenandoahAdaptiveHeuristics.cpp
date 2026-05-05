@@ -57,11 +57,6 @@ const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
 
-// To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,
-// for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
-// allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
-const size_t ShenandoahCycleDuration::GC_TIME_SAMPLE_SIZE = 15;
-
 // We also keep separate track of recently sampled allocation rates for two purposes:
 //  1. The number of samples examined to determine acceleration of allocation is configured by
 //     ShenandoahRecentAllocRateSampleWindowMs
@@ -78,101 +73,22 @@ const size_t ShenandoahCycleDuration::GC_TIME_SAMPLE_SIZE = 15;
 // detected, the impact of acceleration on anticipated consumption of available memory is also much more impactful
 // than the assumed constant allocation rate consumption of available memory.
 
-ShenandoahCycleDuration::ShenandoahCycleDuration()
-: _gc_time_first_sample_index(0),
-  _gc_time_num_samples(0),
-  _gc_time_timestamps(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
-  _gc_time_samples(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
-  _gc_time_xy(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
-  _gc_time_xx(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
-  _gc_time_sum_of_timestamps(0),
-  _gc_time_sum_of_samples(0),
-  _gc_time_sum_of_xy(0),
-  _gc_time_sum_of_xx(0),
-  _gc_time_m(0.0),
-  _gc_time_b(0.0),
-  _gc_time_sd(0.0) {
-}
-
-ShenandoahCycleDuration::~ShenandoahCycleDuration() {
-  FREE_C_HEAP_ARRAY(_gc_time_timestamps);
-  FREE_C_HEAP_ARRAY(_gc_time_samples);
-  FREE_C_HEAP_ARRAY(_gc_time_xy);
-  FREE_C_HEAP_ARRAY(_gc_time_xx);
-}
+ShenandoahCycleDuration::ShenandoahCycleDuration() : _gc_times(15) {}
 
 void ShenandoahCycleDuration::record_duration(double time_at_start, double gc_time) {
   log_info(gc, sampling)("Cycle started at: %.3f, completed in %.3fs", time_at_start, gc_time);
-  // Update best-fit linear predictor of GC time
-  const uint index = (_gc_time_first_sample_index + _gc_time_num_samples) % GC_TIME_SAMPLE_SIZE;
-  if (_gc_time_num_samples == GC_TIME_SAMPLE_SIZE) {
-    _gc_time_sum_of_timestamps -= _gc_time_timestamps[index];
-    _gc_time_sum_of_samples -= _gc_time_samples[index];
-    _gc_time_sum_of_xy -= _gc_time_xy[index];
-    _gc_time_sum_of_xx -= _gc_time_xx[index];
-  }
-  _gc_time_timestamps[index] = time_at_start;
-  _gc_time_samples[index] = gc_time;
-  _gc_time_xy[index] = time_at_start * gc_time;
-  _gc_time_xx[index] = time_at_start * time_at_start;
-
-  _gc_time_sum_of_timestamps += _gc_time_timestamps[index];
-  _gc_time_sum_of_samples += _gc_time_samples[index];
-  _gc_time_sum_of_xy += _gc_time_xy[index];
-  _gc_time_sum_of_xx += _gc_time_xx[index];
-
-  if (_gc_time_num_samples < GC_TIME_SAMPLE_SIZE) {
-    _gc_time_num_samples++;
-  } else {
-    _gc_time_first_sample_index = (_gc_time_first_sample_index + 1) % GC_TIME_SAMPLE_SIZE;
-  }
-
-  if (_gc_time_num_samples == 1) {
-    // The predictor is constant (horizontal line)
-    _gc_time_m = 0;
-    _gc_time_b = gc_time;
-    _gc_time_sd = 0.0;
-  } else if (_gc_time_num_samples == 2) {
-
-    assert(time_at_start > _gc_time_timestamps[_gc_time_first_sample_index],
-           "Two GC cycles cannot finish at same time: %.6f vs %.6f, with GC times %.6f and %.6f", time_at_start,
-           _gc_time_timestamps[_gc_time_first_sample_index], gc_time, _gc_time_samples[_gc_time_first_sample_index]);
-
-    // Two points define a line
-    const double delta_x = time_at_start - _gc_time_timestamps[_gc_time_first_sample_index];
-    const double delta_y = gc_time - _gc_time_samples[_gc_time_first_sample_index];
-    _gc_time_m = delta_y / delta_x;
-    // y = mx + b
-    // so b = y0 - mx0
-    _gc_time_b = gc_time - _gc_time_m * time_at_start;
-    _gc_time_sd = 0.0;
-  } else {
-    // Since timestamps are monotonically increasing, denominator does not equal zero.
-    const double denominator = _gc_time_num_samples * _gc_time_sum_of_xx - _gc_time_sum_of_timestamps * _gc_time_sum_of_timestamps;
-    assert(denominator != 0.0, "Invariant: samples: %u, sum_of_xx: %.6f, sum_of_timestamps: %.6f",
-           _gc_time_num_samples, _gc_time_sum_of_xx, _gc_time_sum_of_timestamps);
-    _gc_time_m = ((_gc_time_num_samples * _gc_time_sum_of_xy - _gc_time_sum_of_timestamps * _gc_time_sum_of_samples) /
-                  denominator);
-    _gc_time_b = (_gc_time_sum_of_samples - _gc_time_m * _gc_time_sum_of_timestamps) / _gc_time_num_samples;
-    double sum_of_squared_deviations = 0.0;
-    for (size_t i = 0; i < _gc_time_num_samples; i++) {
-      const uint idx = (_gc_time_first_sample_index + i) % GC_TIME_SAMPLE_SIZE;
-      const double x = _gc_time_timestamps[idx];
-      const double predicted_y = _gc_time_m * x + _gc_time_b;
-      const double deviation = predicted_y - _gc_time_samples[idx];
-      sum_of_squared_deviations += deviation * deviation;
-    }
-    _gc_time_sd = sqrt(sum_of_squared_deviations / _gc_time_num_samples);
-  }
+  _gc_times.add(time_at_start, gc_time);
 }
 
 double ShenandoahCycleDuration::predict_duration(double timestamp_at_start, double margin_of_error) const {
-  const double prediction = _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * margin_of_error;
-  if (prediction <= 0.0) {
-    // return average time, rather than negative or zero time
-    return _gc_time_sum_of_samples / MAX2(_gc_time_num_samples, 1u);
+  double slope(0.0), intercept(0.0);
+  _gc_times.fit_line(slope, intercept);
+  const double prediction = slope * timestamp_at_start + intercept + _gc_times.residual_sd() * margin_of_error;
+  if (prediction > 0.0) {
+    return prediction;
   }
-  return prediction;
+  // return average time, rather than negative or zero time
+  return _gc_times.weighted_average();
 }
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :

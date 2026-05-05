@@ -28,6 +28,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahAllocationClock {
@@ -49,23 +50,9 @@ class ShenandoahAllocRate {
   size_t _minimum_sample_size;
 
 
-  // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
-  // typical to experience a small spike following end of GC cycle, as mutator threads refresh their TLABs.  But
-  // there is generally an abundance of memory at this time as well, so this will not generally trigger GC.
-  uint _first_sample_index;
-  uint _num_samples;
-  uint _buffer_size;
-  uint _recent_window_size;
-  uint _momentary_sample_size;
-
-  double* const _rate_samples;
-  double* const _rate_timestamps;
-
-  bool _recompute;
-  double _baseline_average;
-  double _recent_average;
-  double _momentary_average;
-  double _acceleration;
+  ShenandoahWeightedSeq _baseline;
+  ShenandoahWeightedSeq _recent;
+  ShenandoahWeightedSeq _momentary;
 
 public:
   explicit ShenandoahAllocRate(const uint minimum_sample_size = 1024 * 1024,
@@ -76,24 +63,10 @@ public:
     , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
     , _last_sample_time(Clock::elapsed_counter())
     , _minimum_sample_size(minimum_sample_size)
-    , _first_sample_index(0)
-    , _num_samples(0)
-    , _buffer_size(baseline_window_size)
-    , _recent_window_size(recent_window_size)
-    , _momentary_sample_size(momentary_window_size)
-    , _rate_samples(NEW_C_HEAP_ARRAY(double, _buffer_size, mtGC))
-    , _rate_timestamps(NEW_C_HEAP_ARRAY(double, _buffer_size, mtGC))
-    , _recompute(false)
-    , _baseline_average(0.0)
-    , _recent_average(0.0)
-    , _momentary_average(0.0)
-    , _acceleration(0.0)
+    , _baseline(baseline_window_size)
+    , _recent(recent_window_size)
+    , _momentary(momentary_window_size)
   {
-  }
-
-  ~ShenandoahAllocRate() {
-    FREE_C_HEAP_ARRAY(_rate_samples);
-    FREE_C_HEAP_ARRAY(_rate_timestamps);
   }
 
   void set_minimum_sample_size(const size_t minimum_sample_size) {
@@ -106,17 +79,13 @@ public:
 
   double average() {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    return _baseline_average;
+    return _baseline.weighted_average();
   }
 
   double upper_bound(const double standard_deviations) {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    // TODO: compute standard deviation along with average
-    return _baseline_average;
+    return _baseline.weighted_average() + (standard_deviations * _baseline.weighted_sd());
   }
-private:
-  void record_rate_sample(double timestamp, double rate);
-  void update_averages();
 };
 
 typedef ShenandoahAllocRate<> ShenandoahAllocationRate;
