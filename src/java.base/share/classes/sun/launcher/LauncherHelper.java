@@ -1125,8 +1125,6 @@ public final class LauncherHelper {
         private static void setFXLaunchParameters(String what, int mode) {
 
             // find the module with the FX launcher
-            // this method is only called if we can find the module
-            // in the first place, so it will always be present
             Optional<Module> om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
             if (om.isEmpty()) {
                 abort(null, "java.launcher.cls.error3");
