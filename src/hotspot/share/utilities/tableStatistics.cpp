@@ -127,8 +127,6 @@ TableStatistics::TableStatistics(TableRateStatistics& rate_stats,
 #endif
 }
 
-TableStatistics::~TableStatistics() { }
-
 void TableStatistics::print(outputStream* st, const char *table_name) {
   st->print_cr("%s statistics:", table_name);
   st->print_cr("Number of buckets       : %9" PRIuPTR " = %9" PRIuPTR

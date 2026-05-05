@@ -59,7 +59,7 @@ protected:
   float get_remove_rate();
 };
 
-class TableStatistics : CHeapObj<mtStatistics> {
+class TableStatistics {
 
 public:
   size_t _literal_bytes;
@@ -85,7 +85,6 @@ public:
   TableStatistics();
   TableStatistics(NumberSeq summary, size_t literal_bytes, size_t bucket_bytes, size_t node_bytes);
   TableStatistics(TableRateStatistics& rate_stats, NumberSeq summary, size_t literal_bytes, size_t bucket_bytes, size_t node_bytes);
-  ~TableStatistics();
 
   void print(outputStream* st, const char *table_name);
 };
