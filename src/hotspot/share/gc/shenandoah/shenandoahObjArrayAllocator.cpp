@@ -72,12 +72,11 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   // For obj array, the header will be corrected to object array after clearing the memory.
   Klass* filling_klass = _klass;
   int filling_array_length = _length;
-  const bool is_ref_type = is_reference_type(element_type, true);
+  const bool is_ref_type = is_reference_type(element_type);
 
   if (is_ref_type) {
-    const bool is_narrow_oop = element_type == T_NARROWOOP;
-    size_t filling_element_byte_size = is_narrow_oop ? T_INT_aelem_bytes : T_LONG_aelem_bytes;
-    filling_klass = is_narrow_oop ? Universe::intArrayKlass() : Universe::longArrayKlass();
+    size_t filling_element_byte_size = UseCompactObjectHeaders ? T_INT_aelem_bytes : T_LONG_aelem_bytes;
+    filling_klass = UseCompactObjectHeaders ? Universe::intArrayKlass() : Universe::longArrayKlass();
     filling_array_length = (int) ((process_size << LogBytesPerWord) / filling_element_byte_size);
   }
   ObjArrayAllocator filling_array_allocator(filling_klass, _word_size,  filling_array_length , /* do_zero */ false);
