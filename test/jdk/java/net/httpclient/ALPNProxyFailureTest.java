@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
  * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        ALPNFailureTest ALPNProxyFailureTest
- * @run main/othervm -Djdk.internal.httpclient.debug=true -Dtest.nolinger=true ALPNProxyFailureTest HTTP_1_1
- * @run main/othervm -Dtest.nolinger=true ALPNProxyFailureTest HTTP_2
+ * @run main/othervm -Djdk.internal.httpclient.debug=true -Dtest.nolinger=true ${test.main.class} HTTP_1_1
+ * @run main/othervm -Dtest.nolinger=true ${test.main.class} HTTP_2
  */
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
@@ -44,14 +44,9 @@ import java.net.http.HttpClient;
 
 public class ALPNProxyFailureTest extends ALPNFailureTest {
 
-    static final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     static {
-        try {
-            context = new SimpleSSLContext().get();
-            SSLContext.setDefault(context);
-        } catch (Exception x) {
-            throw new ExceptionInInitializerError(x);
-        }
+        SSLContext.setDefault(context);
     }
 
     public static void main(String[] args) throws Exception{

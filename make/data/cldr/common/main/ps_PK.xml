@@ -167,6 +167,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>د فرانسے سویل او انټارټيک وخت</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<daylight>هوایی الیوتین رڼا ورځے وخت</daylight>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<daylight>هوایی الیوتین رڼا ورځے وخت</daylight>

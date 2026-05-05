@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "runtime/continuationEntry.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -222,6 +223,7 @@
   volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
+  nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
@@ -259,13 +261,13 @@
   nonstatic_field(JavaThread,                  _om_cache,                                     OMCache)                               \
   nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   nonstatic_field(JavaThread,                  _unlocked_inflated_monitor,                    ObjectMonitor*)                        \
-  JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
+  nonstatic_field(JavaThread,                  _is_in_vthread_transition,                     bool)                                  \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
   nonstatic_field(ContinuationEntry,           _pin_count,                                    uint32_t)                              \
   nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
                                                                                                                                      \
-  JVMTI_ONLY(static_field(JvmtiVTMSTransitionDisabler, _VTMS_notify_jvmti_events,             bool))                                 \
+  static_field(MountUnmountDisabler,           _notify_jvmti_events,                          bool)                                  \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
@@ -281,7 +283,6 @@
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
-  nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(Klass,                       _secondary_supers_bitmap,                      uintx)                                 \
   nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
@@ -341,7 +342,7 @@
   volatile_nonstatic_field(ObjectMonitor,      _succ,                                         int64_t)                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
-  volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
+  volatile_nonstatic_field(oopDesc,            _compressed_klass,                             narrowKlass)                           \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \
@@ -431,11 +432,11 @@
                                                                                                                                      \
   nonstatic_field(Thread,                   _poll_data,                                       SafepointMechanism::ThreadData)        \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
-  nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
+  nonstatic_field(Thread,                   _allocated_bytes,                                 uint64_t)                              \
   JFR_ONLY(nonstatic_field(Thread,          _jfr_thread_local,                                JfrThreadLocal))                       \
                                                                                                                                      \
   static_field(java_lang_Thread,            _tid_offset,                                      int)                                   \
-  static_field(java_lang_Thread,            _jvmti_is_in_VTMS_transition_offset,              int)                                   \
+  static_field(java_lang_Thread,            _is_in_vthread_transition_offset,                 int)                                   \
   JFR_ONLY(static_field(java_lang_Thread,   _jfr_epoch_offset,                                int))                                  \
                                                                                                                                      \
   JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_id,                                      traceid))                              \
@@ -449,8 +450,8 @@
   nonstatic_field(ThreadLocalAllocBuffer,   _pf_top,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,   _desired_size,                                    size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,   _refill_waste_limit,                              size_t)                                \
-  nonstatic_field(ThreadLocalAllocBuffer,   _number_of_refills,                               unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,   _slow_allocations,                                unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,   _num_refills,                                     unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,   _num_slow_allocations,                            unsigned)                              \
                                                                                                                                      \
   nonstatic_field(SafepointMechanism::ThreadData, _polling_word,                              volatile uintptr_t)                    \
   nonstatic_field(SafepointMechanism::ThreadData, _polling_page,                              volatile uintptr_t)                    \
@@ -585,6 +586,7 @@
   declare_constant(nmethod::InvalidationReason::UNCOMMON_TRAP)                            \
   declare_constant(nmethod::InvalidationReason::WHITEBOX_DEOPTIMIZATION)                  \
   declare_constant(nmethod::InvalidationReason::ZOMBIE)                                   \
+  declare_constant(nmethod::InvalidationReason::RELOCATED)                                \
                                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
@@ -877,10 +879,6 @@
   declare_function(SharedRuntime::enable_stack_reserved_zone)             \
   declare_function(SharedRuntime::frem)                                   \
   declare_function(SharedRuntime::drem)                                   \
-  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_start)) \
-  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_end))   \
-  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_mount)) \
-  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_unmount)) \
                                                                           \
   declare_function(os::dll_load)                                          \
   declare_function(os::dll_lookup)                                        \
@@ -1019,7 +1017,7 @@
   static_field(VM_Version, _rop_protection, bool)                       \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
 
-#define DECLARE_INT_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_INT_CONSTANT_ENTRY(VM_Version::CPU_##id)
+#define DECLARE_INT_CPU_FEATURE_CONSTANT(id, name) GENERATE_VM_INT_CONSTANT_ENTRY(VM_Version::CPU_##id)
 #define VM_INT_CPU_FEATURE_CONSTANTS CPU_FEATURE_FLAGS(DECLARE_INT_CPU_FEATURE_CONSTANT)
 
 #endif
@@ -1039,7 +1037,7 @@
   declare_constant(frame::interpreter_frame_sender_sp_offset)       \
   declare_constant(frame::interpreter_frame_last_sp_offset)
 
-#define DECLARE_LONG_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_LONG_CONSTANT_ENTRY(VM_Version::CPU_##id)
+#define DECLARE_LONG_CPU_FEATURE_CONSTANT(id, name) GENERATE_VM_LONG_CONSTANT_ENTRY(VM_Version::CPU_##id)
 #define VM_LONG_CPU_FEATURE_CONSTANTS \
    CPU_FEATURE_FLAGS(DECLARE_LONG_CPU_FEATURE_CONSTANT)
 

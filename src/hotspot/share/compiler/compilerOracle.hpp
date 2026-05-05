@@ -51,6 +51,7 @@ class methodHandle;
   option(Log, "log", Bool) \
   option(Print, "print", Bool) \
   option(Inline,  "inline", Bool) \
+  option(DelayInline,  "delayinline", Bool) \
   option(DontInline,  "dontinline", Bool) \
   option(Blackhole,  "blackhole", Bool) \
   option(CompileOnly, "compileonly", Bool)\
@@ -62,6 +63,7 @@ class methodHandle;
   option(MemStat, "MemStat", Uintx) \
   option(PrintAssembly, "PrintAssembly", Bool) \
   option(PrintCompilation, "PrintCompilation", Bool) \
+  option(PrintCompilation2, "PrintCompilation2", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
   option(PrintIntrinsics, "PrintIntrinsics", Bool) \
   option(PrintNMethods, "PrintNMethods", Bool)   \
@@ -149,6 +151,9 @@ class CompilerOracle : AllStatic {
 
   // Tells whether we want to disallow inlining of this method
   static bool should_not_inline(const methodHandle& method);
+
+  // Tells whether we want to delay inlining of this method
+  static bool should_delay_inline(const methodHandle& method);
 
   // Tells whether this method changes Thread.currentThread()
   static bool changes_current_thread(const methodHandle& method);

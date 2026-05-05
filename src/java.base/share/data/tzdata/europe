@@ -27,9 +27,9 @@
 # 2009-05-17 by Arthur David Olson.
 
 # This file is by no means authoritative; if you think you know better,
-# go ahead and edit the file (and please send any changes to
-# tz@iana.org for general use in the future).  For more, please see
-# the file CONTRIBUTING in the tz distribution.
+# go ahead and edit the file, and please send any changes to
+# the public mailing list tz@iana.org for general use in the future.
+# For more, please see the file CONTRIBUTING in the tz distribution.
 
 # From Paul Eggert (2017-02-10):
 #
@@ -65,7 +65,7 @@
 #	<https://www.jstor.org/stable/1774359>.  He writes:
 #	"It is requested that corrections and additions to these tables
 #	may be sent to Mr. John Milne, Royal Geographical Society,
-#	Savile Row, London."  Nowadays please email them to tz@iana.org.
+#	Savile Row, London."  Nowadays please see the file CONTRIBUTING.
 #
 #	Byalokoz EL. New Counting of Time in Russia since July 1, 1919.
 #	This Russian-language source was consulted by Vladimir Karpinsky; see
@@ -77,7 +77,7 @@
 #	Десятая гос. тип., 1919.
 #	http://resolver.gpntb.ru/purl?docushare/dsweb/Get/Resource-2011/Byalokoz__E.L.__Novyy__schet__vremeni__v__techenie__sutok__izd__2(1).pdf
 #
-#	Brazil's Divisão Serviço da Hora (DSHO),
+#	Brazil's Divisão de Serviços da Hora (DISHO)
 #	History of Summer Time
 #	<http://pcdsh01.on.br/HISTHV.htm>
 #	(1998-09-21, in Portuguese)
@@ -937,7 +937,7 @@ Rule	Belgium	1922	1927	-	Oct	Sat>=1	23:00s	0	-
 Rule	Belgium	1923	only	-	Apr	21	23:00s	1:00	S
 Rule	Belgium	1924	only	-	Mar	29	23:00s	1:00	S
 Rule	Belgium	1925	only	-	Apr	 4	23:00s	1:00	S
-# DSH writes that a royal decree of 1926-02-22 specified the Sun following 3rd
+# DISHO writes that a royal decree of 1926-02-22 specified the Sun following 3rd
 # Sat in Apr (except if it's Easter, in which case it's one Sunday earlier),
 # to Sun following 1st Sat in Oct, and that a royal decree of 1928-09-15
 # changed the transition times to 02:00 GMT.
@@ -1064,9 +1064,19 @@ Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 
 # Greenland
 #
-# From Paul Eggert (2004-10-31):
+# From Paul Eggert (2026-01-22):
+# During World War II, Greenland was effectively independent of Denmark and
+# observed daylight saving time.  TIME, volume 37, page 23 (1941-04-21)
+# <https://time.com/archive/6770243/war-peace-greenlands-icy-mountains/> says,
+# "Penfield and West made their way to the U.S.'s most northerly consulate.
+# They were astonished to find that Greenlanders, with almost 24 hours of
+# sunlight a day during the summer, have daylight saving time."
+# As the details are unknown they are omitted from the data for now.
+#
 # During World War II, Germany maintained secret manned weather stations in
 # East Greenland and Franz Josef Land, but we don't know their time zones.
+# Also, they're likely out of scope for the database
+# as we lack resources to track every bit of military activity.
 # My source for this is Wilhelm Dege's book mentioned under Svalbard.
 #
 # From Paul Eggert (2017-12-10):
@@ -1333,6 +1343,13 @@ Zone	Europe/Helsinki	1:39:49 -	LMT	1878 May 31
 # France
 # Monaco
 
+# From Robert H. van Gent (2025-07-21):
+# The most recent issue of the Annuaire [par le Bureau des Longitudes]
+# on Gallica (2021) ... lists information for France
+# https://gallica.bnf.fr/ark:/12148/bpt6k9127672b/f52.item
+# From Paul Eggert (2025-07-21):
+# Go with the 2020 Annuaire (published 2021) except as noted below.
+
 # From Ciro Discepolo (2000-12-20):
 #
 # Henri Le Corre, Régimes horaires pour le monde entier, Éditions
@@ -1394,7 +1411,6 @@ Zone	Europe/Helsinki	1:39:49 -	LMT	1878 May 31
 # problems in Algiers, Monaco and Tunis.
 
 #
-# Shank & Pottenger seem to use '24:00' ambiguously; resolve it with Whitman.
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	France	1916	only	-	Jun	14	23:00s	1:00	S
 Rule	France	1916	1919	-	Oct	Sun>=1	23:00s	0	-
@@ -1406,9 +1422,25 @@ Rule	France	1920	only	-	Oct	23	23:00s	0	-
 Rule	France	1921	only	-	Mar	14	23:00s	1:00	S
 Rule	France	1921	only	-	Oct	25	23:00s	0	-
 Rule	France	1922	only	-	Mar	25	23:00s	1:00	S
-# DSH writes that a law of 1923-05-24 specified 3rd Sat in Apr at 23:00 to 1st
-# Sat in Oct at 24:00; and that in 1930, because of Easter, the transitions
-# were Apr 12 and Oct 5.  Go with Shanks & Pottenger.
+# From Robert H. van Gent (2025-07-22):
+# There is a curious history behind the erroneous date for the start of
+# daylight saving in France in 1923 as listed in the current issues of
+# the Annuaire du Bureau des Longitudes.  [See:]
+# https://lists.iana.org/hyperkitty/list/tz@iana.org/message/MYQEJMSXO2AIEZ3UIXZKMTTAIPY7KNT2/
+# From Brian Inglis (2025-07-23):
+# Légifrance JORF No. 0073 du 15 mars 1922
+# https://www.legifrance.gouv.fr/jorf/jo/id/JORFCONT000000008324
+# Légifrance JORF No. 0139 du 25 mai 1923
+# https://www.legifrance.gouv.fr/jorf/jo/id/JORFCONT000000008416
+# From Paul Eggert (2025-07-23):
+# The latter specifies March's last Saturday at 23:00 to October's first
+# Saturday at 24:00, except that if neighboring allies agree the dates
+# can be moved to April's third Saturday and September's third Saturday.
+# Apparently spring 1923 was tricky.  DISHO writes that in 1930,
+# because of Easter, the transitions were Apr 12 and Oct 5.
+# Use the 2020 Annuaire dates, except for spring 1923 where
+# Shanks & Pottenger's May 26 matches the dates given in the 1924 and
+# 1961-2001 issues of the Annuaire.
 Rule	France	1922	1938	-	Oct	Sat>=1	23:00s	0	-
 Rule	France	1923	only	-	May	26	23:00s	1:00	S
 Rule	France	1924	only	-	Mar	29	23:00s	1:00	S
@@ -1958,7 +1990,6 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2 # Valletta
 
 # From Stepan Golosunov (2016-03-07):
 # the act of the government of the Republic of Moldova Nr. 132 from 1990-05-04
-# http://lex.justice.md/viewdoc.php?action=view&view=doc&id=298782&lang=2
 # ... says that since 1990-05-06 on the territory of the Moldavian SSR
 # time would be calculated as the standard time of the second time belt
 # plus one hour of the "summer" time. To implement that clocks would be
@@ -2013,9 +2044,61 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2 # Valletta
 # says the 2014-03-30 spring-forward transition was at 02:00 local time.
 # Guess that since 1997 Moldova has switched one hour before the EU.
 
+# From Heitor David Pinto (2026-02-22):
+# Soviet Moldovan resolution 132 of 1990 defined the summer time period from
+# the last Sunday in March at 2:00 to the last Sunday in September at 3:00,
+# matching the dates used in most of Europe at the time:
+# https://web.archive.org/web/20211107050832/http://lex.justice.md/viewdoc.php?action=view&view=doc&id=298782&lang=1
+#
+# It seems that in 1996 Moldova changed the end date to October like most of
+# Europe, but kept the transitions at 2:00 and 3:00 rather than 1:00 UTC,
+# which would have been locally 3:00 and 4:00....
+#
+# The notices in the Moldovan government website and broadcaster showed the
+# transitions at 2:00 and 3:00 until 2021:
+# 2015 https://old.gov.md/en/node/7304
+# 2016 https://old.gov.md/en/node/12587
+# 2017 https://old.gov.md/en/node/20654
+# 2017 https://old.gov.md/en/content/moldova-upholds-winter-time-night-28-29-october
+# 2018 https://old.gov.md/en/content/moldova-switch-summer-time
+# 2018 https://old.gov.md/en/content/cabinet-ministers-informs-about-switch-winter-time-28-october
+# 2019 https://old.gov.md/en/content/moldova-switch-summer-time-31-march
+# 2019 https://old.gov.md/en/node/31122
+# 2020 https://old.gov.md/en/node/32771
+# 2020 https://old.gov.md/en/node/34497
+# 2021 https://trm.md/ro/social/moldova-trece-in-aceasta-noapte-la-ora-de-vara
+# 2021 https://trm.md/en/social/republica-moldova-trece-la-ora-de-iarna1
+#
+# However, since 2022, the notices showed the transitions at 3:00 and 4:00,
+# matching the EU rule at 1:00 UTC:
+# 2022 https://trm.md/en/social/in-acest-weekend-republica-moldova-trece-la-ora-de-vara
+# 2022 https://old.gov.md/en/content/moldova-switch-winter-time
+# 2023 https://moldova1.md/p/6587/ora-de-vara-2023-cum-schimbam-acele-ceasornicelor-si-cand-trecem-la-ora-de-vara
+# 2023 https://old.gov.md/en/node/46662
+# 2024 https://moldova1.md/p/26535/republica-moldova-trece-la-ora-de-vara-in-acest-weekend
+# 2024 https://moldova1.md/p/37768/republica-moldova-trece-in-aceasta-noapte-la-ora-de-iarna
+# 2025 https://moldova1.md/p/46349/republica-moldova-trece-la-ora-de-vara-pe-30-martie-cum-ne-afecteaza-si-ce-recomanda-medicii
+# 2025 https://moldova1.md/p/60469/republica-moldova-trece-la-ora-de-iarna-ceasurile-se-dau-inapoi-cu-o-ora
+#
+# It seems that the changes to the end date and transition times were just
+# done in practice without formally changing the resolution. In late 2025, the
+# government said that the Soviet resolution was still in force, and proposed
+# a new resolution to replace it and formally establish the EU rule:
+# ... based on the notices, it seems that in practice Moldova already
+# uses the EU rule since 2022. This was also the year when Moldova applied to
+# join the EU.
+#
+# From Robert Bastian (2026-02-26):
+# This has been approved and published in the government gazette:
+# https://monitorul.gov.md/ro/monitorul/view/pdf/3234/part/2#page=27
+#
+# From Paul Eggert (2026-02-24):
+# Also see Svetlana Rudenko, "Moldova abandons the 'Soviet era'", Logos Press,
+# 2026-02-21 <https://logos-pres.md/en/news/moldova-abandons-the-soviet-era/>.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Moldova	1997	max	-	Mar	lastSun	 2:00	1:00	S
-Rule	Moldova	1997	max	-	Oct	lastSun	 3:00	0	-
+Rule	Moldova	1997	2021	-	Mar	lastSun	 2:00	1:00	S
+Rule	Moldova	1997	2021	-	Oct	lastSun	 3:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Chisinau	1:55:20 -	LMT	1880
@@ -2028,7 +2111,8 @@ Zone	Europe/Chisinau	1:55:20 -	LMT	1880
 			2:00	Russia	EE%sT	1992
 			2:00	E-Eur	EE%sT	1997
 # See Romania commentary for the guessed 1997 transition to EU rules.
-			2:00	Moldova	EE%sT
+			2:00	Moldova	EE%sT	2022
+			2:00	EU	EE%sT
 
 # Poland
 
@@ -2119,12 +2203,10 @@ Zone	Europe/Warsaw	1:24:00 -	LMT	1880
 # all clocks therefore having to be advanced or set back correspondingly ...
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-# From Tim Parenti (2024-07-01), per Paul Eggert (1999-01-30):
-# DSH writes in their history that Decreto 1469 of 1915-03-30 established
-# summer time and that, "despite" this, the change to the clocks was not done
-# every year, depending on what Spain did, because of railroad schedules.
-# In fact, that decree had nothing to do with DST; rather, it regulated the
-# sending of time signals.  But we do see linkage to Spain in the 1920s below.
+# From Tim Parenti (2024-07-01):
+# Decreto 1469 of 1915-03-30 ... had nothing to do with DST;
+# rather it regulated the sending of time signals.
+# But we do see linkage to Spain in the 1920s below.
 # https://dre.pt/dr/detalhe/decreto/1469-1915-285721
 # https://dre.pt/application/conteudo/285721
 #
@@ -2416,7 +2498,7 @@ Zone Atlantic/Madeira	-1:07:36 -	LMT	1884        # Funchal
 # Nine O'clock <http://www.nineoclock.ro/POL/1778pol.html>
 # (1998-10-23) reports that the switch occurred at
 # 04:00 local time in fall 1998.  For lack of better info,
-# assume that Romania and Moldova switched to EU rules in 1997,
+# assume that Romania switched to EU rules in 1997,
 # the same year as Bulgaria.
 #
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   SUBTAG (('_'|'-') SUBTAG)*} where {@code SUBTAG =
  *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}.</dd>
  *   <dd> <em>BCP 47 deviation:</em> BCP 47 only
- *   uses hyphen ('-') as a delimiter, {@code Locale} is more lenient.</dd>
+ *   uses hyphen ('-') as a delimiter and APIs provided by {@code Locale} which accept
+ *   BCP 47 language tags expect as such. However, for backwards compatibility,
+ *   {@link Locale.Builder#setVariant(String)} also accepts underscore ('_').
+ *   {@link Locale#of(String, String, String)} accepts only underscore ('_').</dd>
  *
  *   <dd> <em>Example:</em> "polyton" (Polytonic Greek), "POSIX"</dd>
  *
@@ -535,34 +538,13 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3><a id="legacy_language_codes">Legacy language codes</a></h3>
  *
- * <p>Locale's constructors have always converted three language codes to
- * their earlier, obsoleted forms: {@code he} maps to {@code iw},
- * {@code yi} maps to {@code ji}, and {@code id} maps to
- * {@code in}. Since Java SE 17, this is no longer the case. Each
- * language maps to its new form; {@code iw} maps to {@code he}, {@code ji}
- * maps to {@code yi}, and {@code in} maps to {@code id}.
- *
- * <p>For backwards compatible behavior, the system property
- * {@systemProperty java.locale.useOldISOCodes} reverts the behavior
- * back to that of before Java SE 17. If the system property is set to
- * {@code true}, those three current language codes are mapped to their
- * backward compatible forms. The property is only read at Java runtime
- * startup and subsequent calls to {@code System.setProperty()} will
- * have no effect. <b>As of Java SE 25, the use of the
- * {@code java.locale.useOldISOCodes} system property is deprecated.
- * This backwards compatible behavior will be removed in a future release
- * of the JDK.</b>
- *
- * <p>The APIs added in Java SE 7 map between the old and new language codes,
- * maintaining the mapped codes internal to Locale (so that
- * {@code getLanguage} and {@code toString} reflect the mapped
- * code, which depends on the {@code java.locale.useOldISOCodes} system
- * property), but using the new codes in the BCP 47 language tag APIs (so
- * that {@code toLanguageTag} reflects the new one). This
- * preserves the equivalence between Locales no matter which code or
- * API is used to construct them. Java's default resource bundle
- * lookup mechanism also implements this mapping, so that resources
- * can be named using either convention, see {@link ResourceBundle.Control}.
+ * <p>For compatibility, a {@code Locale} created with one of the
+ * three obsolete language codes, {@code iw}, {@code ji}, or {@code in},
+ * will map the language to its modern equivalent, {@code he}, {@code yi},
+ * or {@code id}, respectively.
+ * <p>The default resource bundle lookup mechanism also implements
+ * this mapping, so that resources can be named using either convention,
+ * see {@link ResourceBundle.Control}.
  *
  * @spec https://www.rfc-editor.org/info/rfc4647
  *      RFC 4647: Matching of Language Tags
@@ -992,8 +974,8 @@ public final class Locale implements Cloneable, Serializable {
         }
     }
 
-    private static final Supplier<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
-            StableValue.supplier(new Supplier<>() {
+    private static final LazyConstant<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public ReferencedKeyMap<Object, Locale> get() {
                     return ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
@@ -1950,7 +1932,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's language that is appropriate for display to the
+     * Returns a name for {@code this} locale's language that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.
@@ -1964,14 +1946,15 @@ public final class Locale implements Cloneable, Serializable {
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a language, this function returns the empty string.
      *
-     * @return The name of the display language.
+     * @return The name of the display language appropriate to the default
+     *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
-    public final String getDisplayLanguage() {
+    public String getDisplayLanguage() {
         return getDisplayLanguage(getDefault(Category.DISPLAY));
     }
 
     /**
-     * Returns a name for the locale's language that is appropriate for display to the
+     * Returns a name for {@code this} locale's language that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized according to inLocale.
      * For example, if the locale is fr_FR and inLocale
@@ -1982,7 +1965,7 @@ public final class Locale implements Cloneable, Serializable {
      * on the ISO code as a last-resort value.  If the locale doesn't specify a language,
      * this function returns the empty string.
      *
-     * @param inLocale The locale for which to retrieve the display language.
+     * @param inLocale The locale in which to localize the display language.
      * @return The name of the display language appropriate to the given locale.
      * @throws    NullPointerException if {@code inLocale} is {@code null}
      */
@@ -1991,13 +1974,13 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's script that is appropriate for display to
+     * Returns a name for {@code this} locale's script that is appropriate for display to
      * the user. If possible, the name will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  Returns
      * the empty string if this locale doesn't specify a script code.
      *
-     * @return the display name of the script code for the current default
-     *     {@link Locale.Category#DISPLAY DISPLAY} locale
+     * @return The display name of the script code appropriate to the default
+     *     {@link Locale.Category#DISPLAY DISPLAY} locale.
      * @since 1.7
      */
     public String getDisplayScript() {
@@ -2005,14 +1988,13 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's script that is appropriate
+     * Returns a name for {@code this} locale's script that is appropriate
      * for display to the user. If possible, the name will be
      * localized for the given locale. Returns the empty string if
      * this locale doesn't specify a script code.
      *
-     * @param inLocale The locale for which to retrieve the display script.
-     * @return the display name of the script code for the current default
-     * {@link Locale.Category#DISPLAY DISPLAY} locale
+     * @param inLocale The locale in which to localize the display script.
+     * @return The display name of the script code appropriate to the given locale.
      * @throws NullPointerException if {@code inLocale} is {@code null}
      * @since 1.7
      */
@@ -2021,7 +2003,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's country that is appropriate for display to the
+     * Returns a name for {@code this} locale's country that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.
@@ -2035,14 +2017,15 @@ public final class Locale implements Cloneable, Serializable {
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a country, this function returns the empty string.
      *
-     * @return The name of the country appropriate to the locale.
+     * @return The name of the country appropriate to the default
+     *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
-    public final String getDisplayCountry() {
+    public String getDisplayCountry() {
         return getDisplayCountry(getDefault(Category.DISPLAY));
     }
 
     /**
-     * Returns a name for the locale's country that is appropriate for display to the
+     * Returns a name for {@code this} locale's country that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized according to inLocale.
      * For example, if the locale is fr_FR and inLocale
@@ -2053,7 +2036,7 @@ public final class Locale implements Cloneable, Serializable {
      * on the ISO code as a last-resort value.  If the locale doesn't specify a country,
      * this function returns the empty string.
      *
-     * @param inLocale The locale for which to retrieve the display country.
+     * @param inLocale The locale in which to localize the display country.
      * @return The name of the country appropriate to the given locale.
      * @throws    NullPointerException if {@code inLocale} is {@code null}
      */
@@ -2079,23 +2062,24 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's variant code that is appropriate for display to the
+     * Returns a name for {@code this} locale's variant code that is appropriate for display to the
      * user.  If possible, the name will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
      *
-     * @return The name of the display variant code appropriate to the locale.
+     * @return The name of the display variant code appropriate to the default
+     *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
-    public final String getDisplayVariant() {
+    public String getDisplayVariant() {
         return getDisplayVariant(getDefault(Category.DISPLAY));
     }
 
     /**
-     * Returns a name for the locale's variant code that is appropriate for display to the
+     * Returns a name for {@code this} locale's variant code that is appropriate for display to the
      * user.  If possible, the name will be localized for inLocale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
      *
-     * @param inLocale The locale for which to retrieve the display variant code.
+     * @param inLocale The locale in which to localize the display variant code.
      * @return The name of the display variant code appropriate to the given locale.
      * @throws    NullPointerException if {@code inLocale} is {@code null}
      */
@@ -2116,7 +2100,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale that is appropriate for display to the
+     * Returns a name for {@code this} locale that is appropriate for display to the
      * user. This will be the values returned by getDisplayLanguage(),
      * getDisplayScript(), getDisplayCountry(), getDisplayVariant() and
      * optional {@linkplain ##def_locale_extension Unicode extensions}
@@ -2134,14 +2118,15 @@ public final class Locale implements Cloneable, Serializable {
      * be localized depending on the locale. If the language, script, country,
      * and variant fields are all empty, this function returns the empty string.
      *
-     * @return The name of the locale appropriate to display.
+     * @return The display name appropriate to the default
+     *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
-    public final String getDisplayName() {
+    public String getDisplayName() {
         return getDisplayName(getDefault(Category.DISPLAY));
     }
 
     /**
-     * Returns a name for the locale that is appropriate for display
+     * Returns a name for {@code this} locale that is appropriate for display
      * to the user.  This will be the values returned by
      * getDisplayLanguage(), getDisplayScript(), getDisplayCountry(),
      * getDisplayVariant(), and optional {@linkplain ##def_locale_extension
@@ -2160,8 +2145,8 @@ public final class Locale implements Cloneable, Serializable {
      * be localized depending on the locale. If the language, script, country,
      * and variant fields are all empty, this function returns the empty string.
      *
-     * @param inLocale The locale for which to retrieve the display name.
-     * @return The name of the locale appropriate to display.
+     * @param inLocale The locale in which to localize the display name.
+     * @return The display name appropriate to the given locale.
      * @throws NullPointerException if {@code inLocale} is {@code null}
      */
     public String getDisplayName(Locale inLocale) {
@@ -2330,8 +2315,8 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultDisplayLocale;
     private static volatile Locale defaultFormatLocale;
 
-    private final transient Supplier<String> languageTag =
-            StableValue.supplier(new Supplier<>() {
+    private final transient LazyConstant<String> languageTag =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public String get() {
                     return computeLanguageTag();
@@ -2364,27 +2349,22 @@ public final class Locale implements Cloneable, Serializable {
 
         if (ret == null || ret.equals(type)) {
             // no localization for this type. try combining key/type separately
-            String displayType = type;
-            switch (key) {
-            case "cu":
-                displayType = lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
-                break;
-            case "rg":
-                if (type != null &&
-                    // UN M.49 code should not be allowed here
-                    type.matches("^[a-zA-Z]{2}[zZ]{4}$")) {
-                        displayType = lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT));
-                }
-                break;
-            case "tz":
-                displayType = TimeZoneNameUtility.convertLDMLShortID(type)
-                    .map(id -> TimeZoneNameUtility.retrieveGenericDisplayName(id, TimeZone.LONG, inLocale))
-                    .orElse(type);
-                break;
-            }
             ret = MessageFormat.format(lr.getLocaleName("ListKeyTypePattern"),
                 getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY),
-                Optional.ofNullable(displayType).orElse(type));
+                switch (key) {
+                    case "cu" -> {
+                        var cname = lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
+                        yield cname != null ? cname : type;
+                    }
+                    case "rg" -> type != null && type.matches("^[a-zA-Z]{2}[zZ]{4}$") ?
+                        // UN M.49 code should not be allowed here
+                        lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT)) :
+                        type;
+                    case "tz" -> TimeZoneNameUtility.convertLDMLShortID(type)
+                        .map(id -> TimeZoneNameUtility.retrieveGenericDisplayName(id, TimeZone.LONG, inLocale))
+                        .orElse(type);
+                    default -> type;
+                });
         }
 
         return ret;
@@ -2532,8 +2512,7 @@ public final class Locale implements Cloneable, Serializable {
 
     private static String convertOldISOCodes(String language) {
         // we accept both the old and the new ISO codes for the languages whose ISO
-        // codes have changed, but we always store the NEW code, unless the property
-        // java.locale.useOldISOCodes is set to "true"
+        // codes have changed, but we always store the NEW code
         return BaseLocale.convertOldISOCodes(LocaleUtils.toLowerString(language).intern());
     }
 

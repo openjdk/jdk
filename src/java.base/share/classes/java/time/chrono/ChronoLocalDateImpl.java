@@ -74,6 +74,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
+import jdk.internal.util.DecimalDigits;
+
 /**
  * A date expressed in terms of a standard year-month-day calendar system.
  * <p>
@@ -426,18 +428,22 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
 
     @Override
     public String toString() {
-        // getLong() reduces chances of exceptions in toString()
-        long yoe = getLong(YEAR_OF_ERA);
-        long moy = getLong(MONTH_OF_YEAR);
-        long dom = getLong(DAY_OF_MONTH);
+        // Using get() instead of getLong() for performance reasons,
+        // as the values of YEAR_OF_ERA, MONTH_OF_YEAR, and DAY_OF_MONTH
+        // are guaranteed to be within the int range for all chronologies.
+        int yoe = get(YEAR_OF_ERA);
+        int moy = get(MONTH_OF_YEAR);
+        int dom = get(DAY_OF_MONTH);
         StringBuilder buf = new StringBuilder(30);
         buf.append(getChronology().toString())
                 .append(" ")
                 .append(getEra())
                 .append(" ")
                 .append(yoe)
-                .append(moy < 10 ? "-0" : "-").append(moy)
-                .append(dom < 10 ? "-0" : "-").append(dom);
+                .append('-');
+        DecimalDigits.appendPair(buf, moy);
+        buf.append('-');
+        DecimalDigits.appendPair(buf, dom);
         return buf.toString();
     }
 

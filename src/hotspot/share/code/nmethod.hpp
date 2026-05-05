@@ -29,6 +29,7 @@
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
+#include "runtime/mutexLocker.hpp"
 
 class AbstractCompiler;
 class CompiledDirectCall;
@@ -40,6 +41,7 @@ class Dependencies;
 class DirectiveSet;
 class DebugInformationRecorder;
 class ExceptionHandlerTable;
+class ICacheInvalidationContext;
 class ImplicitExceptionTable;
 class JvmtiThreadState;
 class MetadataClosure;
@@ -168,7 +170,7 @@ class nmethod : public CodeBlob {
   friend class JVMCINMethodData;
   friend class DeoptimizationScope;
 
-  #define ImmutableDataReferencesCounterSize ((int)sizeof(int))
+  #define ImmutableDataRefCountSize ((int)sizeof(int))
 
  private:
 
@@ -228,17 +230,16 @@ class nmethod : public CodeBlob {
   int _exception_offset;
   // All deoptee's will resume execution at this location described by
   // this offset.
-  int _deopt_handler_offset;
+  int _deopt_handler_entry_offset;
   // Offset (from insts_end) of the unwind handler if it exists
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
 
-  uint16_t _oops_size;
 #if INCLUDE_JVMCI
   // _metadata_size is not specific to JVMCI. In the non-JVMCI case, it can be derived as:
   // _metadata_size = mutable_data_size - relocation_size
-  uint16_t _metadata_size;
+  int _metadata_size;
 #endif
 
   // Offset in immutable data section
@@ -250,7 +251,7 @@ class nmethod : public CodeBlob {
 #if INCLUDE_JVMCI
   int      _speculations_offset;
 #endif
-  int      _immutable_data_reference_counter_offset;
+  int      _immutable_data_ref_count_offset;
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -498,6 +499,7 @@ public:
     UNCOMMON_TRAP,
     WHITEBOX_DEOPTIMIZATION,
     ZOMBIE,
+    RELOCATED,
     INVALIDATION_REASONS_COUNT
   };
 
@@ -542,6 +544,8 @@ public:
         return "whitebox deoptimization";
       case InvalidationReason::ZOMBIE:
         return "zombie";
+      case InvalidationReason::RELOCATED:
+        return "relocated";
       default: {
         assert(false, "Unhandled reason");
         return "Unknown";
@@ -616,7 +620,7 @@ public:
   address stub_begin            () const { return           header_begin() + _stub_offset             ; }
   address stub_end              () const { return           code_end()     ; }
   address exception_begin       () const { return           header_begin() + _exception_offset        ; }
-  address deopt_handler_begin   () const { return           header_begin() + _deopt_handler_offset    ; }
+  address deopt_handler_entry   () const { return           header_begin() + _deopt_handler_entry_offset    ; }
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const { return (oop*)    data_begin(); }
   oop*    oops_end              () const { return (oop*)    data_end(); }
@@ -647,11 +651,11 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           _immutable_data + _immutable_data_reference_counter_offset ; }
+  address speculations_end      () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
 #else
-  address scopes_data_end       () const { return           _immutable_data + _immutable_data_reference_counter_offset ; }
+  address scopes_data_end       () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
 #endif
-  address immutable_data_references_counter_begin () const { return _immutable_data + _immutable_data_reference_counter_offset ; }
+  address immutable_data_ref_count_begin () const { return  _immutable_data + _immutable_data_ref_count_offset ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
@@ -798,15 +802,15 @@ public:
 
   // Relocation support
 private:
-  void fix_oop_relocations(address begin, address end, bool initialize_immediates);
+  bool fix_oop_relocations(bool initialize_immediates);
   inline void initialize_immediate_oop(oop* dest, jobject handle);
 
 protected:
   address oops_reloc_begin() const;
 
 public:
-  void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
-  void fix_oop_relocations()                           { fix_oop_relocations(nullptr, nullptr, false); }
+  void fix_oop_relocations(ICacheInvalidationContext* icic);
+  void fix_oop_relocations();
 
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
@@ -962,8 +966,24 @@ public:
   bool  load_reported() const                     { return _load_reported; }
   void  set_load_reported()                       { _load_reported = true; }
 
-  inline int  get_immutable_data_references_counter()           { return *((int*)immutable_data_references_counter_begin());  }
-  inline void set_immutable_data_references_counter(int count)  { *((int*)immutable_data_references_counter_begin()) = count; }
+  inline void init_immutable_data_ref_count() {
+    assert(is_not_installed(), "should be called in nmethod constructor");
+    *((int*)immutable_data_ref_count_begin()) = 1;
+  }
+
+  inline int inc_immutable_data_ref_count() {
+    assert_lock_strong(CodeCache_lock);
+    int* ref_count = (int*)immutable_data_ref_count_begin();
+    assert(*ref_count > 0, "Must be positive");
+    return ++(*ref_count);
+  }
+
+  inline int dec_immutable_data_ref_count() {
+    assert_lock_strong(CodeCache_lock);
+    int* ref_count = (int*)immutable_data_ref_count_begin();
+    assert(*ref_count > 0, "Must be positive");
+    return --(*ref_count);
+  }
 
   static void add_delayed_compiled_method_load_event(nmethod* nm) NOT_CDS_RETURN;
 

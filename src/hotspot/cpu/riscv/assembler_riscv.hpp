@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,11 +30,11 @@
 #include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "code/codeCache.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include <type_traits>
 
 #define XLEN 64
 
@@ -2661,6 +2661,9 @@ enum Nf {
   INSN(vsha2ms_vv,  0b1110111, 0b010, 0b1, 0b101101);
   INSN(vsha2ch_vv,  0b1110111, 0b010, 0b1, 0b101110);
   INSN(vsha2cl_vv,  0b1110111, 0b010, 0b1, 0b101111);
+
+  // Vector GHASH (Zvkg) Extension
+  INSN(vghsh_vv,    0b1110111, 0b010, 0b1, 0b101100);
 
 #undef INSN
 

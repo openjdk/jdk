@@ -58,25 +58,11 @@ public:
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
-    ShenandoahSuspendibleThreadSetJoiner stsj;
+    SuspendibleThreadSetJoiner stsj;
     StringDedup::Requests requests;
     _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/,
                    ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
-  }
-};
-
-class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
-private:
-  SATBMarkQueueSet& _satb_qset;
-
-public:
-  explicit ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset) :
-    _satb_qset(satb_qset) {}
-
-  void do_thread(Thread* thread) override {
-    // Transfer any partial buffer to the qset for completed buffer processing.
-    _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
   }
 };
 
@@ -109,7 +95,7 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set);
+      ShenandoahFlushSATB tc(satb_mq_set);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
     _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/,
@@ -314,7 +300,11 @@ void ShenandoahConcurrentMark::finish_mark_work() {
     default:
       ShouldNotReachHere();
   }
-
+  if (!generation()->is_old() && heap->is_concurrent_young_mark_in_progress()) {
+    // Lastly, ensure all the invisible roots are marked.
+    ShenandoahInvisibleRootsMarkClosure cl;
+    Threads::java_threads_do(&cl);
+  }
 
   assert(task_queues()->is_empty(), "Should be empty");
 }

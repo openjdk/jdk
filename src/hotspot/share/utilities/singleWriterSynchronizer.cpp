@@ -43,17 +43,17 @@ SingleWriterSynchronizer::SingleWriterSynchronizer() :
 // synchronization have exited that critical section.
 void SingleWriterSynchronizer::synchronize() {
   // Side-effect in assert balanced by debug-only dec at end.
-  assert(AtomicAccess::add(&_writers, 1u) == 1u, "multiple writers");
+  assert(_writers.fetch_then_add(1u) == 0u, "multiple writers");
   // We don't know anything about the muxing between this invocation
   // and invocations in other threads.  We must start with the latest
   // _enter polarity, else we could clobber the wrong _exit value on
   // the first iteration.  So fence to ensure everything here follows
   // whatever muxing was used.
   OrderAccess::fence();
-  uint value = _enter;
+  uint value = _enter.load_relaxed();
   // (1) Determine the old and new exit counters, based on the
   // polarity (bit0 value) of the on-entry enter counter.
-  volatile uint* new_ptr = &_exit[(value + 1) & 1];
+  Atomic<uint>& new_exit = _exit[(value + 1) & 1];
   // (2) Change the in-use exit counter to the new counter, by adding
   // 1 to the enter counter (flipping the polarity), meanwhile
   // "simultaneously" initializing the new exit counter to that enter
@@ -62,29 +62,29 @@ void SingleWriterSynchronizer::synchronize() {
   uint old;
   do {
     old = value;
-    *new_ptr = ++value;
-    value = AtomicAccess::cmpxchg(&_enter, old, value);
+    new_exit.store_relaxed(++value);
+    value = _enter.compare_exchange(old, value);
   } while (old != value);
   // Critical sections entered before we changed the polarity will use
   // the old exit counter.  Critical sections entered after the change
   // will use the new exit counter.
-  volatile uint* old_ptr = &_exit[old & 1];
-  assert(old_ptr != new_ptr, "invariant");
+  Atomic<uint>& old_exit = _exit[old & 1];
+  assert(&new_exit != &old_exit, "invariant");
   // (3) Inform threads in in-progress critical sections that there is
   // a pending synchronize waiting.  The thread that completes the
   // request (_exit value == old) will signal the _wakeup semaphore to
   // allow us to proceed.
-  _waiting_for = old;
+  _waiting_for.store_relaxed(old);
   // Write of _waiting_for must precede read of _exit and associated
   // conditional semaphore wait.  If they were re-ordered then a
   // critical section exit could miss the wakeup request, failing to
   // signal us while we're waiting.
   OrderAccess::fence();
   // (4) Wait for all the critical sections started before the change
-  // to complete, e.g. for the value of old_ptr to catch up with old.
+  // to complete, e.g. for the value of old_exit to catch up with old.
   // Loop because there could be pending wakeups unrelated to this
   // synchronize request.
-  while (old != AtomicAccess::load_acquire(old_ptr)) {
+  while (old != old_exit.load_acquire()) {
     _wakeup.wait();
   }
   // (5) Drain any pending wakeups. A critical section exit may have
@@ -95,5 +95,5 @@ void SingleWriterSynchronizer::synchronize() {
   // lead to semaphore overflow.  This doesn't guarantee no unrelated
   // wakeups for the next wait, but prevents unbounded accumulation.
   while (_wakeup.trywait()) {}
-  DEBUG_ONLY(AtomicAccess::dec(&_writers);)
+  assert(_writers.sub_then_fetch(1u) == 0u, "invariant");
 }

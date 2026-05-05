@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,13 +406,13 @@ public class ServerSocket implements java.io.Closeable {
      *        with a {@link ServerSocketChannel ServerSocketChannel}. In that
      *        case, interrupting a thread accepting a connection will close the
      *        underlying channel and cause this method to throw {@link
-     *        java.nio.channels.ClosedByInterruptException} with the interrupt
-     *        status set.
+     *        java.nio.channels.ClosedByInterruptException} with the thread's
+     *        interrupted status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is accepting a
      *        connection. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. This method will then throw
-     *        {@code SocketException} with the interrupt status set.
+     *        {@code SocketException} with the thread's interrupted status set.
      * </ol>
      *
      * @implNote
@@ -947,7 +947,11 @@ public class ServerSocket implements java.io.Closeable {
      *         bandwidth
      *
      * @since 1.5
+     *
+     * @deprecated This method was intended to allow for protocols that are now
+     *             obsolete.
      */
+    @Deprecated(since = "26", forRemoval = true)
     public void setPerformancePreferences(int connectionTime,
                                           int latency,
                                           int bandwidth)

@@ -25,12 +25,13 @@ package catalog;
 
 import javax.xml.catalog.CatalogResolver;
 
-import org.testng.Assert;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * Utilities for checking catalog resolution.
  */
-class ResolutionChecker {
+final class ResolutionChecker {
 
     /* ********** Checks normal resolution ********** */
 
@@ -38,8 +39,8 @@ class ResolutionChecker {
      * Checks the resolution result for specified external identifier.
      */
     static void checkExtIdResolution(CatalogResolver resolver,
-            String publicId, String systemId, String matchedUri) {
-        Assert.assertEquals(
+                                     String publicId, String systemId, String matchedUri) {
+        assertEquals(
                 resolver.resolveEntity(publicId, getNotSpecified(systemId)).getSystemId(),
                 matchedUri);
     }
@@ -65,8 +66,8 @@ class ResolutionChecker {
      * with the specified base location.
      */
     static void checkUriResolution(CatalogResolver resolver,
-            String href, String base, String matchedUri) {
-        Assert.assertEquals(resolver.resolve(href, base).getSystemId(),
+                                   String href, String base, String matchedUri) {
+        assertEquals(resolver.resolve(href, base).getSystemId(),
                 matchedUri);
     }
 
@@ -106,9 +107,9 @@ class ResolutionChecker {
     static <T extends Throwable> void expectExceptionOnExtId(
             CatalogResolver resolver, String publicId, String systemId,
             Class<T> expectedExceptionClass) {
-        expectThrows(expectedExceptionClass, () -> {
-            resolver.resolveEntity(publicId, getNotSpecified(systemId));
-        });
+        assertThrows(
+                expectedExceptionClass,
+                () -> resolver.resolveEntity(publicId, getNotSpecified(systemId)));
     }
 
     /*
@@ -140,9 +141,7 @@ class ResolutionChecker {
     static <T extends Throwable> void expectExceptionOnUri(
             CatalogResolver resolver, String href, String base,
             Class<T> expectedExceptionClass) {
-        expectThrows(expectedExceptionClass, () -> {
-            resolver.resolve(href, base);
-        });
+        assertThrows(expectedExceptionClass, () -> resolver.resolve(href, base));
     }
 
     /*
@@ -155,31 +154,6 @@ class ResolutionChecker {
         expectExceptionOnUri(resolver, href, null, expectedExceptionClass);
     }
 
-    // The TestNG distribution in current JTREG build doesn't support
-    // method Assert.expectThrows().
-    private static <T extends Throwable> T expectThrows(Class<T> throwableClass,
-            ThrowingRunnable runnable) {
-        try {
-            runnable.run();
-        } catch (Throwable t) {
-            if (throwableClass.isInstance(t)) {
-                return throwableClass.cast(t);
-            } else {
-                String mismatchMessage = String.format(
-                        "Expected %s to be thrown, but %s was thrown",
-                        throwableClass.getSimpleName(),
-                        t.getClass().getSimpleName());
-
-                throw new AssertionError(mismatchMessage, t);
-            }
-        }
-
-        String message = String.format(
-                "Expected %s to be thrown, but nothing was thrown",
-                throwableClass.getSimpleName());
-        throw new AssertionError(message);
-    }
-
     /*
      * SystemId can never be null in XML. For publicId tests, if systemId is null,
      * it will be considered as not-specified instead. A non-existent systemId
@@ -190,9 +164,5 @@ class ResolutionChecker {
             return "not-specified-systemId.dtd";
         }
         return systemId;
-    }
-
-    private interface ThrowingRunnable {
-        void run() throws Throwable;
     }
 }

@@ -297,6 +297,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">بافیایی</language>
 			<language type="ksh">کولش</language>
 			<language type="ku">کردی</language>
+			<language type="ku" menu="core">کردی</language>
+			<language type="ku" menu="extension">کرمانجی</language>
 			<language type="kum">کومیکی</language>
 			<language type="kut">کوتنی</language>
 			<language type="kv">کومیایی</language>
@@ -822,6 +824,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">چین</territory>
 			<territory type="CO">کلمبیا</territory>
 			<territory type="CP">جزایر کلیپرتون</territory>
+			<territory type="CQ">سارک</territory>
 			<territory type="CR">کاستاریکا</territory>
 			<territory type="CU">کوبا</territory>
 			<territory type="CV">کیپ‌ورد</territory>
@@ -1079,35 +1082,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNumeric">مرتب‌سازی عددی</key>
 			<key type="colStrength">قدرت مرتب‌سازی</key>
 			<key type="currency">واحد پول</key>
+			<key type="em">نمایش اموجی</key>
 			<key type="hc">دور ساعت (۱۲ در مقابل ۲۴)</key>
 			<key type="lb">شیوهٔ سطرشکنی</key>
+			<key type="lw">شکست خط داخل کلمات</key>
 			<key type="ms">دستگاه اندازه‌گیری</key>
 			<key type="numbers">اعداد</key>
+			<key type="ss">شکست جمله پس از مخفف</key>
 			<key type="timezone">منطقهٔ زمانی</key>
 			<key type="va">متغیر محلی</key>
 			<key type="x">استفادهٔ خصوصی</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">تقویم بودایی</type>
+			<type key="calendar" type="buddhist" scope="core">بودایی</type>
 			<type key="calendar" type="chinese">تقویم چینی</type>
+			<type key="calendar" type="chinese" scope="core">چینی</type>
 			<type key="calendar" type="coptic">تقویم قبطی</type>
+			<type key="calendar" type="coptic" scope="core">قبطی</type>
 			<type key="calendar" type="dangi">تقویم دانگی</type>
+			<type key="calendar" type="dangi" scope="core">دانگی</type>
 			<type key="calendar" type="ethiopic">تقویم اتیوپیایی</type>
+			<type key="calendar" type="ethiopic" scope="core">اتیوپیایی</type>
 			<type key="calendar" type="ethiopic-amete-alem">تقویم اتیوپیایی عامت عالم</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">عامت عالم اتیوپیایی</type>
 			<type key="calendar" type="gregorian">تقویم میلادی</type>
+			<type key="calendar" type="gregorian" scope="core">میلادی</type>
 			<type key="calendar" type="hebrew">تقویم عبری</type>
+			<type key="calendar" type="hebrew" scope="core">عبری</type>
 			<type key="calendar" type="indian">تقویم ملی هند</type>
 			<type key="calendar" type="islamic">تقویم هجری قمری</type>
+			<type key="calendar" type="islamic" scope="core">هجری</type>
 			<type key="calendar" type="islamic-civil">تقویم هجری قمری جدولی مدنی</type>
+			<type key="calendar" type="islamic-civil" scope="core">هجری (جدولی، دوران مدنی)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">قویم هجری قمری هلالی عربستان سعودی</type>
 			<type key="calendar" type="islamic-tbla">تقویم هجری قمری جدولی نجومی</type>
+			<type key="calendar" type="islamic-tbla" scope="core">هجری (جدولی، دوران نجومی)</type>
 			<type key="calendar" type="islamic-umalqura">تقویم هجری قمری ام‌القری</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">هجری (ام‌القری)</type>
 			<type key="calendar" type="iso8601">تقویم ایزو ۸۶۰۱</type>
 			<type key="calendar" type="japanese">تقویم ژاپنی</type>
+			<type key="calendar" type="japanese" scope="core">ژاپنی</type>
 			<type key="calendar" type="persian">تقویم هجری شمسی</type>
+			<type key="calendar" type="persian" scope="core">ایرانی</type>
 			<type key="calendar" type="roc">تقویم جمهوری چین (تایوان)</type>
+			<type key="calendar" type="roc" scope="core">جمهوری چین</type>
 			<type key="cf" type="account">قالب حسابداری واحد پول</type>
+			<type key="cf" type="account" scope="core">حسابداری</type>
 			<type key="cf" type="standard">قالب استاندارد واحد پول</type>
+			<type key="cf" type="standard" scope="core">استاندارد</type>
 			<type key="colAlternate" type="non-ignorable">مرتب‌سازی نمادها</type>
 			<type key="colAlternate" type="shifted">مرتب‌سازی با نادیده گرفتن نمادها</type>
 			<type key="colBackwards" type="no">مرتب‌سازی آکسان‌ها به صورت معمولی</type>
@@ -1117,19 +1140,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">مرتب‌سازی بر اساس حرف بزرگ در ابتدا</type>
 			<type key="colCaseLevel" type="no">مرتب‌سازی بدون توجه به کوچک و بزرگی حروف</type>
 			<type key="colCaseLevel" type="yes">مرتب‌سازی با حساسیت به اندازه حروف</type>
-			<type key="collation" type="big5han">ترتیب چینی سنتی - Big5</type>
 			<type key="collation" type="compat" draft="contributed">ترتیب پیشین، برای سازگاری</type>
 			<type key="collation" type="dictionary">ترتیب فرهنگ لغت</type>
 			<type key="collation" type="ducet">ترتیب پیش‌فرض یونی‌کد</type>
+			<type key="collation" type="ducet" scope="core">یونی‌کد پیش‌فرض</type>
 			<type key="collation" type="emoji">ترتیب ایموجی</type>
 			<type key="collation" type="eor" draft="contributed">قوانین ترتیب اروپایی</type>
-			<type key="collation" type="gb2312han">ترتیب چینی ساده‌شده - GB2312</type>
 			<type key="collation" type="phonebook">ترتیب دفتر تلفن</type>
 			<type key="collation" type="phonetic">مرتب کردن بر اساس آوایی</type>
 			<type key="collation" type="pinyin">ترتیب پین‌یین</type>
 			<type key="collation" type="search">جستجوی عمومی</type>
+			<type key="collation" type="search" scope="core">جستجو</type>
 			<type key="collation" type="searchjl">جستجو با صامت اول هانگول</type>
 			<type key="collation" type="standard">ترتیب استاندارد</type>
+			<type key="collation" type="standard" scope="core">استاندارد</type>
 			<type key="collation" type="stroke">ترتیب حرکتی</type>
 			<type key="collation" type="traditional">ترتیب سنتی</type>
 			<type key="collation" type="unihan">ترتیب رادیکالی-حرکتی</type>
@@ -1146,18 +1170,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="d0" type="fwidth">تمام‌عرض</type>
 			<type key="d0" type="hwidth">نیم‌عرض</type>
 			<type key="d0" type="npinyin">سیستم اعداد</type>
+			<type key="em" type="default" scope="core">پیش‌فرض</type>
+			<type key="em" type="emoji" scope="core">اموجی</type>
+			<type key="em" type="text" scope="core">پیامک</type>
 			<type key="hc" type="h11">سیستم ۱۲ ساعته (۰ تا ۱۱)</type>
+			<type key="hc" type="h11" scope="core">۱۲ ساعته (۰ تا ۱۱)</type>
 			<type key="hc" type="h12">سیستم ۱۲ ساعته (۱ تا ۱۲)</type>
+			<type key="hc" type="h12" scope="core">۱۲ ساعته (۱ تا ۱۲)</type>
 			<type key="hc" type="h23">سیستم ۲۴ ساعته (۰ تا ۲۳)</type>
+			<type key="hc" type="h23" scope="core">۲۴ ساعته (۰ تا ۲۳)</type>
 			<type key="hc" type="h24">سیستم ۲۴ ساعته (۱ تا ۲۴)</type>
+			<type key="hc" type="h24" scope="core">۲۴ ساعته (۱ تا ۲۴)</type>
 			<type key="lb" type="loose">شیوهٔ سطرشکنی سهل‌گیرانه</type>
+			<type key="lb" type="loose" scope="core">سهل‌گیرانه</type>
 			<type key="lb" type="normal">شیوهٔ سطرشکنی عادی</type>
+			<type key="lb" type="normal" scope="core">عادی</type>
 			<type key="lb" type="strict">شیوهٔ سطرشکنی سخت‌گیرانه</type>
+			<type key="lb" type="strict" scope="core">سخت‌گیرانه</type>
+			<type key="lw" type="breakall" scope="core">شکست همه</type>
+			<type key="lw" type="keepall" scope="core">حفظ همه</type>
+			<type key="lw" type="normal" scope="core">عادی</type>
+			<type key="lw" type="phrase" scope="core">حفظ در عبارات</type>
 			<type key="m0" type="bgn">ترانویسی انجمن نام‌های جغرافیایی ایالات متحده</type>
 			<type key="m0" type="ungegn">ترانویسی گروه نام‌های جغرافیایی سازمان ملل</type>
 			<type key="ms" type="metric">دستگاه متریک</type>
+			<type key="ms" type="metric" scope="core">متریک</type>
 			<type key="ms" type="uksystem">سیستم اندازه‌گیری انگلیسی</type>
+			<type key="ms" type="uksystem" scope="core">انگلیسی</type>
 			<type key="ms" type="ussystem">سیستم اندازه‌گیری امریکایی</type>
+			<type key="ms" type="ussystem" scope="core">امریکایی</type>
 			<type key="numbers" type="arab">ارقام عربی</type>
 			<type key="numbers" type="arabext">ارقام فارسی</type>
 			<type key="numbers" type="armn">اعداد ارمنی</type>
@@ -1209,6 +1250,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="tibt">ارقام تبتی</type>
 			<type key="numbers" type="traditional">سیستم اعداد سنتی</type>
 			<type key="numbers" type="vaii">ارقام وایی</type>
+			<type key="ss" type="none" scope="core">خاموش</type>
+			<type key="ss" type="standard" scope="core">روشن</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">متریک</measurementSystemName>
@@ -1231,7 +1274,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="auxiliary">[ـ\u200C\u200D\u200E\u200F َ ِ ُ ْ ٖ ٰ إ ك ىي]</exemplarCharacters>
 		<exemplarCharacters type="index">[آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ه ی]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E , ٫ ٬ . % ٪ ‰ ؉ + − 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
+		<exemplarCharacters type="numbers-auxiliary">[{&lt;LRM&gt;} ٤ ٥ ٦]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-auxiliary">[_ — @ / #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-person">[\- ‐‑ . /]</exemplarCharacters>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
@@ -1297,20 +1343,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">قبل از حلول مسیح</era>
-						<era type="1" draft="contributed">بعد از حلول مسیح</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">قبل از مسیح</era>
-						<era type="1" draft="contributed">پس از مسیح</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">ق.م.</era>
-						<era type="1" draft="contributed">ب.م.</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1383,7 +1415,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EHm">E H:mm</dateFormatItem>
 						<dateFormatItem id="EHms">E H:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">y/M G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E، y/M/d G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
@@ -1391,6 +1425,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="HHmmZ">HH:mm (Z)</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hv">سHH v</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E M/d</dateFormatItem>
 						<dateFormatItem id="MMMd">d LLL</dateFormatItem>
@@ -1821,7 +1856,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EHm">E H:mm</dateFormatItem>
 						<dateFormatItem id="EHms">E H:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">y/M G</dateFormatItem>
 						<dateFormatItem id="GyMd">y/M/d GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E، y/M/d G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
@@ -1831,6 +1868,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hmsv">H:mm:ss v</dateFormatItem>
 						<dateFormatItem id="Hmv">H:mm v</dateFormatItem>
+						<dateFormatItem id="Hv">سHH v</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E M/d</dateFormatItem>
 						<dateFormatItem id="MMMd">d LLL</dateFormatItem>
@@ -1982,7 +2020,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E y/M/d تا E y/M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">LLL تا MMM y</greatestDifference>
+							<greatestDifference id="M">MMM تا MMM y</greatestDifference>
 							<greatestDifference id="y">MMM y تا MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
@@ -1996,7 +2034,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E d MMM y تا E d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">LLLL تا MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM تا MMMM y</greatestDifference>
 							<greatestDifference id="y">MMMM y تا MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
@@ -2164,6 +2202,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="GyM">y/M G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E، y/M/d G</dateFormatItem>
 						<dateFormatItem id="HmZ">HH:mm (Z)</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="yM">y/M G</dateFormatItem>
@@ -2448,50 +2488,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} یکشنبه قبل</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sun-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} یکشنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} یکشنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} یکشنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} یکشنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} یکشنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} یکشنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} یکشنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} یکشنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="mon">
 				<relative type="-1">دوشنبهٔ گذشته</relative>
 				<relative type="0">این دوشنبه</relative>
 				<relative type="1">دوشنبهٔ آینده</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} دوشنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} دوشنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} دوشنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} دوشنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} دوشنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} دوشنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} دوشنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} دوشنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} دوشنبه بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} دوشنبه بعد</relativeTimePattern>
@@ -2514,50 +2514,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} سه‌شنبه قبل</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="tue-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} سه‌شنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} سه‌شنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} سه‌شنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} سه‌شنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} سه‌شنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} سه‌شنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} سه‌شنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} سه‌شنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="wed">
 				<relative type="-1">چهارشنبهٔ گذشته</relative>
 				<relative type="0">این چهارشنبه</relative>
 				<relative type="1">چهارشنبهٔ آینده</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} چهارشنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} چهارشنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} چهارشنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} چهارشنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} چهارشنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} چهارشنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} چهارشنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} چهارشنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} چهارشنبه بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} چهارشنبه بعد</relativeTimePattern>
@@ -2580,26 +2540,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} پنجشنبه قبل</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="thu-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} پنجشنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} پنجشنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} پنجشنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} پنجشنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} پنجشنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} پنجشنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} پنجشنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} پنجشنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="fri">
 				<relative type="-1">جمعهٔ گذشته</relative>
 				<relative type="0">این جمعه</relative>
@@ -2613,50 +2553,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} جمعه قبل</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="fri-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} جمعه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} جمعه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} جمعه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} جمعه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} جمعه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} جمعه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} جمعه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} جمعه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="sat">
 				<relative type="-1">شنبهٔ گذشته</relative>
 				<relative type="0">این شنبه</relative>
 				<relative type="1">شنبهٔ آینده</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} شنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} شنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} شنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} شنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} شنبه بعد</relativeTimePattern>
-					<relativeTimePattern count="other">{0} شنبه بعد</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} شنبه قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} شنبه قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} شنبه بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} شنبه بعد</relativeTimePattern>
@@ -2713,6 +2613,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<hourFormat>‎+HH:mm;‎−HH:mm</hourFormat>
 			<gmtFormat>{0} گرینویچ</gmtFormat>
 			<gmtZeroFormat>گرینویچ</gmtZeroFormat>
+			<gmtUnknownFormat>گرینویچ+؟</gmtUnknownFormat>
 			<regionFormat>وقت {0}</regionFormat>
 			<regionFormat type="daylight">وقت تابستانی {0}</regionFormat>
 			<regionFormat type="standard">وقت عادی {0}</regionFormat>
@@ -3069,6 +2970,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Easter">
 				<exemplarCity>ایستر</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>کویهایکیو</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>پونتا آرناس</exemplarCity>
 			</zone>
@@ -3334,9 +3238,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>پنوم‌پن</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>اندربری</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>کانتون</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4006,9 +3907,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>وقت غرب افریقا</generic>
-					<standard>وقت عادی غرب افریقا</standard>
-					<daylight>وقت تابستانی غرب افریقا</daylight>
+					<standard>وقت غرب افریقا</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4375,6 +4274,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard>وقت گویان</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>وقت عادی هاوایی‐الوشن</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4827,6 +4731,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>وقت چوئوک</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>وقت ترکیه</generic>
+					<standard>وقت عادی ترکیه</standard>
+					<daylight>وقت تابستانی ترکیه</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>وقت ترکمنستان</generic>
@@ -4998,7 +4909,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>‎¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00</pattern>
 					<pattern alt="noCurrency" draft="provisional">‎#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -5006,7 +4921,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>‎¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00</pattern>
 					<pattern alt="noCurrency" draft="provisional">‎#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00;‎(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">‎#,##0.00;‎(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -5014,39 +4934,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>‎¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">‎#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">‎#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>‎¤ #,##0.00;‎(¤ #,##0.00)</pattern>
-					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00;‎(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">‎#,##0.00;‎(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">0 هزار ¤</pattern>
-					<pattern type="1000" count="other">0 هزار ¤</pattern>
-					<pattern type="10000" count="one">00 هزار ¤</pattern>
-					<pattern type="10000" count="other">00 هزار ¤</pattern>
-					<pattern type="100000" count="one">000 هزار ¤</pattern>
-					<pattern type="100000" count="other">000 هزار ¤</pattern>
-					<pattern type="1000000" count="one">0 میلیون ¤</pattern>
-					<pattern type="1000000" count="other">0 میلیون ¤</pattern>
-					<pattern type="10000000" count="one">00 میلیون ¤</pattern>
-					<pattern type="10000000" count="other">00 میلیون ¤</pattern>
-					<pattern type="100000000" count="one">000 میلیون ¤</pattern>
-					<pattern type="100000000" count="other">000 میلیون ¤</pattern>
-					<pattern type="1000000000" count="one">0 میلیارد ¤</pattern>
-					<pattern type="1000000000" count="other">0 میلیارد ¤</pattern>
-					<pattern type="10000000000" count="one">00 میلیارد ¤</pattern>
-					<pattern type="10000000000" count="other">00 میلیارد ¤</pattern>
-					<pattern type="100000000000" count="one">000 میلیارد ¤</pattern>
-					<pattern type="100000000000" count="other">000 میلیارد ¤</pattern>
-					<pattern type="1000000000000" count="one">0 هزارمیلیارد ¤</pattern>
-					<pattern type="1000000000000" count="other">0 هزارمیلیارد ¤</pattern>
-					<pattern type="10000000000000" count="one">00 هزارمیلیارد ¤</pattern>
-					<pattern type="10000000000000" count="other">00 هزارمیلیارد ¤</pattern>
-					<pattern type="100000000000000" count="one">000 هزارمیلیارد ¤</pattern>
-					<pattern type="100000000000000" count="other">000 هزارمیلیارد ¤</pattern>
+					<pattern type="1000" count="one">‎¤ 0 هزار</pattern>
+					<pattern type="1000" count="other">‎¤ 0 هزار</pattern>
+					<pattern type="10000" count="one">‎¤ 00 هزار</pattern>
+					<pattern type="10000" count="other">‎¤ 00 هزار</pattern>
+					<pattern type="100000" count="one">‎¤ 000 هزار</pattern>
+					<pattern type="100000" count="other">‎¤ 000 هزار</pattern>
+					<pattern type="1000000" count="one">‎¤ 0 میلیون</pattern>
+					<pattern type="1000000" count="other">‎¤ 0 میلیون</pattern>
+					<pattern type="10000000" count="one">‎¤ 00 میلیون</pattern>
+					<pattern type="10000000" count="other">‎¤ 00 میلیون</pattern>
+					<pattern type="100000000" count="one">‎¤ 000 میلیون</pattern>
+					<pattern type="100000000" count="other">‎¤ 000 میلیون</pattern>
+					<pattern type="1000000000" count="one">‎¤ 0 میلیارد</pattern>
+					<pattern type="1000000000" count="other">‎¤ 0 میلیارد</pattern>
+					<pattern type="10000000000" count="one">‎¤ 00 میلیارد</pattern>
+					<pattern type="10000000000" count="other">‎¤ 00 میلیارد</pattern>
+					<pattern type="100000000000" count="one">‎¤ 000 میلیارد</pattern>
+					<pattern type="100000000000" count="other">‎¤ 000 میلیارد</pattern>
+					<pattern type="1000000000000" count="one">‎¤ 0 تریلیون</pattern>
+					<pattern type="1000000000000" count="other">‎¤ 0 تریلیون</pattern>
+					<pattern type="10000000000000" count="one">‎¤ 00 تریلیون</pattern>
+					<pattern type="10000000000000" count="other">‎¤ 00 تریلیون</pattern>
+					<pattern type="100000000000000" count="one">‎¤ 000 تریلیون</pattern>
+					<pattern type="100000000000000" count="other">‎¤ 000 تریلیون</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -5125,8 +5047,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BGN">
 				<displayName>لو بلغارستان</displayName>
-				<displayName count="one">لو بلغارستان</displayName>
-				<displayName count="other">لو بلغارستان</displayName>
 			</currency>
 			<currency type="BHD">
 				<displayName>دینار بحرین</displayName>
@@ -5323,8 +5243,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ILS">
 				<displayName>شِکِل جدید اسرائیل</displayName>
-				<displayName count="one">شِکِل جدید اسرائیل</displayName>
-				<displayName count="other">شِکِل جدید اسرائیل</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName>روپیهٔ هند</displayName>
@@ -5546,8 +5464,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="PLN">
 				<displayName>زلوتی لهستان</displayName>
-				<displayName count="one">زلوتی لهستان</displayName>
-				<displayName count="other">زلوتی لهستان</displayName>
 			</currency>
 			<currency type="PTE">
 				<displayName>اسکودوی پرتغال</displayName>
@@ -5737,6 +5653,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>دلار شرق کارائیب</displayName>
 				<symbol>$EC</symbol>
 			</currency>
+			<currency type="XCG">
+				<displayName>گیلدر کارائیب</displayName>
+				<displayName count="one">گیلدر کارائیب</displayName>
+				<displayName count="other">گیلدر کارائیب</displayName>
+			</currency>
 			<currency type="XFO">
 				<displayName>فرانک طلای فرانسه</displayName>
 			</currency>
@@ -5782,6 +5703,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWD">
 				<displayName>دلار زیمبابوه (۱۹۸۰ تا ۲۰۰۸)</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>طلای زیمبابوه</displayName>
+				<displayName count="one">طلای زیمبابوه</displayName>
+				<displayName count="other">طلای زیمبابوه</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>دلار زیمبابوه (۲۰۰۹)</displayName>
@@ -5845,10 +5771,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} کیلومتر مربع</unitPattern>
 				<perUnitPattern>{0} در کیلومتر مربع</perUnitPattern>
 			</unit>
-			<unit type="area-hectare">
-				<unitPattern count="one">{0} هکتار</unitPattern>
-				<unitPattern count="other">{0} هکتار</unitPattern>
-			</unit>
 			<unit type="area-square-meter">
 				<unitPattern count="one">{0} متر مربع</unitPattern>
 				<unitPattern count="other">{0} متر مربع</unitPattern>
@@ -5875,7 +5797,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} میلی‌مول در لیتر</unitPattern>
 				<unitPattern count="other">{0} میلی‌مول در لیتر</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>پارت</displayName>
+				<unitPattern count="one">{0} پارت</unitPattern>
+				<unitPattern count="other">{0} پارت</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>بخش در میلیون</displayName>
 				<unitPattern count="one">{0} بخش در میلیون</unitPattern>
 				<unitPattern count="other">{0} بخش در میلیون</unitPattern>
@@ -5891,6 +5818,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-permyriad">
 				<unitPattern count="one">{0} ده‌هزارم</unitPattern>
 				<unitPattern count="other">{0} ده‌هزارم</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>گلوکز</displayName>
+				<unitPattern count="one">{0} گلوکز</unitPattern>
+				<unitPattern count="other">{0} گلوکز</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لیتر در کیلومتر</displayName>
@@ -6088,9 +6020,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-milligram">
 				<displayName>میلی‌گرم</displayName>
 			</unit>
-			<unit type="mass-microgram">
-				<displayName>میکروگرم</displayName>
-			</unit>
 			<unit type="mass-earth-mass">
 				<unitPattern count="one">{0} جرم زمین</unitPattern>
 				<unitPattern count="other">{0} جرم زمین</unitPattern>
@@ -6107,6 +6036,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millimeter-ofhg">
 				<unitPattern count="one">{0} میلی‌متر جیوه</unitPattern>
 				<unitPattern count="other">{0} میلی‌متر جیوه</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>جیوه</displayName>
+				<unitPattern count="one">{0} جیوه</unitPattern>
+				<unitPattern count="other">{0} جیوه</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="one">{0} پوند در اینچ مربع</unitPattern>
@@ -6197,6 +6131,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} سانتی‌لیتر</unitPattern>
 				<unitPattern count="other">{0} سانتی‌لیتر</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>اونس مایع متریک</displayName>
+				<unitPattern count="one">{0} اونس مایع متریک</unitPattern>
+				<unitPattern count="other">{0} اونس مایع متریک</unitPattern>
+			</unit>
 			<unit type="volume-gallon-imperial">
 				<perUnitPattern>{0} در گالن امپریال</perUnitPattern>
 			</unit>
@@ -6231,15 +6170,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} درم</unitPattern>
 				<unitPattern count="other">{0} درم</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
-				<displayName>بخش در بیلیون</displayName>
+			<unit type="angle-steradian">
+				<displayName>استرادیان</displayName>
+				<unitPattern count="one">{0} استرادیان</unitPattern>
+				<unitPattern count="other">{0} استرادیان</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>کاتال</displayName>
+				<unitPattern count="one">{0} کاتال</unitPattern>
+				<unitPattern count="other">{0} کاتال</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>کولن</displayName>
+				<unitPattern count="one">{0} کولن</unitPattern>
+				<unitPattern count="other">{0} کولن</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>فاراد</displayName>
+				<unitPattern count="one">{0} فاراد</unitPattern>
+				<unitPattern count="other">{0} فاراد</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>هنری</displayName>
+				<unitPattern count="one">{0} هنری</unitPattern>
+				<unitPattern count="other">{0} هنری</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>زیمنس</displayName>
+				<unitPattern count="one">{0} زیمنس</unitPattern>
+				<unitPattern count="other">{0} زیمنس</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>کالری [IT]</displayName>
+				<unitPattern count="one">{0} کالری [IT]</unitPattern>
+				<unitPattern count="other">{0} کالری [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>بکرل</displayName>
+				<unitPattern count="one">{0} بکرل</unitPattern>
+				<unitPattern count="other">{0} بکرل</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>سیورت</displayName>
+				<unitPattern count="one">{0} سیورت</unitPattern>
+				<unitPattern count="other">{0} سیورت</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>گری</displayName>
+				<unitPattern count="one">{0} گری</unitPattern>
+				<unitPattern count="other">{0} گری</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>کیلوگرم-نیرو</displayName>
+				<unitPattern count="one">{0} کیلوگرم-نیرو</unitPattern>
+				<unitPattern count="other">{0} کیلوگرم-نیرو</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>تسلا</displayName>
+				<unitPattern count="one">{0} تسلا</unitPattern>
+				<unitPattern count="other">{0} تسلا</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>وبر</displayName>
+				<unitPattern count="one">{0} وبر</unitPattern>
+				<unitPattern count="other">{0} وبر</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>نور</displayName>
+				<unitPattern count="one">{0} نوری</unitPattern>
+				<unitPattern count="other">{0} نوری</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0} بخش در بیلیون</unitPattern>
 				<unitPattern count="other">{0} بخش در بیلیون</unitPattern>
 			</unit>
 			<unit type="duration-night">
-				<displayName>شب</displayName>
-				<unitPattern count="one">{0} شب</unitPattern>
-				<unitPattern count="other">{0} شب</unitPattern>
 				<perUnitPattern>{0} در شب</perUnitPattern>
 			</unit>
 			<coordinateUnit>
@@ -6451,7 +6456,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} مورد</unitPattern>
 				<unitPattern count="other">{0} مورد</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>پارت</displayName>
+				<unitPattern count="one">{0} پارت</unitPattern>
+				<unitPattern count="other">{0} پارت</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>بخش/میلیون</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6469,6 +6479,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>مول</displayName>
 				<unitPattern count="one">{0} مول</unitPattern>
 				<unitPattern count="other">{0} مول</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>گلوکز</displayName>
+				<unitPattern count="one">{0} گلوکز</unitPattern>
+				<unitPattern count="other">{0} گلوکز</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لیتر/کیلومتر</displayName>
@@ -6825,6 +6840,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} لوکس</unitPattern>
 				<unitPattern count="other">{0} لوکس</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>شمع</displayName>
+				<unitPattern count="one">{0} شمع</unitPattern>
+				<unitPattern count="other">{0} شمع</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>لومن</displayName>
+				<unitPattern count="one">{0} لومن</unitPattern>
+				<unitPattern count="other">{0} لومن</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>تابندگی خورشید</displayName>
 				<unitPattern count="one">{0} ☉L</unitPattern>
@@ -6940,6 +6965,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>میلی‌متر جیوه</displayName>
 				<unitPattern count="one">{0} م‌م جیوه</unitPattern>
 				<unitPattern count="other">{0} م‌م جیوه</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>جیوه</displayName>
+				<unitPattern count="one">{0} جیوه</unitPattern>
+				<unitPattern count="other">{0} جیوه</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>پوند در اینچ مربع</displayName>
@@ -7103,6 +7133,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} پیمانهٔ متریک</unitPattern>
 				<unitPattern count="other">{0} پیمانهٔ متریک</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<unitPattern count="one">{0} fl oz m.</unitPattern>
+				<unitPattern count="other">{0} fl oz m.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>جریب فوت</displayName>
 				<unitPattern count="one">{0} جریب فوت</unitPattern>
@@ -7200,7 +7234,77 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} کوارت انگلیسی</unitPattern>
 				<unitPattern count="other">{0} کوارت انگلیسی</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="angle-steradian">
+				<displayName>استرادیان</displayName>
+				<unitPattern count="one">{0} استرادیان</unitPattern>
+				<unitPattern count="other">{0} استرادیان</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>کاتال</displayName>
+				<unitPattern count="one">{0} کاتال</unitPattern>
+				<unitPattern count="other">{0} کاتال</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>کولن</displayName>
+				<unitPattern count="one">{0} کولن</unitPattern>
+				<unitPattern count="other">{0} کولن</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>فاراد</displayName>
+				<unitPattern count="one">{0} فاراد</unitPattern>
+				<unitPattern count="other">{0} فاراد</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>هنری</displayName>
+				<unitPattern count="one">{0} هنری</unitPattern>
+				<unitPattern count="other">{0} هنری</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>زیمنس</displayName>
+				<unitPattern count="one">{0} زیمنس</unitPattern>
+				<unitPattern count="other">{0} زیمنس</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>کالری-IT</displayName>
+				<unitPattern count="one">{0} کالری-IT</unitPattern>
+				<unitPattern count="other">{0} کالری-IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>بکرل</displayName>
+				<unitPattern count="one">{0} بکرل</unitPattern>
+				<unitPattern count="other">{0} بکرل</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>سیورت</displayName>
+				<unitPattern count="one">{0} سیورت</unitPattern>
+				<unitPattern count="other">{0} سیورت</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>گری</displayName>
+				<unitPattern count="one">{0} گری</unitPattern>
+				<unitPattern count="other">{0} گری</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>کیلوگرم-نیرو</displayName>
+				<unitPattern count="one">{0} کیلوگرم-نیرو</unitPattern>
+				<unitPattern count="other">{0} کیلوگرم-نیرو</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>تسلا</displayName>
+				<unitPattern count="one">{0} تسلا</unitPattern>
+				<unitPattern count="other">{0} تسلا</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>وبر</displayName>
+				<unitPattern count="one">{0} وبر</unitPattern>
+				<unitPattern count="other">{0} وبر</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>نور</displayName>
+				<unitPattern count="one">{0} نوری</unitPattern>
+				<unitPattern count="other">{0} نوری</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>بخش در بیلیون</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7329,6 +7433,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>m/s²</displayName>
 			</unit>
+			<unit type="angle-radian">
+				<unitPattern count="one">{0}rad</unitPattern>
+				<unitPattern count="other">{0}rad</unitPattern>
+			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
@@ -7383,16 +7491,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}دونوم</unitPattern>
 				<unitPattern count="other">{0}دونوم</unitPattern>
 			</unit>
+			<unit type="concentr-karat">
+				<unitPattern count="one">{0}kt</unitPattern>
+				<unitPattern count="other">{0}kt</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<unitPattern count="one">{0}mmol/L</unitPattern>
+				<unitPattern count="other">{0}mmol/L</unitPattern>
+			</unit>
 			<unit type="concentr-item">
 				<unitPattern count="one">{0}مورد</unitPattern>
 				<unitPattern count="other">{0}مورد</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>پارت</displayName>
+				<unitPattern count="one">{0} پارت</unitPattern>
+				<unitPattern count="other">{0}پارت</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>٪</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>گلوکز</displayName>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>L/۱۰۰km</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<unitPattern count="one">{0}mpg</unitPattern>
+				<unitPattern count="other">{0}mpg</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<unitPattern count="one">{0}m/gUK</unitPattern>
@@ -7513,9 +7644,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}Btu</unitPattern>
 				<unitPattern count="other">{0}Btu</unitPattern>
 			</unit>
-			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<unitPattern count="one">{0}ک.وا.س/۱۰۰ ک.م</unitPattern>
-				<unitPattern count="other">{0} ک.وا.س/۱۰۰ ک.م</unitPattern>
+			<unit type="force-pound-force">
+				<unitPattern count="one">{0}lbf</unitPattern>
+				<unitPattern count="other">{0}lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<unitPattern count="one">{0}N</unitPattern>
+				<unitPattern count="other">{0}N</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -7660,6 +7795,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}R☉</unitPattern>
 				<unitPattern count="other">{0}R☉</unitPattern>
 			</unit>
+			<unit type="light-lux">
+				<unitPattern count="one">{0}lx</unitPattern>
+				<unitPattern count="other">{0}lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>شمع</displayName>
+				<unitPattern count="one">{0}cd</unitPattern>
+				<unitPattern count="other">{0}cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>لومن</displayName>
+				<unitPattern count="one">{0}lm</unitPattern>
+				<unitPattern count="other">{0}lm</unitPattern>
+			</unit>
 			<unit type="mass-tonne">
 				<unitPattern count="one">{0}t</unitPattern>
 				<unitPattern count="other">{0}t</unitPattern>
@@ -7751,6 +7900,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}hp</unitPattern>
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>جیوه</displayName>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0}inHg</unitPattern>
 				<unitPattern count="other">{0}inHg</unitPattern>
@@ -7770,6 +7922,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-hectopascal">
 				<unitPattern count="one">{0}hPa</unitPattern>
 				<unitPattern count="other">{0}hPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="one">{0}MPa</unitPattern>
+				<unitPattern count="other">{0}MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/hr</displayName>
@@ -7802,6 +7958,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<unitPattern count="one">{0}K</unitPattern>
 				<unitPattern count="other">{0}K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0}lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">{0}N⋅m</unitPattern>
+				<unitPattern count="other">{0}N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="one">{0}km³</unitPattern>
@@ -7871,10 +8036,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}fl oz Im</unitPattern>
 				<unitPattern count="other">{0}fl oz Im</unitPattern>
 			</unit>
-			<unit type="volume-tablespoon">
-				<unitPattern count="one">{0} ق.غ.خ</unitPattern>
-				<unitPattern count="other">{0} ق.غ.خ</unitPattern>
-			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>ق.چ.خ</displayName>
 				<unitPattern count="one">{0}ق.چ.</unitPattern>
@@ -7898,14 +8059,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
-				<displayName>بخش در بیلیون</displayName>
+			<unit type="concentr-katal">
+				<displayName>کاتال</displayName>
 			</unit>
-			<unit type="duration-night">
-				<displayName>شب</displayName>
-				<unitPattern count="one">{0} شب</unitPattern>
-				<unitPattern count="other">{0} شب</unitPattern>
-				<perUnitPattern>{0}/شب</perUnitPattern>
+			<unit type="electric-coulomb">
+				<displayName>کولن</displayName>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>هنری</displayName>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>کالری-IT</displayName>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>گری</displayName>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>تسلا</displayName>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>وبر</displayName>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>نور</displayName>
+				<unitPattern count="one">{0}نوری</unitPattern>
+				<unitPattern count="other">{0}نوری</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
+				<unitPattern count="one">{0}ppb</unitPattern>
+				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,7 +48,7 @@ public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register start, Register count, Register tmp, RegSet saved_regs) {}
+                                  Register start, Register count, Register tmp) {}
 
   virtual void copy_load_at(MacroAssembler* masm,
                             DecoratorSet decorators,
@@ -106,6 +106,11 @@ public:
   static address patching_epoch_addr();
   static void clear_patching_epoch();
   static void increment_patching_epoch();
+
+  // See AS_NO_KEEPALIVE for peek semantics
+  // weak_handle and obj may alias
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                               Register tmp, Label& slow_path);
 
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node,

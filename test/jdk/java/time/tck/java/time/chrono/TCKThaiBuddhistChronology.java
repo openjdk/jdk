@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,12 @@ import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -94,14 +95,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKThaiBuddhistChronology {
 
     private static final int YDIFF = 543;
@@ -113,10 +116,10 @@ public class TCKThaiBuddhistChronology {
     public void test_chrono_byName() {
         Chronology c = ThaiBuddhistChronology.INSTANCE;
         Chronology test = Chronology.of("ThaiBuddhist");
-        Assert.assertNotNull(test, "The ThaiBuddhist calendar could not be found byName");
-        Assert.assertEquals(test.getId(), "ThaiBuddhist", "ID mismatch");
-        Assert.assertEquals(test.getCalendarType(), "buddhist", "Type mismatch");
-        Assert.assertEquals(test, c);
+        Assertions.assertNotNull(test, "The ThaiBuddhist calendar could not be found byName");
+        assertEquals("ThaiBuddhist", test.getId(), "ID mismatch");
+        assertEquals("buddhist", test.getCalendarType(), "Type mismatch");
+        assertEquals(c, test);
     }
 
     //-----------------------------------------------------------------------
@@ -125,42 +128,41 @@ public class TCKThaiBuddhistChronology {
     @Test
     public void test_chrono_byLocale_fullTag_thaiCalendarFromThai() {
         Chronology test = Chronology.ofLocale(Locale.forLanguageTag("th-TH-u-ca-buddhist"));
-        Assert.assertEquals(test.getId(), "ThaiBuddhist");
-        Assert.assertEquals(test, ThaiBuddhistChronology.INSTANCE);
+        assertEquals("ThaiBuddhist", test.getId());
+        assertEquals(ThaiBuddhistChronology.INSTANCE, test);
     }
 
     @Test
     public void test_chrono_byLocale_fullTag_thaiCalendarFromElsewhere() {
         Chronology test = Chronology.ofLocale(Locale.forLanguageTag("en-US-u-ca-buddhist"));
-        Assert.assertEquals(test.getId(), "ThaiBuddhist");
-        Assert.assertEquals(test, ThaiBuddhistChronology.INSTANCE);
+        assertEquals("ThaiBuddhist", test.getId());
+        assertEquals(ThaiBuddhistChronology.INSTANCE, test);
     }
 
     @Test
     public void test_chrono_byLocale_oldTH_noVariant() {  // deliberately different to Calendar
         Chronology test = Chronology.ofLocale(Locale.of("th", "TH"));
-        Assert.assertEquals(test.getId(), "ISO");
-        Assert.assertEquals(test, IsoChronology.INSTANCE);
+        assertEquals("ISO", test.getId());
+        assertEquals(IsoChronology.INSTANCE, test);
     }
 
     @Test
     public void test_chrono_byLocale_oldTH_variant() {
         Chronology test = Chronology.ofLocale(Locale.of("th", "TH", "TH"));
-        Assert.assertEquals(test.getId(), "ISO");
-        Assert.assertEquals(test, IsoChronology.INSTANCE);
+        assertEquals("ISO", test.getId());
+        assertEquals(IsoChronology.INSTANCE, test);
     }
 
     @Test
     public void test_chrono_byLocale_iso() {
-        Assert.assertEquals(Chronology.ofLocale(Locale.of("th", "TH")).getId(), "ISO");
-        Assert.assertEquals(Chronology.ofLocale(Locale.forLanguageTag("th-TH")).getId(), "ISO");
-        Assert.assertEquals(Chronology.ofLocale(Locale.forLanguageTag("th-TH-TH")).getId(), "ISO");
+        assertEquals("ISO", Chronology.ofLocale(Locale.of("th", "TH")).getId());
+        assertEquals("ISO", Chronology.ofLocale(Locale.forLanguageTag("th-TH")).getId());
+        assertEquals("ISO", Chronology.ofLocale(Locale.forLanguageTag("th-TH-TH")).getId());
     }
 
     //-----------------------------------------------------------------------
     // creation, toLocalDate()
     //-----------------------------------------------------------------------
-    @DataProvider(name="samples")
     Object[][] data_samples() {
         return new Object[][] {
             {ThaiBuddhistChronology.INSTANCE.date(1 + YDIFF, 1, 1), LocalDate.of(1, 1, 1)},
@@ -195,49 +197,52 @@ public class TCKThaiBuddhistChronology {
         };
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_toLocalDate(ThaiBuddhistDate jdate, LocalDate iso) {
-        assertEquals(LocalDate.from(jdate), iso);
+        assertEquals(iso, LocalDate.from(jdate));
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_fromCalendrical(ThaiBuddhistDate jdate, LocalDate iso) {
-        assertEquals(ThaiBuddhistChronology.INSTANCE.date(iso), jdate);
-        assertEquals(ThaiBuddhistDate.from(iso), jdate);
+        assertEquals(jdate, ThaiBuddhistChronology.INSTANCE.date(iso));
+        assertEquals(jdate, ThaiBuddhistDate.from(iso));
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_isEqual(ThaiBuddhistDate jdate, LocalDate iso) {
         assertTrue(jdate.isEqual(iso));
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_date_equals(ThaiBuddhistDate jdate, LocalDate iso) {
         assertFalse(jdate.equals(iso));
-        assertNotEquals(jdate.hashCode(), iso.hashCode());
+        assertNotEquals(iso.hashCode(), jdate.hashCode());
     }
 
     @Test
     public void test_dateNow(){
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistDate.now()) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistDate.now(ZoneId.systemDefault())) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistDate.now(Clock.systemDefaultZone())) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistDate.now(Clock.systemDefaultZone().getZone())) ;
+        assertEquals(ThaiBuddhistDate.now(), ThaiBuddhistChronology.INSTANCE.dateNow()) ;
+        assertEquals(ThaiBuddhistDate.now(ZoneId.systemDefault()), ThaiBuddhistChronology.INSTANCE.dateNow()) ;
+        assertEquals(ThaiBuddhistDate.now(Clock.systemDefaultZone()), ThaiBuddhistChronology.INSTANCE.dateNow()) ;
+        assertEquals(ThaiBuddhistDate.now(Clock.systemDefaultZone().getZone()), ThaiBuddhistChronology.INSTANCE.dateNow()) ;
 
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistChronology.INSTANCE.dateNow(ZoneId.systemDefault())) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemDefaultZone())) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone())) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(ZoneId.systemDefault()), ThaiBuddhistChronology.INSTANCE.dateNow()) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemDefaultZone()), ThaiBuddhistChronology.INSTANCE.dateNow()) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone()), ThaiBuddhistChronology.INSTANCE.dateNow()) ;
 
         ZoneId zoneId = ZoneId.of("Europe/Paris");
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(zoneId), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.system(zoneId))) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(zoneId), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone())) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(zoneId), ThaiBuddhistDate.now(Clock.system(zoneId))) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(zoneId), ThaiBuddhistDate.now(Clock.system(zoneId).getZone())) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(Clock.system(zoneId)), ThaiBuddhistChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone()), ThaiBuddhistChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(ThaiBuddhistDate.now(Clock.system(zoneId)), ThaiBuddhistChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(ThaiBuddhistDate.now(Clock.system(zoneId).getZone()), ThaiBuddhistChronology.INSTANCE.dateNow(zoneId)) ;
 
-        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId())), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemUTC())) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemUTC()), ThaiBuddhistChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId()))) ;
     }
 
-    @DataProvider(name="badDates")
     Object[][] data_badDates() {
         return new Object[][] {
             {1728, 0, 0},
@@ -261,15 +266,15 @@ public class TCKThaiBuddhistChronology {
         };
     }
 
-    @Test(dataProvider="badDates", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        ThaiBuddhistChronology.INSTANCE.date(year, month, dom);
+        Assertions.assertThrows(DateTimeException.class, () -> ThaiBuddhistChronology.INSTANCE.date(year, month, dom));
     }
 
     //-----------------------------------------------------------------------
     // prolepticYear() and is LeapYear()
     //-----------------------------------------------------------------------
-    @DataProvider(name="prolepticYear")
     Object[][] data_prolepticYear() {
         return new Object[][] {
             {1, ThaiBuddhistEra.BE, 4 + YDIFF, 4 + YDIFF, true},
@@ -297,25 +302,27 @@ public class TCKThaiBuddhistChronology {
         };
     }
 
-    @Test(dataProvider="prolepticYear")
+    @ParameterizedTest
+    @MethodSource("data_prolepticYear")
     public void test_prolepticYear(int eraValue, Era  era, int yearOfEra, int expectedProlepticYear, boolean isLeapYear) {
         Era eraObj = ThaiBuddhistChronology.INSTANCE.eraOf(eraValue);
         assertTrue(ThaiBuddhistChronology.INSTANCE.eras().contains(eraObj));
-        assertEquals(eraObj, era);
-        assertEquals(ThaiBuddhistChronology.INSTANCE.prolepticYear(era, yearOfEra), expectedProlepticYear);
+        assertEquals(era, eraObj);
+        assertEquals(expectedProlepticYear, ThaiBuddhistChronology.INSTANCE.prolepticYear(era, yearOfEra));
     }
 
-    @Test(dataProvider="prolepticYear")
+    @ParameterizedTest
+    @MethodSource("data_prolepticYear")
     public void test_isLeapYear(int eraValue, Era  era, int yearOfEra, int expectedProlepticYear, boolean isLeapYear) {
-        assertEquals(ThaiBuddhistChronology.INSTANCE.isLeapYear(expectedProlepticYear), isLeapYear) ;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.isLeapYear(expectedProlepticYear), Year.of(expectedProlepticYear - YDIFF).isLeap());
+        assertEquals(isLeapYear, ThaiBuddhistChronology.INSTANCE.isLeapYear(expectedProlepticYear)) ;
+        assertEquals(Year.of(expectedProlepticYear - YDIFF).isLeap(), ThaiBuddhistChronology.INSTANCE.isLeapYear(expectedProlepticYear));
 
         ThaiBuddhistDate jdate = ThaiBuddhistDate.now();
         jdate = jdate.with(ChronoField.YEAR, expectedProlepticYear).with(ChronoField.MONTH_OF_YEAR, 2);
         if (isLeapYear) {
-            assertEquals(jdate.lengthOfMonth(), 29);
+            assertEquals(29, jdate.lengthOfMonth());
         } else {
-            assertEquals(jdate.lengthOfMonth(), 28);
+            assertEquals(28, jdate.lengthOfMonth());
         }
     }
 
@@ -365,14 +372,14 @@ public class TCKThaiBuddhistChronology {
     public void test_adjust1() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(1728, 10, 29);
         ThaiBuddhistDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(1728, 10, 31));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.date(1728, 10, 31), test);
     }
 
     @Test
     public void test_adjust2() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(1728, 12, 2);
         ThaiBuddhistDate test = base.with(TemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(1728, 12, 31));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.date(1728, 12, 31), test);
     }
 
     //-----------------------------------------------------------------------
@@ -382,14 +389,14 @@ public class TCKThaiBuddhistChronology {
     public void test_withYear_BE() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29);
         ThaiBuddhistDate test = base.with(YEAR, 2554);
-        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(2554, 8, 29));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.date(2554, 8, 29), test);
     }
 
     @Test
     public void test_withYear_BBE() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
         ThaiBuddhistDate test = base.with(YEAR_OF_ERA, 2554);
-        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(-2553, 8, 29));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.date(-2553, 8, 29), test);
     }
 
     //-----------------------------------------------------------------------
@@ -399,21 +406,21 @@ public class TCKThaiBuddhistChronology {
     public void test_withEra_BE() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29);
         ThaiBuddhistDate test = base.with(ChronoField.ERA, ThaiBuddhistEra.BE.getValue());
-        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29), test);
     }
 
     @Test
     public void test_withEra_BBE() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
         ThaiBuddhistDate test = base.with(ChronoField.ERA, ThaiBuddhistEra.BEFORE_BE.getValue());
-        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29), test);
     }
 
     @Test
     public void test_withEra_swap() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
         ThaiBuddhistDate test = base.with(ChronoField.ERA, ThaiBuddhistEra.BE.getValue());
-        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29), test);
     }
 
     //-----------------------------------------------------------------------
@@ -423,13 +430,15 @@ public class TCKThaiBuddhistChronology {
     public void test_adjust_toLocalDate() {
         ThaiBuddhistDate jdate = ThaiBuddhistChronology.INSTANCE.date(1726, 1, 4);
         ThaiBuddhistDate test = jdate.with(LocalDate.of(2012, 7, 6));
-        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(2555, 7, 6));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.date(2555, 7, 6), test);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_adjust_toMonth() {
-        ThaiBuddhistDate jdate = ThaiBuddhistChronology.INSTANCE.date(1726, 1, 4);
-        jdate.with(Month.APRIL);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            ThaiBuddhistDate jdate = ThaiBuddhistChronology.INSTANCE.date(1726, 1, 4);
+            jdate.with(Month.APRIL);
+        });
     }
 
     //-----------------------------------------------------------------------
@@ -439,14 +448,14 @@ public class TCKThaiBuddhistChronology {
     public void test_LocalDate_adjustToBuddhistDate() {
         ThaiBuddhistDate jdate = ThaiBuddhistChronology.INSTANCE.date(2555, 10, 29);
         LocalDate test = LocalDate.MIN.with(jdate);
-        assertEquals(test, LocalDate.of(2012, 10, 29));
+        assertEquals(LocalDate.of(2012, 10, 29), test);
     }
 
     @Test
     public void test_LocalDateTime_adjustToBuddhistDate() {
         ThaiBuddhistDate jdate = ThaiBuddhistChronology.INSTANCE.date(2555, 10, 29);
         LocalDateTime test = LocalDateTime.MIN.with(jdate);
-        assertEquals(test, LocalDateTime.of(2012, 10, 29, 0, 0));
+        assertEquals(LocalDateTime.of(2012, 10, 29, 0, 0), test);
     }
 
     //-----------------------------------------------------------------------
@@ -457,7 +466,7 @@ public class TCKThaiBuddhistChronology {
         ThaiBuddhistDate mdate1 = ThaiBuddhistDate.of(1, 1, 1);
         ThaiBuddhistDate mdate2 = ThaiBuddhistDate.of(2, 2, 2);
         ChronoPeriod period = mdate1.until(mdate2);
-        assertEquals(period, ThaiBuddhistChronology.INSTANCE.period(1, 1, 1));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.period(1, 1, 1), period);
     }
 
     @Test
@@ -465,7 +474,7 @@ public class TCKThaiBuddhistChronology {
         ThaiBuddhistDate mdate1 = ThaiBuddhistDate.of(1, 1, 1);
         ThaiBuddhistDate mdate2 = ThaiBuddhistDate.of(2, 2, 2);
         long months = mdate1.until(mdate2, ChronoUnit.MONTHS);
-        assertEquals(months, 13);
+        assertEquals(13, months);
     }
 
     @Test
@@ -474,13 +483,12 @@ public class TCKThaiBuddhistChronology {
         ThaiBuddhistDate mdate2 = ThaiBuddhistDate.of(2, 2, 2);
         MinguoDate ldate2 = MinguoChronology.INSTANCE.date(mdate2);
         ChronoPeriod period = mdate1.until(ldate2);
-        assertEquals(period, ThaiBuddhistChronology.INSTANCE.period(1, 1, 1));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.period(1, 1, 1), period);
     }
 
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name="toString")
     Object[][] data_toString() {
         return new Object[][] {
             {ThaiBuddhistChronology.INSTANCE.date(544, 1, 1), "ThaiBuddhist BE 544-01-01"},
@@ -491,9 +499,10 @@ public class TCKThaiBuddhistChronology {
         };
     }
 
-    @Test(dataProvider="toString")
+    @ParameterizedTest
+    @MethodSource("data_toString")
     public void test_toString(ThaiBuddhistDate jdate, String expected) {
-        assertEquals(jdate.toString(), expected);
+        assertEquals(expected, jdate.toString());
     }
 
     //-----------------------------------------------------------------------
@@ -503,12 +512,12 @@ public class TCKThaiBuddhistChronology {
     public void test_Chrono_range() {
         long minYear = LocalDate.MIN.getYear() + YDIFF;
         long maxYear = LocalDate.MAX.getYear() + YDIFF;
-        assertEquals(ThaiBuddhistChronology.INSTANCE.range(YEAR), ValueRange.of(minYear, maxYear));
-        assertEquals(ThaiBuddhistChronology.INSTANCE.range(YEAR_OF_ERA), ValueRange.of(1, -minYear + 1, maxYear));
+        assertEquals(ValueRange.of(minYear, maxYear), ThaiBuddhistChronology.INSTANCE.range(YEAR));
+        assertEquals(ValueRange.of(1, -minYear + 1, maxYear), ThaiBuddhistChronology.INSTANCE.range(YEAR_OF_ERA));
 
-        assertEquals(ThaiBuddhistChronology.INSTANCE.range(DAY_OF_MONTH), DAY_OF_MONTH.range());
-        assertEquals(ThaiBuddhistChronology.INSTANCE.range(DAY_OF_YEAR), DAY_OF_YEAR.range());
-        assertEquals(ThaiBuddhistChronology.INSTANCE.range(MONTH_OF_YEAR), MONTH_OF_YEAR.range());
+        assertEquals(DAY_OF_MONTH.range(), ThaiBuddhistChronology.INSTANCE.range(DAY_OF_MONTH));
+        assertEquals(DAY_OF_YEAR.range(), ThaiBuddhistChronology.INSTANCE.range(DAY_OF_YEAR));
+        assertEquals(MONTH_OF_YEAR.range(), ThaiBuddhistChronology.INSTANCE.range(MONTH_OF_YEAR));
     }
 
     //-----------------------------------------------------------------------
@@ -526,7 +535,6 @@ public class TCKThaiBuddhistChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_yearOfEra")
     Object[][] data_resolve_yearOfEra() {
         return new Object[][] {
                 // era only
@@ -591,7 +599,8 @@ public class TCKThaiBuddhistChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_yearOfEra")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yearOfEra")
     public void test_resolve_yearOfEra(ResolverStyle style, Integer e, Integer yoe, Integer y, ChronoField field, Integer expected) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         if (e != null) {
@@ -605,9 +614,9 @@ public class TCKThaiBuddhistChronology {
         }
         if (field != null) {
             ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, style);
-            assertEquals(date, null);
-            assertEquals(fieldValues.get(field), (Long) expected.longValue());
-            assertEquals(fieldValues.size(), 1);
+            assertEquals(null, date);
+            assertEquals((Long) expected.longValue(), fieldValues.get(field));
+            assertEquals(1, fieldValues.size());
         } else {
             try {
                 ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, style);
@@ -620,7 +629,6 @@ public class TCKThaiBuddhistChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_ymd")
     Object[][] data_resolve_ymd() {
         return new Object[][] {
                 {YDIFF + 2012, 1, -365, date(YDIFF + 2010, 12, 31), false, false},
@@ -679,18 +687,20 @@ public class TCKThaiBuddhistChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_lenient(int y, int m, int d, ThaiBuddhistDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_smart(int y, int m, int d, ThaiBuddhistDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -698,11 +708,11 @@ public class TCKThaiBuddhistChronology {
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         if (Boolean.TRUE.equals(smart)) {
             ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else if (smart instanceof ThaiBuddhistDate) {
             ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, smart);
+            assertEquals(smart, date);
         } else {
             try {
                 ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -713,7 +723,8 @@ public class TCKThaiBuddhistChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_strict(int y, int m, int d, ThaiBuddhistDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -721,8 +732,8 @@ public class TCKThaiBuddhistChronology {
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         if (strict) {
             ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
@@ -735,7 +746,6 @@ public class TCKThaiBuddhistChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_yd")
     Object[][] data_resolve_yd() {
         return new Object[][] {
                 {YDIFF + 2012, -365, date(YDIFF + 2010, 12, 31), false, false},
@@ -763,25 +773,27 @@ public class TCKThaiBuddhistChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_lenient(int y, int d, ThaiBuddhistDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_smart(int y, int d, ThaiBuddhistDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         if (smart) {
             ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -792,15 +804,16 @@ public class TCKThaiBuddhistChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_strict(int y, int d, ThaiBuddhistDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         if (strict) {
             ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
@@ -813,7 +826,6 @@ public class TCKThaiBuddhistChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_ymaa")
     Object[][] data_resolve_ymaa() {
         return new Object[][] {
                 {YDIFF + 2012, 1, 1, -365, date(YDIFF + 2010, 12, 31), false, false},
@@ -870,7 +882,8 @@ public class TCKThaiBuddhistChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_lenient(int y, int m, int w, int d, ThaiBuddhistDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -878,11 +891,12 @@ public class TCKThaiBuddhistChronology {
         fieldValues.put(ChronoField.ALIGNED_WEEK_OF_MONTH, (long) w);
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_smart(int y, int m, int w, int d, ThaiBuddhistDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -891,8 +905,8 @@ public class TCKThaiBuddhistChronology {
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         if (smart) {
             ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -903,7 +917,8 @@ public class TCKThaiBuddhistChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_strict(int y, int m, int w, int d, ThaiBuddhistDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -912,8 +927,8 @@ public class TCKThaiBuddhistChronology {
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         if (strict) {
             ThaiBuddhistDate date = ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 ThaiBuddhistChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);

@@ -26,7 +26,7 @@
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
- *          4802647 7123424 8024709 8193128 8327858
+ *          4802647 7123424 8024709 8193128 8327858 8368178 8371164
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @modules java.base/java.util:open
@@ -143,6 +143,7 @@ public class MOAT {
         testImmutableSet(AccessFlag.maskToAccessFlags(Modifier.PUBLIC | Modifier.STATIC | Modifier.SYNCHRONIZED, AccessFlag.Location.METHOD), AccessFlag.ABSTRACT);
         testImmutableList(unmodifiableList(Arrays.asList(1,2,3)));
         testImmutableMap(unmodifiableMap(Collections.singletonMap(1,2)));
+        testImmutableMap(unmodifiableMap(new HashMap<>(Map.of(1, 101, 2, 202, 3, 303))));
         testImmutableSeqColl(unmodifiableSequencedCollection(Arrays.asList(1,2,3)), 99);
         testImmutableSeqColl(unmodifiableSequencedSet(new LinkedHashSet<>(Arrays.asList(1,2,3))), 99);
         var lhm = new LinkedHashMap<Integer,Integer>(); lhm.put(1,2); lhm.put(3, 4);
@@ -156,6 +157,8 @@ public class MOAT {
         testMapMutatorsAlwaysThrow(unmodifiableMap(Collections.singletonMap(1,2)));
         testMapMutatorsAlwaysThrow(unmodifiableMap(Collections.emptyMap()));
         testEmptyMapMutatorsAlwaysThrow(unmodifiableMap(Collections.emptyMap()));
+
+        testHashMapPutAll();
 
         // Empty collections
         final List<Integer> emptyArray = Arrays.asList(new Integer[]{});
@@ -220,15 +223,15 @@ public class MOAT {
         // Immutable List
         testEmptyList(List.of());
         testEmptyList(List.of().subList(0,0));
-        testEmptyList(StableValue.list(0, i -> i));
-        testEmptyList(StableValue.list(3, i -> i).subList(0, 0));
+        testEmptyList(List.ofLazy(0, i -> i));
+        testEmptyList(List.ofLazy(3, i -> i).subList(0, 0));
         testListMutatorsAlwaysThrow(List.of());
         testListMutatorsAlwaysThrow(List.<Integer>of().subList(0,0));
-        testListMutatorsAlwaysThrow(StableValue.list(0, i -> i));
+        testListMutatorsAlwaysThrow(List.ofLazy(0, i -> i));
         testEmptyListMutatorsAlwaysThrow(List.of());
         testEmptyListMutatorsAlwaysThrow(List.<Integer>of().subList(0,0));
-        testEmptyListMutatorsAlwaysThrow(StableValue.list(0, i -> i));
-        testEmptyListMutatorsAlwaysThrow(StableValue.list(3, i -> i).subList(0, 0));
+        testEmptyListMutatorsAlwaysThrow(List.ofLazy(0, i -> i));
+        testEmptyListMutatorsAlwaysThrow(List.ofLazy(3, i -> i).subList(0, 0));
         for (List<Integer> list : Arrays.asList(
                 List.<Integer>of(),
                 List.of(1),
@@ -251,9 +254,9 @@ public class MOAT {
                 Stream.of(1, null).toList(),
                 Stream.of(1, null, 3).toList(),
                 Stream.of(1, null, 3, 4).toList(),
-                StableValue.list(0, i -> i),
-                StableValue.list(3, i -> i),
-                StableValue.list(10, i -> i))) {
+                List.ofLazy(0, i -> i),
+                List.ofLazy(3, i -> i),
+                List.ofLazy(10, i -> i))) {
             testCollection(list);
             testImmutableList(list);
             testListMutatorsAlwaysThrow(list);
@@ -365,9 +368,9 @@ public class MOAT {
         testEmptyMap(Map.of());
         testMapMutatorsAlwaysThrow(Map.of());
         testEmptyMapMutatorsAlwaysThrow(Map.of());
-        testEmptyMap(StableValue.map(Set.of(), k -> k));
-        testMapMutatorsAlwaysThrow(StableValue.map(Set.of(), k -> k));
-        testEmptyMapMutatorsAlwaysThrow(StableValue.map(Set.of(), k -> k));
+        testEmptyMap(Map.ofLazy(Set.of(), k -> k));
+        testMapMutatorsAlwaysThrow(Map.ofLazy(Set.of(), k -> k));
+        testEmptyMapMutatorsAlwaysThrow(Map.ofLazy(Set.of(), k -> k));
         for (Map<Integer,Integer> map : Arrays.asList(
                 Map.<Integer,Integer>of(),
                 Map.of(1, 101),
@@ -381,9 +384,9 @@ public class MOAT {
                 Map.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707, 8, 808, 9, 909),
                 Map.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707, 8, 808, 9, 909, 10, 1010),
                 Map.ofEntries(ea),
-                StableValue.map(Set.<Integer>of(), k -> k),
-                StableValue.map(Set.of(1), k -> k),
-                StableValue.map(Set.of(1, 2, 3), k -> k))) {
+                Map.ofLazy(Set.<Integer>of(), k -> k),
+                Map.ofLazy(Set.of(1), k -> k),
+                Map.ofLazy(Set.of(1, 2, 3), k -> k))) {
             testMap(map);
             testImmutableMap(map);
             testMapMutatorsAlwaysThrow(map);
@@ -417,6 +420,30 @@ public class MOAT {
         testMap(mapCollected2);
         testImmutableMap(mapCollected2);
         testMapMutatorsAlwaysThrow(mapCollected2);
+    }
+
+    // Test HashMap.putAll() optimization paths
+    private static void testHashMapPutAll() {
+        Map<Integer,Integer> testData = Map.of(1, 101, 2, 202, 3, 303);
+        HashMap<Integer,Integer> target = new HashMap<>();
+
+        target.putAll(new HashMap<>(testData));
+        check(target.equals(testData));
+
+        target.clear();
+
+        target.putAll(new TreeMap<>(testData));
+        check(target.equals(testData));
+
+        target.clear();
+
+        target.putAll(unmodifiableMap(new HashMap<>(testData)));
+        check(target.equals(testData));
+
+        target.clear();
+
+        target.putAll(unmodifiableMap(new TreeMap<>(testData)));
+        check(target.equals(testData));
     }
 
     private static void checkContainsSelf(Collection<Integer> c) {
@@ -472,8 +499,10 @@ public class MOAT {
 
     private static void testEmptyList(List<?> c) {
         testEmptyCollection(c);
+        THROWS(NoSuchElementException.class, c::getFirst, c::getLast);
         equal(c.hashCode(), 1);
         equal2(c, Collections.<Integer>emptyList());
+        equal2(c, c.reversed());
     }
 
     private static <T> void testEmptySet(Set<T> c) {
@@ -885,6 +914,28 @@ public class MOAT {
         catch (Throwable t) { unexpected(t); }
     }
 
+    private static void testAddAll(Collection<Integer> c) {
+        clear(c);
+
+        // Test ArrayList source
+        ArrayList<Integer> arrayListSource = new ArrayList<>();
+        arrayListSource.add(42);
+        arrayListSource.add(99);
+        check(c.addAll(arrayListSource));
+        equal(c.size(), arrayListSource.size());
+        check(c.containsAll(arrayListSource));
+
+        clear(c);
+
+        // Test non-ArrayList source
+        LinkedList<Integer> linkedListSource = new LinkedList<>();
+        linkedListSource.add(77);
+        linkedListSource.add(88);
+        check(c.addAll(linkedListSource));
+        equal(c.size(), linkedListSource.size());
+        check(c.containsAll(linkedListSource));
+    }
+
     private static void testConcurrentCollection(Collection<Integer> c) {
         try {
             c.add(1);
@@ -1232,6 +1283,10 @@ public class MOAT {
         var t = new ArrayList<>(l);
         check(t.equals(l));
         check(l.equals(t));
+        if (!l.isEmpty()) {
+            equal(l.getFirst(), l.get(0));
+            equal(l.getLast(), l.get(l.size() - 1));
+        }
     }
 
     private static void testCollection(Collection<Integer> c) {
@@ -1287,6 +1342,8 @@ public class MOAT {
 
         clear(c);      testStringElement(c);
         oneElement(c); testStringElement(c);
+
+        testAddAll(c);
 
         if (c.getClass().getName().matches(".*concurrent.*"))
             testConcurrentCollection(c);
@@ -1417,6 +1474,13 @@ public class MOAT {
                 check(m.size() == 2);
                 checkFunctionalInvariants(m);
                 checkNPEConsistency(m);
+
+                // Test putAll with HashMap source and target
+                int oldSize = m.size();
+                Map<Integer,Integer> source = Map.of(10, 1000, 11, 1001, 12, 1002);
+                m.putAll(source);
+                check(m.entrySet().containsAll(source.entrySet()));
+                check(m.size() == oldSize + source.size());
             }
             catch (Throwable t) { unexpected(t); }
         }

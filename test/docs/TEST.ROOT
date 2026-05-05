@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,8 @@
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=8.1+1
+requiredVersion=8.2.1+1
 
-# Use new module options
-useNewOptions=true
-
-# Use --patch-module instead of -Xmodule:
-useNewPatchModule=true
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

@@ -26,6 +26,8 @@
 #ifndef CPU_ZERO_BYTECODEINTERPRETER_ZERO_INLINE_HPP
 #define CPU_ZERO_BYTECODEINTERPRETER_ZERO_INLINE_HPP
 
+#include "sanitizers/ub.hpp"
+
 // Inline interpreter functions for zero
 
 inline jfloat BytecodeInterpreter::VMfloatAdd(jfloat op1, jfloat op2) {
@@ -40,6 +42,7 @@ inline jfloat BytecodeInterpreter::VMfloatMul(jfloat op1, jfloat op2) {
   return op1 * op2;
 }
 
+ATTRIBUTE_NO_UBSAN // IEEE-754 division by zero is well-defined
 inline jfloat BytecodeInterpreter::VMfloatDiv(jfloat op1, jfloat op2) {
   return op1 / op2;
 }
@@ -68,7 +71,7 @@ inline void BytecodeInterpreter::VMmemCopy64(uint32_t       to[2],
 }
 
 inline jlong BytecodeInterpreter::VMlongAdd(jlong op1, jlong op2) {
-  return op1 + op2;
+  return java_add(op1, op2);
 }
 
 inline jlong BytecodeInterpreter::VMlongAnd(jlong op1, jlong op2) {
@@ -82,7 +85,7 @@ inline jlong BytecodeInterpreter::VMlongDiv(jlong op1, jlong op2) {
 }
 
 inline jlong BytecodeInterpreter::VMlongMul(jlong op1, jlong op2) {
-  return op1 * op2;
+  return java_multiply(op1, op2);
 }
 
 inline jlong BytecodeInterpreter::VMlongOr(jlong op1, jlong op2) {
@@ -90,7 +93,7 @@ inline jlong BytecodeInterpreter::VMlongOr(jlong op1, jlong op2) {
 }
 
 inline jlong BytecodeInterpreter::VMlongSub(jlong op1, jlong op2) {
-  return op1 - op2;
+  return java_subtract(op1, op2);
 }
 
 inline jlong BytecodeInterpreter::VMlongXor(jlong op1, jlong op2) {
@@ -104,19 +107,19 @@ inline jlong BytecodeInterpreter::VMlongRem(jlong op1, jlong op2) {
 }
 
 inline jlong BytecodeInterpreter::VMlongUshr(jlong op1, jint op2) {
-  return ((unsigned long long) op1) >> (op2 & 0x3F);
+  return java_shift_right_unsigned(op1, op2);
 }
 
 inline jlong BytecodeInterpreter::VMlongShr(jlong op1, jint op2) {
-  return op1 >> (op2 & 0x3F);
+  return java_shift_right(op1, op2);
 }
 
 inline jlong BytecodeInterpreter::VMlongShl(jlong op1, jint op2) {
-  return op1 << (op2 & 0x3F);
+  return java_shift_left(op1, op2);
 }
 
 inline jlong BytecodeInterpreter::VMlongNeg(jlong op) {
-  return -op;
+  return java_negate(op);
 }
 
 inline jlong BytecodeInterpreter::VMlongNot(jlong op) {
@@ -183,8 +186,8 @@ inline jdouble BytecodeInterpreter::VMdoubleAdd(jdouble op1, jdouble op2) {
   return op1 + op2;
 }
 
+ATTRIBUTE_NO_UBSAN // IEEE-754 division by zero is well-defined
 inline jdouble BytecodeInterpreter::VMdoubleDiv(jdouble op1, jdouble op2) {
-  // Divide by zero... QQQ
   return op1 / op2;
 }
 
@@ -228,7 +231,7 @@ inline jdouble BytecodeInterpreter::VMfloat2Double(jfloat op) {
 // Integer Arithmetic
 
 inline jint BytecodeInterpreter::VMintAdd(jint op1, jint op2) {
-  return op1 + op2;
+  return java_add(op1, op2);
 }
 
 inline jint BytecodeInterpreter::VMintAnd(jint op1, jint op2) {
@@ -242,11 +245,11 @@ inline jint BytecodeInterpreter::VMintDiv(jint op1, jint op2) {
 }
 
 inline jint BytecodeInterpreter::VMintMul(jint op1, jint op2) {
-  return op1 * op2;
+  return java_multiply(op1, op2);
 }
 
 inline jint BytecodeInterpreter::VMintNeg(jint op) {
-  return -op;
+  return java_negate(op);
 }
 
 inline jint BytecodeInterpreter::VMintOr(jint op1, jint op2) {
@@ -260,19 +263,19 @@ inline jint BytecodeInterpreter::VMintRem(jint op1, jint op2) {
 }
 
 inline jint BytecodeInterpreter::VMintShl(jint op1, jint op2) {
-  return op1 << (op2 & 0x1F);
+  return java_shift_left(op1, op2);
 }
 
 inline jint BytecodeInterpreter::VMintShr(jint op1, jint op2) {
-  return op1 >> (op2 & 0x1F);
+  return java_shift_right(op1, op2);
 }
 
 inline jint BytecodeInterpreter::VMintSub(jint op1, jint op2) {
-  return op1 - op2;
+  return java_subtract(op1, op2);
 }
 
 inline juint BytecodeInterpreter::VMintUshr(jint op1, jint op2) {
-  return ((juint) op1) >> (op2 & 0x1F);
+  return java_shift_right_unsigned(op1, op2);
 }
 
 inline jint BytecodeInterpreter::VMintXor(jint op1, jint op2) {

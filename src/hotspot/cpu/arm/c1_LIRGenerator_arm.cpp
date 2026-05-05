@@ -924,7 +924,7 @@ void LIRGenerator::do_Convert(Convert* x) {
       LIRItem value(x->value(), this);
       value.load_item();
       LIR_Opr reg = rlock_result(x);
-      __ convert(x->op(), value.result(), reg, nullptr);
+      __ convert(x->op(), value.result(), reg);
       return;
     }
   }
@@ -1332,7 +1332,8 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
       load_addr = address;
     }
     __ volatile_load_mem_reg(load_addr, result, info);
-    return;
+  } else {
+    __ load(address, result, info, lir_patch_none);
   }
-  __ load(address, result, info, lir_patch_none);
+  __ membar_acquire();
 }

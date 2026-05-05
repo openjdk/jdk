@@ -94,6 +94,15 @@ public:
     virtual void execute(DCmdSource source, TRAPS);
 };
 
+class PrintSecurityPropertiesDCmd : public DCmd {
+public:
+  PrintSecurityPropertiesDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() { return "VM.security_properties"; }
+  static const char* description() { return "Print java.security.Security properties."; }
+  static const char* impact() { return "Low"; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 // See also: print_flag in attachListener.cpp
 class PrintVMFlagsDCmd : public DCmdWithParser {
 protected:
@@ -324,6 +333,21 @@ public:
   }
   virtual void execute(DCmdSource source, TRAPS);
 };
+
+#if INCLUDE_CDS
+class AOTEndRecordingDCmd : public DCmd {
+public:
+  AOTEndRecordingDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+    static const char* name() { return "AOT.end_recording"; }
+    static const char* description() {
+      return "End AOT recording.";
+    }
+    static const char* impact() {
+      return "Medium: Pause time depends on number of loaded classes";
+    }
+    virtual void execute(DCmdSource source, TRAPS);
+};
+#endif // INCLUDE_CDS
 
 #if INCLUDE_CDS
 class DumpSharedArchiveDCmd: public DCmdWithParser {

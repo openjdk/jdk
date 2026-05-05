@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, Red Hat, Inc.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * @library /test/lib
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -40,6 +42,8 @@
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -53,6 +57,8 @@
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -66,6 +72,8 @@
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -142,7 +150,11 @@ public class AccessZeroNKlassHitsProtectionZone {
             for (forceBase = start; forceBase < end; forceBase += step) {
                 String thisBaseString = String.format("0x%016X", forceBase).toLowerCase();
                 output = run_test(COH, CDS, thisBaseString);
-                if (output.contains("CompressedClassSpaceBaseAddress=" + thisBaseString + " given, but reserving class space failed.")) {
+                if (output.contains("CompressedClassSpaceBaseAddress=" + thisBaseString + " given, but reserving class space failed.") ||
+                    output.matches ("CompressedClassSpaceBaseAddress=" + thisBaseString + " given with shift .*, cannot be used to encode class pointers")) {
+                    // possible output:
+                    //     CompressedClassSpaceBaseAddress=0x0000000c00000000 given, but reserving class space failed.
+                    //     CompressedClassSpaceBaseAddress=0x0000000d00000000 given with shift 6, cannot be used to encode class pointers
                     // try next one
                 } else if (output.contains("Successfully forced class space address to " + thisBaseString)) {
                     break;

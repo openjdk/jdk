@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,18 +63,16 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit H2GoAwayTest
+ * @run junit ${test.main.class}
  */
 public class H2GoAwayTest {
     private static final String REQ_PATH = "/test";
     private static HttpTestServer server;
     private static String REQ_URI_BASE;
-    private static SSLContext sslCtx;
+    private static final SSLContext sslCtx = SimpleSSLContext.findSSLContext();
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        sslCtx = new SimpleSSLContext().get();
-        assertNotNull(sslCtx, "SSLContext couldn't be created");
         server = HttpTestServer.create(HTTP_2, sslCtx);
         server.addHandler(new Handler(), REQ_PATH);
         server.start();
@@ -250,11 +248,15 @@ public class H2GoAwayTest {
                         } catch (ExecutionException ee) {
                             final Throwable cause = ee.getCause();
                             if (!(cause instanceof IOException ioe)) {
+                                System.err.println("unexpected exception: " + cause
+                                        + ", for request " + REQ_URI_BASE + reqQueryPart);
                                 throw cause;
                             }
                             // verify it failed for the right reason
                             if (ioe.getMessage() == null
                                     || !ioe.getMessage().contains("request not processed by peer")) {
+                                System.err.println("unexpected exception message: " + ioe.getMessage()
+                                        + ", for request " + REQ_URI_BASE + reqQueryPart);
                                 // propagate the original failure
                                 throw ioe;
                             }

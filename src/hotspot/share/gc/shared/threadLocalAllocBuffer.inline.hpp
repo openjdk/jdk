@@ -54,8 +54,7 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
   // Compute the size for the new TLAB.
   // The "last" tlab may be smaller to reduce fragmentation.
-  // unsafe_max_tlab_alloc is just a hint.
-  const size_t available_size = Universe::heap()->unsafe_max_tlab_alloc(thread()) / HeapWordSize;
+  const size_t available_size = Universe::heap()->unsafe_max_tlab_alloc() / HeapWordSize;
   size_t new_tlab_size = MIN3(available_size, desired_size() + align_object_size(obj_size), max_size());
 
   // Make sure there's enough room for object and filler int[].
@@ -83,7 +82,7 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
 
   set_refill_waste_limit(refill_waste_limit() + refill_waste_limit_increment());
 
-  _slow_allocations++;
+  _num_slow_allocations++;
 
   log_develop_trace(gc, tlab)("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
                               " obj: %zu"

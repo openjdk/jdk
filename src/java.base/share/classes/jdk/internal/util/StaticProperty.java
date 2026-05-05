@@ -53,7 +53,6 @@ public final class StaticProperty {
     private static final String STDOUT_ENCODING;
     private static final String SUN_JNU_ENCODING;
     private static final String JAVA_PROPERTIES_DATE;
-    private static final String JAVA_LOCALE_USE_OLD_ISO_CODES;
     private static final String OS_NAME;
     private static final String OS_ARCH;
     private static final String OS_VERSION;
@@ -94,7 +93,6 @@ public final class StaticProperty {
         STDOUT_ENCODING = getProperty(props, "stdout.encoding");
         SUN_JNU_ENCODING = getProperty(props, "sun.jnu.encoding");
         JAVA_PROPERTIES_DATE = getProperty(props, "java.properties.date", null);
-        JAVA_LOCALE_USE_OLD_ISO_CODES = getProperty(props, "java.locale.useOldISOCodes", "");
         OS_NAME = getProperty(props, "os.name");
         OS_ARCH = getProperty(props, "os.arch");
         OS_VERSION = getProperty(props, "os.version");
@@ -256,13 +254,6 @@ public final class StaticProperty {
      */
     public static String javaPropertiesDate() {
         return JAVA_PROPERTIES_DATE;
-    }
-
-    /**
-     * {@return the {@code java.locale.useOldISOCodes} system property}
-     */
-    public static String javaLocaleUseOldISOCodes() {
-        return JAVA_LOCALE_USE_OLD_ISO_CODES;
     }
 
      /**

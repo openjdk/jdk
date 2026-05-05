@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,15 @@ inline void FreezeBase::patch_stack_pd(intptr_t* frame_sp, intptr_t* heap_sp) {
   Unimplemented();
 }
 
+inline intptr_t* AnchorMark::anchor_mark_set_pd() {
+  Unimplemented();
+  return nullptr;
+}
+
+inline void AnchorMark::anchor_mark_clear_pd() {
+  Unimplemented();
+}
+
 inline frame ThawBase::new_entry_frame() {
   Unimplemented();
   return frame();
@@ -96,6 +105,11 @@ inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
 }
 
 inline intptr_t* ThawBase::push_cleanup_continuation() {
+  Unimplemented();
+  return nullptr;
+}
+
+inline intptr_t* ThawBase::push_preempt_adapter() {
   Unimplemented();
   return nullptr;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,31 +53,35 @@ CardTableBarrierSet::CardTableBarrierSet(BarrierSetAssembler* barrier_set_assemb
                                          BarrierSetC2* barrier_set_c2,
                                          CardTable* card_table,
                                          const BarrierSet::FakeRtti& fake_rtti) :
-  ModRefBarrierSet(barrier_set_assembler,
-                   barrier_set_c1,
-                   barrier_set_c2,
-                   fake_rtti.add_tag(BarrierSet::CardTableBarrierSet)),
+  BarrierSet(barrier_set_assembler,
+             barrier_set_c1,
+             barrier_set_c2,
+             nullptr /* barrier_set_nmethod */,
+             nullptr /* barrier_set_stack_chunk */,
+             fake_rtti.add_tag(BarrierSet::CardTableBarrierSet)),
   _card_table(card_table)
 {}
 
 CardTableBarrierSet::CardTableBarrierSet(CardTable* card_table) :
-  ModRefBarrierSet(make_barrier_set_assembler<CardTableBarrierSetAssembler>(),
-                   make_barrier_set_c1<CardTableBarrierSetC1>(),
-                   make_barrier_set_c2<CardTableBarrierSetC2>(),
-                   BarrierSet::FakeRtti(BarrierSet::CardTableBarrierSet)),
+  BarrierSet(make_barrier_set_assembler<CardTableBarrierSetAssembler>(),
+             make_barrier_set_c1<CardTableBarrierSetC1>(),
+             make_barrier_set_c2<CardTableBarrierSetC2>(),
+             nullptr /* barrier_set_nmethod */,
+             nullptr /* barrier_set_stack_chunk */,
+             BarrierSet::FakeRtti(BarrierSet::CardTableBarrierSet)),
   _card_table(card_table)
 {}
 
 CardTableBarrierSet::~CardTableBarrierSet() {
-  delete _card_table;
+  delete card_table();
 }
 
 void CardTableBarrierSet::write_region(MemRegion mr) {
-  _card_table->dirty_MemRegion(mr);
+  card_table()->dirty_MemRegion(mr);
 }
 
 void CardTableBarrierSet::print_on(outputStream* st) const {
-  _card_table->print_on(st);
+  card_table()->print_on(st);
 }
 
 // Helper for ReduceInitialCardMarks. For performance,
@@ -112,7 +116,7 @@ void CardTableBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop ne
   if (!ReduceInitialCardMarks) {
     return;
   }
-  if (new_obj->is_typeArray() || _card_table->is_in_young(new_obj)) {
+  if (new_obj->is_typeArray() || card_table()->is_in_young(new_obj)) {
     // Arrays of non-references don't need a post-barrier.
   } else {
     MemRegion mr(cast_from_oop<HeapWord*>(new_obj), new_obj->size());

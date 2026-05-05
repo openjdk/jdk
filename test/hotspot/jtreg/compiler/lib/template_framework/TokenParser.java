@@ -31,7 +31,7 @@ import java.util.List;
  * Helper class for {@link Token}, to keep the parsing methods package private.
  *
  * <p>
- * The {@link Template#body} and {@link Hook#anchor} are given a list of tokens, which are either
+ * The {@link Template#scope} and {@link Hook#anchor} are given a list of tokens, which are either
  * {@link Token}s or {@link String}s or some permitted boxed primitives. These are then parsed
  * and all non-{@link Token}s are converted to {@link StringToken}s. The parsing also flattens
  * {@link List}s.

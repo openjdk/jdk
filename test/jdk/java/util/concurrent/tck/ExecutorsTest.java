@@ -329,7 +329,6 @@ public class ExecutorsTest extends JSR166TestCase {
      * ThreadPoolExecutor using defaultThreadFactory has
      * specified group, priority, daemon status, and name
      */
-    @SuppressWarnings("removal")
     public void testDefaultThreadFactory() throws Exception {
         final ThreadGroup egroup = Thread.currentThread().getThreadGroup();
         final CountDownLatch done = new CountDownLatch(1);

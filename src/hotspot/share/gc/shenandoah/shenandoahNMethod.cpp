@@ -48,7 +48,7 @@ ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, boo
 
 ShenandoahNMethod::~ShenandoahNMethod() {
   if (_oops != nullptr) {
-    FREE_C_HEAP_ARRAY(oop*, _oops);
+    FREE_C_HEAP_ARRAY(_oops);
   }
 }
 
@@ -60,7 +60,7 @@ void ShenandoahNMethod::update() {
   detect_reloc_oops(nm(), oops, non_immediate_oops);
   if (oops.length() != _oops_count) {
     if (_oops != nullptr) {
-      FREE_C_HEAP_ARRAY(oop*, _oops);
+      FREE_C_HEAP_ARRAY(_oops);
       _oops = nullptr;
     }
 
@@ -126,7 +126,6 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->is_concurrent_weak_root_in_progress() ||
       heap->is_concurrent_strong_root_in_progress()) {
-    ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
   } else if (heap->is_concurrent_mark_in_progress()) {
     ShenandoahKeepAliveClosure cl;
@@ -241,7 +240,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     assert(nm == data->nm(), "Must be same nmethod");
     // Prevent updating a nmethod while concurrent iteration is in progress.
     wait_until_concurrent_iteration_done();
-    ShenandoahReentrantLocker data_locker(data->lock());
+    ShenandoahNMethodLocker data_locker(data->lock());
     data->update();
   } else {
     // For a new nmethod, we can safely append it to the list, because
@@ -394,7 +393,7 @@ ShenandoahNMethodList::ShenandoahNMethodList(int size) :
 ShenandoahNMethodList::~ShenandoahNMethodList() {
   assert(_list != nullptr, "Sanity");
   assert(_ref_count == 0, "Must be");
-  FREE_C_HEAP_ARRAY(ShenandoahNMethod*, _list);
+  FREE_C_HEAP_ARRAY(_list);
 }
 
 void ShenandoahNMethodList::transfer(ShenandoahNMethodList* const list, int limit) {
@@ -433,8 +432,8 @@ void ShenandoahNMethodTableSnapshot::parallel_nmethods_do(NMethodClosure *f) {
   ShenandoahNMethod** const list = _list->list();
 
   size_t max = (size_t)_limit;
-  while (_claimed < max) {
-    size_t cur = AtomicAccess::fetch_then_add(&_claimed, stride, memory_order_relaxed);
+  while (_claimed.load_relaxed() < max) {
+    size_t cur = _claimed.fetch_then_add(stride, memory_order_relaxed);
     size_t start = cur;
     size_t end = MIN2(cur + stride, max);
     if (start >= max) break;
@@ -457,8 +456,8 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
 
   ShenandoahNMethod** list = _list->list();
   size_t max = (size_t)_limit;
-  while (_claimed < max) {
-    size_t cur = AtomicAccess::fetch_then_add(&_claimed, stride, memory_order_relaxed);
+  while (_claimed.load_relaxed() < max) {
+    size_t cur = _claimed.fetch_then_add(stride, memory_order_relaxed);
     size_t start = cur;
     size_t end = MIN2(cur + stride, max);
     if (start >= max) break;

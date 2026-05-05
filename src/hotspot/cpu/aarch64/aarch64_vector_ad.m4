@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2025, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2026, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -119,18 +119,24 @@ source %{
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
-      // NEON instructions support them. But the match rule support for them is profitable for
-      // Vector API intrinsics.
+      // NEON instructions support them. They use multiple instructions which is more
+      // expensive in almost all cases where we would auto vectorize.
+      // But the match rule support for them is profitable for Vector API intrinsics.
       if ((opcode == Op_VectorCastD2X && (bt == T_INT || bt == T_SHORT)) ||
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
+          opcode == Op_MulVL ||
           // The implementations of Op_AddReductionVD/F in Neon are for the Vector API only.
           // They are not suitable for auto-vectorization because the result would not conform
           // to the JLS, Section Evaluation Order.
+          // Note: we could implement sequential reductions for these reduction operators, but
+          //       this will still almost never lead to speedups, because the sequential
+          //       reductions are latency limited along the reduction chain, and not
+          //       throughput limited. This is unlike unordered reductions (associative op)
+          //       and element-wise ops which are usually throughput limited.
           opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
-          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF ||
-          opcode == Op_MulVL) {
+          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF) {
         return false;
       }
     }
@@ -185,6 +191,8 @@ source %{
       case Op_XorReductionV:
       case Op_MinReductionV:
       case Op_MaxReductionV:
+      case Op_UMinReductionV:
+      case Op_UMaxReductionV:
         // Reductions with less than 8 bytes vector length are
         // not supported.
         if (length_in_bytes < 8) {
@@ -229,10 +237,39 @@ source %{
       case Op_MinVHF:
       case Op_MaxVHF:
       case Op_SqrtVHF:
+        if (UseSVE == 0 && !is_feat_fp16_supported()) {
+          return false;
+        }
+        break;
+      // At the time of writing this, the Vector API has no half-float (FP16) species.
+      // Consequently, AddReductionVHF and MulReductionVHF are only produced by the
+      // auto-vectorizer, which requires strictly ordered semantics for FP reductions.
+      //
+      // There is no direct Neon instruction that performs strictly ordered floating
+      // point add reduction. Hence, on Neon only machines, the add reduction operation
+      // is implemented as a scalarized sequence using half-precision scalar instruction
+      // FADD which requires FEAT_FP16 and ASIMDHP to be available on the target.
+      // On SVE machines (UseSVE > 0) however, there is a direct instruction (FADDA) which
+      // implements strictly ordered floating point add reduction which does not require
+      // the FEAT_FP16 and ASIMDHP checks as SVE supports half-precision floats by default.
+      case Op_AddReductionVHF:
         // FEAT_FP16 is enabled if both "fphp" and "asimdhp" features are supported.
         // Only the Neon instructions need this check. SVE supports half-precision floats
         // by default.
-        if (UseSVE == 0 && !is_feat_fp16_supported()) {
+        if (length_in_bytes < 8 || (UseSVE == 0 && !is_feat_fp16_supported())) {
+          return false;
+        }
+        break;
+      case Op_MulReductionVHF:
+        // There are no direct Neon/SVE instructions that perform strictly ordered
+        // floating point multiply reduction.
+        // For vector length ≤ 16 bytes, the reduction is implemented as a scalarized
+        // sequence using half-precision scalar instruction FMUL. This path requires
+        // FEAT_FP16 and ASIMDHP to be available on the target.
+        // For vector length > 16 bytes, this operation is disabled because there is no
+        // direct SVE instruction that performs a strictly ordered FP16 multiply
+        // reduction.
+        if (length_in_bytes < 8 || length_in_bytes > 16 || !is_feat_fp16_supported()) {
           return false;
         }
         break;
@@ -264,6 +301,12 @@ source %{
           return false;
         }
         break;
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
+        if (length_in_bytes > 16) {
+          return false; // NEON only, since SLI/USHR are not available in SVE
+        }
+        break;
       default:
         break;
     }
@@ -282,6 +325,7 @@ source %{
       case Op_VectorRearrange:
       case Op_MulReductionVD:
       case Op_MulReductionVF:
+      case Op_MulReductionVHF:
       case Op_MulReductionVI:
       case Op_MulReductionVL:
       case Op_CompressBitsV:
@@ -322,6 +366,11 @@ source %{
       case Op_SqrtVHF:
       case Op_FmaVHF:
         return false;
+      // There's no SLI instruction in SVE, so we can't have an optimal vector
+      // rotate with masking when emitting code for SVE.
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
+        return false;
       default:
         break;
     }
@@ -330,8 +379,14 @@ source %{
   }
 
   bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-    // Only SVE has partial vector operations
-    if (UseSVE == 0) {
+    // 1. Only SVE requires partial vector operations.
+    // 2. The vector size in bytes must be smaller than MaxVectorSize.
+    // 3. Predicated vectors have a mask input, which guarantees that
+    //    out-of-bounds lanes remain inactive.
+    int length_in_bytes = vt->length_in_bytes();
+    if (UseSVE == 0 ||
+        length_in_bytes == MaxVectorSize ||
+        node->is_predicated_vector()) {
       return false;
     }
 
@@ -340,6 +395,7 @@ source %{
       case Op_VectorMaskCmp:
       case Op_LoadVectorGather:
       case Op_StoreVectorScatter:
+      case Op_AddReductionVHF:
       case Op_AddReductionVF:
       case Op_AddReductionVD:
       case Op_AndReductionV:
@@ -354,27 +410,56 @@ source %{
         return !node->in(1)->is_Con();
       case Op_LoadVector:
       case Op_StoreVector:
-        // We use NEON load/store instructions if the vector length is <= 128 bits.
-        return vt->length_in_bytes() > 16;
       case Op_AddReductionVI:
       case Op_AddReductionVL:
-        // We may prefer using NEON instructions rather than SVE partial operations.
-        return !VM_Version::use_neon_for_vector(vt->length_in_bytes());
+        // For these ops, we prefer using NEON instructions rather than SVE
+        // predicated instructions for better performance.
+        return !VM_Version::use_neon_for_vector(length_in_bytes);
       case Op_MinReductionV:
       case Op_MaxReductionV:
-        // For BYTE/SHORT/INT/FLOAT/DOUBLE types, we may prefer using NEON
-        // instructions rather than SVE partial operations.
+      case Op_UMinReductionV:
+      case Op_UMaxReductionV:
+        // For BYTE/SHORT/INT/FLOAT/DOUBLE types, we prefer using NEON
+        // instructions rather than SVE predicated instructions for
+        // better performance.
         return vt->element_basic_type() == T_LONG ||
-               !VM_Version::use_neon_for_vector(vt->length_in_bytes());
+               !VM_Version::use_neon_for_vector(length_in_bytes);
       default:
-        // For other ops whose vector size is smaller than the max vector size, a
-        // full-sized unpredicated operation does not impact the final vector result.
+        // For other ops whose vector size is smaller than the max vector
+        // size, a full-sized unpredicated operation does not impact the
+        // vector result.
         return false;
     }
   }
 
   bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
     return false;
+  }
+
+  bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+    // Only SVE supports the predicate feature.
+    if (UseSVE == 0) {
+      // On architectures that do not support predicate, masks are stored in
+      // general vector registers (TypeVect) with sizes ranging from TypeVectA
+      // to TypeVectX based on the vector size in bytes.
+      assert(vt->isa_pvectmask() == nullptr, "mask type is not matched");
+      return false;
+    }
+
+    assert(vt->isa_pvectmask() != nullptr, "expected TypePVectMask on SVE");
+    switch (opcode) {
+      case Op_VectorMaskToLong:
+      case Op_VectorLongToMask:
+        // These operations lack native SVE predicate instructions and are
+        // implemented using general vector instructions instead. Use vector
+        // registers rather than predicate registers to save the mask for
+        // better performance.
+        return false;
+      default:
+        // By default, the mask operations are implemented with predicate
+        // instructions with a predicate input/output.
+        return true;
+    }
   }
 
   // Assert that the given node is not a variable shift.
@@ -493,13 +578,9 @@ instruct vloadcon(vReg dst, immI0 src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (UseSVE == 0) {
       uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+      int entry_idx = __ vector_iota_entry_index(bt);
       assert(length_in_bytes <= 16, "must be");
-      // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 16.
-      int offset = exact_log2(type2aelembytes(bt)) << 4;
-      if (is_floating_point_type(bt)) {
-        offset += 32;
-      }
-      __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + offset));
+      __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices(entry_idx)));
       if (length_in_bytes == 16) {
         __ ldrq($dst$$FloatRegister, rscratch1);
       } else {
@@ -1895,6 +1976,25 @@ instruct vlsra_imm(vReg dst, vReg src, immI_positive shift) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector rotate with constant shift count (NEON only)
+// Uses USHR+SLI 2-instruction sequence instead of SHL+USHR+ORR 3-instruction decomposition.
+
+instruct vrotateconstant(vReg dst, vReg src, immI shift) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16);
+  match(Set dst (RotateLeftV src shift));
+  match(Set dst (RotateRightV src shift));
+  effect(TEMP_DEF dst);
+  format %{ "vrotateconstant $dst, $src, $shift" %}
+  ins_encode %{
+    int opc = this->ideal_Opcode();
+    int raw_shift = checked_cast<int>(opc == Op_RotateLeftV ?
+                                      $shift$$constant : -$shift$$constant);
+    __ neon_vector_rotate($dst$$FloatRegister, get_arrangement(this),
+                          $src$$FloatRegister, raw_shift);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 dnl
 dnl VSHIFT_PREDICATE($1,   $2,      $3  )
 dnl VSHIFT_PREDICATE(type, op_name, insn)
@@ -2020,6 +2120,25 @@ instruct reduce_non_strict_order_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vR
   ins_pipe(pipe_slow);
 %}
 dnl
+
+// Add Reduction for Half floats (FP16).
+// Neon does not provide direct instructions for strictly ordered floating-point add reductions.
+// On Neon-only targets (UseSVE = 0), this operation is implemented as a sequence of scalar additions:
+// values equal to the vector width are loaded into a vector register, each lane is extracted,
+// and its value is accumulated into the running sum, producing a final scalar result.
+instruct reduce_addHF_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+  predicate(UseSVE == 0);
+  match(Set dst (AddReductionVHF fsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "reduce_addHF $dst, $fsrc, $vsrc\t# 4HF/8HF. KILL $tmp" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ neon_reduce_add_fp16($dst$$FloatRegister, $fsrc$$FloatRegister,
+                            $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+dnl
 dnl REDUCE_ADD_FP_SVE($1,   $2  )
 dnl REDUCE_ADD_FP_SVE(type, size)
 define(`REDUCE_ADD_FP_SVE', `
@@ -2031,21 +2150,26 @@ define(`REDUCE_ADD_FP_SVE', `
 //    strictly ordered.
 // 2. Strictly-ordered AddReductionV$1. For example - AddReductionV$1 generated by
 //    auto-vectorization on SVE machine.
-instruct reduce_add$1_sve(vReg$1 dst_src1, vReg src2) %{
-  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) ||
-            n->as_Reduction()->requires_strict_order());
+instruct reduce_add$1_sve(vReg`'ifelse($1, HF, F, $1) dst_src1, vReg src2) %{
+  ifelse($1, HF,
+       `predicate(UseSVE > 0);',
+       `predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) ||
+            n->as_Reduction()->requires_strict_order());')
   match(Set dst_src1 (AddReductionV$1 dst_src1 src2));
   format %{ "reduce_add$1_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
-    assert(UseSVE > 0, "must be sve");
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
+    ifelse($1, HF, `',
+       `assert(UseSVE > 0, "must be sve");
+    ')dnl
+uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ sve_fadda($dst_src1$$FloatRegister, __ $2, ptrue, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-REDUCE_ADD_FP_SVE(F, S)
+REDUCE_ADD_FP_SVE(HF, H)
+REDUCE_ADD_FP_SVE(F,  S)
 
 // reduction addD
 
@@ -2086,21 +2210,30 @@ dnl
 dnl REDUCE_ADD_FP_PREDICATE($1,        $2     )
 dnl REDUCE_ADD_FP_PREDICATE(insn_name, op_name)
 define(`REDUCE_ADD_FP_PREDICATE', `
-instruct reduce_add$1_masked(vReg$1 dst_src1, vReg src2, pRegGov pg) %{
+instruct reduce_add$1_masked(vReg$2 dst_src1, vReg src2, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src1 (AddReductionV$1 (Binary dst_src1 src2) pg));
+  ifelse($2, F,
+       `match(Set dst_src1 (AddReductionVHF (Binary dst_src1 src2) pg));
+  match(Set dst_src1 (AddReductionV$2 (Binary dst_src1 src2) pg));',
+       `match(Set dst_src1 (AddReductionV$2 (Binary dst_src1 src2) pg));')
   format %{ "reduce_add$1_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fadda($dst_src1$$FloatRegister, __ $2,
-                 $pg$$PRegister, $src2$$FloatRegister);
+    ifelse($2, F,
+       `BasicType bt = Matcher::vector_element_basic_type(this, $src2);
+    ',)dnl
+ifelse($2, F,
+       `__ sve_fadda($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                 $pg$$PRegister, $src2$$FloatRegister);',
+       `__ sve_fadda($dst_src1$$FloatRegister, __ $2,
+                 $pg$$PRegister, $src2$$FloatRegister);')
   %}
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
 REDUCE_ADD_INT_PREDICATE(I, iRegIorL2I)
 REDUCE_ADD_INT_PREDICATE(L, iRegL)
-REDUCE_ADD_FP_PREDICATE(F, S)
-REDUCE_ADD_FP_PREDICATE(D, D)
+REDUCE_ADD_FP_PREDICATE(FHF, F)
+REDUCE_ADD_FP_PREDICATE(D,   D)
 
 // ------------------------------ Vector reduction mul -------------------------
 
@@ -2133,30 +2266,37 @@ instruct reduce_mulL(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulF(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(2)) <= 16);
-  match(Set dst (MulReductionVF fsrc vsrc));
+dnl REDUCE_MUL_FP($1,        $2     )
+dnl REDUCE_MUL_FP(insn_name, op_name)
+define(`REDUCE_MUL_FP', `
+instruct reduce_mul$1(vReg$2 dst, vReg$2 ifelse($2, F, fsrc, dsrc), vReg vsrc, vReg tmp) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) ifelse($2, F, <=, ==) 16);
+  ifelse($2, F,
+       `match(Set dst (MulReductionVHF fsrc vsrc));
+  match(Set dst (MulReductionV$2 fsrc vsrc));',
+       `match(Set dst (MulReductionV$2 dsrc vsrc));')
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_mulF $dst, $fsrc, $vsrc\t# 2F/4F. KILL $tmp" %}
+  ifelse($2, F,
+         `format %{ "reduce_mul$1 $dst, $fsrc, $vsrc\t# 2F/4F/4HF/8HF. KILL $tmp" %}',
+         `format %{ "reduce_mul$1 $dst, $dsrc, $vsrc\t# 2D. KILL $tmp" %}')
   ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ neon_reduce_mul_fp($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
-                          $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);
+    ifelse($2, F,
+       `uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    ',)dnl
+ifelse($2, F,
+       `BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    ',)dnl
+ifelse($2, F,
+       `__ neon_reduce_mul_fp($dst$$FloatRegister, bt, $fsrc$$FloatRegister,
+                          $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);',
+       `__ neon_reduce_mul_fp($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
+                          $vsrc$$FloatRegister, 16, $tmp$$FloatRegister);')
   %}
   ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mulD(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(2)) == 16);
-  match(Set dst (MulReductionVD dsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_mulD $dst, $dsrc, $vsrc\t# 2D. KILL $tmp" %}
-  ins_encode %{
-    __ neon_reduce_mul_fp($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
-                          $vsrc$$FloatRegister, 16, $tmp$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
+%}')dnl
+dnl
+REDUCE_MUL_FP(FHF, F)
+REDUCE_MUL_FP(D,   D)
 
 dnl
 dnl REDUCE_BITWISE_OP_NEON($1,        $2       $3    $4     )
@@ -2465,6 +2605,32 @@ REDUCE_MAXMIN_INT_PREDICATE(min, I, iRegIorL2I, MinReductionV)
 REDUCE_MAXMIN_INT_PREDICATE(min, L, iRegL,      MinReductionV)
 REDUCE_MAXMIN_FP_PREDICATE(min, F, fsrc, MinReductionV, sve_fminv, fmins)
 REDUCE_MAXMIN_FP_PREDICATE(min, D, dsrc, MinReductionV, sve_fminv, fmind)
+
+// -------------------- Vector reduction unsigned min/max ----------------------
+
+// reduction uminI
+REDUCE_MAXMIN_I_NEON(umin, UMinReductionV)
+REDUCE_MAXMIN_I_SVE(umin, UMinReductionV)
+
+// reduction uminL
+REDUCE_MAXMIN_L_NEON(umin, UMinReductionV)
+REDUCE_MAXMIN_L_SVE(umin, UMinReductionV)
+
+// reduction umin - predicated
+REDUCE_MAXMIN_INT_PREDICATE(umin, I, iRegIorL2I, UMinReductionV)
+REDUCE_MAXMIN_INT_PREDICATE(umin, L, iRegL,      UMinReductionV)
+
+// reduction umaxI
+REDUCE_MAXMIN_I_NEON(umax, UMaxReductionV)
+REDUCE_MAXMIN_I_SVE(umax, UMaxReductionV)
+
+// reduction umaxL
+REDUCE_MAXMIN_L_NEON(umax, UMaxReductionV)
+REDUCE_MAXMIN_L_SVE(umax, UMaxReductionV)
+
+// reduction umax - predicated
+REDUCE_MAXMIN_INT_PREDICATE(umax, I, iRegIorL2I, UMaxReductionV)
+REDUCE_MAXMIN_INT_PREDICATE(umax, L, iRegL,      UMaxReductionV)
 
 // ------------------------------ Vector reinterpret ---------------------------
 
@@ -4297,31 +4463,44 @@ instruct vmask_tolong_neon(iRegLNoSp dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_tolong_sve(iRegLNoSp dst, pReg src, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE > 0);
+instruct vmask_tolong_sve(iRegLNoSp dst, vReg src, vReg tmp) %{
+  predicate(UseSVE > 0 && !VM_Version::supports_svebitperm());
+  match(Set dst (VectorMaskToLong src));
+  effect(TEMP tmp);
+  format %{ "vmask_tolong_sve $dst, $src\t# KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    __ sve_vmask_tolong($dst$$Register, $src$$FloatRegister,
+                        $tmp$$FloatRegister, Matcher::vector_length(this, $src));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_tolong_sve2(iRegLNoSp dst, vReg src, vReg tmp1, vReg tmp2) %{
+  predicate(VM_Version::supports_svebitperm());
   match(Set dst (VectorMaskToLong src));
   effect(TEMP tmp1, TEMP tmp2);
-  format %{ "vmask_tolong_sve $dst, $src\t# KILL $tmp1, $tmp2" %}
+  format %{ "vmask_tolong_sve2 $dst, $src\t# KILL $tmp1, $tmp2" %}
   ins_encode %{
-    __ sve_vmask_tolong($dst$$Register, $src$$PRegister,
-                        Matcher::vector_element_basic_type(this, $src),
-                        Matcher::vector_length(this, $src),
-                        $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    __ sve2_vmask_tolong($dst$$Register, $src$$FloatRegister,
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                         Matcher::vector_length(this, $src));
   %}
   ins_pipe(pipe_slow);
 %}
 
 // fromlong
 
-instruct vmask_fromlong(pReg dst, iRegL src, vReg tmp1, vReg tmp2) %{
+instruct vmask_fromlong(vReg dst, iRegL src, vReg tmp) %{
   match(Set dst (VectorLongToMask src));
-  effect(TEMP tmp1, TEMP tmp2);
-  format %{ "vmask_fromlong $dst, $src\t# vector (sve2). KILL $tmp1, $tmp2" %}
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "vmask_fromlong $dst, $src\t# vector (sve2). KILL $tmp" %}
   ins_encode %{
-    __ sve_vmask_fromlong($dst$$PRegister, $src$$Register,
-                          Matcher::vector_element_basic_type(this),
-                          Matcher::vector_length(this),
-                          $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+    __ sve_vmask_fromlong($dst$$FloatRegister, $src$$Register,
+                          $tmp$$FloatRegister, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}

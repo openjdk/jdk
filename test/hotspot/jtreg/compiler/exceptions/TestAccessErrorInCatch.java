@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,21 @@
 
 /*
  * @test
- * @bug 8367002
+ * @bug 8367002 8370766
  * @summary Compilers might not generate handlers for recursive exceptions
  *
  * @compile IllegalAccessInCatch.jasm
  * @run main/othervm -Xbatch
  *   -XX:CompileCommand=compileonly,IllegalAccessInCatch*::test
+ *   -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
  *   -XX:-TieredCompilation
  *   TestAccessErrorInCatch
  * @run main/othervm -Xbatch
  *   -XX:CompileCommand=compileonly,IllegalAccessInCatch*::test
+ *   -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
  *   -XX:TieredStopAtLevel=3
  *   TestAccessErrorInCatch
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+GenerateOopMapALot TestAccessErrorInCatch
  */
 
 import java.lang.invoke.MethodHandle;
@@ -62,6 +65,11 @@ public class TestAccessErrorInCatch {
     }
 
     private static int invoke(MethodHandle mh) throws Throwable {
-        return (int) mh.invokeExact();
+        int expected = 1;
+        int ret = (int) mh.invokeExact();
+        if (ret != expected) {
+            throw new RuntimeException("Returned " + ret + " but expected " + expected);
+        }
+        return ret;
     }
 }

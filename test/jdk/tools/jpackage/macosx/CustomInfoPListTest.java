@@ -24,10 +24,12 @@
 import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.Map.entry;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
+import static jdk.jpackage.internal.util.PListWriter.writeKey;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.PListWriter.writeString;
 import static jdk.jpackage.internal.util.XmlUtils.createXml;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,15 +45,18 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
@@ -69,11 +74,9 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --type image --resource-dir "Info.plist" and "Runtime-Info.plist"
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build CustomInfoPListTest
  * @requires (os.family == "mac")
- * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=CustomInfoPListTest
  */
@@ -81,39 +84,68 @@ public class CustomInfoPListTest {
 
     @Test
     @ParameterSupplier("customPLists")
-    public void testAppImage(TestConfig cfg) throws Throwable {
-        var cmd = cfg.init(JPackageCommand.helloAppImage());
-        var verifier = cfg.createPListFilesVerifier(cmd.executePrerequisiteActions());
-        cmd.executeAndAssertHelloAppImageCreated();
-        verifier.accept(cmd);
+    public void testAppImage(TestConfig cfg) {
+        testApp(new ConfigurationTarget(JPackageCommand.helloAppImage()), cfg);
     }
 
     @Test
     @ParameterSupplier("customPLists")
-    public void testNativePackage(TestConfig cfg) {
-        List<ThrowingConsumer<JPackageCommand>> verifier = new ArrayList<>();
-        new PackageTest().configureHelloApp().addInitializer(cmd -> {
-            cfg.init(cmd.setFakeRuntime());
-        }).addRunOnceInitializer(() -> {
-            verifier.add(cfg.createPListFilesVerifier(JPackageCommand.helloAppImage().executePrerequisiteActions()));
+    public void testPackage(TestConfig cfg) {
+        testApp(new ConfigurationTarget(new PackageTest().configureHelloApp()), cfg);
+    }
+
+    @Test
+    @ParameterSupplier("customPLists")
+    public void testFromAppImage(TestConfig cfg) {
+
+        var verifier = Slot.<Consumer<JPackageCommand>>createEmpty();
+
+        var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
+
+        new PackageTest().addRunOnceInitializer(() -> {
+            // Create the input app image with custom plist file(s).
+            // Call JPackageCommand.executePrerequisiteActions() to initialize
+            // all command line options.
+            cfg.init(appImageCmd.executePrerequisiteActions());
+            appImageCmd.execute();
+            verifier.set(cfg.createPListFilesVerifier(appImageCmd));
+        }).addInitializer(cmd -> {
+            cmd.removeArgumentWithValue("--input").setArgumentValue("--app-image", appImageCmd.outputBundle());
         }).addInstallVerifier(cmd -> {
-            verifier.get(0).accept(cmd);
+            verifier.get().accept(cmd);
         }).run(Action.CREATE_AND_UNPACK);
     }
 
     @Test
-    public void testRuntime() {
-        final Path runtimeImage[] = new Path[1];
+    @Parameter("true")
+    @Parameter("false")
+    public void testRuntime(boolean runtimeBundle) {
+
+        var runtimeImage = Slot.<Path>createEmpty();
 
         var cfg = new TestConfig(Set.of(CustomPListType.RUNTIME));
 
         new PackageTest().addRunOnceInitializer(() -> {
-            runtimeImage[0] = JPackageCommand.createInputRuntimeImage();
+            if (runtimeBundle) {
+                // Use custom plist file with the input runtime bundle.
+                runtimeImage.set(MacHelper.createRuntimeBundle(toConsumer(buildRuntimeBundleCmd -> {
+                    // Use the same name for the input runtime bundle as the name of the output bundle.
+                    // This is to make the plist file validation pass, as the custom plist file
+                    // is configured for the command building the input runtime bundle,
+                    // but the plist file from the output bundle is examined.
+                    buildRuntimeBundleCmd.setDefaultAppName();
+                    cfg.init(buildRuntimeBundleCmd);
+                })));
+            } else {
+                runtimeImage.set(JPackageCommand.createInputRuntimeImage());
+            }
         }).addInitializer(cmd -> {
             cmd.ignoreDefaultRuntime(true)
                     .removeArgumentWithValue("--input")
-                    .setArgumentValue("--runtime-image", runtimeImage[0]);
-            cfg.init(cmd);
+                    .setArgumentValue("--runtime-image", runtimeImage.get());
+            if (!runtimeBundle) {
+                cfg.init(cmd);
+            }
         }).addInstallVerifier(cmd -> {
             cfg.createPListFilesVerifier(cmd).accept(cmd);
         }).run(Action.CREATE_AND_UNPACK);
@@ -128,6 +160,31 @@ public class CustomInfoPListTest {
         ).map(TestConfig::new).map(cfg -> {
             return new Object[] { cfg };
         }).toList();
+    }
+
+    private void testApp(ConfigurationTarget target, TestConfig cfg) {
+
+        List<Consumer<JPackageCommand>> verifier = new ArrayList<>();
+
+        target.addInitializer(JPackageCommand::setFakeRuntime);
+
+        target.addInitializer(toConsumer(cfg::init));
+
+        target.addRunOnceInitializer(_ -> {
+            verifier.add(cfg.createPListFilesVerifier(
+                    target.cmd().orElseGet(JPackageCommand::helloAppImage).executePrerequisiteActions()
+            ));
+        });
+
+        target.cmd().ifPresent(JPackageCommand::executeAndAssertHelloAppImageCreated);
+
+        target.addInstallVerifier(cmd -> {
+            verifier.get(0).accept(cmd);
+        });
+
+        target.test().ifPresent(test -> {
+            test.run(Action.CREATE_AND_UNPACK);
+        });
     }
 
     private static List<String> toStringList(PListReader plistReader) {
@@ -173,27 +230,41 @@ public class CustomInfoPListTest {
             return cmd;
         }
 
-        ThrowingConsumer<JPackageCommand> createPListFilesVerifier(JPackageCommand cmd) throws IOException {
-            ThrowingConsumer<JPackageCommand> defaultVerifier = otherCmd -> {
+        Consumer<JPackageCommand> createPListFilesVerifier(JPackageCommand cmd) {
+            Consumer<JPackageCommand> customPListFilesVerifier = toConsumer(otherCmd -> {
                 for (var customPList : customPLists) {
                     customPList.verifyPListFile(otherCmd);
                 }
-            };
+            });
 
+            // Get the list of default plist files.
+            // These are the plist files created from the plist file templates in jpackage resources.
             var defaultPListFiles = CustomPListType.defaultRoles(customPLists);
 
             if (defaultPListFiles.isEmpty()) {
-                return defaultVerifier;
+                // All plist files in the bundle are customized.
+                return customPListFilesVerifier;
             } else {
-                var vanillaCmd = new JPackageCommand().setFakeRuntime()
+                // There are some default plist files in the bundle.
+                // Verify the expected default plist files are such.
+
+                // Create a copy of the `cmd` without the resource directory and with the app image bundling type.
+                // Execute it and get the default plist files.
+                var vanillaCmd = new JPackageCommand()
                         .addArguments(cmd.getAllArguments())
                         .setPackageType(PackageType.IMAGE)
                         .removeArgumentWithValue("--resource-dir")
+                        // Ignore externally configured runtime if any.
+                        // It may or may not have the "bin" directory, it also can be a bundle.
+                        // These factors affect the runtime plist file (see JDK-8363980) which may not be the default one.
+                        .ignoreDefaultRuntime(true)
                         .setArgumentValue("--dest", TKit.createTempDirectory("vanilla"));
-                vanillaCmd.executeIgnoreExitCode().assertExitCodeIsZero();
+                vanillaCmd.execute();
 
                 return otherCmd -> {
-                    defaultVerifier.accept(otherCmd);
+                    // Verify custom plist files.
+                    customPListFilesVerifier.accept(otherCmd);
+                    // Verify default plist files.
                     for (var defaultPListFile : defaultPListFiles) {
                         final var expectedPListPath = defaultPListFile.path(vanillaCmd);
                         final var expectedPList = MacHelper.readPList(expectedPListPath);
@@ -236,7 +307,10 @@ public class CustomInfoPListTest {
                 CustomPListFactory.PLIST_OUTPUT::writeAppPlist,
                 "Info.plist"),
 
-        APP_WITH_FA(APP),
+        APP_WITH_FA(
+                CustomPListFactory.PLIST_INPUT::writeAppPlistWithFa,
+                CustomPListFactory.PLIST_OUTPUT::writeAppPlistWithFa,
+                "Info.plist"),
 
         EMBEDDED_RUNTIME(
                 CustomPListFactory.PLIST_INPUT::writeEmbeddedRuntimePlist,
@@ -250,18 +324,12 @@ public class CustomInfoPListTest {
         ;
 
         private CustomPListType(
-                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter> inputPlistWriter,
-                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter> outputPlistWriter,
+                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter, ? extends Exception> inputPlistWriter,
+                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter, ? extends Exception> outputPlistWriter,
                 String outputPlistFilename) {
             this.inputPlistWriter = ThrowingBiConsumer.toBiConsumer(inputPlistWriter);
             this.outputPlistWriter = ThrowingBiConsumer.toBiConsumer(outputPlistWriter);
             this.outputPlistFilename = outputPlistFilename;
-        }
-
-        private CustomPListType(CustomPListType other) {
-            this.inputPlistWriter = other.inputPlistWriter;
-            this.outputPlistWriter = other.outputPlistWriter;
-            this.outputPlistFilename = other.outputPlistFilename;
         }
 
         void createInputPListFile(JPackageCommand cmd) throws IOException {
@@ -315,7 +383,15 @@ public class CustomInfoPListTest {
         PLIST_OUTPUT,
         ;
 
+        private void writeAppPlistWithFa(JPackageCommand cmd, XMLStreamWriter xml) throws XMLStreamException, IOException {
+            writeAppPlist(cmd, xml, true);
+        }
+
         private void writeAppPlist(JPackageCommand cmd, XMLStreamWriter xml) throws XMLStreamException, IOException {
+            writeAppPlist(cmd, xml, false);
+        }
+
+        private void writeAppPlist(JPackageCommand cmd, XMLStreamWriter xml, boolean withFa) throws XMLStreamException, IOException {
             writePList(xml, toXmlConsumer(() -> {
                 writeDict(xml, toXmlConsumer(() -> {
                     writeString(xml, "CustomAppProperty", "App");
@@ -328,7 +404,7 @@ public class CustomInfoPListTest {
                     writeString(xml, "CFBundleVersion", value("DEPLOY_BUNDLE_CFBUNDLE_VERSION", cmd.version()));
                     writeString(xml, "NSHumanReadableCopyright", value("DEPLOY_BUNDLE_COPYRIGHT",
                             JPackageStringBundle.MAIN.cannedFormattedString("param.copyright.default", new Date()).getValue()));
-                    if (cmd.hasArgument("--file-associations")) {
+                    if (withFa) {
                         if (this == PLIST_INPUT) {
                             xml.writeCharacters("DEPLOY_FILE_ASSOCIATIONS");
                         } else {
@@ -360,6 +436,10 @@ public class CustomInfoPListTest {
                     writeString(xml, "CFBundleShortVersionString", value("CF_BUNDLE_SHORT_VERSION_STRING", cmd.version()));
                     writeString(xml, "CFBundleVersion", value("CF_BUNDLE_VERSION", cmd.version()));
                     writeString(xml, "CustomInfoPListFA", "DEPLOY_FILE_ASSOCIATIONS");
+                    writeKey(xml, "JavaVM");
+                    writeDict(xml, toXmlConsumer(() -> {
+                        writeString(xml, "JVMVersion", value("CF_BUNDLE_VERSION", cmd.version()));
+                    }));
                 }));
             }));
         }

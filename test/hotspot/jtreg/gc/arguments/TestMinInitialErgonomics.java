@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package gc.arguments;
  * @bug 8006088
  * @requires vm.gc.Parallel
  * @requires vm.compMode != "Xcomp"
+ * @requires !vm.opt.final.UseLargePages
  * @summary Test Parallel GC ergonomics decisions related to minimum and initial heap size.
  * @library /test/lib
  * @library /

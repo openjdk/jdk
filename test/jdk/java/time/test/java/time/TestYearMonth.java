@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,14 +59,18 @@
  */
 package test.java.time;
 
+import java.io.ObjectStreamClass;
+import java.io.ObjectStreamField;
+import java.time.LocalDate;
 import java.time.YearMonth;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test YearMonth.
  */
-@Test
 public class TestYearMonth extends AbstractTest {
 
     //-----------------------------------------------------------------------
@@ -75,4 +79,16 @@ public class TestYearMonth extends AbstractTest {
         assertImmutable(YearMonth.class);
     }
 
+    // Verify serialized fields types are backward compatible
+    @Test
+    public void verifySerialFields() {
+        var osc = ObjectStreamClass.lookup(YearMonth.class);
+        for (ObjectStreamField f : osc.getFields()) {
+            switch (f.getName()) {
+                case "year" -> assertEquals(int.class, f.getType(), f.getName());
+                case "month" -> assertEquals(int.class, f.getType(), f.getName());
+                default -> fail("unknown field in YearMonth: " + f.getName());
+            }
+        }
+    }
 }

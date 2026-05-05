@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@
 #include "opto/subnode.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -150,7 +152,7 @@ inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vle
 
 // Because the transitions from emitted code to the runtime
 // monitorenter/exit helper stubs are so slow it's critical that
-// we inline both the stack-locking fast path and the inflated fast path.
+// we inline both the lock-stack fast path and the inflated fast path.
 //
 // See also: cmpFastLock and cmpFastUnlock.
 //
@@ -217,13 +219,12 @@ inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vle
 //    In the case of failure, the node will branch directly to the
 //    FailureLabel
 
-
 // obj: object to lock
 // box: on-stack box address -- KILLED
 // rax: tmp -- KILLED
 // t  : tmp -- KILLED
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register rax_reg,
-                                              Register t, Register thread) {
+void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
+                                  Register t, Register thread) {
   assert(rax_reg == rax, "Used for CAS");
   assert_different_registers(obj, box, rax_reg, t, thread);
 
@@ -247,7 +248,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
   const Register mark = t;
 
-  { // Lightweight Lock
+  { // Fast Lock
 
     Label push;
 
@@ -286,7 +287,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     // After successful lock, push object on lock-stack.
     movptr(Address(thread, top), obj);
     addl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
-    jmpb(locked);
+    jmp(locked);
   }
 
   { // Handle inflated monitor.
@@ -297,38 +298,49 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     if (!UseObjectMonitorTable) {
       assert(mark == monitor, "should be the same here");
     } else {
-      // Uses ObjectMonitorTable.  Look for the monitor in the om_cache.
-      // Fetch ObjectMonitor* from the cache or take the slow-path.
+      const Register hash = t;
       Label monitor_found;
 
-      // Load cache address
-      lea(t, Address(thread, JavaThread::om_cache_oops_offset()));
+      // Look for the monitor in the om_cache.
 
-      const int num_unrolled = 2;
+      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
+      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
+      const int num_unrolled  = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        cmpptr(obj, Address(t));
+        movptr(monitor, Address(thread,  cache_offset + monitor_offset));
+        cmpptr(obj, Address(thread, cache_offset));
         jccb(Assembler::equal, monitor_found);
-        increment(t, in_bytes(OMCache::oop_to_oop_difference()));
+        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
-      Label loop;
+      // Look for the monitor in the table.
 
-      // Search for obj in cache.
-      bind(loop);
+      // Get the hash code.
+      movptr(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
+      shrq(hash, markWord::hash_shift);
+      andq(hash, markWord::hash_mask);
 
-      // Check for match.
-      cmpptr(obj, Address(t));
-      jccb(Assembler::equal, monitor_found);
+      // Get the table and calculate the bucket's address.
+      lea(rax_reg, ExternalAddress(ObjectMonitorTable::current_table_address()));
+      movptr(rax_reg, Address(rax_reg));
+      andq(hash, Address(rax_reg, ObjectMonitorTable::table_capacity_mask_offset()));
+      movptr(rax_reg, Address(rax_reg, ObjectMonitorTable::table_buckets_offset()));
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      cmpptr(Address(t), 1);
-      jcc(Assembler::below, slow_path); // 0 check, but with ZF=0 when *t == 0
-      increment(t, in_bytes(OMCache::oop_to_oop_difference()));
-      jmpb(loop);
+      // Read the monitor from the bucket.
+      movptr(monitor, Address(rax_reg, hash, Address::times_ptr));
 
-      // Cache hit.
+      // Check if the monitor in the bucket is special (empty, tombstone or removed)
+      cmpptr(monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      jcc(Assembler::below, slow_path);
+
+      // Check if object matches.
+      movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
+      cmpptr(rax_reg, obj);
+      jcc(Assembler::notEqual, slow_path);
+
       bind(monitor_found);
-      movptr(monitor, Address(t, OMCache::oop_to_monitor_difference()));
     }
     const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
     const Address recursions_address(monitor, ObjectMonitor::recursions_offset() - monitor_tag);
@@ -415,7 +427,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 // A perfectly viable alternative is to elide the owner check except when
 // Xcheck:jni is enabled.
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread) {
+void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, Register thread) {
   assert(reg_rax == rax, "Used for CAS");
   assert_different_registers(obj, reg_rax, t);
 
@@ -430,16 +442,16 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   const Register box = reg_rax;
 
   Label dummy;
-  C2FastUnlockLightweightStub* stub = nullptr;
+  C2FastUnlockStub* stub = nullptr;
 
   if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, mark, reg_rax, thread);
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockStub(obj, mark, reg_rax, thread);
     Compile::current()->output()->add_stub(stub);
   }
 
   Label& push_and_slow_path = stub == nullptr ? dummy : stub->push_and_slow_path();
 
-  { // Lightweight Unlock
+  { // Fast Unlock
 
     // Load top.
     movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
@@ -487,14 +499,14 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     cmpl(top, in_bytes(JavaThread::lock_stack_base_offset()));
     jcc(Assembler::below, check_done);
     cmpptr(obj, Address(thread, top));
-    jccb(Assembler::notEqual, inflated_check_lock_stack);
+    jcc(Assembler::notEqual, inflated_check_lock_stack);
     stop("Fast Unlock lock on stack");
     bind(check_done);
     if (UseObjectMonitorTable) {
       movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     }
     testptr(mark, markWord::monitor_value);
-    jccb(Assembler::notZero, inflated);
+    jcc(Assembler::notZero, inflated);
     stop("Fast Unlock not monitor");
 #endif
 
@@ -519,7 +531,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 
     // Check if recursive.
     cmpptr(recursions_address, 0);
-    jccb(Assembler::notZero, recursive);
+    jcc(Assembler::notZero, recursive);
 
     // Set owner to null.
     // Release to satisfy the JMM
@@ -530,11 +542,11 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 
     // Check if the entry_list is empty.
     cmpptr(entry_list_address, NULL_WORD);
-    jccb(Assembler::zero, unlocked);    // If so we are done.
+    jcc(Assembler::zero, unlocked);    // If so we are done.
 
     // Check if there is a successor.
     cmpptr(succ_address, NULL_WORD);
-    jccb(Assembler::notZero, unlocked); // If so we are done.
+    jcc(Assembler::notZero, unlocked); // If so we are done.
 
     // Save the monitor pointer in the current thread, so we can try to
     // reacquire the lock in SharedRuntime::monitor_exit_helper().
@@ -617,17 +629,16 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   BLOCK_COMMENT("CastII {");
   Label fail;
   Label succeed;
-  if (hi == max_jint) {
+
+  if (lo != min_jint) {
     cmpl(val, lo);
-    jccb(Assembler::greaterEqual, succeed);
-  } else {
-    if (lo != min_jint) {
-      cmpl(val, lo);
-      jccb(Assembler::less, fail);
-    }
-    cmpl(val, hi);
-    jccb(Assembler::lessEqual, succeed);
+    jccb(Assembler::less, fail);
   }
+  if (hi != max_jint) {
+    cmpl(val, hi);
+    jccb(Assembler::greater, fail);
+  }
+  jmpb(succeed);
 
   bind(fail);
   movl(c_rarg0, idx);
@@ -666,17 +677,15 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
     }
   };
 
-  if (hi == max_jlong) {
+  if (lo != min_jlong) {
     cmp_val(lo);
-    jccb(Assembler::greaterEqual, succeed);
-  } else {
-    if (lo != min_jlong) {
-      cmp_val(lo);
-      jccb(Assembler::less, fail);
-    }
-    cmp_val(hi);
-    jccb(Assembler::lessEqual, succeed);
+    jccb(Assembler::less, fail);
   }
+  if (hi != max_jlong) {
+    cmp_val(hi);
+    jccb(Assembler::greater, fail);
+  }
+  jmpb(succeed);
 
   bind(fail);
   movl(c_rarg0, idx);
@@ -1028,18 +1037,33 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
   }
 }
 
-void C2_MacroAssembler::vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
-                                   XMMRegister src1, XMMRegister src2, int vlen_enc) {
+void C2_MacroAssembler::vminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                                           XMMRegister src1, XMMRegister src2, int vlen_enc) {
   assert(opc == Op_MinV || opc == Op_MinReductionV ||
          opc == Op_MaxV || opc == Op_MaxReductionV, "sanity");
 
-  int imm8 = (opc == Op_MinV || opc == Op_MinReductionV) ? AVX10_MINMAX_MIN_COMPARE_SIGN
-                                                         : AVX10_MINMAX_MAX_COMPARE_SIGN;
+  int imm8 = (opc == Op_MinV || opc == Op_MinReductionV) ? AVX10_2_MINMAX_MIN_COMPARE_SIGN
+                                                         : AVX10_2_MINMAX_MAX_COMPARE_SIGN;
   if (elem_bt == T_FLOAT) {
     evminmaxps(dst, mask, src1, src2, true, imm8, vlen_enc);
   } else {
     assert(elem_bt == T_DOUBLE, "");
     evminmaxpd(dst, mask, src1, src2, true, imm8, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::sminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                                           XMMRegister src1, XMMRegister src2) {
+  assert(opc == Op_MinF || opc == Op_MaxF ||
+         opc == Op_MinD || opc == Op_MaxD, "sanity");
+
+  int imm8 = (opc == Op_MinF || opc == Op_MinD) ? AVX10_2_MINMAX_MIN_COMPARE_SIGN
+                                                : AVX10_2_MINMAX_MAX_COMPARE_SIGN;
+  if (elem_bt == T_FLOAT) {
+    evminmaxss(dst, mask, src1, src2, true, imm8);
+  } else {
+    assert(elem_bt == T_DOUBLE, "");
+    evminmaxsd(dst, mask, src1, src2, true, imm8);
   }
 }
 
@@ -1049,17 +1073,28 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
 
   Label DONE_LABEL;
 
+  // Handle special cases +0.0/-0.0 and NaN, if argument is +0.0/-0.0 or NaN, return argument
+  // If AVX10.2 (or newer) floating point comparison instructions used, SF=1 for equal and unordered cases
+  // If other floating point comparison instructions used, ZF=1 for equal and unordered cases
   if (opcode == Op_SignumF) {
-    ucomiss(dst, zero);
-    jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
-    jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
+    if (VM_Version::supports_avx10_2()) {
+      evucomxss(dst, zero);
+      jcc(Assembler::negative, DONE_LABEL);
+    } else {
+      ucomiss(dst, zero);
+      jcc(Assembler::equal, DONE_LABEL);
+    }
     movflt(dst, one);
     jcc(Assembler::above, DONE_LABEL);
     xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), noreg);
   } else if (opcode == Op_SignumD) {
-    ucomisd(dst, zero);
-    jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
-    jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
+    if (VM_Version::supports_avx10_2()) {
+      evucomxsd(dst, zero);
+      jcc(Assembler::negative, DONE_LABEL);
+    } else {
+      ucomisd(dst, zero);
+      jcc(Assembler::equal, DONE_LABEL);
+    }
     movdbl(dst, one);
     jcc(Assembler::above, DONE_LABEL);
     xorpd(dst, ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), noreg);
@@ -1671,12 +1706,8 @@ void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, Inte
 }
 
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, int vlen_in_bytes, BasicType bt) {
-  // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 64.
-  int offset = exact_log2(type2aelembytes(bt)) << 6;
-  if (is_floating_point_type(bt)) {
-    offset += 128;
-  }
-  ExternalAddress addr(StubRoutines::x86::vector_iota_indices() + offset);
+  int entry_idx = vector_iota_entry_index(bt);
+  ExternalAddress addr(StubRoutines::x86::vector_iota_indices(entry_idx));
   load_vector(T_BYTE, dst, addr, vlen_in_bytes);
 }
 
@@ -1706,6 +1737,24 @@ void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegis
         case T_INT:         pmaxsd(dst, src); break;
         case T_LONG:        assert(UseAVX > 2, "required");
                             vpmaxsq(dst, dst, src, Assembler::AVX_128bit); break;
+        default:            assert(false, "wrong type");
+      }
+      break;
+    case Op_UMinReductionV:
+      switch (typ) {
+        case T_BYTE:        vpminub(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_SHORT:       vpminuw(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_INT:         vpminud(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_LONG:        evpminuq(dst, k0, dst, src, true, Assembler::AVX_128bit); break;
+        default:            assert(false, "wrong type");
+      }
+      break;
+    case Op_UMaxReductionV:
+      switch (typ) {
+        case T_BYTE:        vpmaxub(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_SHORT:       vpmaxuw(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_INT:         vpmaxud(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_LONG:        evpmaxuq(dst, k0, dst, src, true, Assembler::AVX_128bit); break;
         default:            assert(false, "wrong type");
       }
       break;
@@ -1769,6 +1818,24 @@ void C2_MacroAssembler::reduce_operation_256(BasicType typ, int opcode, XMMRegis
         case T_INT:         vpmaxsd(dst, src1, src2, vector_len); break;
         case T_LONG:        assert(UseAVX > 2, "required");
                             vpmaxsq(dst, src1, src2, vector_len); break;
+        default:            assert(false, "wrong type");
+      }
+      break;
+    case Op_UMinReductionV:
+      switch (typ) {
+        case T_BYTE:        vpminub(dst, src1, src2, vector_len); break;
+        case T_SHORT:       vpminuw(dst, src1, src2, vector_len); break;
+        case T_INT:         vpminud(dst, src1, src2, vector_len); break;
+        case T_LONG:        evpminuq(dst, k0, src1, src2, true, vector_len); break;
+        default:            assert(false, "wrong type");
+      }
+      break;
+    case Op_UMaxReductionV:
+      switch (typ) {
+        case T_BYTE:        vpmaxub(dst, src1, src2, vector_len); break;
+        case T_SHORT:       vpmaxuw(dst, src1, src2, vector_len); break;
+        case T_INT:         vpmaxud(dst, src1, src2, vector_len); break;
+        case T_LONG:        evpmaxuq(dst, k0, src1, src2, true, vector_len); break;
         default:            assert(false, "wrong type");
       }
       break;
@@ -2038,7 +2105,11 @@ void C2_MacroAssembler::reduce8B(int opcode, Register dst, Register src1, XMMReg
   psrldq(vtmp2, 1);
   reduce_operation_128(T_BYTE, opcode, vtmp1, vtmp2);
   movdl(vtmp2, src1);
-  pmovsxbd(vtmp1, vtmp1);
+  if (opcode == Op_UMinReductionV || opcode == Op_UMaxReductionV) {
+    pmovzxbd(vtmp1, vtmp1);
+  } else {
+    pmovsxbd(vtmp1, vtmp1);
+  }
   reduce_operation_128(T_INT, opcode, vtmp1, vtmp2);
   pextrb(dst, vtmp1, 0x0);
   movsbl(dst, dst);
@@ -2075,8 +2146,8 @@ void C2_MacroAssembler::mulreduce16B(int opcode, Register dst, Register src1, XM
   } else {
     pmovsxbw(vtmp2, src2);
     reduce8S(opcode, dst, src1, vtmp2, vtmp1, vtmp2);
-    pshufd(vtmp2, src2, 0x1);
-    pmovsxbw(vtmp2, src2);
+    pshufd(vtmp2, src2, 0xe);
+    pmovsxbw(vtmp2, vtmp2);
     reduce8S(opcode, dst, dst, vtmp2, vtmp1, vtmp2);
   }
 }
@@ -2085,7 +2156,7 @@ void C2_MacroAssembler::mulreduce32B(int opcode, Register dst, Register src1, XM
   if (UseAVX > 2 && VM_Version::supports_avx512bw()) {
     int vector_len = Assembler::AVX_512bit;
     vpmovsxbw(vtmp1, src2, vector_len);
-    reduce32S(opcode, dst, src1, vtmp1, vtmp1, vtmp2);
+    reduce32S(opcode, dst, src1, vtmp1, vtmp2, vtmp1);
   } else {
     assert(UseAVX >= 2,"Should not reach here.");
     mulreduce16B(opcode, dst, src1, src2, vtmp1, vtmp2);
@@ -2115,7 +2186,11 @@ void C2_MacroAssembler::reduce4S(int opcode, Register dst, Register src1, XMMReg
     reduce_operation_128(T_SHORT, opcode, vtmp1, vtmp2);
   }
   movdl(vtmp2, src1);
-  pmovsxwd(vtmp1, vtmp1);
+  if (opcode == Op_UMinReductionV || opcode == Op_UMaxReductionV) {
+    pmovzxwd(vtmp1, vtmp1);
+  } else {
+    pmovsxwd(vtmp1, vtmp1);
+  }
   reduce_operation_128(T_INT, opcode, vtmp1, vtmp2);
   pextrw(dst, vtmp1, 0x0);
   movswl(dst, dst);
@@ -2128,6 +2203,7 @@ void C2_MacroAssembler::reduce8S(int opcode, Register dst, Register src1, XMMReg
     }
     phaddw(vtmp1, src2);
   } else {
+    assert_different_registers(src2, vtmp1);
     pshufd(vtmp1, src2, 0xE);
     reduce_operation_128(T_SHORT, opcode, vtmp1, src2);
   }
@@ -2140,6 +2216,7 @@ void C2_MacroAssembler::reduce16S(int opcode, Register dst, Register src1, XMMRe
     vphaddw(vtmp2, src2, src2, vector_len);
     vpermq(vtmp2, vtmp2, 0xD8, vector_len);
   } else {
+    assert_different_registers(src2, vtmp2);
     vextracti128_high(vtmp2, src2);
     reduce_operation_128(T_SHORT, opcode, vtmp2, src2);
   }
@@ -2147,6 +2224,7 @@ void C2_MacroAssembler::reduce16S(int opcode, Register dst, Register src1, XMMRe
 }
 
 void C2_MacroAssembler::reduce32S(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  assert_different_registers(src2, vtmp1);
   int vector_len = Assembler::AVX_256bit;
   vextracti64x4_high(vtmp1, src2);
   reduce_operation_256(T_SHORT, opcode, vtmp1, vtmp1, src2);
@@ -2336,7 +2414,7 @@ void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_vali
     }
 
     if (VM_Version::supports_avx10_2()) {
-      vminmax_fp(opcode, T_FLOAT, wdst, k0, wtmp, wsrc, vlen_enc);
+      vminmax_fp_avx10_2(opcode, T_FLOAT, wdst, k0, wtmp, wsrc, vlen_enc);
     } else {
       vminmax_fp(opcode, T_FLOAT, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
     }
@@ -2345,7 +2423,7 @@ void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_vali
   }
   if (is_dst_valid) {
     if (VM_Version::supports_avx10_2()) {
-      vminmax_fp(opcode, T_FLOAT, dst, k0, wdst, dst, Assembler::AVX_128bit);
+      vminmax_fp_avx10_2(opcode, T_FLOAT, dst, k0, wdst, dst, Assembler::AVX_128bit);
     } else {
       vminmax_fp(opcode, T_FLOAT, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
     }
@@ -2376,7 +2454,7 @@ void C2_MacroAssembler::reduceDoubleMinMax(int opcode, int vlen, bool is_dst_val
     }
 
     if (VM_Version::supports_avx10_2()) {
-      vminmax_fp(opcode, T_DOUBLE, wdst, k0, wtmp, wsrc, vlen_enc);
+      vminmax_fp_avx10_2(opcode, T_DOUBLE, wdst, k0, wtmp, wsrc, vlen_enc);
     } else {
       vminmax_fp(opcode, T_DOUBLE, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
     }
@@ -2387,7 +2465,7 @@ void C2_MacroAssembler::reduceDoubleMinMax(int opcode, int vlen, bool is_dst_val
 
   if (is_dst_valid) {
     if (VM_Version::supports_avx10_2()) {
-      vminmax_fp(opcode, T_DOUBLE, dst, k0, wdst, dst, Assembler::AVX_128bit);
+      vminmax_fp_avx10_2(opcode, T_DOUBLE, dst, k0, wdst, dst, Assembler::AVX_128bit);
     } else {
       vminmax_fp(opcode, T_DOUBLE, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
     }
@@ -5163,7 +5241,7 @@ void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister ds
   }
 }
 
-void C2_MacroAssembler::vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
+void C2_MacroAssembler::vector_castF2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
   switch(to_elem_bt) {
     case T_LONG:
       evcvttps2qqs(dst, src, vec_enc);
@@ -5183,7 +5261,7 @@ void C2_MacroAssembler::vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister d
   }
 }
 
-void C2_MacroAssembler::vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
+void C2_MacroAssembler::vector_castF2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
   switch(to_elem_bt) {
     case T_LONG:
       evcvttps2qqs(dst, src, vec_enc);
@@ -5203,7 +5281,7 @@ void C2_MacroAssembler::vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister d
   }
 }
 
-void C2_MacroAssembler::vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
+void C2_MacroAssembler::vector_castD2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
   switch(to_elem_bt) {
     case T_LONG:
       evcvttpd2qqs(dst, src, vec_enc);
@@ -5223,7 +5301,7 @@ void C2_MacroAssembler::vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister d
   }
 }
 
-void C2_MacroAssembler::vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
+void C2_MacroAssembler::vector_castD2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
   switch(to_elem_bt) {
     case T_LONG:
       evcvttpd2qqs(dst, src, vec_enc);
@@ -5480,7 +5558,7 @@ void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Regi
       }
       break;
     case Op_VectorMaskFirstTrue:
-      if (VM_Version::supports_bmi1()) {
+      if (UseCountTrailingZerosInstruction) {
         if (masklen < 32) {
           orl(tmp, 1 << masklen);
           tzcntl(dst, tmp);
@@ -6119,77 +6197,64 @@ void C2_MacroAssembler::vector_count_leading_zeros_short_avx(XMMRegister dst, XM
 
 void C2_MacroAssembler::vector_count_leading_zeros_int_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                            XMMRegister xtmp2, XMMRegister xtmp3, int vec_enc) {
-  // Since IEEE 754 floating point format represents mantissa in 1.0 format
-  // hence biased exponent can be used to compute leading zero count as per
-  // following formula:-
-  // LZCNT = 31 - (biased_exp - 127)
-  // Special handling has been introduced for Zero, Max_Int and -ve source values.
-
-  // Broadcast 0xFF
-  vpcmpeqd(xtmp1, xtmp1, xtmp1, vec_enc);
-  vpsrld(xtmp1, xtmp1, 24, vec_enc);
+  // By converting the integer to a float, we can obtain the number of leading zeros based on the exponent of the float.
+  // As the float exponent contains a bias of 127 for nonzero values, the bias must be removed before interpreting the
+  // exponent as the leading zero count.
 
   // Remove the bit to the right of the highest set bit ensuring that the conversion to float cannot round up to a higher
   // power of 2, which has a higher exponent than the input. This transformation is valid as only the highest set bit
   // contributes to the leading number of zeros.
-  vpsrld(xtmp2, src, 1, vec_enc);
-  vpandn(xtmp3, xtmp2, src, vec_enc);
+  vpsrld(dst, src, 1, vec_enc);
+  vpandn(dst, dst, src, vec_enc);
 
-  // Extract biased exponent.
-  vcvtdq2ps(dst, xtmp3, vec_enc);
+  vcvtdq2ps(dst, dst, vec_enc);
+
+  // By comparing the register to itself, all the bits in the destination are set.
+  vpcmpeqd(xtmp1, xtmp1, xtmp1, vec_enc);
+
+  // Move the biased exponent to the low end of the lane and mask with 0xFF to discard the sign bit.
+  vpsrld(xtmp2, xtmp1, 24, vec_enc);
   vpsrld(dst, dst, 23, vec_enc);
-  vpand(dst, dst, xtmp1, vec_enc);
+  vpand(dst, xtmp2, dst, vec_enc);
 
-  // Broadcast 127.
-  vpsrld(xtmp1, xtmp1, 1, vec_enc);
-  // Exponent = biased_exp - 127
-  vpsubd(dst, dst, xtmp1, vec_enc);
+  // Subtract 127 from the exponent, which removes the bias from the exponent.
+  vpsrld(xtmp2, xtmp1, 25, vec_enc);
+  vpsubd(dst, dst, xtmp2, vec_enc);
 
-  // Exponent_plus_one = Exponent + 1
-  vpsrld(xtmp3, xtmp1, 6, vec_enc);
-  vpaddd(dst, dst, xtmp3, vec_enc);
+  vpsrld(xtmp2, xtmp1, 27, vec_enc);
 
-  // Replace -ve exponent with zero, exponent is -ve when src
-  // lane contains a zero value.
-  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
-  vblendvps(dst, dst, xtmp2, dst, vec_enc);
+  // If the original value is 0 the exponent would not have bias, so the subtraction creates a negative number. If this
+  // is found in any of the lanes, replace the lane with -1 from xtmp1.
+  vblendvps(dst, dst, xtmp1, dst, vec_enc, true, xtmp3);
 
-  // Rematerialize broadcast 32.
-  vpslld(xtmp1, xtmp3, 5, vec_enc);
-  // Exponent is 32 if corresponding source lane contains max_int value.
-  vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
-  // LZCNT = 32 - exponent_plus_one
-  vpsubd(dst, xtmp1, dst, vec_enc);
+  // If the original value is negative, replace the lane with 31.
+  vblendvps(dst, dst, xtmp2, src, vec_enc, true, xtmp3);
 
-  // Replace LZCNT with a value 1 if corresponding source lane
-  // contains max_int value.
-  vpblendvb(dst, dst, xtmp3, xtmp2, vec_enc);
-
-  // Replace biased_exp with 0 if source lane value is less than zero.
-  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
-  vblendvps(dst, dst, xtmp2, src, vec_enc);
+  // Subtract the exponent from 31, giving the final result. For 0, the result is 32 as the exponent was replaced with -1,
+  // and for negative numbers the result is 0 as the exponent was replaced with 31.
+  vpsubd(dst, xtmp2, dst, vec_enc);
 }
 
 void C2_MacroAssembler::vector_count_leading_zeros_long_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                             XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, int vec_enc) {
-  vector_count_leading_zeros_short_avx(dst, src, xtmp1, xtmp2, xtmp3, rtmp, vec_enc);
-  // Add zero counts of lower word and upper word of a double word if
-  // upper word holds a zero value.
-  vpsrld(xtmp3, src, 16, vec_enc);
-  // xtmp1 is set to all zeros by vector_count_leading_zeros_byte_avx.
-  vpcmpeqd(xtmp3, xtmp1, xtmp3, vec_enc);
-  vpslld(xtmp2, dst, 16, vec_enc);
-  vpaddd(xtmp2, xtmp2, dst, vec_enc);
-  vpblendvb(dst, dst, xtmp2, xtmp3, vec_enc);
-  vpsrld(dst, dst, 16, vec_enc);
-  // Add zero counts of lower doubleword and upper doubleword of a
-  // quadword if upper doubleword holds a zero value.
-  vpsrlq(xtmp3, src, 32, vec_enc);
-  vpcmpeqq(xtmp3, xtmp1, xtmp3, vec_enc);
-  vpsllq(xtmp2, dst, 32, vec_enc);
-  vpaddq(xtmp2, xtmp2, dst, vec_enc);
-  vpblendvb(dst, dst, xtmp2, xtmp3, vec_enc);
-  vpsrlq(dst, dst, 32, vec_enc);
+  // Find the leading zeros of the top and bottom halves of the long individually.
+  vector_count_leading_zeros_int_avx(dst, src, xtmp1, xtmp2, xtmp3, vec_enc);
+
+  // Move the top half result to the bottom half of xtmp1, setting the top half to 0.
+  vpsrlq(xtmp1, dst, 32, vec_enc);
+  // By moving the top half result to the right by 6 bits, if the top half was empty (i.e. 32 is returned) the result bit will
+  // be in the most significant position of the bottom half.
+  vpsrlq(xtmp2, dst, 6, vec_enc);
+
+  // In the bottom half, add the top half and bottom half results.
+  vpaddq(dst, xtmp1, dst, vec_enc);
+
+  // For the bottom half, choose between the values using the most significant bit of xtmp2.
+  // If the MSB is set, then bottom+top in dst is the resulting value. If the top half is less than 32 xtmp1 is chosen,
+  // which contains only the top half result.
+  // In the top half the MSB is always zero, so the value in xtmp1 is always chosen. This value is always 0, which clears
+  // the lane as required.
+  vblendvps(dst, xtmp1, dst, xtmp2, vec_enc, true, xtmp3);
 }
 
 void C2_MacroAssembler::vector_count_leading_zeros_avx(BasicType bt, XMMRegister dst, XMMRegister src,
@@ -6285,7 +6350,7 @@ void C2_MacroAssembler::udivI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movl(rdx, rax);
   subl(rdx, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rdx, rax);
   } else {
     notl(rdx);
@@ -6309,7 +6374,7 @@ void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rax, rdx);
   } else {
     notl(rax);
@@ -6338,7 +6403,7 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rax, rdx);
   } else {
     notl(rax);
@@ -6450,7 +6515,7 @@ void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movq(rdx, rax);
   subq(rdx, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rdx, rax);
   } else {
     notq(rdx);
@@ -6474,7 +6539,7 @@ void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rax, rdx);
   } else {
     notq(rax);
@@ -6502,7 +6567,7 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rax, rdx);
   } else {
     notq(rax);
@@ -7010,13 +7075,25 @@ void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, 
   }
 }
 
-void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                                            KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2) {
-  vector_max_min_fp16(opcode, dst, src1, src2, ktmp, xtmp1, xtmp2, Assembler::AVX_128bit);
+void C2_MacroAssembler::sminmax_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                     KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2) {
+  vminmax_fp16(opcode, dst, src1, src2, ktmp, xtmp1, xtmp2, Assembler::AVX_128bit);
 }
 
-void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                                            KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+void C2_MacroAssembler::sminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                             KRegister ktmp) {
+  if (opcode == Op_MaxHF) {
+    // dst = max(src1, src2)
+    evminmaxsh(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MAX_COMPARE_SIGN);
+  } else {
+    assert(opcode == Op_MinHF, "");
+    // dst = min(src1, src2)
+    evminmaxsh(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN);
+  }
+}
+
+void C2_MacroAssembler::vminmax_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                     KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
   if (opcode == Op_MaxVHF || opcode == Op_MaxHF) {
     // Move sign bits of src2 to mask register.
     evpmovw2m(ktmp, src2, vlen_enc);
@@ -7057,5 +7134,50 @@ void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // in case second operand holds a NaN value then as per above semantics
     // result is same as second operand.
     Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                             KRegister ktmp, int vlen_enc) {
+  if (opcode == Op_MaxVHF) {
+    // dst = max(src1, src2)
+    evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vlen_enc);
+  } else {
+    assert(opcode == Op_MinVHF, "");
+    // dst = min(src1, src2)
+    evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, Address src2,
+                                             KRegister ktmp, int vlen_enc) {
+  if (opcode == Op_MaxVHF) {
+    // dst = max(src1, src2)
+    evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vlen_enc);
+  } else {
+    assert(opcode == Op_MinVHF, "");
+    // dst = min(src1, src2)
+    evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
+  }
+}
+
+int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
+  // The vector iota entries array is ordered by type B/S/I/L/F/D, and
+  // the offset between two types is 16.
+  switch(bt) {
+  case T_BYTE:
+    return 0;
+  case T_SHORT:
+    return 1;
+  case T_INT:
+    return 2;
+  case T_LONG:
+    return 3;
+  case T_FLOAT:
+    return 4;
+  case T_DOUBLE:
+    return 5;
+  default:
+    ShouldNotReachHere();
   }
 }

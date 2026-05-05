@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,6 @@ public:
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
@@ -141,7 +140,6 @@ class RethrowNode : public Node {
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint match_edge(uint idx) const;
@@ -505,6 +503,66 @@ public:
     return _has_ea_local_in_scope;
   }
 
+  // A temporary storge for node edges.
+  // Intended for a single use.
+  class NodeEdgeTempStorage : public StackObj {
+    friend class SafePointNode;
+
+    PhaseIterGVN& _igvn;
+    Node*         _node_hook;
+
+#ifdef ASSERT
+    enum State { state_initial, state_populated, state_processed };
+
+    State _state; // monotonically transitions from initial to processed state.
+#endif // ASSERT
+
+    bool is_empty() const {
+      return _node_hook == nullptr || _node_hook->req() == 1;
+    }
+    void push(Node* n) {
+      assert(n != nullptr, "");
+      if (_node_hook == nullptr) {
+        _node_hook = new Node(nullptr);
+      }
+      _node_hook->add_req(n);
+    }
+    Node* pop() {
+      assert(!is_empty(), "");
+      int idx = _node_hook->req()-1;
+      Node* r = _node_hook->in(idx);
+      _node_hook->del_req(idx);
+      assert(r != nullptr, "");
+      return r;
+    }
+
+  public:
+    NodeEdgeTempStorage(PhaseIterGVN &igvn) : _igvn(igvn), _node_hook(nullptr)
+                                              DEBUG_ONLY(COMMA _state(state_initial)) {
+      assert(is_empty(), "");
+    }
+
+    ~NodeEdgeTempStorage() {
+      assert(_state == state_processed, "not processed");
+      assert(is_empty(), "");
+      if (_node_hook != nullptr) {
+        _node_hook->destruct(&_igvn);
+      }
+    }
+
+    void remove_edge_if_present(Node* n) {
+      if (!is_empty()) {
+        int idx = _node_hook->find_edge(n);
+        if (idx > 0) {
+          _node_hook->del_req(idx);
+        }
+      }
+    }
+  };
+
+  void remove_non_debug_edges(NodeEdgeTempStorage& non_debug_edges);
+  void restore_non_debug_edges(NodeEdgeTempStorage& non_debug_edges);
+
   void disconnect_from_root(PhaseIterGVN *igvn);
 
   // Standard Node stuff
@@ -687,7 +745,7 @@ class CallGenerator;
 class CallNode : public SafePointNode {
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) const;
 
 public:
   const TypeFunc* _tf;          // Function type
@@ -730,14 +788,15 @@ public:
   // for some macro nodes whose expansion does not have a safepoint on the fast path.
   virtual bool        guaranteed_safepoint()  { return true; }
   // For macro nodes, the JVMState gets modified during expansion. If calls
-  // use MachConstantBase, it gets modified during matching. So when cloning
-  // the node the JVMState must be deep cloned. Default is to shallow clone.
-  virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
+  // use MachConstantBase, it gets modified during matching. If the call is
+  // late inlined, it also needs the full JVMState. So when cloning the
+  // node the JVMState must be deep cloned. Default is to shallow clone.
+  virtual bool needs_deep_clone_jvms(Compile* C) { return _generator != nullptr || C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const;
   // Does this node have a use of n other than in debug information?
-  bool                has_non_debug_use(Node* n);
+  bool                has_non_debug_use(const Node* n);
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
   // or returns null if there is no one.
@@ -752,11 +811,15 @@ public:
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion
   // and the late inlining support.
-  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true) const;
+  void extract_projections(CallProjections* projs,
+                           bool separate_io_proj,
+                           bool do_asserts = true,
+                           bool allow_handlers = false) const;
 
   virtual uint match_edge(uint idx) const;
 
   bool is_call_to_arraycopystub() const;
+  bool is_call_to_multianewarray_stub() const;
 
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
@@ -816,11 +879,14 @@ public:
 // calls and optimized virtual calls, plus calls to wrappers for run-time
 // routines); generates static stub.
 class CallStaticJavaNode : public CallJavaNode {
+  // If this is an uncommon trap guarded by some condition, is it safe to change the condition to a narrower condition?
+  // See comment in PhaseIdealLoop::do_split_if()
+  bool _safe_for_fold_compare;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
-    : CallJavaNode(tf, addr, method) {
+    : CallJavaNode(tf, addr, method), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
     if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
       init_flags(Flag_is_macro);
@@ -828,7 +894,7 @@ public:
     }
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, nullptr) {
+    : CallJavaNode(tf, addr, nullptr), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
@@ -851,6 +917,14 @@ public:
 
   virtual int         Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+  void clear_safe_for_fold_compare() {
+    _safe_for_fold_compare = false;
+  }
+
+  bool safe_for_fold_compare() const {
+    return _safe_for_fold_compare;
+  }
 
 #ifndef PRODUCT
   virtual void        dump_spec(outputStream *st) const;
@@ -942,13 +1016,14 @@ protected:
   TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
 
 public:
-  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type)
-      : CallLeafNode(tf, addr, name, adr_type) {
+  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name)
+      : CallLeafNode(tf, addr, name, nullptr) {
     init_class_id(Class_CallLeafPure);
   }
   int Opcode() const override;
   Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+
+  CallLeafPureNode* inline_call_leaf_pure_node(Node* control = nullptr) const;
 };
 
 //------------------------------CallLeafNoFPNode-------------------------------
@@ -1043,7 +1118,7 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) { return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const { return false; }
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -1100,7 +1175,7 @@ public:
   void compute_MemBar_redundancy(ciMethod* initializer);
   bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 
-  Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
+  Node* make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem);
 
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
@@ -1207,7 +1282,7 @@ public:
   bool is_balanced();
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const { return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);
@@ -1300,4 +1375,19 @@ public:
   JVMState* dbg_jvms() const { return nullptr; }
 #endif
 };
+
+//------------------------------PowDNode--------------------------------------
+class PowDNode : public CallLeafPureNode {
+  TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result, Node* control = nullptr);
+
+public:
+  PowDNode(Compile* C, Node* base, Node* exp);
+  int Opcode() const override;
+  const Type* Value(PhaseGVN* phase) const override;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+
+  Node* base() const { return in(TypeFunc::Parms + 0); }
+  Node* exp() const  { return in(TypeFunc::Parms + 2); }
+};
+
 #endif // SHARE_OPTO_CALLNODE_HPP
