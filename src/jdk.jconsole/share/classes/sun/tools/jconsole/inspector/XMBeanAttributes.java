@@ -820,7 +820,6 @@ public class XMBeanAttributes extends XTable {
                                                      int row,
                                                      int column) {
 
-            table.putClientProperty("html.disable", Boolean.TRUE);
             Object val = value;
             if(column == VALUE_COLUMN) {
                 Object obj = getModel().getValueAt(row,
@@ -875,6 +874,7 @@ public class XMBeanAttributes extends XTable {
             if (d.getHeight() > 220) {
                 comp.setPreferredSize(new Dimension((int) d.getWidth(), 220));
             }
+            putClientProperty("html.disable", Boolean.TRUE);
         }
         @Override
         public Component getTableCellRendererComponent(JTable table,
