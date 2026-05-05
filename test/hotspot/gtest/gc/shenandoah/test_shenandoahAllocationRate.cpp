@@ -63,7 +63,7 @@ constexpr uint MINIMUM_SAMPLE_SIZE = 1024;
 TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_sample) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
   rate.allocated(512);
-  EXPECT_EQ(rate.average(), 0);
+  EXPECT_DOUBLE_EQ(rate.average(), 0);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
@@ -72,7 +72,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
   allocate(rate, 2048); // t = 2
   double acceleration(0), current_rate(0);
   rate.accelerated_consumption(acceleration, current_rate, 100);
-  EXPECT_EQ(rate.average(), 2048.0);
+  EXPECT_DOUBLE_EQ(rate.average(), 2048.0);
 }
 
 // disabled because the current implementation needs at least two samples to compute rates
@@ -120,7 +120,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike)
   // the recent samples, but we will not consider this to be an acceleration.
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
-  EXPECT_EQ(acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(acceleration, 0.0);
   EXPECT_DOUBLE_EQ(current_rate, 2048);
   EXPECT_GE(anticipated_consumption, 102400UL);
 }
@@ -143,8 +143,8 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
   // will evaluate the acceleration of the rate.
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
-  EXPECT_GE(acceleration, 180);
-  EXPECT_GE(current_rate, 2048);
+  EXPECT_DOUBLE_EQ(acceleration, 180.0);
+  EXPECT_DOUBLE_EQ(current_rate, 2048.0);
   EXPECT_GE(anticipated_consumption, 102400UL);
 }
 
@@ -162,6 +162,6 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_decelerating) {
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_GE(acceleration, 0.0);
-  EXPECT_DOUBLE_EQ(current_rate, 1024);
+  EXPECT_DOUBLE_EQ(current_rate, 1024.0);
   EXPECT_GE(anticipated_consumption, 102400UL);
 }
