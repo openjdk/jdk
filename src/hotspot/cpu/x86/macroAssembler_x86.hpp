@@ -550,15 +550,6 @@ public:
   }
 
   // allocation
-
-  // Object / value buffer allocation...
-  // Allocate instance of klass, assumes klass initialized by caller
-  // new_obj prefers to be rax
-  // Kills t1 and t2, perserves klass, return allocation in new_obj (rsi on LP64)
-  void allocate_instance(Register klass, Register new_obj,
-                         Register t1, Register t2,
-                         bool clear_fields, Label& alloc_failed);
-
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise

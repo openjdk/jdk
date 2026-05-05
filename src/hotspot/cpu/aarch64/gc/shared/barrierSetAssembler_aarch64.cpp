@@ -50,7 +50,6 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   bool is_not_null = (decorators & IS_NOT_NULL) != 0;
-
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {

@@ -3629,124 +3629,6 @@ void MacroAssembler::testptr(Register dst, Register src) {
   testq(dst, src);
 }
 
-// Object / value buffer allocation...
-//
-// Kills klass and rsi on LP64
-void MacroAssembler::allocate_instance(Register klass, Register new_obj,
-                                       Register t1, Register t2,
-                                       bool clear_fields, Label& alloc_failed)
-{
-  Label done, initialize_header, initialize_object, slow_case, slow_case_no_pop;
-  Register layout_size = t1;
-  assert(new_obj == rax, "needs to be rax");
-  assert_different_registers(klass, new_obj, t1, t2);
-
-  // get instance_size in InstanceKlass (scaled to a count of bytes)
-  movl(layout_size, Address(klass, Klass::layout_helper_offset()));
-  // test to see if it is malformed in some way
-  testl(layout_size, Klass::_lh_instance_slow_path_bit);
-  jcc(Assembler::notZero, slow_case_no_pop);
-
-  // Allocate the instance:
-  //  If TLAB is enabled:
-  //    Try to allocate in the TLAB.
-  //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path.
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
-  //    Initialize the allocation.
-  //    Exit.
-  //
-  //  Go to slow path.
-
-  push(klass);
-  if (UseTLAB) {
-    tlab_allocate(new_obj, layout_size, 0, klass, t2, slow_case);
-    if (ZeroTLAB || (!clear_fields)) {
-      // the fields have been already cleared
-      jmp(initialize_header);
-    } else {
-      // initialize both the header and fields
-      jmp(initialize_object);
-    }
-  } else {
-    jmp(slow_case);
-  }
-
-  // If UseTLAB is true, the object is created above and there is an initialize need.
-  // Otherwise, skip and go to the slow path.
-  if (UseTLAB) {
-    if (clear_fields) {
-      // The object is initialized before the header.  If the object size is
-      // zero, go directly to the header initialization.
-      bind(initialize_object);
-      if (UseCompactObjectHeaders) {
-        assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
-        decrement(layout_size, oopDesc::base_offset_in_bytes());
-      } else {
-        decrement(layout_size, sizeof(oopDesc));
-      }
-      jcc(Assembler::zero, initialize_header);
-
-      // Initialize topmost object field, divide size by 8, check if odd and
-      // test if zero.
-      Register zero = klass;
-      xorl(zero, zero);    // use zero reg to clear memory (shorter code)
-      shrl(layout_size, LogBytesPerLong); // divide by 2*oopSize and set carry flag if odd
-
-  #ifdef ASSERT
-      // make sure instance_size was multiple of 8
-      Label L;
-      // Ignore partial flag stall after shrl() since it is debug VM
-      jcc(Assembler::carryClear, L);
-      stop("object size is not multiple of 2 - adjust this code");
-      bind(L);
-      // must be > 0, no extra check needed here
-  #endif
-
-      // initialize remaining object fields: instance_size was a multiple of 8
-      {
-        Label loop;
-        bind(loop);
-        int header_size_bytes = oopDesc::header_size() * HeapWordSize;
-        assert(is_aligned(header_size_bytes, BytesPerLong), "oop header size must be 8-byte-aligned");
-        movptr(Address(new_obj, layout_size, Address::times_8, header_size_bytes - 1*oopSize), zero);
-        decrement(layout_size);
-        jcc(Assembler::notZero, loop);
-      }
-    } // clear_fields
-
-    // initialize object header only.
-    bind(initialize_header);
-    if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
-      pop(klass);
-      Register mark_word = t2;
-      movptr(mark_word, Address(klass, Klass::prototype_header_offset()));
-      movptr(Address(new_obj, oopDesc::mark_offset_in_bytes ()), mark_word);
-    } else {
-     movptr(Address(new_obj, oopDesc::mark_offset_in_bytes()),
-            (intptr_t)markWord::prototype().value()); // header
-     pop(klass);   // get saved klass back in the register.
-    }
-    if (!UseCompactObjectHeaders) {
-      xorl(rsi, rsi);                 // use zero reg to clear memory (shorter code)
-      store_klass_gap(new_obj, rsi);  // zero klass gap for compressed oops
-      movptr(t2, klass);         // preserve klass
-      store_klass(new_obj, t2, rscratch1);  // src klass reg is potentially compressed
-    }
-    jmp(done);
-  }
-
-  bind(slow_case);
-  pop(klass);
-  bind(slow_case_no_pop);
-  jmp(alloc_failed);
-
-  bind(done);
-}
-
 // Defines obj, preserves var_size_in_bytes, okay for t2 == var_size_in_bytes.
 void MacroAssembler::tlab_allocate(Register obj,
                                    Register var_size_in_bytes,
@@ -6182,9 +6064,9 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
   int call_offset = -1;
 
 #ifdef _LP64
-  // The following code is similar to allocate_instance but has some slight differences,
+  // The following code is similar to allocation code in TemplateTable::_new but has some slight differences,
   // e.g. object size is always not zero, sometimes it's constant; storing klass ptr after
-  // allocating is not necessary if vk != nullptr, etc. allocate_instance is not aware of these.
+  // allocating is not necessary if vk != nullptr, etc.
   Label slow_case;
   // 1. Try to allocate a new buffered inline instance either from TLAB or eden space
   mov(rscratch1, rax); // save rax for slow_case since *_allocate may corrupt it when allocation failed

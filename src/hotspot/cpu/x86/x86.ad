@@ -1659,7 +1659,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   }
   return offset;
 }
-
 //
 // Compute padding required for nodes which need alignment
 //

@@ -210,18 +210,6 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
   bind(has_counters);
 }
 
-void InterpreterMacroAssembler::allocate_instance(Register klass, Register new_obj,
-                                                  Register t1, Register t2,
-                                                  bool clear_fields, Label& alloc_failed) {
-  MacroAssembler::allocate_instance(klass, new_obj, t1, t2, clear_fields, alloc_failed);
-  if (DTraceAllocProbes) {
-    // Trigger dtrace event for fastpath
-    push(atos);
-    call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), new_obj);
-    pop(atos);
-  }
-}
-
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
   membar(Assembler::StoreStore);

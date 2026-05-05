@@ -940,7 +940,6 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm, int comp_args_on_stack
      }
    }
 
-
   __ mov(rscratch2, rscratch1);
   __ push_cont_fastpath(rthread); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about; kills rscratch1
   __ mov(rscratch1, rscratch2);
@@ -956,6 +955,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm, int comp_args_on_stack
   // and the vm will find there should this case occur.
 
   __ str(rmethod, Address(rthread, JavaThread::callee_target_offset()));
+
   __ br(rscratch1);
 }
 

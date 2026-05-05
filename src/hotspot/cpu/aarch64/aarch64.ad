@@ -6887,7 +6887,7 @@ instruct loadConP(iRegPNoSp dst, immP con)
 
   ins_cost(INSN_COST * 4);
   format %{
-    "mov  $dst, $con\t# ptr"
+    "mov  $dst, $con\t# ptr\n\t"
   %}
 
   ins_encode(aarch64_enc_mov_p(dst, con));

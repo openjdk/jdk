@@ -3825,8 +3825,81 @@ void TemplateTable::_new() {
   assert(VM_Version::supports_fast_class_init_checks(), "Optimization requires support for fast class initialization checks");
   __ clinit_barrier(r4, rscratch1, nullptr /*L_fast_path*/, &slow_case);
 
-  __ allocate_instance(r4, r0, r3, r1, true, slow_case);
-  __ b(done);
+  // get instance_size in InstanceKlass (scaled to a count of bytes)
+  __ ldrw(r3,
+          Address(r4,
+                  Klass::layout_helper_offset()));
+  // test to see if it is malformed in some way
+  __ tbnz(r3, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
+
+  // Allocate the instance:
+  //  If TLAB is enabled:
+  //    Try to allocate in the TLAB.
+  //    If fails, go to the slow path.
+  //    Initialize the allocation.
+  //    Exit.
+  //
+  //  Go to slow path.
+
+  if (UseTLAB) {
+    __ tlab_allocate(r0, r3, 0, noreg, r1, slow_case);
+
+    if (ZeroTLAB) {
+      // the fields have been already cleared
+      __ b(initialize_header);
+    }
+
+    // The object is initialized before the header.  If the object size is
+    // zero, go directly to the header initialization.
+    int header_size = oopDesc::header_size() * HeapWordSize;
+    assert(is_aligned(header_size, BytesPerLong), "oop header size must be 8-byte-aligned");
+    __ sub(r3, r3, header_size);
+    __ cbz(r3, initialize_header);
+
+  #ifdef ASSERT
+    // make sure instance_size was multiple of 8
+    Label L;
+    __ tst(r3, 7);
+    __ br(Assembler::EQ, L);
+    __ stop("object size is not multiple of 8 - adjust this code");
+    __ bind(L);
+    // must be > 0, no extra check needed here
+  #endif
+
+    // Initialize object fields
+    {
+      __ add(r2, r0, header_size);
+      Label loop;
+      __ bind(loop);
+      __ str(zr, Address(__ post(r2, BytesPerLong)));
+      __ sub(r3, r3, BytesPerLong);
+      __ cbnz(r3, loop);
+    }
+
+    // initialize object header only.
+    __ bind(initialize_header);
+    if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
+      __ ldr(rscratch1, Address(r4, Klass::prototype_header_offset()));
+      __ str(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+    } else {
+      __ mov(rscratch1, (intptr_t)markWord::prototype().value());
+      __ str(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+    }
+    if (!UseCompactObjectHeaders) {
+      __ store_klass_gap(r0, zr);  // zero klass gap for compressed oops
+      __ store_klass(r0, r4);      // store klass last
+    }
+
+    if (DTraceAllocProbes) {
+      // Trigger dtrace event for fastpath
+      __ push(atos); // save the return value
+      __ call_VM_leaf(
+           CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), r0);
+      __ pop(atos); // restore the return value
+
+    }
+    __ b(done);
+  }
 
   // slow case
   __ bind(slow_case);
@@ -3917,7 +3990,6 @@ void TemplateTable::checkcast()
   if (ProfileInterpreter) {
     __ profile_null_seen(r2);
   }
-
   __ bind(done);
 }
 
