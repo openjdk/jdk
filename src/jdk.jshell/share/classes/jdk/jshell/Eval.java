@@ -257,8 +257,14 @@ class Eval {
         JCTree.JCEnhancedVariableDeclaration tree = (JCTree.JCEnhancedVariableDeclaration) unitTree;
 
         List<JCTree.JCBindingPattern> patternBindings = new ArrayList<>();
-        gatherBindings((JCTree) tree.getPattern(), patternBindings::add);
 
+        gatherBindings((JCTree) tree.getPattern(), bp -> {
+            if (!bp.getVariable().getName().toString().isEmpty()) {
+                patternBindings.add(bp);
+            }
+        });
+
+        // if there are no bindings treat it as a simple variable statement
         if (patternBindings.isEmpty()) {
             return processStatement(userSource, compileSource);
         }
@@ -266,7 +272,6 @@ class Eval {
         // short circuit since inference is expensive
         boolean hasAnyVars = false;
         for (JCTree.JCBindingPattern bp : patternBindings) {
-            String bindingName = bp.getVariable().getName().toString();
             Tree bindingTypeTree = bp.getVariable().getType();
             if (bindingTypeTree.getKind() == Tree.Kind.VAR_TYPE) {
                 hasAnyVars = true;

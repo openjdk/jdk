@@ -88,6 +88,15 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
     }
 
     @Test
+    public void testSingleUnnamedBinding() {
+        assertEval("record Point(int a) {}");
+        assertEval("Point p = new Point(42);");
+
+        assertEval("Point(int _) = p;");
+        assertEval("Point(var _) = p;");
+    }
+
+    @Test
     public void testRecordNoComponents() {
         assertEval("record Point() {}");
         assertEquals(varKey(assertEval("Point p = new Point();")).name(), "p");
