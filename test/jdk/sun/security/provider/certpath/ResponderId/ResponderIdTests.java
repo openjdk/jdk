@@ -27,7 +27,6 @@
  * @summary OCSP Stapling for TLS (ResponderId tests)
  * @modules java.base/sun.security.provider.certpath
  *          java.base/sun.security.x509
- * @run main/othervm -Dtest.debug=true ResponderIdTests
  */
 
 import java.io.*;
@@ -48,7 +47,8 @@ import sun.security.provider.certpath.ResponderId;
  */
 public class ResponderIdTests {
 
-    private static final boolean debug = Boolean.getBoolean("test.debug");
+    private static final boolean debug =
+            Boolean.parseBoolean(System.getProperty("test.debug", "true"));
 
     // Source certificate created with the following command:
     // keytool -genkeypair -alias test1 -keyalg rsa -keysize 2048 \
