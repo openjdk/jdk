@@ -256,9 +256,9 @@ inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, o
   oop prev = RawAccess<>::oop_load(addr);
   satb_enqueue(prev);
 
-  // Perform LRB on location to fix it up for this and all following CASes.
+  // Perform LRB on location to fix it up for this and all following accesses.
   // This guarantees there are no false negatives due to concurrent evacuation,
-  // and the value loaded later by CAS is already passed by some LRB.
+  // and the value loaded later by CAS is sanitized by some LRB, or is null.
   load_reference_barrier(decorators, prev, addr);
 
   return RawAccess<>::oop_atomic_cmpxchg(addr, compare_value, new_value);
@@ -272,8 +272,9 @@ inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop 
   oop prev = RawAccess<>::oop_load(addr);
   satb_enqueue(prev);
 
-  // Perform LRB on location to fix it up for this and all following CASes.
-  // This guarantees the value loaded later by CAS is already passed by some LRB.
+  // Perform LRB on location to fix it up for this and all following accesses.
+  // This is purely opportunistic: we would not have any false negatives here.
+  // This guarantees the value loaded later by XCHG is sanitized by some LRB, or is null.
   load_reference_barrier(decorators, prev, addr);
 
   return RawAccess<>::oop_atomic_xchg(addr, new_value);
