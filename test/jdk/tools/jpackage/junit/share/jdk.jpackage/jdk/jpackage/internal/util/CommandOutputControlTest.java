@@ -79,6 +79,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.CommandOutputControl.UnavailableExitCodeException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -349,6 +350,13 @@ public class CommandOutputControlTest {
 
         var getExitCodeEx = assertThrowsExactly(IllegalStateException.class, result::getExitCode);
         assertEquals(("Exit code is unavailable for timed-out command"), getExitCodeEx.getMessage());
+
+        // Verify UnavailableExitCodeException
+        var expectExitCodeEx = assertThrowsExactly(UnavailableExitCodeException.class, () -> {
+            result.expectExitCode(0);
+        });
+        assertEquals(String.format("Exit code unavailable from executing the command %s",
+                result.execAttrs().printableCommandLine()), expectExitCodeEx.getMessage());
 
         // We want to check that the saved output contains only the text emitted before the "sleep" action.
         // It works for a subprocess, but in the case of a ToolProvider, sometimes the timing is such
