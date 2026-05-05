@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,56 +27,79 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.I18N.buildConfigException;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
-import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.LauncherIcon;
+import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
 import jdk.jpackage.internal.model.RuntimeBuilder;
+import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.RuntimeReleaseFile;
 
 final class ApplicationBuilder {
 
-    Application create() throws ConfigException {
+    ApplicationBuilder() {
+    }
+
+    ApplicationBuilder(ApplicationBuilder other) {
+        name = other.name;
+        description = other.description;
+        version = other.version;
+        vendor = other.vendor;
+        copyright = other.copyright;
+        appDirSources = other.appDirSources;
+        externalApp = other.externalApp;
+        contentDirSources = other.contentDirSources;
+        appImageLayout = other.appImageLayout;
+        runtimeBuilder = other.runtimeBuilder;
+        launchers = other.launchers;
+        runtimeReleaseFile = other.runtimeReleaseFile;
+        derivedVersionNormalizer = other.derivedVersionNormalizer;
+    }
+
+    ApplicationBuilder copy() {
+        return new ApplicationBuilder(this);
+    }
+
+    Application create() {
         Objects.requireNonNull(appImageLayout);
 
         final var launchersAsList = Optional.ofNullable(launchers).map(
                 ApplicationLaunchers::asList).orElseGet(List::of);
 
-        final var launcherCount = launchersAsList.size();
-
-        if (launcherCount != launchersAsList.stream().map(Launcher::name).distinct().count()) {
-            throw buildConfigException("ERR_NoUniqueName").create();
-        }
-
-        final String effectiveName;
-        if (name != null) {
-            effectiveName = name;
-        } else if (!launchersAsList.isEmpty()) {
-            effectiveName = launchers.mainLauncher().name();
-        } else {
-            throw buildConfigException("error.no.name").advice("error.no.name.advice").create();
-        }
-
-        Objects.requireNonNull(launchersAsList);
+        final String effectiveName = Optional.ofNullable(name).or(() -> {
+            return Optional.ofNullable(launchers).map(ApplicationLaunchers::mainLauncher).map(Launcher::name);
+        }).orElseThrow(() -> {
+            return buildConfigException("error.no.name").advice("error.no.name.advice").create();
+        });
 
         return new Application.Stub(
                 effectiveName,
                 Optional.ofNullable(description).orElse(effectiveName),
-                Optional.ofNullable(version).orElseGet(DEFAULTS::version),
+                validatedVersion(),
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
-                Optional.ofNullable(srcDir),
-                Optional.ofNullable(contentDirs).orElseGet(List::of),
-                appImageLayout, Optional.ofNullable(runtimeBuilder), launchersAsList, Map.of());
+                Optional.ofNullable(appDirSources).orElseGet(List::of),
+                Optional.ofNullable(contentDirSources).orElseGet(List::of),
+                appImageLayout,
+                Optional.ofNullable(runtimeBuilder),
+                launchersAsList,
+                Map.of());
     }
 
     ApplicationBuilder runtimeBuilder(RuntimeBuilder v) {
@@ -84,25 +107,8 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder initFromExternalApplication(ExternalApplication app,
-            Function<LauncherInfo, Launcher> mapper) {
-
-        externalApp = Objects.requireNonNull(app);
-
-        if (version == null) {
-            version = app.getAppVersion();
-        }
-        if (name == null) {
-            name = app.getAppName();
-        }
-        runtimeBuilder = null;
-
-        var mainLauncherInfo = new LauncherInfo(app.getLauncherName(), false, Map.of());
-
-        launchers = new ApplicationLaunchers(
-                mapper.apply(mainLauncherInfo),
-                app.getAddLaunchers().stream().map(mapper).toList());
-
+    ApplicationBuilder externalApplication(ExternalApplication v) {
+        externalApp = v;
         return this;
     }
 
@@ -119,18 +125,14 @@ final class ApplicationBuilder {
         return Optional.ofNullable(externalApp);
     }
 
-    Optional<String> mainLauncherClassName() {
-        return launchers()
-                .map(ApplicationLaunchers::mainLauncher)
-                .flatMap(Launcher::startupInfo)
-                .map(LauncherStartupInfo::qualifiedClassName).or(() -> {
-                    return externalApplication().map(ExternalApplication::getMainClass);
-                });
-    }
-
     ApplicationBuilder appImageLayout(AppImageLayout v) {
         appImageLayout = v;
         return this;
+    }
+
+    boolean isRuntime() {
+        return Optional.ofNullable(appImageLayout)
+                .orElseThrow(IllegalStateException::new) instanceof RuntimeLayout;
     }
 
     ApplicationBuilder name(String v) {
@@ -148,6 +150,15 @@ final class ApplicationBuilder {
         return this;
     }
 
+    Optional<String> version() {
+        return Optional.ofNullable(version);
+        }
+
+    ApplicationBuilder runtimeReleaseFile(Path v) {
+        runtimeReleaseFile = v;
+        return this;
+    }
+
     ApplicationBuilder vendor(String v) {
         vendor = v;
         return this;
@@ -158,14 +169,153 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder srcDir(Path v) {
-        srcDir = v;
+    ApplicationBuilder appDirSources(Collection<RootedPath> v) {
+        appDirSources = v;
         return this;
     }
 
-    ApplicationBuilder contentDirs(List<Path> v) {
-        contentDirs = v;
+    ApplicationBuilder contentDirSources(Collection<RootedPath> v) {
+        contentDirSources = v;
         return this;
+    }
+
+    ApplicationBuilder derivedVersionNormalizer(UnaryOperator<String> v) {
+        derivedVersionNormalizer = v;
+        return this;
+    }
+
+    private String validatedVersion() {
+        return Optional.ofNullable(version).or(() -> {
+            // Application version has not been specified explicitly. Derive it.
+            var derivedVersion = derivedVersion();
+            if (derivedVersionNormalizer != null) {
+                derivedVersion = derivedVersion.map(v -> {
+                    var mappedVersion = derivedVersionNormalizer.apply(v);
+                    if (!mappedVersion.equals(v)) {
+                        Log.trace("Normalize derived bundle version from [%s] to [%s]", v, mappedVersion);
+                    }
+                    return mappedVersion;
+                });
+            }
+            return derivedVersion;
+        }).orElseGet(DEFAULTS::version);
+    }
+
+    private Optional<String> derivedVersion() {
+        if (appImageLayout instanceof RuntimeLayout && runtimeReleaseFile != null) {
+            try {
+                var releaseVersion = new RuntimeReleaseFile(runtimeReleaseFile).getJavaVersion().toString();
+                Log.trace("Derive bundle version [%s] from [%s] file", releaseVersion, runtimeReleaseFile);
+                return Optional.of(releaseVersion);
+            } catch (Exception ex) {
+                Log.trace(ex, "Failed to derive bundle version from [%s] file", runtimeReleaseFile);
+                return Optional.empty();
+            }
+        } else if (launchers != null) {
+            return launchers.mainLauncher().startupInfo()
+                    .filter(LauncherModularStartupInfo.class::isInstance)
+                    .map(LauncherModularStartupInfo.class::cast)
+                    .flatMap(modularStartupInfo -> {
+                        var moduleVersion = modularStartupInfo.moduleVersion();
+                        moduleVersion.ifPresent(v -> {
+                            Log.trace("Derive bundle version [%s] from [%s] module", v, modularStartupInfo.moduleName());
+                        });
+                        return moduleVersion;
+                    });
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    static <T extends Launcher> ApplicationLaunchers normalizeIcons(
+            ApplicationLaunchers appLaunchers, Optional<Path> resourceDir, BiFunction<T, Launcher, T> launcherOverrideCtor) {
+
+        Objects.requireNonNull(resourceDir);
+
+        return normalizeLauncherProperty(appLaunchers, Launcher::hasDefaultIcon, (T launcher) -> {
+            return resourceDir.<LauncherIcon>flatMap(dir -> {
+                var resource = LauncherBuilder.createLauncherIconResource(launcher, _ -> {
+                    return new OverridableResource()
+                            .setResourceDir(dir)
+                            .setSourceOrder(OverridableResource.Source.ResourceDir);
+                });
+                if (resource.probe() == OverridableResource.Source.ResourceDir) {
+                    return Optional.of(ResourceDirLauncherIcon.create(resource.getPublicName().toString()));
+                } else {
+                    return Optional.empty();
+                }
+            });
+        }, launcher -> {
+            return launcher.icon().orElseThrow();
+        }, (launcher, icon) -> {
+            return launcherOverrideCtor.apply(launcher, overrideIcon(launcher, icon));
+        });
+    }
+
+    static <T, U extends Launcher> ApplicationLaunchers normalizeLauncherProperty(
+            ApplicationLaunchers appLaunchers,
+            Predicate<U> needsNormalization,
+            Function<U, Optional<T>> normalizedPropertyValueFinder,
+            BiFunction<U, T, U> propertyOverrider) {
+
+        return normalizeLauncherProperty(
+                appLaunchers,
+                needsNormalization,
+                normalizedPropertyValueFinder,
+                launcher -> {
+                    return normalizedPropertyValueFinder.apply(launcher).orElseThrow();
+                },
+                propertyOverrider);
+    }
+
+    static <T, U extends Launcher> ApplicationLaunchers normalizeLauncherProperty(
+            ApplicationLaunchers appLaunchers,
+            Predicate<U> needsNormalization,
+            Function<U, Optional<T>> normalizedPropertyValueFinder,
+            Function<U, T> normalizedPropertyValueGetter,
+            BiFunction<U, T, U> propertyOverrider) {
+
+        Objects.requireNonNull(appLaunchers);
+        Objects.requireNonNull(needsNormalization);
+        Objects.requireNonNull(normalizedPropertyValueFinder);
+        Objects.requireNonNull(normalizedPropertyValueGetter);
+        Objects.requireNonNull(propertyOverrider);
+
+        boolean[] modified = new boolean[1];
+
+        @SuppressWarnings("unchecked")
+        var newLaunchers = appLaunchers.asList().stream().map(launcher -> {
+            return (U)launcher;
+        }).map(launcher -> {
+            if (needsNormalization.test(launcher)) {
+                return normalizedPropertyValueFinder.apply(launcher).map(normalizedPropertyValue -> {
+                    modified[0] = true;
+                    return propertyOverrider.apply(launcher, normalizedPropertyValue);
+                }).orElse(launcher);
+            } else {
+                return launcher;
+            }
+        }).toList();
+
+        var newMainLauncher = newLaunchers.getFirst();
+        if (!needsNormalization.test(newMainLauncher)) {
+            // The main launcher doesn't require normalization.
+            newLaunchers = newLaunchers.stream().map(launcher -> {
+                if (needsNormalization.test(launcher)) {
+                    var normalizedPropertyValue = normalizedPropertyValueGetter.apply(newMainLauncher);
+                    modified[0] = true;
+                    return propertyOverrider.apply(launcher, normalizedPropertyValue);
+                } else {
+                    return launcher;
+                }
+            }).toList();
+        }
+
+        if (modified[0]) {
+            return ApplicationLaunchers.fromList(newLaunchers).orElseThrow();
+        } else {
+            return appLaunchers;
+        }
     }
 
     static Launcher overrideLauncherStartupInfo(Launcher launcher, LauncherStartupInfo startupInfo) {
@@ -187,12 +337,24 @@ final class ApplicationBuilder {
                 app.version(),
                 app.vendor(),
                 app.copyright(),
-                app.srcDir(),
-                app.contentDirs(),
+                app.appDirSources(),
+                app.contentDirSources(),
                 Objects.requireNonNull(appImageLayout),
                 app.runtimeBuilder(),
                 app.launchers(),
                 app.extraAppImageFileData());
+    }
+
+    private static Launcher overrideIcon(Launcher launcher, LauncherIcon icon) {
+        return new Launcher.Stub(
+                launcher.name(),
+                launcher.startupInfo(),
+                launcher.fileAssociations(),
+                launcher.isService(),
+                launcher.description(),
+                Optional.of(icon),
+                launcher.defaultIconResourceName(),
+                launcher.extraAppImageFileData());
     }
 
     record MainLauncherStartupInfo(String qualifiedClassName) implements LauncherStartupInfo {
@@ -223,12 +385,14 @@ final class ApplicationBuilder {
     private String version;
     private String vendor;
     private String copyright;
-    private Path srcDir;
+    private Collection<RootedPath> appDirSources;
     private ExternalApplication externalApp;
-    private List<Path> contentDirs;
+    private Collection<RootedPath> contentDirSources;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;
+    private Path runtimeReleaseFile;
+    private UnaryOperator<String> derivedVersionNormalizer;
 
     private static final Defaults DEFAULTS = new Defaults(
             "1.0",

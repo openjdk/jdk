@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ class PhaseIterGVN;
 class PhaseRegAlloc;
 class PhaseCCP;
 class PhaseOutput;
+class ReachabilityFenceNode;
 class RootNode;
 class relocInfo;
 class StartNode;
@@ -107,7 +108,8 @@ enum LoopOptsMode {
   LoopOptsMaxUnroll,
   LoopOptsShenandoahExpand,
   LoopOptsSkipSplitIf,
-  LoopOptsVerify
+  LoopOptsVerify,
+  PostLoopOptsExpandReachabilityFences
 };
 
 // The type of all node counts and indexes.
@@ -317,12 +319,22 @@ class Compile : public Phase {
   int                   _fixed_slots;           // count of frame slots not allocated by the register
                                                 // allocator i.e. locks, original deopt pc, etc.
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
+  uint             _node_count_inlining_cutoff; // Number of nodes in the graph above which inlining is denied
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
-  int                   _major_progress;        // Count of something big happening
+  /* If major progress is set:
+   *   Marks that the loop tree information (get_ctrl, idom, get_loop, etc.) could be invalid, and we need to rebuild the loop tree.
+   *   It also indicates that the graph was changed in a way that is promising to be able to apply more loop optimization.
+   * If major progress is not set:
+   *   Loop tree information is valid.
+   *   If major progress is not set at the end of a loop opts phase, then we can stop loop opts, because we do not expect any further progress if we did more loop opts phases.
+   *
+   * This is not 100% accurate, the semantics of major progress has become less clear over time, but this is the general idea.
+   */
+  bool                  _major_progress;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
@@ -346,6 +358,7 @@ class Compile : public Phase {
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
+  bool                  _print_phase_loop_opts; // True if we should print before and after loop opts phase
 #ifndef PRODUCT
   uint                  _phase_counter;         // Counter for the number of already printed phases
   uint                  _igv_idx;               // Counter for IGV node identifiers
@@ -375,6 +388,7 @@ class Compile : public Phase {
   // of Template Assertion Predicates themselves.
   GrowableArray<OpaqueTemplateAssertionPredicateNode*>  _template_assertion_predicate_opaques;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
+  GrowableArray<ReachabilityFenceNode*> _reachability_fences; // List of reachability fences
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
@@ -469,7 +483,9 @@ private:
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
-  uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
+  bool                          _has_mh_late_inlines; // Can there still be a method handle late inlining pending?
+                                                      // false: there can't be one
+                                                      // true: we've enqueued one at some point so there may still be one
 
   // "MemLimit" directive was specified and the memory limit was hit during compilation
   bool                          _oom;
@@ -583,16 +599,16 @@ public:
   // Control of this compilation.
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
-  int               major_progress() const      { return _major_progress; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
   int               inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
   int               inlining_incrementally() const { return _inlining_incrementally; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   int               do_cleanup() const          { return _do_cleanup; }
-  void          set_major_progress()            { _major_progress++; }
-  void          restore_major_progress(int progress) { _major_progress += progress; }
-  void        clear_major_progress()            { _major_progress = 0; }
+  bool              major_progress() const      { return _major_progress; }
+  void          set_major_progress()            { _major_progress = true; }
+  void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
+  void        clear_major_progress()            { _major_progress = false; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }
@@ -639,6 +655,8 @@ public:
   void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
   uint              max_node_limit() const       { return (uint)_max_node_limit; }
   void          set_max_node_limit(uint n)       { _max_node_limit = n; }
+  uint           node_count_inlining_cutoff() const { return _node_count_inlining_cutoff; }
+  void       set_node_count_inlining_cutoff(uint n) { _node_count_inlining_cutoff = n; }
   bool              clinit_barrier_on_entry()       { return _clinit_barrier_on_entry; }
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
   bool              has_monitors() const         { return _has_monitors; }
@@ -655,7 +673,7 @@ public:
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
   void          print_phase(const char* phase_name);
-  void          print_ideal_ir(const char* phase_name);
+  void          print_ideal_ir(const char* compile_phase_name) const;
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
@@ -669,7 +687,7 @@ public:
   void begin_method();
   void end_method();
 
-  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
+  void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   bool should_print_igv(int level);
@@ -702,10 +720,12 @@ public:
   int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaques.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
-
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
 
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
+
+  ReachabilityFenceNode* reachability_fence(int idx) const { return _reachability_fences.at(idx); }
+  int                    reachability_fences_count() const { return _reachability_fences.length(); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
@@ -726,6 +746,14 @@ public:
   void add_expensive_node(Node* n);
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);
+  }
+
+  void add_reachability_fence(ReachabilityFenceNode* rf) {
+    _reachability_fences.append(rf);
+  }
+
+  void remove_reachability_fence(ReachabilityFenceNode* n) {
+    _reachability_fences.remove_if_existing(n);
   }
 
   void add_parse_predicate(ParsePredicateNode* n) {
@@ -783,6 +811,7 @@ public:
   void remove_from_merge_stores_igvn(Node* n);
   void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
 
+  void shuffle_late_inlines();
   void shuffle_macro_nodes();
   void sort_macro_nodes();
 
@@ -973,10 +1002,12 @@ public:
                                    JVMState* jvms, bool allow_inline, float profile_factor, ciKlass* speculative_receiver_type = nullptr,
                                    bool allow_intrinsics = true);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
-    return should_delay_string_inlining(call_method, jvms) ||
+    return C->directive()->should_delay_inline(call_method) ||
+           should_delay_string_inlining(call_method, jvms) ||
            should_delay_boxing_inlining(call_method, jvms) ||
            should_delay_vector_inlining(call_method, jvms);
   }
+  bool should_delay_after_inlining_cutoff(ciMethod* callee, ciMethod* caller);
   bool should_delay_string_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms);
@@ -1046,6 +1077,13 @@ public:
   // Record this CallGenerator for inlining at the end of parsing.
   void              add_late_inline(CallGenerator* cg)        {
     _late_inlines.insert_before(_late_inlines_pos, cg);
+    if (StressIncrementalInlining) {
+      assert(_late_inlines_pos < _late_inlines.length(), "unthinkable!");
+      if (_late_inlines.length() - _late_inlines_pos >= 2) {
+        int j = (C->random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
+        swap(_late_inlines.at(_late_inlines_pos), _late_inlines.at(j));
+      }
+    }
     _late_inlines_pos++;
   }
 
@@ -1083,13 +1121,12 @@ public:
       // and avoid thrashing when live node count is close to the limit.
       // Keep in mind that live_nodes() isn't accurate during inlining until
       // dead node elimination step happens (see Compile::inline_incrementally).
-      return live_nodes() > (uint)LiveNodeCountInliningCutoff * 11 / 10;
+      return live_nodes() > node_count_inlining_cutoff() * 11 / 10;
     }
   }
 
-  void inc_number_of_mh_late_inlines() { _number_of_mh_late_inlines++; }
-  void dec_number_of_mh_late_inlines() { assert(_number_of_mh_late_inlines > 0, "_number_of_mh_late_inlines < 0 !"); _number_of_mh_late_inlines--; }
-  bool has_mh_late_inlines() const     { return _number_of_mh_late_inlines > 0; }
+  void mark_has_mh_late_inlines() { _has_mh_late_inlines = true; }
+  bool has_mh_late_inlines() const { return _has_mh_late_inlines; }
 
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
@@ -1279,6 +1316,9 @@ public:
 
   // Definitions of pd methods
   static void pd_compiler2_init();
+
+  // Materialize reachability fences from reachability edges on safepoints.
+  void expand_reachability_edges(Unique_Node_List& safepoints);
 
   // Static parse-time type checking logic for gen_subtype_check:
   enum SubTypeCheckResult { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };

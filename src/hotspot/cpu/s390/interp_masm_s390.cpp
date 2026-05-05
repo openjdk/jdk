@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -411,7 +411,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
-  resolve_oop_handle(result); // Load resolved references array itself.
+  resolve_oop_handle(result, Z_R0_scratch, Z_R1_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
@@ -575,11 +575,17 @@ void InterpreterMacroAssembler::store_ptr(int n, Register val) {
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted(Register method) {
   // Satisfy interpreter calling convention (see generate_normal_entry()).
   z_lgr(Z_R10, Z_SP); // Set sender sp (aka initial caller sp, aka unextended sp).
-  // Record top_frame_sp, because the callee might modify it, if it's compiled.
-  assert_different_registers(Z_R1, method);
-  z_sgrk(Z_R1, Z_SP, Z_fp);
-  z_srag(Z_R1, Z_R1, Interpreter::logStackElementSize);
-  z_stg(Z_R1, _z_ijava_state_neg(top_frame_sp), Z_fp);
+#ifdef ASSERT
+  NearLabel ok;
+  Register tmp = Z_R1;
+  z_lg(tmp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+  z_slag(tmp, tmp, Interpreter::logStackElementSize);
+  z_agr(tmp, Z_fp);
+  z_cgr(tmp, Z_SP);
+  z_bre(ok);
+  stop("corrupted top_frame_sp");
+  bind(ok);
+#endif
   save_bcp();
   save_esp();
   z_lgr(Z_method, method); // Set Z_method (kills Z_fp!).
@@ -1013,7 +1019,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   NearLabel done, slow_case;
 
-  lightweight_lock(monitor, object, header, tmp, slow_case);
+  fast_lock(monitor, object, header, tmp, slow_case);
   z_bru(done);
 
   bind(slow_case);
@@ -1048,7 +1054,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   clear_mem(obj_entry, sizeof(oop));
 
-  lightweight_unlock(object, header, current_header, slow_case);
+  fast_unlock(object, header, current_header, slow_case);
   z_bru(done);
 
   // The lock has been converted into a heavy lock and hence
@@ -1253,27 +1259,15 @@ void InterpreterMacroAssembler::profile_final_call(Register mdp) {
 
 void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
                                                      Register mdp,
-                                                     Register reg2,
-                                                     bool receiver_can_be_null) {
+                                                     Register reg2) {
   if (ProfileInterpreter) {
     NearLabel profile_continue;
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    NearLabel skip_receiver_profile;
-    if (receiver_can_be_null) {
-      NearLabel not_null;
-      compareU64_and_branch(receiver, (intptr_t)0L, bcondNotEqual, not_null);
-      // We are making a call. Increment the count for null receiver.
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-      z_bru(skip_receiver_profile);
-      bind(not_null);
-    }
-
     // Record the receiver type.
     record_klass_in_profile(receiver, mdp, reg2);
-    bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
@@ -1917,6 +1911,11 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool     stack_is_empty,
 
   // Adjust stack pointer for additional monitor entry.
   resize_frame(RegisterOrConstant((intptr_t) delta), Z_fp, false);
+
+  // Rtemp3 is free at this point, use it to store top_frame_sp
+  z_sgrk(Rtemp3, Z_SP, Z_fp);
+  z_srag(Rtemp3, Rtemp3, Interpreter::logStackElementSize);
+  reg2mem_opt(Rtemp3, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
 
   if (!stack_is_empty) {
     // Must copy stack contents down.

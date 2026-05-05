@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,28 @@
 
 /*
  * @test
- * @summary round trip test NumberFormat
+ * @bug 4266589 8031145 8164791 8316696 8368001
+ * @summary NumberFormat round trip testing of parsing and formatting.
+ *      This test checks 4 factory instances per locale against ~20 numeric inputs.
+ *      Samples ~1/4 of the available locales provided by NumberFormat.
  * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run junit NumberRoundTrip
  */
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Locale;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
+import jdk.test.lib.RandomFactory;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * This class tests the round-trip behavior of NumberFormat, DecimalFormat, and DigitList.
@@ -44,187 +53,106 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Two tests are applied:  String preservation, and numeric preservation.  String
  * preservation is exact; numeric preservation is not.  However, numeric preservation
  * should extend to the few least-significant bits.
- * //bug472
  */
 public class NumberRoundTrip {
-    static final boolean STRING_COMPARE = true;
-    static final boolean EXACT_NUMERIC_COMPARE = false;
-    static final double MAX_ERROR = 1e-14;
-    static double max_numeric_error = 0;
-    static double min_numeric_error = 1;
 
-    String localeName, formatName;
+    private static final Random RND = RandomFactory.getRandom();
 
-    @Test
-    public void TestNumberFormatRoundTrip() {
-        System.out.println("Default Locale");
-        localeName = "Default Locale";
-        formatName = "getInstance";
-        doTest(NumberFormat.getInstance());
-        formatName = "getNumberInstance";
-        doTest(NumberFormat.getNumberInstance());
-        formatName = "getCurrencyInstance";
-        doTest(NumberFormat.getCurrencyInstance());
-        formatName = "getPercentInstance";
-        doTest(NumberFormat.getPercentInstance());
+    @ParameterizedTest
+    @MethodSource
+    void testNumberFormatRoundTrip(NumberFormat fmt) {
+        fmt.setMaximumFractionDigits(Integer.MAX_VALUE);
+        Stream.concat(numbers.stream(), randomNumbers())
+                .forEach(num -> test(fmt, num));
+    }
 
-        Locale[] loc = NumberFormat.getAvailableLocales();
-        for (int i=0; i<loc.length; ++i) {
-            System.out.println(loc[i].getDisplayName());
-            localeName = loc[i].toString();
-            formatName = "getInstance";
-            doTest(NumberFormat.getInstance(loc[i]));
-            formatName = "getNumberInstance";
-            doTest(NumberFormat.getNumberInstance(loc[i]));
-            formatName = "getCurrencyInstance";
-            doTest(NumberFormat.getCurrencyInstance(loc[i]));
-            formatName = "getPercentInstance";
-            doTest(NumberFormat.getPercentInstance(loc[i]));
+    private void test(NumberFormat fmt, Number num) {
+        String originalFormatted = fmt.format(num);
+        Number parsedNum = Assertions.assertDoesNotThrow(() -> fmt.parse(originalFormatted),
+                "Failed parse(format(%s))".formatted(num));
+        String parsedFormatted = fmt.format(parsedNum);
+        var equal = originalFormatted.equals(parsedFormatted);
+        // Try BigDecimal parsing, if not equal
+        if (!equal) {
+            var df = Assertions.assertInstanceOf(DecimalFormat.class, fmt);
+            df.setParseBigDecimal(true);
+            parsedNum = Assertions.assertDoesNotThrow(() -> fmt.parse(originalFormatted),
+                    "Failed BigDecimal parse(format(%s))".formatted(num));
+            parsedFormatted = fmt.format(parsedNum);
+            df.setParseBigDecimal(false);
+            Assertions.assertEquals(originalFormatted, parsedFormatted,
+                    "Failed to round-trip format(parse(format(%s)))".formatted(num));
         }
-
-        System.out.println("Numeric error " +
-              min_numeric_error + " to " +
-              max_numeric_error);
+        // Numeric mismatch to the amount of 1e-14 is tolerable
+        var error = proportionalError(num, parsedNum);
+        Assertions.assertFalse(error > 1e-14,
+                "Round tripping %s caused numeric error: %s".formatted(num, error));
     }
 
-    public void doTest(NumberFormat fmt) {
-        doTest(fmt, Double.NaN);
-        doTest(fmt, Double.POSITIVE_INFINITY);
-        doTest(fmt, Double.NEGATIVE_INFINITY);
-
-        doTest(fmt, 500);
-        doTest(fmt, 0);
-        doTest(fmt, 5555555555555555L);
-        doTest(fmt, 55555555555555555L);
-        doTest(fmt, 9223372036854775807L);
-        doTest(fmt, 9223372036854775808.0);
-        doTest(fmt, -9223372036854775808L);
-        doTest(fmt, -9223372036854775809.0);
-
-        for (int i=0; i<2; ++i) {
-            doTest(fmt, randomDouble(1));
-            doTest(fmt, randomDouble(10000));
-            doTest(fmt, Math.floor(randomDouble(10000)));
-            doTest(fmt, randomDouble(1e50));
-            doTest(fmt, randomDouble(1e-50));
-            doTest(fmt, randomDouble(1e100));
-            // The use of double d such that isInfinite(100d) causes the
-            // numeric test to fail with percent formats (bug 4266589).
-            // Largest double s.t. 100d < Inf: d=1.7976931348623156E306
-            doTest(fmt, randomDouble(1e306));
-            doTest(fmt, randomDouble(1e-323));
-            doTest(fmt, randomDouble(1e-100));
-        }
+    // Regular, number, currency, and percent instance per locale
+    private static Stream<Arguments> testNumberFormatRoundTrip() {
+        return Stream.concat(
+                // Default Locale
+                Stream.of(
+                        Arguments.of(NumberFormat.getInstance()),
+                        Arguments.of(NumberFormat.getNumberInstance()),
+                        Arguments.of(NumberFormat.getCurrencyInstance()),
+                        Arguments.of(NumberFormat.getPercentInstance())),
+                // ~1000 locales returned from provider.
+                // Too expensive to test all locales, so sample a reasonable amount
+                Arrays.stream(NumberFormat.getAvailableLocales())
+                        .filter(_ -> RND.nextDouble() < .25)
+                        .flatMap(loc -> Stream.of(
+                        Arguments.of(NumberFormat.getInstance(loc)),
+                        Arguments.of(NumberFormat.getNumberInstance(loc)),
+                        Arguments.of(NumberFormat.getCurrencyInstance(loc)),
+                        Arguments.of(NumberFormat.getPercentInstance(loc)))
+                )
+        );
     }
 
-    /**
-     * Return a random value from -range..+range.
-     */
-    public double randomDouble(double range) {
-        double a = Math.random();
-        return (2.0 * range * a) - range;
+    // Fixed set of numbers to test each locale against
+    private static final List<Number> numbers = List.of(
+            Double.NaN,
+            Double.POSITIVE_INFINITY,
+            Double.NEGATIVE_INFINITY,
+            500,
+            0,
+            5555555555555555L,
+            55555555555555555L,
+            9223372036854775807L,
+            9223372036854775808.0,
+            -9223372036854775808L,
+            -9223372036854775809.0
+    );
+
+    // Compute fresh batch of random numbers per locale
+    private Stream<Number> randomNumbers() {
+        return Stream.of(
+                randomDouble(1),
+                randomDouble(10000),
+                Math.floor(randomDouble(10000)),
+                randomDouble(1e50),
+                randomDouble(1e-50),
+                randomDouble(1e100),
+                // The use of double d such that isInfinite(100d) causes the
+                // numeric test to fail with percent formats (bug 4266589).
+                // Largest double s.t. 100d < Inf: d=1.7976931348623156E306
+                randomDouble(1e306),
+                randomDouble(1e-323),
+                randomDouble(1e-100)
+        );
     }
 
-    public void doTest(NumberFormat fmt, double value) {
-        doTest(fmt, Double.valueOf(value));
+    // Return a random value from -range..+range.
+    private static double randomDouble(double range) {
+        return RND.nextDouble(-range, range);
     }
 
-    public void doTest(NumberFormat fmt, long value) {
-        doTest(fmt, Long.valueOf(value));
-    }
-
-    static double proportionalError(Number a, Number b) {
+    private static double proportionalError(Number a, Number b) {
         double aa = a.doubleValue(), bb = b.doubleValue();
         double error = aa - bb;
         if (aa != 0 && bb != 0) error /= aa;
         return Math.abs(error);
-    }
-
-    public void doTest(NumberFormat fmt, Number value) {
-        fmt.setMaximumFractionDigits(Integer.MAX_VALUE);
-        String s = fmt.format(value), s2 = null;
-        Number n = null;
-        String err = "";
-        try {
-            System.out.println("  " + value + " F> " + escape(s));
-            n = fmt.parse(s);
-            System.out.println("  " + escape(s) + " P> " + n);
-            s2 = fmt.format(n);
-            System.out.println("  " + n + " F> " + escape(s2));
-
-            if (STRING_COMPARE) {
-                if (!s.equals(s2)) {
-                    if (fmt instanceof DecimalFormat) {
-                        System.out.println("Text mismatch: expected: " + s + ", got: " + s2 + " --- Try BigDecimal parsing.");
-                        ((DecimalFormat)fmt).setParseBigDecimal(true);
-                        n = fmt.parse(s);
-                        System.out.println("  " + escape(s) + " P> " + n);
-                        s2 = fmt.format(n);
-                        System.out.println("  " + n + " F> " + escape(s2));
-                        ((DecimalFormat)fmt).setParseBigDecimal(false);
-
-                        if (!s.equals(s2)) {
-                            err = "STRING ERROR(DecimalFormat): ";
-                        }
-                    } else {
-                        err = "STRING ERROR(NumberFormat): ";
-                    }
-                }
-            }
-
-            if (EXACT_NUMERIC_COMPARE) {
-                if (value.doubleValue() != n.doubleValue()) {
-                    err += "NUMERIC ERROR: ";
-                }
-            } else {
-                // Compute proportional error
-                double error = proportionalError(value, n);
-
-                if (error > MAX_ERROR) {
-                    err += "NUMERIC ERROR " + error + ": ";
-                }
-
-                if (error > max_numeric_error) max_numeric_error = error;
-                if (error < min_numeric_error) min_numeric_error = error;
-            }
-
-            String message = value + typeOf(value) + " F> " +
-                escape(s) + " P> " +
-                n + typeOf(n) + " F> " +
-                escape(s2);
-            if (err.length() > 0) {
-                fail("*** " + err + " with " +
-                      formatName + " in " + localeName +
-                      " " + message);
-            } else {
-                System.out.println(message);
-            }
-        } catch (ParseException e) {
-            fail("*** " + e.toString() + " with " +
-                  formatName + " in " + localeName);
-        }
-    }
-
-    static String typeOf(Number n) {
-        if (n instanceof Long) return " Long";
-        if (n instanceof Double) return " Double";
-        return " Number";
-    }
-
-    static String escape(String s) {
-        StringBuffer buf = new StringBuffer();
-        for (int i=0; i<s.length(); ++i) {
-            char c = s.charAt(i);
-            if (c < (char)0xFF) {
-                buf.append(c);
-            } else {
-                buf.append("\\U");
-                buf.append(Integer.toHexString((c & 0xF000) >> 12));
-                buf.append(Integer.toHexString((c & 0x0F00) >> 8));
-                buf.append(Integer.toHexString((c & 0x00F0) >> 4));
-                buf.append(Integer.toHexString(c & 0x000F));
-            }
-        }
-        return buf.toString();
     }
 }

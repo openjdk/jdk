@@ -26,7 +26,7 @@
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "gc/shared/ptrQueue.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -70,7 +70,7 @@ JVMFlag::Error G1RemSetHowlMaxNumBucketsConstraintFunc(uint value, bool verbose)
   }
   if (!is_power_of_2(G1RemSetHowlMaxNumBuckets)) {
     JVMFlag::printError(verbose,
-                        "G1RemSetMaxHowlNumBuckets (%u) must be a power of two.\n",
+                        "G1RemSetHowlMaxNumBuckets (%u) must be a power of two.\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

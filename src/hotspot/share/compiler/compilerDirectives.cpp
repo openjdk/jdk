@@ -256,7 +256,7 @@ ControlIntrinsicIter::ControlIntrinsicIter(ccstrlist option_value, bool disable_
 }
 
 ControlIntrinsicIter::~ControlIntrinsicIter() {
-  FREE_C_HEAP_ARRAY(char, _list);
+  FREE_C_HEAP_ARRAY(_list);
 }
 
 // pre-increment
@@ -557,6 +557,20 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   }
   if (!CompilerDirectivesIgnoreCompileCommandsOption) {
     return CompilerOracle::should_not_inline(mh);
+  }
+  return false;
+}
+
+bool DirectiveSet::should_delay_inline(ciMethod* inlinee) {
+  inlinee->check_is_loaded();
+  VM_ENTRY_MARK;
+  methodHandle mh(THREAD, inlinee->get_Method());
+
+  if (_inlinematchers != nullptr) {
+    return matches_inline(mh, InlineMatcher::delay_inline);
+  }
+  if (!CompilerDirectivesIgnoreCompileCommandsOption) {
+    return CompilerOracle::should_delay_inline(mh);
   }
   return false;
 }

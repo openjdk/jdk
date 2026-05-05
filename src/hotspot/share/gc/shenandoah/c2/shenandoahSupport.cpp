@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2026, Red Hat, Inc. All rights reserved.
  * Copyright (C) 2022, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 
 #include "classfile/javaClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -859,8 +860,8 @@ static void hide_strip_mined_loop(OuterStripMinedLoopNode* outer, CountedLoopNod
   phase->register_control(new_outer, phase->get_loop(outer), outer->in(LoopNode::EntryControl));
   Node* new_le = new IfNode(le->in(0), le->in(1), le->_prob, le->_fcnt);
   phase->register_control(new_le, phase->get_loop(le), le->in(0));
-  phase->lazy_replace(outer, new_outer);
-  phase->lazy_replace(le, new_le);
+  phase->replace_node_and_forward_ctrl(outer, new_outer);
+  phase->replace_node_and_forward_ctrl(le, new_le);
   inner->clear_strip_mined();
 }
 
@@ -871,7 +872,7 @@ void ShenandoahBarrierC2Support::test_gc_state(Node*& ctrl, Node* raw_mem, Node*
 
   Node* thread          = new ThreadLocalNode();
   Node* gc_state_offset = igvn.MakeConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  Node* gc_state_addr   = new AddPNode(phase->C->top(), thread, gc_state_offset);
+  Node* gc_state_addr   = AddPNode::make_off_heap(thread, gc_state_offset);
   Node* gc_state        = new LoadBNode(old_ctrl, raw_mem, gc_state_addr,
                                         DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(nullptr),
                                         TypeInt::BYTE, MemNode::unordered);
@@ -928,12 +929,31 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   PhaseIterGVN& igvn = phase->igvn();
 
   Node* raw_val        = new CastP2XNode(old_ctrl, val);
-  Node* cset_idx       = new URShiftXNode(raw_val, igvn.intcon(ShenandoahHeapRegion::region_size_bytes_shift_jint()));
+  Node* region_size_shift = nullptr;
+  if (AOTCodeCache::is_on_for_dump()) {
+    Node* aot_addr = igvn.makecon(TypeRawPtr::make(AOTRuntimeConstants::grain_shift_address()));
+    region_size_shift = new LoadINode(old_ctrl, raw_mem, aot_addr,
+                                      DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(nullptr),
+                                      TypeInt::INT, MemNode::unordered);
+    phase->register_new_node(region_size_shift, old_ctrl);
+  } else {
+    region_size_shift = igvn.intcon(ShenandoahHeapRegion::region_size_bytes_shift_jint());
+  }
+  Node* cset_idx       = new URShiftXNode(raw_val, region_size_shift);
 
   // Figure out the target cset address with raw pointer math.
   // This avoids matching AddP+LoadB that would emit inefficient code.
   // See JDK-8245465.
-  Node* cset_addr_ptr  = igvn.makecon(TypeRawPtr::make(ShenandoahHeap::in_cset_fast_test_addr()));
+  Node* cset_addr_ptr = nullptr;
+  if (AOTCodeCache::is_on_for_dump()) {
+    Node* aot_addr = igvn.makecon(TypeRawPtr::make(AOTRuntimeConstants::cset_base_address()));
+    cset_addr_ptr = new LoadPNode(old_ctrl, raw_mem, aot_addr,
+                                  DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(nullptr),
+                                  TypeRawPtr::NOTNULL, MemNode::unordered);
+    phase->register_new_node(cset_addr_ptr, old_ctrl);
+  } else {
+    cset_addr_ptr  = igvn.makecon(TypeRawPtr::make(ShenandoahHeap::in_cset_fast_test_addr()));
+  }
   Node* cset_addr      = new CastP2XNode(old_ctrl, cset_addr_ptr);
   Node* cset_load_addr = new AddXNode(cset_addr, cset_idx);
   Node* cset_load_ptr  = new CastX2PNode(cset_load_addr);
@@ -1324,7 +1344,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       Node* backedge = head->in(LoopNode::LoopBackControl);
       Node* new_head = new LoopNode(entry, backedge);
       phase->register_control(new_head, phase->get_loop(entry), entry);
-      phase->lazy_replace(head, new_head);
+      phase->replace_node_and_forward_ctrl(head, new_head);
     }
   }
 
@@ -1394,7 +1414,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     }
     if (addr->Opcode() == Op_AddP) {
       Node* orig_base = addr->in(AddPNode::Base);
-      Node* base = new CheckCastPPNode(ctrl, orig_base, orig_base->bottom_type(), ConstraintCastNode::StrongDependency);
+      Node* base = new CheckCastPPNode(ctrl, orig_base, orig_base->bottom_type(), ConstraintCastNode::DependencyType::NonFloatingNarrowing);
       phase->register_new_node(base, ctrl);
       if (addr->in(AddPNode::Base) == addr->in((AddPNode::Address))) {
         // Field access
@@ -1777,7 +1797,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
           if (u->adr_type() == TypePtr::BOTTOM) {
             fix_memory_uses(u, n, n, c);
           } else if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
-            _phase->lazy_replace(u, n);
+            _phase->igvn().replace_node(u, n);
             --i; --imax;
           }
         }

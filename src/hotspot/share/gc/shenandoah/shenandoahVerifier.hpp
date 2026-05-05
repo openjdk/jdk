@@ -52,7 +52,7 @@ private:
 };
 
 typedef Stack<ShenandoahVerifierTask, mtGC> ShenandoahVerifierStack;
-typedef volatile juint ShenandoahLivenessData;
+typedef Atomic<juint> ShenandoahLivenessData;
 
 class ShenandoahVerifier : public CHeapObj<mtGC> {
 private:
@@ -155,7 +155,10 @@ public:
     _verify_size_exact,
 
     // Expect promote-in-place adjustments: padding inserted to temporarily prevent further allocation in regular regions
-    _verify_size_adjusted_for_padding
+    _verify_size_adjusted_for_padding,
+
+    // Expected heap size should not include
+    _verify_size_exact_including_trash
   } VerifySize;
 
   typedef enum {
@@ -217,6 +220,7 @@ public:
   void verify_before_evacuation(ShenandoahGeneration* generation);
   void verify_before_update_refs(ShenandoahGeneration* generation);
   void verify_after_update_refs(ShenandoahGeneration* generation);
+  void verify_after_gc(ShenandoahGeneration* generation);
   void verify_before_fullgc(ShenandoahGeneration* generation);
   void verify_after_fullgc(ShenandoahGeneration* generation);
   void verify_after_degenerated(ShenandoahGeneration* generation);

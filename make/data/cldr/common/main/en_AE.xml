@@ -286,13 +286,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</calendar>
 		</calendars>
 		<timeZoneNames>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>∅∅∅</generic>
-					<standard>∅∅∅</standard>
-					<daylight>∅∅∅</daylight>
-				</short>
-			</zone>
 			<metazone type="Alaska">
 				<short>
 					<generic>∅∅∅</generic>
@@ -338,6 +331,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Gulf">
 				<short>
 					<standard>GST</standard>
+				</short>
+			</metazone>
+			<metazone type="Hawaii">
+				<short>
+					<standard>∅∅∅</standard>
 				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">

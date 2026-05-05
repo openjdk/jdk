@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
-
 import java.util.Objects;
 import jdk.jpackage.internal.util.Result;
 
@@ -36,6 +34,6 @@ record WinSystemEnvironment(WixToolset wixToolset) implements SystemEnvironment 
     }
 
     static Result<WinSystemEnvironment> create() {
-        return Result.create(toSupplier(WixTool::createToolset)).map(WinSystemEnvironment::new);
+        return Result.of(WixTool::createToolset).map(WinSystemEnvironment::new);
     }
 }

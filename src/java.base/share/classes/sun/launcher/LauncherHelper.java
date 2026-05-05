@@ -103,6 +103,7 @@ public final class LauncherHelper {
     private static final String ADD_EXPORTS = "Add-Exports";
     private static final String ADD_OPENS = "Add-Opens";
     private static final String ENABLE_NATIVE_ACCESS = "Enable-Native-Access";
+    private static final String ENABLE_FINAL_FIELD_MUTATION = "Enable-Final-Field-Mutation";
 
     private static StringBuilder outBuf = new StringBuilder();
 
@@ -647,12 +648,24 @@ public final class LauncherHelper {
         if (opens != null) {
             addExportsOrOpens(opens, true);
         }
+
+        // Enable-Native-Access
         String enableNativeAccess = mainAttrs.getValue(ENABLE_NATIVE_ACCESS);
         if (enableNativeAccess != null) {
             if (!enableNativeAccess.equals("ALL-UNNAMED")) {
                 abort(null, "java.launcher.jar.error.illegal.ena.value", enableNativeAccess);
             }
             Modules.addEnableNativeAccessToAllUnnamed();
+        }
+
+        // Enable-Final-Field-Mutation
+        String enableFinalFieldMutation = mainAttrs.getValue(ENABLE_FINAL_FIELD_MUTATION);
+        if (enableFinalFieldMutation != null) {
+            if (!enableFinalFieldMutation.equals("ALL-UNNAMED")) {
+                abort(null, "java.launcher.jar.error.illegal.effm.value",
+                        enableFinalFieldMutation);
+            }
+            Modules.addEnableFinalMutationToAllUnnamed();
         }
 
         /*

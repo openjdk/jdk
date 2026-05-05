@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html.taglets;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
@@ -70,7 +71,8 @@ public final class UserTaglet implements Taglet {
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         Content output = tagletWriter.getOutputInstance();
-        output.add(RawHtml.of(userTaglet.toString(List.of(tag), element)));
+        URI pathToRoot = getPathToRoot(tagletWriter);
+        output.add(RawHtml.of(userTaglet.toString(List.of(tag), element, pathToRoot)));
         return output;
     }
 
@@ -80,11 +82,17 @@ public final class UserTaglet implements Taglet {
         var utils = tagletWriter.utils;
         List<? extends DocTree> tags = utils.getBlockTags(holder, getName());
         if (!tags.isEmpty()) {
-            String tagString = userTaglet.toString(tags, holder);
+            URI pathToRoot = getPathToRoot(tagletWriter);
+            String tagString = userTaglet.toString(tags, holder, pathToRoot);
             if (tagString != null) {
                 output.add(RawHtml.of(tagString));
             }
         }
         return output;
+    }
+
+    private URI getPathToRoot(TagletWriter tagletWriter) {
+        var path = tagletWriter.htmlWriter.pathToRoot.getPath();
+        return URI.create(path.isEmpty() || path.endsWith("/") ? path : path + "/");
     }
 }

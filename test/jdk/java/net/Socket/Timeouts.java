@@ -442,7 +442,7 @@ class Timeouts {
     }
 
     /**
-     * Test timed accept with the thread interrupt status set.
+     * Test timed accept with the thread interrupted status set.
      */
     @Test
     void testTimedAccept8() throws IOException {
@@ -461,7 +461,7 @@ class Timeouts {
                 checkDuration(startMillis, timeout-100, timeout+20_000);
                 assertTrue(Thread.currentThread().isInterrupted());
             } finally {
-                Thread.interrupted(); // clear interrupt status
+                Thread.interrupted(); // clear interrupted status
             }
         }
     }
@@ -488,7 +488,7 @@ class Timeouts {
                 assertTrue(Thread.currentThread().isInterrupted());
             } finally {
                 interrupter.cancel(true);
-                Thread.interrupted(); // clear interrupt status
+                Thread.interrupted(); // clear interrupted status
             }
         }
     }

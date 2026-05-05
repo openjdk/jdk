@@ -1100,6 +1100,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // ... and push the new frame F0.
   __ push_frame(top_frame_size, fp, true /*copy_sp*/, false);
+
+  __ z_lcgr(top_frame_size);  // negate
+  __ z_srag(top_frame_size, top_frame_size, Interpreter::logStackElementSize);
+  // Store relativized top_frame_sp
+  __ z_stg(top_frame_size, _z_ijava_state_neg(top_frame_sp), fp);
   }
 
   //=============================================================================
@@ -1108,6 +1113,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   {
   // locals
   const Register local_addr = Z_ARG4;
+  const Register constants_addr = Z_ARG2;
 
   BLOCK_COMMENT("generate_fixed_frame: initialize interpreter state {");
 
@@ -1123,8 +1129,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_stg(Z_R10, _z_ijava_state_neg(sender_sp), fp);
 
   // Load cp cache and save it at the end of this block.
-  __ z_lg(Z_R1_scratch, Address(const_method, ConstMethod::constants_offset()));
-  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, ConstantPool::cache_offset()));
+  __ z_lg(constants_addr, Address(const_method, ConstMethod::constants_offset()));
+  __ z_lg(Z_R1_scratch, Address(constants_addr, ConstantPool::cache_offset()));
 
   // z_ijava_state->method = method;
   __ z_stg(Z_method, _z_ijava_state_neg(method), fp);
@@ -1187,7 +1193,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(cpoolCache), fp);
 
   // Get mirror and store it in the frame as GC root for this Method*.
-  __ load_mirror_from_const_method(Z_R1_scratch, const_method);
+  __ mem2reg_opt(Z_R1_scratch, Address(constants_addr, ConstantPool::pool_holder_offset()));
+  __ mem2reg_opt(Z_R1_scratch, Address(Z_R1_scratch, Klass::java_mirror_offset()));
+  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(mirror), fp);
 
   BLOCK_COMMENT("} generate_fixed_frame: initialize interpreter state");
@@ -2023,7 +2031,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   uint64_t entry_off = __ offset();
 
   __ z_lg(Z_RET, Address(Z_thread, JavaThread::threadObj_offset()));
-  __ resolve_oop_handle(Z_RET);
+  __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
 
   // Restore caller sp for c2i case.
   __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
@@ -2068,6 +2076,14 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Frame accessors use Z_fp.
   // Z_ARG1 (==Z_tos): exception
   // Z_ARG2          : Return address/pc that threw exception.
+  {
+    Register top_frame_sp = Z_R1_scratch; // anyway going to load it with correct value
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
   __ restore_bcp();    // R13 points to call/send.
   __ restore_locals();
 
@@ -2175,6 +2191,14 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        false,  // install_monitor_exception
                        false); // notify_jvmdi
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
+  {
+    Register top_frame_sp = Z_R1_scratch;
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
   __ restore_bcp();
   __ restore_locals();
   __ restore_esp();

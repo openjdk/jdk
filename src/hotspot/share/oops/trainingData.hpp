@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "oops/array.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -217,11 +218,7 @@ public:
       return *prior;
     }
     template<typename Function>
-    void iterate(const Function& fn) const { // lambda enabled API
-      iterate(const_cast<Function&>(fn));
-    }
-    template<typename Function>
-    void iterate(Function& fn) const { // lambda enabled API
+    void iterate(Function fn) const { // lambda enabled API
       return _table.iterate_all([&](const TrainingData::Key* k, TrainingData* td) { fn(td); });
     }
     int size() const { return _table.number_of_entries(); }
@@ -304,13 +301,10 @@ private:
   }
 
   template<typename Function>
-  static void iterate(const Function& fn) { iterate(const_cast<Function&>(fn)); }
-
-  template<typename Function>
-  static void iterate(Function& fn) { // lambda enabled API
+  static void iterate(Function fn) { // lambda enabled API
     TrainingDataLocker l;
     if (have_data()) {
-      archived_training_data_dictionary()->iterate(fn);
+      archived_training_data_dictionary()->iterate_all(fn);
     }
     if (need_data()) {
       training_data_set()->iterate(fn);
@@ -431,6 +425,8 @@ private:
     }
     return nullptr;
   }
+
+  static void cleanup_after_redefinition();
 };
 
 // Training data that is associated with an InstanceKlass
@@ -748,6 +744,9 @@ class MethodTrainingData : public TrainingData {
   MethodCounters* _final_counters;
   MethodData*     _final_profile;
 
+  int _invocation_count;
+  int _backedge_count;
+
   MethodTrainingData();
   MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
     _klass = ktd;
@@ -758,6 +757,8 @@ class MethodTrainingData : public TrainingData {
     _highest_top_level = CompLevel_none;
     _level_mask = 0;
     _was_toplevel = false;
+    _invocation_count = 0;
+    _backedge_count = 0;
   }
 
   static int level_mask(int level) {
@@ -772,6 +773,8 @@ class MethodTrainingData : public TrainingData {
   bool saw_level(CompLevel l) const { return (_level_mask & level_mask(l)) != 0; }
   int highest_top_level()     const { return _highest_top_level; }
   MethodData* final_profile() const { return _final_profile; }
+  int invocation_count() const { return _invocation_count; }
+  int backedge_count() const { return _backedge_count; }
 
   Symbol* name() const {
     precond(has_holder());

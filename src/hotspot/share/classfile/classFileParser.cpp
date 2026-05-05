@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
@@ -47,6 +48,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/annotations.hpp"
+#include "oops/bsmAttribute.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/fieldStreams.inline.hpp"
@@ -85,12 +87,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
-#if INCLUDE_CDS
-#include "classfile/systemDictionaryShared.hpp"
-#endif
-#if INCLUDE_JFR
-#include "jfr/support/jfrTraceIdExtension.hpp"
-#endif
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -156,6 +152,8 @@
 
 #define JAVA_26_VERSION                   70
 
+#define JAVA_27_VERSION                   71
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -194,7 +192,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
     // so we don't need bounds-check for reading tag.
     const u1 tag = cfs->get_u1_fast();
     switch (tag) {
-      case JVM_CONSTANT_Class : {
+      case JVM_CONSTANT_Class: {
         cfs->guarantee_more(3, CHECK);  // name_index, tag/access_flags
         const u2 name_index = cfs->get_u2_fast();
         cp->klass_index_at_put(index, name_index);
@@ -943,6 +941,7 @@ public:
     _java_lang_Deprecated_for_removal,
     _jdk_internal_vm_annotation_AOTSafeClassInitializer,
     _method_AOTRuntimeSetup,
+    _jdk_internal_vm_annotation_TrustFinalFields,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1016,7 +1015,8 @@ public:
 };
 
 
-static int skip_annotation_value(const u1*, int, int); // fwd decl
+static int skip_annotation_value(const u1* buffer, int limit, int index, int recursion_depth); // fwd decl
+static const int max_recursion_depth = 5;
 
 // Safely increment index by val if does not pass limit
 #define SAFE_ADD(index, limit, val) \
@@ -1024,23 +1024,29 @@ if (index >= limit - val) return limit; \
 index += val;
 
 // Skip an annotation.  Return >=limit if there is any problem.
-static int skip_annotation(const u1* buffer, int limit, int index) {
+static int skip_annotation(const u1* buffer, int limit, int index, int recursion_depth = 0) {
   assert(buffer != nullptr, "invariant");
+  if (recursion_depth > max_recursion_depth) {
+    return limit;
+  }
   // annotation := atype:u2 do(nmem:u2) {member:u2 value}
   // value := switch (tag:u1) { ... }
   SAFE_ADD(index, limit, 4); // skip atype and read nmem
   int nmem = Bytes::get_Java_u2((address)buffer + index - 2);
   while (--nmem >= 0 && index < limit) {
     SAFE_ADD(index, limit, 2); // skip member
-    index = skip_annotation_value(buffer, limit, index);
+    index = skip_annotation_value(buffer, limit, index, recursion_depth + 1);
   }
   return index;
 }
 
 // Skip an annotation value.  Return >=limit if there is any problem.
-static int skip_annotation_value(const u1* buffer, int limit, int index) {
+static int skip_annotation_value(const u1* buffer, int limit, int index, int recursion_depth) {
   assert(buffer != nullptr, "invariant");
 
+  if (recursion_depth > max_recursion_depth) {
+    return limit;
+  }
   // value := switch (tag:u1) {
   //   case B, C, I, S, Z, D, F, J, c: con:u2;
   //   case e: e_class:u2 e_name:u2;
@@ -1072,12 +1078,12 @@ static int skip_annotation_value(const u1* buffer, int limit, int index) {
       SAFE_ADD(index, limit, 2); // read nval
       int nval = Bytes::get_Java_u2((address)buffer + index - 2);
       while (--nval >= 0 && index < limit) {
-        index = skip_annotation_value(buffer, limit, index);
+        index = skip_annotation_value(buffer, limit, index, recursion_depth + 1);
       }
     }
     break;
     case '@':
-      index = skip_annotation(buffer, limit, index);
+      index = skip_annotation(buffer, limit, index, recursion_depth + 1);
       break;
     default:
       return limit;  //  bad tag byte
@@ -1878,6 +1884,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _field_Stable;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_TrustFinalFields_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_TrustFinalFields;
+    }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature): {
       if (_location != _in_field && _location != _in_class) {
         break;  // only allow for fields and classes
@@ -1991,6 +2002,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   }
   if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
     ik->set_has_aot_safe_initializer();
+  }
+  if (has_annotation(_jdk_internal_vm_annotation_TrustFinalFields)) {
+    ik->set_trust_final_fields(true);
   }
 }
 
@@ -2349,8 +2363,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
           }
           if (lvt_cnt == max_lvt_cnt) {
             max_lvt_cnt <<= 1;
-            localvariable_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
-            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(const unsafe_u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
+            localvariable_table_length = REALLOC_RESOURCE_ARRAY(localvariable_table_length, lvt_cnt, max_lvt_cnt);
+            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(localvariable_table_start, lvt_cnt, max_lvt_cnt);
           }
           localvariable_table_start[lvt_cnt] =
             parse_localvariable_table(cfs,
@@ -2379,8 +2393,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
           // Parse local variable type table
           if (lvtt_cnt == max_lvtt_cnt) {
             max_lvtt_cnt <<= 1;
-            localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
-            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(const unsafe_u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
           }
           localvariable_type_table_start[lvtt_cnt] =
             parse_localvariable_table(cfs,
@@ -3298,8 +3312,9 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
                                                                   TRAPS) {
   assert(cfs != nullptr, "invariant");
   assert(cp != nullptr, "invariant");
+  const int cp_size = cp->length();
 
-  const u1* const current_start = cfs->current();
+  const u1* const current_before_parsing = cfs->current();
 
   guarantee_property(attribute_byte_length >= sizeof(u2),
                      "Invalid BootstrapMethods attribute length %u in class file %s",
@@ -3308,57 +3323,40 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
 
   cfs->guarantee_more(attribute_byte_length, CHECK);
 
-  const int attribute_array_length = cfs->get_u2_fast();
+  const int num_bootstrap_methods = cfs->get_u2_fast();
 
-  guarantee_property(_max_bootstrap_specifier_index < attribute_array_length,
+  guarantee_property(_max_bootstrap_specifier_index < num_bootstrap_methods,
                      "Short length on BootstrapMethods in class file %s",
                      CHECK);
 
+  const u4 bootstrap_methods_u2_len = (attribute_byte_length - sizeof(u2)) / sizeof(u2);
 
-  // The attribute contains a counted array of counted tuples of shorts,
-  // represending bootstrap specifiers:
-  //    length*{bootstrap_method_index, argument_count*{argument_index}}
-  const unsigned int operand_count = (attribute_byte_length - (unsigned)sizeof(u2)) / (unsigned)sizeof(u2);
-  // operand_count = number of shorts in attr, except for leading length
-
-  // The attribute is copied into a short[] array.
-  // The array begins with a series of short[2] pairs, one for each tuple.
-  const int index_size = (attribute_array_length * 2);
-
-  Array<u2>* const operands =
-    MetadataFactory::new_array<u2>(_loader_data, index_size + operand_count, CHECK);
-
-  // Eagerly assign operands so they will be deallocated with the constant
+  // Eagerly assign the arrays so that they will be deallocated with the constant
   // pool if there is an error.
-  cp->set_operands(operands);
+  BSMAttributeEntries::InsertionIterator iter =
+    cp->bsm_entries().start_extension(num_bootstrap_methods,
+                                      bootstrap_methods_u2_len,
+                                      _loader_data,
+                                      CHECK);
 
-  int operand_fill_index = index_size;
-  const int cp_size = cp->length();
-
-  for (int n = 0; n < attribute_array_length; n++) {
-    // Store a 32-bit offset into the header of the operand array.
-    ConstantPool::operand_offset_at_put(operands, n, operand_fill_index);
-
-    // Read a bootstrap specifier.
+  for (int i = 0; i < num_bootstrap_methods; i++) {
     cfs->guarantee_more(sizeof(u2) * 2, CHECK);  // bsm, argc
-    const u2 bootstrap_method_index = cfs->get_u2_fast();
-    const u2 argument_count = cfs->get_u2_fast();
+    u2 bootstrap_method_ref = cfs->get_u2_fast();
+    u2 num_bootstrap_arguments = cfs->get_u2_fast();
     guarantee_property(
-      valid_cp_range(bootstrap_method_index, cp_size) &&
-      cp->tag_at(bootstrap_method_index).is_method_handle(),
-      "bootstrap_method_index %u has bad constant type in class file %s",
-      bootstrap_method_index,
-      CHECK);
+       valid_cp_range(bootstrap_method_ref, cp_size) &&
+       cp->tag_at(bootstrap_method_ref).is_method_handle(),
+       "bootstrap_method_index %u has bad constant type in class file %s",
+       bootstrap_method_ref,
+       CHECK);
+    cfs->guarantee_more(sizeof(u2) * num_bootstrap_arguments, CHECK); // argv[argc]
 
-    guarantee_property((operand_fill_index + 1 + argument_count) < operands->length(),
-      "Invalid BootstrapMethods num_bootstrap_methods or num_bootstrap_arguments value in class file %s",
-      CHECK);
+    BSMAttributeEntry* entry = iter.reserve_new_entry(bootstrap_method_ref, num_bootstrap_arguments);
+    guarantee_property(entry != nullptr,
+                       "Invalid BootstrapMethods num_bootstrap_methods."
+                       " The total amount of space reserved for the BootstrapMethod attribute was not sufficient", CHECK);
 
-    operands->at_put(operand_fill_index++, bootstrap_method_index);
-    operands->at_put(operand_fill_index++, argument_count);
-
-    cfs->guarantee_more(sizeof(u2) * argument_count, CHECK);  // argv[argc]
-    for (int j = 0; j < argument_count; j++) {
+    for (int argi = 0; argi < num_bootstrap_arguments; argi++) {
       const u2 argument_index = cfs->get_u2_fast();
       guarantee_property(
         valid_cp_range(argument_index, cp_size) &&
@@ -3366,10 +3364,11 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
         "argument_index %u has bad constant type in class file %s",
         argument_index,
         CHECK);
-      operands->at_put(operand_fill_index++, argument_index);
+      entry->set_argument(argi, argument_index);
     }
   }
-  guarantee_property(current_start + attribute_byte_length == cfs->current(),
+  cp->bsm_entries().end_extension(iter, _loader_data, CHECK);
+  guarantee_property(current_before_parsing + attribute_byte_length == cfs->current(),
                      "Bad length on BootstrapMethods in class file %s",
                      CHECK);
 }
@@ -4402,14 +4401,14 @@ void ClassFileParser::verify_legal_field_modifiers(jint flags,
                                                    TRAPS) const {
   if (!_need_verify) { return; }
 
-  const bool is_public    = (flags & JVM_ACC_PUBLIC)    != 0;
-  const bool is_protected = (flags & JVM_ACC_PROTECTED) != 0;
-  const bool is_private   = (flags & JVM_ACC_PRIVATE)   != 0;
-  const bool is_static    = (flags & JVM_ACC_STATIC)    != 0;
-  const bool is_final     = (flags & JVM_ACC_FINAL)     != 0;
-  const bool is_volatile  = (flags & JVM_ACC_VOLATILE)  != 0;
-  const bool is_transient = (flags & JVM_ACC_TRANSIENT) != 0;
-  const bool is_enum      = (flags & JVM_ACC_ENUM)      != 0;
+  const bool is_public    = (flags & JVM_ACC_PUBLIC)      != 0;
+  const bool is_protected = (flags & JVM_ACC_PROTECTED)   != 0;
+  const bool is_private   = (flags & JVM_ACC_PRIVATE)     != 0;
+  const bool is_static    = (flags & JVM_ACC_STATIC)      != 0;
+  const bool is_final     = (flags & JVM_ACC_FINAL)       != 0;
+  const bool is_volatile  = (flags & JVM_ACC_VOLATILE)    != 0;
+  const bool is_transient = (flags & JVM_ACC_TRANSIENT)   != 0;
+  const bool is_enum      = (flags & JVM_ACC_ENUM)        != 0;
   const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
 
   bool is_illegal = false;
@@ -5255,6 +5254,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   if (!is_internal()) {
     ik->print_class_load_logging(_loader_data, module_entry, _stream);
+    if (CDSConfig::is_dumping_archive()) {
+      SystemDictionaryShared::check_code_source(ik, _stream);
+    }
 
     if (ik->minor_version() == JAVA_PREVIEW_MINOR_VERSION &&
         ik->major_version() == JVM_CLASSFILE_MAJOR_VERSION &&
@@ -5285,8 +5287,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
       }
     }
   }
-
-  JFR_ONLY(INIT_ID(ik);)
 
   // If we reach here, all is well.
   // Now remove the InstanceKlass* from the _klass_to_deallocate field
@@ -5523,6 +5523,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   _orig_cp_size = cp_size;
   if (is_hidden()) { // Add a slot for hidden class name.
+    guarantee_property((u4)cp_size < 0xffff, "Overflow in constant pool size for hidden class %s", CHECK);
     cp_size++;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2323,7 +2323,7 @@ private:
     if (strcmp(rep_var,"$Register") == 0)      return "as_Register";
     if (strcmp(rep_var,"$KRegister") == 0)     return "as_KRegister";
     if (strcmp(rep_var,"$FloatRegister") == 0) return "as_FloatRegister";
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
     if (strcmp(rep_var,"$XMMRegister") == 0)   return "as_XMMRegister";
 #endif
     if (strcmp(rep_var,"$CondRegister") == 0)  return "as_ConditionRegister";
@@ -4211,14 +4211,6 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
           _frame->_inline_cache_reg);
   fprintf(fp_cpp,"int Matcher::inline_cache_reg_encode() {");
   fprintf(fp_cpp," return _regEncode[inline_cache_reg()]; }\n\n");
-
-  // Interpreter's Frame Pointer Register
-  fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_frame_pointer_reg() {");
-  if (_frame->_interpreter_frame_pointer_reg == nullptr)
-    fprintf(fp_cpp," return OptoReg::Bad; }\n\n");
-  else
-    fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
-            _frame->_interpreter_frame_pointer_reg);
 
   // Frame Pointer definition
   /* CNC - I can not contemplate having a different frame pointer between

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2096,17 +2096,32 @@ public final class System {
             public boolean isReflectivelyOpened(Module m, String pn, Module other) {
                 return m.isReflectivelyOpened(pn, other);
             }
-            public Module addEnableNativeAccess(Module m) {
-                return m.implAddEnableNativeAccess();
+            public void addEnableNativeAccess(Module m) {
+                m.implAddEnableNativeAccess();
             }
             public boolean addEnableNativeAccess(ModuleLayer layer, String name) {
                 return layer.addEnableNativeAccess(name);
             }
             public void addEnableNativeAccessToAllUnnamed() {
-                Module.implAddEnableNativeAccessToAllUnnamed();
+                Module.addEnableNativeAccessToAllUnnamed();
             }
             public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
                 m.ensureNativeAccess(owner, methodName, currentClass, jni);
+            }
+            public boolean isStaticallyExported(Module m, String pn, Module other) {
+                return m.isStaticallyExported(pn, other);
+            }
+            public boolean isStaticallyOpened(Module m, String pn, Module other) {
+                return m.isStaticallyOpened(pn, other);
+            }
+            public boolean isFinalMutationEnabled(Module m) {
+                return m.isFinalMutationEnabled();
+            }
+            public boolean tryEnableFinalMutation(Module m) {
+                return m.tryEnableFinalMutation();
+            }
+            public void addEnableFinalMutationToAllUnnamed() {
+                Module.addEnableFinalMutationToAllUnnamed();
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
@@ -2262,6 +2277,14 @@ public final class System {
                 return Thread.scopedValueBindings();
             }
 
+            public long nativeThreadID(Thread thread) {
+                return thread.nativeThreadID();
+            }
+
+            public void setThreadNativeID(long id) {
+                Thread.currentThread().setNativeThreadID(id);
+            }
+
             public Continuation getContinuation(Thread thread) {
                 return thread.getContinuation();
             }
@@ -2296,7 +2319,7 @@ public final class System {
                 if (thread instanceof BaseVirtualThread vthread) {
                     vthread.unpark();
                 } else {
-                    throw new WrongThreadException();
+                    throw new IllegalArgumentException();
                 }
             }
 
@@ -2315,13 +2338,18 @@ public final class System {
             }
 
             @Override
-            public void copyToSegmentRaw(String string, MemorySegment segment, long offset) {
-                string.copyToSegmentRaw(segment, offset);
+            public void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
+                string.copyToSegmentRaw(segment, offset, srcIndex, srcLength);
             }
 
             @Override
-            public boolean bytesCompatible(String string, Charset charset) {
-                return string.bytesCompatible(charset);
+            public boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
+                return string.bytesCompatible(charset, srcIndex, numChars);
+            }
+
+            @Override
+            public void finishInit(StackTraceElement[] stackTrace) {
+                StackTraceElement.finishInit(stackTrace);
             }
         });
     }

@@ -1997,20 +1997,5 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             }
         }
     }
-    @SuppressWarnings("deprecation")
-    public void testFinalizeMethodCallsSuperFinalize() {
-        new CustomTPE(1, 1,
-                      LONG_DELAY_MS, MILLISECONDS,
-                      new LinkedBlockingQueue<Runnable>()) {
-
-            /**
-             * A finalize method without "throws Throwable", that
-             * calls super.finalize().
-             */
-            protected void finalize() {
-                super.finalize();
-            }
-        }.shutdown();
-    }
 
 }

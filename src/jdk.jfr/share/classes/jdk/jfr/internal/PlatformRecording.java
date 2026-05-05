@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import static jdk.jfr.internal.LogTag.JFR;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -352,7 +353,7 @@ public final class PlatformRecording implements AutoCloseable {
         // Recording is RUNNING, create a clone
         PlatformRecording clone = recorder.newTemporaryRecording();
         clone.setShouldWriteActiveRecordingEvent(false);
-        clone.setName(getName());
+        clone.setName(getName(), false);
         clone.setToDisk(true);
         clone.setMaxAge(getMaxAge());
         clone.setMaxSize(getMaxSize());
@@ -424,7 +425,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
-    void setState(RecordingState state) {
+    public void setState(RecordingState state) {
         synchronized (recorder) {
             this.state = state;
         }
@@ -448,9 +449,11 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
-    public void setName(String name) {
+    public void setName(String name, boolean checkClosed) {
         synchronized (recorder) {
-            ensureNotClosed();
+            if (checkClosed) {
+                ensureNotClosed();
+            }
             this.name = name;
         }
     }
@@ -744,7 +747,14 @@ public final class PlatformRecording implements AutoCloseable {
     }
 
     private void transferChunks(WriteablePath path) throws IOException {
-        try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(path.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
+        // Before writing, wipe the file if it already exists.
+        try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(path.getReal(), StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING,  StandardOpenOption.CREATE)) {
+            // Mitigate races against other processes
+            FileLock l = fc.tryLock();
+            if (l == null) {
+                Logger.log(LogTag.JFR, LogLevel.INFO, "Dump operation skipped for recording \"" + name + "\" (" + id + "). File " + path.getRealPathText() + " is locked by other dump operation or activity.");
+                return;
+            }
             long bytes = cc.transferTo(fc);
             Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
             // No need to force if no data was transferred, which avoids IOException when device is /dev/null

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,6 +393,11 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ cbz(obj, error);      // if klass is null it is broken
 }
 
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ ldr(obj, Address(weak_handle));
+}
+
 #ifdef COMPILER2
 
 OptoReg::Name BarrierSetAssembler::encode_float_vector_register_size(const Node* node, OptoReg::Name opto_reg) {
@@ -440,7 +445,6 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 
   return opto_reg;
 }
-
 #undef __
 #define __ _masm->
 

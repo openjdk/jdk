@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -32,6 +29,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Function;
+import org.junit.jupiter.api.BeforeAll;
 
 public abstract class VarHandleBaseByteArrayTest extends VarHandleBaseTest {
 
@@ -338,7 +336,7 @@ public abstract class VarHandleBaseByteArrayTest extends VarHandleBaseTest {
         bavss.add(dbb_offset_unaligned_ro);
     }
 
-    @BeforeClass
+    @BeforeAll
     public void setup() {
         setupByteSources();
         vhss = setupVarHandleSources(true);
@@ -346,13 +344,10 @@ public abstract class VarHandleBaseByteArrayTest extends VarHandleBaseTest {
 
     abstract List<VarHandleSource> setupVarHandleSources(boolean same);
 
-
-    @DataProvider
     public Object[][] varHandlesProvider() throws Exception {
         return vhss.stream().map(cvh -> new Object[]{cvh}).toArray(Object[][]::new);
     }
 
-    @DataProvider
     public Object[][] typesProvider() throws Exception {
         List<java.lang.Class<?>> aepts = Arrays.asList(byte[].class, int.class);
         List<java.lang.Class<?>> bbpts = Arrays.asList(ByteBuffer.class, int.class);

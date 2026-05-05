@@ -975,7 +975,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>मिलीमोल फी लीटर</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>हिस्से फी दस लक्ख</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -1499,7 +1499,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>मिलीमोल/लीटर</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>हिस्से/दस लक्ख</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -1942,7 +1942,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>मिलीमोल/ली</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>हिफीदल</displayName>
 			</unit>
 			<unit type="concentr-mole">

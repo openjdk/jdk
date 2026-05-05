@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -40,9 +39,11 @@ WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _end_semaphore() {}
 
 void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
+  guarantee(num_workers > 0, "must use at least one worker, deadlocks otherwise");
+
   // No workers are allowed to read the state variables until they have been signaled.
   _task = task;
-  _not_finished = num_workers;
+  _not_finished.store_relaxed(num_workers);
 
   // Dispatch 'num_workers' number of tasks.
   _start_semaphore.signal(num_workers);
@@ -51,9 +52,12 @@ void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint nu
   _end_semaphore.wait();
 
   // No workers are allowed to read the state variables after the coordinator has been signaled.
-  assert(_not_finished == 0, "%d not finished workers?", _not_finished);
+#ifdef ASSERT
+  uint not_finished = _not_finished.load_relaxed();
+  assert(not_finished == 0, "%u not finished workers?", not_finished);
+#endif // ASSERT
   _task = nullptr;
-  _started = 0;
+  _started.store_relaxed(0);
 }
 
 void WorkerTaskDispatcher::worker_run_task() {
@@ -61,7 +65,7 @@ void WorkerTaskDispatcher::worker_run_task() {
   _start_semaphore.wait();
 
   // Get and set worker id.
-  const uint worker_id = AtomicAccess::fetch_then_add(&_started, 1u);
+  const uint worker_id = _started.fetch_then_add(1u);
   WorkerThread::set_worker_id(worker_id);
 
   // Run task.
@@ -70,7 +74,7 @@ void WorkerTaskDispatcher::worker_run_task() {
 
   // Mark that the worker is done with the task.
   // The worker is not allowed to read the state variables after this line.
-  const uint not_finished = AtomicAccess::sub(&_not_finished, 1u);
+  const uint not_finished = _not_finished.sub_then_fetch(1u);
 
   // The last worker signals to the coordinator that all work is completed.
   if (not_finished == 0) {
@@ -93,8 +97,22 @@ void WorkerThreads::initialize_workers() {
   }
 }
 
+bool WorkerThreads::allow_inject_creation_failure() const {
+  if (!is_init_completed()) {
+    // Never allow creation failures during VM init
+    return false;
+  }
+
+  if (_created_workers == 0) {
+    // Never allow creation failures of the first worker, it will cause the VM to exit
+    return false;
+  }
+
+  return true;
+}
+
 WorkerThread* WorkerThreads::create_worker(uint name_suffix) {
-  if (is_init_completed() && InjectGCWorkerCreationFailure) {
+  if (InjectGCWorkerCreationFailure && allow_inject_creation_failure()) {
     return nullptr;
   }
 
@@ -113,9 +131,9 @@ WorkerThread* WorkerThreads::create_worker(uint name_suffix) {
 }
 
 uint WorkerThreads::set_active_workers(uint num_workers) {
-  assert(num_workers > 0 && num_workers <= _max_workers,
-         "Invalid number of active workers %u (should be 1-%u)",
-         num_workers, _max_workers);
+  guarantee(num_workers > 0 && num_workers <= _max_workers,
+            "Invalid number of active workers %u (should be 1-%u)",
+            num_workers, _max_workers);
 
   while (_created_workers < num_workers) {
     WorkerThread* const worker = create_worker(_created_workers);
@@ -194,8 +212,6 @@ WorkerThread::WorkerThread(const char* name_prefix, uint name_suffix, WorkerTask
 }
 
 void WorkerThread::run() {
-  os::set_priority(this, NearMaxPriority);
-
   while (true) {
     _dispatcher->worker_run_task();
   }

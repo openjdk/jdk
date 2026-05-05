@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,12 +388,6 @@ public class ReferenceTracker {
             System.out.println(warning.substring(pos));
             System.err.println(warning.substring(pos));
         }
-    }
-
-    private boolean isSelectorManager(Thread t) {
-        String name = t.getName();
-        if (name == null) return false;
-        return name.contains("SelectorManager");
     }
 
     // This is a slightly more permissive check than the default checks,

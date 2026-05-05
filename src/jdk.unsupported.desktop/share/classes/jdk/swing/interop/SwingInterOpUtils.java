@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.AWTEvent;
 import sun.awt.SunToolkit;
-import sun.awt.AppContext;
 import sun.awt.UngrabEvent;
 
 /**
@@ -47,10 +46,7 @@ public class SwingInterOpUtils {
     public SwingInterOpUtils() {}
 
     public static void postEvent(Object target, java.awt.AWTEvent e) {
-        AppContext context = SunToolkit.targetToAppContext(target);
-        if (context != null) {
-            SunToolkit.postEvent(context, e);
-        }
+        SunToolkit.postEvent(e);
     }
 
     public static void grab(Toolkit toolkit, Window window) {

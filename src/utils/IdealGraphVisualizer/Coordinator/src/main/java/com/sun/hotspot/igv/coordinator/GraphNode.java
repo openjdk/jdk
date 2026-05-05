@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.util.StringUtils;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+
 import java.awt.Image;
 import javax.swing.Action;
 import org.openide.actions.OpenAction;
@@ -86,7 +88,7 @@ public class GraphNode extends AbstractNode {
 
     @Override
     public String getDisplayName() {
-        return graph.getDisplayName();
+        return EditorTopComponent.getGraphDisplayName(graph);
     }
 
     private GraphNode(InputGraph graph, InstanceContent content) {

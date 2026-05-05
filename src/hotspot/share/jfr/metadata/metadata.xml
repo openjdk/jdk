@@ -215,6 +215,7 @@
   <Event name="ClassDefine" category="Java Virtual Machine, Class Loading" label="Class Define" thread="true" stackTrace="true" startTime="false">
     <Field type="Class" name="definedClass" label="Defined Class" />
     <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
+    <Field type="Symbol" name="source" label="Source" />
   </Event>
 
   <Event name="ClassRedefinition" category="Java Virtual Machine, Class Loading" label="Class Redefinition" thread="false" stackTrace="false" startTime="false">
@@ -1272,18 +1273,42 @@
     <Field type="ulong" name="cSetRegions" label="Collection Set Regions" />
     <Field type="ulong" contentType="bytes" name="cSetUsedBefore" label="Collection Set Before" description="Memory usage before GC in the collection set regions" />
     <Field type="ulong" contentType="bytes" name="cSetUsedAfter" label="Collection Set After" description="Memory usage after GC in the collection set regions" />
-    <Field type="ulong" contentType="bytes" name="collectedOld" label="Collected Old" description="Memory collected from old generation" />
-    <Field type="ulong" contentType="bytes" name="collectedPromoted" label="Collected Promoted" description="Memory collected from generation promotion" />
-    <Field type="ulong" contentType="bytes" name="collectedYoung" label="Collection Young" description="Memory collected from young generation" />
-    <Field type="ulong" name="regionsPromotedHumongous" label="Regions Promoted Humongous" />
-    <Field type="ulong" name="regionsPromotedRegular" label="Regions Promoted Regular" />
-    <Field type="ulong" contentType="bytes" name="regularPromotedGarbage" label="Regular Promoted Garbage" description="Garbage memory of in place promoted regular regions" />
-    <Field type="ulong" contentType="bytes" name="regularPromotedFree" label="Regular Promoted Free" description="Free memory of in place promoted regular regions" />
     <Field type="ulong" name="freeRegions" label="Free Regions" description="Free regions prior to collection" />
     <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
     <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
   </Event>
-  
+
+  <Event name="ShenandoahPromotionInformation" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Promotion Information" startTime="false">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="ulong" contentType="bytes" name="collectedOld" label="Collected Old" description="Memory collected from old generation" />
+    <Field type="ulong" contentType="bytes" name="collectedPromoted" label="Collected Promoted" description="Memory collected from generation promotion" />
+    <Field type="ulong" contentType="bytes" name="collectedYoung" label="Collection Young" description="Memory collected from young generation" />
+    <Field type="ulong" name="regionsPromotedHumongous" label="Regions Promoted Humongous" />
+    <Field type="ulong" contentType="bytes" name="humongousPromotedGarbage" label="Humongous Promoted Garbage" description="Garbage memory of in place promoted humongous regions" />
+    <Field type="ulong" contentType="bytes" name="humongousPromotedFree" label="Humongous Promoted Free" description="Free memory of in place promoted humongous regions" />
+    <Field type="ulong" name="regionsPromotedRegular" label="Regions Promoted Regular" />
+    <Field type="ulong" contentType="bytes" name="regularPromotedGarbage" label="Regular Promoted Garbage" description="Garbage memory of in place promoted regular regions" />
+    <Field type="ulong" contentType="bytes" name="regularPromotedFree" label="Regular Promoted Free" description="Free memory of in place promoted regular regions" />
+  </Event>
+
+  <Event name="StringDeduplication" category="Java Virtual Machine, GC, Detailed" label="String Deduplication Statistics" stackTrace="false">
+    <Field type="ulong" name="inspected" label="Inspected" />
+    <Field type="ulong" name="known" label="Known" />
+    <Field type="ulong" name="shared" label="Shared" />
+    <Field type="ulong" name="newStrings" label="New Strings" description="New unknown strings" />
+    <Field type="ulong" name="newSize" contentType="bytes" label="New Size" description="Size of new unknown strings" />
+    <Field type="ulong" name="replaced" label="Replaced" />
+    <Field type="ulong" name="deleted" label="Deleted" />
+    <Field type="ulong" name="deduplicated" label="Deduplicated" />
+    <Field type="ulong" name="deduplicatedSize" contentType="bytes" label="Deduplicated Size" />
+    <Field type="ulong" name="skippedDead" label="Skipped Dead" />
+    <Field type="ulong" name="skippedIncomplete" label="Skipped Incomplete" />
+    <Field type="ulong" name="skippedShared" label="Skipped Shared" />
+    <Field type="Tickspan" name="processing" label="Processing" />
+    <Field type="Tickspan" name="tableResize" label="Table Resize" />
+    <Field type="Tickspan" name="tableCleanup" label="Table Cleanup" />
+  </Event>
+
   <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
     <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
     <Field type="ulong" name="elements" label="Elements Written" />

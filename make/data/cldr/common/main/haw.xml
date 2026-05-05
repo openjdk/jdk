@@ -326,18 +326,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 		<timeZoneNames>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
-			</zone>
 			<metazone type="Alaska">
 				<short>
 					<generic>AKT</generic>
 					<standard>AKST</standard>
 					<daylight>AKDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Hawaii">
+				<short>
+					<generic>HAT</generic>
+					<standard>HAST</standard>
+					<daylight>HADT</daylight>
 				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">

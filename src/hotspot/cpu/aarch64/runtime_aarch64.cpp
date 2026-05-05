@@ -260,8 +260,6 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 
 //------------------------------generate_exception_blob---------------------------
 // creates exception blob at the end
-// Using exception blob, this code is jumped from a compiled method.
-// (see emit_exception_handler in aarch64.ad file)
 //
 // Given an exception pc at a call we call into the runtime for the
 // handler in this method. This handler might merely restore state
@@ -292,7 +290,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
 
   const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)BlobId::c2_exception_id, name);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
   if (blob != nullptr) {
     return blob->as_exception_blob();
   }

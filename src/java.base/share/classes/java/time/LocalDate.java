@@ -79,6 +79,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.IsoEra;
@@ -143,6 +145,22 @@ public final class LocalDate
         implements Temporal, TemporalAdjuster, ChronoLocalDate, Serializable {
 
     /**
+     * For backward compatibility of the serialized {@code LocalDate.class} object,
+     * explicitly declare the types of the serialized fields as defined in Java SE 8.
+     * Instances of {@code LocalDate} are serialized using the dedicated
+     * serialized form by {@code writeReplace}.
+     * @serialField year int The year.
+     * @serialField month short The month-of-year.
+     * @serialField day short The day-of-month.
+     */
+    @Serial
+    private static final ObjectStreamField[] serialPersistentFields = {
+            new ObjectStreamField("year", int.class),
+            new ObjectStreamField("month", short.class),
+            new ObjectStreamField("day", short.class)
+    };
+
+    /**
      * The minimum supported {@code LocalDate}, '-999999999-01-01'.
      * This could be used by an application as a "far past" date.
      */
@@ -178,15 +196,15 @@ public final class LocalDate
     /**
      * @serial The year.
      */
-    private final int year;
+    private final transient int year;
     /**
      * @serial The month-of-year.
      */
-    private final short month;
+    private final transient byte month;
     /**
      * @serial The day-of-month.
      */
-    private final short day;
+    private final transient byte day;
 
     //-----------------------------------------------------------------------
     /**
@@ -490,8 +508,8 @@ public final class LocalDate
      */
     private LocalDate(int year, int month, int dayOfMonth) {
         this.year = year;
-        this.month = (short) month;
-        this.day = (short) dayOfMonth;
+        this.month = (byte) month;
+        this.day = (byte) dayOfMonth;
     }
 
     //-----------------------------------------------------------------------

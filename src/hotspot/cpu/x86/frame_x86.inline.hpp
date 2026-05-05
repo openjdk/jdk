@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,8 +231,8 @@ inline bool frame::equal(frame other) const {
 
 // Return unique id for this frame. The id must have a value where we can distinguish
 // identity and younger/older relationship. null represents an invalid (incomparable)
-// frame.
-inline intptr_t* frame::id(void) const { return unextended_sp(); }
+// frame. Should not be called for heap frames.
+inline intptr_t* frame::id(void) const { return real_fp(); }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != nullptr && id != nullptr, "null frame id");
@@ -397,6 +397,9 @@ inline frame frame::sender(RegisterMap* map) const {
     StackWatermarkSet::on_iteration(map->thread(), result);
   }
 
+  // Calling frame::id() is currently not supported for heap frames.
+  assert(result._on_heap || this->_on_heap || result.is_older(this->id()), "Must be");
+
   return result;
 }
 
@@ -483,7 +486,6 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
   // we don't have to always save EBP/RBP on entry and exit to c2 compiled
   // code, on entry will be enough.
   map->set_location(rbp->as_VMReg(), (address) link_addr);
-#ifdef AMD64
   // this is weird "H" ought to be at a higher address however the
   // oopMaps seems to have the "H" regs at the same address and the
   // vanilla register.
@@ -491,6 +493,5 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
   if (true) {
     map->set_location(rbp->as_VMReg()->next(), (address) link_addr);
   }
-#endif // AMD64
 }
 #endif // CPU_X86_FRAME_X86_INLINE_HPP

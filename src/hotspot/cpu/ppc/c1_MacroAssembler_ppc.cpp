@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -82,7 +82,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   std(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
 
-  lightweight_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
+  fast_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
   b(done);
 
   bind(slow_int);
@@ -104,7 +104,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   ld(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
   verify_oop(Roop, FILE_AND_LINE);
 
-  lightweight_unlock(Roop, Rmark, slow_int);
+  fast_unlock(Roop, Rmark, slow_int);
   b(done);
   bind(slow_int);
   b(slow_case); // far
@@ -144,7 +144,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     stw(len, arrayOopDesc::length_offset_in_bytes(), obj);
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
+  } else if (!UseCompactObjectHeaders) {
     // Otherwise length is in the class gap.
     store_klass_gap(obj);
   }

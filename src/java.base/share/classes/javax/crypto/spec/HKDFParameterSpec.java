@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,8 @@ import java.util.Objects;
  * <p>
  * Examples:
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-Extract AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-Extract
+ * // AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(label)
@@ -58,12 +59,14 @@ import java.util.Objects;
  *                              .addSalt(salt).extractOnly();
  *}
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-Expand AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-Expand
+ * // AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.expandOnly(prk, info, 32);
  *}
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-ExtractExpand AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-ExtractExpand
+ * // AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikm)
@@ -112,8 +115,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *
          * @implNote HKDF implementations will enforce that the length
          *         is not greater than 255 * HMAC length. HKDF implementations
-         *         will also enforce that a {code null} info value is treated as
-         *         zero-length byte array.
+         *         will also enforce that a {@code null} info value is
+         *         treated as zero-length byte array.
          *
          * @param info
          *         the optional context and application specific information
@@ -261,8 +264,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * @implNote HKDF implementations will enforce that the length is
      *         not greater than 255 * HMAC length. Implementations will also
      *         enforce that the prk argument is at least as many bytes as the
-     *         HMAC length. Implementations will also enforce that a {code null}
-     *         info value is treated as zero-length byte array.
+     *         HMAC length. Implementations will also enforce that a
+     *         {@code null} info value is treated as zero-length byte array.
      *
      * @param prk
      *         the pseudorandom key (PRK); must not be {@code null}
@@ -358,7 +361,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * @param prk
          *         the pseudorandom key (PRK); in the case of
          *         {@code ExtractThenExpand}, the {@code prk} argument may be
-         *         {@null} since the output of extract phase is used
+         *         {@code null} since the output of extract phase is used
          * @param info
          *         the optional context and application specific information
          *         (may be {@code null}); the byte array is cloned to prevent

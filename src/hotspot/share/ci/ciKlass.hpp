@@ -122,9 +122,6 @@ public:
   // Fetch modifier flags.
   jint                   modifier_flags();
 
-  // Fetch Klass::access_flags.
-  jint                   access_flags();
-
   // Fetch Klass::misc_flags.
   klass_flags_t          misc_flags();
 

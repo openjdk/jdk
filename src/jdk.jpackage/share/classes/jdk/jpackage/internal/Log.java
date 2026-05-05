@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,161 +25,62 @@
 
 package jdk.jpackage.internal;
 
-import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+import jdk.jpackage.internal.log.ProgressLogger;
+import jdk.jpackage.internal.log.ResourceLogger;
+import jdk.jpackage.internal.log.StandardLogger;
+import jdk.jpackage.internal.log.TraceLogger;
 
 /**
  * Log
  *
  * General purpose logging mechanism.
  */
-public class Log {
-    public static class Logger {
-        private boolean verbose = false;
-        private PrintWriter out = null;
-        private PrintWriter err = null;
+final class Log {
 
-        // verbose defaults to true unless environment variable JPACKAGE_DEBUG
-        // is set to true.
-        // Then it is only set to true by using --verbose jpackage option
-
-        public Logger() {
-            verbose = ("true".equals(System.getenv("JPACKAGE_DEBUG")));
-        }
-
-        public void setVerbose() {
-            verbose = true;
-        }
-
-        public boolean isVerbose() {
-            return verbose;
-        }
-
-        public void setPrintWriter(PrintWriter out, PrintWriter err) {
-            this.out = out;
-            this.err = err;
-        }
-
-        public void flush() {
-            if (out != null) {
-                out.flush();
-            }
-
-            if (err != null) {
-                err.flush();
-            }
-        }
-
-        public void info(String msg) {
-            if (out != null) {
-                out.println(msg);
-            }
-        }
-
-        public void fatalError(String msg) {
-            if (err != null) {
-                err.println(msg);
-            }
-        }
-
-        public void error(String msg) {
-            msg = addTimestamp(msg);
-            if (err != null) {
-                err.println(msg);
-            }
-        }
-
-        public void verbose(Throwable t) {
-            if (out != null && verbose) {
-                out.print(addTimestamp(""));
-                t.printStackTrace(out);
-            }
-        }
-
-        public void verbose(String msg) {
-            msg = addTimestamp(msg);
-            if (out != null && verbose) {
-                out.println(msg);
-            }
-        }
-
-        public void verbose(List<String> strings,
-                List<String> output, int returnCode, long pid) {
-            if (verbose) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Command [PID: ");
-                sb.append(pid);
-                sb.append("]:\n   ");
-
-                for (String s : strings) {
-                    sb.append(" " + s);
-                }
-                verbose(sb.toString());
-                if (output != null && !output.isEmpty()) {
-                    sb = new StringBuilder("Output:");
-                    for (String s : output) {
-                        sb.append("\n    " + s);
-                    }
-                    verbose(sb.toString());
-                }
-                verbose("Returned: " + returnCode + "\n");
-            }
-        }
-
-        private String addTimestamp(String msg) {
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
-            Date time = new Date(System.currentTimeMillis());
-            return String.format("[%s] %s", sdf.format(time), msg);
-        }
+    private Log() {
     }
 
-    private static final InheritableThreadLocal<Logger> instance =
-            new InheritableThreadLocal<Logger>() {
-                @Override protected Logger initialValue() {
-                    return new Logger();
-                }
-            };
-
-    public static void setPrintWriter (PrintWriter out, PrintWriter err) {
-        instance.get().setPrintWriter(out, err);
+    static void trace(String format, Object... args) {
+        tracer().trace(format, args);
     }
 
-    public static void flush() {
-        instance.get().flush();
+    static void trace(Throwable t, String format, Object... args) {
+        tracer().trace(t, format, args);
     }
 
-    public static void info(String msg) {
-        instance.get().info(msg);
+    static void trace(Throwable t) {
+        tracer().trace(t);
     }
 
-    public static void fatalError(String msg) {
-        instance.get().fatalError(msg);
+    static void useResource(String localizedMsg) {
+        resourceLogger().useResource(localizedMsg);
     }
 
-    public static void error(String msg) {
-        instance.get().error(msg);
+    static void progress(String localizedMsg) {
+        progressLogger().progress(localizedMsg);
     }
 
-    public static void setVerbose() {
-        instance.get().setVerbose();
+    static void progressWarning(Exception cause) {
+        progressLogger().progressWarning(cause);
     }
 
-    public static boolean isVerbose() {
-        return instance.get().isVerbose();
+    static void progressWarning(Exception cause, String localizedMsg) {
+        progressLogger().progressWarning(cause, localizedMsg);
     }
 
-    public static void verbose(String msg) {
-       instance.get().verbose(msg);
+    static void progressWarning(String localizedMsg) {
+        progressLogger().progressWarning(localizedMsg);
     }
 
-    public static void verbose(Throwable t) {
-       instance.get().verbose(t);
+    private static TraceLogger tracer() {
+        return Globals.instance().logger(StandardLogger.TRACE_LOGGER);
     }
 
-    public static void verbose(List<String> strings, List<String> out,
-            int ret, long pid) {
-       instance.get().verbose(strings, out, ret, pid);
+    private static ProgressLogger progressLogger() {
+        return Globals.instance().logger(StandardLogger.PROGRESS_LOGGER);
+    }
+
+    private static ResourceLogger resourceLogger() {
+        return Globals.instance().logger(StandardLogger.RESOURCE_LOGGER);
     }
 }

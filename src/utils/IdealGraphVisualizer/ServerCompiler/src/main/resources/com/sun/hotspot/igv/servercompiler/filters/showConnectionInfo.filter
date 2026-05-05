@@ -1,0 +1,16 @@
+// This filter appends escape analysis connection graph node information to the
+// (possibly already existing) extra-label line.
+// This is only carried out for those nodes that are relevant to escape
+// analysis (and therefore represented in the connection graph).
+
+// Merge a possibly existing extra label with the escape analysis node type into a
+// new, single extra label.
+function mergeAndAppendTypeInfo(extra_label, ea_node) {
+  new_extra_label = extra_label == null ? "" : (extra_label + " ");
+  return new_extra_label + ea_node;
+}
+
+editProperty(hasProperty("ea_node"),
+             ["extra_label", "ea_node"],
+             "extra_label",
+             function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1]);});

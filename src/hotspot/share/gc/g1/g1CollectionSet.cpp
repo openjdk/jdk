@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
-#include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
@@ -72,7 +72,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
 }
 
 G1CollectionSet::~G1CollectionSet() {
-  FREE_C_HEAP_ARRAY(uint, _regions);
+  FREE_C_HEAP_ARRAY(_regions);
   abandon_all_candidates();
 }
 
@@ -126,8 +126,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   assert(!hr->rem_set()->has_cset_group(), "Should have already uninstalled group remset");
 
-  assert(!hr->in_collection_set(), "should not already be in the collection set");
-  _g1h->register_old_region_with_region_attr(hr);
+  _g1h->register_old_collection_set_region_with_region_attr(hr);
 
   assert(_regions_cur_length < _regions_max_length, "Collection set now larger than maximum size.");
   _regions[_regions_cur_length++] = hr->hrm_index();
@@ -164,6 +163,7 @@ void G1CollectionSet::clear() {
   assert_at_safepoint_on_vm_thread();
   _regions_cur_length = 0;
   _groups.clear();
+  assert(_optional_groups.length() == 0, "must be");
 }
 
 void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
@@ -174,7 +174,6 @@ void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
     G1HeapRegion* r = _g1h->region_at(_regions[i]);
     bool result = cl->do_heap_region(r);
     if (result) {
-      cl->set_incomplete();
       return;
     }
   }
@@ -217,7 +216,11 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == CSetBuildType::Active, "Precondition");
 
-  assert(!hr->in_collection_set(), "invariant");
+  // Add to remembered set/cardset group.
+  _g1h->policy()->remset_tracker()->update_at_allocate(hr);
+  _g1h->young_regions_cset_group()->add(hr);
+
+  // Synchronize with the region attribute table.
   _g1h->register_young_region_with_region_attr(hr);
 
   // We use UINT_MAX as "invalid" marker in verification.
@@ -234,11 +237,13 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
 }
 
 void G1CollectionSet::add_survivor_regions(G1HeapRegion* hr) {
+  assert_at_safepoint_on_vm_thread();
   assert(hr->is_survivor(), "Must only add survivor regions, but is %s", hr->get_type_str());
   add_young_region_common(hr);
 }
 
 void G1CollectionSet::add_eden_region(G1HeapRegion* hr) {
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(hr->is_eden(), "Must only add eden regions, but is %s", hr->get_type_str());
   add_young_region_common(hr);
 }
@@ -320,7 +325,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
-  bool in_young_only_phase = _policy->collector_state()->in_young_only_phase();
+  bool in_young_only_phase = _policy->collector_state()->is_in_young_only_phase();
   size_t pending_cards = _policy->analytics()->predict_pending_cards(in_young_only_phase);
 
   log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: %zu target pause time: %1.2fms",
@@ -368,12 +373,12 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 //   made to regular old regions without remembered sets after a few attempts to save computation costs
 //   of keeping them candidates for very long living pinned regions.
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
-  double non_young_start_time_sec = os::elapsedTime();
+  Ticks start_time = Ticks::now();
 
   if (!candidates()->is_empty()) {
     candidates()->verify();
 
-    if (collector_state()->in_mixed_phase()) {
+    if (collector_state()->is_in_mixed_phase()) {
       time_remaining_ms = select_candidates_from_marking(time_remaining_ms);
     } else {
       log_debug(gc, ergo, cset)("Do not add marking candidates to collection set due to pause type.");
@@ -387,8 +392,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     log_debug(gc, ergo, cset)("No candidates to reclaim.");
   }
 
-  double non_young_end_time_sec = os::elapsedTime();
-  phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
+  phase_times()->record_non_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * MILLIUNITS);
 }
 
 static void print_finish_message(const char* reason, bool from_marking) {
@@ -724,7 +728,7 @@ bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_ti
 
   stop_incremental_building();
 
-  _g1h->verify_region_attr_remset_is_tracked();
+  _g1h->verify_region_attr_is_remset_tracked();
 
   return num_regions_selected > 0;
 }
@@ -736,7 +740,7 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
       // Clear collection set marker and make sure that the remembered set information
       // is correct as we still need it later.
       _g1h->clear_region_attr(r);
-      _g1h->register_region_with_region_attr(r);
+      _g1h->update_region_attr(r);
       r->clear_index_in_opt_cset();
     };
 
@@ -745,7 +749,7 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
     _optional_groups.remove_selected(_optional_groups.length(), _optional_groups.num_regions());
   }
 
-  _g1h->verify_region_attr_remset_is_tracked();
+  _g1h->verify_region_attr_is_remset_tracked();
 }
 
 #ifdef ASSERT
@@ -761,7 +765,7 @@ public:
     }
   }
   ~G1VerifyYoungCSetIndicesClosure() {
-    FREE_C_HEAP_ARRAY(int, _heap_region_indices);
+    FREE_C_HEAP_ARRAY(_heap_region_indices);
   }
 
   virtual bool do_heap_region(G1HeapRegion* r) {
