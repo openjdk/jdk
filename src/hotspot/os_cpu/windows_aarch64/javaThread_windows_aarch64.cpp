@@ -95,29 +95,23 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 void JavaThread::cache_global_variables() { }
 
 int64_t JavaThread::get_thr_tls_offset() {
-  // Use magic statics to ensure that only one thread initializes the static
-  // variable, making the following code both thread safe and efficient.
-  static int64_t thr_tls_offset = []() {
-    char* tebPointer = (char*)NtCurrentTeb();
+  char* tebPointer = (char*)NtCurrentTeb();
 
-    // 0x58 is the offset of ThreadLocalStoragePointer within the TEB.  This is
-    // a stable Windows ABI constant but is not exposed in the SDK's minimal
-    // _TEB struct.
-    void** tls_array = *(void***)(tebPointer + 0x58);
-    char* curr_ptr = (char*)&Thread::_thr_current;
-    char* tls_block = (char*)tls_array[_tls_index];
+  // 0x58 is the offset of ThreadLocalStoragePointer within the TEB.  This is
+  // a stable Windows ABI constant but is not exposed in the SDK's minimal
+  // _TEB struct.
+  void** tls_array = *(void***)(tebPointer + 0x58);
+  char* curr_ptr = (char*)&Thread::_thr_current;
+  char* tls_block = (char*)tls_array[_tls_index];
 
-    // Compute the offset of Thread::_thr_current within this module's TLS
-    // block.  Unlike ELF, which provides `tlsdesc` relocations that lets
-    // assembly code resolve TLS variables symbolically at link/load time,
-    // Windows PE/COFF has no equivalent mechanism for armasm64.  So we compute
-    // the offset here in C++ (where the compiler knows how to access
-    // __declspec(thread) variables) and store it in a plain global that the
-    // assembly can load directly.  In subsequent calls to
-    // `aarch64_get_thread_helper()`, the assembly will read the TEB to find the
-    // TLS block and then add this offset to find `Thread::_thr_current`.
-    return (int64_t)(curr_ptr - tls_block);
-  }();
-
-  return thr_tls_offset;
+  // Compute the offset of Thread::_thr_current within this module's TLS
+  // block.  Unlike ELF, which provides `tlsdesc` relocations that lets
+  // assembly code resolve TLS variables symbolically at link/load time,
+  // Windows PE/COFF has no equivalent mechanism for armasm64.  So we compute
+  // the offset here in C++ (where the compiler knows how to access
+  // __declspec(thread) variables) and store it in a plain global that the
+  // assembly can load directly.  In subsequent calls to
+  // `aarch64_get_thread_helper()`, the assembly will read the TEB to find the
+  // TLS block and then add this offset to find `Thread::_thr_current`.
+  return (int64_t)(curr_ptr - tls_block);
 }

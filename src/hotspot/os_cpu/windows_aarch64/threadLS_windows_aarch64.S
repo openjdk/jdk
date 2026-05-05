@@ -44,16 +44,16 @@
     ldr     x1, [x18, #0x58]
 
     ; Load `_tls_index` and zero-extend it to 64 bits to occupy x0
-    ldr     x0, =_tls_index
-    ldr     w0, [x0]
+    adrp    x0, _tls_index
+    ldr     w0, [x0, _tls_index]
 
     ; `x0` holds the index, `x1` holds the array base address (each entry is 64
     ; bits long), so in the following line, x1 = array_base[_tls_index]
     ldr     x1, [x1, x0, lsl #3]
 
     ; Load cached TLS offset of `Thread::_thr_current`
-    ldr     x0, =_jvm_thr_current_tls_offset
-    ldr     x0, [x0]
+    adrp    x0, _jvm_thr_current_tls_offset
+    ldr     x0, [x0, _jvm_thr_current_tls_offset]
 
     ; Load `Thread::_thr_current` value
     ldr     x0, [x1, x0]
