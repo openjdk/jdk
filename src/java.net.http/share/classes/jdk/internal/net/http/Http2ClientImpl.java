@@ -351,4 +351,8 @@ class Http2ClientImpl {
     public boolean stopping() {
         return stopping;
     }
+
+    Map<String, Http2Connection> getConnections() {
+        return connections;
+    }
 }

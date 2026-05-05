@@ -1615,6 +1615,10 @@ class Http2Connection implements Closeable {
     // by the sendlock (see `sendFrame()`).
     private ByteBuffer cachedHeaderBuffer;
 
+    ByteBuffer getCachedHeaderBuffer() {
+        return cachedHeaderBuffer;
+    }
+
     private ByteBuffer getHeaderBuffer(int size) {
         assert sendlock.isHeldByCurrentThread() : "current thread is not holding sendlock";
 

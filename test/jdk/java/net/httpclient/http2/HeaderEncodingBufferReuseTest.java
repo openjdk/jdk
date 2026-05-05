@@ -22,7 +22,6 @@
  */
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,14 +29,17 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
-import java.util.Map;
+import java.util.Collection;
+import javax.net.ssl.SSLContext;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
+import jdk.internal.net.http.HttpClientImplAccess;
 import jdk.test.lib.net.URIBuilder;
+import jdk.test.lib.net.SimpleSSLContext;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -49,25 +51,29 @@ import static org.junit.jupiter.api.Assertions.*;
  * @summary Verifies that Http2Connection.cachedHeaderBuffer is reused
  *          across multiple requests on the same connection.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *          /test/jdk/java/net/httpclient/access
+ * @build java.net.http/jdk.internal.net.http.HttpClientImplAccess
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.net.SimpleSSLContext
  * @run junit/othervm
- *      --add-opens java.net.http/jdk.internal.net.http=ALL-UNNAMED
  *      ${test.main.class}
  */
 
 public class HeaderEncodingBufferReuseTest implements HttpServerAdapters {
 
     static String httpUri;
+    static SSLContext sslContext;
     static HttpTestServer testServer;
 
     @BeforeAll
     static void init() throws Exception {
-        testServer = HttpTestServer.create(HTTP_2);
+        sslContext = SimpleSSLContext.findSSLContext();
+        testServer = HttpTestServer.create(HTTP_2, sslContext);
         testServer.addHandler(new OkHandler(), "/test");
         testServer.start();
         httpUri = URIBuilder.newBuilder()
-                            .scheme("http")
-                            .host("localhost")
+                            .scheme("https")
+                            .loopback()
                             .port(testServer.getAddress().getPort())
                             .path("/test")
                             .build()
@@ -84,48 +90,43 @@ public class HeaderEncodingBufferReuseTest implements HttpServerAdapters {
         try (HttpClient client = HttpClient.newBuilder()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .version(HttpClient.Version.HTTP_2)
+                .sslContext(sslContext)
                 .build()) {
 
             // Force a large cached header buffer by sending 300 headers.
             assertEquals(200, send(client, httpUri, 300).statusCode());
 
-            Object conn = getHttp2Connection(client);
-            assertEquals(200, send(client, httpUri, 2).statusCode());
-            ByteBuffer cached = (ByteBuffer) getField(conn, "cachedHeaderBuffer");
+            Collection<?> connections = HttpClientImplAccess.getHttp2Connections(client);
+            assertEquals(1, connections.size());
+            Object conn = connections.iterator().next();
+
+            HttpResponse response = send(client, httpUri, 2);
+            assertEquals(200, response.statusCode());
+
+            ByteBuffer cached = HttpClientImplAccess.getCachedHeaderBuffer(conn);
             assertNotNull(cached);
-            assertSame(conn, getHttp2Connection(client));
 
-            assertEquals(200, send(client, httpUri, 2).statusCode());
-            assertSame(cached, getField(conn, "cachedHeaderBuffer"));
-            assertSame(conn, getHttp2Connection(client));
+            response = send(client, httpUri, 2);
+            assertEquals(200, response.statusCode());
+            connections = HttpClientImplAccess.getHttp2Connections(client);
+            assertEquals(1, connections.size());
+            assertSame(conn, connections.iterator().next());
+            assertSame(cached, HttpClientImplAccess.getCachedHeaderBuffer(conn));
 
-            assertEquals(200, send(client, httpUri, 300).statusCode());
-            assertSame(cached, getField(conn, "cachedHeaderBuffer"));
-            assertSame(conn, getHttp2Connection(client));
+            response = send(client, httpUri, 300);
+            assertEquals(200, response.statusCode());
+            connections = HttpClientImplAccess.getHttp2Connections(client);
+            assertEquals(1, connections.size());
+            assertSame(conn, connections.iterator().next());
+            assertSame(cached, HttpClientImplAccess.getCachedHeaderBuffer(conn));
 
-            assertEquals(200, send(client, httpUri, 2).statusCode());
-            assertSame(cached, getField(conn, "cachedHeaderBuffer"));
-            assertSame(conn, getHttp2Connection(client));
+            response = send(client, httpUri, 2);
+            assertEquals(200, response.statusCode());
+            connections = HttpClientImplAccess.getHttp2Connections(client);
+            assertEquals(1, connections.size());
+            assertSame(conn, connections.iterator().next());
+            assertSame(cached, HttpClientImplAccess.getCachedHeaderBuffer(conn));
         }
-    }
-
-    static Object getField(Object obj, String name) throws Exception {
-        Field field = obj.getClass().getDeclaredField(name);
-        field.setAccessible(true);
-        return field.get(obj);
-    }
-
-    static Object getHttp2Connection(HttpClient client) throws Exception {
-        Object clientImpl = getField(client, "impl");
-
-        var method = clientImpl.getClass().getDeclaredMethod("client2");
-        method.setAccessible(true);
-        Object client2 = method.invoke(clientImpl);
-
-        Object conns = getField(client2, "connections");
-        Map<String, ?> connections = (Map<String, ?>) conns;
-        assertEquals(1, connections.size());
-        return connections.values().iterator().next();
     }
 
     static HttpResponse<Void> send(HttpClient client, String uri, int headerCount) throws Exception {
