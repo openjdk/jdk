@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on live process
  * @requires vm.hasSA
+ * @requires !vm.ubsan
  * @requires vm.gc != "Z"
  * @requires vm.compMode != "Xcomp"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))

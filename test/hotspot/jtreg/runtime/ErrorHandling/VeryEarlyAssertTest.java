@@ -30,6 +30,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires vm.flagless
+ * @requires !vm.ubsan
  * @requires (vm.debug == true)
  * @requires os.family == "linux"
  * @run driver VeryEarlyAssertTest
