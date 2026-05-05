@@ -346,7 +346,7 @@ template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value) {
   assert((decorators & AS_NO_KEEPALIVE) == 0, "CAS only with keep-alive");
   assert((decorators & ON_STRONG_OOP_REF) != 0, "CAS only for strong refs");
-  ShenandoahBarrierSet* bs = barrier_set();
+  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   return bs->oop_cmpxchg(decorators, addr, compare_value, new_value);
 }
 
@@ -355,7 +355,7 @@ template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value) {
   assert((decorators & AS_NO_KEEPALIVE) == 0, "CAS only with keep-alive");
   assert((decorators & ON_STRONG_OOP_REF) != 0, "CAS only for strong refs");
-  ShenandoahBarrierSet* bs = barrier_set();
+  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   oop result = bs->oop_cmpxchg(decorators, addr, compare_value, new_value);
   if (ShenandoahCardBarrier) {
     bs->write_ref_field_post<decorators>(addr);
@@ -367,6 +367,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_in_heap_at(oop base, ptrdiff_t offset, oop compare_value, oop new_value) {
   assert((decorators & AS_NO_KEEPALIVE) == 0, "CAS only with keep-alive");
   assert((decorators & (ON_STRONG_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0, "CAS only for strong refs OR unknown refs (Unsafe)");
+  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
 
   // Unsafe.compareAndExchange/Set come here with ON_UNKNOWN_OOP_REF set.
   // These are normally strong refs, but one can use Unsafe on Reference.referent.
@@ -379,7 +380,6 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   resolved_decorators = (resolved_decorators & ~ON_DECORATOR_MASK) | ON_STRONG_OOP_REF;
 
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
-  ShenandoahBarrierSet* bs = barrier_set();
   oop result = bs->oop_cmpxchg(resolved_decorators, addr, compare_value, new_value);
   if (ShenandoahCardBarrier) {
     bs->write_ref_field_post<decorators>(addr);
@@ -392,7 +392,7 @@ template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_not_in_heap(T* addr, oop new_value) {
   assert((decorators & AS_NO_KEEPALIVE) == 0, "XCHG only with keep-alive");
   assert((decorators & ON_STRONG_OOP_REF) != 0, "XCHG only for strong refs");
-  ShenandoahBarrierSet* bs = barrier_set();
+  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   return bs->oop_xchg(decorators, addr, new_value);
 }
 
@@ -401,7 +401,7 @@ template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_in_heap(T* addr, oop new_value) {
   assert((decorators & AS_NO_KEEPALIVE) == 0, "XCHG only with keep-alive");
   assert((decorators & ON_STRONG_OOP_REF) != 0, "XCHG only for strong refs");
-  ShenandoahBarrierSet* bs = barrier_set();
+  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   oop result = bs->oop_xchg(decorators, addr, new_value);
   if (ShenandoahCardBarrier) {
     bs->write_ref_field_post<decorators>(addr);
@@ -413,6 +413,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value) {
   assert((decorators & AS_NO_KEEPALIVE) == 0, "XCHG only with keep-alive");
   assert((decorators & (ON_STRONG_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0, "XCHG only for strong refs OR unknown refs (Unsafe)");
+  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
 
   // Unsafe.getAndSet comes here with ON_UNKNOWN_OOP_REF set.
   // These are normally strong refs, but one can use Unsafe on Reference.referent.
@@ -425,7 +426,6 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   resolved_decorators = (resolved_decorators & ~ON_DECORATOR_MASK) | ON_STRONG_OOP_REF;
 
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
-  ShenandoahBarrierSet* bs = barrier_set();
   oop result = bs->oop_xchg(resolved_decorators, addr, new_value);
   if (ShenandoahCardBarrier) {
     bs->write_ref_field_post<decorators>(addr);
