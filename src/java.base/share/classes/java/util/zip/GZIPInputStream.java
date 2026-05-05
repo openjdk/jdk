@@ -49,11 +49,12 @@ import java.util.Objects;
  * decompressed data from at most one member; data from multiple members is not combined
  * in a single read operation.
  * <p>
- * When {@linkplain #read(byte[], int, int) reading}, this class may read ahead in the underlying
- * stream while completing a member or determining whether another member follows. Consequently,
- * an unspecified number of bytes beyond a member’s trailer may be consumed. If the bytes read
- * ahead do not constitute a valid header for a subsequent member, the stream is considered to
- * have reached end-of-stream, and {@code read()} returns {@code -1}.
+ * When {@linkplain #read(byte[], int, int) processing the GZIP stream}, this class may read
+ * ahead in the underlying stream while completing a member or determining whether another
+ * member follows. Consequently, an unspecified number of bytes beyond a member’s trailer
+ * may be consumed. If the bytes read ahead do not constitute a valid header for a
+ * subsequent member, the stream is considered to have reached end-of-stream, and the read
+ * method returns {@code -1}.
  *
  * <h2><a id="thread_safety">Thread safety</a></h2>
  * {@code GZIPInputStream} is not safe for use by multiple concurrent threads. Any multithreaded
