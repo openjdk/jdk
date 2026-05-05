@@ -193,9 +193,6 @@ public class TestAcmpFastPath {
         scenario.addFlags();
         InlineTypes.getFramework()
                 .addScenarios(scenario)
-                .addHelperClasses(MyValueClass1.class,
-                        MyValueClass2.class,
-                        MyValueClass2Inline.class)
                 .start();
     }
 
