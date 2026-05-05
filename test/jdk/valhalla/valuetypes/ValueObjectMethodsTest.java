@@ -176,7 +176,6 @@ public class ValueObjectMethodsTest {
     @Test
     public void identityTestNull() {
         assertFalse(Objects.hasIdentity(null), "Objects.hasIdentity(null)");
-        assertFalse(Objects.isValueObject(null), "Objects.isValueObject(null)");
     }
 
     static Stream<Arguments> equalsTests() {
