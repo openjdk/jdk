@@ -334,14 +334,14 @@ void os::init_system_properties_values() {
     home_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + 1, mtInternal);
     strcpy(home_path, home_dir);
     Arguments::set_java_home(home_path);
-    FREE_C_HEAP_ARRAY(char, home_path);
+    FREE_C_HEAP_ARRAY(home_path);
 
     dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1,
                                 mtInternal);
     strcpy(dll_path, home_dir);
     strcat(dll_path, bin);
     Arguments::set_dll_dir(dll_path);
-    FREE_C_HEAP_ARRAY(char, dll_path);
+    FREE_C_HEAP_ARRAY(dll_path);
 
     if (!set_boot_path('\\', ';')) {
       vm_exit_during_initialization("Failed setting boot class path.", nullptr);
@@ -396,7 +396,7 @@ void os::init_system_properties_values() {
     strcat(library_path, ";.");
 
     Arguments::set_library_path(library_path);
-    FREE_C_HEAP_ARRAY(char, library_path);
+    FREE_C_HEAP_ARRAY(library_path);
   }
 
   // Default extensions directory
@@ -1079,7 +1079,7 @@ void os::set_native_thread_name(const char *name) {
       HRESULT hr = _SetThreadDescription(current, unicode_name);
       if (FAILED(hr)) {
         log_debug(os, thread)("set_native_thread_name: SetThreadDescription failed - falling back to debugger method");
-        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+        FREE_C_HEAP_ARRAY(unicode_name);
       } else {
         log_trace(os, thread)("set_native_thread_name: SetThreadDescription succeeded - new name: %s", name);
 
@@ -1102,7 +1102,7 @@ void os::set_native_thread_name(const char *name) {
           LocalFree(thread_name);
         }
 #endif
-        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+        FREE_C_HEAP_ARRAY(unicode_name);
         return;
       }
     } else {
@@ -2528,12 +2528,6 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-
-// Used for PostMortemDump
-extern "C" void safepoints();
-extern "C" void find(int x);
-extern "C" void events();
-
 // According to Windows API documentation, an illegal instruction sequence should generate
 // the 0xC000001C exception code. However, real world experience shows that occasionnaly
 // the execution of an illegal instruction can generate the exception code 0xC000001E. This
@@ -2903,7 +2897,7 @@ class NUMANodeListHolder {
   int _numa_used_node_count;
 
   void free_node_list() {
-    FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
+    FREE_C_HEAP_ARRAY(_numa_used_node_list);
   }
 
  public:
@@ -4750,7 +4744,7 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
 
   LPWSTR unicode_path = nullptr;
   err = convert_to_unicode(buf, &unicode_path);
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
   if (err != ERROR_SUCCESS) {
     return nullptr;
   }
@@ -4778,9 +4772,9 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
   }
 
   if (converted_path != unicode_path) {
-    FREE_C_HEAP_ARRAY(WCHAR, converted_path);
+    FREE_C_HEAP_ARRAY(converted_path);
   }
-  FREE_C_HEAP_ARRAY(WCHAR, unicode_path);
+  FREE_C_HEAP_ARRAY(unicode_path);
 
   return static_cast<wchar_t*>(result); // LPWSTR and wchat_t* are the same type on Windows.
 }
@@ -5833,7 +5827,7 @@ int os::fork_and_exec(const char* cmd) {
     exit_code = -1;
   }
 
-  FREE_C_HEAP_ARRAY(char, cmd_string);
+  FREE_C_HEAP_ARRAY(cmd_string);
   return (int)exit_code;
 }
 

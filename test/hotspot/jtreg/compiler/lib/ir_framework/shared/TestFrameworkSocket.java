@@ -26,7 +26,9 @@ package compiler.lib.ir_framework.shared;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.network.*;
 import compiler.lib.ir_framework.driver.network.testvm.TestVmMessageReader;
+import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessageParser;
 import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessages;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,9 +44,13 @@ public class TestFrameworkSocket implements AutoCloseable {
 
     private final int serverSocketPort;
     private final ServerSocket serverSocket;
-    private boolean running;
-    private final ExecutorService executor;
-    private Future<JavaMessages> javaFuture;
+    private final ExecutorService acceptExecutor;
+    private final ExecutorService clientExecutor;
+
+    // Make these volatile such that the main thread can observe an update written by the worker threads in the executor
+    // services to avoid stale values.
+    private volatile boolean running;
+    private volatile Future<JavaMessages> javaFuture;
 
     public TestFrameworkSocket() {
         try {
@@ -54,29 +60,53 @@ public class TestFrameworkSocket implements AutoCloseable {
             throw new TestFrameworkException("Failed to create TestFramework server socket", e);
         }
         serverSocketPort = serverSocket.getLocalPort();
-        executor = Executors.newCachedThreadPool();
+        acceptExecutor = Executors.newSingleThreadExecutor();
+        clientExecutor = Executors.newCachedThreadPool();
         if (TestFramework.VERBOSE) {
             System.out.println("TestFramework server socket uses port " + serverSocketPort);
         }
-        start();
     }
 
     public String getPortPropertyFlag() {
         return "-D" + SERVER_PORT_PROPERTY + "=" + serverSocketPort;
     }
 
-    private void start() {
+    public void start() {
         running = true;
-        executor.submit(this::acceptLoop);
+        CountDownLatch calledAcceptLoopLatch = new CountDownLatch(1);
+        startAcceptLoop(calledAcceptLoopLatch);
+    }
+
+    private void startAcceptLoop(CountDownLatch calledAcceptLoopLatch) {
+        acceptExecutor.submit(() -> acceptLoop(calledAcceptLoopLatch));
+        waitUntilAcceptLoopRuns(calledAcceptLoopLatch);
+    }
+
+    private void waitUntilAcceptLoopRuns(CountDownLatch calledAcceptLoopLatch) {
+        try {
+            if (!calledAcceptLoopLatch.await(10, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("acceptLoop did not start in time");
+            }
+        } catch (Exception e) {
+            throw new TestFrameworkException("Could not start TestFrameworkSocket", e);
+        }
     }
 
     /**
      * Main loop to wait for new client connections and handling them upon connection request.
      */
-    private void acceptLoop() {
+    private void acceptLoop(CountDownLatch calledAcceptLoopLatch) {
+        calledAcceptLoopLatch.countDown();
         while (running) {
             try {
                 acceptNewClientConnection();
+            }  catch (SocketException e) {
+                if (!running || serverSocket.isClosed()) {
+                    // Normal shutdown
+                    return;
+                }
+                running = false;
+                throw new TestFrameworkException("Server socket error", e);
             } catch (TestFrameworkException e) {
                 running = false;
                 throw e;
@@ -88,20 +118,46 @@ public class TestFrameworkSocket implements AutoCloseable {
     }
 
     /**
-     * Accept new client connection and then submit a task accordingly to manage incoming message on that connection/socket.
+     * Accept new client connection by first reading the identity of the connection (either coming from Java or C2)
+     * and then submitting a task accordingly to manage incoming messages on that connection/socket.
      */
     private void acceptNewClientConnection() throws IOException {
         Socket client = serverSocket.accept();
         BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        submitTask(client, reader);
+        try {
+            String identity = readIdentity(client, reader).trim();
+            submitTask(identity, client, reader);
+        } catch (Exception e) {
+            client.close();
+            reader.close();
+            throw e;
+        }
+    }
+
+    private String readIdentity(Socket client, BufferedReader reader) throws IOException {
+        String identity;
+        try {
+            client.setSoTimeout(10000);
+            identity = reader.readLine();
+            TestFramework.check(identity != null, "end of stream has been reached without reading the identity");
+        } catch (SocketTimeoutException e) {
+            throw new TestFrameworkException("Did not receive initial identity message after 10s", e);
+        } finally {
+            client.setSoTimeout(0);
+        }
+        return identity;
     }
 
     /**
      * Submit dedicated tasks which are wrapped into {@link Future} objects. The tasks will read all messages sent
      * over that connection.
      */
-    private void submitTask(Socket client, BufferedReader reader) {
-        javaFuture = executor.submit(new TestVmMessageReader(client, reader));
+    private void submitTask(String identity, Socket client, BufferedReader reader) {
+        if (identity.equals(TestVmSocket.IDENTITY)) {
+            javaFuture = clientExecutor.submit(new TestVmMessageReader<>(client, reader, new JavaMessageParser()));
+        } else {
+            throw new TestFrameworkException("Unrecognized identity: " + identity);
+        }
     }
 
     @Override
@@ -112,7 +168,8 @@ public class TestFrameworkSocket implements AutoCloseable {
         } catch (IOException e) {
             throw new TestFrameworkException("Could not close socket", e);
         }
-        executor.shutdown();
+        acceptExecutor.shutdown();
+        clientExecutor.shutdown();
     }
 
     public TestVMData testVmData(String hotspotPidFileName, boolean allowNotCompilable) {

@@ -131,14 +131,11 @@ void G1ConcurrentMarkThread::run_service() {
 
     update_perf_counter_cpu_time();
   }
-  _cm->root_regions()->cancel_scan();
 }
 
 void G1ConcurrentMarkThread::stop_service() {
   if (is_in_progress()) {
-    // We are not allowed to abort the marking threads during root region scan.
-    // Needs to be done separately.
-    _cm->root_region_scan_abort_and_wait();
+    _cm->abort_root_region_scan();
 
     _cm->abort_marking_threads();
   }
@@ -164,7 +161,7 @@ bool G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
 
 bool G1ConcurrentMarkThread::phase_scan_root_regions() {
   G1ConcPhaseTimer p(_cm, "Concurrent Scan Root Regions");
-  _cm->scan_root_regions();
+  _cm->scan_root_regions_concurrently();
   update_perf_counter_cpu_time();
   return _cm->has_aborted();
 }
@@ -265,23 +262,6 @@ void G1ConcurrentMarkThread::concurrent_cycle_start() {
 void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   HandleMark hm(Thread::current());
   ResourceMark rm;
-
-  // We have to ensure that we finish scanning the root regions
-  // before the next GC takes place. To ensure this we have to
-  // make sure that we do not join the STS until the root regions
-  // have been scanned. If we did then it's possible that a
-  // subsequent GC could block us from joining the STS and proceed
-  // without the root regions have been scanned which would be a
-  // correctness issue.
-  //
-  // So do not return before the scan root regions phase as a GC waits for a
-  // notification from it.
-  //
-  // For the same reason ConcurrentGCBreakpoints (in the phase methods) before
-  // here risk deadlock, because a young GC must wait for root region scanning.
-  //
-  // We can not easily abort before root region scan either because of the
-  // reasons mentioned in G1CollectedHeap::abort_concurrent_cycle().
 
   // Phase 1: Scan root regions.
   if (phase_scan_root_regions()) return;

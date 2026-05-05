@@ -214,7 +214,7 @@ G1CollectionSetCandidates::G1CollectionSetCandidates() :
 { }
 
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
-  FREE_C_HEAP_ARRAY(CandidateOrigin, _contains_map);
+  FREE_C_HEAP_ARRAY(_contains_map);
   _from_marking_groups.clear();
   _retained_groups.clear();
 }
@@ -264,7 +264,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G
   // During each Mixed GC, we must collect at least G1Policy::calc_min_old_cset_length regions to meet
   // the G1MixedGCCountTarget. For the first collection in a Mixed GC cycle, we can add all regions
   // required to meet this threshold to the same remset group. We are certain these will be collected in
-  // the same MixedGC.
+  // the same Mixed GC.
   uint group_limit = p->calc_min_old_cset_length(num_candidates);
 
   G1CSetCandidateGroup::reset_next_group_id();
@@ -413,7 +413,7 @@ void G1CollectionSetCandidates::verify() {
            static_cast<std::underlying_type<CandidateOrigin>::type>(verify_map[i]));
   }
 
-  FREE_C_HEAP_ARRAY(CandidateOrigin, verify_map);
+  FREE_C_HEAP_ARRAY(verify_map);
 }
 #endif
 

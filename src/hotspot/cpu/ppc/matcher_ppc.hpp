@@ -38,10 +38,10 @@
     return false;
   }
 
-  // The PPC implementation uses VSX lxvd2x/stxvd2x instructions (if
+  // The PPC implementation uses VSX lxv/stxv instructions (if
   // SuperwordUseVSX). They do not have alignment requirements.
   // Some VSX storage access instructions cannot encode arbitrary displacements
-  // (e.g. lxv). None of them is currently used.
+  // (e.g. lxv). We use memoryAlg16 for them.
   static constexpr bool misaligned_vectors_ok() {
     return true;
   }
@@ -87,7 +87,6 @@
 
   static bool narrow_klass_use_complex_address() {
     NOT_LP64(ShouldNotCallThis());
-    assert(UseCompressedClassPointers, "only for compressed klass code");
     // TODO: PPC port if (MatchDecodeNodes) return true;
     return false;
   }

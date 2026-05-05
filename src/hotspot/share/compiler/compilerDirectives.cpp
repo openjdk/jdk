@@ -256,7 +256,7 @@ ControlIntrinsicIter::ControlIntrinsicIter(ccstrlist option_value, bool disable_
 }
 
 ControlIntrinsicIter::~ControlIntrinsicIter() {
-  FREE_C_HEAP_ARRAY(char, _list);
+  FREE_C_HEAP_ARRAY(_list);
 }
 
 // pre-increment
