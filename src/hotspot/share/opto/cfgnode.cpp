@@ -2271,75 +2271,56 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
     }
 
-    if (uncasted) {
-      // Add cast nodes between the phi to be removed and its unique input.
-      // Wait until after parsing for the type information to propagate from the casts.
-      assert(can_reshape, "Invalid during parsing");
-      const Type* phi_type = bottom_type();
-      // Add casts to carry the control dependency of the Phi that is
-      // going away
-      Node* cast = nullptr;
-      const TypeTuple* extra_types = collect_types(phase);
-      if (phi_type->isa_ptr()) {
-        const Type* uin_type = phase->type(uin);
-        if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-        } else {
-          // Use a CastPP for a cast to not null and a CheckCastPP for
-          // a cast to a new klass (and both if both null-ness and
-          // klass change).
+    const Type* phi_type = bottom_type();
+    const Type* uin_type = phase->type(uin);
 
-          // If the type of phi is not null but the type of uin may be
-          // null, uin's type must be casted to not null
-          if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
-              uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-          }
+    // In principle, we should insert a cast whenever uin_type is not a subset of phi_type.
+    // However, it is unexpected to leave behind a CastII after removing the iv of a CountedLoop.
+    // As a result, only handle pointers for now, as they are necessary, see
+    // Node::verify_type_replacement.
+    if (!uncasted && (!phi_type->isa_ptr() || uin_type->higher_equal_speculative(phi_type))) {
+      // Let Identity handle
+      return progress;
+    }
 
-          // If the type of phi and uin, both casted to not null,
-          // differ the klass of uin must be (check)cast'ed to match
-          // that of phi
-          if (phi_type->join_speculative(TypePtr::NOTNULL) != uin_type->join_speculative(TypePtr::NOTNULL)) {
-            Node* n = uin;
-            if (cast != nullptr) {
-              cast = phase->transform(cast);
-              n = cast;
-            }
-            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-          }
-          if (cast == nullptr) {
-            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-          }
-        }
+    // Add casts to carry the control dependency of the Phi that is going away
+    Node* cast = nullptr;
+    const TypeTuple* extra_types = collect_types(phase);
+    if (phi_type->isa_ptr()) {
+      if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
+        cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
       } else {
-        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+        // Use a CastPP for a cast to not null and a CheckCastPP for a cast to a new klass (and
+        // both if both null-ness and klass change).
+
+        // If the type of phi is not null but the type of uin may be null, uin's type must be
+        // casted to not null
+        if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
+            uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
+          cast = new CastPPNode(r, uin, uin_type->filter_speculative(TypePtr::NOTNULL), ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+        }
+
+        // If the type of phi and uin, both casted to not null, differ the klass of uin must be
+        // (check)cast'ed to match that of phi
+        if (phi_type->join_speculative(TypePtr::NOTNULL) != uin_type->join_speculative(TypePtr::NOTNULL)) {
+          Node* n = uin;
+          if (cast != nullptr) {
+            cast = phase->transform(cast);
+            n = cast;
+          }
+          cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+        }
+        if (cast == nullptr) {
+          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+        }
       }
-      assert(cast != nullptr, "cast should be set");
-      cast = phase->transform(cast);
-      // set all inputs to the new cast(s) so the Phi is removed by Identity
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      for (uint i = 1; i < req(); i++) {
-        set_req_X(i, cast, igvn);
-        progress = this;
-      }
-      uin = cast;
+    } else {
+      cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
     }
 
-    // One unique input.
-    DEBUG_ONLY(Node* ident = Identity(phase));
-    // The unique input must eventually be detected by the Identity call.
-#ifdef ASSERT
-    if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {
-      // print this output before failing assert
-      r->dump(3);
-      this->dump(3);
-      ident->dump();
-      uin->dump();
-    }
-#endif
-    // Identity may not return the expected uin, if it has to wait for the region, in irreducible case
-    assert(ident == uin || ident->is_top() || must_wait_for_region_in_irreducible_loop(phase), "Identity must clean this up");
-    return progress;
+    assert(cast != nullptr, "cast should be set");
+    assert(!must_wait_for_region_in_irreducible_loop(phase), "must check beforehand");
+    return cast;
   }
 
   Node* opt = nullptr;
