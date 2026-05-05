@@ -252,36 +252,31 @@ inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, o
   shenandoah_assert_not_in_cset_except(nullptr, compare_value, (compare_value == nullptr || ShenandoahHeap::heap()->cancelled_gc()));
   shenandoah_assert_not_in_cset_except(nullptr, new_value, (new_value == nullptr || ShenandoahHeap::heap()->cancelled_gc()));
 
+  // Handle the previous value through SATB, as we are about to perform the store.
+  oop prev = RawAccess<>::oop_load(addr);
+  satb_enqueue(prev);
+
   // Perform LRB on location to fix it up for this and all following CASes.
   // This guarantees there are no false negatives due to concurrent evacuation,
   // and the value loaded later by CAS is already passed by some LRB.
-  load_reference_barrier(decorators, RawAccess<>::oop_load(addr), addr);
+  load_reference_barrier(decorators, prev, addr);
 
-  oop res = RawAccess<>::oop_atomic_cmpxchg(addr, compare_value, new_value);
-  shenandoah_assert_not_in_cset_except(addr, res, (res == nullptr || ShenandoahHeap::heap()->cancelled_gc()));
-
-  // If CAS succeeded, the previous memory value is now the result, throw it to SATB.
-  // If CAS failed, there was no store, so no SATB is needed.
-  if (res == compare_value) {
-    satb_enqueue(res);
-  }
-  return res;
+  return RawAccess<>::oop_atomic_cmpxchg(addr, compare_value, new_value);
 }
 
 template <typename T>
 inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop new_value) {
   shenandoah_assert_not_in_cset_except(nullptr, new_value, (new_value == nullptr || ShenandoahHeap::heap()->cancelled_gc()));
 
+  // Handle the previous value through SATB, as we are about to perform the store.
+  oop prev = RawAccess<>::oop_load(addr);
+  satb_enqueue(prev);
+
   // Perform LRB on location to fix it up for this and all following CASes.
   // This guarantees the value loaded later by CAS is already passed by some LRB.
-  load_reference_barrier(decorators, RawAccess<>::oop_load(addr), addr);
+  load_reference_barrier(decorators, prev, addr);
 
-  oop res = RawAccess<>::oop_atomic_xchg(addr, new_value);
-  shenandoah_assert_not_in_cset_except(addr, res, (res == nullptr || ShenandoahHeap::heap()->cancelled_gc()));
-
-  // XCHG always succeeds, and the previous memory value is now in result, throw it to SATB.
-  satb_enqueue(res);
-  return res;
+  return RawAccess<>::oop_atomic_xchg(addr, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -374,10 +369,10 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Unsafe.compareAndExchange/Set come here with ON_UNKNOWN_OOP_REF set.
   // These are normally strong refs, but one can use Unsafe on Reference.referent.
-  // We cannot deal with that case. If you are doing Unsafe operations on Reference.referent
-  // field, you are on your own, and this likely breaks weak reference semantics.
-  // We upgrade the access to strong in (sometimes futile) attempt to maintain heap integrity,
-  // and assert in debug builds for better diagnostics.
+  // We cannot deal with that case. If application does Unsafe operations on
+  // Reference.referent field, this likely breaks weak reference semantics already.
+  // We upgrade the access to strong in (sometimes futile) attempt to maintain heap
+  // integrity, and assert in debug builds for better diagnostics.
   DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
   assert((resolved_decorators & ON_STRONG_OOP_REF) != 0, "Application error: CAS on weak location");
   resolved_decorators = (resolved_decorators & ~ON_DECORATOR_MASK) | ON_STRONG_OOP_REF;
@@ -420,10 +415,10 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Unsafe.getAndSet comes here with ON_UNKNOWN_OOP_REF set.
   // These are normally strong refs, but one can use Unsafe on Reference.referent.
-  // We cannot deal with that case. If you are doing Unsafe operations on Reference.referent
-  // field, you are on your own, and this likely breaks high-level weak reference semantics.
-  // We upgrade the access to strong in (sometimes futile) attempt to maintain heap integrity,
-  // and assert in debug builds for better diagnostics.
+  // We cannot deal with that case. If application does Unsafe operations on
+  // Reference.referent field, this likely breaks weak reference semantics already.
+  // We upgrade the access to strong in (sometimes futile) attempt to maintain heap
+  // integrity, and assert in debug builds for better diagnostics.
   DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
   assert((resolved_decorators & ON_STRONG_OOP_REF) != 0, "Application error: XCHG on weak location");
   resolved_decorators = (resolved_decorators & ~ON_DECORATOR_MASK) | ON_STRONG_OOP_REF;
