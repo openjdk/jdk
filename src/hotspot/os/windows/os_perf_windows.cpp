@@ -782,7 +782,8 @@ static OSReturn allocate_pdh_constants() {
 // Look up the PDH index by reading the English (locale 009) counter name
 // registry.  See KB Q287159: Using PDH APIs Correctly in a Localized Language
 // for details.
-static DWORD lookup_perfindex_by_english_name(const char* english_name) {
+static OSReturn lookup_perf_index_by_english_name(const char* english_name,
+                                                  DWORD* result) {
   ResourceMark rm;
 
   DWORD type = 0;
@@ -791,14 +792,48 @@ static DWORD lookup_perfindex_by_english_name(const char* english_name) {
   // Determine the required buffer size
   if (RegQueryValueEx(HKEY_PERFORMANCE_DATA, "Counter 009",
                       nullptr, &type, nullptr, &size) != ERROR_SUCCESS) {
-    return 0;
+    return OS_ERR;
   }
 
-  // Allocate and read into buffer
-  char* buffer = NEW_RESOURCE_ARRAY(char, size);
-  if (RegQueryValueEx(HKEY_PERFORMANCE_DATA, "Counter 009", nullptr, &type,
-                      (LPBYTE)buffer, &size) != ERROR_SUCCESS) {
-    return 0;
+  // Since registry entries in `HKEY_PERFORMANCE_DATA` are generated on the fly,
+  // they could change between calls, so we can't rely just on the size returned
+  // by the first call.  Instead, Microsoft's documentation suggests running
+  // these calls in a loop until the return code is no longer `ERROR_MORE_DATA`.
+
+  char* buffer;
+  do {
+    if (size == 0) {
+      return OS_ERR;
+    }
+
+    // When `RegQueryValueEx()` returns `ERROR_MORE_DATA`, the value in the
+    // callback argument is undefined, so we need to create a new variable whose
+    // address is passed as the callback size argument.
+    buffer = NEW_RESOURCE_ARRAY(char, size);
+
+    DWORD cb_size = size;
+    LSTATUS status = RegQueryValueEx(HKEY_PERFORMANCE_DATA, "Counter 009",
+                                     nullptr, &type, (LPBYTE)buffer,
+                                     &cb_size);
+    if (status == ERROR_MORE_DATA) {
+      // We need to increase the buffer size.  Since we don't know _how much_ to
+      // increase it by, we use an estimate (4096) for the increment.
+      DWORD increment = 4096;
+      if (size > MAXDWORD - increment) {
+        return OS_ERR;
+      }
+      size += increment;
+    } else if (status == ERROR_SUCCESS) {
+      break;
+    } else {
+      // If there was some other problem fetching this registry entry, tell the
+      // caller that we couldn't lookup the index.
+      return OS_ERR;
+    }
+  } while (true);
+
+  if (type != REG_MULTI_SZ) {
+    return OS_ERR;
   }
 
   // The buffer contains indices and names in the form (<index>\0<name>\0)*, so
@@ -814,11 +849,17 @@ static DWORD lookup_perfindex_by_english_name(const char* english_name) {
     const char* name = p;
     p += strlen(p) + 1;
     if (strcmp(name, english_name) == 0) {
-      return (DWORD)atoi(idx_str);
+      errno = 0;
+      char* end = nullptr;
+      unsigned long value = strtoul(idx_str, &end, 10);
+      if (errno == 0 && end != idx_str && value <= MAXDWORD) {
+        *result = (DWORD)value;
+        return OS_OK;
+      }
     }
   }
 
-  return 0;
+  return OS_ERR;
 }
 
 // Return the counter index of the 'Processor Information' counter, if
@@ -835,8 +876,14 @@ static DWORD get_proc_counter() {
   // in the specific user's locale.  We determine the locale-specific name using
   // the counter index, but to find the counter index, we use the English name
   // of the counter and look for it in a specific registry key.
-  DWORD info_idx = lookup_perfindex_by_english_name("Processor Information");
-  pdh_idx = (info_idx != 0) ? info_idx : PDH_PROCESSOR_IDX;
+  DWORD info_idx;
+  if (lookup_perf_index_by_english_name("Processor Information",
+                                        &info_idx) != OS_OK) {
+    info_idx = PDH_PROCESSOR_IDX;
+  }
+
+  // Assign to the static variable so that the value persists across calls.
+  pdh_idx = info_idx;
   return pdh_idx;
 }
 
