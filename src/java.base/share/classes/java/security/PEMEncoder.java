@@ -171,7 +171,7 @@ public final class PEMEncoder {
     public String encodeToString(BinaryEncodable be) {
         Objects.requireNonNull(be);
         if (be instanceof PEM pem) {
-            return Pem.pemEncoded(pem);
+            return Pem.pemEncodedToString(pem);
         }
         return KeyUtil.clear(encode(be),
             e -> new String(e, StandardCharsets.ISO_8859_1));
@@ -257,7 +257,7 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException("PEM cannot be " +
                         "encrypted");
                 }
-                yield Pem.pemEncoded(rec).getBytes(StandardCharsets.ISO_8859_1);
+                yield Pem.pemEncoded(rec);
             }
 
             default -> throw new IllegalArgumentException("PEM does not " +

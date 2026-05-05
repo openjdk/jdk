@@ -48,7 +48,11 @@ import java.util.regex.Pattern;
  * A utility class for PEM format encoding.
  */
 public class Pem {
-    private static final byte[] CRLF = new byte[] {'\r', '\n'};
+    private static final byte[] CRLF = new byte[]{'\r', '\n'};
+    private static final byte[] DASH;
+    private static final byte[] BEGIN_B;
+    private static final byte[] BEGIN_PREFIX;
+    private static final byte[] END_PREFIX;
 
     // Default algorithm from jdk.epkcs8.defaultAlgorithm in java.security
     public static final String DEFAULT_ALGO;
@@ -76,6 +80,10 @@ public class Pem {
             Pattern.CASE_INSENSITIVE);
         STRIP_WHITESPACE_PATTERN = Pattern.compile("\\s+");
         LINE_WRAP_64_PATTERN = Pattern.compile("(.{64})");
+        DASH = "-----".getBytes(StandardCharsets.ISO_8859_1);
+        BEGIN_B = "-----B".getBytes(StandardCharsets.ISO_8859_1);
+        BEGIN_PREFIX = "-----BEGIN ".getBytes(StandardCharsets.ISO_8859_1);
+        END_PREFIX = "-----END ".getBytes(StandardCharsets.ISO_8859_1);
     }
 
     public static final String CERTIFICATE = "CERTIFICATE";
@@ -174,171 +182,191 @@ public class Pem {
 
         int hyphen = (shortHeader ? 1 : 0);
         int eol = 0;
-        ByteArrayOutputStream os = new ByteArrayOutputStream(6);
+        var os = new ClearableBufferStream(6); // preData
+        var readbuf = new ByteArrayOutputStream(64);  // header/footer
+        var pem = new ClearableBufferStream(1024); // PEM
+        String headerType, footerType;
 
-        // Find 5 hyphens followed by a 'B' to start processing the header.
-        boolean headerStarted = false;
-        do {
-            int d = is.read();
-            switch (d) {
-                case '-' -> hyphen++;
-                case -1 -> {
-                    if (os.size() == 0) {
-                        throw new EOFException("No data available");
+        try {
+            // Find 5 hyphens followed by a 'B' to start processing the header.
+            boolean headerStarted = false;
+            do {
+                int d = is.read();
+                switch (d) {
+                    case '-' -> hyphen++;
+                    case -1 -> {
+                        if (os.size() == 0) {
+                            throw new EOFException("No data available");
+                        }
+                        throw new EOFException("No PEM data found");
                     }
-                    throw new EOFException("No PEM data found");
+                    case 'B' -> {
+                        if (hyphen == 5) {
+                            headerStarted = true;
+                        } else {
+                            hyphen = 0;
+                        }
+                    }
+                    default -> hyphen = 0;
                 }
-                case 'B' -> {
-                    if (hyphen == 5) {
-                        headerStarted = true;
-                    } else {
-                        hyphen = 0;
-                    }
+                os.write(d);
+            } while (!headerStarted);
+
+            readbuf.writeBytes(BEGIN_B);
+            hyphen = 0;
+            int c;
+
+            // Get header definition until first hyphen
+            do {
+                switch (c = is.read()) {
+                    case '-' -> hyphen++;
+                    case -1 -> throw new EOFException("Input ended prematurely");
+                    case '\n', '\r' -> throw new IOException("Incomplete header");
+                    default -> readbuf.write(c);
                 }
-                default -> hyphen = 0;
-            }
-            os.write(d);
-        } while (!headerStarted);
+            } while (hyphen == 0);
 
-        StringBuilder sb = new StringBuilder(64);
-        sb.append("-----B");
-        hyphen = 0;
-        int c;
-
-        // Get header definition until first hyphen
-        do {
-            switch (c = is.read()) {
-                case '-' -> hyphen++;
-                case -1 -> throw new EOFException("Input ended prematurely");
-                case '\n', '\r' -> throw new IOException("Incomplete header");
-                default -> sb.append((char) c);
-            }
-        } while (hyphen == 0);
-
-        // Verify header ending with 5 hyphens.
-        do {
-            if (is.read() == '-') {
-                hyphen++;
-            } else {
-                throw new IOException("Incomplete header");
-            }
-        } while (hyphen < 5);
-
-        sb.append("-----");
-        String header = sb.toString();
-        if (header.length() < 16 || !header.startsWith("-----BEGIN ") ||
-            !header.endsWith("-----")) {
-            throw new IOException("Illegal header: " + header);
-        }
-
-        hyphen = 0;
-        sb = new StringBuilder(1024);
-
-        // Determine the line break using the char after the last hyphen
-        while (eol == 0) {
-            switch (is.read()) {
-                case '\s', '\t' -> {} // skip whitespace or tab
-                case '\r' -> {
-                    c = is.read();
-                    if (c == '\n') {
-                        eol = '\n';
-                    } else {
-                        eol = '\r';
-                        sb.append((char) c);
-                    }
+            // Verify header ending with 5 hyphens.
+            do {
+                if (is.read() == '-') {
+                    hyphen++;
+                } else {
+                    throw new IOException("Incomplete header");
                 }
-                case '\n' -> eol = '\n';
-                default -> throw new IOException("No EOL character found");
-            }
-        }
+            } while (hyphen < 5);
 
-        // Read data until we find the first footer hyphen.
-        // CR & LF are allowed to support legacy PEM formats (ie: encrypted PKCS1)
-        do {
-            switch (c = is.read()) {
-                case -1 ->
-                    throw new EOFException("Incomplete header");
-                case '-' -> hyphen++;
-                case '\s', '\t', '\r', '\n' -> {} // skip whitespace and tab
-                default -> {
-                    // If reading a legacy format, allow for one dash
-                    if (hyphen == 1) {
-                        hyphen = 0;
-                        sb.append('-');
+            readbuf.writeBytes(DASH);
+            byte[] header = readbuf.toByteArray();
+            if (header.length < 16 ||
+                !matchesAt(header, 0, BEGIN_PREFIX) ||
+                !matchesAt(header, header.length - DASH.length, DASH)) {
+                throw new IOException("Illegal header: " +
+                    new String(header, StandardCharsets.ISO_8859_1));
+            }
+
+            hyphen = 0;
+            readbuf.reset();
+
+            // Determine the line break using the char after the last hyphen
+            while (eol == 0) {
+                switch (is.read()) {
+                    case '\s', '\t' -> {} // skip whitespace or tab
+                    case '\r' -> {
+                        c = is.read();
+                        if (c == '\n') {
+                            eol = '\n';
+                        } else {
+                            eol = '\r';
+                            pem.write(c);
+                        }
                     }
-                    sb.append((char) c);
+                    case '\n' -> eol = '\n';
+                    default -> throw new IOException("No EOL character found");
                 }
             }
-        } while (hyphen < 2);
 
-        String data = sb.toString();
+            // Read data until we find the first footer hyphen.
+            // CR & LF are allowed to support legacy PEM formats (ie: encrypted PKCS1)
+            do {
+                switch (c = is.read()) {
+                    case -1 -> throw new EOFException("Incomplete header");
+                    case '-' -> hyphen++;
+                    case '\s', '\t', '\r', '\n' -> {} // skip whitespace and tab
+                    default -> {
+                        // If reading a legacy format, allow for one dash
+                        if (hyphen == 1) {
+                            hyphen = 0;
+                            pem.write('-');
+                        }
+                        pem.write(c);
+                    }
+                }
+            } while (hyphen < 2);
 
-        // Verify footer starts with 5 hyphens.
-        do {
-            switch (is.read()) {
-                case '-' -> hyphen++;
-                case -1 -> throw new EOFException("Input ended prematurely");
-                default -> throw new IOException("Incomplete footer");
+            // Verify footer starts with 5 hyphens.
+            do {
+                switch (is.read()) {
+                    case '-' -> hyphen++;
+                    case -1 ->
+                        throw new EOFException("Input ended prematurely");
+                    default -> throw new IOException("Incomplete footer");
+                }
+            } while (hyphen < 5);
+
+            hyphen = 0;
+            readbuf.reset();
+            readbuf.writeBytes(DASH);
+
+            // Look for Complete header by looking for the end of the hyphens
+            do {
+                switch (c = is.read()) {
+                    case '-' -> hyphen++;
+                    case -1 ->
+                        throw new EOFException("Input ended prematurely");
+                    default -> readbuf.write(c);
+                }
+            } while (hyphen == 0);
+
+            // Verify ending with 5 hyphens.
+            do {
+                switch (is.read()) {
+                    case '-' -> hyphen++;
+                    case -1 ->
+                        throw new EOFException("Input ended prematurely");
+                    default -> throw new IOException("Incomplete footer");
+                }
+            } while (hyphen < 5);
+
+            while ((c = is.read()) != eol && c != -1 && c != '\s' && c != '\t') {
+                // skip when eol is '\n', the line separator is likely "\r\n".
+                if (c == '\r') {
+                    continue;
+                }
+                throw new IOException("Invalid PEM format:  " +
+                    "No EOL char found in footer:  0x" +
+                    HexFormat.of().toHexDigits((byte) c));
             }
-        } while (hyphen < 5);
 
-        hyphen = 0;
-        sb = new StringBuilder(64);
-        sb.append("-----");
+            readbuf.writeBytes(DASH);
+            byte[] footer = readbuf.toByteArray();
+            if (footer.length < 14 ||
+                !matchesAt(footer, 0, END_PREFIX) ||
+                !matchesAt(footer, footer.length - DASH.length, DASH)) {
 
-        // Look for Complete header by looking for the end of the hyphens
-        do {
-            switch (c = is.read()) {
-                case '-' -> hyphen++;
-                case -1 -> throw new EOFException("Input ended prematurely");
-                default -> sb.append((char) c);
+                // Not an IOE because the read pointer is correctly at the end.
+                throw new IOException("Illegal footer: " +
+                    new String(footer, StandardCharsets.ISO_8859_1));
             }
-        } while (hyphen == 0);
 
-        // Verify ending with 5 hyphens.
-        do {
-            switch (is.read()) {
-                case '-' -> hyphen++;
-                case -1 -> throw new EOFException("Input ended prematurely");
-                default -> throw new IOException("Incomplete footer");
+            // Verify the object type in the header and the footer are the same.
+            headerType = new String(header, 11, header.length - 16,
+                StandardCharsets.ISO_8859_1);
+            footerType = new String(footer, 9, footer.length - 14,
+                StandardCharsets.ISO_8859_1);
+            if (!headerType.equals(footerType)) {
+                throw new IOException("Header and footer do not " +
+                    "match: " + headerType + " " + footerType);
             }
-        } while (hyphen < 5);
 
-        while ((c = is.read()) != eol && c != -1 && c != '\s' && c != '\t') {
-            // skip when eol is '\n', the line separator is likely "\r\n".
-            if (c == '\r') {
-                continue;
+            // If there was data before finding the 5 dashes of the PEM header,
+            // backup 5 characters and save that data.
+            byte[] preData = null;
+            if (os.size() > 6) {
+                preData = Arrays.copyOf(os.getBuffer(), os.size() - 6);
             }
-            throw new IOException("Invalid PEM format:  " +
-                "No EOL char found in footer:  0x" +
-                HexFormat.of().toHexDigits((byte) c));
+
+            return (preData == null) ?
+                new PEM(typeConverter(headerType), pem.toByteArray()) :
+                new PEM(typeConverter(headerType), pem.toByteArray(), preData);
+
+        } finally {
+            os.clear();
+            os.close();
+            pem.clear();
+            pem.close();
+            readbuf.close();
         }
 
-        sb.append("-----");
-        String footer = sb.toString();
-        if (footer.length() < 14 || !footer.startsWith("-----END ") ||
-            !footer.endsWith("-----")) {
-            // Not an IOE because the read pointer is correctly at the end.
-            throw new IOException("Illegal footer: " + footer);
-        }
-
-        // Verify the object type in the header and the footer are the same.
-        String headerType = header.substring(11, header.length() - 5);
-        String footerType = footer.substring(9, footer.length() - 5);
-        if (!headerType.equals(footerType)) {
-            throw new IOException("Header and footer do not " +
-                "match: " + headerType + " " + footerType);
-        }
-
-        // If there was data before finding the 5 dashes of the PEM header,
-        // backup 5 characters and save that data.
-        byte[] preData = null;
-        if (os.size() > 6) {
-            preData = Arrays.copyOf(os.toByteArray(), os.size() - 6);
-        }
-
-        return (preData == null) ? new PEM(typeConverter(headerType), data) :
-            new PEM(typeConverter(headerType), data, preData);
     }
 
     public static PEM readPEM(InputStream is) throws IOException {
@@ -346,8 +374,7 @@ public class Pem {
     }
 
     /**
-     * Return a PEM encoding with the given type and binary
-     * data in a String.
+     * Return a PEM encoding with the given type and base64 data in a String.
      */
     public static String pemEncoded(String type, String base64) {
         return
@@ -357,41 +384,48 @@ public class Pem {
     }
 
     /**
-     * Return a PEM encoding with the given type and binary
-     * data in a byte array.
+     * Return a PEM encoding with the given type and base64 byte array.
      */
-    public static byte[] pemEncodedFromDER(String type, byte[] der) {
+    public static byte[] pemEncoded(String type, byte[] base64) {
         byte[] header = ("-----BEGIN " + type + "-----\r\n")
             .getBytes(StandardCharsets.ISO_8859_1);
         byte[] footer = ("-----END " + type + "-----\r\n")
             .getBytes(StandardCharsets.ISO_8859_1);
-        byte[] base64 = base64Encode(der);
 
-        try {
-            int crlfLen = (base64.length == 0 ||
-                base64[base64.length - 1] != '\n') ? 2 : 0;
-            byte[] result = new byte[header.length + base64.length +
-                crlfLen + footer.length];
-            System.arraycopy(header, 0, result, 0, header.length);
-            System.arraycopy(base64, 0, result, header.length, base64.length);
-            if (crlfLen == 2) {
-                result[header.length + base64.length] = '\r';
-                result[header.length + base64.length + 1] = '\n';
-            }
-            System.arraycopy(footer, 0, result,
-                header.length + base64.length + crlfLen, footer.length);
-            return result;
-        } finally {
-            KeyUtil.clear(base64);
+        int crlfLen = (base64.length == 0 ||
+            base64[base64.length - 1] != '\n') ? 2 : 0;
+        byte[] result = new byte[header.length + base64.length +
+            crlfLen + footer.length];
+        System.arraycopy(header, 0, result, 0, header.length);
+        System.arraycopy(base64, 0, result, header.length, base64.length);
+        if (crlfLen == 2) {
+            result[header.length + base64.length] = '\r';
+            result[header.length + base64.length + 1] = '\n';
         }
+        System.arraycopy(footer, 0, result,
+            header.length + base64.length + crlfLen, footer.length);
+        return result;
+    }
+
+    public static byte[] pemEncodedFromDER(String type, byte[] der) {
+        return KeyUtil.clear(base64Encode(der), e ->pemEncoded(type, e));
+    }
+
+    /**
+     * Construct a PEM encoding from the PEM object given.
+     * leadingData is not used with this method.
+     */
+    public static byte[] pemEncoded(PEM pem) {
+        return pemEncoded(pem.type(), pem.content());
     }
 
     /**
      * Construct a String-based PEM encoding from the PEM object given.
      * leadingData is not used with this method.
      */
-    public static String pemEncoded(PEM pem) {
-        return pemEncoded(pem.type(), pem.content());
+    public static String pemEncodedToString(PEM pem) {
+        return new String(pemEncoded(pem.type(), pem.content()),
+            StandardCharsets.ISO_8859_1);
     }
 
     // Return base64 encoding in a byte array.
@@ -424,7 +458,6 @@ public class Pem {
             KeyUtil.clear(p8KeySpec);
         }
     }
-
 
     /**
      * With a given PKCS8 encoding, construct a PrivateKey or KeyPair.  A
@@ -497,4 +530,40 @@ public class Pem {
         return privKey;
     }
 
+    private static boolean matchesAt(byte[] source, int offset, byte[] match) {
+        if (offset < 0) {
+            return false;
+        }
+        for (int i = 0; i < match.length; i++) {
+            if (source[offset + i] != match[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Clearable ByteArrayOutputStream for temporary data.  Access to the
+     * internal buffer is allowed to limit data copying.  Handle with care.
+     */
+    private static final class ClearableBufferStream
+        extends ByteArrayOutputStream {
+
+        ClearableBufferStream(int len) {
+            super(len);
+        }
+
+        byte[] getBuffer() {
+            return buf;
+        }
+
+        int length() {
+            return count;
+        }
+
+        void clear() {
+            Arrays.fill(buf, (byte) 0);
+            count = 0;
+        }
+    }
 }

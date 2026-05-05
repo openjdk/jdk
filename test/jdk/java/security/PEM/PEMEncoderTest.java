@@ -173,9 +173,9 @@ public class PEMEncoderTest {
             decoder.decode(e.pem())));
 
         // Independent structural check for the new byte-oriented utility path.
-        System.out.println("Testing consistency between pemEncodedFromDER()" +
+        System.out.println("Testing consistency between pemEncodedFromArray()" +
             "and pemEncoded():");
-        testPemEncodedFromDER();
+        testPemEncodedFromArray();
     }
 
     static Map generateObjKeyMap(List<PEMData.Entry> list) {
@@ -244,26 +244,25 @@ public class PEMEncoderTest {
         System.out.println("PASS: " + entry.name());
     }
 
-    static void testPemEncodedFromDER() {
-        byte[] der = {1, 2, 3, 4, 5};
+    static void testPemEncodedFromArray() {
+        byte[] data = {1, 2, 3, 4, 5};
         String type = Pem.CERTIFICATE;
         String base64 = Base64.getMimeEncoder(64, "\r\n".getBytes(
-            StandardCharsets.ISO_8859_1)).encodeToString(der);
+            StandardCharsets.ISO_8859_1)).encodeToString(data);
         String expected = "-----BEGIN " + type + "-----\r\n" +
             base64 + (!base64.endsWith("\n") ? "\r\n" : "") +
             "-----END " + type + "-----\r\n";
 
-        assertEquals(new String(Pem.pemEncodedFromDER(type, der),
-            StandardCharsets.ISO_8859_1), expected);
+        assertEquals(Pem.pemEncoded(type, base64), expected);
 
-        // Empty DER should still include a CRLF before footer.
-        byte[] emptyDer = new byte[0];
+        // Empty data should still include a CRLF before footer.
+        byte[] empty = new byte[0];
         String emptyBase64 = Base64.getMimeEncoder(64, "\r\n".getBytes(
-            StandardCharsets.ISO_8859_1)).encodeToString(emptyDer);
+            StandardCharsets.ISO_8859_1)).encodeToString(empty);
         String emptyExpected = "-----BEGIN " + type + "-----\r\n" +
             emptyBase64 + (!emptyBase64.endsWith("\n") ? "\r\n" : "") +
             "-----END " + type + "-----\r\n";
-        assertEquals(new String(Pem.pemEncodedFromDER(type, emptyDer),
+        assertEquals(new String(Pem.pemEncoded(type, empty),
             StandardCharsets.ISO_8859_1), emptyExpected);
         System.out.println("PASS");
     }

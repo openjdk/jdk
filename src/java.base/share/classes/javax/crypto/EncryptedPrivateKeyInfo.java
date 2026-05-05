@@ -273,7 +273,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @param cipher the initialized {@code Cipher} object which will be
      * used for decrypting the encrypted data.
-     * @return the PKCS8EncodedKeySpec object with a specified algorithm
+     * @return the PKCS8EncodedKeySpec object
      * @exception NullPointerException if {@code cipher} is {@code null}.
      * @exception InvalidKeySpecException if the given cipher is
      * inappropriate for the encrypted data or the encrypted
@@ -360,11 +360,11 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @throws NullPointerException if {@code be}, {@code password}, or
      *         {@code algorithm} is {@code null}
      * @throws IllegalArgumentException if {@code be} is an unsupported
-     *         {@code BinaryEncodable} or has no encoding.
+     *         {@code BinaryEncodable} or has no encoding
      * @throws CryptoException if an error occurs while generating the
      *         PBE key, if {@code algorithm} or {@code params} are
      *         not supported by any provider, or if an error occurs during
-     *         encryption.
+     *         encryption
      *
      * @since 27
      */
@@ -403,7 +403,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *         {@code BinaryEncodable}
      * @throws CryptoException if an error occurs while generating the
      *         PBE key, if the default algorithm is misconfigured, or if an
-     *         error occurs during encryption.
+     *         error occurs during encryption
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
      * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}

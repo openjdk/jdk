@@ -44,16 +44,16 @@ public final class CryptoException extends RuntimeException {
     private static final long serialVersionUID = -6824337376392797817L;
 
     /**
-     * Constructs a new CryptoException with {@code null} as its detail message.
-     * The cause is not initialized and may subsequently be initialized by a
-     * call to {@link #initCause(Throwable)}.
+     * Constructs a new {@code CryptoException} with {@code null} as its detail
+     * message. The cause is not initialized and may subsequently be initialized
+     * by a call to {@link #initCause(Throwable)}.
      */
     public CryptoException() {
         super();
     }
 
     /**
-     * Constructs a new CryptoException with the specified detail message.
+     * Constructs a new {@code CryptoException} with the specified detail message.
      * The cause is not initialized and may subsequently be initialized by a
      * call to {@link #initCause(Throwable)}.
      *
@@ -65,7 +65,8 @@ public final class CryptoException extends RuntimeException {
     }
 
     /**
-     * Constructs a new CryptoException with the specified detail message and cause.
+     * Constructs a new {@code CryptoException} with the specified detail
+     * message and cause.
      *
      * <p> Note that the detail message associated with {@code cause} is not
      * automatically incorporated in this exception's detail message.
@@ -81,7 +82,7 @@ public final class CryptoException extends RuntimeException {
     }
 
     /**
-     * Constructs a new CryptoException with the specified cause and a detail
+     * Constructs a new {@code CryptoException} with the specified cause and a detail
      * message of {@code (cause == null ? null : cause.toString())}, which
      * typically contains the class and detail message of {@code cause}.
      *

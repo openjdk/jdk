@@ -102,15 +102,15 @@ import java.util.Objects;
  * obtaining {@link KeyFactory} and {@link CertificateFactory} instances used
  * during decoding. The {@link #withDecryption(char[])} method configures the
  * decoder to decrypt and decode encrypted private key PEM data using the given
- * password. If decryption fails, an {@link CryptoException} is thrown.
+ * password. If decryption fails, a {@link CryptoException} is thrown.
  * If an encrypted PEM is processed by a decoder not configured
  * for decryption, an {@link EncryptedPrivateKeyInfo} is returned.
  * A {@code PEMDecoder} configured for decryption can also decode unencrypted PEM.
  *
  * The {@code BinaryEncodable} interface may evolve. When using a decode method
  * with {@code switch}, always include a {@code default} case rather than
- * relying on this permits list to remain fixed. An exhaustive {@code switch}
- * may result in a {@link MatchException}.
+ * relying on the classes specified in the permits clause to remain fixed.
+ * An exhaustive {@code switch} may result in a {@link MatchException}.
  *
  * <p> This class is immutable and thread-safe.
  *
