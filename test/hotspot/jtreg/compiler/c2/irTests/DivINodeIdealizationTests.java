@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class DivINodeIdealizationTests {
 
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByNegOne", "divByPow2And",
-                 "divByPow2And1",  "divByPow2", "divByNegPow2", "divByMin",
+                 "divByPow2And1", "divByPow2", "divByNegPow2", "divByMin",
                  "magicDiv13", "magicDiv7", "magicDiv7Bounded"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -197,7 +197,6 @@ public class DivINodeIdealizationTests {
                   IRNode.RSHIFT_I, "1",
                   IRNode.ADD_I, "1"
                  })
-
     // Similar to above, 0 - (v >> 31) = v >>> 31
     public int divByMin(int x) {
         return x / Integer.MIN_VALUE;

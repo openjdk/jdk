@@ -113,7 +113,6 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
 
   bool d_pos = divisor >= 0;
   juint d = g_uabs(divisor);
-  constexpr int N = 32;
   const TypeInt* dti = phase->type(dividend)->is_int();
   juint min_neg = dti->_lo < 0 ? -juint(dti->_lo) : 0;
   juint max_pos = dti->_hi > 0 ? juint(dti->_hi) : 0;
@@ -154,6 +153,7 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
       // positive ones.  So (-7+3)>>2 becomes -1, (-4+3)>>2 becomes -1,
       // (-2+3)>>2 becomes 0, etc.
 
+      constexpr int N = 32;
       // Compute 0 or -1, based on sign bit
       Node* sign = phase->transform(new RShiftINode(dividend, phase->intcon(N - 1)));
       // Mask sign bit to the low sign bits
@@ -195,6 +195,7 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
   }
 
   // q = (x * c) >> s + (x < 0 ? 1 : 0) = (x * c) >> s - (x >> (W - 1))
+  constexpr int N = 32;
   Node* addend1 = phase->transform(new RShiftINode(dividend, phase->intcon(N - 1)));
 
   // If the divisor is negative, swap the order of the input addends;
@@ -208,7 +209,6 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
 // Convert an unsigned division by constant divisor into an alternate Ideal graph.
 static Node* transform_int_udivide(PhaseGVN* phase, Node* dividend, juint divisor) {
   assert(divisor > 1, "invalid constant divisor");
-  constexpr int N = 32;
   const TypeInt* i1 = phase->type(dividend)->is_int();
   juint max_pos = i1->_uhi;
 
@@ -242,6 +242,7 @@ static Node* transform_int_udivide(PhaseGVN* phase, Node* dividend, juint diviso
     // If x * c can fit into a u64, use long multiplication
 
     // Java shifts are modular so we need this special case
+    constexpr int N = 32;
     if (shift_const == N * 2) {
       return new ConINode(TypeInt::ZERO);
     }
@@ -350,7 +351,6 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
 
   bool d_pos = divisor >= 0;
   julong d = g_uabs(divisor);
-  constexpr int N = 64;
   const TypeLong* dtl = phase->type(dividend)->is_long();
   julong min_neg = dtl->_lo < 0 ? -julong(dtl->_lo) : 0;
   julong max_pos = dtl->_hi > 0 ? julong(dtl->_hi) : 0;
@@ -391,6 +391,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
       // positive ones.  So (-7+3)>>2 becomes -1, (-4+3)>>2 becomes -1,
       // (-2+3)>>2 becomes 0, etc.
 
+      constexpr int N = 64;
       // Compute 0 or -1, based on sign bit
       Node* sign = phase->transform(new RShiftLNode(dividend, phase->intcon(N - 1)));
       // Mask sign bit to the low sign bits
@@ -419,6 +420,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
     Node* mul = phase->transform(new MulLNode(dividend, phase->longcon(magic_const)));
     addend0 = phase->transform(new RShiftLNode(mul, phase->intcon(shift_const)));
   } else {
+    constexpr int N = 64;
     if (shift_const < N) {
       // We need i128 arithmetic here, if s < 64 we need to combine the high and low half of the full
       // product, force s to be >= 64 so we only need to use the high half
@@ -440,6 +442,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
   }
 
   // q = mul_hi(x, c) >> (s - 64) + (x < 0 ? 1 : 0) = mul_hi(x, c) >> (x - 64) - (x >> 63)
+  constexpr int N = 64;
   Node *addend1 = phase->transform(new RShiftLNode(dividend, phase->intcon(N - 1)));
 
   // If the divisor is negative, swap the order of the input addends;

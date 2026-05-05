@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class DivLNodeIdealizationTests {
 
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByNegOne", "divByPow2And",
-                 "divByPow2And1",  "divByPow2", "divByNegPow2", "divByMin",
+                 "divByPow2And1", "divByPow2", "divByNegPow2", "divByMin",
                  "magicDiv19", "magicDiv15", "magicDiv15Bounded"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
