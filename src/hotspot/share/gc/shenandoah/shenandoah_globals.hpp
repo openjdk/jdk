@@ -35,21 +35,16 @@
                             constraint)                                     \
                                                                             \
   product(uint, ShenandoahMomentaryAllocRateSampleWindow, 12, EXPERIMENTAL, \
-          "When at least this much time (measured in ms) has passed "       \
-          "since the acceleration allocation rate was most recently "       \
-          "sampled, capture another allocation rate sample for the purpose "\
-          "of detecting acceleration or momentary spikes in allocation "    \
-          "rate. A smaller value allows quicker response to changes in "    \
-          "allocation rates but is more vulnerable to noise and requires "  \
-          "more monitoring effort.")                                        \
+          "The number of samples in the momentary allocation rate moving "  \
+          "average. This window serves to detect momentary spikes in the "  \
+          "allocation rate. A smaller value allows quicker response to "    \
+          "changes in the allocation rate but is more vulnerable to noise " \
+          "and requires more monitoring effort.")                           \
           range(1, 1000)                                                    \
                                                                             \
-  product(uint, ShenandoahRecentAllocRateSampleWindow, 60, EXPERIMENTAL, \
-          "In selected ShenandoahControlIntervals "                         \
-          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
-          "since previous allocation rate sample), "                        \
-          "we compute the allocation rate since the previous rate was "     \
-          "sampled.  This many samples are analyzed to determine whether "  \
+  product(uint, ShenandoahRecentAllocRateSampleWindow, 60, EXPERIMENTAL,    \
+          "The number of samples in the recent allocation rate moving "     \
+          "average. These samples are analyzed to determine whether "       \
           "allocation rates are accelerating.  Acceleration may occur "     \
           "due to increasing client demand or due to phase changes in "     \
           "an application.  A larger value reduces sensitivity to "         \
@@ -64,7 +59,6 @@
           "sampled values will have an upward slope, manifesting as "       \
           "acceleration.")                                                  \
           range(1,5000)                                                     \
-                                                                            \
                                                                             \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \
@@ -270,14 +264,9 @@
           "to 100 effectively disables the shortcut.")                      \
           range(0,100)                                                      \
                                                                             \
-  product(uint, ShenandoahAllocRateSamplePeriodMs, 10, EXPERIMENTAL,        \
-          "The number of times per second to update the allocation rate "   \
-          "moving average.")                                                \
-                                                                            \
-  product(uint, ShenandoahAllocRateSampleWindow, 250, EXPERIMENTAL,     \
+  product(uint, ShenandoahAllocRateSampleWindow, 250, EXPERIMENTAL,         \
           "The size of the moving window over which the average "           \
-          "allocation rate is maintained. The total number of samples "     \
-          "is the product of this number and the sample frequency.")        \
+          "allocation rate is maintained.")                                 \
                                                                             \
   product(double, ShenandoahAdaptiveInitialConfidence, 1.8, EXPERIMENTAL,   \
           "The number of standard deviations used to determine an initial " \

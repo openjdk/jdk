@@ -346,7 +346,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(ShenandoahAll
 //
 // For most of the 100 ms time span that precedes the sample at 101.907, the allocation rate still remains at zero.  The phase
 // change that causes increasing allocations occurs near the end ot this time segment.  When sampled with a 3 ms period,
-// acceration of allocation can be triggered at approximately time 101.88s.
+// acceleration of allocation can be triggered at approximately time 101.88s.
 //
 // In the default configuration, accelerated allocation rate is detected by examining a sequence of 8 allocation rate samples.
 //

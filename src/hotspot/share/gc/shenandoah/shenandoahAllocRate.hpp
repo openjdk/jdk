@@ -42,12 +42,22 @@ public:
   }
 };
 
+// This class tracks three moving averages of the allocation rate:
+//  1. Momentary: this is the shortest and acts as a sort of 'spike' detector
+//  2. Recent: larger than momentary, these samples are used to detect 'accleration' of the rate
+//  3. Baseline: the largest sample window, this is meant to establish the baseline allocation rate
+//
+// Samples are taken whenever the accumulating count of bytes allocated exceeds the
+// minimum sample size. The miminum sample size is generally derived from the heap
+// capacity. The thinking is that larger heaps require less frequent sampling. Note
+// that as the allocation rate increases, the timeliness of the averages and other
+// estimates increases.
 template<typename Clock = ShenandoahAllocationClock>
 class ShenandoahAllocRate {
   Atomic<size_t> _allocated_bytes_since_last_sample;
   Monitor _sample_lock;
   jlong _last_sample_time;
-  size_t _minimum_sample_size;
+  size_t _minimum_sample_size; // bytes
 
 
   ShenandoahWeightedSeq _baseline;
@@ -69,19 +79,27 @@ public:
   {
   }
 
+  // Set minimum sample size in bytes
   void set_minimum_sample_size(const size_t minimum_sample_size) {
     _minimum_sample_size = minimum_sample_size;
   }
 
+  // Indicate that this many bytes have been allocated (by the mutator).
   void allocated(size_t allocated_bytes);
 
+  // If the recent average is above the baseline average, provide the acceleration
+  // and current rate. Returns the amount of bytes expected to be consumed in the
+  // given 'time_delta'. The prediction is based either on recent samples (acceleration)
+  // or the momentary average.
   size_t accelerated_consumption(double& acceleration, double& current_rate, double time_delta);
 
+  // Returns the weighted average of the samples.
   double average() {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     return _baseline.weighted_average();
   }
 
+  // Returns the upper bound of the confidence interval about the mean in terms of the given deviation.
   double upper_bound(const double standard_deviations) {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     return _baseline.weighted_average() + (standard_deviations * _baseline.weighted_sd());

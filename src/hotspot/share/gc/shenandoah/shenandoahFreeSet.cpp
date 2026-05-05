@@ -1670,8 +1670,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     size_t waste_bytes = _partitions.retire_from_partition(orig_partition, idx, r->used());
     DEBUG_ONLY(boundary_changed = true;)
     if (req.is_mutator_alloc() && (waste_bytes > 0)) {
-      // TODO: include waste bytes in new alloc rate
-      // increase_bytes_allocated(waste_bytes);
+      req.set_waste(waste_bytes / HeapWordSize);
     }
   }
 
@@ -1846,16 +1845,11 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     if (waste_bytes > 0) {
       // For humongous allocations, waste_bytes are included in total_used.  Since this is not humongous,
       // we need to account separately for the waste_bytes.
-      // TODO: new alloc rate doesn't account for wastage
-      // increase_bytes_allocated(waste_bytes);
+      req.set_waste(waste_bytes / HeapWordSize);
     }
   }
 
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
-
-  // TODO: new alloc rate doesn't account for wastage
-  // increase_bytes_allocated(total_used);
-
   req.set_actual_size(words_size);
   // If !is_humongous, the "waste" is made availabe for new allocation
   if (waste_bytes > 0) {
