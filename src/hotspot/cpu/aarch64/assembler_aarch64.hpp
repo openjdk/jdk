@@ -4302,6 +4302,22 @@ public:
   INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
 #undef INSN
 
+// SVE2 widening integer multiply - vector
+#define INSN(NAME, is_unsigned, is_top)                                                \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) { \
+    starti;                                                                            \
+    assert(T != B && T != Q, "invalid size");                                          \
+    int op = 0b011100 | (is_unsigned ? 0b10 : 0) | (is_top ? 0b1 : 0);                 \
+    f(0b01000101, 31, 24), f(T, 23, 22), f(0, 21), rf(Zm, 16);                         \
+    f(op, 15, 10), rf(Zn, 5), rf(Zd, 0);                                               \
+  }
+
+  INSN(sve_umullb, /* is_unsigned */ true,  /* is_top */ false); // Unsigned widening multiply of bottom elements
+  INSN(sve_umullt, /* is_unsigned */ true,  /* is_top */ true ); // Unsigned widening multiply of top elements
+  INSN(sve_smullb, /* is_unsigned */ false, /* is_top */ false); // Signed widening multiply of bottom elements
+  INSN(sve_smullt, /* is_unsigned */ false, /* is_top */ true ); // Signed widening multiply of top elements
+#undef INSN
+
 // SVE2 saturating operations - predicate
 #define INSN(NAME, op1, op2)                                                          \
   void NAME(FloatRegister Zdn, SIMD_RegVariant T, PRegister Pg, FloatRegister Znm) {  \
