@@ -133,18 +133,12 @@ refArrayOop oopFactory::new_refArray(Klass* klass, int length, TRAPS) {
   return new_refArray(klass, length, ArrayProperties::Default(), THREAD);
 }
 
-flatArrayOop oopFactory::new_flatArray(FlatArrayKlass* klass, int length, TRAPS) {
-  return klass->allocate_instance(length, THREAD);
-}
-
-flatArrayOop oopFactory::new_flatArray(Klass* k, int length, ArrayProperties props, LayoutKind lk, TRAPS) {
-  InlineKlass* klass = InlineKlass::cast(k);
-
-  ArrayKlass* ak = klass->array_klass(CHECK_NULL);
+flatArrayOop oopFactory::new_flatArray(InlineKlass* ik, int length, ArrayProperties props, TRAPS) {
+  ArrayKlass* ak = ik->array_klass(CHECK_NULL);
   ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_with_properties(props, CHECK_NULL);
-
   FlatArrayKlass* fak = FlatArrayKlass::cast(oak);
-  return fak->allocate_instance(length, CHECK_NULL);
+
+  return fak->allocate_instance(length, THREAD);
 }
 
 refArrayHandle oopFactory::new_refArray_handle(Klass* klass, int length, TRAPS) {
