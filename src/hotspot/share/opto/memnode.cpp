@@ -25,6 +25,7 @@
 
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInlineKlass.hpp"
+#include "ci/ciInstanceKlass.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmIntrinsics.hpp"
@@ -1295,9 +1296,26 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
   return nullptr;
 }
 
-static Node* see_through_inline_type(PhaseValues* phase, const MemNode* load, Node* base, int offset) {
-  if (!load->is_mismatched_access() && base != nullptr && base->is_InlineType() && offset > oopDesc::klass_offset_in_bytes()) {
-    InlineTypeNode* vt = base->as_InlineType();
+static Node* see_through_inline_type(PhaseValues* phase, const LoadNode* load, Node* base, int offset) {
+  if (load->is_mismatched_access() || base == nullptr) {
+    return nullptr;
+  }
+
+  InlineTypeNode* vt = base->uncast()->isa_InlineType();
+  if (vt == nullptr) {
+    return nullptr;
+  }
+
+  const TypeInstPtr* base_type = phase->type(base)->isa_instptr();
+  if (base_type == nullptr) {
+    return nullptr;
+  }
+
+  // There can be cases when an InlineTypeNode is casted to some unrelated type, the graph is dead
+  // but we should not recklessly fold the load
+  ciInstanceKlass* expected_type = base_type->instance_klass();
+  ciInlineKlass* actual_type = vt->type()->inline_klass();
+  if (expected_type == actual_type && actual_type->get_field_by_offset(offset, false) != nullptr) {
     Node* value = vt->field_value_by_offset(offset, true);
     assert(value != nullptr, "must see some value");
     return value;
@@ -1318,12 +1336,9 @@ Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phas
   intptr_t ld_off = 0;
   Node* ld_base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ld_off);
   // Try to see through an InlineTypeNode
-  // LoadN is special because the input is not compressed
-  if (Opcode() != Op_LoadN) {
-    Node* value = see_through_inline_type(phase, this, ld_base, ld_off);
-    if (value != nullptr) {
-      return value;
-    }
+  Node* value = see_through_inline_type(phase, this, ld_base, ld_off);
+  if (value != nullptr) {
+    return value;
   }
 
   const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
@@ -2743,17 +2758,8 @@ const Type* LoadSNode::Value(PhaseGVN* phase) const {
 }
 
 Node* LoadNNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // Loading from an InlineType, find the input and make an EncodeP
-  Node* addr = in(Address);
-  intptr_t offset;
-  Node* base = AddPNode::Ideal_base_and_offset(addr, phase, offset);
-  Node* value = see_through_inline_type(phase, this, base, offset);
-  if (value != nullptr) {
-    return new EncodePNode(value, type());
-  }
-
   // Can see the corresponding value, may need to add an EncodeP
-  value = can_see_stored_value(in(Memory), phase);
+  Node* value = can_see_stored_value_through_membars(in(Memory), phase);
   if (value != nullptr && phase->type(value)->isa_ptr() && type()->isa_narrowoop()) {
     return new EncodePNode(value, type());
   }
@@ -6136,6 +6142,11 @@ Node* MergeMemNode::Identity(PhaseGVN* phase) {
 //------------------------------Ideal------------------------------------------
 // This method is invoked recursively on chains of MergeMem nodes
 Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (Identity(phase) != this) {
+    // Let Identity handle this case
+    return nullptr;
+  }
+
   // Remove chain'd MergeMems
   //
   // This is delicate, because the each "in(i)" (i >= Raw) is interpreted

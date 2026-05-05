@@ -114,7 +114,7 @@ GraphKit::GraphKit(const SafePointNode* sft, PhaseIterGVN& igvn)
     current->set_map(cloned_map);
   }
   set_jvms(cloned_jvms);
-  set_all_memory(reset_memory());
+  set_all_memory(cloned_map->memory());
 }
 
 //---------------------------clean_stack---------------------------------------
@@ -1571,19 +1571,22 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
 //------------------------------cast_not_null----------------------------------
 // Cast obj to not-null on this path
 Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
+  const Type* t = _gvn.type(obj);
+  const Type* t_not_null = t->join_speculative(TypePtr::NOTNULL);
+  if (t == t_not_null) {
+    return obj;
+  }
+
   if (obj->is_InlineType()) {
-    Node* vt = obj->isa_InlineType()->clone_if_required(&gvn(), map(), do_replace_in_map);
-    vt->as_InlineType()->set_null_marker(_gvn);
-    vt = _gvn.transform(vt);
+    InlineTypeNode* vt = obj->isa_InlineType()->clone_if_required(&gvn(), map(), do_replace_in_map);
+    vt->set_null_marker(_gvn);
+    vt->set_type(t_not_null);
+    vt = _gvn.transform(vt)->as_InlineType();
     if (do_replace_in_map) {
       replace_in_map(obj, vt);
     }
     return vt;
   }
-  const Type *t = _gvn.type(obj);
-  const Type *t_not_null = t->join_speculative(TypePtr::NOTNULL);
-  // Object is already not-null?
-  if( t == t_not_null ) return obj;
 
   Node* cast = new CastPPNode(control(), obj,t_not_null);
   cast = _gvn.transform( cast );
@@ -1672,11 +1675,19 @@ Node* GraphKit::reset_memory() {
 
 //------------------------------set_all_memory---------------------------------
 void GraphKit::set_all_memory(Node* newmem) {
-  Node* mergemem = MergeMemNode::make(newmem);
-  gvn().set_type_bottom(mergemem);
-  if (_gvn.is_IterGVN() != nullptr) {
-    record_for_igvn(mergemem);
+  // The 2 cases are semantically equivalent
+  MergeMemNode* mergemem;
+  if (_gvn.is_IterGVN()) {
+    // During IGVN, create a more predictable pattern so it is easier to verify that the GraphKit
+    // does not modify memory
+    mergemem = MergeMemNode::make(C->top());
+    mergemem->set_base_memory(newmem);
+  } else {
+    // During parsing, be a little more aggressive so that GVN can fold accesses more easily
+    mergemem = MergeMemNode::make(newmem);
   }
+  _gvn.set_type_bottom(mergemem);
+  record_for_igvn(mergemem);
   map()->set_memory(mergemem);
 }
 
@@ -3765,13 +3776,6 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   bool speculative_not_null = false;
   bool never_see_null = ((failure_control == nullptr)  // regular case only
                          && seems_never_null(obj, data, speculative_not_null));
-
-  if (obj->is_InlineType()) {
-    // Re-execute if buffering during triggers deoptimization
-    PreserveReexecuteState preexecs(this);
-    jvms()->set_should_reexecute(true);
-    obj = obj->as_InlineType()->buffer(this, safe_for_replace);
-  }
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();

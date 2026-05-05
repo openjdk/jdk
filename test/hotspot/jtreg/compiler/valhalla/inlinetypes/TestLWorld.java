@@ -5119,7 +5119,7 @@ public class TestLWorld {
     }
 
     // Same as test178 but with object argument
-    @Test
+    @Test(allowNotCompilable = true) // TODO 8378943: reason should be "failed spill-split-recycle sanity check"
     @IR(failOn = {ALLOC, STORE_OF_ANY_KLASS, STATIC_CALL_OF_METHOD, "isSubstitutable.*"})
     public boolean test179(Value178 x, Object y) {
         return getter(x) == getter(y);
@@ -5235,6 +5235,74 @@ public class TestLWorld {
         Asserts.assertFalse(test182(val1, val2));
         Asserts.assertFalse(test182(val2, val3));
         Asserts.assertTrue(test182(val3, val4));
+    }
+
+    @Test
+    @IR(failOn = {STATIC_CALL_OF_METHOD, "isSubstitutable.*", ALLOC})
+    public boolean test183(Integer o1, Value181 o2) {
+        // The only intersection is null
+        return getter(new Value181(o1)) == getter(new Value181(o2));
+    }
+
+    @Run(test = "test183")
+    public void test183_verifier() {
+        Value181 val = new Value181(null);
+        Asserts.assertTrue(test183(null, null));
+        Asserts.assertFalse(test183(null, val));
+        Asserts.assertFalse(test183(0, null));
+        Asserts.assertFalse(test183(0, val));
+    }
+
+    @Test
+    @IR(failOn = {STATIC_CALL_OF_METHOD, "isSubstitutable.*", ALLOC})
+    @IR(counts = {IRNode.CMP_P, "1"})
+    public boolean test184(MyClass152 o1, Object o2) {
+        // One side is not a value object
+        return getter(new Value181(o1)) == getter(new Value181(o2));
+    }
+
+    @Run(test = "test184")
+    public void test184_verifier() {
+        MyClass152 identity = new MyClass152(0);
+        Asserts.assertTrue(test184(null, null));
+        Asserts.assertFalse(test184(null, identity));
+        Asserts.assertFalse(test184(identity, 0));
+        Asserts.assertTrue(test184(identity, identity));
+        Asserts.assertFalse(test184(identity, new MyClass152(0)));
+    }
+
+    @Test
+    @IR(failOn = {STATIC_CALL_OF_METHOD, "isSubstitutable.*", ALLOC})
+    public boolean test185(MyValue152 o1, Object o2) {
+        // One side is a value object
+        return getter(new Value181(o1)) == getter(new Value181(o2));
+    }
+
+    @Run(test = "test185")
+    public void test185_verifier() {
+        MyValue152 value = new MyValue152(0);
+        Asserts.assertTrue(test185(null, null));
+        Asserts.assertFalse(test185(null, value));
+        Asserts.assertFalse(test185(value, 0));
+        Asserts.assertTrue(test185(value, value));
+        Asserts.assertTrue(test185(value, new MyValue152(0)));
+    }
+
+    @Test
+    @IR(failOn = {STATIC_CALL_OF_METHOD, "isSubstitutable.*"})
+    public boolean test186(MyClass152 o1, Object o2) {
+        // One side is not a value object
+        return getter(o1) == getter(o2);
+    }
+
+    @Run(test = "test186")
+    public void test186_verifier() {
+        MyClass152 identity = new MyClass152(0);
+        Asserts.assertTrue(test186(null, null));
+        Asserts.assertFalse(test186(null, identity));
+        Asserts.assertFalse(test186(identity, 0));
+        Asserts.assertTrue(test186(identity, identity));
+        Asserts.assertFalse(test186(identity, new MyClass152(0)));
     }
 
     @LooselyConsistentValue
@@ -5412,4 +5480,3 @@ public class TestLWorld {
         }
     }
 }
-
