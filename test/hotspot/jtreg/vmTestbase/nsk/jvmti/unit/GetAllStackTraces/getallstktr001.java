@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jvmti.unit.GetAllStackTraces;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import java.io.PrintStream;
 import nsk.share.Consts;
 
@@ -74,7 +75,7 @@ public class getallstktr001 {
             try { Thread.sleep(500); } catch ( InterruptedException e ) {}
 
             boolean allThreadsReady = true;
-            for ( Thread t : thr ) {
+            for ( TestThread t : thr ) {
                 StackTraceElement[] stack = t.getStackTrace();
                 if ( stack.length == 0 ) {
                     System.out.println("Thread " + t.getName() + " has an empty stack. Seems strange.");
@@ -118,7 +119,7 @@ public class getallstktr001 {
         return GetResult();
     }
 
-    static class TestThread extends Thread {
+    static class TestThread extends ThreadWrapper {
         static int counter=0;
         int ind;
         public TestThread(String name) {
