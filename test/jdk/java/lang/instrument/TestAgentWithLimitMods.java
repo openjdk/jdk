@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@
  * @requires !vm.graal.enabled
  * @summary Tests that the -javaagent option adds the java.instrument into
  * the module graph
+ * @library /test/lib
+ * @build SimpleAgent
  *
- * @run shell MakeJAR3.sh SimpleAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder SimpleAgent SimpleAgent.jar
  * @run main/othervm -javaagent:SimpleAgent.jar --limit-modules java.base TestAgentWithLimitMods
  *
  */

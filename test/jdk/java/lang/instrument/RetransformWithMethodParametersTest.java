@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
  * @bug 8240908
  *
  * @library /test/lib
+ * @build RetransformWithMethodParametersTest InstrumentationHandoff
  * @run compile -g -parameters RetransformWithMethodParametersTest.java
- * @run shell MakeJAR.sh retransformAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff retransformAgent.jar Can-Retransform-Classes:true
  *
  * @run main/othervm -javaagent:retransformAgent.jar RetransformWithMethodParametersTest
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
  * @summary make sure redefineClasses throws NullPointerException in the right places.
  * @author Robert Field as modified from the code of Gabriel Adauto, Wily Technology
  *
- * @run build NullRedefineClassesTests
- * @run shell MakeJAR.sh redefineAgent
+ * @library /test/lib
+ * @run build NullRedefineClassesTests InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff redefineAgent.jar Can-Redefine-Classes:true
  * @run main/othervm -javaagent:redefineAgent.jar NullRedefineClassesTests NullRedefineClassesTests
  */
 

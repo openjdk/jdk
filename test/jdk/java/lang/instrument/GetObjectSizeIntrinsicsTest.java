@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +29,8 @@
  * @library /test/lib
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -56,8 +57,8 @@
  * @requires vm.bits == 64
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -84,8 +85,8 @@
  * @requires vm.bits == 64
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -112,8 +113,8 @@
  * @requires vm.debug
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -144,8 +145,8 @@
  * @requires vm.debug
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -176,8 +177,8 @@
  * @requires vm.debug
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -208,8 +209,8 @@
  * @requires vm.debug
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -240,8 +241,8 @@
  * @requires vm.debug
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -273,8 +274,8 @@
  * @requires os.maxMemory >= 10G
  *
  * @build jdk.test.whitebox.WhiteBox
- * @run build GetObjectSizeIntrinsicsTest
- * @run shell MakeJAR.sh basicAgent
+ * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
