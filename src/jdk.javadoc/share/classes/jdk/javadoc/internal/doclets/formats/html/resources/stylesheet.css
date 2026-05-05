@@ -77,6 +77,7 @@
     /* Note colors */
     --note-background-color: #fdfdfd;
     --note-border-color: #a5a5a5;
+    --note-header-color: #434343;
     --note-text-color: var(--block-text-color);
     --note-important-background-color: #f1f7ff;
     --note-important-border-color: #7b95a5;
@@ -86,6 +87,7 @@
     --note-critical-border-color: #d01414;
     --note-critical-header-color: #ffffff;
     --note-critical-pre-color: #fee3e3;
+    --jdk-note-border-color: #d6d6d6;
     /* Border colors for structural elements and user defined tables */
     --border-color: #e6e6e6;
     --table-border-color: #000000;
@@ -149,6 +151,7 @@
     --pre-text-color: var(--snippet-text-color);
     --note-background-color: #282a2c;
     --note-border-color: #747474;
+    --note-header-color: #e5e5e5;
     --note-text-color: var(--block-text-color);
     --note-important-background-color: #353f4e;
     --note-important-border-color: #446c86;
@@ -158,6 +161,7 @@
     --note-critical-border-color: #b82222;
     --note-critical-header-color: #ffffff;
     --note-critical-pre-color: #391a1a;
+    --jdk-note-border-color: #606060;
     --border-color: #444444;
     --table-border-color: #717171;
     --tab-border-radius: 2px 2px 0 0;
@@ -583,7 +587,7 @@ dl.notes > div > dt {
     font-size:0.856em;
     font-weight:bold;
     margin:10px 0 0 0;
-    color:var(--body-text-color);
+    color:var(--note-header-color);
 }
 dl.notes > dd,
 dl.notes > div > dd {
@@ -630,6 +634,11 @@ dl.notes > div.block-note.note-tag-critical {
     pre, pre.snippet, div.snippet-container {
         background-color: var(--note-critical-pre-color);
     }
+}
+dl.notes > div.block-note.note-tag-apiNote,
+dl.notes > div.block-note.note-tag-implNote,
+dl.notes > div.block-note.note-tag-implSpec {
+    border-color: var(--jdk-note-border-color);
 }
 div.block-note > dd > ul,
 div.block-note > dd > ol {
