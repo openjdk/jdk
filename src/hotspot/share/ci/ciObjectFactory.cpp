@@ -110,9 +110,15 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
       if (obj->is_loaded() && obj->is_instance_klass() &&
           obj->as_instance_klass()->is_shared()) {
         ciInstanceKlass* cik = obj->as_instance_klass();
-        u1 state = 0;
-        GUARDED_VM_ENTRY( state = (u1)cik->get_instanceKlass()->init_state(); )
-        _shared_init_state.at_put_grow(cik->ident(), state, 0);
+        InstanceKlass::ClassState current_state = cik->_init_state;
+        InstanceKlass::ClassState state = InstanceKlass::fully_initialized;
+        if (current_state != state) {
+          GUARDED_VM_ENTRY( state = cik->get_instanceKlass()->init_state(); )
+          // Update state of shared ciInstanceKlass
+          cik->_init_state = state;
+        }
+        // Cache state for current compilation
+        _shared_init_state.at_put_grow(cik->ident(), (u1)state, 0);
       }
     }
   }

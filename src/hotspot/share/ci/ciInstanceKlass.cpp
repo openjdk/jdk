@@ -136,19 +136,15 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
 
 
 // ------------------------------------------------------------------
-// ciInstanceKlass::compute_shared_is_initialized
-InstanceKlass::ClassState ciInstanceKlass::compute_shared_init_state() {
-  GUARDED_VM_ENTRY(
-    InstanceKlass* ik = get_instanceKlass();
-    // Update state of shared instance to be used by next compilation
-    _init_state = ik->init_state();
-    // But return its cached state for current compilation
+InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
+  if (_is_shared && is_loaded()) {
+    // Return cached init state of shared klass
     ciEnv* env = CURRENT_ENV;
     if (env != nullptr && env->task() != nullptr) {
       return env->get_shared_init_state(ident());
     }
-    return _init_state;
-  )
+  }
+  return _init_state;
 }
 
 // ------------------------------------------------------------------
