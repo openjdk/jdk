@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -57,12 +58,16 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
@@ -419,6 +424,7 @@ public class Arguments {
                 log.error(Errors.ModulesourcepathMustBeSpecifiedWithDashMOption);
             } else {
                 java.util.List<String> modules = Arrays.asList(options.get(Option.MODULE).split(","));
+                Set<String> outOfDateModules = new HashSet<>();
                 try {
                     for (String module : modules) {
                         Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
@@ -427,8 +433,23 @@ public class Arguments {
                             return false;
                         }
                         if (isModuleOutOfDate(fm, module, sourceLoc)) {
-                            for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(Kind.SOURCE), true)) {
-                                fileObjects.add(file);
+                            outOfDateModules.add(module);
+                            addModuleSources(fm, sourceLoc);
+                        }
+                    }
+
+                    // Now also add all dependent modules to the set of compiled files.
+                    // Code in these may need updating because an updated module changed its API.
+                    // We don't need to be recursive here, since a non-updated module
+                    // can not change its API.
+                    if (!outOfDateModules.isEmpty()) {
+                        ParserFactory parserFactory = ParserFactory.instance(context);
+                        for (String module : modules) {
+                            if (!outOfDateModules.contains(module)) {
+                                Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
+                                if (requiresOutOfDateModule(fm, parserFactory, sourceLoc, outOfDateModules)) {
+                                    addModuleSources(fm, sourceLoc);
+                                }
                             }
                         }
                     }
@@ -635,6 +656,27 @@ public class Arguments {
         }
 
         return !errors && (log.nerrors == 0);
+    }
+
+    private void addModuleSources(JavaFileManager fm, Location sourceLoc) throws IOException {
+        for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(Kind.SOURCE), true)) {
+            fileObjects.add(file);
+        }
+    }
+
+    private static boolean requiresOutOfDateModule(JavaFileManager fm, ParserFactory parserFactory, Location sourceLoc,
+                                                   Set<String> updatedModules) throws IOException {
+        JavaFileObject moduleInfo = fm.getJavaFileForInput(sourceLoc, "module-info", Kind.SOURCE);
+        JavacParser parser = parserFactory.newParser(moduleInfo.getCharContent(false), false, false, true);
+        JCTree.JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
+        JCTree.JCModuleDecl moduleDecl = compilationUnit.getModuleDecl();
+        for (JCTree.JCDirective directive : moduleDecl.getDirectives()) {
+            if (directive instanceof JCTree.JCRequires requires
+                    && updatedModules.contains(TreeInfo.fullName(requires.getModuleName()).toString())) {
+                return true;
+           }
+        }
+        return false;
     }
 
     private static boolean isModuleOutOfDate(JavaFileManager fm, String module, Location sourceLoc) throws IOException {
