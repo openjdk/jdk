@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,51 +21,32 @@
  * questions.
  */
 
-//
-// SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.
-//
-
 /*
  * @test
- * @bug 4980882 8207250 8237474
+ * @bug 4980882 8207250 8237474 8382270
  * @summary SSLEngine should enforce setUseClientMode
  * @library /javax/net/ssl/templates
- * @run main/othervm EngineEnforceUseClientMode
+ *          /test/lib
+ * @run main EngineEnforceUseClientMode
  * @author Brad R. Wetmore
  */
+
+import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
 
 import javax.net.ssl.*;
 
 public class EngineEnforceUseClientMode extends SSLEngineTemplate {
 
-    private static boolean debug = false;
-
-    private SSLEngine serverEngine2;    // server
-    private SSLEngine serverEngine3;    // server
-    private SSLEngine serverEngine4;    // server
-
-    /*
-     * Majority of the test case is here, setup is done below.
-     */
-    private void createAdditionalSSLEngines() throws Exception {
-        SSLContext sslc = createServerSSLContext();
-        /*
-         * Note, these are not initialized to client/server
-         */
-        serverEngine2 = sslc.createSSLEngine();
-        serverEngine3 = sslc.createSSLEngine();
-        serverEngine4 = sslc.createSSLEngine();
-        //Check default SSLEngine role.
-        if (serverEngine4.getUseClientMode()) {
-            throw new RuntimeException("Expected default role to be server");
-        }
-
-    }
+    private static final boolean debug = false;
 
     private void runTest() throws Exception {
+        SSLContext sslc = createServerSSLContext();
 
-        createAdditionalSSLEngines();
+        SSLEngine engine1 = sslc.createSSLEngine();
+        SSLEngine engine2 = sslc.createSSLEngine();
+        SSLEngine engine3 = sslc.createSSLEngine();
+        SSLEngine engine4 = sslc.createSSLEngine();
 
         /*
          * First try the engines with no client/server initialization
@@ -73,7 +54,7 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
          */
         try {
             System.out.println("Testing wrap()");
-            serverEngine2.wrap(clientOut, cTOs);
+            engine1.wrap(clientOut, cTOs);
             throw new RuntimeException(
                 "wrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
@@ -87,7 +68,7 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
 
         try {
             System.out.println("Testing unwrap()");
-            serverEngine3.unwrap(cTOs, clientIn);
+            engine2.unwrap(cTOs, clientIn);
             throw new RuntimeException(
                 "unwrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
@@ -101,12 +82,28 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
 
         try {
             System.out.println("Testing beginHandshake()");
-            serverEngine4.beginHandshake();
+            engine3.beginHandshake();
             throw new RuntimeException(
                 "unwrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
             System.out.println("Caught the correct exception.");
         }
+
+        try {
+            System.out.println("Testing getUseClientMode()");
+            engine4.getUseClientMode();
+            throw new RuntimeException(
+                    "unwrap():  Didn't catch the exception properly");
+        } catch (IllegalStateException e) {
+            System.out.println("Caught the correct exception.");
+        }
+
+        // Now set the mode and verify that we can get it.
+        engine4.setUseClientMode(true);
+        assertTrue(engine4.getUseClientMode());
+
+        engine1.setUseClientMode(false);
+        assertFalse(engine1.getUseClientMode());
 
         boolean dataDone = false;
 
@@ -180,12 +177,8 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
         }
     }
 
-    public static void main(String args[]) throws Exception {
-
-        EngineEnforceUseClientMode test = new EngineEnforceUseClientMode();
-        test.createAdditionalSSLEngines();
-        test.runTest();
-
+    public static void main(String[] args) throws Exception {
+        new EngineEnforceUseClientMode().runTest();
         System.out.println("Test Passed.");
     }
 
