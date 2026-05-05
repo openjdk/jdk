@@ -910,7 +910,9 @@ void VM_Version::get_processor_features() {
     vm_exit_during_initialization("Unknown x64 processor: SSE2 not supported");
   }
   // in 64 bit the use of SSE2 is the minimum
-  if (UseSSE < 2) UseSSE = 2;
+  if (UseSSE < 2) {
+    UseSSE = 2;
+  }
 
   // flush_icache_stub have to be generated first.
   // That is why Icache line size is hard coded in ICache class,
@@ -952,12 +954,6 @@ void VM_Version::get_processor_features() {
     clear_feature(CPU_SSE4A);
   }
 
-  if (UseSSE < 2)
-    clear_feature(CPU_SSE2);
-
-  if (UseSSE < 1)
-    clear_feature(CPU_SSE);
-
   // ZX cpus specific settings
   if (is_zx() && FLAG_IS_DEFAULT(UseAVX)) {
     if (cpu_family() == 7) {
@@ -974,19 +970,11 @@ void VM_Version::get_processor_features() {
   // UseSSE is set to the smaller of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseSSE to 2 on
   // older Pentiums which do not support it.
-  int use_sse_limit = 0;
-  if (UseSSE > 0) {
-    if (UseSSE > 3 && supports_sse4_1()) {
-      use_sse_limit = 4;
-    } else if (UseSSE > 2 && supports_sse3()) {
-      use_sse_limit = 3;
-    } else if (UseSSE > 1 && supports_sse2()) {
-      use_sse_limit = 2;
-    } else if (UseSSE > 0 && supports_sse()) {
-      use_sse_limit = 1;
-    } else {
-      use_sse_limit = 0;
-    }
+  int use_sse_limit = 2;
+  if (UseSSE > 3 && supports_sse4_1()) {
+    use_sse_limit = 4;
+  } else if (UseSSE > 2 && supports_sse3()) {
+    use_sse_limit = 3;
   }
   if (FLAG_IS_DEFAULT(UseSSE)) {
     FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
@@ -1578,7 +1566,7 @@ void VM_Version::get_processor_features() {
       if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
         FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
       }
-      if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+      if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
     }
@@ -1594,7 +1582,7 @@ void VM_Version::get_processor_features() {
     if (cpu_family() >= 0x17) {
       // On family >=17h processors use XMM and UnalignedLoadStores
       // for Array Copy
-      if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+      if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
 #ifdef COMPILER2
@@ -1796,8 +1784,6 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
     if (AllocatePrefetchInstr == 3 && !supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
-    } else if (!supports_sse() && supports_3dnow_prefetch()) {
-      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
   }
 
@@ -3243,17 +3229,9 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
   // It will be used only when AllocatePrefetchStyle > 0
 
   if (is_amd_family()) { // AMD | Hygon
-    if (supports_sse2()) {
-      return 256; // Opteron
-    } else {
-      return 128; // Athlon
-    }
+    return 256; // Opteron
   } else if (is_zx()) {
-    if (supports_sse2()) {
-      return 256;
-    } else {
-      return 128;
-    }
+    return 256;
   } else { // Intel
     if (supports_sse3() && is_intel_server_family()) {
       if (is_intel_modern_cpu()) { // Nehalem based cpus
@@ -3262,14 +3240,10 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
         return 384;
       }
     }
-    if (supports_sse2()) {
-      if (is_intel_server_family()) {
-        return 256; // Pentium M, Core, Core2
-      } else {
-        return 512; // Pentium 4
-      }
+    if (is_intel_server_family()) {
+      return 256; // Pentium M, Core, Core2
     } else {
-      return 128; // Pentium 3 (and all other old CPUs)
+      return 512; // Pentium 4
     }
   }
 }
