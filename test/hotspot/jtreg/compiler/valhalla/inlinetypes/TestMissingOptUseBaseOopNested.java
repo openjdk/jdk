@@ -35,6 +35,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
  *          inline types and InlineTypeNode::is_loaded suddenly returns something for one of
  *          the nested types after another optimization.
  * @library /test/lib /
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
