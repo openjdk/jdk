@@ -1182,12 +1182,15 @@ public class TransPatterns extends TreeTranslator {
 
         // pattern matching check logic and remainder check
         List<JCExpression> matchExParams = List.of(makeNull(), makeNull());
-        JCTree.JCThrow thr = make.Throw(makeNewClass(syms.matchExceptionType, matchExParams));
+        JCTree.JCThrow thr =
+                make.Throw(makeNewClass(syms.matchExceptionType, matchExParams));
 
-        JCInstanceOf instanceOfTree = make.TypeTest(make.Ident(candidate).setType(candidate.type), pattern);
+        JCInstanceOf instanceOfTree =
+                make.TypeTest(make.Ident(candidate).setType(candidate.type), pattern);
+        instanceOfTree.allowNull = true;
 
-        JCIf matchCheck = make.If(makeUnary(Tag.NOT,
-                translate(instanceOfTree)).setType(syms.booleanType), thr, null);
+        JCIf matchCheck =
+                make.If(makeUnary(Tag.NOT, translate(instanceOfTree)).setType(syms.booleanType), thr, null);
 
         return List.of(nullCheck, matchCheck);
     }
@@ -1204,13 +1207,13 @@ public class TransPatterns extends TreeTranslator {
          * (where <pattern> is a record pattern) is translated to:
          *
          * <pre>{@code
-         *     <expr-type> N$temp = <expression>;
-         *     if ( N$temp == null ) {
-         *         throw new NullPointerException();
-         *     }
          *     <binding variable declarations>
-         *     if (!( N$temp instanceof <pattern> ) {
-         *         throw new MatchException(null, null);
+         *     {
+         *          final <expr-type-or-Object> N$temp = <expression>;
+         *          <null check of N$temp>;
+         *          if (!(<translated match check for N$temp against pattern>)) {
+         *              throw new MatchException(null, null);
+         *          }
          *     }
          * }</pre>
          *
@@ -1257,15 +1260,13 @@ public class TransPatterns extends TreeTranslator {
                  * (where coll implements {@code Iterable<R>}) gets translated to
                  *
                  * <pre>{@code
-                 *     for (<type-of-coll-item> N$temp : coll) {
+                 *     for (<class-bound element type> N$temp : coll) {
                  *          < binding variable declarations >
-                 *          if ( N$temp == null ) {
-                 *              throw new NullPointerException();
-                 *          }
-                 *          if (!( N$temp instanceof <pattern> ) {
+                 *          <null check of N$temp>;
+                 *          if (!(<translated match check for N$temp against pattern>)) {
                  *              throw new MatchException(null, null);
                  *          }
-                 *          stmt ;
+                 *          <translated stmt>
                  * }</pre>
                  *
                  */
