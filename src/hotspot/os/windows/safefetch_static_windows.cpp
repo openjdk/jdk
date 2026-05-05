@@ -46,8 +46,7 @@ extern "C" char _SafeFetchN_fault[];
 
 bool handle_safefetch(int exception_code, address pc, void* context) {
   CONTEXT* ctx = (CONTEXT*)context;
-  if ((exception_code == EXCEPTION_ACCESS_VIOLATION ||
-       exception_code == EXCEPTION_GUARD_PAGE) && ctx != nullptr) {
+  if (ctx != nullptr) {
     if (pc == (address)_SafeFetch32_fault) {
       os::win32::context_set_pc(ctx, (address)_SafeFetch32_continuation);
       return true;
