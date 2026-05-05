@@ -25,10 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
+#include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahAllocationClock {
