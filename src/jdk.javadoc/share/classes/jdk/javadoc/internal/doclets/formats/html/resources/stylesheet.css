@@ -597,7 +597,8 @@ dl.notes > div.block-note.note-tag-important,
 dl.notes > div.block-note.note-tag-critical,
 dl.notes > div.block-note.note-tag-apiNote,
 dl.notes > div.block-note.note-tag-implNote,
-dl.notes > div.block-note.note-tag-implSpec {
+dl.notes > div.block-note.note-tag-implSpec,
+dl.notes > div.block-note.note-tag-previewNote {
     margin: 12px 0;
     padding: 0 12px;
     border-radius: 4px;
@@ -611,7 +612,8 @@ dl.notes > div.block-note.note-tag-implSpec {
 dl.notes > div.block-note.note-tag-infobox,
 dl.notes > div.block-note.note-tag-apiNote,
 dl.notes > div.block-note.note-tag-implNote,
-dl.notes > div.block-note.note-tag-implSpec {
+dl.notes > div.block-note.note-tag-implSpec,
+dl.notes > div.block-note.note-tag-previewNote {
     background-color: var(--note-background-color);
     border: 1px solid var(--note-border-color);
 }

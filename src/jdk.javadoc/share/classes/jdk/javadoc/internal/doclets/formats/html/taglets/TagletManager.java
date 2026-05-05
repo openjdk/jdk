@@ -202,6 +202,7 @@ public class TagletManager {
         this.utils = config.utils;
         this.tagletPath = options.tagletPath();
         initStandardTaglets();
+        initPreviewTaglets();
     }
 
     public Set<String> getAllTagletNames() {
@@ -231,14 +232,14 @@ public class TagletManager {
     }
 
     /**
-     * Adds a new {@code Taglet}.
+     * Adds a new user {@code Taglet}.
      *
      * Prints a message to indicate whether or not the Taglet was registered properly.
      *
      * @param classname  the name of the class representing the custom tag
      * @param fileManager the file manager to load classes and resources
      */
-    public void addCustomTag(String classname, JavaFileManager fileManager) {
+    public void addUserTaglet(String classname, JavaFileManager fileManager) {
         ClassLoader tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
         if (config.workArounds.accessInternalAPI()) {
             Module thisModule = getClass().getModule();
@@ -292,7 +293,7 @@ public class TagletManager {
     }
 
     /**
-     * Adds a new {@code SimpleTaglet}.
+     * Adds a new {@code NoteTaglet} or changes the order of an existing tag.
      *
      * If this tag already exists and the header passed as an argument is {@code null},
      * move tag to the back of the list. If this tag already exists and the
@@ -303,7 +304,7 @@ public class TagletManager {
      * @param header the header to output
      * @param locations the possible locations that this tag can appear in
      */
-    public void addNewCustomTag(String tagName, String header, String locations) {
+    public void addCustomTag(String tagName, String header, String locations) {
         if (tagName == null || locations == null) {
             return;
         }
@@ -665,6 +666,18 @@ public class TagletManager {
                 new SimpleTaglet(config, SERIAL_FIELD, null, EnumSet.of(Location.FIELD)));
     }
 
+    private void initPreviewTaglets() {
+        // Add taglets for undocumented preview feature and note options
+        var previewNoteTag = config.getOptions().previewNoteTag();
+        if (previewNoteTag != null && !allTaglets.containsKey(previewNoteTag)) {
+            addCustomTag(previewNoteTag, config.docResources.getText("doclet.Preview_Note_Default_Header"), "a");
+        }
+        var previewFeatureTag = config.getOptions().previewFeatureTag();
+        if (previewFeatureTag != null && !allTaglets.containsKey(previewFeatureTag)) {
+            addCustomTag(previewFeatureTag, null, "xb");
+        }
+    }
+
     /**
      * Initialize JavaFX-related tags.
      */
@@ -691,7 +704,11 @@ public class TagletManager {
         standardTags.add(name);
     }
 
-    public boolean isKnownCustomTag(String tagName) {
+    /**
+     * {@return {@code true} if a tag with the given name exists}
+     * @param tagName the tag name
+     */
+    public boolean isKnownTag(String tagName) {
         return allTaglets.containsKey(tagName);
     }
 
