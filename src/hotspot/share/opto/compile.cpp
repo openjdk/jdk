@@ -2220,9 +2220,21 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     if (failing())  return;
 
     if (_late_inlines.length() == 0 && _vector_late_inlines.length() > 0) {
-      while (_vector_late_inlines.length() > 0) {
-        add_late_inline(_vector_late_inlines.pop());
+      for (int i = 0; i < _vector_late_inlines.length(); i++) {
+        CallGenerator* cg = _vector_late_inlines.at(i);
+        // When a vector intrinsic fails, set_generator(cg) caches the
+        // LateInlineVectorCallGenerator on the call node to allow retries
+        // if IGVN optimizes the call node's inputs. If the call node is not
+        // on the IGVN worklist when cleanup runs, CallStaticJavaNode::Ideal
+        // does not fire and the cached generator persists. Once _late_inlines
+        // drains and we commit to the fallback here, clear the stale generator
+        // to prevent a subsequent IGVN pass from re-registering the intrinsic
+        // attempt into _late_inlines alongside the fallback, which would create
+        // duplicate call_node entries.
+        cg->call_node()->as_CallJava()->set_generator(nullptr);
+        add_late_inline(cg);
       }
+      _vector_late_inlines.clear();
     }
   }
 

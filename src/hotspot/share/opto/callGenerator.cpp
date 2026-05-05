@@ -438,28 +438,25 @@ CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* cal
 }
 
 class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
- private:
-  CallGenerator* _fallback_cg;
-
  public:
-  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg, CallGenerator* fallback_cg) :
-    LateInlineCallGenerator(method, intrinsic_cg), _fallback_cg(fallback_cg) {}
+  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg) :
+    LateInlineCallGenerator(method, intrinsic_cg) {}
 
   virtual bool is_vector_late_inline() const { return true; }
 
   virtual JVMState* generate(JVMState* jvms) {
     JVMState* new_jvms = LateInlineCallGenerator::generate(jvms);
-    if (InlineVectorFallback) {
-      CallGenerator* fallback = CallGenerator::for_late_inline(method(), _fallback_cg);
-      fallback = fallback->with_call_node(call_node());
+    if (IncrementalInlineVector) {
+      CallGenerator* inline_cg = CallGenerator::for_inline(method());
+      CallGenerator* fallback = CallGenerator::for_late_inline(method(), inline_cg)->with_call_node(call_node());
       Compile::current()->add_vector_late_inline(fallback);
     }
     return new_jvms;
   }
 };
 
-CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, CallGenerator* fallback_cg) {
-  return new LateInlineVectorCallGenerator(m, intrinsic_cg, fallback_cg);
+CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg) {
+  return new LateInlineVectorCallGenerator(m, intrinsic_cg);
 }
 
 
