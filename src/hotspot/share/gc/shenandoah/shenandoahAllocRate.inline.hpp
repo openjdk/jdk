@@ -85,7 +85,7 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     double slope(0), intercept(0);
     _recent.fit_line(slope, intercept);
     if (slope > 0) {
-      const double proposed_current_rate = slope * _momentary.latest() + intercept;
+      const double proposed_current_rate = slope * _recent.last() + intercept;
       acceleration = slope;
       current_rate = proposed_current_rate;
     }
