@@ -5,8 +5,9 @@ EnhancedVariableDeclAssignmentNR1S.java:43:21: compiler.warn.preview.feature.use
 EnhancedVariableDeclAssignmentNR1S.java:50:17: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
 EnhancedVariableDeclAssignmentNR1S.java:58:14: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
 EnhancedVariableDeclAssignmentNR1S.java:64:27: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
-EnhancedVariableDeclAssignmentNR1S.java:71:16: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
-EnhancedVariableDeclAssignmentNR1S.java:78:17: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
-EnhancedVariableDeclAssignmentNR1S.java:90:15: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
-EnhancedVariableDeclAssignmentNR1S.java:93:15: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
-11 warnings
+EnhancedVariableDeclAssignmentNR1S.java:71:27: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:78:16: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:85:17: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:97:15: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:100:15: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+12 warnings

@@ -51,20 +51,27 @@ public class EnhancedVariableDeclAssignmentNR1S {
     }
 
     static sealed interface IFoo permits FooImpl {}
-    static final class FooImpl implements IFoo {}
+    static record FooImpl(int i) implements IFoo {}
     static void reassignmentFromSealedInterface() {
-        IFoo f = new FooImpl();
-        FooImpl fi = new FooImpl();
+        IFoo f = new FooImpl(1);
+        FooImpl fi = new FooImpl(2);
         fi = f;      // OK
     }
 
     static void enhancedForElementNarrowing() {
-        List<IFoo> fs = List.of(new FooImpl(), new FooImpl());
-        int count = 0;
+        List<IFoo> fs = List.of(new FooImpl(1), new FooImpl(2));
+        int acc = 0;
         for (FooImpl fi : fs) {
-            count++;
+            acc += fi.i();
         }
-        assertEquals(2, count);
+        assertEquals(3, acc);
+
+        IFoo[] fsArr = { new FooImpl(1), new FooImpl(2) };
+        acc = 0;
+        for (FooImpl fi : fsArr) {
+            acc += fi.i();
+        }
+        assertEquals(3, acc);
     }
 
     static SB1 returnFromParameterSealedSupertype(SA1 sa) {
