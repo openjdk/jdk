@@ -454,7 +454,7 @@ public class FileDialog extends Dialog {
      * "accept" the result of a {@code setFile} value or to edit in the name
      * of some other file to load/open even if it is not present.
      * Applications should therefore verify the file represented by the
-     * {@code String} exists.
+     * returned {@code String} exists.
      * The value is usually the basename, not a full path name.
      *
      * @return    the currently selected file of this file dialog window,
@@ -529,7 +529,7 @@ public class FileDialog extends Dialog {
      * <p>
      * It is also platform-specific as to what happens for {@code LOAD} mode of a non-existent file.
      * For example, it may be possible for the user to "accept" the {@code setFile} value or
-     * to edit in the name some other file to load/open even if it is not present.
+     * to edit in the name of some other file to load/open even if it is not present.
      * <p>
      * Specifying "" as the file is exactly equivalent to specifying
      * {@code null} as the file.
@@ -549,7 +549,7 @@ public class FileDialog extends Dialog {
     /**
      * Enables or disables multiple file selection for the file dialog.
      * <p>
-     * Multiple mode may be ignored in some cases, for example commonly
+     * Multiple mode may be ignored in some cases, for example, commonly
      * {@code SAVE} mode dialogs do not support it.
      *
      * @param enable    if {@code true}, multiple file selection is enabled;
