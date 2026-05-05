@@ -38,13 +38,13 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
-#define PROPERFMT_F         "%.0f %s"
+#define PROPERFMT_F         "%.1f %s"
 #define PROPERFMT_F_ARGS(s) byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
 // These are used to decide if we want to make any adjustments at all
 // at the end of a successful concurrent cycle.
-const double ShenandoahAdaptiveHeuristics::LOWEST_EXPECTED_AVAILABLE_AT_END = -0.5;
-const double ShenandoahAdaptiveHeuristics::HIGHEST_EXPECTED_AVAILABLE_AT_END = 0.5;
+constexpr double LOWEST_EXPECTED_AVAILABLE_AT_END = -0.5;
+constexpr double HIGHEST_EXPECTED_AVAILABLE_AT_END = 0.5;
 
 // These values are the confidence interval expressed as standard deviations.
 // At the minimum confidence level, there is a 25% chance that the true value of
@@ -53,27 +53,15 @@ const double ShenandoahAdaptiveHeuristics::HIGHEST_EXPECTED_AVAILABLE_AT_END = 0
 // MAXIMUM_CONFIDENCE interval here means there is a one in a thousand chance
 // that the true value of our estimate is outside the interval. These are used
 // as bounds on the adjustments applied at the outcome of a GC cycle.
-const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
-const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
+constexpr double MINIMUM_CONFIDENCE = 0.319; // 25%
+constexpr double MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
+// To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,
+// for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
+// allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
+constexpr uint GC_TIME_SAMPLE_SIZE = 15;
 
-// We also keep separate track of recently sampled allocation rates for two purposes:
-//  1. The number of samples examined to determine acceleration of allocation is configured by
-//     ShenandoahRecentAllocRateSampleWindowMs
-//  2. The number of most recent samples averaged to determine a momentary allocation spike is represented by
-//     ShenandoahMomentaryAllocRateSampleWindowMs
-
-// Allocation rates are sampled by the regulator thread, which typically runs every ms.  There may be jitter in the scheduling
-// of the regulator thread.  To reduce signal noise and synchronization overhead, we do not sample allocation rate with every
-// iteration of the regulator.  We prefer sample time longer than 1 ms so that there can be a statistically significant number
-// of allocations occurring within each sample period.  The regulator thread samples allocation rate only if at least
-// ShenandoahAccelerationSamplePeriod ms have passed since it previously sampled the allocation rate.
-//
-// This trigger responds much more quickly than the traditional trigger, which monitors 100 ms spans.  When acceleration is
-// detected, the impact of acceleration on anticipated consumption of available memory is also much more impactful
-// than the assumed constant allocation rate consumption of available memory.
-
-ShenandoahCycleDuration::ShenandoahCycleDuration() : _gc_times(15) {}
+ShenandoahCycleDuration::ShenandoahCycleDuration() : _gc_times(GC_TIME_SAMPLE_SIZE) {}
 
 void ShenandoahCycleDuration::record_duration(double time_at_start, double gc_time) {
   log_info(gc, sampling)("Cycle started at: %.3f, completed in %.3fs", time_at_start, gc_time);
@@ -201,21 +189,17 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   // Should we not add GC time if this was an abbreviated cycle?
   _cycles.record_duration(_cycle_start, elapsed_cycle_time());
 
-  size_t available = _space_info->available();
-
   double z_score = 0.0;
-  double available_sd = _available.sd();
+  const double available = static_cast<double>(_space_info->available());
+  const double available_sd = _available.sd();
   if (available_sd > 0) {
-    double available_avg = _available.avg();
-    z_score = (double(available) - available_avg) / available_sd;
-    log_debug(gc, ergo)("Available: %zu %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
-                        byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
-                        z_score,
-                        byte_size_in_proper_unit(available_avg), proper_unit_for_byte_size(available_avg),
-                        byte_size_in_proper_unit(available_sd), proper_unit_for_byte_size(available_sd));
+    const double available_avg = _available.avg();
+    z_score = (available - available_avg) / available_sd;
+    log_debug(gc, ergo)("Available: " PROPERFMT_F "B, z-score=%.3f. Average available: " PROPERFMT_F "B +/- " PROPERFMT_F "B.",
+                        PROPERFMT_F_ARGS(available), z_score, PROPERFMT_F_ARGS(available_avg), PROPERFMT_F_ARGS(available_sd));
   }
 
-  _available.add(double(available));
+  _available.add(available);
 
   // In the case when a concurrent GC cycle completes successfully but with an
   // unusually small amount of available memory we will adjust our trigger
@@ -270,42 +254,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   _last_trigger = OTHER;
 
-  if (trigger_min_free_threshold(available)) {
+  if (trigger_min_free_threshold(available, capacity)) {
     return true;
   }
 
   if (trigger_learning(available, capacity)) {
     return true;
   }
-
-  // The test (3 * allocated > available) below is intended to prevent triggers from firing so quickly that there
-  // has not been sufficient time to create garbage that can be reclaimed during the triggered GC cycle.  If we trigger before
-  // garbage has been created, the concurrent GC will find no garbage.  This has been observed to result in degens which
-  // experience OOM during evac or that experience "bad progress", both of which escalate to Full GC.  Note that garbage that
-  // was allocated following the start of the current GC cycle cannot be reclaimed in this GC cycle.  Here is the derivation
-  // of the expression:
-  //
-  // Let R (runway) represent the total amount of memory that can be allocated following the start of GC(N).  The runway
-  // represents memory available at the start of the current GC plus garbage reclaimed by the current GC. In a balanced,
-  // fully utilized configuration, we will be starting each new GC cycle immediately following completion of the preceding
-  // GC cycle.  In this configuration, we would expect half of R to be consumed during concurrent cycle GC(N) and half
-  // to be consumed during concurrent GC(N+1).
-  //
-  // Assume we want to delay GC trigger until:    A/V > 0.33
-  //     This is equivalent to enforcing that:      A > 0.33V
-  //                                 which is:     3A > V
-  //              Since A+V equals R, we have: A + 3A > A + V  = R
-  //                     which is to say that:      A > R/4
-  //
-  // Postponing the trigger until at least 1/4 of the runway has been consumed helps to improve the efficiency of the
-  // triggered GC.  Under heavy steady state workload, this delay condition generally has no effect: if the allocation
-  // runway is divided "equally" between the current GC and the next GC, then at any potential trigger point (which cannot
-  // happen any sooner than completion of the first GC), it is already the case that roughly A > R/2.
-  // if (3 * allocated <= available) {
-  //   // Even though we will not issue an adaptive trigger unless a minimum threshold of memory has been allocated,
-  //   // we still allow more generic triggers, such as guaranteed GC intervals, to act.
-  //   return ShenandoahHeuristics::should_start_gc();
-  // }
 
   ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
   const size_t allocatable_bytes = allocatable(available);
@@ -320,8 +275,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   return ShenandoahHeuristics::should_start_gc();
 }
 
-bool ShenandoahAdaptiveHeuristics::trigger_min_free_threshold(size_t available) {
-  const size_t min_threshold = min_free_threshold();
+bool ShenandoahAdaptiveHeuristics::trigger_min_free_threshold(size_t available, size_t capacity) {
+  const size_t min_threshold = min_free_threshold(capacity);
   if (available < min_threshold) {
     log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
                 PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
@@ -454,7 +409,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(Shenando
   const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
   const size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate_by_acceleration, anticipated_gc_duration);
   log_debug(gc, sampling)("anticipated consumption: %zu, acceleration: %.3f, allocatable_bytes: %zu",
-    anticipated_consumption, acceleration, allocatable_bytes);
+                          anticipated_consumption, acceleration, allocatable_bytes);
   if (anticipated_consumption > allocatable_bytes) {
     if (acceleration > 0) {
       log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
@@ -486,8 +441,8 @@ void ShenandoahAdaptiveHeuristics::adjust_margin_of_error(double amount) {
   log_debug(gc, ergo)("Margin of error now %.2f", _margin_of_error_sd);
 }
 
-size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
-  return ShenandoahHeap::heap()->soft_max_capacity() / 100 * ShenandoahMinFreeThreshold;
+size_t ShenandoahAdaptiveHeuristics::min_free_threshold(size_t capacity) const {
+  return capacity / 100 * ShenandoahMinFreeThreshold;
 }
 
 #undef PROPERFMT_F

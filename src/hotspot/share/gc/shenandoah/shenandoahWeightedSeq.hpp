@@ -27,6 +27,11 @@
 
 #include "utilities/globalDefinitions.hpp"
 
+// Provides a weighted sequence of x, y pairs. Various statistical properties
+// such as weighted mean, standard deviation, the line of best fit and the
+// residual deviation (deviation about the line of best fit) are available.
+// These attributes are maintained incrementally as we expect this structure
+// to be read more often than it is written.
 class ShenandoahWeightedSeq {
 
   uint _size;
@@ -52,7 +57,8 @@ public:
   explicit ShenandoahWeightedSeq(uint size);
   ~ShenandoahWeightedSeq();
 
-  double latest() const {
+  // Return last item added to the sequence (zero if sequence is empty).
+  double last() const {
     if (_num_samples == 0) {
       return 0.0;
     }
@@ -61,12 +67,28 @@ public:
     return _x_values[index];
   }
 
+  // Add x, y to the sequence. Weight will be calculated as x - last().
   void add(double x, double y);
+
+  // Add x, y to the sequence using given weight.
   void add(double x, double y, double weight);
+
+  // Predict the next value in the sequence for a given x. Uses average
+  // if the prediction is <= 0. This is a legacy method visible only for
+  // testing.
   double predict(double x, double margin_of_error) const;
+
+  // The standard deviation of the samples about the line of best fit rather
+  // than deviation about the mean.
   double residual_sd() const { return _residual_sd; }
+
+  // An unweighted mean.
   double average() const { return _y_sum / MAX2(_num_samples, 1u); }
+
+  // The weighted mean for the sequence.
   double weighted_average() const { return _weighted_y_sum / MAX2(_weighted_sum, 1.0); }
+
+  // Standard deviation for the weighted mean.
   double weighted_sd() const {
     if (_weighted_sum <= 0.0) {
       return 0.0;
@@ -77,6 +99,7 @@ public:
     return sqrt(MAX2(variance, 0.0));
   }
 
+  // Provides the slope and y-intercept for the line of best fit through the sequence
   void fit_line(double& slope, double& intercept) const {
     slope = _slope;
     intercept = _y_intercept;
