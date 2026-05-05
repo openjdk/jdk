@@ -110,10 +110,10 @@
           range(1, max_intx)                                                \
                                                                             \
   product(uint, G1IHOP, 45,                                                 \
-          "The Initiating Heap Occupancy Percentage (IHOP) for the old "    \
-          "generation. This sets the percentage of the current Java heap "  \
-          "capacity occupied by the old generation at which G1 starts a "   \
-          "concurrent marking cycle. If G1UseAdaptiveIHOP is enabled, this "\
+          "The Initiating Heap Occupancy Percentage (IHOP) for the "        \
+          "concurrent cycle. G1IHOP sets the percentage of the current "    \
+          "Java heap capacity occupied by the old generation at which G1 "  \
+          "starts this process. If G1UseAdaptiveIHOP is enabled, this "     \
           "value is used as the initial threshold and may be adjusted "     \
           "ergonomically by G1. "                                           \
           "A value of 0 will result in as frequent as possible concurrent " \
