@@ -92,6 +92,7 @@ uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_wate
 }
 
 void SafepointMechanism::update_poll_values(JavaThread* thread) {
+  DEBUG_ONLY(guarantee(thread != nullptr, "Must be");)
   assert(thread == Thread::current(), "Must be");
   assert(thread->thread_state() != _thread_blocked, "Must not be");
   assert(thread->thread_state() != _thread_in_native, "Must not be");

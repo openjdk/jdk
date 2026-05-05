@@ -914,7 +914,7 @@ struct ShenandoahRegionChunk {
   size_t _chunk_size;            // HeapWordSize qty
 
   ShenandoahHeapRegion* region() const {
-    DEBUG_ONLY(guarantee(_r != nullptr, "Chunk region must be set");)
+    guarantee(_r != nullptr, "Chunk region must be set");
     return _r;
   }
 };
