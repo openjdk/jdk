@@ -158,7 +158,7 @@ public class PixelInterleavedSampleModel extends ComponentSampleModel
      * @throws NullPointerException if {@code bands} is {@code null}
      * @throws IllegalArgumentException if the number of bands is not greater than 0
      * @throws RasterFormatException if the number of bands is greater than
-     *                               the number of banks in this sample model.
+     *                               the number of bands in this sample model.
      * @throws ArrayIndexOutOfBoundsException if any of the bank indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
