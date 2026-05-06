@@ -74,14 +74,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   const bool is_ref_type = is_reference_type(element_type);
 
   if (is_ref_type) {
-#ifdef _LP64
-    if (!UseCompressedOops) {
-      filling_klass = Universe::longArrayKlass();
-    } else
-#endif
-    {
-      filling_klass = Universe::intArrayKlass();
-    }
+    filling_klass = LP64_ONLY(UseCompressedOops ? Universe::intArrayKlass() : Universe::longArrayKlass()) NOT_LP64(Universe::intArrayKlass());
 
 #ifdef ASSERT
     const int filling_element_byte_size = type2aelembytes(ArrayKlass::cast(filling_klass)->element_type());
