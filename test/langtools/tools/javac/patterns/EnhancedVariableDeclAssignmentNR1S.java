@@ -18,6 +18,8 @@ public class EnhancedVariableDeclAssignmentNR1S {
         reassignmentFromSealedInterface();
         enhancedForElementNarrowing();
         returnFromParameterSealedSupertype(new SB1());
+        conditionalExpression(true);
+        conditionalExpression(false);
     }
 
     static sealed abstract class SA1 permits SB1 {}
@@ -98,6 +100,12 @@ public class EnhancedVariableDeclAssignmentNR1S {
     }
     void multipleSafeSuperTypes2(JJ j) {
         L l = j; // OK
+    }
+
+    static void conditionalExpression(boolean b) {
+        IFoo f = new FooImpl(41);
+        FooImpl fi = b ? f : new FooImpl(1); // OK
+        assertEquals(b ? 41 : 1, fi.i());
     }
 
     static void assertEquals(Object expected, Object actual) {
