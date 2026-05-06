@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class SquareRootTests {
                 BigDecimal input = BigDecimal.valueOf(i, j);
                 for (int n = -4; n <= 4; n += 2) {
                     try {
-                        BigDecimal result = input.sqrt(MathContext.DECIMAL64);
+                        BigDecimal result = input.rootn(n, MathContext.DECIMAL64);
                         System.err.println("Unexpected nth root of negative: (" +
                                            input + ").rootn(" + n + ")  = " + result );
                         failures += 1;
