@@ -39,7 +39,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -104,9 +103,7 @@ Klass* oopDesc::klass_or_null() const {
 }
 
 Klass* oopDesc::klass_or_null_acquire() const {
-  narrowKlass nk = narrow_klass();
-  OrderAccess::acquire();
-  return CompressedKlassPointers::decode(nk);
+  return CompressedKlassPointers::decode(narrow_klass_acquire());
 }
 
 Klass* oopDesc::klass_without_asserts() const {
@@ -119,6 +116,17 @@ narrowKlass oopDesc::narrow_klass() const {
       return mark().narrow_klass();
     case ObjLayout::Compressed:
       return _compressed_klass;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+narrowKlass oopDesc::narrow_klass_acquire() const {
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return mark_acquire().narrow_klass();
+    case ObjLayout::Compressed:
+      return AtomicAccess::load_acquire(&_compressed_klass);
     default:
       ShouldNotReachHere();
   }
