@@ -1346,7 +1346,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       st->print(PTR_FORMAT " is a valid markword: ", p2i(addr));
       mw.print_on(st);
       st->print(" ");
-      mw.klass()->Klass::print_on(st);
+      mw.klass()->print_on(st);
       return;
     }
   }
