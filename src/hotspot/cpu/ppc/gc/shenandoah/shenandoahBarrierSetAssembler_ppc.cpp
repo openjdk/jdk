@@ -663,16 +663,18 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ block_comment("} try_resolve_jobject_in_native (shenandoahgc)");
 }
 
-void ShenandoahBarrierSetAssembler::try_resolve_weak_handle(MacroAssembler *masm, Register obj,
-                                                            Register tmp, Label &slow_path) {
-  __ block_comment("try_resolve_weak_handle (shenandoahgc) {");
+void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler *masm, Register weak_handle,
+                                                                    Register obj, Register tmp, Label &slow_path) {
+  __ block_comment("try_peek_weak_handle_in_nmethod (shenandoahgc) {");
 
-  assert_different_registers(obj, tmp);
+  assert_different_registers(weak_handle, tmp, noreg);
+  assert_different_registers(obj, tmp, noreg);
+
 
   Label done;
 
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle(masm, obj, tmp, slow_path);
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, tmp, slow_path);
 
   // Check if the reference is null, and if it is, take the fast path.
   __ cmpdi(CR0, obj, 0);
@@ -685,7 +687,7 @@ void ShenandoahBarrierSetAssembler::try_resolve_weak_handle(MacroAssembler *masm
   __ bne(CR0, slow_path);
   __ bind(done);
 
-  __ block_comment("} try_resolve_weak_handle (shenandoahgc)");
+  __ block_comment("} try_peek_weak_handle_in_nmethod (shenandoahgc)");
 }
 
 // Special shenandoah CAS implementation that handles false negatives due

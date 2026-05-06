@@ -1382,10 +1382,9 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   }
 #endif
 
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
+  CompilerDirectiveMatcher matcher(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, compile_reason, directive, THREAD);
-  DirectivesStack::release(directive);
+  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, compile_reason, matcher.directive_set(), THREAD);
   return nm;
 }
 
@@ -2365,11 +2364,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
 
     if (!ci_env.failing() && !task->is_success()) {
-      assert(ci_env.failure_reason() != nullptr, "expect failure reason");
-      assert(false, "compiler should always document failure: %s", ci_env.failure_reason());
-      // The compiler elected, without comment, not to register a result.
+      const char* reason = task->failure_reason();
+      assert(reason != nullptr, "compiler should always document failure");
       // Do not attempt further compilations of this method.
-      ci_env.record_method_not_compilable("compile failed");
+      ci_env.record_method_not_compilable(reason != nullptr ? reason : "compile failed: reason unknown");
     }
 
     // Copy this bit to the enclosing block:
@@ -2416,7 +2414,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     ResourceMark rm;
     task->print_post(tty);
   }
-  DirectivesStack::release(directive);
 
   Log(compilation, codecache) log;
   if (log.is_debug()) {
