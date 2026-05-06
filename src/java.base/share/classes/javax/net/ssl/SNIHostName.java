@@ -100,9 +100,10 @@ public final class SNIHostName extends SNIServerName {
      *
      * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
-     * StandardCharsets#US_ASCII ASCII}.
+     * StandardCharsets#US_ASCII ASCII}. The
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
-     * is used to enforce the restrictions on ASCII characters in hostnames (see
+     * method is used to enforce the restrictions on ASCII characters in
+     * hostnames (see
      * <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>,
      * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a>,
      * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>), and
@@ -166,17 +167,17 @@ public final class SNIHostName extends SNIServerName {
      *
      * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
-     * StandardCharsets#US_ASCII ASCII}.
+     * StandardCharsets#US_ASCII ASCII}. The
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
-     * is used to translate non-ASCII Unicode code points into their
+     * method is used to translate non-ASCII Unicode code points into their
      * corresponding ASCII-Compatible Encoding (ACE).
      *
      * @apiNote
      *
-     * Users are expected to handle thrown exceptions and make a decision
-     * depending on their context; e.g., propagate the failure, or report the
-     * issue and skip {@linkplain SSLParameters#setServerNames(List) the SNI
-     * server name configuration}.
+     * Code using this method is expected to handle thrown exceptions and make
+     * a decision depending on its context; e.g., propagate the failure, or
+     * report the issue and skip {@linkplain SSLParameters#setServerNames(List)
+     * the SNI server name configuration}.
      *
      * @param hostname the hostname of this server name
      *
@@ -202,10 +203,10 @@ public final class SNIHostName extends SNIServerName {
      * Creates an {@code SNIHostName} using the specified hostname encoded in
      * either ASCII or UTF-8.
      * <p>
-     * Once the specified value is decoded into a hostname string, it must
-     * constitute a DNS hostname, which is either an ASCII-encoded hostname or
-     * an {@linkplain IDN Internationalized Domain Name (IDN)}. A decoded
-     * hostname string is considered illegal if it:
+     * The specified byte array gets decoded into a hostname string that is
+     * required to be a valid a DNS hostname, which is either an ASCII-encoded
+     * hostname or an {@linkplain IDN Internationalized Domain Name (IDN)}. A
+     * decoded hostname string is considered illegal if it:
      * <ul>
      * <li>is empty,
      * <li>ends with a trailing dot,
@@ -233,9 +234,10 @@ public final class SNIHostName extends SNIServerName {
      *
      * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
-     * StandardCharsets#US_ASCII ASCII}.
+     * StandardCharsets#US_ASCII ASCII}. The
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
-     * is used to enforce the restrictions on ASCII characters in hostnames (see
+     * method is used to enforce the restrictions on ASCII characters in
+     * hostnames (see
      * <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>,
      * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a>,
      * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>), and
@@ -345,16 +347,16 @@ public final class SNIHostName extends SNIServerName {
      *
      * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
-     * StandardCharsets#US_ASCII ASCII}.
+     * StandardCharsets#US_ASCII ASCII}. The
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
-     * is used to translate non-ASCII Unicode code points into their
+     * method is used to translate non-ASCII Unicode code points into their
      * corresponding ASCII-Compatible Encoding (ACE).
      *
      * @apiNote
      *
      * This method is intended for parsing the encoded name value in a
      * requested SNI extension. If you already have the hostname in string form,
-     * use {@link #ofHostName(String) SNIHostName.of(String)} instead.
+     * use {@link #ofHostName(String) SNIHostName.ofHostName(String)} instead.
      *
      * @implNote
      *
