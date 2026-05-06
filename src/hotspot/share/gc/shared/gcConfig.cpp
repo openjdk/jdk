@@ -95,10 +95,11 @@ void GCConfig::fail_if_non_included_gc_is_selected() {
 }
 
 void GCConfig::select_gc_ergonomically() {
-  if (os::is_server_class_machine()) {
 #if INCLUDE_G1GC
-    FLAG_SET_ERGO_IF_DEFAULT(UseG1GC, true);
-#elif INCLUDE_PARALLELGC
+  FLAG_SET_ERGO_IF_DEFAULT(UseG1GC, true);
+#else
+  if (os::is_server_class_machine()) {
+#if INCLUDE_PARALLELGC
     FLAG_SET_ERGO_IF_DEFAULT(UseParallelGC, true);
 #elif INCLUDE_SERIALGC
     FLAG_SET_ERGO_IF_DEFAULT(UseSerialGC, true);
@@ -108,6 +109,7 @@ void GCConfig::select_gc_ergonomically() {
     FLAG_SET_ERGO_IF_DEFAULT(UseSerialGC, true);
 #endif
   }
+#endif
 }
 
 bool GCConfig::is_no_gc_selected() {
