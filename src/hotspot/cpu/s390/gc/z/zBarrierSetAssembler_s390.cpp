@@ -59,6 +59,7 @@ long some_fubar = 0;
 long store_slow_fubar = 0;
 long c1_load_fubar = 0;
 long c1_store_fubar = 0;
+long conjoint_fubar = 0;
 long copy_load_slow_fubar = 0;
 long disjoint_fubar = 0;
 long atomic_nmethod_fubar = 0;
@@ -317,11 +318,22 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // in the young generation.
       //__ load_const_optimized(rnew_zpointer, (uintptr_t)&non_atomic_nmethod_fubar);
       //__ z_agsi(0, rnew_zpointer, 1);
+      //__ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
+      //__ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
+      //// RuntimeTODO: check if it is correct, // z_cg(rnew_zpointer, ref_addr);
+      //// TODO: Check if this will work or else implement z_chy
+      //__ z_ng(rnew_zpointer, ref_addr);
+
+
+      // Careful: The first instruction emmited here should do a memory access on ref_addr
+      // otherwise ImplicitNullCheck will not work and the JVM will crash instead of throwing
+      // a null pointer exception. Run C1NullCheckOfNullStore.java test case after doing any
+      // changes here.
+      __ z_lg(rnew_zpointer, ref_addr);
+      __ z_nihf(rnew_zpointer, 0x00000000);
+      __ z_nilh(rnew_zpointer, 0x0000);
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
-      __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
-      // RuntimeTODO: check if it is correct, // z_cg(rnew_zpointer, ref_addr);
-      // TODO: Check if this will work or else implement z_chy
-      __ z_ng(rnew_zpointer, ref_addr);
+      __ z_nill(rnew_zpointer, barrier_Relocation::unpatched);
       __ branch_optimized(Assembler::bcondNotZero, medium_path);
     }
     __ bind(medium_path_continuation);
@@ -616,15 +628,13 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
                                               Label& medium_path,
                                               Label& continuation,
                                               bool dest_unintialized) const {
-  __ stop("copy store at slow");
-
   if (!dest_unintialized) {
     Label slow_path, slow_path_continuation;
     __ align(32);
     __ bind(medium_path);
     // TODO: Check for slow_path_continuation -> done
     __ z_ldgr(Z_F0, Z_tmp_1);
-    store_barrier_medium(masm, Address(addr, 0), Z_tmp_1, Z_R1_scratch, false, false, continuation, slow_path, slow_path_continuation);
+    store_barrier_medium(masm, Address(addr, 0), Z_tmp_1, Z_tmp_2, false, false, continuation, slow_path, slow_path_continuation);
     __ z_lgdr(Z_tmp_1, Z_F0);
     __ bind(slow_path);
     {
@@ -674,7 +684,8 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 }
 
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
-  __ stop("conjoint oop copy");
+  __ load_const_optimized(Z_R1, (uintptr_t)&conjoint_fubar);
+  __ z_agsi(0, Z_R1, 1);
   const Register zpointer = Z_R1;
   // TODO: Where is zpointer stored?
   Label done, loop, load_bad, load_good, store_bad, store_good;

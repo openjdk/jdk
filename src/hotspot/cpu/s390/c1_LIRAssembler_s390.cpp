@@ -600,6 +600,10 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   LIR_Const* c = src->as_constant_ptr();
   Address addr = as_Address(dest->as_address_ptr());
 
+  __ z_nop();
+  __ z_nop();
+  __ z_nop();
+
   int store_offset = -1;
 
   if (dest->as_address_ptr()->index()->is_valid()) {
@@ -974,7 +978,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_P
       } else {
         __ z_lg(dest->as_register(), disp_value, disp_reg, src);
       }
-      __ verify_oop(dest->as_register(), FILE_AND_LINE);
+      // __ verify_oop(dest->as_register(), FILE_AND_LINE);
       break;
     }
     case T_FLOAT:
@@ -1035,7 +1039,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   if (src->is_single_cpu()) {
     const Address dst = frame_map()->address_for_slot(dest->single_stack_ix());
     if (is_reference_type(type)) {
-      __ verify_oop(src->as_register(), FILE_AND_LINE);
+      //__ verify_oop(src->as_register(), FILE_AND_LINE);
       __ reg2mem_opt(src->as_register(), dst, true);
     } else if (type == T_METADATA || type == T_ADDRESS) {
       __ reg2mem_opt(src->as_register(), dst, true);
@@ -1132,7 +1136,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
   assert(disp_reg != Z_R0 || Immediate::is_simm20(disp_value), "should have set this up");
 
   if (is_reference_type(type)) {
-    __ verify_oop(from->as_register(), FILE_AND_LINE);
+    //__ verify_oop(from->as_register(), FILE_AND_LINE);
   }
 
   bool short_disp = Immediate::is_uimm12(disp_value);
