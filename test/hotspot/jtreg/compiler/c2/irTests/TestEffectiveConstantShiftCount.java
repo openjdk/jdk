@@ -76,7 +76,7 @@ public class TestEffectiveConstantShiftCount {
     public static int testIntURShift(int x, int count) {
         int shifted1 = x >>> intCount(count);
         int shifted2 = x >>> INT_LOW;
-	    return shifted1 == shifted2;
+        return shifted1 == shifted2;
     }
 
     @Test
