@@ -1012,8 +1012,10 @@ public:
 
   // SSE2 and later processors implement a 'pause' instruction
   // that can be used for efficient implementation of
-  // the intrinsic for java.lang.Thread.onSpinWait()
-  static bool supports_on_spin_wait() { return supports_sse2(); }
+  // the intrinsic for java.lang.Thread.onSpinWait().
+  // Also, SSE2 is the minimum sse level required by the VM to work on an x86-64 system.
+  // So if we are here then we know the hardware supports sse2, so just return true.
+  static bool supports_on_spin_wait() { return true; }
 
   // x86_64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() {
