@@ -57,7 +57,7 @@ public class TestEffectiveConstantShiftCount {
     // ---------------- shift test for int ----------------
     @Test
     @IR(failOn = IRNode.CMP_I)
-    public static int testIntLShift(int x, int count) {
+    public static boolean testIntLShift(int x, int count) {
         int shifted1 = x << intCount(count);
         int shifted2 = x << INT_LOW;
         return shifted1 == shifted2;
@@ -65,7 +65,7 @@ public class TestEffectiveConstantShiftCount {
 
     @Test
     @IR(failOn = IRNode.CMP_I)
-    public static int testIntRShift(int x, int count) {
+    public static boolean testIntRShift(int x, int count) {
         int shifted1 = x >> intCount(count);
         int shifted2 = x >> INT_LOW;
         return shifted1 == shifted2;
@@ -73,7 +73,7 @@ public class TestEffectiveConstantShiftCount {
 
     @Test
     @IR(failOn = IRNode.CMP_I)
-    public static int testIntURShift(int x, int count) {
+    public static boolean testIntURShift(int x, int count) {
         int shifted1 = x >>> intCount(count);
         int shifted2 = x >>> INT_LOW;
         return shifted1 == shifted2;
@@ -93,7 +93,7 @@ public class TestEffectiveConstantShiftCount {
     // ---------------- shift test for long ----------------
     @Test
     @IR(failOn = IRNode.CMP_L)
-    public static long testLongLShift(long x, int count) {
+    public static boolean testLongLShift(long x, int count) {
         long shifted1 = x << longCount(count);
         long shifted2 = x << LONG_LOW;
         return shifted1 == shifted2;
@@ -101,7 +101,7 @@ public class TestEffectiveConstantShiftCount {
 
     @Test
     @IR(failOn = IRNode.CMP_L)
-    public static long testLongRShift(long x, int count) {
+    public static boolean testLongRShift(long x, int count) {
         long shifted1 = x >> longCount(count);
         long shifted2 = x >> LONG_LOW;
         return shifted1 == shifted2;
@@ -109,7 +109,7 @@ public class TestEffectiveConstantShiftCount {
 
     @Test
     @IR(failOn = IRNode.CMP_L)
-    public static long testLongURShift(long x, int count) {
+    public static boolean testLongURShift(long x, int count) {
         long shifted1 = x >>> longCount(count);
         long shifted2 = x >>> LONG_LOW;
         return shifted1 == shifted2;
@@ -135,13 +135,13 @@ public class TestEffectiveConstantShiftCount {
                  "testLongRShift",
                  "testLongLShiftWithLoopOpt"})
     public static void runShift() {
-        Asserts.assertTrue(testIntLShift(RAND_I,RAND_COUNT));
-        Asserts.assertTrue(testIntURShift(RAND_I,RAND_COUNT));
-        Asserts.assertTrue(testIntRShift(RAND_I,RAND_COUNT));
-        Asserts.assertTrue(testIntLShiftWithLoopOpt(RAND_I,RAND_COUNT));
-        Asserts.assertTrue(testLongLShift(RAND_L,RAND_COUNT));
-        Asserts.assertTrue(testLongURShift(RAND_L,RAND_COUNT));
-        Asserts.assertTrue(testLongRShift(RAND_L,RAND_COUNT));
-        Asserts.assertTrue(testLongLShiftWithLoopOpt(RAND_L,RAND_COUNT));
+        Asserts.assertTrue(testIntLShift(RAND_I, RAND_COUNT));
+        Asserts.assertTrue(testIntURShift(RAND_I, RAND_COUNT));
+        Asserts.assertTrue(testIntRShift(RAND_I, RAND_COUNT));
+        Asserts.assertTrue(testIntLShiftWithLoopOpt(RAND_I, RAND_COUNT));
+        Asserts.assertTrue(testLongLShift(RAND_L, RAND_COUNT));
+        Asserts.assertTrue(testLongURShift(RAND_L, RAND_COUNT));
+        Asserts.assertTrue(testLongRShift(RAND_L, RAND_COUNT));
+        Asserts.assertTrue(testLongLShiftWithLoopOpt(RAND_L, RAND_COUNT));
     }
 }
