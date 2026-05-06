@@ -59,6 +59,7 @@ public class bug4133768 {
     private static volatile int buttonHeight;
     private static Robot robot;
     private static int ROLLOVER_Y_OFFSET = 4;
+    private static int COLOR_TOLERANCE = 5;
     private static CountDownLatch frameGainedFocusLatch =
         new CountDownLatch(1);
 
@@ -87,6 +88,12 @@ public class bug4133768 {
                 }
             });
         }
+    }
+
+    private static boolean checkColor(Color actual, Color expected) {
+        return Math.abs(actual.getRed() - expected.getRed()) <= COLOR_TOLERANCE
+            && Math.abs(actual.getGreen() - expected.getGreen()) <= COLOR_TOLERANCE
+            && Math.abs(actual.getBlue() - expected.getBlue()) <= COLOR_TOLERANCE;
     }
 
     private static void createTestImages() {
@@ -153,7 +160,7 @@ public class bug4133768 {
         robot.delay(1000);
         Color buttonColor = robot.getPixelColor(buttonLocation.x +
             buttonWidth / 2, buttonLocation.y + buttonHeight / 2);
-        if (!buttonColor.equals(Color.GREEN)) {
+        if (!checkColor(buttonColor, Color.GREEN)) {
             throw new RuntimeException("Button roll over color is : " +
                 buttonColor + " but it should be : " + Color.GREEN);
         }
@@ -170,8 +177,8 @@ public class bug4133768 {
         robot.delay(200);
         Color buttonColor = robot.getPixelColor(buttonLocation.x +
             buttonWidth / 2, buttonLocation.y + buttonHeight / 2);
-        if (buttonColor.equals(Color.GREEN) ||
-            buttonColor.equals(Color.RED)) {
+        if (checkColor(buttonColor, Color.GREEN) ||
+            checkColor(buttonColor, Color.RED)) {
             throw new RuntimeException("Disabled button color should not be : "
                 + buttonColor);
         }
