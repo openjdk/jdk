@@ -3276,37 +3276,6 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
 
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
-  case Op_AddHF:
-  case Op_MulHF:
-  case Op_AddF:
-  case Op_SubF:
-  case Op_MulF:
-  case Op_DivF:
-  case Op_NegF:
-  case Op_ModF:
-  case Op_ConvI2F:
-  case Op_ConF:
-  case Op_CmpF:
-  case Op_CmpF3:
-  case Op_StoreF:
-  case Op_LoadF:
-  case Op_ConvF2D:
-  case Op_ConvD2F:
-  case Op_AddD:
-  case Op_SubD:
-  case Op_MulD:
-  case Op_DivD:
-  case Op_NegD:
-  case Op_ModD:
-  case Op_ConvI2D:
-  case Op_ConvD2I:
-  case Op_ConD:
-  case Op_CmpD:
-  case Op_CmpD3:
-  case Op_StoreD:
-  case Op_LoadD:
-  case Op_LoadD_unaligned:
-    break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
     break;
@@ -3357,6 +3326,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
+
+  // Mem nodes need explicit cases to satisfy assert(!n->is_Mem()) in default.
+  case Op_StoreF:
+  case Op_LoadF:
+  case Op_StoreD:
+  case Op_LoadD:
+  case Op_LoadD_unaligned:
   case Op_StoreB:
   case Op_StoreC:
   case Op_StoreI:
@@ -3404,6 +3380,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadN:
   case Op_LoadRange:
   case Op_LoadS:
+  case Op_LoadVectorGather:
+  case Op_StoreVectorScatter:
+  case Op_LoadVectorGatherMasked:
+  case Op_StoreVectorScatterMasked:
+  case Op_LoadVectorMasked:
+  case Op_StoreVectorMasked:
     break;
 
   case Op_AddP: {               // Assert sane base pointers
@@ -3754,35 +3736,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 #endif
     break;
 
-  case Op_LoadVectorGather:
-  case Op_StoreVectorScatter:
-  case Op_LoadVectorGatherMasked:
-  case Op_StoreVectorScatterMasked:
-  case Op_VectorCmpMasked:
-  case Op_VectorMaskGen:
-  case Op_LoadVectorMasked:
-  case Op_StoreVectorMasked:
-    break;
-
-  case Op_AddReductionVI:
-  case Op_AddReductionVL:
-  case Op_AddReductionVHF:
-  case Op_AddReductionVF:
-  case Op_AddReductionVD:
-  case Op_MulReductionVI:
-  case Op_MulReductionVL:
-  case Op_MulReductionVHF:
-  case Op_MulReductionVF:
-  case Op_MulReductionVD:
-  case Op_MinReductionV:
-  case Op_MaxReductionV:
-  case Op_UMinReductionV:
-  case Op_UMaxReductionV:
-  case Op_AndReductionV:
-  case Op_OrReductionV:
-  case Op_XorReductionV:
-    break;
-
   case Op_PackB:
   case Op_PackS:
   case Op_PackI:
@@ -3858,8 +3811,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
-  case Op_Blackhole:
-    break;
   case Op_RangeCheck: {
     RangeCheckNode* rc = n->as_RangeCheck();
     Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);
