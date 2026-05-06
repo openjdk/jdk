@@ -199,13 +199,6 @@ void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* 
 
 oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
-  if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
-    // This thread went through the OOM during evac protocol and it is safe to return
-    // the forward pointer. It must not attempt to evacuate anymore.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
-  }
-
-  assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
   ShenandoahHeapRegion* from_region = heap_region_containing(p);
   assert(!from_region->is_humongous(), "never evacuate humongous objects");
@@ -329,8 +322,23 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     }
 
     control_thread()->handle_alloc_failure_evac(size);
-    oom_evac_handler()->handle_out_of_memory_during_evacuation();
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+
+    // Install the self-forwarded bit so other evacuators/LRBs see the
+    // object as "already handled, do not try to evacuate". The CAS may
+    // fail if another thread concurrently installed a real forwardee or
+    // self-forwarded first.
+    markWord old_mark = p->mark();
+    if (old_mark.is_forwarded()) {
+      return ShenandoahForwarding::get_forwardee(p);
+    }
+    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
+    if (winner == nullptr) {
+      // We own the self-forwarding. Flag the from-region so the degen/full
+      // GC entry drain knows to scan it for self_fwd bits to clear.
+      heap_region_containing(p)->set_has_self_forwards();
+      return p;
+    }
+    return winner;
   }
 
   if (ShenandoahEvacTracking) {
@@ -717,7 +725,7 @@ public:
   void work(uint worker_id) override {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj;
+      SuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
