@@ -5037,6 +5037,7 @@ StubGenerator::StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub
     break;
   case BlobId::stubgen_final_id:
     generate_final_stubs();
+
     break;
   default:
     fatal("unexpected blob id: %s", StubInfo::name(blob_id));

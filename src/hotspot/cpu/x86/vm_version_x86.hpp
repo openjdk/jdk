@@ -1010,11 +1010,9 @@ public:
 
   static int allocate_prefetch_distance(bool use_watermark_prefetch);
 
-  // SSE2 and later processors implement a 'pause' instruction
-  // that can be used for efficient implementation of
-  // the intrinsic for java.lang.Thread.onSpinWait().
-  // Also, SSE2 is the minimum sse level required by the VM to work on an x86-64 system.
-  // So if we are here then we know the hardware supports sse2, so just return true.
+  // All currently supported processors support PAUSE instruction
+  // that can be used for efficient implementation of intrinsic for
+  // java.lang.Thread.onSpinWait().
   static bool supports_on_spin_wait() { return true; }
 
   // x86_64 supports fast class initialization checks
