@@ -39,6 +39,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
