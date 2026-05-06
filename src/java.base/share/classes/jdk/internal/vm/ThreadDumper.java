@@ -603,7 +603,7 @@ public class ThreadDumper {
         }
         @Override
         public void write(int b) {
-            if (max < count) {
+            if (max > count) {
                 super.write(b);
             }
         }
