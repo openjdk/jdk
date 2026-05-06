@@ -158,8 +158,8 @@ private:
   static const uintptr_t weak_extract_mask      = 1 << 1;
   static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
-  static const int chunk_range_mask = right_n_bits(chunk_bits);
-  static const int pow_range_mask   = right_n_bits(pow_bits);
+  static const int chunk_range_mask = right_n_bits<int>(chunk_bits);
+  static const int pow_range_mask   = right_n_bits<int>(pow_bits);
 
   inline oop decode_oop(uintptr_t val) const {
     STATIC_ASSERT(oop_shift == 0);
@@ -249,7 +249,7 @@ public:
   }
 
   static int chunk_size() {
-    return nth_bit(chunk_bits);
+    return nth_bit<int>(chunk_bits);
   }
 };
 #else

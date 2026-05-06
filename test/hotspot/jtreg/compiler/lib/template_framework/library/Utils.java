@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  */
 final class Utils {
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public static <T> List<T> concat(List<? extends T>... lists) {
         return Arrays.stream(lists)
                      .flatMap(List::stream)

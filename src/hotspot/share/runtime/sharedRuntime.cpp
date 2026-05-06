@@ -177,6 +177,11 @@ void SharedRuntime::generate_stubs() {
                           CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
 
   generate_deopt_blob();
+
+#if INCLUDE_CDS
+  // disallow any further generation of runtime stubs
+  AOTCodeCache::set_shared_stubs_complete();
+#endif // INCLUDE_CDS
 }
 
 void SharedRuntime::init_adapter_library() {
@@ -3080,7 +3085,7 @@ AdapterHandlerEntry::~AdapterHandlerEntry() {
     _fingerprint = nullptr;
   }
 #ifdef ASSERT
-  FREE_C_HEAP_ARRAY(unsigned char, _saved_code);
+  FREE_C_HEAP_ARRAY(_saved_code);
 #endif
   FreeHeap(this);
 }
@@ -3189,11 +3194,10 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
           }
         }
 
-        DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, CompileBroker::compiler(CompLevel_simple));
-        if (directive->PrintAssemblyOption) {
+        CompilerDirectiveMatcher matcher(method, CompileBroker::compiler(CompLevel_simple));
+        if (matcher.directive_set()->PrintAssemblyOption) {
           nm->print_code();
         }
-        DirectivesStack::release(directive);
       }
     }
   } // Unlock AdapterHandlerLibrary_lock
@@ -3371,7 +3375,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
 JRT_END
 
 JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
-  FREE_C_HEAP_ARRAY(intptr_t, buf);
+  FREE_C_HEAP_ARRAY(buf);
 JRT_END
 
 const char* AdapterHandlerLibrary::name(AdapterHandlerEntry* handler) {
