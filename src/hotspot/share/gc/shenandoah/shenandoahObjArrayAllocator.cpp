@@ -78,7 +78,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
     filling_klass = UseCompressedOops ? Universe::intArrayKlass() : Universe::longArrayKlass();
     size_t filling_element_byte_size = UseCompressedOops ? T_INT_aelem_bytes : T_LONG_aelem_bytes;
     filling_array_length = (int) ((process_size << LogBytesPerWord) / filling_element_byte_size);
-    LP64_ONLY(assert(filling_array_length == _length, "Must match");)
+    assert(filling_array_length == _length, "Must match");
   }
   ObjArrayAllocator filling_array_allocator(filling_klass, _word_size,  filling_array_length , /* do_zero */ false);
   filling_array_allocator.initialize(mem);
