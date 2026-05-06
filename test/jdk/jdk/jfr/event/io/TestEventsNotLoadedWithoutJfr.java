@@ -40,6 +40,7 @@ import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -84,126 +85,80 @@ public class TestEventsNotLoadedWithoutJfr {
 
         private static void exerciseFileForce() throws IOException, ExecutionException, InterruptedException {
             Path tmp = Files.createTempFile(Path.of(""), "TestEventsNotLoadedWithoutJfr", ".tmp");
-            try {
-                String s = "short";
-                ByteBuffer data = ByteBuffer.allocate(s.length());
-                data.put(s.getBytes());
-                data.flip();
+            ByteBuffer buffer = StandardCharsets.UTF_8.encode("short");
+            buffer.flip();
 
-                // Check both AsynchronousFileChannel and FileChannelImpl
-                try (AsynchronousFileChannel afc = AsynchronousFileChannel.open(tmp, READ, WRITE)) {
-                    int expectedWritten = data.remaining();
-                    int actualWritten = afc.write(data, 0).get();
-                    assertEquals(actualWritten, expectedWritten, "Unexpected amount written.");
-                    afc.force(true);
-                }
-                data.flip();
-                try (FileChannel fc = FileChannel.open(tmp, READ, WRITE)) {
-                    int expectedWritten = data.remaining();
-                    int actualWritten = fc.write(data);
-                    assertEquals(actualWritten, expectedWritten, "Unexpected amount written.");
-                    fc.force(true);
-                }
-            } finally {
-                Files.deleteIfExists(tmp);
+            // Check both AsynchronousFileChannel and FileChannelImpl
+            try (AsynchronousFileChannel afc = AsynchronousFileChannel.open(tmp, READ, WRITE)) {
+                int expectedWritten = buffer.remaining();
+                int actualWritten = afc.write(buffer, 0).get();
+                assertEquals(actualWritten, expectedWritten, "Unexpected amount written.");
+                afc.force(true);
+            }
+            buffer.flip();
+            try (FileChannel fc = FileChannel.open(tmp, READ, WRITE)) {
+                int expectedWritten = buffer.remaining();
+                int actualWritten = fc.write(buffer);
+                assertEquals(actualWritten, expectedWritten, "Unexpected amount written.");
+                fc.force(true);
             }
         }
 
         // Exercises inner Socket$SocketInputStream / Socket$SocketOutputStream
-        private static void exerciseSocket() throws IOException, InterruptedException {
+        private static void exerciseSocket() throws IOException {
             try (ServerSocket ss = new ServerSocket()) {
                 ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
-                Thread clientThread = new Thread(() -> {
-                    try (Socket client = new Socket()) {
-                        client.connect(ss.getLocalSocketAddress());
-                        try (InputStream in = client.getInputStream();
-                             OutputStream out = client.getOutputStream()) {
-                            out.write(CLIENT_MSG);
-                            byte[] buf = new byte[SERVER_MSG.length];
-                            in.read(buf);
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                try (Socket client = new Socket()) {
+                    client.connect(ss.getLocalSocketAddress());
+                    try (Socket server = ss.accept();
+                         OutputStream out = server.getOutputStream()) {
+                        out.write(SERVER_MSG);
                     }
-                });
-                clientThread.start();
-
-                try (Socket server = ss.accept();
-                     InputStream in = server.getInputStream();
-                     OutputStream out = server.getOutputStream()) {
-                    byte[] buf = new byte[CLIENT_MSG.length];
-                    in.read(buf);
-                    out.write(SERVER_MSG);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    try (InputStream in = client.getInputStream()) {
+                        byte[] buf = new byte[SERVER_MSG.length];
+                        in.read(buf);
+                    }
                 }
-
-                clientThread.join();
             }
         }
 
-        private static void exerciseSocketChannelImpl() {
+        private static void exerciseSocketChannelImpl() throws IOException {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
-                Thread serverThread = new Thread(() -> {
+                try (SocketChannel client = SocketChannel.open()) {
+                    client.connect(ssc.getLocalAddress());
+                    // Exercise write(ByteBuffer[], int, int)
+                    client.write(new ByteBuffer[]{ByteBuffer.wrap(CLIENT_MSG)}, 0, 1);
                     try (SocketChannel server = ssc.accept()) {
                         // Exercise write(ByteBuffer) and read(ByteBuffer)
                         ByteBuffer buf = ByteBuffer.allocate(CLIENT_MSG.length);
                         server.read(buf);
                         server.write(ByteBuffer.wrap(SERVER_MSG));
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
                     }
-                });
-                serverThread.start();
-
-                try (SocketChannel client = SocketChannel.open()) {
-                    client.connect(ssc.getLocalAddress());
-                    // Exercise write(ByteBuffer[], int, int) and read(ByteBuffer[], int, int)
-                    client.write(new ByteBuffer[]{ByteBuffer.wrap(CLIENT_MSG)}, 0, 1);
+                    // Exercise and read(ByteBuffer[], int, int)
                     ByteBuffer buf = ByteBuffer.allocate(SERVER_MSG.length);
                     client.read(new ByteBuffer[]{buf}, 0, 1);
                 }
-
-                serverThread.join();
-            } catch (IOException |InterruptedException e) {
-                throw new RuntimeException(e);
             }
         }
 
-        private static void exerciseSocketInputStream() {
+        private static void exerciseSocketInputStream() throws IOException {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
-                Thread serverThread = new Thread(() -> {
-                   try (SocketChannel server = ssc.accept()) {
-                       try (InputStream in = server.socket().getInputStream();
-                            OutputStream out = server.socket().getOutputStream()) {
-                           byte[] buf = new byte[CLIENT_MSG.length];
-                           in.read(buf);
-                           out.write(SERVER_MSG);
-                       }
-                   } catch (Exception e) {
-                       throw new RuntimeException(e);
-                   }
-                });
-                serverThread.start();
-
                 try (SocketChannel client = SocketChannel.open()) {
                     client.connect(ssc.getLocalAddress());
-                    try (InputStream in = client.socket().getInputStream();
-                         OutputStream out = client.socket().getOutputStream()) {
-                        out.write(CLIENT_MSG);
+                    try (SocketChannel server = ssc.accept();
+                         OutputStream out = server.socket().getOutputStream()) {
+                        out.write(SERVER_MSG);
+                    }
+                    try (InputStream in = client.socket().getInputStream()) {
                         byte[] buf = new byte[SERVER_MSG.length];
                         in.read(buf);
                     }
                 }
-
-                serverThread.join();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
         }
     }
