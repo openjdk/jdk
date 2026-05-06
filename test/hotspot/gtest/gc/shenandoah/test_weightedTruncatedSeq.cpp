@@ -24,23 +24,23 @@
 #include "unittest.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 
-constexpr uint SIZE = 3;
+constexpr uint SAMPLE_SIZE = 3;
 
 TEST_VM(ShenandoahWeightedSeqTest, empty_sanity) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   EXPECT_DOUBLE_EQ(seq.predict(0, 0), 0.0);
   EXPECT_DOUBLE_EQ(seq.predict(1, 0), 0.0);
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, predict_flat_line) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 2);
   EXPECT_DOUBLE_EQ(seq.predict(1, 1), 2.0);
   EXPECT_DOUBLE_EQ(seq.predict(2, 1), 2.0);
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 1);
   seq.add(2, 2);
   seq.add(3, 3);
@@ -49,7 +49,7 @@ TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x) {
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 1);
   seq.add(2, 4);
   seq.add(3, 9);
@@ -61,37 +61,37 @@ TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared) {
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, simple_average_no_samples) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   EXPECT_DOUBLE_EQ(seq.average(), 0.0);
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, simple_average_one_sample) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 1);
   EXPECT_DOUBLE_EQ(seq.average(), 1.0);
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, simple_average) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 1);
   seq.add(2, 1);
   EXPECT_DOUBLE_EQ(seq.average(), 1.0);
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, simple_average_2) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 1);
   seq.add(2, 2);
   EXPECT_DOUBLE_EQ(seq.average(), 1.5);
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, weighted_average_no_samples) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   EXPECT_DOUBLE_EQ(seq.weighted_average(), 0.0);
 }
 
 TEST_VM(ShenandoahWeightedSeqTest, weighted_average_one_sample) {
-  ShenandoahWeightedSeq seq(SIZE);
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 2, 2);
   EXPECT_DOUBLE_EQ(seq.weighted_average(), 2.0);
 }
