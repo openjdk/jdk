@@ -88,6 +88,21 @@ public class EnhancedVariableDeclAssignmentNR1SRegressionErrors {
         L1 l = s;               // always error
     }
 
+    static sealed interface OverrideI permits OverrideA {}
+    static final class OverrideA implements OverrideI {}
+    static class OverrideSuper {
+        OverrideA m() {
+            return null;
+        }
+    }
+    static class OverrideSub extends OverrideSuper {
+        @Override
+        OverrideI m() {        // always error: wider return type
+            return null;
+        }
+    }
+
+
     // Errors despite the existence of exhaustive switches
     // taken from test/langtools/tools/javac/patterns/Exhaustiveness.java
     sealed interface Base permits Special, Value {}
