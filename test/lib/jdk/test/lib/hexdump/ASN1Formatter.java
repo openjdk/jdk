@@ -455,11 +455,11 @@ public class ASN1Formatter implements HexPrinter.Formatter {
         String tagString = (isConstructed(tag) ? "CONSTRUCTED " : "") + tagNames[tagType(tag)];
         switch (tag & 0xc0) {
             case TAG_APPLICATION:
-                return "APPLICATION " + tagString;
+                return "APPLICATION " + tagType(tag);
             case TAG_PRIVATE:
-                return "PRIVATE " + tagString;
+                return "PRIVATE " + tagType(tag);
             case TAG_CONTEXT:
-                return tagString;
+                return "CONTEXT " + tagType(tag);
             case TAG_UNIVERSAL:
                 if (tag > 0 && tag < tagNames.length)
                     return tagNames[tag];
