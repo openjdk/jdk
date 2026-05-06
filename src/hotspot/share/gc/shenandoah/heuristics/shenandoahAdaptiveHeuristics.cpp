@@ -83,7 +83,7 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   ShenandoahHeuristics(space_info),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _last_trigger(OTHER),
-  _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor),
+  _available(Moving_Average_Samples),
   _headroom_adjustment(0) {
   }
 

@@ -274,12 +274,6 @@
           "allocation rate. Increasing this value will cause the "          \
           "heuristic to initiate more concurrent cycles." )                 \
                                                                             \
-  product(double, ShenandoahAdaptiveDecayFactor, 0.1, EXPERIMENTAL,         \
-          "The decay factor (alpha) used for values in the weighted "       \
-          "moving average of the allocation rate. "                         \
-          "Larger values give more weight to recent values.")               \
-          range(0,1.0)                                                      \
-                                                                            \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \
           "least with this interval. This is useful when large idle "       \
