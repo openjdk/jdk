@@ -53,7 +53,7 @@ public class AttributedString {
     // Fields holding run attribute information.
     // Run attributes are organized by run.
     // Arrays are always of equal lengths (the current capacity).
-    // Since there are no vectors of int, we have to use arrays.
+    // Since there are not yet Lists of unboxed int, we use arrays.
     private static final int INITIAL_CAPACITY = 10;
     int runCount;    // actual number of runs, <= current capacity
     int[] runStarts; // start index for each run
@@ -367,7 +367,7 @@ public class AttributedString {
             throw new IllegalArgumentException("Can't add attribute to 0-length text");
         }
 
-        // make sure we have run attribute data vectors
+        // make sure we have run attribute data arrays
         if (runCount == 0) {
             createRunAttributeDataArrays();
         }
@@ -384,7 +384,7 @@ public class AttributedString {
     private synchronized void addAttributeImpl(Attribute attribute, Object value,
             int beginIndex, int endIndex) {
 
-        // make sure we have run attribute data vectors
+        // make sure we have run attribute data arrays
         if (runCount == 0) {
             createRunAttributeDataArrays();
         }
