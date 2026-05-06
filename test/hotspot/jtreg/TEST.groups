@@ -614,7 +614,7 @@ hotspot_appcds_with_jfr = \
  -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java
 
 tier1_serviceability = \
-  serviceability \
+  serviceability/ \
   -serviceability/dcmd/compiler/CompilerQueueTest.java \
   -serviceability/jvmti/RedefineClasses/RedefineLeak.java \
   -serviceability/jvmti/RedefineClasses/RedefineLeakThrowable.java \
