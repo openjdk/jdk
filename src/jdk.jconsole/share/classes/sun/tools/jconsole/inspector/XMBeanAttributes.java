@@ -874,7 +874,9 @@ public class XMBeanAttributes extends XTable {
             if (d.getHeight() > 220) {
                 comp.setPreferredSize(new Dimension((int) d.getWidth(), 220));
             }
-            comp.putClientProperty("html.disable", Boolean.TRUE);
+            if (comp instanceof JComponent jComp) {
+                jComp.putClientProperty("html.disable", Boolean.TRUE);
+            }
         }
         @Override
         public Component getTableCellRendererComponent(JTable table,
