@@ -106,23 +106,26 @@ class CompilerDirectives;
 class DirectiveSet;
 
 class DirectivesStack : AllStatic {
+  // To allow access to private methods
+  friend class CompilerDirectiveMatcher;
+  friend class DirectiveSetPtr;
 private:
   static CompilerDirectives* _top;
   static CompilerDirectives* _bottom;
   static int _depth;
 
   static void pop_inner(); // no lock version of pop
-public:
-  static void init();
   static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp);
   static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
+  static void release(DirectiveSet* set);
+  static void release(CompilerDirectives* dir);
+public:
+  static void init();
   static void push(CompilerDirectives* directive);
   static void pop(int count);
   static bool check_capacity(int request_size, outputStream* st);
   static void clear();
   static void print(outputStream* st);
-  static void release(DirectiveSet* set);
-  static void release(CompilerDirectives* dir);
 };
 
 class DirectiveSet : public CHeapObj<mtCompiler> {
@@ -325,6 +328,28 @@ public:
 
   DirectiveSet* _c1_store;
   DirectiveSet* _c2_store;
+};
+
+// Helper class to get a matching CompilerDirective using RAII pattern.
+// CompileDirective ref count is decremented in the destructor.
+class CompilerDirectiveMatcher {
+private:
+  DirectiveSet* _match;
+public:
+  // Use this constructor to get default directive
+  CompilerDirectiveMatcher(AbstractCompiler* comp) {
+    _match = DirectivesStack::getDefaultDirective(comp);
+  }
+
+  CompilerDirectiveMatcher(const methodHandle& mh, AbstractCompiler* comp) {
+    _match = DirectivesStack::getMatchingDirective(mh, comp);
+  }
+
+  ~CompilerDirectiveMatcher() {
+    DirectivesStack::release(_match);
+  }
+
+  DirectiveSet* directive_set() const { return _match; }
 };
 
 #endif // SHARE_COMPILER_COMPILERDIRECTIVES_HPP
