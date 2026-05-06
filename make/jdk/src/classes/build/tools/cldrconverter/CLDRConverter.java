@@ -815,6 +815,28 @@ public class CLDRConverter {
                 data = map.get(TIMEZONE_ID_PREFIX + tzLink);
             }
 
+            // Process metazones first, if any
+            String meta = handlerMetaZones.get(tzKey);
+            String[] metaNames = null;
+            if (meta == null && tzLink != null) {
+                // Check for tzLink
+                meta = handlerMetaZones.get(tzLink);
+            }
+            if (meta != null) {
+                var metaKey = METAZONE_ID_PREFIX + meta;
+                if (map.get(metaKey) instanceof String[] mn) {
+                    metaNames = mn;
+                }
+                if (metaNames != null && isDefaultZone(meta, tzKey)) {
+                    // Record the metazone names only from the default
+                    // (001) zone, with short names filled from TZDB
+                    metaNames = Arrays.copyOf(metaNames, metaNames.length);
+                    fillTZDBShortNames(tzKey, metaNames);
+                    names.put(metaKey, metaNames);
+                }
+            }
+
+            // Put regular time zones
             if (data instanceof String[] tznames) {
                 // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
                 if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
@@ -828,26 +850,10 @@ public class CLDRConverter {
                     names.put(tzid, tznames);
                 }
             } else {
-                String meta = handlerMetaZones.get(tzKey);
-                if (meta == null && tzLink != null) {
-                    // Check for tzLink
-                    meta = handlerMetaZones.get(tzLink);
-                }
-                if (meta != null) {
-                    String metaKey = METAZONE_ID_PREFIX + meta;
-                    data = map.get(metaKey);
-                    if (data instanceof String[] tznames) {
-                        if (isDefaultZone(meta, tzKey)) {
-                            // Record the metazone names only from the default
-                            // (001) zone, with short names filled from TZDB
-                            tznames = Arrays.copyOf(tznames, tznames.length);
-                            fillTZDBShortNames(tzKey, tznames);
-                            names.put(metaKey, tznames);
-                        }
-                        names.put(tzid, meta);
-                        if (tzLink != null && availableIds.contains(tzLink)) {
-                            names.put(tzLink, meta);
-                        }
+                if (metaNames != null) {
+                    names.put(tzid, meta);
+                    if (tzLink != null && availableIds.contains(tzLink)) {
+                        names.put(tzLink, meta);
                     }
                 } else if (id.equals("root")) {
                     // supply TZDB short names if available
