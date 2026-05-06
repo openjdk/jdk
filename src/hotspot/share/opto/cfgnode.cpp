@@ -37,6 +37,7 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -632,18 +633,35 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       remove_unreachable_subgraph(igvn);
       return nullptr;
     }
-  } else if (can_reshape && cnt == 1) {
+  }
+
+  if (can_reshape && cnt == 1) {
     // Is it dead loop?
     // If it is LoopNode it had 2 (+1 itself) inputs and
     // one of them was cut. The loop is dead if it was EntryControl.
     // Loop node may have only one input because entry path
     // is removed in PhaseIdealLoop::Dominators().
+    PhaseIterGVN* igvn = phase->is_IterGVN();
     assert(!this->is_Loop() || cnt_orig <= 3, "Loop node should have 3 or less inputs");
     if ((this->is_Loop() && (del_it == LoopNode::EntryControl ||
                              (del_it == 0 && is_unreachable_region(phase)))) ||
         (!this->is_Loop() && has_phis && is_unreachable_region(phase))) {
-      PhaseIterGVN* igvn = phase->is_IterGVN();
       remove_unreachable_subgraph(igvn);
+      return nullptr;
+    }
+
+    // If there is any Phi child, wait for its idealization
+    bool has_phi = false;
+    for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+      Node* out = fast_out(i);
+      if (out->is_Phi()) {
+        assert(out->req() == 2, "a Phi must have the same number of inputs as its input Region: %d - %d", req(), out->req());
+        igvn->_worklist.push(out);
+        has_phi = true;
+      }
+    }
+    if (has_phi) {
+      igvn->_worklist.push(this);
       return nullptr;
     }
   }
@@ -703,19 +721,12 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
           continue;
         }
-        if( n->is_Phi() ) {   // Collapse all Phis
+        if (n->is_Phi()) {   // Collapse all Phis
           // Eagerly replace phis to avoid regionless phis.
-          Node* in;
-          if( cnt == 0 ) {
-            assert( n->req() == 1, "No data inputs expected" );
-            in = parent_ctrl; // replaced by top
-          } else {
-            assert( n->req() == 2 &&  n->in(1) != nullptr, "Only one data input expected" );
-            in = n->in(1);               // replaced by unique input
-            if( n->as_Phi()->is_unsafe_data_reference(in) )
-              in = phase->C->top();      // replaced by top
-          }
-          igvn->replace_node(n, in);
+          assert(cnt == 0, "must wait for Phi processing");
+          assert(n->req() == 1, "No data inputs expected");
+          Node* top = parent_ctrl; // replaced by top
+          igvn->replace_node(n, top);
         }
         else if( n->is_Region() ) { // Update all incoming edges
           assert(n != this, "Must be removed from DefUse edges");
