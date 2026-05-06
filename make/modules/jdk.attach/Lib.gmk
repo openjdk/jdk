@@ -56,35 +56,35 @@ TARGETS += $(BUILD_LIBATTACH)
 # Linux and Windows only:
 ifeq ($(call isTargetOs, linux windows), true)
 
-$(eval $(call SetupJdkExecutable, BUILD_REVIVALHELPER, \
-    NAME := revivalhelper, \
-    OPTIMIZATION := LOW, \
-    LINK_TYPE := C++, \
-    LDFLAGS := $(LDFLAGS_CXX_JDK), \
-    LIBS_linux:= -ldl -lpthread,\
-    LIBS_windows := Shlwapi.lib ImageHlp.lib DbgHelp.lib, \
-    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
-))
+  $(eval $(call SetupJdkExecutable, BUILD_REVIVALHELPER, \
+      NAME := revivalhelper, \
+      OPTIMIZATION := LOW, \
+      LINK_TYPE := C++, \
+      LDFLAGS := $(LDFLAGS_CXX_JDK), \
+      LIBS_linux:= -ldl -lpthread,\
+      LIBS_windows := Shlwapi.lib ImageHlp.lib DbgHelp.lib, \
+      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
+  ))
 
-# Support library on Linux only:
-ifeq ($(call isTargetOs, linux), true)
-$(eval $(call SetupJdkLibrary, BUILD_REVIVAL_SUPPORT, \
-    NAME := revival_support, \
-    OPTIMIZATION := LOW, \
-    LIBS_linux:= -ldl,\
-    LINK_TYPE := C, \
-    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
-))
-endif
+  # Support library on Linux only:
+  ifeq ($(call isTargetOs, linux), true)
+    $(eval $(call SetupJdkLibrary, BUILD_REVIVAL_SUPPORT, \
+        NAME := revival_support, \
+        OPTIMIZATION := LOW, \
+        LIBS_linux:= -ldl,\
+        LINK_TYPE := C, \
+        OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
+    ))
+  endif
 
-TARGETS += $(BUILD_REVIVALHELPER) $(BUILD_REVIVAL_SUPPORT)
+  TARGETS += $(BUILD_REVIVALHELPER) $(BUILD_REVIVAL_SUPPORT)
 
-$(eval $(call SetupCopyFiles, BUILD_REVIVALHELPER_SCRIPTS, \
-    DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
-    MACRO := copy-and-chmod-executable, \
-))
+  $(eval $(call SetupCopyFiles, BUILD_REVIVALHELPER_SCRIPTS, \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
+      MACRO := copy-and-chmod-executable, \
+  ))
 
-TARGETS += $(BUILD_REVIVALHELPER_SCRIPTS)
+  TARGETS += $(BUILD_REVIVALHELPER_SCRIPTS)
 endif
 
 ################################################################################
