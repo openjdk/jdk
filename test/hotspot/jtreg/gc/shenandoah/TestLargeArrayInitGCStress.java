@@ -73,7 +73,6 @@
  * @test id=compressed-oops-off
  * @summary Verify correct object metadata for large arrays with compressed oops disabled under GC stress
  * @requires vm.gc.Shenandoah
- * @requires vm.bits == 64
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx256m -Xms256m

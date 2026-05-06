@@ -72,7 +72,6 @@
  * @test id=compressed-oops-off
  * @summary Verify zero-initialization completeness for large arrays with compressed oops disabled
  * @requires vm.gc.Shenandoah
- * @requires vm.bits == 64
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m -Xms512m

@@ -71,16 +71,18 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   // Always initialize the mem with primitive array first so GC won't look into the elements in the array.
   // For obj array, the header will be corrected to object array after clearing the memory.
   Klass* filling_klass = _klass;
-  int filling_array_length = _length;
   const bool is_ref_type = is_reference_type(element_type);
 
   if (is_ref_type) {
     filling_klass = UseCompressedOops ? Universe::intArrayKlass() : Universe::longArrayKlass();
+#ifdef ASSERT
     size_t filling_element_byte_size = UseCompressedOops ? T_INT_aelem_bytes : T_LONG_aelem_bytes;
-    filling_array_length = (int) ((process_size << LogBytesPerWord) / filling_element_byte_size);
+    int filling_array_length = (int) ((process_size << LogBytesPerWord) / filling_element_byte_size);
+    // Should always pass given that 32bit architecture is not supported.
     assert(filling_array_length == _length, "Must match");
+#endif
   }
-  ObjArrayAllocator filling_array_allocator(filling_klass, _word_size,  filling_array_length , /* do_zero */ false);
+  ObjArrayAllocator filling_array_allocator(filling_klass, _word_size, _length, /* do_zero */ false);
   filling_array_allocator.initialize(mem);
 
   // Invisible roots will be scanned and marked at the end of marking.
