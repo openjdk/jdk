@@ -2161,6 +2161,24 @@ void Compile::shuffle_late_inlines() {
   shuffle_array(*C, _late_inlines);
 }
 
+void Compile::transfer_vector_late_inlines() {
+  for (int i = 0; i < _vector_late_inlines.length(); i++) {
+    CallGenerator* cg = _vector_late_inlines.at(i);
+    // When a vector intrinsic fails, set_generator(cg) caches the
+    // LateInlineVectorCallGenerator on the call node to allow retries
+    // if IGVN optimizes the call node's inputs. If the call node is not
+    // on the IGVN worklist when cleanup runs, CallStaticJavaNode::Ideal
+    // does not fire and the cached generator persists. Once _late_inlines
+    // drains and we commit to the fallback here, clear the stale generator
+    // to prevent a subsequent IGVN pass from re-registering the intrinsic
+    // attempt into _late_inlines alongside the fallback, which would create
+    // duplicate call_node entries.
+    cg->call_node()->as_CallJava()->set_generator(nullptr);
+    add_late_inline(cg);
+  }
+  _vector_late_inlines.clear();
+}
+
 // Perform incremental inlining until bound on number of live nodes is reached
 void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   TracePhase tp(_t_incrInline);
@@ -2220,21 +2238,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     if (failing())  return;
 
     if (_late_inlines.length() == 0 && _vector_late_inlines.length() > 0) {
-      for (int i = 0; i < _vector_late_inlines.length(); i++) {
-        CallGenerator* cg = _vector_late_inlines.at(i);
-        // When a vector intrinsic fails, set_generator(cg) caches the
-        // LateInlineVectorCallGenerator on the call node to allow retries
-        // if IGVN optimizes the call node's inputs. If the call node is not
-        // on the IGVN worklist when cleanup runs, CallStaticJavaNode::Ideal
-        // does not fire and the cached generator persists. Once _late_inlines
-        // drains and we commit to the fallback here, clear the stale generator
-        // to prevent a subsequent IGVN pass from re-registering the intrinsic
-        // attempt into _late_inlines alongside the fallback, which would create
-        // duplicate call_node entries.
-        cg->call_node()->as_CallJava()->set_generator(nullptr);
-        add_late_inline(cg);
-      }
-      _vector_late_inlines.clear();
+      transfer_vector_late_inlines();
     }
   }
 
