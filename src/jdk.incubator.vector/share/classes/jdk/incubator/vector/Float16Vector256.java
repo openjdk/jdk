@@ -205,15 +205,15 @@ final class Float16Vector256 extends Float16Vector {
 
     @ForceInline
     final @Override
-    Float16Vector256 sOp(FSnOp f) {
-        return (Float16Vector256) super.sOpTemplate(f);  // specialize
+    Float16Vector256 uRawOp(FUnRawOp f) {
+        return (Float16Vector256) super.uRawOpTemplate(f);  // specialize
     }
 
     @ForceInline
     final @Override
-    Float16Vector256 sOp(VectorMask<Float16> m, FSnOp f) {
+    Float16Vector256 uRawOp(VectorMask<Float16> m, FUnRawOp f) {
         return (Float16Vector256)
-            super.sOpTemplate((Float16Mask256)m, f);  // specialize
+            super.uRawOpTemplate((Float16Mask256)m, f);  // specialize
     }
     // Binary operator
 

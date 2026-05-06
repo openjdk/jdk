@@ -49,7 +49,22 @@ import static java.lang.Float.*;
 
 /**
  * A specialized {@link Vector} representing an ordered immutable sequence of
- * {@code short} values.
+ * 16-bit data values in the IEEE 754 binary16 format.
+ *
+ * <p>The element type of a {@code Float16Vector} is represented as
+ * {@link Float16}, but carrier type which represents the type of
+ * the backing storage element is {@code short}, values of which hold
+ * 16-bit data in the IEEE 754 binary16 format.
+ * In particular, vector loading and storing operations such as
+ * {@link #fromArray(VectorSpecies, short[], int) fromArray} and
+ * {@link #intoArray(short[], int) intoArray} read from and write to
+ * {@code short[]} arrays holding IEEE 754 binary16 encoded values.
+ *
+ * <p>An array of {@code Float16} values does not currently have a flat
+ * memory layout. Until {@code Float16} becomes a value type whose
+ * backing storage has a flat layout like {@code short[]}, the element
+ * type ({@code Float16}) and the carrier type ({@code short}) will
+ * remain distinct.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
 public abstract sealed class Float16Vector extends AbstractVector<Float16>
@@ -195,16 +210,16 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     }
 
     /*package-private*/
-    interface FSnOp {
+    interface FUnRawOp {
         short apply(int i, short a);
     }
 
     /*package-private*/
     abstract
-    Float16Vector sOp(FSnOp f);
+    Float16Vector uRawOp(FUnRawOp f);
     @ForceInline
     final
-    Float16Vector sOpTemplate(FSnOp f) {
+    Float16Vector uRawOpTemplate(FUnRawOp f) {
         short[] vec = vec();
         short[] res = new short[length()];
         for (int i = 0; i < res.length; i++) {
@@ -215,14 +230,14 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /*package-private*/
     abstract
-    Float16Vector sOp(VectorMask<Float16> m,
-                             FSnOp f);
+    Float16Vector uRawOp(VectorMask<Float16> m,
+                             FUnRawOp f);
     @ForceInline
     final
-    Float16Vector sOpTemplate(VectorMask<Float16> m,
-                                     FSnOp f) {
+    Float16Vector uRawOpTemplate(VectorMask<Float16> m,
+                                     FUnRawOp f) {
         if (m == null) {
-            return sOpTemplate(f);
+            return uRawOpTemplate(f);
         }
         short[] vec = vec();
         short[] res = new short[length()];
@@ -800,7 +815,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
             case VECTOR_OP_LOG10: return (v0, m) ->
                     v0.uOp(m, (i, a) -> (float) Math.log10(a));
             case VECTOR_OP_SQRT: return (v0, m) ->
-                    v0.sOp(m, (i, a) -> (short) float16ToRawShortBits(Float16.sqrt(shortBitsToFloat16(a))));
+                    v0.uRawOp(m, (i, a) -> (short) float16ToRawShortBits(Float16.sqrt(shortBitsToFloat16(a))));
             case VECTOR_OP_CBRT: return (v0, m) ->
                     v0.uOp(m, (i, a) -> (float) Math.cbrt(a));
             case VECTOR_OP_SINH: return (v0, m) ->
@@ -2335,7 +2350,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.sOp((i, a) -> {
+            (v1, s_, m_) -> v1.uRawOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
@@ -2362,7 +2377,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.sOp((i, a) -> {
+                   (v1, s_, m_) -> v1.uRawOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
@@ -2388,7 +2403,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
-                (v0, s_, m_) -> v0.sOp((i, a) -> {
+                (v0, s_, m_) -> v0.uRawOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
@@ -2396,7 +2411,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
-                (v1, s_, m_) -> v1.sOp((i, a) -> {
+                (v1, s_, m_) -> v1.uRawOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));

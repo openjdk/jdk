@@ -205,15 +205,15 @@ final class Float16VectorMax extends Float16Vector {
 
     @ForceInline
     final @Override
-    Float16VectorMax sOp(FSnOp f) {
-        return (Float16VectorMax) super.sOpTemplate(f);  // specialize
+    Float16VectorMax uRawOp(FUnRawOp f) {
+        return (Float16VectorMax) super.uRawOpTemplate(f);  // specialize
     }
 
     @ForceInline
     final @Override
-    Float16VectorMax sOp(VectorMask<Float16> m, FSnOp f) {
+    Float16VectorMax uRawOp(VectorMask<Float16> m, FUnRawOp f) {
         return (Float16VectorMax)
-            super.sOpTemplate((Float16MaskMax)m, f);  // specialize
+            super.uRawOpTemplate((Float16MaskMax)m, f);  // specialize
     }
     // Binary operator
 

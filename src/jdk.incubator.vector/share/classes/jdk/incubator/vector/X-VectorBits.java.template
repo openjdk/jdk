@@ -219,15 +219,15 @@ final class $vectortype$ extends $abstractvectortype$ {
 #if[FP16]
     @ForceInline
     final @Override
-    $vectortype$ sOp(FSnOp f) {
-        return ($vectortype$) super.sOpTemplate(f);  // specialize
+    $vectortype$ uRawOp(FUnRawOp f) {
+        return ($vectortype$) super.uRawOpTemplate(f);  // specialize
     }
 
     @ForceInline
     final @Override
-    $vectortype$ sOp(VectorMask<$Boxtype$> m, FSnOp f) {
+    $vectortype$ uRawOp(VectorMask<$Boxtype$> m, FUnRawOp f) {
         return ($vectortype$)
-            super.sOpTemplate(($masktype$)m, f);  // specialize
+            super.uRawOpTemplate(($masktype$)m, f);  // specialize
     }
 #end[FP16]
     // Binary operator
