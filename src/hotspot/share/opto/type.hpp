@@ -63,7 +63,7 @@ class     TypeVectD;
 class     TypeVectX;
 class     TypeVectY;
 class     TypeVectZ;
-class     TypeVectMask;
+class     TypePVectMask;
 class   TypePtr;
 class     TypeRawPtr;
 class     TypeOopPtr;
@@ -313,8 +313,8 @@ public:
   const TypeAry    *isa_ary() const;             // Returns null of not ary
   const TypeVect   *is_vect() const;             // Vector
   const TypeVect   *isa_vect() const;            // Returns null if not a Vector
-  const TypeVectMask *is_vectmask() const;       // Predicate/Mask Vector
-  const TypeVectMask *isa_vectmask() const;      // Returns null if not a Vector Predicate/Mask
+  const TypePVectMask *is_pvectmask() const;     // Predicate/Mask Vector
+  const TypePVectMask *isa_pvectmask() const;    // Returns null if not a Vector Predicate/Mask
   const TypePtr    *is_ptr() const;              // Asserts it is a ptr type
   const TypePtr    *isa_ptr() const;             // Returns null if not ptr type
   const TypeRawPtr *isa_rawptr() const;          // NOT Java oop
@@ -1108,14 +1108,14 @@ class TypeVectZ : public TypeVect {
   TypeVectZ(BasicType elem_bt, uint length) : TypeVect(VectorZ, elem_bt, length) {}
 };
 
-// Class of TypeVectMask, representing vector masks with "PVectMask" layout (see
+// Class of TypePVectMask, representing vector masks with "PVectMask" layout (see
 // vectornode.hpp for detailed notes on vector mask representations), mapped to
 // dedicated hardware predicate/mask registers.
-class TypeVectMask : public TypeVect {
+class TypePVectMask : public TypeVect {
 public:
   friend class TypeVect;
-  TypeVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
-  static const TypeVectMask* make(const BasicType elem_bt, uint length);
+  TypePVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
+  static const TypePVectMask* make(const BasicType elem_bt, uint length);
 };
 
 // Set of implemented interfaces. Referenced from TypeOopPtr and TypeKlassPtr.
@@ -2305,13 +2305,13 @@ inline const TypeAry *Type::isa_ary() const {
   return ((_base == Array) ? (TypeAry*)this : nullptr);
 }
 
-inline const TypeVectMask *Type::is_vectmask() const {
+inline const TypePVectMask *Type::is_pvectmask() const {
   assert( _base == VectorMask, "Not a Vector Mask" );
-  return (TypeVectMask*)this;
+  return (TypePVectMask*)this;
 }
 
-inline const TypeVectMask *Type::isa_vectmask() const {
-  return (_base == VectorMask) ? (TypeVectMask*)this : nullptr;
+inline const TypePVectMask *Type::isa_pvectmask() const {
+  return (_base == VectorMask) ? (TypePVectMask*)this : nullptr;
 }
 
 inline const TypeVect *Type::is_vect() const {
