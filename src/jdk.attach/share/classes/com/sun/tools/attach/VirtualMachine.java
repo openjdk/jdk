@@ -143,7 +143,7 @@ public abstract class VirtualMachine {
         ArrayList<VirtualMachineDescriptor> l =
             new ArrayList<VirtualMachineDescriptor>();
         List<AttachProvider> providers = AttachProvider.providers();
-        for (AttachProvider provider: providers) {
+        for (AttachProvider provider : providers) {
             l.addAll(provider.listVirtualMachines());
         }
         return l;
@@ -197,7 +197,7 @@ public abstract class VirtualMachine {
             throw new AttachNotSupportedException("no providers installed");
         }
         AttachNotSupportedException lastExc = null;
-        for (AttachProvider provider: providers) {
+        for (AttachProvider provider : providers) {
             try {
                 return provider.attachVirtualMachine(id);
             } catch (AttachNotSupportedException x) {
@@ -273,7 +273,7 @@ public abstract class VirtualMachine {
             throw new AttachNotSupportedException("no providers installed");
         }
         AttachNotSupportedException lastExc = null;
-        for (AttachProvider provider: providers) {
+        for (AttachProvider provider : providers) {
             try {
                 return provider.attachVirtualMachine(id, env);
             } catch (AttachNotSupportedException x) {
