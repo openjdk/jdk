@@ -21,18 +21,29 @@
  * questions.
  */
 
-package jdk.internal.vm;
-
-/**
- * Defines methods that use package-private methods on ThreadSnapshot.
+/*
+ * @test
+ * @summary Verify constant locals used in binding patterns are materialized in temps
+ * @enablePreview
+ * @compile PrimitiveInstanceOfConstantLocalVerifyError.java
+ * @compile -g:none PrimitiveInstanceOfConstantLocalVerifyError.java
+ * @run main PrimitiveInstanceOfConstantLocalVerifyError
  */
-public class Helper {
 
-    /**
-     * Uses ThreadSnapshot.of(Thread) to take a snapshot of the given thread, returning
-     * {@code true} if the thread is alive.
-     */
-    public static boolean isAlive(Thread thread) {
-        return ThreadSnapshot.of(thread) != null;
+public class PrimitiveInstanceOfConstantLocalVerifyError {
+    void run() {
+        final int x = 42;
+        if (!(x instanceof byte b) || b != 42) {
+            throw new AssertionError("primitive pattern failed");
+        }
+
+        final String s = "hi";
+        if (!(s instanceof CharSequence cs) || !cs.toString().equals("hi")) {
+            throw new AssertionError("reference pattern failed");
+        }
+    }
+
+    public static void main(String[] args) {
+        new PrimitiveInstanceOfConstantLocalVerifyError().run();
     }
 }
