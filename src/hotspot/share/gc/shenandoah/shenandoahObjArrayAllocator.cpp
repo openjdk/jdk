@@ -75,8 +75,8 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   const bool is_ref_type = is_reference_type(element_type);
 
   if (is_ref_type) {
-    size_t filling_element_byte_size = UseCompactObjectHeaders ? T_INT_aelem_bytes : T_LONG_aelem_bytes;
-    filling_klass = UseCompactObjectHeaders ? Universe::intArrayKlass() : Universe::longArrayKlass();
+    size_t filling_element_byte_size = UseCompressedOops ? T_INT_aelem_bytes : T_LONG_aelem_bytes;
+    filling_klass = UseCompressedOops ? Universe::intArrayKlass() : Universe::longArrayKlass();
     filling_array_length = (int) ((process_size << LogBytesPerWord) / filling_element_byte_size);
   }
   ObjArrayAllocator filling_array_allocator(filling_klass, _word_size,  filling_array_length , /* do_zero */ false);
