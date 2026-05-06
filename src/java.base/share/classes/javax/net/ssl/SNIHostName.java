@@ -572,7 +572,6 @@ public final class SNIHostName extends SNIServerName {
             throw new IllegalArgumentException(
                     "Server name value of host_name must be a valid DNSName", ioe);
         }
-
     }
 
     private static final class SNIHostNameMatcher extends SNIMatcher {

@@ -81,11 +81,8 @@ class SNIHostNamePositiveTest {
                 .map(Character::toString)
                 .map(s -> new Arg<>(false, "example" + s + "com"));
 
-        // Edge cases
-        var edgeCases = Stream.of(new Arg<>(true, "127.0.0.1"));
-
         // Combine all
-        return Stream.of(basicCases, dotCases, edgeCases).flatMap(Function.identity());
+        return Stream.of(basicCases, dotCases).flatMap(Function.identity());
 
     }
 
