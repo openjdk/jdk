@@ -102,6 +102,9 @@ public class DeprecationNoEffect {
                 .options("-d", classes.toString(), "-XDrawDiagnostics", "-Xlint:deprecation")
                 .sources("""
                          record R(int x) {
+                             R (@Deprecated int x) {
+                                 this.x = x;
+                             }
                              R (@Deprecated String s) {
                                  this(s.length());
                              }
@@ -111,8 +114,9 @@ public class DeprecationNoEffect {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
         tb.checkEqual(out, List.of(
-                "R.java:2:27: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable",
-                "1 warning"));
+                "R.java:2:24: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable",
+                "R.java:5:27: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable",
+                "2 warnings"));
     }
 
     @BeforeEach
