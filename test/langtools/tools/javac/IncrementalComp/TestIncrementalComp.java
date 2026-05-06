@@ -62,8 +62,9 @@ class TestIncrementalComp {
         Files.createDirectories(localTestModules);
         FileUtils.copyDirectory(TEST_MODULES_DIR.resolve("single"), localTestModules);
 
-        Files.copy(ALTS_DIR.resolve("Lib_int.java"),
-                localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"));
+        Path libPath = localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java");
+        Files.createDirectories(libPath.getParent());
+        Files.copy(ALTS_DIR.resolve("Lib_int.java"), libPath);
 
         // compile both modules
         compile(
@@ -74,9 +75,7 @@ class TestIncrementalComp {
         invokeMainMethod(outDir, "org.moda", "org.moda.app.Main");
 
         // modify sources. Dep is not modified
-        Files.copy(ALTS_DIR.resolve("Lib_long.java"),
-                localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"),
-                REPLACE_EXISTING);
+        Files.copy(ALTS_DIR.resolve("Lib_long.java"), libPath, REPLACE_EXISTING);
 
         // recompile moda. Dep should be recompiled as well
         compile(
@@ -97,8 +96,9 @@ class TestIncrementalComp {
         Files.createDirectories(localTestModules);
         FileUtils.copyDirectory(TEST_MODULES_DIR.resolve("multi"), localTestModules);
 
-        Files.copy(ALTS_DIR.resolve("Lib_int.java"),
-                localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"));
+        Path libPath = localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java");
+        Files.createDirectories(libPath.getParent());
+        Files.copy(ALTS_DIR.resolve("Lib_int.java"), libPath);
 
         // compile both modules explicitly
         compile(
@@ -109,9 +109,7 @@ class TestIncrementalComp {
         invokeMainMethod(outDir, "org.modb", "org.modb.app.Main");
 
         // modify sources
-        Files.copy(ALTS_DIR.resolve("Lib_long.java"),
-                localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"),
-                REPLACE_EXISTING);
+        Files.copy(ALTS_DIR.resolve("Lib_long.java"), libPath, REPLACE_EXISTING);
 
         // compile both modules again
         // only moda was out of date, but modb should be recompiled as well
