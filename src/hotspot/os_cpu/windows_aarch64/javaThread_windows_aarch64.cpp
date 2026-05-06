@@ -94,7 +94,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 
 void JavaThread::cache_global_variables() { }
 
-int64_t JavaThread::get_thr_tls_offset() {
+ptrdiff_t JavaThread::get_thr_tls_offset() {
   char* tebPointer = (char*)NtCurrentTeb();
 
   // 0x58 is the offset of ThreadLocalStoragePointer within the TEB.  This is
@@ -113,5 +113,5 @@ int64_t JavaThread::get_thr_tls_offset() {
   // assembly can load directly.  In subsequent calls to
   // `aarch64_get_thread_helper()`, the assembly will read the TEB to find the
   // TLS block and then add this offset to find `Thread::_thr_current`.
-  return (int64_t)(curr_ptr - tls_block);
+  return curr_ptr - tls_block;
 }

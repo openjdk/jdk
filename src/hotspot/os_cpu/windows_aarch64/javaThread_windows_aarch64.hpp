@@ -51,6 +51,6 @@ public:
   // Compute the offset of `Thread::_thr_current` in the thread-local storage
   // This offset is then used by the assembly code implementation of
   // `aarch64_get_thread_helper()`.
-  static int64_t get_thr_tls_offset();
+  static ptrdiff_t get_thr_tls_offset();
 
 #endif // OS_CPU_WINDOWS_AARCH64_JAVATHREAD_WINDOWS_AARCH64_HPP
