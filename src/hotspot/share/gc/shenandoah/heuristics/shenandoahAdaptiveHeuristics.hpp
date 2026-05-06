@@ -278,7 +278,7 @@ public:
   // arguments to represent the independenet value.  evacuation_time is the dependent value.  Predictions include a stdev from
   // the best-fit line.  
   void log_gc_evac_time(size_t words_evacuated_to_young, size_t words_promoted_by_evacuation, size_t words_evacuated_to_old,
-                        double evacuation_time)
+                        size_t words_promoted_in_place, double evacuation_time)
 
    // Use this to predict evacuation time component of an anticipated GC cycle (before we have completed marking)
    // The estimate is based on the total anticipated evacuation load, which is the sum of:
@@ -287,7 +287,8 @@ public:
    //     predict_young_evacuation_words(at_gc_start_time)
    // Note that old_generation->get_promoted_reserve() includes promotions that may be implemented "in place".  Promotion
    // in place is easier than promotion by evacuation, even including the extra costs to be paid during update references
-   // to coalesce and fill the pip region.  Thus, this represents a conservative approxmation.
+   // to coalesce and fill the pip region. Here, we predict that all promotion is performed by evacuation. Thus, this 
+   // represents a conservative approxmation of evacuation time.
    double predict_evac_time(double at_gc_start_time)
 
    // Use this to predict evacuation time component after we have completed marking.  After marking, we know "exactly" how
@@ -296,10 +297,6 @@ public:
    // that words evacuated to old generation are more expensive than words evacuated to young generation).
    double predict_evac_time(size_t words_to_be_evacuated, words_to_be_promoted_in_place)
 
-   // Kelvin TODO: promote-in-place C&F is performed during evacuation.  Should we move it to update refs?  We can recycle
-   // collection set regions after evacuation, but before C&F is finished.
-
-               
    // At GC trigger time, we call this with conservative parameter values:
    //               anticipated_live_young: predict_marked_young_words(at_gc_start_time) - 
    //                                       (old_generation->get_promoted_reserve() / ShenandaohPromoEvacWaste)
