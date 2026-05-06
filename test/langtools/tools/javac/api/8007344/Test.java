@@ -225,8 +225,8 @@ public class Test {
         }
 
         void checkEndPos(CompilationUnitTree unit, Tree tree) {
-            long sp = srcPosns.getStartPosition(unit, tree);
-            long ep = srcPosns.getEndPosition(unit, tree);
+            long sp = srcPosns.getStartPosition(tree);
+            long ep = srcPosns.getEndPosition(tree);
             if (sp >= 0 && ep == Position.NOPOS) {
                 error("endpos not set for " + tree.getKind()
                         + " " + Pretty.toSimpleString(((JCTree) tree))
