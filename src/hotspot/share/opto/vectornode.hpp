@@ -49,7 +49,7 @@
 //
 // - PVectMask: Platform-specific mask stored in predicate/mask registers. Generated
 //   on architectures with predicate/mask feature, such as AArch64 SVE, x86 AVX-512,
-//   and RISC-V Vector Extension (RVV). The corresponding type is TypeVectMask.
+//   and RISC-V Vector Extension (RVV). The corresponding type is TypePVectMask.
 //
 // NVectMask and PVectMask encode element data type and vector length information.
 // They are the primary mask representations used in most mask and masked vector
@@ -1332,7 +1332,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatterMasked);
      assert(indices->bottom_type()->is_vect(), "indices must be in vector");
-     assert(mask->bottom_type()->isa_vectmask(), "sanity");
+     assert(mask->bottom_type()->isa_pvectmask(), "sanity");
      add_req(indices);
      add_req(mask);
      assert(req() == MemNode::ValueIn + 3, "match_edge expects that last input is in MemNode::ValueIn+2");
@@ -1887,7 +1887,7 @@ class VectorMaskCastNode : public VectorNode {
     assert(in_vt->length() == vt->length(), "vector length must match");
     assert((in_vt->element_basic_type() == T_BOOLEAN) == (vt->element_basic_type() == T_BOOLEAN),
            "Cast from/to BVectMask not allowed, use VectorLoadMask/VectorStoreMask instead");
-    assert((in_vt->isa_vectmask() == nullptr) == (vt->isa_vectmask() == nullptr),
+    assert((in_vt->isa_pvectmask() == nullptr) == (vt->isa_pvectmask() == nullptr),
            "Both BVectMask, or both NVectMask, or both PVectMask");
   }
   Node* Identity(PhaseGVN* phase);
@@ -1904,7 +1904,7 @@ class VectorReinterpretNode : public VectorNode {
  public:
   VectorReinterpretNode(Node* in, const TypeVect* src_vt, const TypeVect* dst_vt)
      : VectorNode(in, dst_vt), _src_vt(src_vt) {
-     assert((!dst_vt->isa_vectmask() && !src_vt->isa_vectmask()) ||
+     assert((!dst_vt->isa_pvectmask() && !src_vt->isa_pvectmask()) ||
             (type2aelembytes(src_vt->element_basic_type()) >= type2aelembytes(dst_vt->element_basic_type())),
             "unsupported mask widening reinterpretation");
      init_class_id(Class_VectorReinterpret);

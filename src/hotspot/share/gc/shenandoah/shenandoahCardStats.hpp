@@ -88,10 +88,10 @@ public:
       _local_card_stats[MAX_CLEAN_RUN].add(percent_of(_max_clean_run, _cards_in_cluster));
 
       // Update global stats for dirty obj scan counts
-      _local_card_stats[DIRTY_SCAN_OBJS].add(_dirty_scan_obj_cnt);
+      _local_card_stats[DIRTY_SCAN_OBJS].add(static_cast<double>(_dirty_scan_obj_cnt));
 
       // Update global stats for alternation counts
-      _local_card_stats[ALTERNATIONS].add(_alternation_cnt);
+      _local_card_stats[ALTERNATIONS].add(static_cast<double>(_alternation_cnt));
     }
   }
 
