@@ -103,6 +103,21 @@ static LayoutKind field_layout_selection(FieldInfo field_info, Array<InlineLayou
   }
 }
 
+static LayoutKind adjust_with_budget(FieldInfo field_info, Array<InlineLayoutInfo>* inline_layout_info_array,
+                                     LayoutKind lk, int& budget) {
+  if (lk == LayoutKind::REFERENCE) return lk;
+  assert(LayoutKindHelper::is_flat((lk)), "Must be");
+  InlineLayoutInfo* inline_field_info = inline_layout_info_array->adr_at(field_info.index());
+  InlineKlass* vk = inline_field_info->klass();
+  int size = vk->layout_size_in_bytes(lk);
+  if (size > budget) {
+    return LayoutKind::REFERENCE;
+  } else {
+    budget -= size;
+    return lk;
+  }
+}
+
 static bool field_is_inlineable(FieldInfo fieldinfo, LayoutKind lk, Array<InlineLayoutInfo>* ili) {
   if (fieldinfo.field_flags().is_null_free_inline_type()) {
     // A null-free inline type is always inlineable
@@ -786,6 +801,8 @@ FieldLayoutBuilder::FieldLayoutBuilder(const Symbol* classname, ClassLoaderData*
   _nullable_non_atomic_layout_size_in_bytes(-1),
   _fields_size_sum(0),
   _declared_nonstatic_fields_count(0),
+  _flattening_budget((int)FlatteningBudget),  // uint -> int convertion but FlatteningBudget value has
+                                              // been validated in VM flags parsing (range [0, 1024 * 1024]).
   _has_non_naturally_atomic_fields(false),
   _is_naturally_atomic(false),
   _must_be_atomic(must_be_atomic),
@@ -867,7 +884,7 @@ void FieldLayoutBuilder::regular_field_sorting() {
     case T_ARRAY:
     {
       LayoutKind lk = field_layout_selection(fieldinfo, _inline_layout_info_array, true);
-
+      lk = adjust_with_budget(fieldinfo, _inline_layout_info_array, lk, _flattening_budget);
       if (field_is_inlineable(fieldinfo, lk, _inline_layout_info_array)) {
         _has_inlineable_fields = true;
       }
@@ -954,7 +971,7 @@ void FieldLayoutBuilder::inline_class_field_sorting() {
     {
       bool use_atomic_flat = _must_be_atomic; // flatten atomic fields only if the container is itself atomic
       LayoutKind lk = field_layout_selection(fieldinfo, _inline_layout_info_array, use_atomic_flat);
-
+      lk = adjust_with_budget(fieldinfo, _inline_layout_info_array, lk, _flattening_budget);
       if (field_is_inlineable(fieldinfo, lk, _inline_layout_info_array)) {
         _has_inlineable_fields = true;
       }
