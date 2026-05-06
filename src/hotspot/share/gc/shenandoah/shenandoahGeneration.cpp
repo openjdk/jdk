@@ -388,14 +388,6 @@ void ShenandoahGeneration::post_initialize(ShenandoahHeap* heap) {
   assert(_free_set != nullptr, "bad initialization order");
 }
 
-size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  const double average_allocation_rate = heap->alloc_rate().average();
-  const double now = os::elapsedTime();
-  const double elapsed_seconds = now - heuristics()->cycle_start_time_seconds() + 1;
-  return average_allocation_rate * elapsed_seconds;
-}
-
 void ShenandoahGeneration::reserve_task_queues(uint workers) {
   _task_queues->reserve(workers);
 }

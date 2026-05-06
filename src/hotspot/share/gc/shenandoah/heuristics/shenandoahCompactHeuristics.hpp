@@ -36,14 +36,18 @@ public:
   explicit ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info);
 
   bool should_start_gc() override;
+  const char* name() override     { return "Compact"; }
+  bool is_diagnostic() override   { return false; }
+  bool is_experimental() override { return false; }
 
+protected:
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                              RegionData* data, size_t size,
                                              size_t actual_free) override;
 
-  const char* name() override     { return "Compact"; }
-  bool is_diagnostic() override   { return false; }
-  bool is_experimental() override { return false; }
+
+private:
+  static size_t estimate_bytes_allocated_since_gc_start();
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
