@@ -818,9 +818,8 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       cb = nm;
       if (compile_state == nullptr) {
         // This compile didn't come through the CompileBroker so perform the printing here
-        DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
-        nm->maybe_print_nmethod(directive);
-        DirectivesStack::release(directive);
+        CompilerDirectiveMatcher matcher(method, compiler);
+        nm->maybe_print_nmethod(matcher.directive_set());
 
         // Since this compilation didn't pass through the broker it wasn't logged yet.
         if (PrintCompilation) {
