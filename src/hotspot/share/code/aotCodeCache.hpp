@@ -266,6 +266,10 @@ public:
   address load_archive_data(StubId stub_id, address &end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN_(nullptr);
   void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
 
+  void stub_epilog(StubId stub_id);
+#ifdef ASSERT
+  void check_stored(StubId stub_id);
+#endif
   const AOTStubData* as_const() { return (const AOTStubData*)this; }
 };
 
@@ -331,8 +335,6 @@ public:
   do_var(intx,  PrefetchCopyIntervalInBytes)            /* array copy stubs */ \
   do_var(int,   SoftwarePrefetchHintDistance)           /* array fill stubs */ \
   do_var(bool,  UseBlockZeroing) \
-  do_var(bool,  UseLSE)                                 /* stubs and nmethods */ \
-  do_var(uint,  UseSVE)                                 /* stubs and nmethods */ \
   do_var(bool,  UseSecondarySupersCache) \
   do_var(bool,  UseSIMDForArrayEquals)                  /* array copy stubs and nmethods */ \
   do_var(bool,  UseSIMDForBigIntegerShiftIntrinsics) \
@@ -348,8 +350,6 @@ public:
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
   do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
   do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
-  do_var(int,   UseAVX)                                 /* array copy stubs and nmethods */ \
-  do_var(bool,  UseAPX)                                 /* nmethods and stubs */ \
   do_var(bool,  UseLibmIntrinsic) \
   do_var(bool,  UseIntPolyIntrinsics) \
   // END
@@ -688,6 +688,7 @@ class AOTRuntimeConstants {
  private:
   address _card_table_base;
   uint    _grain_shift;
+  address _cset_base;
   static address _field_addresses_list[];
   static AOTRuntimeConstants _aot_runtime_constants;
   // private constructor for unique singleton
@@ -703,6 +704,7 @@ class AOTRuntimeConstants {
   }
   static address card_table_base_address();
   static address grain_shift_address() { return (address)&_aot_runtime_constants._grain_shift; }
+  static address cset_base_address() { return (address)&_aot_runtime_constants._cset_base; }
   static address* field_addresses_list() {
     return _field_addresses_list;
   }
@@ -710,6 +712,7 @@ class AOTRuntimeConstants {
   static bool contains(address adr)        { return false; }
   static address card_table_base_address() { return nullptr; }
   static address grain_shift_address()     { return nullptr; }
+  static address cset_base_address()       { return nullptr; }
   static address* field_addresses_list()   { return nullptr; }
 #endif
 };

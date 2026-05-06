@@ -22,21 +22,25 @@
  */
 
 import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
-import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.WindowsHelper.WixType;
 
 /*
  * @test
@@ -111,31 +115,74 @@ public class WinL10nTest {
         });
     }
 
-    private static Stream<String> getWixCommandLine(Executor.Result result) {
-        return result.getOutput().stream().filter(createToolCommandLinePredicate("light").or(
-                createToolCommandLinePredicate("wix")));
-    }
+    private record OutputAnalizer(Executor.Result result, WixType wixType, Optional<String> wixBuildCommandLine) {
 
-    private static boolean isWix3(Executor.Result result) {
-        return getWixTypeFromVerboseJPackageOutput(result) == WIX3;
-    }
+        OutputAnalizer {
+            Objects.requireNonNull(result);
+            Objects.requireNonNull(wixType);
+            Objects.requireNonNull(wixBuildCommandLine);
+        }
 
-    private static final Predicate<String> createToolCommandLinePredicate(String wixToolName) {
-        var toolFileName = wixToolName + ".exe";
-        return (s) -> {
-            s = s.trim();
+        OutputAnalizer(Executor.Result result) {
+            this(result, getWixTypeFromVerboseJPackageOutput(result));
+        }
 
-            if (s.startsWith(toolFileName)) {
-                return true;
+        OutputAnalizer(Executor.Result result, WixType wixType) {
+            this(result, wixType, findWixBuildCommandLine(result, wixType));
+        }
+
+        String getWixBuildCommandLine() {
+            return wixBuildCommandLine.orElseThrow(() -> {
+                return new IllegalStateException("WiX build command line not found");
+            });
+        }
+
+        void verifyCulturesInCmdline(String... cultures) {
+            if (cultures.length == 0) {
+                throw new IllegalArgumentException("Cultures list must be non-empty");
             }
 
-            // Accommodate for:
-            //     'C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe' ...
-            //     light.exe ...
-            return Stream.of("\\%s ", "\\%s' ").map(format -> {
-                return String.format(format, toolFileName);
-            }).anyMatch(s::contains) && s.contains(" -out ");
-        };
+            var cmdline = getWixBuildCommandLine();
+
+            var expected = switch (wixType) {
+                case WIX3 -> {
+                    yield "-cultures:" + String.join(";", cultures);
+                }
+                case WIX4 -> {
+                    yield Stream.of(cultures).map(culture -> {
+                        return String.join(" ", "-culture", culture);
+                    }).collect(Collectors.joining(" "));
+                }
+            };
+            TKit.assertTextStream(expected).label("WiX build command line").apply(List.of(cmdline));
+        }
+
+        private static Optional<String> findWixBuildCommandLine(Executor.Result result, WixType wixType) {
+            Objects.requireNonNull(result);
+            Objects.requireNonNull(wixType);
+            return result.stdout().stream()
+                    .filter(JPackageCommand::withTimestamp)
+                    .map(JPackageCommand::stripTimestamp)
+                    .map(String::stripLeading)
+                    .filter(createToolCommandLinePredicate(wixType.buildTool()))
+                    .findFirst();
+        }
+
+        private static final Predicate<String> createToolCommandLinePredicate(String wixToolFileName) {
+            Objects.requireNonNull(wixToolFileName);
+            return s -> {
+                if (!s.startsWith("Running ")) {
+                    return false;
+                }
+
+                // Accommodate for:
+                //     'C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe' ...
+                //     light.exe ...
+                return Stream.of("Running %s ", "\\%s ", "\\%s' ").map(format -> {
+                    return String.format(format, wixToolFileName);
+                }).anyMatch(s::contains) && s.contains(" -out ");
+            };
+        }
     }
 
     private static List<TKit.TextStreamVerifier> createDefaultL10nFilesLocVerifiers(Path wixSrcDir) {
@@ -164,6 +211,16 @@ public class WinL10nTest {
             // 1. Set fake run time to save time by skipping jlink step of jpackage.
             // 2. Instruct test to save jpackage output.
             cmd.setFakeRuntime().saveConsoleOutput(true);
+
+            // Need summary to pick WiX version.
+            // Need errors to pick up errors.
+            // Need tools to pick up tool command lines jpackage invokes
+            // Suppress trace as it interfers with output validators.
+            cmd.setEnabledMessageCategories(
+                    MessageCategory.SUMMARY,
+                    MessageCategory.ERRORS,
+                    MessageCategory.TOOLS
+            ).setDisabledMessageCategories(MessageCategory.TRACE);
 
             boolean withJavaOptions = false;
 
@@ -194,25 +251,15 @@ public class WinL10nTest {
             cmd.addArguments("--temp", tempDir);
         })
         .addBundleVerifier((cmd, result) -> {
-            final List<String> wixCmdline = getWixCommandLine(result).toList();
 
-            final var isWix3 = isWix3(result);
+            var outputAnalizer = new OutputAnalizer(result);
 
             if (expectedCultures != null) {
-                String expected;
-                if (isWix3) {
-                    expected = "-cultures:" + String.join(";", expectedCultures);
-                } else {
-                    expected = Stream.of(expectedCultures).map(culture -> {
-                        return String.join(" ", "-culture", culture);
-                    }).collect(Collectors.joining(" "));
-                }
-                TKit.assertTextStream(expected).apply(wixCmdline);
+                outputAnalizer.verifyCulturesInCmdline(expectedCultures);
             }
 
             if (expectedErrorMessage != null) {
-                TKit.assertTextStream(expectedErrorMessage)
-                        .apply(result.getOutput());
+                TKit.assertTextStream(expectedErrorMessage).apply(result.stderr());
             }
 
             if (wxlFileInitializers != null) {
@@ -222,21 +269,20 @@ public class WinL10nTest {
                 if (allWxlFilesValid) {
                     for (var v : wxlFileInitializers) {
                         if (!v.name.startsWith("MsiInstallerStrings_")) {
-                            v.createCmdOutputVerifier(wixSrcDir).apply(wixCmdline);
+                            v.createCmdOutputVerifier(wixSrcDir).apply(List.of(outputAnalizer.getWixBuildCommandLine()));
                         }
                     }
 
                     for (var v : createDefaultL10nFilesLocVerifiers(wixSrcDir)) {
-                        v.apply(wixCmdline);
+                        v.apply(List.of(outputAnalizer.getWixBuildCommandLine()));
                     }
                 } else {
                     Stream.of(wxlFileInitializers)
                             .filter(Predicate.not(WixFileInitializer::isValid))
                             .forEach(v -> v.createCmdOutputVerifier(
                                     wixSrcDir).apply(result.getOutput()));
-                    TKit.assertTrue(wixCmdline.stream().findAny().isEmpty(),
-                            String.format("Check %s.exe was not invoked",
-                                    isWix3 ? "light" : "wix"));
+                    TKit.assertTrue(outputAnalizer.wixBuildCommandLine().isEmpty(),
+                            String.format("Check %s was not invoked", outputAnalizer.wixType.buildTool()));
                 }
             }
         });

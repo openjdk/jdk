@@ -1664,14 +1664,14 @@ void Assembler::eandl(Register dst, Register src1, Register src2, bool no_flags)
 }
 
 void Assembler::andnl(Register dst, Register src1, Register src2) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF2, (0xC0 | encode));
 }
 
 void Assembler::andnl(Register dst, Register src1, Address src2) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -1696,14 +1696,14 @@ void Assembler::bswapl(Register reg) { // bswap
 }
 
 void Assembler::blsil(Register dst, Register src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rbx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
 }
 
 void Assembler::blsil(Register dst, Address src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -1713,7 +1713,7 @@ void Assembler::blsil(Register dst, Address src) {
 }
 
 void Assembler::blsmskl(Register dst, Register src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rdx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3,
@@ -1721,7 +1721,7 @@ void Assembler::blsmskl(Register dst, Register src) {
 }
 
 void Assembler::blsmskl(Register dst, Address src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -1731,14 +1731,14 @@ void Assembler::blsmskl(Register dst, Address src) {
 }
 
 void Assembler::blsrl(Register dst, Register src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rcx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
 }
 
 void Assembler::blsrl(Register dst, Address src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -7275,21 +7275,21 @@ void Assembler::testl(Register dst, Address src) {
 }
 
 void Assembler::tzcntl(Register dst, Register src) {
-  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  assert(UseCountTrailingZerosInstruction, "tzcnt instruction not supported");
   emit_int8((unsigned char)0xF3);
   int encode = prefix_and_encode(dst->encoding(), src->encoding(), true /* is_map1 */);
   emit_opcode_prefix_and_encoding((unsigned char)0xBC, 0xC0, encode);
 }
 
 void Assembler::etzcntl(Register dst, Register src, bool no_flags) {
-  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  assert(UseCountTrailingZerosInstruction, "tzcnt instruction not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = eevex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, no_flags);
   emit_int16((unsigned char)0xF4, (0xC0 | encode));
 }
 
 void Assembler::tzcntl(Register dst, Address src) {
-  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  assert(UseCountTrailingZerosInstruction, "tzcnt instruction not supported");
   InstructionMark im(this);
   emit_int8((unsigned char)0xF3);
   prefix(src, dst, false, true /* is_map1 */);
@@ -7298,7 +7298,7 @@ void Assembler::tzcntl(Register dst, Address src) {
 }
 
 void Assembler::etzcntl(Register dst, Address src, bool no_flags) {
-  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  assert(UseCountTrailingZerosInstruction, "tzcnt instruction not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -7308,21 +7308,21 @@ void Assembler::etzcntl(Register dst, Address src, bool no_flags) {
 }
 
 void Assembler::tzcntq(Register dst, Register src) {
-  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  assert(UseCountTrailingZerosInstruction, "tzcnt instruction not supported");
   emit_int8((unsigned char)0xF3);
   int encode = prefixq_and_encode(dst->encoding(), src->encoding(), true /* is_map1 */);
   emit_opcode_prefix_and_encoding((unsigned char)0xBC, 0xC0, encode);
 }
 
 void Assembler::etzcntq(Register dst, Register src, bool no_flags) {
-  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  assert(UseCountTrailingZerosInstruction, "tzcnt instruction not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = eevex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, &attributes, no_flags);
   emit_int16((unsigned char)0xF4, (0xC0 | encode));
 }
 
 void Assembler::tzcntq(Register dst, Address src) {
-  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  assert(UseCountTrailingZerosInstruction, "tzcnt instruction not supported");
   InstructionMark im(this);
   emit_int8((unsigned char)0xF3);
   prefixq(src, dst, true /* is_map1 */);
@@ -7331,7 +7331,7 @@ void Assembler::tzcntq(Register dst, Address src) {
 }
 
 void Assembler::etzcntq(Register dst, Address src, bool no_flags) {
-  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  assert(UseCountTrailingZerosInstruction, "tzcnt instruction not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -15000,14 +15000,14 @@ void Assembler::eandq(Register dst, Address src1, Register src2, bool no_flags) 
 }
 
 void Assembler::andnq(Register dst, Register src1, Register src2) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF2, (0xC0 | encode));
 }
 
 void Assembler::andnq(Register dst, Register src1, Address src2) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -15032,14 +15032,14 @@ void Assembler::bswapq(Register reg) {
 }
 
 void Assembler::blsiq(Register dst, Register src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rbx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
 }
 
 void Assembler::blsiq(Register dst, Address src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -15049,14 +15049,14 @@ void Assembler::blsiq(Register dst, Address src) {
 }
 
 void Assembler::blsmskq(Register dst, Register src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rdx->encoding(),  dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
 }
 
 void Assembler::blsmskq(Register dst, Address src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -15066,14 +15066,14 @@ void Assembler::blsmskq(Register dst, Address src) {
 }
 
 void Assembler::blsrq(Register dst, Register src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(rcx->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_38, &attributes, true);
   emit_int16((unsigned char)0xF3, (0xC0 | encode));
 }
 
 void Assembler::blsrq(Register dst, Address src) {
-  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "bit manipulation instructions not supported");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
