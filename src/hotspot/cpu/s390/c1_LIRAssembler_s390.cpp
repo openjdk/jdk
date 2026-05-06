@@ -2892,12 +2892,12 @@ void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_cod
   assert(addr->scale() == LIR_Address::times_1, "scaling unsupported");
 
   if (addr->index()->is_illegal() && patch_code != lir_patch_none) {
-      PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
+    PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
 
-      // TODO: Use load_const_32to64 here by extending NativeMovRegMem to support both the instruction patterns.
-      __ load_const(Z_R0_scratch, (intptr_t)0);
-      __ z_agrk(reg, addr->base()->as_pointer_register(), Z_R0_scratch);
-      patching_epilog(patch, patch_code, addr->base()->as_register(), info);
+    // TODO: Use load_const_32to64 here by extending NativeMovRegMem to support both instruction patterns.
+    __ load_const(Z_R0_scratch, (intptr_t)0);
+    __ z_agrk(reg, addr->base()->as_pointer_register(), Z_R0_scratch);
+    patching_epilog(patch, patch_code, addr->base()->as_register(), info);
   } else {
     __ load_address(reg, as_Address(addr));
   }
