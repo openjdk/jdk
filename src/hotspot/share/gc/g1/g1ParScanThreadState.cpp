@@ -78,7 +78,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers, ParGCArrayScanChunk),
+    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->num_optional_regions()),
     _numa(g1h->numa()),
@@ -131,9 +131,9 @@ size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num
 G1ParScanThreadState::~G1ParScanThreadState() {
   delete _plab_allocator;
   delete _closures;
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
+  FREE_C_HEAP_ARRAY(_surviving_young_words_base);
   delete[] _oops_into_optional_regions;
-  FREE_C_HEAP_ARRAY(size_t, _obj_alloc_stat);
+  FREE_C_HEAP_ARRAY(_obj_alloc_stat);
 }
 
 size_t G1ParScanThreadState::lab_waste_words() const {
@@ -253,7 +253,7 @@ void G1ParScanThreadState::start_partial_objarray(oop from_obj,
   size_t array_length = to_array->length();
   size_t initial_chunk_size =
     // The source array is unused when processing states.
-    _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length);
+    _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length, ParGCArrayScanChunk);
 
   assert(_scanner.skip_card_mark_set(), "must be");
   // Process the initial chunk.  No need to process the type in the
@@ -444,7 +444,7 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
       return;
     }
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
+    ContinuationGCSupport::transform_stack_chunk(obj, klass);
 
     // Check for deduplicating young Strings.
     if (G1StringDedup::is_candidate_from_evacuation(klass,
@@ -650,7 +650,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, Kla
 
     // Mark the failing object in the marking bitmap and later use the bitmap to handle
     // evacuation failure recovery.
-    _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
+    _g1h->mark_evac_failure_object(old);
 
     _evacuation_failed_info.register_copy_failure(word_sz);
 
@@ -730,8 +730,8 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
 
 G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
-  FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
+  FREE_C_HEAP_ARRAY(_states);
+  FREE_C_HEAP_ARRAY(_surviving_young_words_total);
 }
 
 #if TASKQUEUE_STATS

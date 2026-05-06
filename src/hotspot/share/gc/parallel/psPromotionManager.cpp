@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ PartialArrayTaskStats* PSPromotionManager::partial_array_task_stats() {
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
-  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads, ParGCArrayScanChunk)
+  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads)
 {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
@@ -273,7 +273,7 @@ void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   size_t array_length = to_array->length();
   size_t initial_chunk_size =
     // The source array is unused when processing states.
-    _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length);
+    _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length, ParGCArrayScanChunk);
 
   process_array_chunk(to_array, 0, initial_chunk_size);
 }
@@ -294,7 +294,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
 
     ContinuationGCSupport::transform_stack_chunk(obj);
 
-    push_contents(obj);
+    push_contents(obj, obj->klass());
 
     // Save the markWord of promotion-failed objs in _preserved_marks for later
     // restoration. This way we don't have to walk the young-gen to locate
