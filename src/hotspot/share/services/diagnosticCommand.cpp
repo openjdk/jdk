@@ -542,7 +542,7 @@ void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
     output()->print_cr("Parallel thread number out of range (>=0): " JLONG_FORMAT, num);
     return;
   }
-  // Paprallel threads request ignored if revived.
+  // Parallel threads request will be ignored by VM_GC_HeapInspection if revived.
   uint parallel_thread_num = (num == 0)
       ? MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8)
       : num;
