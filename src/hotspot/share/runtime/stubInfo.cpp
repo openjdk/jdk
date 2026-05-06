@@ -574,6 +574,18 @@ void StubInfo::process_stubgen_entry(StubGroup& group_cursor,
                                         field_name, id),                \
                         0);                                             \
 
+#define PROCESS_STUBGEN_ENTRY_ARCH_ARRAY(arch_name, blob, stub,         \
+                                         field_name, getter_name,       \
+                                         count)                         \
+  process_stubgen_entry(_group_cursor, _blob_cursor,                    \
+                        _stub_cursor, _entry_cursor,                    \
+                        #arch_name "_" # field_name "_entry (stub gen)", \
+                        BlobId:: JOIN3(stubgen, blob, id),              \
+                        StubId:: JOIN3(stubgen, stub, id),              \
+                        EntryId:: JOIN4(stubgen, arch_name,             \
+                                        field_name, id),                \
+                        count);                                         \
+
 void StubInfo::populate_stub_tables() {
   StubGroup _group_cursor;
   BlobId _blob_cursor = BlobId::NO_BLOBID;
@@ -615,7 +627,8 @@ void StubInfo::populate_stub_tables() {
                  PROCESS_STUBGEN_ENTRY, PROCESS_STUBGEN_ENTRY_INIT,
                  PROCESS_STUBGEN_ENTRY_ARRAY,
                  DO_ARCH_BLOB_EMPTY2,
-                 PROCESS_STUBGEN_ENTRY_ARCH, PROCESS_STUBGEN_ENTRY_ARCH_INIT);
+                 PROCESS_STUBGEN_ENTRY_ARCH, PROCESS_STUBGEN_ENTRY_ARCH_INIT,
+                 PROCESS_STUBGEN_ENTRY_ARCH_ARRAY);
   assert(next(_blob_cursor) == BlobId::NUM_BLOBIDS, "should have exhausted all blob ids!");
   assert(next(_stub_cursor) == StubId::NUM_STUBIDS, "should have exhausted all stub ids!");
   assert(next(_entry_cursor) == EntryId::NUM_ENTRYIDS, "should have exhausted all entry ids!");
@@ -636,6 +649,7 @@ void StubInfo::populate_stub_tables() {
 #undef PROCESS_STUBGEN_ENTRY_ARRAY
 #undef PROCESS_STUBGEN_ENTRY_ARCH
 #undef PROCESS_STUBGEN_ENTRY_ARCH_INIT
+#undef PROCESS_STUBGEN_ENTRY_ARCH_ARRAY
 
 #ifdef ASSERT
 
@@ -1085,6 +1099,15 @@ int StubInfo::c2_offset(StubId id) {
 
 int StubInfo::stubgen_offset(StubId id) {
   return local_offset(StubGroup::STUBGEN, id);
+}
+
+int StubInfo::stubgen_offset_in_blob(BlobId blob_id, StubId id) {
+  assert(blob(id) == blob_id, "sanity!");
+  StubGroup group = StubGroup::STUBGEN;
+  assert(stubgroup(blob_id) == group, "sanity");
+  StubId base_id = stub_base(blob_id);
+  assert(base_id != StubId::NO_STUBID, "sanity");
+  return local_offset(group, id) - local_offset(group, base_id);
 }
 
 // initialization function called to populate blob. stub and entry

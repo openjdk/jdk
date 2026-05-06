@@ -174,6 +174,17 @@ public class HBShaper {
         MethodHandle tmp1 = LINKER.downcallHandle(malloc_symbol, mallocDescriptor);
         malloc_handle = tmp1;
 
+        MemorySegment free_symbol = SYM_LOOKUP.findOrThrow("free");
+        long free_address = free_symbol.address();
+        FunctionDescriptor setFreeFnDescriptor = FunctionDescriptor.ofVoid(JAVA_LONG);
+        MemorySegment set_free = SYM_LOOKUP.findOrThrow("HBSetFreeFn");
+        @SuppressWarnings("restricted")
+        MethodHandle set_free_handle = LINKER.downcallHandle(set_free, setFreeFnDescriptor);
+        try {
+            set_free_handle.invokeExact(free_address);
+        } catch (Throwable t) {
+        }
+
         FunctionDescriptor createFaceDescriptor =
             FunctionDescriptor.of(ADDRESS, ADDRESS);
         MemorySegment create_face_symbol = SYM_LOOKUP.findOrThrow("HBCreateFace");
@@ -216,45 +227,30 @@ public class HBShaper {
                 JAVA_INT,           // return type
                 JAVA_INT, ADDRESS); // arg types
 
-        FunctionDescriptor get_var_glyph_fd = getFunctionDescriptor(JAVA_INT,  // return type
-              ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS); // arg types
-        MethodHandle get_var_glyph_mh =
-            getMethodHandle("get_variation_glyph", get_var_glyph_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp5 = LINKER.upcallStub(get_var_glyph_mh, get_var_glyph_fd, garena);
-        get_var_glyph_stub = tmp5;
+        get_var_glyph_stub = getUpcallStub(garena,
+                "get_variation_glyph", // method name
+                JAVA_INT,              // return type
+                ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS); // arg types
 
-        FunctionDescriptor get_nominal_glyph_fd = getFunctionDescriptor(JAVA_INT, // return type
-                   ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS); // arg types
-        MethodHandle get_nominal_glyph_mh =
-            getMethodHandle("get_nominal_glyph", get_nominal_glyph_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp6 = LINKER.upcallStub(get_nominal_glyph_mh, get_nominal_glyph_fd, garena);
-        get_nominal_glyph_stub = tmp6;
+        get_nominal_glyph_stub = getUpcallStub(garena,
+                "get_nominal_glyph", // method name
+                JAVA_INT,            // return type
+                ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS); // arg types
 
-        FunctionDescriptor get_h_adv_fd = getFunctionDescriptor(JAVA_INT,  // return type
-                   ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
-        MethodHandle get_h_adv_mh =
-            getMethodHandle("get_glyph_h_advance", get_h_adv_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp7 = LINKER.upcallStub(get_h_adv_mh, get_h_adv_fd, garena);
-        get_h_advance_stub = tmp7;
+        get_h_advance_stub = getUpcallStub(garena,
+                "get_glyph_h_advance", // method name
+                JAVA_INT,              // return type
+                ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
 
-        FunctionDescriptor get_v_adv_fd = getFunctionDescriptor(JAVA_INT,  // return type
-                   ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
-        MethodHandle get_v_adv_mh =
-            getMethodHandle("get_glyph_v_advance", get_v_adv_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp8 = LINKER.upcallStub(get_v_adv_mh, get_v_adv_fd, garena);
-        get_v_advance_stub = tmp8;
+        get_v_advance_stub = getUpcallStub(garena,
+                "get_glyph_v_advance", // method name
+                JAVA_INT,              // return type
+                ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
 
-        FunctionDescriptor get_contour_pt_fd = getFunctionDescriptor(JAVA_INT,  // return type
-            ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS, ADDRESS); // arg types
-        MethodHandle get_contour_pt_mh =
-            getMethodHandle("get_glyph_contour_point", get_contour_pt_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp9 = LINKER.upcallStub(get_contour_pt_mh, get_contour_pt_fd, garena);
-        get_contour_pt_stub = tmp9;
+        get_contour_pt_stub = getUpcallStub(garena,
+                "get_glyph_contour_point", // method name
+                JAVA_INT,                  // return type
+                ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS, ADDRESS); // arg types
 
        /* Having now created the font upcall stubs, we can call down to create
         * the native harfbuzz object holding these.

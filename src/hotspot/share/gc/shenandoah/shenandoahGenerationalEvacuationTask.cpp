@@ -63,7 +63,7 @@ ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(Shena
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
   if (_concurrent) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    ShenandoahSuspendibleThreadSetJoiner stsj;
+    SuspendibleThreadSetJoiner stsj;
     do_work();
   } else {
     ShenandoahParallelWorkerSession worker_session(worker_id);
@@ -73,12 +73,10 @@ void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
 
 void ShenandoahGenerationalEvacuationTask::do_work() {
   if (_only_promote_regions) {
-    // No allocations will be made, do not enter oom-during-evac protocol.
     assert(_heap->collection_set()->is_empty(), "Should not have a collection set here");
     promote_regions();
   } else {
     assert(!_heap->collection_set()->is_empty(), "Should have a collection set here");
-    ShenandoahEvacOOMScope oom_evac_scope;
     evacuate_and_promote_regions();
   }
 }
@@ -133,3 +131,4 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
     }
   }
 }
+

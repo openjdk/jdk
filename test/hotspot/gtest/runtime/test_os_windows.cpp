@@ -29,6 +29,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.inline.hpp"
 #include "os_windows.hpp"
+#include "runtime/safefetch.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
@@ -919,6 +920,38 @@ TEST_VM(os_windows, numa_placeholder_reserve_commit) {
   }
 
   os::release_memory(result, size);
+}
+
+TEST_VM(os_windows, SafeFetchN_with_page_guard_protection) {
+  const DWORD page_size = (DWORD)os::vm_page_size();
+
+  void* p = ::VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ASSERT_NE(p, nullptr) << "VirtualAlloc failed";
+
+  DWORD old_protect;
+  BOOL res = ::VirtualProtect(p, page_size, PAGE_READWRITE | PAGE_GUARD, &old_protect);
+  ASSERT_TRUE(res) << "VirtualProtect failed";
+
+  intptr_t result = SafeFetchN((intptr_t*)p, -1);
+  ASSERT_EQ((intptr_t)-1, result) << "SafeFetchN should return errValue for a page protected with PAGE_GUARD";
+
+  ::VirtualFree(p, 0, MEM_RELEASE);
+}
+
+TEST_VM(os_windows, SafeFetch32_with_page_guard_protection) {
+  const DWORD page_size = (DWORD)os::vm_page_size();
+
+  void* p = ::VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ASSERT_NE(p, nullptr) << "VirtualAlloc failed";
+
+  DWORD old_protect;
+  BOOL res = ::VirtualProtect(p, page_size, PAGE_READWRITE | PAGE_GUARD, &old_protect);
+  ASSERT_TRUE(res) << "VirtualProtect failed";
+
+  int result = SafeFetch32((int*)p, -1);
+  ASSERT_EQ(-1, result) << "SafeFetch32 should return errValue for a page protected with PAGE_GUARD";
+
+  ::VirtualFree(p, 0, MEM_RELEASE);
 }
 
 #endif

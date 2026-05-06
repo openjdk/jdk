@@ -67,6 +67,7 @@ public final class PlatformRecorder {
     private long recordingCounter = 0;
     private RepositoryChunk currentChunk;
     private boolean runPeriodicTask;
+    private boolean destroyed;
 
     public PlatformRecorder() throws Exception {
         repository = Repository.getRepository();
@@ -82,8 +83,18 @@ public final class PlatformRecorder {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
-    public synchronized PlatformRecording newRecording(RecordingState state, Map<String, String> settings) {
-        return newRecording(state, settings, ++recordingCounter);
+    public synchronized PlatformRecording newRecording(Boolean register, Map<String, String> settings) {
+        long id = ++recordingCounter;
+        if (register == null) {
+            if (isDestroyed()) {
+                PlatformRecording r =  newRecording(false, settings, id);
+                r.setState(RecordingState.CLOSED);
+                return r;
+            } else {
+                return newRecording(true, settings, id);
+            }
+        }
+        return newRecording(register, settings, id);
     }
 
     // To be used internally when doing dumps.
@@ -92,15 +103,15 @@ public final class PlatformRecorder {
         if(!Thread.holdsLock(this)) {
             throw new InternalError("Caller must have recorder lock");
         }
-        return newRecording(RecordingState.NEW, new HashMap<>(), 0);
+        return newRecording(true, new HashMap<>(), 0);
     }
 
-    private synchronized PlatformRecording newRecording(RecordingState state, Map<String, String> settings, long id) {
+    private synchronized PlatformRecording newRecording(boolean register, Map<String, String> settings, long id) {
         PlatformRecording recording = new PlatformRecording(this, id);
         if (!settings.isEmpty()) {
             recording.setSettings(settings);
         }
-        if (state != RecordingState.CLOSED) {
+        if (register) {
             recordings.add(recording);
         }
         return recording;
@@ -177,8 +188,13 @@ public final class PlatformRecorder {
                 }
             }
         }
-
         writeReports();
+        destroyed = true;
+        // This will prevent further interaction with recordings after JFR has been destroyed.
+        for (PlatformRecording p : getRecordings()) {
+            p.setState(RecordingState.CLOSED);
+        }
+        recordings.clear();
         JDKEvents.remove();
 
         if (JVMSupport.hasJFR()) {
@@ -190,11 +206,29 @@ public final class PlatformRecorder {
         repository.clear();
     }
 
+    // Not synchronized. Caller must hold recorder lock to avoid races.
+    public boolean isDestroyed() {
+        if (!Thread.holdsLock(this)) {
+            throw new InternalError("Caller must have recorder lock");
+        }
+        return destroyed;
+    }
+
     private void writeReports() {
         for (PlatformRecording recording : getRecordings()) {
             if (recording.isToDisk() && recording.getState() == RecordingState.STOPPED) {
                 for (Report report : recording.getReports()) {
-                    report.print(recording.getStartTime(), recording.getStopTime());
+                    try {
+                        report.print(recording.getStartTime(), recording.getStopTime());
+                    } catch (Exception e) {
+                        StringBuilder message = new StringBuilder();
+                        message.append("Could not generate report-on-exit for view ");
+                        message.append(report.name());
+                        message.append(" (recording ");
+                        message.append(recording.getName()).append(":").append(recording.getId());
+                        message.append("). Unexpected error: ").append(e.toString());
+                        Logger.log(JFR, WARN,  message.toString());
+                    }
                 }
             }
         }
@@ -547,15 +581,15 @@ public final class PlatformRecorder {
     }
 
     synchronized Recording newCopy(PlatformRecording r, boolean stop) {
-        PrivateAccess pr = PrivateAccess.getInstance();
-        boolean closed = r.getState() == RecordingState.CLOSED;
-        Recording newRec = closed ? pr.newRecording(RecordingState.CLOSED) : new Recording();
-        PlatformRecording copy = pr.getPlatformRecording(newRec);
+        PrivateAccess access = PrivateAccess.getInstance();
+        boolean register = !isDestroyed() && r.getState() != RecordingState.CLOSED;
+        Recording newRec = access.newRecording(register);
+        PlatformRecording copy = access.getPlatformRecording(newRec);
         copy.setSettings(r.getSettings());
         copy.setMaxAge(r.getMaxAge());
         copy.setMaxSize(r.getMaxSize());
         copy.setDumpOnExit(r.getDumpOnExit());
-        copy.setName("Clone of " + r.getName());
+        copy.setName("Clone of " + r.getName(), false);
         copy.setToDisk(r.isToDisk());
         copy.setInternalDuration(r.getDuration());
         copy.setStartTime(r.getStartTime());

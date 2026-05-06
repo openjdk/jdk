@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Type;
@@ -101,16 +100,16 @@ public final class Recording implements Closeable {
      * @since 11
      */
     public Recording(Map<String, String> settings) {
-        this(RecordingState.NEW, settings);
+        this(null, settings);
     }
 
     // package private
-    Recording(RecordingState state, Map<String, String> settings) {
+    Recording(Boolean register, Map<String, String> settings) {
         Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
-            this.internal = r.newRecording(state, sanitized);
+            this.internal = r.newRecording(register, sanitized);
             this.internal.setRecording(this);
             if (internal.getRecording() != this) {
                 throw new InternalError("Internal recording not properly setup");
@@ -503,7 +502,7 @@ public final class Recording implements Closeable {
      */
     public void setName(String name) {
         Objects.requireNonNull(name, "name");
-        internal.setName(name);
+        internal.setName(name, true);
     }
 
     /**
