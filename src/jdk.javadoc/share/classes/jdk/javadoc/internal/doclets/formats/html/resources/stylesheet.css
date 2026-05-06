@@ -192,7 +192,7 @@ body {
     width:100%;
 }
 main [id] {
-    scroll-margin-top: calc(var(--nav-height) + 6px);
+    scroll-margin-top: calc(var(--nav-height) + 14px);
 }
 div.main-grid {
     max-width: var(--max-content-width);
@@ -1774,6 +1774,9 @@ table.striped > tbody > tr > th {
     }
     main {
         padding: 10px 12px;
+    }
+    main [id] {
+        scroll-margin-top: calc(var(--nav-height) + 10px);
     }
     body {
         -webkit-text-size-adjust: none;
