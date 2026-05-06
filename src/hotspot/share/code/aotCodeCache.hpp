@@ -335,8 +335,6 @@ public:
   do_var(intx,  PrefetchCopyIntervalInBytes)            /* array copy stubs */ \
   do_var(int,   SoftwarePrefetchHintDistance)           /* array fill stubs */ \
   do_var(bool,  UseBlockZeroing) \
-  do_var(bool,  UseLSE)                                 /* stubs and nmethods */ \
-  do_var(uint,  UseSVE)                                 /* stubs and nmethods */ \
   do_var(bool,  UseSecondarySupersCache) \
   do_var(bool,  UseSIMDForArrayEquals)                  /* array copy stubs and nmethods */ \
   do_var(bool,  UseSIMDForBigIntegerShiftIntrinsics) \
@@ -352,8 +350,6 @@ public:
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
   do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
   do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
-  do_var(int,   UseAVX)                                 /* array copy stubs and nmethods */ \
-  do_var(bool,  UseAPX)                                 /* nmethods and stubs */ \
   do_var(bool,  UseLibmIntrinsic) \
   do_var(bool,  UseIntPolyIntrinsics) \
   // END
