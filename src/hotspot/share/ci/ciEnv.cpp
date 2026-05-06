@@ -1075,10 +1075,10 @@ void ciEnv::register_method(ciMethod* target,
     code_buffer->free_blob();
 
     if (nm != nullptr) {
-      nm->set_has_unsafe_access(has_unsafe_access);
-      nm->set_has_wide_vectors(has_wide_vectors);
-      nm->set_has_monitors(has_monitors);
-      nm->set_has_scoped_access(has_scoped_access);
+      nm->init_has_unsafe_access(has_unsafe_access);
+      nm->init_has_wide_vectors(has_wide_vectors);
+      nm->init_has_monitors(has_monitors);
+      nm->init_has_scoped_access(has_scoped_access);
       assert(!method->is_synchronized() || nm->has_monitors(), "");
 
       if (entry_bci == InvocationEntryBci) {

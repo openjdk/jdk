@@ -267,14 +267,20 @@ class nmethod : public CodeBlob {
   // Protected by NMethodState_lock
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
-  // set during construction
+  // Persistent bits, set once during construction.
   uint8_t _has_unsafe_access:1,        // May fault due to unsafe access.
           _has_wide_vectors:1,         // Preserve wide vectors at safepoints
           _has_monitors:1,             // Fastpath monitor detection for continuations
-          _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
-          _has_flushed_dependencies:1, // Used for maintenance of dependencies (under CodeCache_lock)
-          _is_unlinked:1,              // mark during class unloading
-          _load_reported:1;            // used by jvmti to track if an event has been posted for this nmethod
+          _has_scoped_access:1;        // Used by for shared scope closure (scopedMemoryAccess.cpp)
+
+  // Used for maintenance of dependencies (under CodeCache_lock)
+  bool _has_flushed_dependencies;
+
+  // Mark during class unloading
+  bool _is_unlinked;
+
+  // Used by JVMTI to track if an event has been posted for this nmethod
+  bool _load_reported;
 
   enum DeoptimizationStatus : u1 {
     not_marked,
@@ -752,16 +758,16 @@ public:
   void set_gc_data(T* gc_data)                    { _gc_data = reinterpret_cast<void*>(gc_data); }
 
   bool  has_unsafe_access() const                 { return _has_unsafe_access; }
-  void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }
+  void  init_has_unsafe_access(bool z)            { _has_unsafe_access = z; }
 
   bool  has_monitors() const                      { return _has_monitors; }
-  void  set_has_monitors(bool z)                  { _has_monitors = z; }
+  void  init_has_monitors(bool z)                 { _has_monitors = z; }
 
   bool  has_scoped_access() const                 { return _has_scoped_access; }
-  void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }
+  void  init_has_scoped_access(bool z)            { _has_scoped_access = z; }
 
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
-  void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
+  void  init_has_wide_vectors(bool z)             { _has_wide_vectors = z; }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
