@@ -312,10 +312,10 @@ public final class SNIHostName extends SNIServerName {
      * {@return an {@code SNIHostName} using the specified hostname encoded in
      * either ASCII or UTF-8}
      * <p>
-     * Once the specified value is decoded into a hostname string, it must
-     * constitute a DNS hostname, which is either an ASCII-encoded hostname or
-     * an {@linkplain IDN Internationalized Domain Name (IDN)}. A decoded
-     * hostname string is considered illegal if it:
+     * The specified byte array gets decoded into a hostname string that is
+     * required to be a valid a DNS hostname, which is either an ASCII-encoded
+     * hostname or an {@linkplain IDN Internationalized Domain Name (IDN)}. A
+     * decoded hostname string is considered illegal if it:
      * <p>
      * A decoded hostname string is considered illegal if it:
      * <ul>
