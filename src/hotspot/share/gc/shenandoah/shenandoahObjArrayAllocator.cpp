@@ -74,9 +74,19 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   const bool is_ref_type = is_reference_type(element_type);
 
   if (is_ref_type) {
-    filling_klass = UseCompressedOops ? Universe::intArrayKlass() : Universe::longArrayKlass();
+    DEBUG_ONLY(size_t filling_element_byte_size;)
+#ifdef LP64
+    if (!CompressedOops) {
+      filling_klass = Universe::longArrayKlass();
+      filling_element_byte_size = T_LONG_aelem_bytes;
+    } else
+#endif
+    {
+      filling_klass = Universe::intArrayKlass();
+      filling_element_byte_size = T_INT_aelem_bytes;
+    }
+
 #ifdef ASSERT
-    const size_t filling_element_byte_size = UseCompressedOops ? T_INT_aelem_bytes : T_LONG_aelem_bytes;
     const int max_filling_array_length = (int) ((process_size << LogBytesPerWord) / filling_element_byte_size);
     assert(max_filling_array_length == _length || max_filling_array_length - _length == 1,
            "max filling array length must match or exceed by at most 1 due to alignment padding");
