@@ -25,6 +25,7 @@ package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -35,74 +36,112 @@ import jdk.test.lib.Asserts;
  */
 
 public class TestEffectiveConstantShiftCount {
-    private static int count = 0;
+    private static final int INT_LOW = Utils.getRandomInstance().nextInt(1, 32);
+    private static final int LONG_LOW = Utils.getRandomInstance().nextInt(1, 64);
+    private static final int RAND_I = Utils.getRandomInstance().nextInt();
+    private static final long RAND_L = Utils.getRandomInstance().nextLong();
+    private static final int RAND_COUNT = Utils.getRandomInstance().nextInt();
 
     public static void main(String[] args) {
         TestFramework.run();
     }
 
     private static int intCount(int x) {
-        return x & ~31;
+        return (x & ~31) | INT_LOW;
     }
 
     private static int longCount(int x) {
-        return x & ~63;
+        return (x & ~63) | LONG_LOW;
     }
 
     // ---------------- shift test for int ----------------
     @Test
-    @IR(failOn = {IRNode.LSHIFT_I},  phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = IRNode.CMP_I)
     public static int testIntLShift(int x, int count) {
-        return x << intCount(count);
+        int shifted1 = x << intCount(count);
+        int shifted2 = x << INT_LOW;
+        return shifted1 == shifted2;
     }
 
     @Test
-    @IR(failOn = {IRNode.RSHIFT_I},  phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = IRNode.CMP_I)
     public static int testIntRShift(int x, int count) {
-        return x >> intCount(count);
+        int shifted1 = x >> intCount(count);
+        int shifted2 = x >> INT_LOW;
+        return shifted1 == shifted2;
     }
 
     @Test
-    @IR(failOn = {IRNode.URSHIFT_I}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = IRNode.CMP_I)
     public static int testIntURShift(int x, int count) {
-        return x >>> intCount(count);
+        int shifted1 = x >>> intCount(count);
+        int shifted2 = x >>> INT_LOW;
+	    return shifted1 == shifted2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.CMP_I)
+    public static boolean testIntLShiftWithLoopOpt(int x, int count) {
+        int i;
+        for (i = 1; i < INT_LOW; i++);
+        int mCount = (count & ~31) | i;
+        int shifted1 = x << mCount;
+        int shifted2 = x << INT_LOW;
+        return shifted1 == shifted2;
     }
 
     // ---------------- shift test for long ----------------
     @Test
-    @IR(failOn = {IRNode.LSHIFT_L}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = IRNode.CMP_L)
     public static long testLongLShift(long x, int count) {
-        return x << longCount(count);
+        long shifted1 = x << longCount(count);
+        long shifted2 = x << LONG_LOW;
+        return shifted1 == shifted2;
     }
 
     @Test
-    @IR(failOn = {IRNode.RSHIFT_L}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = IRNode.CMP_L)
     public static long testLongRShift(long x, int count) {
-        return x >> longCount(count);
+        long shifted1 = x >> longCount(count);
+        long shifted2 = x >> LONG_LOW;
+        return shifted1 == shifted2;
     }
 
     @Test
-    @IR(failOn = {IRNode.URSHIFT_L}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = IRNode.CMP_L)
     public static long testLongURShift(long x, int count) {
-        return x >>> longCount(count);
+        long shifted1 = x >>> longCount(count);
+        long shifted2 = x >>> LONG_LOW;
+        return shifted1 == shifted2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.CMP_L)
+    public static boolean testLongLShiftWithLoopOpt(long x, int count) {
+        int i;
+        for (i = 1; i < LONG_LOW; i++);
+        int mCount = (count & ~63) | i;
+        long shifted1 = x << mCount;
+        long shifted2 = x << LONG_LOW;
+        return shifted1 == shifted2;
     }
 
     @Run(test = {"testIntLShift",
                  "testIntURShift",
                  "testIntRShift",
+                 "testIntLShiftWithLoopOpt",
                  "testLongLShift",
                  "testLongURShift",
-                 "testLongRShift"})
+                 "testLongRShift",
+                 "testLongLShiftWithLoopOpt"})
     public static void runShift() {
-        count++;
-        int i = 0x12345678;
-        Asserts.assertEQ(testIntLShift(i, count), i);
-        Asserts.assertEQ(testIntURShift(i, count), i);
-        Asserts.assertEQ(testIntRShift(i, count), i);
-
-        long l = 0xFEDCBA9876543210L;
-        Asserts.assertEQ(testLongLShift(l, count), l);
-        Asserts.assertEQ(testLongURShift(l, count), l);
-        Asserts.assertEQ(testLongRShift(l, count), l);
+        Asserts.assertTrue(testIntLShift(RAND_I,RAND_COUNT));
+        Asserts.assertTrue(testIntURShift(RAND_I,RAND_COUNT));
+        Asserts.assertTrue(testIntRShift(RAND_I,RAND_COUNT));
+        Asserts.assertTrue(testIntLShiftWithLoopOpt(RAND_I,RAND_COUNT));
+        Asserts.assertTrue(testLongLShift(RAND_L,RAND_COUNT));
+        Asserts.assertTrue(testLongURShift(RAND_L,RAND_COUNT));
+        Asserts.assertTrue(testLongRShift(RAND_L,RAND_COUNT));
+        Asserts.assertTrue(testLongLShiftWithLoopOpt(RAND_L,RAND_COUNT));
     }
 }
