@@ -55,6 +55,7 @@ public class kill003 extends JdbTest {
     public static void main (String argv[]) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
+        compoundPromptIdent = COMPOUND_PROMPT_IDENT;
         new kill003().runTest(argv);
     }
 
@@ -65,6 +66,7 @@ public class kill003 extends JdbTest {
     static final String MYTHREAD        = "MyThread";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
     static final String DEBUGGEE_EXCEPTION = DEBUGGEE_CLASS + ".exception";
+    static final String COMPOUND_PROMPT_IDENT = "main";
 
     protected void runCases() {
         String[] reply;
