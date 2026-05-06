@@ -117,7 +117,7 @@
           "value is used as the initial threshold and may be adjusted "     \
           "ergonomically by G1. "                                           \
           "A value of 0 will result in as frequent as possible concurrent " \
-          "marking cycles. A value of 100 disables concurrent marking. "    \
+          "cycles. A value of 100 disables concurrent cycles. "             \
           "Fragmentation waste in the old generation is not considered "    \
           "free space in this calculation.")                                \
           range(0, 100)                                                     \
