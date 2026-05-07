@@ -99,6 +99,6 @@ size_t ShenandoahCompactHeuristics::estimate_bytes_allocated_since_gc_start() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   const double average_allocation_rate = heap->alloc_rate().average();
   const double now = os::elapsedTime();
-  const double elapsed_seconds = now - heap->heuristics()->cycle_start_time_seconds() + 1;
+  const double elapsed_seconds = now - heap->heuristics()->cycle_start_time_seconds();
   return average_allocation_rate * elapsed_seconds;
 }
