@@ -25,11 +25,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
 
-#include <cmath>
-
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 
 #include "logging/log.hpp"
+
+#include <cmath>
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
