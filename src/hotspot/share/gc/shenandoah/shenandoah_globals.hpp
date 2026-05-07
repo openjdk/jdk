@@ -34,7 +34,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uint, ShenandoahMomentaryAllocRateSampleWindow, 12, EXPERIMENTAL, \
+  product(uint, ShenandoahMomentaryAllocRateSampleWindow, 6, EXPERIMENTAL, \
           "The number of samples in the momentary allocation rate moving "  \
           "average. This window serves to detect momentary spikes in the "  \
           "allocation rate. A smaller value allows quicker response to "    \
@@ -42,7 +42,7 @@
           "and requires more monitoring effort.")                           \
           range(1, 1000)                                                    \
                                                                             \
-  product(uint, ShenandoahRecentAllocRateSampleWindow, 60, EXPERIMENTAL,    \
+  product(uint, ShenandoahRecentAllocRateSampleWindow, 20, EXPERIMENTAL,    \
           "The number of samples in the recent allocation rate moving "     \
           "average. These samples are analyzed to determine whether "       \
           "allocation rates are accelerating.  Acceleration may occur "     \
@@ -59,6 +59,11 @@
           "sampled values will have an upward slope, manifesting as "       \
           "acceleration.")                                                  \
           range(1,5000)                                                     \
+                                                                            \
+  product(uint, ShenandoahAllocRateSampleWindow, 100, EXPERIMENTAL,         \
+          "The size of the moving window over which the average "           \
+           "baseline allocation rate is maintained.")                       \
+           range(1,10000)                                                   \
                                                                             \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \
@@ -263,10 +268,6 @@
           "In percents of total garbage found. Setting this threshold "     \
           "to 100 effectively disables the shortcut.")                      \
           range(0,100)                                                      \
-                                                                            \
-  product(uint, ShenandoahAllocRateSampleWindow, 250, EXPERIMENTAL,         \
-          "The size of the moving window over which the average "           \
-          "allocation rate is maintained.")                                 \
                                                                             \
   product(double, ShenandoahAdaptiveInitialConfidence, 1.8, EXPERIMENTAL,   \
           "The number of standard deviations used to determine an initial " \
