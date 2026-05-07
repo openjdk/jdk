@@ -38,7 +38,8 @@ constexpr static const JfrSamplerParams _disabled_params = {
                                                            };
 
 constexpr static const JfrEventId throttleble_events[] = {
-    JfrCPUTimeSampleEvent, JfrObjectAllocationSampleEvent,  JfrSafepointLatencyEvent
+    JfrCPUTimeSampleEvent, JfrObjectAllocationSampleEvent,  JfrSafepointLatencyEvent,
+    JfrStackTraceRequestEvent
 };
 constexpr static int num_throttled_events = sizeof(throttleble_events) / sizeof(throttleble_events[0]);
 

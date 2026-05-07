@@ -1006,7 +1006,7 @@
 
   <Event name="StackTraceRequest" category="Java Virtual Machine, Profiling" label="Stack Trace Request"
     description="Stack trace captured via JVMTI RequestStackTrace extension API"
-    thread="false" experimental="true" startTime="false">
+    throttle="true" thread="false" experimental="true" startTime="false">
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="Thread" name="eventThread" label="Thread" />
     <Field type="long" name="userData" label="User Data"

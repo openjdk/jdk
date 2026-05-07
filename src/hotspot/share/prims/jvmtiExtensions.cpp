@@ -38,7 +38,6 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
-#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
@@ -49,8 +48,6 @@ GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
 
 // the list of extension events
 GrowableArray<jvmtiExtensionEventInfo*>* JvmtiExtensions::_ext_events;
-
-volatile bool JvmtiExtensions::_request_stack_trace_requested = false;
 
 //
 // Extension Functions
@@ -219,28 +216,6 @@ public:
 
 #endif // INCLUDE_JFR
 
-// Parameters: (const jvmtiEnv* env)
-static jvmtiError JNICALL EnableRequestStackTrace(const jvmtiEnv* env, ...) {
-  JvmtiExtensions::set_request_stack_trace_requested();
-#if INCLUDE_JFR
-  if (JfrRecorder::is_created()) {
-    JfrStackWalker::initialize();
-  }
-#endif // INCLUDE_JFR
-  return JVMTI_ERROR_NONE;
-}
-
-// Parameters: (const jvmtiEnv* env)
-static jvmtiError JNICALL DisableRequestStackTrace(const jvmtiEnv* env, ...) {
-  JvmtiExtensions::clear_request_stack_trace_requested();
-#if INCLUDE_JFR
-  if (JfrRecorder::is_created()) {
-    JfrStackWalker::teardown();
-  }
-#endif // INCLUDE_JFR
-  return JVMTI_ERROR_NONE;
-}
-
 // Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jlong user_data)
 static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
 #if !INCLUDE_JFR
@@ -354,26 +329,6 @@ void JvmtiExtensions::register_extensions() {
     errors
   };
 
-  static jvmtiExtensionFunctionInfo ext_func_init_rst = {
-    (jvmtiExtensionFunction)EnableRequestStackTrace,
-    (char*)"com.sun.hotspot.functions.EnableRequestStackTrace",
-    (char*)"Initialize the RequestStackTrace extension (must be called during Agent_OnLoad)",
-    0,
-    nullptr,
-    0,
-    nullptr
-  };
-
-  static jvmtiExtensionFunctionInfo ext_func_disable_rst = {
-    (jvmtiExtensionFunction)DisableRequestStackTrace,
-    (char*)"com.sun.hotspot.functions.DisableRequestStackTrace",
-    (char*)"Disable the RequestStackTrace extension",
-    0,
-    nullptr,
-    0,
-    nullptr
-  };
-
   static jvmtiParamInfo func_params_rst[] = {
     { (char*)"thread",    JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_TRUE },
     { (char*)"ucontext",  JVMTI_KIND_IN_PTR, JVMTI_TYPE_CVOID, JNI_TRUE },
@@ -399,8 +354,6 @@ void JvmtiExtensions::register_extensions() {
   _ext_functions->append(&ext_func0);
   _ext_functions->append(&ext_func1);
   _ext_functions->append(&ext_func2);
-  _ext_functions->append(&ext_func_init_rst);
-  _ext_functions->append(&ext_func_disable_rst);
   _ext_functions->append(&ext_func_rst);
 
   // register our extension event
@@ -632,12 +585,4 @@ jvmtiError JvmtiExtensions::set_event_callback(JvmtiEnv* env,
                                                      callback);
 
   return JVMTI_ERROR_NONE;
-}
-
-void JvmtiExtensions::post_initialize() {
-#if INCLUDE_JFR
-  if (_request_stack_trace_requested) {
-    JfrStackWalker::initialize();
-  }
-#endif // INCLUDE_JFR
 }
