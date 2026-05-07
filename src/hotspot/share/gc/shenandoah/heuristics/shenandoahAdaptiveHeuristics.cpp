@@ -307,8 +307,8 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(ShenandoahAll
                           _space_info->name(), anticipated_gc_duration * 1000, PROPERFMT_F_ARGS(avg_alloc_rate));
 
   if (anticipated_gc_duration * avg_alloc_rate > allocatable_bytes) {
-    log_trigger("Anticipated GC duration (%.2f ms) is above the time for average allocation rate (" PROPERFMT_F "B/s)"
-                " to deplete free headroom (" PROPERFMT "s) (margin of error = %.2f)",
+    log_trigger("Anticipated GC duration (%.2f ms) is above the time for average allocation rate (" PROPERFMT_F "/s)"
+                " to deplete free headroom (" PROPERFMT ") (margin of error = %.2f)",
                 anticipated_gc_duration * 1000,
                 PROPERFMT_F_ARGS(avg_alloc_rate), PROPERFMTARGS(allocatable_bytes), _margin_of_error_sd);
     accept_trigger_with_type(RATE);
