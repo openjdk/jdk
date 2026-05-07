@@ -45,6 +45,8 @@ import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
+ * Security properties plugin.
+ *
  * Creates the java.security configuration file in the output image and
  * overrides the property values with corresponding properties in the
  * specified file.
@@ -54,7 +56,10 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
     private static final String RES = "/java.base/conf/security/java.security";
 
     // holds properties and values that will be overridden
-    private Map<String, String> props = new HashMap<>();
+    private Map<String, String> props;
+
+    // the include filename
+    private String includeFile;
 
     public SecurityPropertiesPlugin() {
         super("security-properties");
@@ -66,27 +71,67 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
     }
 
     @Override
+    public boolean hasRawArgument() {
+        return true;
+    }
+
+    @Override
     public void configure(Map<String, String> config) {
-        String file = config.get(getName());
-        if (file == null) {
+        String operation = config.get(getName());
+        if (operation == null) {
             throw new AssertionError();
         }
 
-        Properties overrideProps = new Properties();
-        try (FileInputStream fis = new FileInputStream(file)) {
-            overrideProps.load(fis);
-        } catch (IOException ioe) {
-            throw new IllegalArgumentException(ioe);
-        }
-        if (overrideProps.containsKey("include")) {
+        String[] options = operation.split(":");
+        if (options.length > 2) {
             throw new IllegalArgumentException(
-                "the include property is not supported");
+                "Each option can be specified at most once");
         }
-        for (String name : overrideProps.stringPropertyNames()) {
-            props.put(name, overrideProps.getProperty(name));
-        }
-        if (props.isEmpty()) {
-            throw new IllegalArgumentException("No properties in " + file);
+        for (String option : options) {
+            String[] args = option.split("=");
+            if (args.length != 2) {
+                throw new IllegalArgumentException("Invalid syntax: " + option);
+            }
+            switch (args[0]) {
+                case "props":
+                    if (props != null) {
+                        throw new IllegalArgumentException(
+                            "Only one props option can be specified");
+                    }
+                    props = new HashMap<>();
+                    String propsFile = args[1];
+                    Properties overrideProps = new Properties();
+                    try (FileInputStream fis = new FileInputStream(propsFile)) {
+                        overrideProps.load(fis);
+                    } catch (IOException ioe) {
+                        throw new IllegalArgumentException(ioe);
+                    }
+                    if (overrideProps.containsKey("include")) {
+                        throw new IllegalArgumentException(
+                            "the include property is not supported in a " +
+                            "properties file");
+                    }
+                    for (String name : overrideProps.stringPropertyNames()) {
+                        props.put(name, overrideProps.getProperty(name));
+                    }
+                    if (props.isEmpty()) {
+                        throw new IllegalArgumentException("No properties in "
+                                                           + propsFile);
+                    }
+                    break;
+
+                case "include":
+                    if (includeFile != null) {
+                        throw new IllegalArgumentException(
+                            "Only one include option can be specified");
+                    }
+                    includeFile = args[1];
+                    break;
+
+                default:
+                    throw new IllegalArgumentException(
+                        "Invalid option: " + args[0]);
+            }
         }
     }
 
@@ -104,6 +149,22 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
     }
 
     private byte[] processProperties(InputStream content) {
+
+        if (props == null) {
+            // only include option specified
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (OutputStreamWriter osw = new OutputStreamWriter(baos);
+                 BufferedWriter bw = new BufferedWriter(osw)) {
+                 baos.write(content.readAllBytes());
+                 // add include directive at end
+                 bw.append("include=" + includeFile);
+                 bw.newLine();
+            } catch (Exception e) {
+                throw new PluginException(e);
+            }
+            return baos.toByteArray();
+        }
+         
         List<String> lines = new ArrayList<>();
 
         // read in contents of java.security file into separate list,
@@ -135,6 +196,11 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
         }
         // add user-defined properties at end
         props.forEach((k, v) -> lines.add(k + "=" + v));
+
+        // add include directive at end, if specified
+        if (includeFile != null) {
+            lines.add("include=" + includeFile);
+        }
 
         // write contents of list to byte array
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
