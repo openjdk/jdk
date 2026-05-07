@@ -60,6 +60,21 @@ TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared) {
   EXPECT_NEAR(seq.predict(5, 1), 17.138, 0.001);
 }
 
+TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared_overfow) {
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
+  for (uint i = 0; i < SAMPLE_SIZE; i++) {
+    seq.add(1, 1);
+    seq.add(2, 4);
+    seq.add(3, 9);
+  }
+
+  EXPECT_NEAR(seq.predict(4, 0), 12.666, 0.001);
+  EXPECT_NEAR(seq.predict(5, 0), 16.666, 0.001);
+  // Give a margin of error that incorporates residuals standard deviation
+  EXPECT_NEAR(seq.predict(4, 1), 13.138, 0.001);
+  EXPECT_NEAR(seq.predict(5, 1), 17.138, 0.001);
+}
+
 TEST_VM(ShenandoahWeightedSeqTest, simple_average_no_samples) {
   ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   EXPECT_DOUBLE_EQ(seq.average(), 0.0);
@@ -68,6 +83,14 @@ TEST_VM(ShenandoahWeightedSeqTest, simple_average_no_samples) {
 TEST_VM(ShenandoahWeightedSeqTest, simple_average_one_sample) {
   ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 1);
+  EXPECT_DOUBLE_EQ(seq.average(), 1.0);
+}
+
+TEST_VM(ShenandoahWeightedSeqTest, simple_average_overflow) {
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
+  for (uint i = 0; i < SAMPLE_SIZE + 1; i++) {
+    seq.add(i, 1);
+  }
   EXPECT_DOUBLE_EQ(seq.average(), 1.0);
 }
 
@@ -93,5 +116,13 @@ TEST_VM(ShenandoahWeightedSeqTest, weighted_average_no_samples) {
 TEST_VM(ShenandoahWeightedSeqTest, weighted_average_one_sample) {
   ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   seq.add(1, 2, 2);
+  EXPECT_DOUBLE_EQ(seq.weighted_average(), 2.0);
+}
+
+TEST_VM(ShenandoahWeightedSeqTest, weighted_average_overflow) {
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
+  for (uint i = 0; i < SAMPLE_SIZE + 1; i++) {
+    seq.add(i, 2, 2);
+  }
   EXPECT_DOUBLE_EQ(seq.weighted_average(), 2.0);
 }
