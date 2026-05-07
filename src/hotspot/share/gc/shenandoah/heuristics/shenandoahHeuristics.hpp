@@ -83,7 +83,7 @@ private:
   double _most_recent_planned_sleep_interval;
 
 protected:
-  static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
+  static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
   bool _start_gc_is_pending;              // True denotes that GC has been triggered, so no need to trigger again.
   size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
@@ -280,11 +280,6 @@ public:
 
   double elapsed_cycle_time() const;
   double elapsed_degenerated_cycle_time() const;
-
-  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) {
-    // do nothing
-    return 0;
-  }
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);

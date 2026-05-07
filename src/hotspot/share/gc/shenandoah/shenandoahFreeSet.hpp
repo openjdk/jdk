@@ -512,8 +512,6 @@ private:
   size_t _total_young_regions;
   size_t _total_global_regions;
 
-  size_t _mutator_bytes_allocated_since_gc_start;
-
   // If only affiliation changes are promote-in-place and generation sizes have not changed,
   //    we have AffiliatedChangesAreGlobalNeutral
   // If only affiliation changes are non-empty regions moved from Mutator to Collector and young size has not changed,
