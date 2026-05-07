@@ -46,6 +46,7 @@ class ShenandoahWeightedSeq {
   double _weighted_yy_sum;
   double _xy_sum;
   double _xx_sum;
+  double _yy_sum;
 
   double _slope;            // slope
   double _y_intercept;      // y-intercept
@@ -68,6 +69,10 @@ public:
 
   // Add x, y to the sequence. Weight will be calculated as x - last().
   void add(double x, double y);
+
+  void deduct_oldest(double x, double y, double weight);
+
+  void add_latest(double x, double y, double weight);
 
   // Add x, y to the sequence using given weight.
   void add(double x, double y, double weight);

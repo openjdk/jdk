@@ -41,6 +41,7 @@ ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
   _weighted_yy_sum(0),
   _xy_sum(0),
   _xx_sum(0),
+  _yy_sum(0),
   _slope(0.0),
   _y_intercept(0.0),
   _residual_sd(0.0) {
@@ -58,30 +59,40 @@ void ShenandoahWeightedSeq::add(double x, double y) {
   add(x, y, weight);
 }
 
+void ShenandoahWeightedSeq::deduct_oldest(const double x, const double y, const double weight) {
+  _x_sum -= x;
+  _y_sum -= y;
+  _xy_sum -= x * y;
+  _xx_sum -= x * x;
+  _yy_sum -= y * y;
+  _weighted_y_sum -= y * weight;
+  _weighted_sum -= weight;
+  _weighted_yy_sum -= y * y * weight;
+}
+
+void ShenandoahWeightedSeq::add_latest(double x, double y, double weight) {
+  _x_sum += x;
+  _y_sum += y;
+  _xy_sum += x * y;
+  _xx_sum += x * x;
+  _yy_sum += y * y;
+  _weighted_y_sum += y * weight;
+  _weighted_sum += weight;
+  _weighted_yy_sum += y * y * weight;
+}
+
 void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   // Update best-fit linear regression
   const uint index = (_first_sample_index + _num_samples) % _size;
   if (_num_samples == _size) {
-    _x_sum -= _x_values[index];
-    _y_sum -= _y_values[index];
-    _xy_sum -= _x_values[index] * _y_values[index];
-    _xx_sum -= _x_values[index] * _x_values[index];
-    _weighted_y_sum -= _weights[index] * _y_values[index];
-    _weighted_sum -= _weights[index];
-    _weighted_yy_sum -= _y_values[index] * _y_values[index] * _weights[index];
+    deduct_oldest(_x_values[index], _y_values[index], _weights[index]);
   }
 
   _x_values[index] = x;
   _y_values[index] = y;
   _weights[index] = weight;
 
-  _x_sum += x;
-  _y_sum += y;
-  _xy_sum += x * y;
-  _xx_sum += x * x;
-  _weighted_y_sum += y * weight;
-  _weighted_sum += weight;
-  _weighted_yy_sum += y * y * weight;
+  add_latest(x, y, weight);
 
   if (_num_samples < _size) {
     _num_samples++;
@@ -98,20 +109,15 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   }
 
   // Assume x values are monotonically increasing, denominator does not equal zero.
-  const double denominator = _num_samples * _xx_sum - _x_sum * _x_sum;
-  assert(denominator != 0.0, "Invariant: samples: %u, sum_of_xx: %.6f, sum_of_x_values: %.6f",
+  const double x_spread = _num_samples * _xx_sum - _x_sum * _x_sum;
+  assert(x_spread != 0.0, "Invariant: samples: %u, sum_of_xx: %.6f, sum_of_x_values: %.6f",
          _num_samples, _xx_sum, _x_sum);
-  _slope = (_num_samples * _xy_sum - _x_sum * _y_sum) / denominator;
+  _slope = (_num_samples * _xy_sum - _x_sum * _y_sum) / x_spread;
   _y_intercept = (_y_sum - _slope * _x_sum) / _num_samples;
-  double sum_of_squared_deviations = 0.0;
-  for (size_t i = 0; i < _num_samples; i++) {
-    const uint idx = (_first_sample_index + i) % _size;
-    const double x_value = _x_values[idx];
-    const double predicted_y = _slope * x_value + _y_intercept;
-    const double deviation = predicted_y - _y_values[idx];
-    sum_of_squared_deviations += deviation * deviation;
-  }
-  _residual_sd = std::sqrt(sum_of_squared_deviations / _num_samples);
+  const double total_sum_of_squares = _yy_sum - _y_sum * _y_sum / _num_samples;
+  const double sum_of_cross_deviations = _xy_sum - _x_sum * _y_sum / _num_samples;
+  const double residual_sum_of_squares = total_sum_of_squares - _slope * sum_of_cross_deviations;
+  _residual_sd = std::sqrt(MAX2(residual_sum_of_squares, 0.0) / _num_samples);
 }
 
 double ShenandoahWeightedSeq::predict(double x, double margin_of_error) const {
