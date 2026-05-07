@@ -66,7 +66,7 @@ public class SecurityPropertiesPluginTest {
          * one that is a user-defined property, and one that
          * overrides a multi-valued property.
          */
-        Map<String, String> propMap = 
+        Map<String, String> propMap =
                 Map.of("keystore.type", "bogus",
                        "foo", "bar",
                        "jdk.certpath.disabledAlgorithms", "MD2");

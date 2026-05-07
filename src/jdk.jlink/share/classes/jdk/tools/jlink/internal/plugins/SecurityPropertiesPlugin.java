@@ -164,7 +164,7 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
             }
             return baos.toByteArray();
         }
-         
+
         List<String> lines = new ArrayList<>();
 
         // read in contents of java.security file into separate list,
