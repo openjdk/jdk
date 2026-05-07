@@ -156,7 +156,7 @@ import java.util.function.Supplier;
  * the constant {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
  * the initialized constant's content is read. Hence, the initialized constant's content,
  * including any {@code final} fields of any newly created objects, is safely published.
- * As subsequent reading of the content might be elided, there are no other memory
+ * As subsequent retrieval of the content might be elided, there are no other memory
  * ordering or visibility guarantees provided as a consequence of calling
  * {@linkplain #get()} again.
  * <p>

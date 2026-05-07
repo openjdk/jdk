@@ -410,7 +410,7 @@ final class LazyCollections {
 
             @Override public V      setValue(V value) { throw ImmutableCollections.uoe(); }
             @Override public V      getValue() { return map.orElseCompute(getKey, map.indexFor(getKey)); }
-            @Override public int    hashCode() { return hash(getKey()) ^ hash(getValue()); }
+            @Override public int    hashCode() { return Objects.hashCode(getKey()) ^ Objects.hashCode(getValue()); }
             @Override public String toString() { return getKey() + "=" + getValue(); }
 
             @Override
@@ -421,9 +421,6 @@ final class LazyCollections {
                         && Objects.equals(getValue(), e.getValue());
             }
 
-            private static int hash(Object obj) {
-                return (obj == null) ? 0 : obj.hashCode();
-            }
         }
 
         @Override

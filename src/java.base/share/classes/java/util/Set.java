@@ -773,13 +773,13 @@ public interface Set<E> extends Collection<E> {
      * computing function again) with no cause and with a message that includes the name
      * of the original unchecked exception's class.
      * <p>
-     * All failures are handled in this way. There is a special cases that cause
+     * All failures are handled in this way. There is a special case that causes
      * unchecked exceptions to be thrown:
      * <p>
      * If the computing function recursively invokes itself (for the same membership
      * candidate) via the returned lazy set, a {@linkplain NoSuchElementException}
      * (with an {@linkplain IllegalStateException} as a cause) will be thrown.
-     *
+     * <p>
      * The returned set's {@linkplain Object Object methods};
      * {@linkplain Object#equals(Object) equals()},
      * {@linkplain Object#hashCode() hashCode()}, and
@@ -823,8 +823,8 @@ public interface Set<E> extends Collection<E> {
      *     }
      *
      *     public static void process() {
-     *         // The if condition (and subsequent elimiated branch) is
-     *          // eligible for constant folding
+     *         // The if condition (and subsequent eliminated branch) is
+     *         // eligible for constant folding (and code elimination).
      *         if (OPTIONS.contains(Option.DRY_RUN)) {
      *             // Skip processing in DRY_RUN mode
      *             return;

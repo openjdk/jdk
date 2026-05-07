@@ -104,7 +104,7 @@ final class LazyListTest {
     }
 
     void exceptionInComputingFunction(LazyConstantTestUtil.CountingIntFunction<Integer> cif,
-                                      Class<? extends RuntimeException> causeType) {
+                                      Class<? extends Throwable> causeType) {
         var lazy = List.ofLazy(SIZE, cif);
         var x = assertThrows(NoSuchElementException.class, () -> lazy.get(INDEX));
         assertEquals(LazyConstantTestUtil.expectedMessage(causeType, INDEX), x.getMessage());

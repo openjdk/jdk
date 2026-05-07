@@ -146,7 +146,7 @@ public class ThrowablesClassUnloading {
     private static void assertLazyAccessFails(List<?> list, String throwableName) {
         var x = assertThrows(NoSuchElementException.class, () -> list.get(0));
         var message = x.getMessage();
-        assertTrue(message == null || message.contains(throwableName), "Missing throwable name in message: " + message);
+        assertTrue(message.contains(throwableName), "Missing throwable name in message: " + message);
     }
 
     private static boolean waitFor(BooleanSupplier condition, long timeoutMillis) {

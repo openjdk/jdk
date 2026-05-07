@@ -253,7 +253,7 @@ final class LazySetTest {
         Set<Value> lazy = Set.ofLazy(set, k -> ref.get().contains(k));
         ref.set(lazy);
         var x = assertThrows(NoSuchElementException.class, () -> lazy.contains(MEMBER));
-        assertEquals(LazyConstantTestUtil.expectedMessage(IllegalStateException.class, MEMBER), x.getMessage());
+        assertEquals(LazyConstantTestUtil.expectedMessage(java.lang.IllegalStateException.class, MEMBER), x.getMessage());
         assertEquals("Recursive initialization of a lazy collection is illegal: " + MEMBER, x.getCause().getMessage());
         assertEquals(IllegalStateException.class, x.getCause().getClass());
     }

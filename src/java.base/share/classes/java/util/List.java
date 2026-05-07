@@ -1258,7 +1258,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@snippet lang = java:
      * class Application {
      *
-     *     private static final POOL_SIZE = 3;
+     *     private static final int POOL_SIZE = 3;
      *
      *     static final List<OrderController> ORDERS
      *         = List.ofLazy(POOL_SIZE, _ -> new OrderController());
@@ -1308,6 +1308,7 @@ public interface List<E> extends SequencedCollection<E> {
      *                          (may not return {@code null})
      * @param <E>               the type of elements in the returned list
      * @throws IllegalArgumentException if the provided {@code size} is negative.
+     * @throws NullPointerException     if the provided {@code computingFunction} is {@code null}
      *
      * @see LazyConstant
      * @since 26

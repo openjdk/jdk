@@ -139,7 +139,7 @@ public class LazyConstantClassUnloading {
     private static void assertLazyAccessFails(LazyConstant<?> lazyConstant, String throwableName) {
         var x = assertThrows(NoSuchElementException.class, () -> lazyConstant.get());
         var message = x.getMessage();
-        assertTrue(message == null || message.contains(throwableName), "Missing throwable name in message: " + message);
+        assertTrue(message.contains(throwableName), "Missing throwable name in message: " + message);
     }
 
     private static boolean waitFor(BooleanSupplier condition, long timeoutMillis) {

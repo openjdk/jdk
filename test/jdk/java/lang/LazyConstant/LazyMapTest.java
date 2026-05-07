@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.Arrays;
@@ -48,6 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -158,30 +160,38 @@ final class LazyMapTest {
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void exception(Set<Value> set) {
-        LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(_ -> {
-            throw new UnsupportedOperationException("Initial exception");
-        });
-        var lazy = Map.ofLazy(set, cif);
-        var x = assertThrows(NoSuchElementException.class, () -> lazy.get(KEY));
-        assertEquals(LazyConstantTestUtil.expectedMessage(UnsupportedOperationException.class, KEY), x.getMessage());
-        assertEquals(UnsupportedOperationException.class, x.getCause().getClass());
-        assertEquals(1, cif.cnt());
+        // Test different Throwable categories
+        for (LazyConstantTestUtil.Thrower thrower : LazyConstantTestUtil.throwers()) {
+            AtomicReference<Throwable> exceptionThrown = new AtomicReference<>();
+            LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(_ -> {
+                Throwable t = thrower.supplier().get();
+                exceptionThrown.set(t);
+                LazyConstantTestUtil.sneakyThrow(t);
+                return 42; // Unreachable
+            });
+            var lazy = Map.ofLazy(set, cif);
+            var x = assertThrows(NoSuchElementException.class, () -> lazy.get(KEY));
+            assertEquals(LazyConstantTestUtil.expectedMessage(exceptionThrown.get().getClass(), KEY), x.getMessage());
+            assertEquals(exceptionThrown.get().getClass(), x.getCause().getClass());
+            assertEquals(thrower.message(), x.getCause().getMessage());
+            assertEquals(1, cif.cnt());
 
-        var x2 = assertThrows(NoSuchElementException.class, () -> lazy.get(KEY));
-        assertEquals(1, cif.cnt());
-        assertEquals(LazyConstantTestUtil.expectedMessage(UnsupportedOperationException.class, KEY), x2.getMessage());
-        // The initial cause should only be present on the _first_ unchecked exception
-        assertNull(x2.getCause());
+            var x2 = assertThrows(NoSuchElementException.class, () -> lazy.get(KEY));
+            assertEquals(1, cif.cnt());
+            assertEquals(LazyConstantTestUtil.expectedMessage(exceptionThrown.get().getClass(), KEY), x2.getMessage());
+            // The initial cause should only be present on the _first_ unchecked exception
+            assertNull(x2.getCause());
 
-        for (Value v : set) {
-            // Make sure all values are touched
-            assertThrows(Exception.class, () -> lazy.get(v));
+            for (Value v : set) {
+                // Make sure all values are touched
+                assertThrows(Exception.class, () -> lazy.get(v));
+            }
+
+            var xToString = assertThrows(NoSuchElementException.class, lazy::toString);
+            var xMessage = xToString.getMessage();
+            assertTrue(xMessage.startsWith(LazyConstantTestUtil.expectedMessage(exceptionThrown.get().getClass(), 0).substring(0, xMessage.indexOf("'"))));
+            assertEquals(set.size(), cif.cnt());
         }
-
-        var xToString = assertThrows(NoSuchElementException.class, lazy::toString);
-        var xMessage = xToString.getMessage();
-        assertTrue(xMessage.startsWith(LazyConstantTestUtil.expectedMessage(UnsupportedOperationException.class, 0).substring(0, xMessage.indexOf("'"))));
-        assertEquals(set.size(), cif.cnt());
     }
 
     @ParameterizedTest

@@ -21,8 +21,10 @@
  * questions.
  */
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
 
@@ -185,8 +187,27 @@ final class LazyConstantTestUtil {
         }
     }
 
-    static String expectedMessage(Class<? extends RuntimeException> throwableClass, Object input) {
+    static String expectedMessage(Class<? extends Throwable> throwableClass, Object input) {
         return "Unable to access the lazy collection because " + throwableClass.getName() + " was thrown at initial computation for input '" + input + "'";
+    }
+
+    @SuppressWarnings("unchecked")
+    static <E extends Throwable> void sneakyThrow(Throwable e) throws E {
+        throw (E) e;
+    }
+
+    record Thrower(String message, Function<String, ? extends Throwable> factory) {
+        public Supplier<? extends Throwable> supplier() {
+            return () -> factory.apply(Thrower.this.message);
+        }
+    }
+
+    static List<Thrower> throwers() {
+        return List.of(
+                new Thrower("Initial checked exception", IOException::new),
+                new Thrower("Initial runtime exception", UnsupportedOperationException::new),
+                new Thrower("Initial Error", InternalError::new)
+        );
     }
 
 }

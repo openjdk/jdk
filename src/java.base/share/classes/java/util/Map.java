@@ -1808,9 +1808,9 @@ public interface Map<K, V> {
      * The {@code Set} of {@code keys} must use {@linkplain Set#equals(Object) equals()}
      * as its equivalence relation, or its comparison method must be consistent with
      * equals, otherwise the behavior is unspecified.
-     * <P>
+     * <p>
      * Here is an example involving an application that caches the values returned by some
-     * {@code expensiveOperation(int param))} for a given set of input parameters. By
+     * {@code expensiveOperation(int param)} for a given set of input parameters. By
      * using a lazy map, we ensure that the {@code expensiveOperation(int param)} is
      * called at most once per distinct input parameter. Once created, the retrieval of
      * values is eligible for constant folding by the JVM:
@@ -1824,7 +1824,7 @@ public interface Map<K, V> {
      *         return Optional.ofNullable(CACHE.get(param));
      *     }
      *
-     *     private double expensiveOperation(int param) {
+     *     private static double expensiveOperation(int param) {
      *       // Calculate the value ...
      *     }
      *
@@ -1872,8 +1872,9 @@ public interface Map<K, V> {
      * @param computingFunction to invoke whenever an associated value is first accessed
      * @param <K>               the type of keys maintained by the returned map
      * @param <V>               the type of mapped values in the returned map
-     * @throws NullPointerException if the provided set of {@code keys} is {@code null}
-     *         or if the set of {@code keys} contains a {@code null} element.
+     * @throws NullPointerException if the provided set of {@code keys} is {@code null},
+     *         if the set of {@code keys} contains a {@code null} element, or
+     *         if the provided {@code computingFunction} is {@code null}
      *
      * @see LazyConstant
      * @since 26

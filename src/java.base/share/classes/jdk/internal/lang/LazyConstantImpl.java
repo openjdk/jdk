@@ -69,8 +69,8 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     // created by one thread and computed by another thread.
     // After the function is successfully invoked, the field is set to
     // `null` to allow the function to be collected. If the function fails, the field is
-    // set to the name of the exception class. We are not storing the exception class
-    // as that would have pinned the class loader of the exception.
+    // set to the fully qualified name of the exception class. We are not storing the
+    // exception class as that would have pinned the class loader of the exception.
     private volatile Object computingFunctionOrExceptionType;
 
     private LazyConstantImpl(Supplier<? extends T> computingFunction) {
@@ -90,29 +90,38 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
         synchronized (this) {
             T t = getAcquire();
             if (t == null) {
-                if (computingFunctionOrExceptionType instanceof Supplier<?> supplier) {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        final T newT = (T) supplier.get();
-                        t = newT;
-                        Objects.requireNonNull(t);
-                        setRelease(t);
-                        // Allow the underlying supplier to be collected after successful use
-                        computingFunctionOrExceptionType = null;
-                    } catch (Throwable ex) {
-                        // Release the original computing function and replace it with
-                        // an exception marker
-                        computingFunctionOrExceptionType = ex.getClass().getName().intern();
-                        throw new NoSuchElementException(ex);
+                switch (computingFunctionOrExceptionType) {
+                    case Supplier<?> computingFunction -> {
+                        try {
+                            @SuppressWarnings("unchecked")
+                            final T newT = (T) computingFunction.get();
+                            t = newT;
+                            Objects.requireNonNull(t);
+                            setRelease(t);
+                            // Allow the underlying supplier to be collected after
+                            // a successful initialization
+                            computingFunctionOrExceptionType = null;
+                        } catch (Throwable ex) {
+                            // Release the original computing function and replace it with
+                            // an exception marker
+                            final String exceptionType = ex.getClass().getName().intern();
+                            computingFunctionOrExceptionType = exceptionType;
+                            throw unableToAccessConstant(exceptionType, ex);
+                        }
                     }
-                } else {
-                    throw new NoSuchElementException("Unable to access the constant because " +
-                            computingFunctionOrExceptionType +
-                            " was thrown at initial computation");
+                    case String exceptionType ->
+                            throw unableToAccessConstant(exceptionType, null);
+                    default ->
+                            throw new InternalError("Cannot reach here");
                 }
             }
             return t;
         }
+    }
+
+    static NoSuchElementException unableToAccessConstant(String exceptionType, Throwable cause) {
+        return new NoSuchElementException("Unable to access the constant because " +
+                exceptionType + " was thrown at initial computation", cause);
     }
 
     // For testing only

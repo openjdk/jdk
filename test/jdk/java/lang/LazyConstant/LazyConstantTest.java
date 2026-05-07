@@ -33,6 +33,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -73,10 +76,17 @@ final class LazyConstantTest {
     @ParameterizedTest
     @MethodSource("factories")
     void exceptionInComputingFunction(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
-        LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(() -> {
-            throw new UnsupportedOperationException("Initial exception");
-        });
-        exceptionInComputingFunction(factory, cs, UnsupportedOperationException.class, "Initial exception");
+        // Test different Throwable categories
+        for (LazyConstantTestUtil.Thrower thrower : LazyConstantTestUtil.throwers()) {
+            AtomicReference<Throwable> exceptionThrown = new AtomicReference<>();
+            LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(() -> {
+                Throwable t = thrower.supplier().get();
+                exceptionThrown.set(t);
+                LazyConstantTestUtil.sneakyThrow(t);
+                return 42; // Unreachable
+            });
+            exceptionInComputingFunction(factory, cs, () -> exceptionThrown.get().getClass(), thrower.message());
+        }
     }
 
     @ParameterizedTest
@@ -85,15 +95,17 @@ final class LazyConstantTest {
         LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(() -> {
             return null;
         });
-        exceptionInComputingFunction(factory, cs, NullPointerException.class, null);
+        exceptionInComputingFunction(factory, cs, () -> NullPointerException.class, null);
     }
 
     void exceptionInComputingFunction(Function<Supplier<Integer>, LazyConstant<Integer>> factory,
                                       LazyConstantTestUtil.CountingSupplier<Integer> cs,
-                                      Class<? extends RuntimeException> causeType,
+                                      Supplier<Class<? extends Throwable>> causeTypeSupplier,
                                       String message) {
         var lazy = factory.apply(cs);
         var ix = assertThrows(NoSuchElementException.class, lazy::get);
+        // Now we can look at the throwable
+        var causeType = causeTypeSupplier.get();
         assertEquals(causeType, ix.getCause().getClass());
         if (message != null) {
             assertEquals(message, ix.getCause().getMessage());
@@ -211,7 +223,8 @@ final class LazyConstantTest {
         var x = assertThrows(NoSuchElementException.class, constant::get);
         assertEquals(IllegalStateException.class, x.getCause().getClass());
         assertEquals(1, cnt.get());
-        assertTrue(x.getMessage().contains(NaughtySupplier.class.getName()));
+        assertEquals("Unable to access the constant because java.lang.IllegalStateException was thrown at initial computation", x.getMessage());
+        assertTrue(x.getCause().getMessage().contains(NaughtySupplier.class.getName()),  x.getCause().getMessage());
     }
 
     @Test
