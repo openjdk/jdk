@@ -142,6 +142,11 @@ InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
     ciEnv* env = CURRENT_ENV;
     if (env != nullptr && env->task() != nullptr) {
       return env->get_cached_init_state(ident());
+    } else {
+      GUARDED_VM_ENTRY(
+        InstanceKlass* ik = get_instanceKlass();
+        _init_state = ik->init_state();
+      )
     }
   }
   return _init_state;
