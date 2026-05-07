@@ -38,9 +38,9 @@ import jdk.test.lib.process.ProcessTools;
 import java.util.List;
 
 public class CompileLevelParseTest {
-    private final static List<String> commandsWithCompileLevel = List.of("break", "compileonly", "exclude", "print");
-    private final static List<String> compLevels = List.of("0", "1", "11", "111", "10", "100", "101", "1000", "1111");
-    private final static List<String> invalidCompLevels = List.of("-9223372036854775808", "-1", "-1111", "10000", "2", "20000", "01012",
+    private static final List<String> commandsWithCompileLevel = List.of("break", "compileonly", "exclude", "print");
+    private static final List<String> compLevels = List.of("0", "1", "11", "111", "10", "100", "101", "1000", "1111");
+    private static final List<String> invalidCompLevels = List.of("-9223372036854775808", "-1", "-1111", "10000", "2", "20000", "01012",
             "91", "9", "c1", "true", "false");
     private static final String DEFAULT_COMP_LEVEL = "1111";
     private static final String METHOD_EXP = "java/lang/Object.toString";

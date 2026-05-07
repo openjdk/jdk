@@ -23,7 +23,6 @@
  */
 
 #include "classfile/symbolTable.hpp"
-#include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/methodMatcher.hpp"
@@ -499,7 +498,7 @@ bool CompilerOracle::applies_to_comp_level(const methodHandle& method, CompileCo
   }
 
   // Since we don't have bitmask for interpreter level (0), but still need to call CompilerOracle::should_print()
-  // from collect_profiled_methods() in java.cpp, a special value of CompLevel_any matches any bitmask, even 0
+  // from collect_profiled_methods() in java.cpp, a special value of CompLevel_any produces a match with any bitmask, even 0
   return current_level == CompLevel_any
       || bitmask_applies_to_comp_level(bitmask, current_level);
 }
@@ -828,7 +827,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
   const char* type_str = optiontype2name(type);
   int skipped = skip_whitespace(line);
   total_bytes_read += skipped;
-  char parseErrorBuf[80] = {};
+  char parse_error_buf[80] = {};
 
   if (type == OptionType::Intx) {
     intx value;
@@ -836,7 +835,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
     switch (option) {
       case CompileCommandEnum::MemLimit:
         // Special parsing for MemLimit
-        success = parseMemLimit(line, value, bytes_read, parseErrorBuf, sizeof(parseErrorBuf));
+        success = parseMemLimit(line, value, bytes_read, parse_error_buf, sizeof(parse_error_buf));
         break;
       case CompileCommandEnum::Break:
       case CompileCommandEnum::CompileOnly:
@@ -850,7 +849,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
         } else {
           success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
           if (success && !is_valid_comp_level_bitmask(value)) {
-            jio_snprintf(parseErrorBuf, sizeof(parseErrorBuf), ": invalid compilation level bitmask '%.*s'", bytes_read, line);
+            jio_snprintf(parse_error_buf, sizeof(parse_error_buf), ": invalid compilation level bitmask '%.*s'", bytes_read, line);
             success = false;
           }
         }
@@ -863,7 +862,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
       total_bytes_read += bytes_read;
       return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
-      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parseErrorBuf);
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parse_error_buf);
       return false;
     }
   } else if (type == OptionType::Uintx) {
@@ -871,7 +870,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
     bool success = false;
     if (option == CompileCommandEnum::MemStat) {
       // Special parsing for MemStat
-      success = parseMemStat(line, value, bytes_read, parseErrorBuf, sizeof(parseErrorBuf));
+      success = parseMemStat(line, value, bytes_read, parse_error_buf, sizeof(parse_error_buf));
     } else {
       // parse as raw number
       success = sscanf(line, "%zu%n", &value, &bytes_read) == 1;
@@ -880,7 +879,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
       total_bytes_read += bytes_read;
       return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
-      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parseErrorBuf);
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parse_error_buf);
       return false;
     }
   } else if (type == OptionType::Ccstr) {
@@ -1182,7 +1181,6 @@ bool CompilerOracle::parse_from_line(char* line) {
         case CompileCommandEnum::CompileOnly:
         case CompileCommandEnum::Exclude:
         case CompileCommandEnum::Print:
-          // Just fall through to scan_value() call: it handles empty values for the commands above
           break;
         case CompileCommandEnum::MemStat:
           // MemStat default action is to collect data but to not print

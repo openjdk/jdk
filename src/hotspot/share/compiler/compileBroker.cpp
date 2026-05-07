@@ -2417,7 +2417,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     task->print_post(tty);
   }
 
-    // We don't need directive further, release it
+  // We don't need directive further, release it
   task->set_directive(nullptr);
 
   Log(compilation, codecache) log;

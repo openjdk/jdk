@@ -1017,7 +1017,6 @@ public class CompileLevelWBTest {
         IO.println("==> entering main() <==");
         try {
             parseExpectedLevels(args);
-            //parseCompileCommandsFromVmInputArgs(testMethod);
             // Wait until compilers are free, so thresholds are not altered
             waitUntilCompilerQueuesIsAlmostEmpty();
 
