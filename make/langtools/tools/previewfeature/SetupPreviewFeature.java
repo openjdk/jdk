@@ -69,7 +69,8 @@ public class SetupPreviewFeature {
                         var trees = Trees.instance(task);
                         var elPath = trees.getPath(el);
                         insertPosition = (int) trees.getSourcePositions()
-                                                    .getStartPosition(elPath.getLeaf());
+                                                    .getStartPosition(elPath.getCompilationUnit(),
+                                                                      elPath.getLeaf());
                     }
                 }
             }
