@@ -25,6 +25,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
@@ -171,6 +172,12 @@ void ShenandoahControlThread::run_service() {
       // If this was the requested GC cycle, notify waiters about it
       if (is_gc_requested) {
         notify_gc_waiters();
+
+        // If WhiteBox requested a GC, notify the waiting WhiteBox thread that
+        // the requested cycle was completed.
+        if (cause == GCCause::_wb_breakpoint) {
+          ShenandoahBreakpoint::at_after_gc();
+        }
       }
 
       // If this cycle completed without being cancelled, notify waiters about it
