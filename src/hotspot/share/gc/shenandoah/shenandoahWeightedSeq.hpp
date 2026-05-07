@@ -89,15 +89,7 @@ public:
   double weighted_average() const { return _weighted_y_sum / MAX2(_weighted_sum, 1.0); }
 
   // Standard deviation for the weighted mean.
-  double weighted_sd() const {
-    if (_weighted_sum <= 0.0) {
-      return 0.0;
-    }
-
-    const double weighted_mean = _weighted_y_sum / _weighted_sum;
-    const double variance = _weighted_yy_sum / _weighted_sum - weighted_mean * weighted_mean;
-    return sqrt(MAX2(variance, 0.0));
-  }
+  double weighted_sd() const;
 
   // Provides the slope and y-intercept for the line of best fit through the sequence
   void fit_line(double& slope, double& intercept) const {

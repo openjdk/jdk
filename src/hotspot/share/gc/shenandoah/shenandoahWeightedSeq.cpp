@@ -26,6 +26,8 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 
+#include <cmath>
+
 ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
 : _size(size),
   _first_sample_index(0),
@@ -110,7 +112,7 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
     const double deviation = predicted_y - _y_values[idx];
     sum_of_squared_deviations += deviation * deviation;
   }
-  _residual_sd = sqrt(sum_of_squared_deviations / _num_samples);
+  _residual_sd = std::sqrt(sum_of_squared_deviations / _num_samples);
 }
 
 double ShenandoahWeightedSeq::predict(double x, double margin_of_error) const {
@@ -120,4 +122,14 @@ double ShenandoahWeightedSeq::predict(double x, double margin_of_error) const {
     return _y_sum / MAX2(_num_samples, 1u);
   }
   return prediction;
+}
+
+double ShenandoahWeightedSeq::weighted_sd() const {
+  if (_weighted_sum <= 0.0) {
+    return 0.0;
+  }
+
+  const double weighted_mean = _weighted_y_sum / _weighted_sum;
+  const double variance = _weighted_yy_sum / _weighted_sum - weighted_mean * weighted_mean;
+  return std::sqrt(MAX2(variance, 0.0));
 }
