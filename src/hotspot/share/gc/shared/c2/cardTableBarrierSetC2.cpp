@@ -126,7 +126,7 @@ Node* CardTableBarrierSetC2::byte_map_base_node(IdealKit* kit) const {
 #endif
   CardTable::CardValue* card_table_base = ci_card_table_address_const();
    if (card_table_base != nullptr) {
-     return kit->makecon(TypeRawPtr::make((address)card_table_base));
+     return kit->makecon(TypeRawPtr::make((address)card_table_base, relocInfo::none));
    } else {
      return kit->makecon(Type::get_zero_type(T_ADDRESS));
    }

@@ -22,6 +22,7 @@
  *
  */
 
+#include "ci/ciUtilities.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
@@ -769,6 +770,18 @@ void external_word_Relocation::fix_relocation_after_move(const CodeBuffer* src, 
     // probably a no-op.
     set_value(_target);
   }
+#ifdef ASSERT
+  // Card table base can point to any address,
+  // skip following checks if target matched it.
+  // Note: we need relocation for it because on Aarch64
+  // C2 GC barrier uses instruction `adrp` to construct it
+  // from displacement relative to current PC.
+  if (UseSerialGC || UseParallelGC) { // Only these GCs have constant card table base
+    if (target() == ci_card_table_address_as<address>()) {
+      return;
+    }
+  }
+#endif
   // If target is nullptr, this is  an absolute embedded reference to an external
   // location, which means  there is nothing to fix here.  In either case, the
   // resulting target should be an "external" address.

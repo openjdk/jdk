@@ -501,7 +501,7 @@ operand immIRotn() %{
 %}
 
 operand immPRot() %{
-  predicate(n->get_ptr() == 0 || (AsmOperand::is_rotated_imm(n->get_ptr()) && ((ConPNode*)n)->type()->reloc() == relocInfo::none));
+  predicate(n->get_ptr() == 0 || (AsmOperand::is_rotated_imm(n->get_ptr()) && ((ConPNode*)n)->type()->is_ptr()->reloc() == relocInfo::none));
 
   match(ConP);
 
