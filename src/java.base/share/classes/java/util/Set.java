@@ -749,19 +749,22 @@ public interface Set<E> extends Collection<E> {
      * an element belongs to the returned set or not. That is, if the membership status
      * for element {@code E} is {@code true}, then {@code E} <em>is</em> a member of the
      * returned set. Conversely, if the membership status for element {@code E} is
-     * {@code false}, then {@code E} <em>is not</em> a member of the returned set. The
-     * returned set is an {@linkplain Collection##unmodifiable unmodifiable} set whose
-     * element candidates are known at construction. The set's element membership statuses
-     * are lazily computed via the provided {@code computingFunction} when first accessed
-     * (e.g., via {@linkplain Set#contains(Object) Set::contains}). Once the membership
-     * status has been successfully computed for an element candidate, the associated
-     * membership status is initialized (i.e., either as <em>a logical member</em> or as
+     * {@code false}, then {@code E} <em>is not</em> a member of the returned set.
+     * <p>
+     * The returned set is an {@linkplain Collection##unmodifiable unmodifiable} set. The
+     * elements in the returned set are derived from the element candidates given at
+     * construction in combination with evaluating each element's membership status. The
+     * set's element membership statuses are lazily computed via the provided
+     * {@code computingFunction} when first accessed (e.g., via
+     * {@linkplain Set#contains(Object) Set::contains}). Once the membership status has
+     * been successfully computed for an element candidate, the associated membership
+     * status is initialized (i.e., either as <em>a logical member</em> or as
      * <em>a logical non-member</em>).
      * <p>
-     * The provided computing function is guaranteed to be invoked
-     * at most once per element candidate, even in a multi-threaded environment. Competing
-     * threads accessing an element candidate already under membership status computation
-     * will block until the membership status of the element candidate is computed or the
+     * The provided computing function is guaranteed to be invoked at most once per
+     * element candidate, even in a multi-threaded environment. Competing threads
+     * accessing an element candidate already under membership status computation will
+     * block until the membership status of the element candidate is computed or the
      * computing function completes abnormally.
      * <p>
      * If evaluation of the provided computing function throws an unchecked exception (for
