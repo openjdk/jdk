@@ -26,16 +26,8 @@
 #include "runtime/mutex.hpp"
 #include "runtime/osThread.hpp"
 
-#include <signal.h>
-
 OSThread::OSThread()
-  : _thread_id(
-#ifdef __APPLE__
-        0
-#else
-        nullptr
-#endif
-    ),
+  : _thread_id(0),
     _pthread_id(nullptr),
     _unique_thread_id(0),
     _caller_sigmask(),
