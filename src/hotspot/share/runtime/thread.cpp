@@ -641,28 +641,28 @@ void* Thread::process_revival() {
   DebuggingContext::force(); // Disable asserts
   Mutex::revive_all();
 
-  struct revival_data* rdata = &vm_revival_data;
+  // Initialize the revival data structure to return:
   memset(&vm_revival_data, 0, sizeof(struct revival_data));
-  rdata->magic = REVIVAL_MAGIC;
-  rdata->version = REVIVAL_VERSION;
-  rdata->size_this = sizeof(vm_revival_data);
-  rdata->status = 1;
+  vm_revival_data.magic = REVIVAL_MAGIC;
+  vm_revival_data.version = REVIVAL_VERSION;
+  vm_revival_data.size_this = sizeof(vm_revival_data);
+  vm_revival_data.status = 1;
 
-  rdata->runtime_name = JDK_Version::runtime_name();
-  rdata->runtime_version = JDK_Version::runtime_version();
-  rdata->runtime_vendor_version = JDK_Version::runtime_vendor_version();
-  rdata->jdk_debug_level = VM_Version::printable_jdk_debug_level();
+  vm_revival_data.runtime_name = JDK_Version::runtime_name();
+  vm_revival_data.runtime_version = JDK_Version::runtime_version();
+  vm_revival_data.runtime_vendor_version = JDK_Version::runtime_vendor_version();
+  vm_revival_data.jdk_debug_level = VM_Version::printable_jdk_debug_level();
 
-  rdata->tls_index = tls_index;
-  rdata->initial_time_count = os::initial_time_count();
-  rdata->initial_time_date = os::initial_time_date();
-  rdata->error_time = VMError::error_time();
+  vm_revival_data.tls_index = tls_index;
+  vm_revival_data.initial_time_count = os::initial_time_count();
+  vm_revival_data.initial_time_date = os::initial_time_date();
+  vm_revival_data.error_time = VMError::error_time();
 
-  rdata->vm_thread = t;
-  rdata->tty = tty;
+  vm_revival_data.vm_thread = t;
+  vm_revival_data.tty = tty;
 
-  rdata->parse_and_execute = (void*) &DCmd::parse_and_execute;
-  return (void*) rdata;
+  vm_revival_data.parse_and_execute = (void*) &DCmd::parse_and_execute;
+  return (void*) &vm_revival_data;
 }
 
 void* process_revival() {
