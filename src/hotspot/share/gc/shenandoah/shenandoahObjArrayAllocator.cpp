@@ -111,7 +111,6 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
 
   // reference array, header need to be overridden to its own.
   if (is_ref_type) {
-    arrayOopDesc::set_length(mem, _length);
     finish(mem);
     // zap paddings after setting correct klass
     mem_zap_start_padding(mem);
