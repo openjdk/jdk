@@ -221,8 +221,8 @@ public abstract class VirtualMachine {
      *
      * @return  A VirtualMachine representing the target VM.
      *
-     * @implNote The Oracle JDK ships with an attach provider which recognises the {@code id} as a
-     * live process ID, or the filename of a core file (on Linux) or MiniDump (Windows).
+     * @implNote The HotSpot provider recognises the {@code id} as a live process ID, or
+     * the filename of a core file (on Linux) or MiniDump (Windows).
      * When reading a core or MiniDump, the following settings are read from the Map:
      *
      * <table class="striped">
