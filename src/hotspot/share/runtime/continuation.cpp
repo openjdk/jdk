@@ -433,7 +433,7 @@ void Continuation::notify_deopt(JavaThread* thread, const frame& f) {
 
   intptr_t* slowpath_boundary = entry->entry_fp();
   intptr_t* old = prev->parent_cont_fastpath();
-  if (old == nullptr || slowpath_boundary > old) {
+  if (old == nullptr || frame::id_is_older_than(slowpath_boundary, old)) {
     prev->set_parent_cont_fastpath(slowpath_boundary);
   }
 }

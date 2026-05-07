@@ -256,6 +256,16 @@ inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != nullptr
 inline bool frame::is_younger(intptr_t* id) const   { assert(this->id() != nullptr && id != nullptr, "null frame id");
                                                     return this->id() < id ; }
 
+inline bool frame::id_is_older_than(intptr_t* id, intptr_t* other_id) {
+  assert(id != nullptr && other_id != nullptr, "null frame id");
+  return id > other_id;
+}
+
+inline bool frame::id_is_younger_than(intptr_t* id, intptr_t* other_id) {
+  assert(id != nullptr && other_id != nullptr, "null frame id");
+  return id < other_id;
+}
+
 inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
 
 inline intptr_t* frame::link_or_null() const {

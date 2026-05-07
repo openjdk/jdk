@@ -228,8 +228,9 @@ template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thr
 template<typename ConfigT>
 static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* fp))
   assert(fp == current->frame_anchor()->last_Java_fp(), "");
-
-  if (current->raw_cont_fastpath() > current->last_continuation()->entry_fp() || current->raw_cont_fastpath() < fp) {
+  intptr_t* boundary = current->raw_cont_fastpath();
+  if (boundary != nullptr && (frame::id_is_older_than(boundary, current->last_continuation()->entry_fp()) ||
+      frame::id_is_younger_than(boundary, fp))) {
     current->set_cont_fastpath(nullptr);
   }
 
