@@ -3076,7 +3076,7 @@ const TypeRawPtr *TypeRawPtr::make( enum PTR ptr ) {
   return (TypeRawPtr*)(new TypeRawPtr(ptr, nullptr, relocInfo::none))->hashcons();
 }
 
-const TypeRawPtr *TypeRawPtr::make(address bits, relocInfo::relocType reloc) {
+const TypeRawPtr* TypeRawPtr::make(address bits, relocInfo::relocType reloc) {
   assert(bits != nullptr, "Use TypePtr for null");
   return (TypeRawPtr*)(new TypeRawPtr(Constant, bits, reloc))->hashcons();
 }
