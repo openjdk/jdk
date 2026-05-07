@@ -84,7 +84,7 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
                                  int expected_size)
                                  : _arena(arena),
                                    _ci_metadata(arena, expected_size, 0, nullptr),
-                                   _shared_init_state(arena, expected_size, 0, (u1)0),
+                                   _cached_init_state(arena, _shared_ident_limit, 0, (u1)0),
                                    _unloaded_methods(arena, 4, 0, nullptr),
                                    _unloaded_klasses(arena, 8, 0, nullptr),
                                    _unloaded_instances(arena, 4, 0, nullptr),
@@ -118,7 +118,7 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
           cik->_init_state = state;
         }
         // Cache state for current compilation
-        _shared_init_state.at_put_grow(cik->ident(), (u1)state, 0);
+        _cached_init_state.at_put_grow(cik->ident(), (u1)state, 0);
       }
     }
   }

@@ -141,7 +141,7 @@ InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
     // Return cached init state of shared klass
     ciEnv* env = CURRENT_ENV;
     if (env != nullptr && env->task() != nullptr) {
-      return env->get_shared_init_state(ident());
+      return env->get_cached_init_state(ident());
     }
   }
   return _init_state;
