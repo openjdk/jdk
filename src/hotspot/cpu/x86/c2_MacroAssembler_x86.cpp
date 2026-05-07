@@ -336,7 +336,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       // Check if object matches.
       movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, rax_reg, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
       cmpptr(rax_reg, obj);
       jcc(Assembler::notEqual, slow_path);
 
