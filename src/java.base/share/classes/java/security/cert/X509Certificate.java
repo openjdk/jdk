@@ -348,7 +348,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      * </pre>
      *
      * @return the start date of the validity period.
-     * @see #checkValidity(Date)
+     * @see #checkValidity()
      */
     public abstract Date getNotBefore();
 
@@ -366,7 +366,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      * @throws NullPointerException when {@code getNotBefore()} returns null.
      *
      * @return the start date of the validity period.
-     * @see #checkValidity(Instant)
+      * @see #checkValidity()
      * @since 27
      */
     public Instant getNotBeforeInstant() {
@@ -383,15 +383,13 @@ public abstract non-sealed class X509Certificate extends Certificate
      * for relevant ASN.1 definitions.
      *
      * @return the end date of the validity period.
-     * @see #checkValidity(Date)
+     * @see #checkValidity()
      */
     public abstract Date getNotAfter();
 
     /**
      * Gets the {@code notAfter} date as an {@code Instant} from the validity
      * period of the certificate.
-     * See {@link #getNotBeforeInstant() getNotBeforeInstant} for relevant
-     * ASN.1 definitions.
      *
      * @apiNote Subclasses should override this method to directly return an
      * instant.
@@ -404,7 +402,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      * @throws NullPointerException when {@code getNotAfter()} returns null.
      *
      * @return the end date of the validity period.
-     * @see #checkValidity(Instant)
+      * @see #checkValidity()
      * @since 27
      */
     public Instant getNotAfterInstant() {
