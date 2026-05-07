@@ -27,7 +27,7 @@
  * @summary assertion failure due to missing depends_only_on_test_impl definition in SqrtHFNode
  * @library /test/lib /
  * @modules jdk.incubator.vector
- * @requires vm.debug & vm.compiler2.enabled
+ * @requires vm.debug & vm.compiler2.enabled & vm.cpu.features ~= ".*avx512fp16.*"
  * @run main/othervm --add-modules=jdk.incubator.vector compiler.c2.TestDependsOnTestSqrtHFAssertion
  */
 
