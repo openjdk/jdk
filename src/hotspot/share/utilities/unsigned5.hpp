@@ -280,6 +280,7 @@ class UNSIGNED5 : AllStatic {
         int len = next_length();  // 0 or length in [1..5]
         if (len == 0)  break;
         _position += len;
+        ++actual;
       }
       return actual;
     }
