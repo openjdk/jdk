@@ -238,13 +238,23 @@ Description
 ### Plugin `security-properties`
 
 Options
-:   `--security-properties=*filename*`
+:   `--security-properties=props=`*filename*`:include=`*filename*
 
 Description
-:   Overrides the security properties - if they exist - in the
+:   The `props` option overrides the security properties in the
     `conf/security/java.security` configuration file with the properties in
-    the specified file. Adds properties not present in the `java.security`
-    file to the end of the file.
+    the specified *filename*. Security properties with the same name are
+    overridden and security properties not present are added to the end of the
+    `conf/security/java.security` configuration file.
+
+    The `include` option adds an `include` statement with the specified
+    *filename* to the end of the `conf/security/java.security` configuration
+    file. The filename does not need to exist at `jlink` time.
+
+    Each option can be specified at most once. If both options are specified,
+    the `include` statement is always added as the last line of the
+    `conf/security/java.security` configuration file, after any
+    new security properties that may have been added.
 
 ## jlink Examples
 
