@@ -577,7 +577,7 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
   return os::create_main_thread(jt);
 }
 
-jboolean Thread::_revived_vm = false;
+bool Thread::_revived_vm = false;
 
 #define REVIVAL_MAGIC 0x2e6e656b6e617266
 #define REVIVAL_VERSION 1

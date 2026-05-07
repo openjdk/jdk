@@ -285,7 +285,7 @@ class Thread: public ThreadShadow {
   JNIEXPORT static bool is_revived() { return _revived_vm; }
   void revive_thread_current();
  private:
-  static jboolean _revived_vm;
+  static bool _revived_vm;
 
  protected:
   // To be implemented by children.
