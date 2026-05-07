@@ -2891,11 +2891,6 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   // HT flag is set for multi-core processors also.
   if (threads_per_core() > 1)
     vm_features.set_feature(CPU_HT);
-  if (std_cpuid1_edx.bits.mmx != 0 || (is_amd_family() &&
-      ext_cpuid1_edx.bits.mmx != 0))
-    vm_features.set_feature(CPU_MMX);
-  if (std_cpuid1_edx.bits.sse != 0)
-    vm_features.set_feature(CPU_SSE);
   if (std_cpuid1_edx.bits.sse2 != 0)
     vm_features.set_feature(CPU_SSE2);
   if (std_cpuid1_ecx.bits.sse3 != 0)
