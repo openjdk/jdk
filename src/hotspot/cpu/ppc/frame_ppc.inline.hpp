@@ -151,6 +151,13 @@ inline bool frame::is_older(intptr_t* id) const {
    return this->id() > id;
 }
 
+// Return true if the frame is younger (more recent activation) than
+// the frame represented by id
+inline bool frame::is_younger(intptr_t* id) const {
+  assert(this->id() != nullptr && id != nullptr, "null frame id");
+  return this->id() < id ;
+}
+
 inline int frame::frame_size() const {
   // Stack grows towards smaller addresses on PPC64: sender is at a higher address.
   return sender_sp() - sp();
