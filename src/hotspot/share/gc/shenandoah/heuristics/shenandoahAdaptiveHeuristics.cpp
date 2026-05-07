@@ -24,13 +24,12 @@
  *
  */
 
+#include <cmath>
 
-#include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
@@ -71,9 +70,11 @@ void ShenandoahCycleDuration::record_duration(double time_at_start, double gc_ti
 double ShenandoahCycleDuration::predict_duration(double timestamp_at_start, double margin_of_error) const {
   double slope(0.0), intercept(0.0);
   _gc_times.fit_line(slope, intercept);
-  const double prediction = slope * timestamp_at_start + intercept + _gc_times.residual_sd() * margin_of_error;
-  if (prediction > 0.0) {
-    return prediction;
+  if (std::isfinite(slope)) {
+    const double prediction = slope * timestamp_at_start + intercept + _gc_times.residual_sd() * margin_of_error;
+    if (prediction > 0.0) {
+      return prediction;
+    }
   }
   // return average time, rather than negative or zero time
   return _gc_times.weighted_average();

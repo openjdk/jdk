@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
 
+#include <cmath>
+
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 
 #include "logging/log.hpp"
@@ -84,7 +86,7 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
   if (_recent.weighted_average() > _baseline.weighted_average()) {
     double slope(0), intercept(0);
     _recent.fit_line(slope, intercept);
-    if (slope > 0) {
+    if (slope > 0 && std::isfinite(slope)) {
       const double proposed_current_rate = slope * _recent.last() + intercept;
       acceleration = slope;
       current_rate = proposed_current_rate;
