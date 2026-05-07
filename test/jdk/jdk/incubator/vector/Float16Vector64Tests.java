@@ -1151,6 +1151,19 @@ public class Float16Vector64Tests extends AbstractVectorTest {
         return float16ToRawShortBits(Float16.valueOf(i));
     }
 
+    static short convIntToFloat16CornerCases(int i) {
+        switch(i % 4) {
+            case 0:
+                return convToFloat16(65504);
+            case 1:
+                return convToFloat16(-65504);
+            case 2:
+                return float16ToRawShortBits(Float16.valueOf(-0.0f));
+            default:
+                return float16ToRawShortBits(Float16.valueOf(0.0f));
+        }
+    }
+
     static final List<IntFunction<short[]>> INT_FLOAT16_GENERATORS = List.of(
             withToString("float16[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1163,6 +1176,10 @@ public class Float16Vector64Tests extends AbstractVectorTest {
             withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (((short)(i + 1) == 0) ? convToFloat16(1) : convToFloat16(i + 1)));
+            }),
+            withToString("float16[intCornerCaseValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> convIntToFloat16CornerCases(i));
             })
     );
 
@@ -1182,6 +1199,19 @@ public class Float16Vector64Tests extends AbstractVectorTest {
         return float16ToRawShortBits(Float16.valueOf(i));
     }
 
+    static short convLongToFloat16CornerCases(int i) {
+        switch(i % 4) {
+            case 0:
+                return convToFloat16(65504L);
+            case 1:
+                return convToFloat16(-65504L);
+            case 2:
+                return float16ToRawShortBits(Float16.valueOf(-0.0f));
+            default:
+                return float16ToRawShortBits(Float16.valueOf(0.0f));
+        }
+    }
+
     static final List<IntFunction<short[]>> LONG_FLOAT16_GENERATORS = List.of(
             withToString("float16[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1194,6 +1224,10 @@ public class Float16Vector64Tests extends AbstractVectorTest {
             withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (((short)(i + 1) == 0) ? convToFloat16(1) : convToFloat16(i + 1)));
+            }),
+            withToString("float16[cornerCaseValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i ->  convLongToFloat16CornerCases(i));
             })
     );
 

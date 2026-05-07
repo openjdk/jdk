@@ -85,7 +85,6 @@ do
   carriertype=$type
   Carriertype=$Type
   elemtype=$type
-  FPtype=$type
   fallbacktype=$type
 
   case $Type in
@@ -137,8 +136,7 @@ do
       sizeInBytes=4
       laneType=LT_FLOAT
       lanebitsType=LT_INT
-      args="$args -KintOrFP -KintOrFloat"
-      FPtype=FP32
+      args="$args -KFP32 -KintOrFP -KintOrFloat"
       ;;
     Double)
       kind=FP
@@ -149,8 +147,7 @@ do
       sizeInBytes=8
       laneType=LT_DOUBLE
       lanebitsType=LT_LONG
-      args="$args -KintOrFP -KlongOrDouble"
-      FPtype=FP64
+      args="$args -KFP64 -KintOrFP -KlongOrDouble"
       ;;
     Float16)
       kind=FP
@@ -161,19 +158,18 @@ do
       sizeInBytes=2
       carriertype=short
       Carriertype=Short
-      FPtype=FP16
       Boxtype=Float16
       elemtype=Float16
       ElemLayout=Short
       laneType=LT_FLOAT16
       lanebitsType=LT_SHORT
       fallbacktype=float
-      args="$args -KbyteOrShort -KshortOrFP -KshortOrFloat16"
+      args="$args -KFP16 -KbyteOrShort"
       ;;
   esac
 
 
-  args="$args -K$FPtype -K$kind -DlaneType=$laneType -DlanebitsType=$lanebitsType -Dfallbacktype=$fallbacktype -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
+  args="$args -K$kind -DlaneType=$laneType -DlanebitsType=$lanebitsType -Dfallbacktype=$fallbacktype -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
   args="$args -DElemLayout=$ElemLayout -Dbitstype=$bitstype -Dmaskbitstype=$maskbitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
   args="$args -DsizeInBytes=$sizeInBytes"

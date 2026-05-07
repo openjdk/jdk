@@ -209,7 +209,7 @@ const char* VectorSupport::lanetype2name(LaneType lane_type) {
     "long",
     "float16",
   };
-  if (lane_type >= LT_FLOAT && lane_type <= LT_LONG) {
+  if (lane_type >= LT_FLOAT && lane_type <= LT_FLOAT16) {
     return lanetype2name[lane_type];
   }
   assert(false, "unknown lane type: %d", (int)lane_type);

@@ -50,21 +50,30 @@ import static java.lang.Float.*;
 /**
  * A specialized {@link Vector} representing an ordered immutable sequence of
  * 16-bit data values in the IEEE 754 binary16 format.
+ * <p>
+ * The scalar {@linkplain Float16Vector#elementType() element type} of {@code Float16Vector}
+ * is the class {@link Float16}, a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class holding 16-bit data in IEEE 754 binary16 format. However, the {@code Float16}
+ * class is not used by vector operations that accept scalar element values, or
+ * arrays of scalar element values. Instead, the primitive type {@code short} is
+ * used to explicitly hold 16-bit data in IEEE 754 binary16 format. For such operations
+ * it may be necessary to explicitly convert between floating-point values of {@code Float16}
+ * or {@code float} and values of {@code short} using the appropriate conversion
+ * methods on {@code Float16} or {@code Float}.
  *
- * <p>The element type of a {@code Float16Vector} is represented as
- * {@link Float16}, but carrier type which represents the type of
- * the backing storage element is {@code short}, values of which hold
- * 16-bit data in the IEEE 754 binary16 format.
- * In particular, vector loading and storing operations such as
- * {@link #fromArray(VectorSpecies, short[], int) fromArray} and
- * {@link #intoArray(short[], int) intoArray} read from and write to
- * {@code short[]} arrays holding IEEE 754 binary16 encoded values.
- *
- * <p>An array of {@code Float16} values does not currently have a flat
- * memory layout. Until {@code Float16} becomes a value type whose
- * backing storage has a flat layout like {@code short[]}, the element
- * type ({@code Float16}) and the carrier type ({@code short}) will
- * remain distinct.
+ * @apiNote
+ * {@code Float16} is currently a value-based class and therefore cannot be optimally
+ * used as the scalar element type of vector operations until it becomes a value class
+ * that behaves similarly to the primitive type {@code short} and arrays of.
+ * For example, accessing {@code Float16} vectors using arrays requires those arrays be
+ * {@code short[]} arrays. Accessing vectors using memory segments requires, naturally,
+ * that consecutive 16-bits of memory hold 16-bit data values in the IEEE 754 binary16
+ * format.
+ * @see Float16
+ * @see Float16#float16ToRawShortBits(Float16)
+ * @see Float16#shortBitsToFloat16(short)
+ * @see Float#floatToFloat16(float)
+ * @see Float#float16ToFloat(short)
  */
 @SuppressWarnings("cast")  // warning: redundant cast
 public abstract sealed class Float16Vector extends AbstractVector<Float16>
@@ -815,7 +824,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
             case VECTOR_OP_LOG10: return (v0, m) ->
                     v0.uOp(m, (i, a) -> (float) Math.log10(a));
             case VECTOR_OP_SQRT: return (v0, m) ->
-                    v0.uRawOp(m, (i, a) -> (short) float16ToRawShortBits(Float16.sqrt(shortBitsToFloat16(a))));
+                    v0.uOp(m, (i, a) -> Float16.sqrt(Float16.valueOf(a)).floatValue());
             case VECTOR_OP_CBRT: return (v0, m) ->
                     v0.uOp(m, (i, a) -> (float) Math.cbrt(a));
             case VECTOR_OP_SINH: return (v0, m) ->
@@ -3792,8 +3801,9 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         /*package-private*/
         @ForceInline
         static long toIntegralChecked(short e, boolean convertToInt) {
-            long value = convertToInt ? shortBitsToFloat16(e).intValue(): shortBitsToFloat16(e).longValue();
-            if (float16ToRawShortBits(Float16.valueOf(value)) != e) {
+            float ef = shortBitsToFloat16(e).floatValue();
+            long value = convertToInt ? (int) ef : (long) ef;
+            if ((float) value != ef) {
                 throw badArrayBits(e, convertToInt, value);
             }
             return value;
