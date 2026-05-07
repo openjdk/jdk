@@ -35,7 +35,6 @@ import jtreg.SkippedException;
  * @bug 8190198
  * @summary Test clhsdb pstack command on a live process
  * @requires vm.hasSA
- * @requires !vm.ubsan
  * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
@@ -47,6 +46,7 @@ import jtreg.SkippedException;
  * @bug 8190198
  * @summary Test clhsdb pstack command on a core file
  * @requires vm.hasSA
+ * @requires !vm.ubsan
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbPstack true

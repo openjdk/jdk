@@ -36,7 +36,6 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on live process
  * @requires vm.hasSA
- * @requires !vm.ubsan
  * @requires vm.gc != "Z"
  * @requires vm.compMode != "Xcomp"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
@@ -51,6 +50,7 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on core file
  * @requires vm.hasSA
+ * @requires !vm.ubsan
  * @requires vm.gc != "Z"
  * @requires vm.compMode != "Xcomp"
  * @requires vm.compiler1.enabled
@@ -76,6 +76,7 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
  * @requires vm.hasSA
+ * @requires !vm.ubsan
  * @requires vm.gc != "Z"
  * @requires vm.compiler1.enabled
  * @library /test/lib
