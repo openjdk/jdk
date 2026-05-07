@@ -107,9 +107,9 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
     int len = _ci_metadata.length();
     for (int i = 0; i < len; i++) {
       ciMetadata* obj = _ci_metadata.at(i);
-      if (obj->is_loaded() && obj->is_instance_klass() &&
-          obj->as_instance_klass()->is_shared()) {
+      if (obj->is_loaded() && obj->is_instance_klass()) {
         ciInstanceKlass* cik = obj->as_instance_klass();
+        precond(cik->is_shared());
         InstanceKlass::ClassState current_state = cik->_init_state;
         InstanceKlass::ClassState state = InstanceKlass::fully_initialized;
         if (current_state != state) {
