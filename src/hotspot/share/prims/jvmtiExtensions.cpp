@@ -184,74 +184,31 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
 #if INCLUDE_JFR
 
 class JfrStackTraceRequestCallback : public JfrStackWalkerCallback {
-  JavaThread* _requested_thread;
   JfrTicks _sample_ticks;
-  JfrStackTrace* _stack_trace;
-  traceid _tid;
   jlong _user_data;
-  bool _biased;
-
-  static u1 convert_type(JfrStackWalkerFrameType type) {
-    switch (type) {
-      case JfrStackWalkerFrameType::FRAME_INTERPRETER: return JfrStackFrame::FRAME_INTERPRETER;
-      case JfrStackWalkerFrameType::FRAME_JIT:         return JfrStackFrame::FRAME_JIT;
-      case JfrStackWalkerFrameType::FRAME_INLINE:      return JfrStackFrame::FRAME_INLINE;
-      case JfrStackWalkerFrameType::FRAME_NATIVE:      return JfrStackFrame::FRAME_NATIVE;
-    }
-    ShouldNotReachHere();
-  }
 
 public:
   JfrStackTraceRequestCallback(jlong user_data) :
-    _requested_thread(nullptr),
     _sample_ticks(JfrTicks::now()),
-    _stack_trace(nullptr),
-    _tid(0),
-    _user_data(user_data),
-    _biased(false) {
+    _user_data(user_data) {
   }
 
-  ~JfrStackTraceRequestCallback() {
-    if (_stack_trace != nullptr) {
-      delete _stack_trace;
-    }
-  }
-
-  void begin_stacktrace(JavaThread* jt, bool continuation, bool biased) final {
-    assert(_stack_trace == nullptr, "invariant");
-    _requested_thread = jt;
-    _stack_trace = new JfrStackTrace;
-    _stack_trace->start_record_frames();
-    _biased = biased;
-    JfrThreadLocal* tl = jt->jfr_thread_local();
-    _tid = continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
-  }
-
-  void end_stacktrace(bool truncated) final {
-    assert(_stack_trace != nullptr, "invariant");
-    _stack_trace->end_record_frames(truncated);
-    traceid sid = JfrStackTraceRepository::add(*_stack_trace);
-    assert(sid != 0, "invariant");
-
+  void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool truncated, bool biased,
+                     JfrStackTrace& stack_trace) final {
     EventStackTraceRequest event(UNTIMED);
     event.set_starttime(_sample_ticks);
-    event.set_eventThread(_tid);
+    event.set_eventThread(tid);
     event.set_stackTrace(sid);
     event.set_userData(_user_data);
     event.set_failed(false);
-    event.set_biased(_biased);
+    event.set_biased(biased);
     event.commit();
   }
 
-  void stack_frame(const Method* method, int bci, int line_no, JfrStackWalkerFrameType type) final {
-    assert(_stack_trace != nullptr, "invariant");
-    _stack_trace->record_frame(method, bci, line_no, convert_type(type));
-  }
-
-  void failure() final {
+  void on_failure(JavaThread* jt, traceid tid) final {
     EventStackTraceRequest event(UNTIMED);
     event.set_starttime(_sample_ticks);
-    event.set_eventThread(_tid);
+    event.set_eventThread(tid);
     event.set_stackTrace(0);
     event.set_userData(_user_data);
     event.set_failed(true);

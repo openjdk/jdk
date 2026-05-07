@@ -30,17 +30,12 @@
 
 #if INCLUDE_JFR
 
+#include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allStatic.hpp"
 
 class JavaThread;
 class JfrNativeStackWalkerThread;
-
-enum class JfrStackWalkerFrameType {
-  FRAME_INTERPRETER,
-  FRAME_JIT,
-  FRAME_INLINE,
-  FRAME_NATIVE,
-};
+class JfrStackTrace;
 
 class JfrStackWalkerCallback {
 public:
@@ -55,10 +50,17 @@ public:
 
   virtual ~JfrStackWalkerCallback() = default;
 
-  virtual void begin_stacktrace(JavaThread* jt, bool continuation, bool biased) = 0;
-  virtual void end_stacktrace(bool truncated) = 0;
-  virtual void stack_frame(const Method* method, int bci, int line_no, JfrStackWalkerFrameType type) = 0;
-  virtual void failure() = 0;
+  // Called when a stack-trace was successfully built and registered with the
+  // stack-trace repository. `sid` is the assigned stack-trace id; `tid` is
+  // the appropriate thread id (vthread id when the sample is in a continuation,
+  // jvm thread id otherwise).
+  virtual void on_stacktrace(JavaThread* jt, traceid sid, traceid tid,
+                             bool truncated, bool biased,
+                             JfrStackTrace& stack_trace) = 0;
+
+  // Called when no stack-trace could be obtained for the request. `tid` is the
+  // jvm thread id of the sampled thread.
+  virtual void on_failure(JavaThread* jt, traceid tid) = 0;
 
   // Called to report that requests were lost (e.g., due to lock contention
   // or a full queue). The count is the number of lost requests since the
@@ -72,8 +74,8 @@ public:
   // Embedded storage constants for the callback object.
   // Avoids heap allocation in signal handlers.
   // Size/alignment are enforced at compile time by construct_callback().
-  static constexpr size_t CALLBACK_STORAGE_SIZE = 64;
-  static constexpr size_t CALLBACK_STORAGE_ALIGNMENT = 16;
+  static constexpr size_t CALLBACK_STORAGE_SIZE = 32;
+  static constexpr size_t CALLBACK_STORAGE_ALIGNMENT = 8;
 
 private:
   alignas(CALLBACK_STORAGE_ALIGNMENT) char _callback_storage[CALLBACK_STORAGE_SIZE];

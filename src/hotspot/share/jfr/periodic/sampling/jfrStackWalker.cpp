@@ -32,6 +32,9 @@
 #include "gc/shared/gc_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/periodic/sampling/jfrStackWalker.hpp"
+#include "jfr/recorder/stacktrace/jfrStackFrame.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -938,16 +941,18 @@ static bool compute_top_frame(JfrStackWalkRequest& request, frame& top_frame, bo
 
 class JfrStackWalkState {
 public:
-  JfrStackWalkRequest& _request;
+  JfrStackTrace& _stack_trace;
+  u4 _max_frames;
   u4 _count;
   bool _truncated;
-  JfrStackWalkState(JfrStackWalkRequest& request) : _request(request), _count(0), _truncated(false) {}
+  JfrStackWalkState(JfrStackTrace& stack_trace, u4 max_frames) :
+    _stack_trace(stack_trace), _max_frames(max_frames), _count(0), _truncated(false) {}
 
-  u4 max_frames() const { return _request.max_frames(); }
+  u4 max_frames() const { return _max_frames; }
 
-  void report_frame(const Method* method, int bci, JfrStackWalkerFrameType type) const {
+  void report_frame(const Method* method, int bci, u1 type) const {
     int line_no = method->line_number_from_bci(bci);
-    _request.callback()->stack_frame(method, bci, line_no, type);
+    _stack_trace.record_frame(method, bci, line_no, type);
   }
 };
 
@@ -955,7 +960,7 @@ static void report_interpreter_top_frame(const JfrStackWalkState& state, const J
   const Method* method = static_cast<Method*>(request.sample_pc());
   assert(method != nullptr, "invariant");
   const int bci = method->is_native() ? 0 : method->bci_from(static_cast<address>(request.sample_bcp()));
-  JfrStackWalkerFrameType type = method->is_native() ? JfrStackWalkerFrameType::FRAME_NATIVE : JfrStackWalkerFrameType::FRAME_INTERPRETER;
+  const u1 type = method->is_native() ? JfrStackFrame::FRAME_NATIVE : JfrStackFrame::FRAME_INTERPRETER;
   state.report_frame(method, bci, type);
 }
 
@@ -978,20 +983,20 @@ static bool report_inner(JfrStackWalkState& state, JavaThread* jt, const frame& 
       break;
     }
     const Method* method = vfs.method();
-    JfrStackWalkerFrameType type = vfs.is_interpreted_frame() ? JfrStackWalkerFrameType::FRAME_INTERPRETER : JfrStackWalkerFrameType::FRAME_JIT;
+    u1 type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {
-      type = JfrStackWalkerFrameType::FRAME_NATIVE;
+      type = JfrStackFrame::FRAME_NATIVE;
     } else {
       bci = vfs.bci();
     }
 
     const intptr_t* const frame_id = vfs.frame_id();
     vfs.next_vframe();
-    if (type == JfrStackWalkerFrameType::FRAME_JIT && !vfs.at_end() && frame_id == vfs.frame_id()) {
+    if (type == JfrStackFrame::FRAME_JIT && !vfs.at_end() && frame_id == vfs.frame_id()) {
       // This frame and the caller frame are both the same physical
       // frame, so this frame is inlined into the caller.
-      type = JfrStackWalkerFrameType::FRAME_INLINE;
+      type = JfrStackFrame::FRAME_INLINE;
     }
     state.report_frame(method, bci, type);
     state._count++;
@@ -1017,28 +1022,37 @@ static bool report(JfrStackWalkState& state, JavaThread* jt, const frame& frame,
   return report(state, jt, frame, in_continuation, 0);
 }
 
+static traceid compute_tid(JavaThread* jt, bool in_continuation) {
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  return in_continuation ? tl->vthread_id_with_epoch_update(jt)
+                         : JfrThreadLocal::jvm_thread_id(jt);
+}
+
 static void report_thread(JfrStackWalkRequest& request, const JfrStackWalkerThreadLocal& tl, JavaThread* jt, const Thread* current) {
   assert(jt != nullptr, "invariant");
   assert(current != nullptr, "invariant");
   frame top_frame;
   bool biased = false;
   bool in_continuation = false;
-  bool could_compute_top_frame = compute_top_frame(request, top_frame, in_continuation, jt, biased);
-
-  if (!could_compute_top_frame) {
-    request.callback()->failure();
+  if (!compute_top_frame(request, top_frame, in_continuation, jt, biased)) {
+    request.callback()->on_failure(jt, JfrThreadLocal::jvm_thread_id(jt));
     return;
   }
 
-  // The callback might be resource-allocating stuff, e.g. in JfrStackTrace.
+  // JfrStackTrace allocates its frames in the ResourceArea.
   ResourceMark rm;
-  request.callback()->begin_stacktrace(jt, in_continuation, biased);
-  JfrStackWalkState state(request);
+  JfrStackTrace stack_trace;
+  stack_trace.start_record_frames();
+  JfrStackWalkState state(stack_trace, request.max_frames());
   if (!report(state, jt, top_frame, in_continuation, request)) {
-    request.callback()->failure();
+    request.callback()->on_failure(jt, compute_tid(jt, in_continuation));
     return;
   }
-  request.callback()->end_stacktrace(state._truncated);
+  stack_trace.end_record_frames(state._truncated);
+  const traceid sid = JfrStackTraceRepository::add(stack_trace);
+  assert(sid != 0, "invariant");
+  request.callback()->on_stacktrace(jt, sid, compute_tid(jt, in_continuation),
+                                    state._truncated, biased, stack_trace);
 }
 
 /**
