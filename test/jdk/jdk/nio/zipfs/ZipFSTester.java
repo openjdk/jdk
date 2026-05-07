@@ -646,6 +646,11 @@ public class ZipFSTester {
     @Test
     void testTime() throws Exception {
         var jar = Utils.createJarFile(System.currentTimeMillis() + ".jar", jarContents);
+        // Read JAR source once before capturing file attributes.
+        // This stabilizes access time before the copy operation.
+        try (InputStream in = Files.newInputStream(jar)) {
+            in.transferTo(OutputStream.nullOutputStream()); // output is irrelevant
+        }
         BasicFileAttributes attrs = Files
                         .getFileAttributeView(jar, BasicFileAttributeView.class)
                         .readAttributes();
