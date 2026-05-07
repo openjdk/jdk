@@ -587,10 +587,10 @@ struct revival_data {
   uint64_t size_this;
   uint64_t status;
 
-  const char *runtime_name;
-  const char *runtime_version;
-  const char *runtime_vendor_version;
-  const char *jdk_debug_level;
+  const char* runtime_name;
+  const char* runtime_version;
+  const char* runtime_vendor_version;
+  const char* jdk_debug_level;
 
   uint64_t tls_index;
   uint64_t initial_time_count; // e.g. clock_gettime MONOTONIC (since system boot), ns
@@ -627,7 +627,7 @@ void* Thread::process_revival() {
   // Reset current thread:
   int tls_index = ThreadLocalStorage::revive(t);
   t->revive_thread_current();
-  Thread *c = Thread::current_or_null(); // Verify TLS
+  Thread* c = Thread::current_or_null(); // Verify TLS
   if (c == nullptr) {
     return nullptr;
   }
