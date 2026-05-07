@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -173,6 +174,21 @@ void ShenandoahHeuristics::record_cycle_start() {
 
 void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
+
+  size_t capacity(0), usage(0);
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (heap->mode()->is_generational()) {
+    capacity = heap->young_generation()->max_capacity();
+    usage = heap->young_generation()->used();
+  } else {
+    capacity = heap->global_generation()->max_capacity();
+    usage = heap->global_generation()->used();
+  }
+
+  const size_t available = capacity > usage ? capacity - usage: 0;
+  const size_t min_sample_size = MAX2(available / ShenandoahHeap::ALLOC_SAMPLE_PORTION, M);
+  log_info(gc, ergo)("Adjust minimum allocation sample size to: " PROPERFMT, PROPERFMTARGS(min_sample_size));
+  heap->alloc_rate().set_minimum_sample_size(min_sample_size);
 }
 
 bool ShenandoahHeuristics::should_start_gc() {

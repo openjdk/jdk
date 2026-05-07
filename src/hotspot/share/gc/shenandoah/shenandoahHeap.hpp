@@ -244,6 +244,8 @@ public:
 
   void set_soft_max_capacity(size_t v);
 
+  static constexpr size_t ALLOC_SAMPLE_PORTION = 128;
+
   ShenandoahAllocationRate& alloc_rate() {
     return _alloc_rate;
   }

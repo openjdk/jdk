@@ -107,8 +107,6 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
-// Minimum sample size for allocation = heap->capacity() / SHENANDOAH_ALLOC_SAMPLE_PORTION;
-constexpr size_t SHENANDOAH_ALLOC_SAMPLE_PORTION = 256;
 
 class ShenandoahPretouchHeapTask : public WorkerTask {
 private:
@@ -700,7 +698,7 @@ void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
   check_soft_max_changed();
-  _alloc_rate.set_minimum_sample_size(soft_max_capacity() / SHENANDOAH_ALLOC_SAMPLE_PORTION);
+  _alloc_rate.set_minimum_sample_size(soft_max_capacity() / ALLOC_SAMPLE_PORTION);
 
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
@@ -772,7 +770,7 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
          min_capacity(), v, max_capacity());
   _soft_max_size.store_relaxed(v);
   heuristics()->compute_headroom_adjustment();
-  _alloc_rate.set_minimum_sample_size(v / SHENANDOAH_ALLOC_SAMPLE_PORTION);
+  _alloc_rate.set_minimum_sample_size(v / ALLOC_SAMPLE_PORTION);
 }
 
 size_t ShenandoahHeap::min_capacity() const {
