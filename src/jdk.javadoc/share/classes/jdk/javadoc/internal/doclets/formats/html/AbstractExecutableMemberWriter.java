@@ -138,6 +138,26 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     }
 
     /**
+     * Returns a label for the given element to be used the table of contents sidebar.
+     *
+     * @param executableElement method or constructor
+     * @return the link label
+     */
+    protected Content getTOCLabel(ExecutableElement executableElement) {
+        var signature = utils.makeSignature(executableElement, typeElement, false, true);
+        var label = new ContentBuilder(Text.of(utils.getSimpleName(executableElement)));
+        // Insert line break opportunity before first parameter.
+        if (signature.length() > 2) {
+            label.add(Text.of(signature.substring(0, 1)))
+                    .add(HtmlTree.WBR())
+                    .add(Text.of(signature.substring(1)));
+        } else {
+            label.add(signature);
+        }
+        return label;
+    }
+
+    /**
      * Adds the generic type parameters.
      *
      * @param member the member to add the generic type parameters for
