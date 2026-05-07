@@ -28,8 +28,6 @@
  * @library /test/lib
  * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires !vm.musl
- * @comment Disable test for the zero VM config due to 8380059.
- * @requires vm.flavor != "zero"
  *
  * @enablePreview
  * @build TestEnableNativeAccessJarManifest
