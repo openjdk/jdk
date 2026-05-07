@@ -30,7 +30,7 @@
 extern "C" unsigned long _tls_index;
 
 // TLS offset read by the assembly code in `aarch64_get_thread_helper()`.
-extern "C" int64_t _jvm_thr_current_tls_offset = JavaThread::get_thr_tls_offset();
+extern "C" ptrdiff_t _jvm_thr_current_tls_offset = JavaThread::get_thr_tls_offset();
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
