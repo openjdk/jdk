@@ -139,10 +139,22 @@ public abstract class AttachProvider {
         throws AttachNotSupportedException, IOException;
 
     /**
-     * Attach to a Java virtual machine.
+     * Attaches to a Java virtual machine.
      *
-     * Details as per the {@link attachVirtualMachine(String)} method.
-     * This method additionally accepts a Map of named parameters and values.
+     * <p> A Java virtual machine is identified by an abstract identifier. The
+     * nature of this identifier is platform dependent but in many cases it will be the
+     * string representation of the process identifier (or pid).
+     *
+     * <p> This method parses the identifier and maps the identifier to a Java
+     * virtual machine (in an implementation dependent manner). If the identifier
+     * cannot be parsed by the provider then an
+     * {@link com.sun.tools.attach.AttachNotSupportedException AttachNotSupportedException}
+     * is thrown. Once parsed this method attempts to attach to the Java virtual machine.
+     * If the provider detects that the identifier corresponds to a Java virtual machine
+     * that does not exist, or it corresponds to a Java virtual machine that does not support
+     * the attach mechanism implemented by this provider, or it detects that the
+     * Java virtual machine is a version to which this provider cannot attach, then
+     * an {@code AttachNotSupportedException} is thrown.
      *
      * @param  id
      *         The abstract identifier that identifies the Java virtual machine.
@@ -151,6 +163,12 @@ public abstract class AttachProvider {
      *         A Map of provider-specific settings to configure the attach.
      *
      * @return  VirtualMachine representing the target virtual machine.
+     *
+     * @throws  AttachNotSupportedException
+     *          If the identifier cannot be parsed, or it corresponds to
+     *          to a Java virtual machine that does not exist, or it
+     *          corresponds to a Java virtual machine which this
+     *          provider cannot attach.
      *
      * @since 27
      */

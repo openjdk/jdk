@@ -208,10 +208,25 @@ public abstract class VirtualMachine {
     }
 
     /**
-     * Attach to a Java virtual machine.
+     * Attaches to a Java virtual machine.
      *
-     * Details as per the {@link attach(String)} method.
-     * This method additionally accepts a Map of named parameters and values.
+     * <p> This method obtains the list of attach providers by invoking the
+     * {@link com.sun.tools.attach.spi.AttachProvider#providers()
+     * AttachProvider.providers()} method. It then iterates over the list
+     * and invokes each provider's {@link
+     * com.sun.tools.attach.spi.AttachProvider#attachVirtualMachine(java.lang.String,java.util.Map)
+     * attachVirtualMachine} method in turn. If a provider successfully
+     * attaches then the iteration terminates, and the VirtualMachine created
+     * by the provider that successfully attached is returned by this method.
+     * If the {@code attachVirtualMachine} method of all providers throws
+     * {@link com.sun.tools.attach.AttachNotSupportedException AttachNotSupportedException}
+     * then this method also throws {@code AttachNotSupportedException}.
+     * This means that {@code AttachNotSupportedException} is thrown when
+     * the identifier provided to this method is invalid, or the identifier
+     * corresponds to a Java virtual machine that does not exist, or none
+     * of the providers can attach to it. This exception is also thrown if
+     * {@link com.sun.tools.attach.spi.AttachProvider#providers()
+     * AttachProvider.providers()} returns an empty list. </p>
      *
      * @param   id
      *          The abstract identifier that identifies the Java virtual machine.
