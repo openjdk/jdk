@@ -148,7 +148,7 @@ public abstract class AttachProvider {
      *         The abstract identifier that identifies the Java virtual machine.
      *
      * @param  env
-     *         A Map of provider-specific settings to configure the attach, may be null or empty.
+     *         A Map of provider-specific settings to configure the attach.
      *
      * @return  VirtualMachine representing the target virtual machine.
      *

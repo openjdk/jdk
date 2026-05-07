@@ -217,7 +217,7 @@ public abstract class VirtualMachine {
      *          The abstract identifier that identifies the Java virtual machine.
      *
      * @param   env
-     *          A Map of provider-specific settings to configure the attach, may be null or empty.
+     *          A Map of provider-specific settings to configure the attach.
      *
      * @return  A VirtualMachine representing the target VM.
      *
@@ -267,6 +267,9 @@ public abstract class VirtualMachine {
     {
         if (id == null) {
             throw new NullPointerException("id cannot be null");
+        }
+        if (env == null) {
+            throw new NullPointerException("env cannot be null");
         }
         List<AttachProvider> providers = AttachProvider.providers();
         if (providers.size() == 0) {

@@ -153,7 +153,7 @@ public class AttachRevival {
     static void testAttach(String coreFileName, String type, String command) throws Throwable {
         System.out.println("TEST: core: " + coreFileName + " Test type: " + type + " Command: " + command);
 
-        VirtualMachine vm = VirtualMachine.attach(coreFileName, null);
+        VirtualMachine vm = VirtualMachine.attach(coreFileName, Map.of());
         System.out.println("vm = '" + vm.toString() + "'");
         String id = vm.id();
         System.out.println("VM id = '" + id + "'");
