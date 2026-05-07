@@ -56,7 +56,7 @@ public:
 template<typename Clock = ShenandoahAllocationClock>
 class ShenandoahAllocRate {
   Atomic<size_t> _allocated_bytes_since_last_sample;
-  Monitor _sample_lock;
+  PaddedMonitor _sample_lock;
   jlong _last_sample_time;
   size_t _minimum_sample_size; // bytes
 
