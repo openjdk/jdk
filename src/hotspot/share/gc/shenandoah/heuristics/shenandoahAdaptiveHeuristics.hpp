@@ -33,12 +33,14 @@
 #include "utilities/numberSeq.hpp"
 
 class ShenandoahCycleDuration {
+  // Written by control thread, read by regulator thread
+  Monitor _gc_times_lock;
   ShenandoahWeightedSeq _gc_times;
 
 public:
   ShenandoahCycleDuration();
   void record_duration(double timestamp_at_start, double duration);
-  double predict_duration(double timestamp_at_start, double margin_of_error) const;
+  double predict_duration(double timestamp_at_start, double margin_of_error);
 };
 
 /*

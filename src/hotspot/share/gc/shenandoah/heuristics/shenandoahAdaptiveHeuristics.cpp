@@ -60,14 +60,18 @@ constexpr double MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 // allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
 constexpr uint GC_TIME_SAMPLE_SIZE = 15;
 
-ShenandoahCycleDuration::ShenandoahCycleDuration() : _gc_times(GC_TIME_SAMPLE_SIZE) {}
+ShenandoahCycleDuration::ShenandoahCycleDuration()
+  : _gc_times_lock(Mutex::nosafepoint - 2, "ShenandoahCycleTimes_lock", true)
+  , _gc_times(GC_TIME_SAMPLE_SIZE) {}
 
 void ShenandoahCycleDuration::record_duration(double time_at_start, double gc_time) {
-  log_info(gc, sampling)("Cycle started at: %.3f, completed in %.3fs", time_at_start, gc_time);
+  log_debug(gc, sampling)("Cycle started at: %.3f, completed in %.3fs", time_at_start, gc_time);
+  MonitorLocker locker(&_gc_times_lock, Mutex::_no_safepoint_check_flag);
   _gc_times.add(time_at_start, gc_time);
 }
 
-double ShenandoahCycleDuration::predict_duration(double timestamp_at_start, double margin_of_error) const {
+double ShenandoahCycleDuration::predict_duration(double timestamp_at_start, double margin_of_error) {
+  MonitorLocker locker(&_gc_times_lock, Mutex::_no_safepoint_check_flag);
   double slope(0.0), intercept(0.0);
   _gc_times.fit_line(slope, intercept);
   if (std::isfinite(slope)) {
