@@ -715,9 +715,13 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
   Thread* current_thread = Thread::current();
 
   HandshakeOperation* op = get_op();
-  assert(op != nullptr, "Must have an op");
-  assert(op->is_enabled(), "Should not reach here with a disabled op");
+  // It is possible that since we claimed the handshake the op has
+  // transitioned to a disabled state and so won't be returned by get_op.
+  if (op == nullptr) {
+      return HandshakeState::_no_operation;
+  }
 
+  assert(op->is_enabled(), "Should not reach here with a disabled op");
   assert(SafepointMechanism::local_poll_armed(_handshakee), "Must be");
   assert(op->_target == nullptr || _handshakee == op->_target, "Wrong thread");
 
