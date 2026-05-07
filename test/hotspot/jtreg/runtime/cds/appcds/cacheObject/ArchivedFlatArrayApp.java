@@ -89,7 +89,7 @@ public class ArchivedFlatArrayApp {
             throw new RuntimeException("Integer array should be flat");
         }
 
-        if (!ValueClass.isFlatArray(archivedObjects.intArray)) {
+        if (!ValueClass.isFlatArray(archivedObjects.charPairArray)) {
             throw new RuntimeException("CharPair array should be flat");
         }
 

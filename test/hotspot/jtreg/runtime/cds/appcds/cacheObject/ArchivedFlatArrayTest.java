@@ -70,6 +70,6 @@ public class ArchivedFlatArrayTest {
 
     public static void main(String[] args) throws Exception {
         test(mainClass, TestCommon.list(mainClass, "ArchivedFlatArrayApp$ArchivedData", "ArchivedFlatArrayApp$CharPair"));
-        test(mainClass, TestCommon.list(mainClass2, "ArchivedArrayLayoutsApp$ArchivedData", "ArchivedArrayLayoutsApp$Point"));
+        test(mainClass2, TestCommon.list(mainClass2, "ArchivedArrayLayoutsApp$ArchivedData", "ArchivedArrayLayoutsApp$Point"));
     }
 }

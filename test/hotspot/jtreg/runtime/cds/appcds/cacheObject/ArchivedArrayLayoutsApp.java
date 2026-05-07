@@ -117,7 +117,7 @@ public class ArchivedArrayLayoutsApp {
             Point[] runtimeArray = new Point[3];
             runtimeArray[0] = new Point(0, 1);
             runtimeArray[1] = new Point(1, 0);
-            runtimeArray[2] = new Point(1, 2);
+            runtimeArray[2] = new Point(1, 1);
 
             checkArray(archivedObjects.pointArray, runtimeArray);
             checkArray(archivedObjects.nullRestrictedArray, runtimeArray);
