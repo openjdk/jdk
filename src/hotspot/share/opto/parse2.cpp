@@ -304,10 +304,51 @@ public:
     // }
 
     if (element_ptr->is_inlinetypeptr()) {
+      ciArrayLoadData* array_load = profile_data();
+      float null_free_prob = PROB_FAIR;
+      float null_free_atomic_prob = PROB_FAIR;
+      if (array_load != nullptr && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+        int flat_nullable_count = array_load->flat_nullable_count();
+        int flat_nullfree_atomic_count = array_load->flat_nullfree_atomic_count();
+        int flat_nullfree_not_atomic_count = array_load->flat_nullfree_not_atomic_count();
+        ciMegamorphicTypeData* megamorphic_type_data = array_load->megamorphic_type_data();
+        for (uint i = 0; i < megamorphic_type_data->row_limit(); ++i) {
+          ciKlass* receiver = megamorphic_type_data->receiver(i);
+          if (receiver != nullptr && receiver->is_subtype_of(element_ptr->is_instptr()->instance_klass())) {
+            ciFlatArrayKlass* flat_array_klass = receiver->as_flat_array_klass();;
+            if (!flat_array_klass->is_elem_null_free()) {
+              saturated_add(flat_nullable_count, megamorphic_type_data->receiver_count(i));
+            } else {
+              if (flat_array_klass->is_elem_atomic()) {
+                saturated_add(flat_nullfree_atomic_count, megamorphic_type_data->receiver_count(i));
+              } else {
+                saturated_add(flat_nullfree_not_atomic_count, megamorphic_type_data->receiver_count(i));
+              }
+            }
+          }
+        }
+        float count = saturated_add(flat_nullable_count, saturated_add(flat_nullfree_atomic_count, flat_nullfree_not_atomic_count));
+        if (flat_nullable_count == 0) {
+          null_free_prob = 1;
+        } else if (flat_nullable_count == count) {
+          null_free_prob = 0;
+        } else {
+          null_free_prob = clamp(1 - (float)flat_nullable_count / count, PROB_MIN, PROB_MAX);
+        }
+        float null_free_count = saturated_add(flat_nullfree_atomic_count, flat_nullfree_not_atomic_count);
+        if (flat_nullfree_atomic_count == 0) {
+          null_free_atomic_prob = 0;
+        } else if (flat_nullfree_atomic_count == null_free_count) {
+          null_free_atomic_prob = 1;
+        } else {
+          null_free_atomic_prob = clamp((float) flat_nullfree_atomic_count / null_free_count, PROB_MIN, PROB_MAX);
+        }
+      }
+
       ciInlineKlass* vk = element_ptr->inline_klass();
       Node* flat_array = _parse.cast_to_flat_array(array, vk);
 
-      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
       ld = vt;
 
       if (_region != nullptr) {

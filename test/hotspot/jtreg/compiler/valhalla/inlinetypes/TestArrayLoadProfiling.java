@@ -70,6 +70,7 @@ public class TestArrayLoadProfiling {
     static MyValue5[] array18 = (MyValue5[])ValueClass.newNullRestrictedAtomicArray(MyValue5.class, 1, new MyValue5((byte)42)); // non atomic
     static MyValue5[] array19 = (MyValue5[])ValueClass.newNullableAtomicArray(MyValue5.class, 1);
     static MyValue5[] array20 = { new MyValue5((byte)42) };
+    static MyValue4[] array21 = (MyValue4[])ValueClass.newReferenceArray(MyValue4.class, 1);
     static {
         array6[0] = new MyValue1((byte)42);
         array7[0] = new MyValue2((byte)42);
@@ -78,6 +79,7 @@ public class TestArrayLoadProfiling {
         array12[0] = new MyValue3((byte)42);
         array15[0] = new MyValue4((byte)42);
         array19[0] = new MyValue5((byte)42);
+        array21[0] = new MyValue4((byte)42);
     }
     
     @Test
@@ -396,7 +398,7 @@ public class TestArrayLoadProfiling {
     @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "8" })
     @IR(failOn = IRNode.ALLOC)
     public static void test21() {
-        I[] array = array3;
+        I[] array = array16;
         test21Inline(array);
     }
 
@@ -404,9 +406,9 @@ public class TestArrayLoadProfiling {
     public static void test21Runner() {
         test21();
         test21Inline(array2);
-        test21Inline(array4);
+        test21Inline(array20);
         test21Inline(array5);
-        test21Inline(array7);
+        test21Inline(array1);
     }
 
     @ForceInline
@@ -515,20 +517,17 @@ public class TestArrayLoadProfiling {
 
     @Run(test = "test26")
     public static void test26Runner() {
-        System.out.println("array13 is " + (ValueClass.isFlatArray(array13) ? "flat" : " non flat") + " " + (ValueClass.isAtomicArray(array13) ? "atomic" : " non atomic"));
-        System.out.println("array14 is " + (ValueClass.isFlatArray(array13) ? "flat" : " non flat") + " " + (ValueClass.isAtomicArray(array14) ? "atomic" : " non atomic"));
-        System.out.println("array17 is " + (ValueClass.isFlatArray(array13) ? "flat" : " non flat") + " " + (ValueClass.isAtomicArray(array17) ? "atomic" : " non atomic"));
-        System.out.println("array18 is " + (ValueClass.isFlatArray(array13) ? "flat" : " non flat") + " " + (ValueClass.isAtomicArray(array18) ? "atomic" : " non atomic"));
-        for (int i = 0; i < 10; i++) {
-            test26(array1);
-            test26(array2);
-        }
-        // test26(array13);
+        // test26(array21); // not flat, nullable
+        // test26(array20); // flat, nullable, atomic
+        // test26(array19); // flat, nullable, atomic
+        // test26(array14); // flat, null restricted atomic
+        test26(array13); // flat, null restricted, non atomic
+
         // test26(array14);
         // test26(array17);
         // test26(array18);
-        test26(array15);
-        test26(array16);
+        // test26(array15);
+        // test26(array16);
     }
 
     // @Test

@@ -2153,11 +2153,11 @@ public:
   }
 
   int not_flat_count() const {
-    return not_flat_null_free_count() + not_flat_nullable_count();
+    return saturated_add(not_flat_null_free_count(), not_flat_nullable_count());
   }
 
   int flat_count() const {
-    return flat_nullfree_atomic_count() + flat_nullfree_not_atomic_count() + flat_nullable_count();
+    return saturated_add(saturated_add(flat_nullfree_atomic_count(), flat_nullfree_not_atomic_count()), flat_nullable_count());
   }
 
   int not_flat_null_free_count() const {
