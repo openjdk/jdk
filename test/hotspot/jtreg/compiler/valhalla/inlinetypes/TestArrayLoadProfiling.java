@@ -71,6 +71,7 @@ public class TestArrayLoadProfiling {
     static MyValue5[] array19 = (MyValue5[])ValueClass.newNullableAtomicArray(MyValue5.class, 1);
     static MyValue5[] array20 = { new MyValue5((byte)42) };
     static MyValue4[] array21 = (MyValue4[])ValueClass.newReferenceArray(MyValue4.class, 1);
+    static MyValue2[] array22 = (MyValue2[])ValueClass.newNullRestrictedAtomicArray(MyValue2.class, 1, new MyValue2((byte)42));
     static {
         array6[0] = new MyValue1((byte)42);
         array7[0] = new MyValue2((byte)42);
@@ -382,7 +383,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "8" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "9" })
     @IR(failOn = IRNode.ALLOC)
     public static void test20(MyValue1[] array) {
         array[0].m();
@@ -395,7 +396,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "8" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "8" })
     @IR(failOn = IRNode.ALLOC)
     public static void test21() {
         I[] array = array16;
@@ -405,10 +406,10 @@ public class TestArrayLoadProfiling {
     @Run(test = "test21")
     public static void test21Runner() {
         test21();
-        test21Inline(array2);
-        test21Inline(array20);
-        test21Inline(array5);
-        test21Inline(array1);
+        test21Inline(array2); // flat, nullable
+        test21Inline(array20); // flat, nullable
+        test21Inline(array5); // not flat
+        test21Inline(array1); // flat, nullable
     }
 
     @ForceInline
@@ -417,18 +418,19 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "7" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "7" })
     @IR(failOn = IRNode.ALLOC)
     public static void test22() {
-        I[] array = array3;
+        I[] array = array16;
         test22Inline(array);
     }
 
     @Run(test = "test22")
     public static void test22Runner() {
         test22();
-        test22Inline(array2);
-        test22Inline(array4);
+        test22Inline(array2); // flat, nullable
+        test22Inline(array20); // flat, nullable
+        test22Inline(array1); // flat, nullable
     }
 
     @ForceInline
@@ -461,7 +463,7 @@ public class TestArrayLoadProfiling {
     // }
 
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "9" })
     @IR(failOn = IRNode.ALLOC)
     public static void test23(I[] array) {
         test23Inline(array[0]);
@@ -469,11 +471,11 @@ public class TestArrayLoadProfiling {
 
     @Run(test = "test23")
     public static void test23Runner() {
-        test23(array1);
-        test23(array3);
-        test23(array6);
-        test23(array8);
-        test23(array9);
+        test23(array1); // flat nullable
+        //test23(array3); // flat null free non atomic
+        test23(array6); // not flat
+        test23(array8); // flat null free atomic
+        test23(array9); // flat nullable atomic
         test23Inline(array2[0]);
         test23Inline(array4[0]);
         test23Inline(array5[0]);
@@ -507,28 +509,70 @@ public class TestArrayLoadProfiling {
     public static void test25Runner() {
         test25(array12, 0, 0, 0);
     }
-    
+
     @Test
-    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "4" })
-    // @IR(failOn = IRNode.ALLOC)
-    public static I test26(I[] array) {
-        return array[0];
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "3", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "7" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test26() {
+        I[] array = array14;
+        test26Inline(array);
     }
 
     @Run(test = "test26")
     public static void test26Runner() {
-        // test26(array21); // not flat, nullable
-        // test26(array20); // flat, nullable, atomic
-        // test26(array19); // flat, nullable, atomic
-        // test26(array14); // flat, null restricted atomic
-        test26(array13); // flat, null restricted, non atomic
-
-        // test26(array14);
-        // test26(array17);
-        // test26(array18);
-        // test26(array15);
-        // test26(array16);
+        test26();
+        test26Inline(array8); // flat, null free atomic
+        test26Inline(array22); // flat, null free atomic
+        test26Inline(array18); // flat, null free atomic
     }
+
+    @ForceInline
+    static void test26Inline(I[] array) {
+        array[0].m();
+    }
+    
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "3", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "7" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test27() {
+        I[] array = array13;
+        test27Inline(array);
+    }
+
+    @Run(test = "test27")
+    public static void test27Runner() {
+        test27();
+        test27Inline(array3); // flat, null free non atomic
+        test27Inline(array10); // flat, null free non atomic
+        test27Inline(array17); // flat, null free non atomic
+    }
+
+    @ForceInline
+    static void test27Inline(I[] array) {
+        array[0].m();
+    }
+
+    // @Test
+    // // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "4" })
+    // // @IR(failOn = IRNode.ALLOC)
+    // public static I test26(I[] array) {
+    //     return array[0];
+    // }
+
+    // @Run(test = "test26")
+    // public static void test26Runner() {
+    //     // test26(array21); // not flat, nullable
+    //     // test26(array20); // flat, nullable, atomic
+    //     // test26(array19); // flat, nullable, atomic
+    //     // test26(array14); // flat, null restricted atomic
+    //     test26(array13); // flat, null restricted, non atomic
+
+    //     // test26(array14);
+    //     // test26(array17);
+    //     // test26(array18);
+    //     // test26(array15);
+    //     // test26(array16);
+    // }
 
     // @Test
     // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
@@ -548,6 +592,7 @@ public class TestArrayLoadProfiling {
     }
     
 
+    @LooselyConsistentValue
     static value class MyValue1 implements I {
         byte byteField;
         byte byteField2;
@@ -605,11 +650,14 @@ public class TestArrayLoadProfiling {
         }
     }
 
+    @LooselyConsistentValue
     static value class MyValue5 implements I {
         byte byteField;
+        byte byteField2;
 
         MyValue5(byte byteField) {
             this.byteField = byteField;
+            this.byteField2 = byteField;
         }
 
         public void m() {
