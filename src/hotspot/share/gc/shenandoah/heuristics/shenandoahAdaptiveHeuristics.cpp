@@ -412,18 +412,13 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(Shenando
     if (acceleration > 0) {
       log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
                   "current rate (" PROPERFMT_F "/s) with acceleration (" PROPERFMT_F "/s/s) for anticipated GC duration (%.2f ms)",
-                  PROPERFMTARGS(anticipated_consumption * HeapWordSize),
-                  PROPERFMTARGS(allocatable_bytes),
-                  PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
-                  PROPERFMT_F_ARGS(acceleration * HeapWordSize),
-                  anticipated_gc_duration * 1000);
+                  PROPERFMTARGS(anticipated_consumption), PROPERFMTARGS(allocatable_bytes),
+                  PROPERFMT_F_ARGS(current_rate_by_acceleration), PROPERFMT_F_ARGS(acceleration), anticipated_gc_duration * 1000);
     } else {
       log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
                   "current rate (" PROPERFMT_F "/s) for anticipated GC duration (%.2f ms)",
-                  PROPERFMTARGS(anticipated_consumption * HeapWordSize),
-                  PROPERFMTARGS(allocatable_bytes),
-                  PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
-                  anticipated_gc_duration * 1000);
+                  PROPERFMTARGS(anticipated_consumption), PROPERFMTARGS(allocatable_bytes),
+                  PROPERFMT_F_ARGS(current_rate_by_acceleration), anticipated_gc_duration * 1000);
     }
 
     // Count this as a form of RATE trigger for purposes of adjusting heuristic triggering configuration because this
