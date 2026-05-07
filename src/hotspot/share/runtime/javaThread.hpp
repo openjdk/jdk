@@ -976,7 +976,7 @@ public:
   bool jni_deferred_suspension() { return AtomicAccess::load(&_jni_deferred_suspension_count); }
   inline void enter_jni_deferred_suspension();
   void exit_jni_deferred_suspension() {
-    assert(Thread::current() == this, "this must be current thread");
+    precond(Thread::current() == this);
     _jni_deferred_suspension_count--;
     assert(_jni_deferred_suspension_count >= 0,
            "JNI deferred suspension nesting problem?");
