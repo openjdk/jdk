@@ -21,6 +21,8 @@
  * questions.
  */
 
+import static jdk.jpackage.test.JPackageCommand.MessageCategory.TRACE;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -76,17 +78,17 @@ public class MacPropertiesTest {
     }
 
     enum BundleIdentifierMessage implements CannedFormattedString.Spec {
-        VALUE("message.derived-bundle-identifier", "bundle-id"),
+        VALUE("TRACE: Derived bundle identifier: {0}", "bundle-id"),
         ;
 
-        BundleIdentifierMessage(String key, Object ... args) {
-            this.key = Objects.requireNonNull(key);
+        BundleIdentifierMessage(String format, Object ... args) {
+            this.format = Objects.requireNonNull(format);
             this.args = List.of(args);
         }
 
         @Override
         public String format() {
-            return key;
+            return format;
         }
 
         @Override
@@ -94,7 +96,12 @@ public class MacPropertiesTest {
             return args;
         }
 
-        private final String key;
+        @Override
+        public CannedFormattedString.Spec.Formatter formatter() {
+            return CannedFormattedString.Spec.Formatter.MESSAGE_FORMAT;
+        }
+
+        private final String format;
         private final List<Object> args;
     }
 
@@ -118,9 +125,12 @@ public class MacPropertiesTest {
 
         void run() {
             var cmd = appDesc.map(JPackageCommand::helloAppImage).orElseGet(JPackageCommand::helloAppImage)
-                    .setFakeRuntime().addArguments(addArgs);
+                    .setFakeRuntime()
+                    .setEnabledMessageCategories(TRACE);
 
             delArgs.forEach(cmd::removeArgumentWithValue);
+
+            cmd.addArguments(addArgs);
 
             Consumer<JPackageOutputValidator> validatorMutator = validator -> {
                 validator.matchTimestamps().stripTimestamps();

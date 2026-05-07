@@ -178,6 +178,9 @@ void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
 }
 
 void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
+  if (_stub_data != nullptr && _stub_data->is_dumping()) {
+    _stub_data->stub_epilog(cdesc->stub_id());
+  }
   print_stub_code_desc(cdesc);
 }
 
@@ -259,15 +262,18 @@ void StubCodeGenerator::verify_stub(StubId stub_id) {
 
 // Implementation of CodeMark
 
-StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name) {
+StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name, StubId stub_id) {
   _cgen  = cgen;
-  _cdesc = new StubCodeDesc(group, name, _cgen->assembler()->pc());
+  _cdesc = new StubCodeDesc(group, name, _cgen->assembler()->pc(), nullptr, stub_id);
   _cgen->stub_prolog(_cdesc);
   // define the stub's beginning (= entry point) to be after the prolog:
   _cdesc->set_begin(_cgen->assembler()->pc());
 }
 
-StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) {
+StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name) : StubCodeMark(cgen, group, name, StubId::NO_STUBID) {
+}
+
+StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id), stub_id) {
 #ifdef ASSERT
   cgen->verify_stub(stub_id);
 #endif

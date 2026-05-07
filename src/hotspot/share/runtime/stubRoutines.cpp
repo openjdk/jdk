@@ -178,18 +178,23 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
   AOTStubData* stub_data_p = nullptr;
   LogTarget(Info, stubs) lt;
 
+  // we need to track and publish details of stubs in a stubgen blob
+  // when we are 1) using stubs from the cache 2) dumping stubs to the
+  // cache 3) generating stubs that may be needed by other cache
+  // elements.
+
+  if (stub_data.is_open()) {
+    stub_data_p = &stub_data;
+  }
   if (code_size > 0 && stub_data.is_using()) {
-    // AOTCodeEntry tracks and logs status of any cached blob
-    bool loaded = stub_data.load_code_blob();
-    if (loaded) {
+    // try to load the blob and details of its stubs from cache. if
+    // that fails we will still generate all necessary stubs
+    if (stub_data.load_code_blob()) {
       if (lt.is_enabled()) {
         LogStream ls(lt);
         ls.print_cr("Found blob %s in AOT cache", StubInfo::name(blob_id));
       }
-      stub_data_p = &stub_data;
     }
-  } else if (stub_data.is_dumping()) {
-    stub_data_p = &stub_data;
   }
 
   // Even if we managed to load a blob from the AOT cache we still
@@ -236,17 +241,8 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
          "increase %s, code_size: %d, used: %d, free: %d",
          assert_msg, code_size, buffer.total_content_size(), buffer.insts_remaining());
 
-  if (stub_data.is_using()) {
-    // we generated some new entries so republish all entries TODO -
-    // ensure we publish collect and publish the preuniverse stubs but
-    // don't try to save them
-    AOTCodeCache::publish_stub_addresses(*stubs_code, blob_id, &stub_data);
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      ls.print_cr("Republished entries for blob '%s'", buffer_name);
-    }
-  } else if (stub_data.is_dumping()) {
-    // save the blob and publihs the entry addresses
+  if (stub_data.is_dumping()) {
+    // save the blob and publish the entry addresses
     if (stub_data.store_code_blob(*stubs_code, &buffer)) {
       if (lt.is_enabled()) {
         LogStream ls(lt);
@@ -257,6 +253,17 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
         LogStream ls(lt);
         ls.print_cr("Failed to store blob '%s' to Startup Code Cache", buffer_name);
       }
+    }
+  } else if (stub_data.is_open()) {
+    // we either loaded some entries or generated new entries so
+    // publish all entries
+    //
+    // TODO - ensure we publish collect and publish the preuniverse
+    // stubs but don't try to save them
+    AOTCodeCache::publish_stub_addresses(*stubs_code, blob_id, &stub_data);
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print_cr("Republished entries for blob '%s'", buffer_name);
     }
   }
 
