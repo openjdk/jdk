@@ -383,7 +383,6 @@ protected:
     decl(HT,                ht                )  \
     decl(3DNOW_PREFETCH,    3dnowpref         )  /* Processor supports 3dnow prefetch and prefetchw instructions */ \
                                                  /* may not necessarily support other 3dnow instructions */ \
-    decl(SSE2,              sse2              )  \
     decl(SSE3,              sse3              ) /* SSE3 comes from cpuid 1 (ECX) */ \
     decl(SSSE3,             ssse3             ) \
     decl(SSE4A,             sse4a             ) \
@@ -852,7 +851,6 @@ public:
   static bool supports_cmov()         { return _features.supports_feature(CPU_CMOV); }
   static bool supports_fxsr()         { return _features.supports_feature(CPU_FXSR); }
   static bool supports_ht()           { return _features.supports_feature(CPU_HT); }
-  static bool supports_sse2()         { return _features.supports_feature(CPU_SSE2); }
   static bool supports_sse3()         { return _features.supports_feature(CPU_SSE3); }
   static bool supports_ssse3()        { return _features.supports_feature(CPU_SSSE3); }
   static bool supports_sse4_1()       { return _features.supports_feature(CPU_SSE4_1); }

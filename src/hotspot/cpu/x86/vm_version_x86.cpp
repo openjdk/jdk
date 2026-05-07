@@ -511,7 +511,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // and check upper YMM/ZMM bits after it.
     //
     int saved_useavx = UseAVX;
-    int saved_usesse = UseSSE;
 
     // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
@@ -542,7 +541,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // EVEX setup: run in lowest evex mode
       VM_Version::set_evex_cpuFeatures(); // Enable temporary to pass asserts
       UseAVX = 3;
-      UseSSE = 2;
 #ifdef _WINDOWS
       // xmm5-xmm15 are not preserved by caller on windows
       // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
@@ -569,7 +567,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // AVX setup
     VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
     UseAVX = 1;
-    UseSSE = 2;
 #ifdef _WINDOWS
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm7);
@@ -623,7 +620,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // EVEX check: run in lowest evex mode
       VM_Version::set_evex_cpuFeatures(); // Enable temporary to pass asserts
       UseAVX = 3;
-      UseSSE = 2;
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm_save_offset())));
       __ evmovdqul(Address(rsi, 0), xmm0, Assembler::AVX_512bit);
       __ evmovdqul(Address(rsi, 64), xmm7, Assembler::AVX_512bit);
@@ -641,7 +637,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       generate_vzeroupper(wrapup);
       VM_Version::clean_cpuFeatures();
       UseAVX = saved_useavx;
-      UseSSE = saved_usesse;
       __ jmp(wrapup);
    }
 
@@ -649,7 +644,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // AVX check
     VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
     UseAVX = 1;
-    UseSSE = 2;
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::ymm_save_offset())));
     __ vmovdqu(Address(rsi, 0), xmm0);
     __ vmovdqu(Address(rsi, 32), xmm7);
@@ -668,7 +662,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     generate_vzeroupper(wrapup);
     VM_Version::clean_cpuFeatures();
     UseAVX = saved_useavx;
-    UseSSE = saved_usesse;
 
     __ bind(wrapup);
     __ popf();
@@ -906,13 +899,7 @@ void VM_Version::get_processor_features() {
   _supports_atomic_getadd8 = true;
 
   // OS should support SSE for x64 and hardware should support at least SSE2.
-  if (!VM_Version::supports_sse2()) {
-    vm_exit_during_initialization("Unknown x64 processor: SSE2 not supported");
-  }
-  // in 64 bit the use of SSE2 is the minimum
-  if (UseSSE < 2) {
-    UseSSE = 2;
-  }
+  guarantee(_cpuid_info.std_cpuid1_edx.bits.sse2 != 0, "Unknown x64 processor: SSE2 not supported");
 
   // flush_icache_stub have to be generated first.
   // That is why Icache line size is hard coded in ICache class,
@@ -968,8 +955,8 @@ void VM_Version::get_processor_features() {
   }
 
   // UseSSE is set to the smaller of what hardware supports and what
-  // the command line requires.  I.e., you cannot set UseSSE to 2 on
-  // older Pentiums which do not support it.
+  // the command line requires. i.e., you cannot set UseSSE to 4 on
+  // older systems which do not support it.
   int use_sse_limit = 2;
   if (UseSSE > 3 && supports_sse4_1()) {
     use_sse_limit = 4;
@@ -2891,8 +2878,6 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   // HT flag is set for multi-core processors also.
   if (threads_per_core() > 1)
     vm_features.set_feature(CPU_HT);
-  if (std_cpuid1_edx.bits.sse2 != 0)
-    vm_features.set_feature(CPU_SSE2);
   if (std_cpuid1_ecx.bits.sse3 != 0)
     vm_features.set_feature(CPU_SSE3);
   if (std_cpuid1_ecx.bits.ssse3 != 0)
