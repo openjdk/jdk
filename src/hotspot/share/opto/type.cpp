@@ -2597,7 +2597,7 @@ const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
 };
 
 //------------------------------make-------------------------------------------
-const TypePtr *TypePtr::make(TYPES t, enum PTR ptr, int offset,
+const TypePtr* TypePtr::make(TYPES t, enum PTR ptr, int offset,
                              const TypePtr* speculative, int inline_depth,
                              relocInfo::relocType reloc) {
   return (TypePtr*)(new TypePtr(t, ptr, offset, reloc, speculative, inline_depth))->hashcons();
