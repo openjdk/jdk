@@ -982,7 +982,7 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     // and 'i2b' patterns which typically fold into 'StoreC/StoreB'.
     if (bt != T_INT || con < 16) {
       // Left input is an add of the same number?
-      if (con != (num_bits - 1) && add1->in(1) == add1->in(2)) {
+      if (con != (bits_per_java_integer(bt) - 1) && add1->in(1) == add1->in(2)) {
         // Convert "(x + x) << c0" into "x << (c0 + 1)"
         // In general, this optimization cannot be applied for c0 == 31 (for LShiftI) since
         // 2x << 31 != x << 32 = x << 0 = x (e.g. x = 1: 2 << 31 = 0 != 1)
