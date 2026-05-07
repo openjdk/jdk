@@ -2352,14 +2352,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         if (FLAG_SET_CMDLINE(BytecodeVerificationRemote, true) != JVMFlag::SUCCESS) {
           return JNI_EINVAL;
         }
-      } else if (strcmp(tail, ":none") == 0) {
-        if (FLAG_SET_CMDLINE(BytecodeVerificationLocal, false) != JVMFlag::SUCCESS) {
-          return JNI_EINVAL;
-        }
-        if (FLAG_SET_CMDLINE(BytecodeVerificationRemote, false) != JVMFlag::SUCCESS) {
-          return JNI_EINVAL;
-        }
-        warning("Options -Xverify:none and -noverify were deprecated in JDK 13 and will likely be removed in a future release.");
       } else if (is_bad_option(option, args->ignoreUnrecognized, "verification")) {
         return JNI_EINVAL;
       }
