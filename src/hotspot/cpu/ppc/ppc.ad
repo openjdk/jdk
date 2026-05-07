@@ -1426,14 +1426,16 @@ int ConstantTable::calculate_table_base_offset() const {
 
 bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
 void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  iRegLdstOper *op_dst = new iRegLdstOper();
+  iRegPdstOper *op_dst = new iRegPdstOper();
   MachNode *m1 = new loadToc_hiNode();
   MachNode *m2 = new loadToc_loNode();
 
   m1->add_req(nullptr);
   m2->add_req(nullptr, m1);
   m1->_opnds[0] = op_dst;
+  m1->_bottom_type = bottom_type(); // MachNode::bottom_type() can't derive type from op_dst
   m2->_opnds[0] = op_dst;
+  m2->_bottom_type = bottom_type(); // MachNode::bottom_type() can't derive type from op_dst
   m2->_opnds[1] = op_dst;
   ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
   ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2632,7 +2634,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // operands for new nodes
     m1->_opnds[0] = new iRegLdstOper(); // dst
     m1->_opnds[1] = immSrc;             // src
-    m1->_opnds[2] = new iRegLdstOper(); // toc
+    m1->_opnds[2] = new iRegPdstOper(); // toc
     m2->_opnds[0] = new iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;             // src
     m2->_opnds[2] = new iRegLdstOper(); // base
@@ -2663,7 +2665,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // operands for new nodes
     m2->_opnds[0] = new iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;             // src
-    m2->_opnds[2] = new iRegLdstOper(); // toc
+    m2->_opnds[2] = new iRegPdstOper(); // toc
 
     // Initialize ins_attrib instruction offset.
     m2->_cbuf_insts_offset = -1;
@@ -2714,7 +2716,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     // operands for new nodes
     m1->_opnds[0] = new  iRegLdstOper(); // dst
     m1->_opnds[1] = immSrc;              // src
-    m1->_opnds[2] = new  iRegLdstOper(); // toc
+    m1->_opnds[2] = new  iRegPdstOper(); // toc
 
     m2->_opnds[0] = new  iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;              // src
@@ -2760,7 +2762,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     // operands for new nodes
     m2->_opnds[0] = new  iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;              // src
-    m2->_opnds[2] = new  iRegLdstOper(); // toc
+    m2->_opnds[2] = new  iRegPdstOper(); // toc
 
     m3->_opnds[0] = new  vecXOper();     // dst
     m3->_opnds[1] = new  iRegLdstOper(); // src
@@ -2893,14 +2895,14 @@ encode %{
       m2->add_req(nullptr, m1);
 
       // operands for new nodes
-      m1->_opnds[0] = new iRegLdstOper(); // dst (not an oop)
+      m1->_opnds[0] = new iRegPdstOper(); // dst
       m1->_opnds[1] = op_src;             // src
-      m1->_opnds[2] = new iRegLdstOper(); // toc
-      m1->_bottom_type = bottom_type(); // should be consistent with m2->_bottom_type (see below)
+      m1->_opnds[2] = new iRegPdstOper(); // toc
+      m1->_bottom_type = bottom_type();   // MachNode::bottom_type() can't derive type from op_dst
       m2->_opnds[0] = new iRegPdstOper(); // dst
       m2->_opnds[1] = op_src;             // src
       m2->_opnds[2] = new iRegLdstOper(); // base
-      m2->_bottom_type = bottom_type(); // result is an oop, MachNode::bottom_type() requires setting it
+      m2->_bottom_type = op_src->type();  // result is an oop, MachNode::bottom_type() requires setting it
 
       // Initialize ins_attrib TOC fields.
       m1->_const_toc_offset = -1;
@@ -2922,8 +2924,8 @@ encode %{
       // operands for new nodes
       m2->_opnds[0] = new iRegPdstOper(); // dst
       m2->_opnds[1] = op_src;             // src
-      m2->_opnds[2] = new iRegLdstOper(); // toc
-      m2->_bottom_type = bottom_type(); // result is an oop, MachNode::bottom_type() requires setting it
+      m2->_opnds[2] = new iRegPdstOper(); // toc
+      m2->_bottom_type = op_src->type();  // result is an oop, MachNode::bottom_type() requires setting it
 
       // Register allocation for new nodes.
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2950,7 +2952,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2974,7 +2976,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
