@@ -50,6 +50,8 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   address              _end;      // points to the first byte after the stub code (excluded)
   uint                 _disp;     // Displacement relative base address in buffer.
   bool                 _loaded_from_cache;
+  // id when this is an enumerated stub otherwise StubId::NO_STUBID
+  StubId               _stub_id;
 
   friend class StubCodeMark;
   friend class StubCodeGenerator;
@@ -75,7 +77,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
 
   static StubCodeDesc* desc_for(address pc);     // returns the code descriptor for the code containing pc or null
 
-  StubCodeDesc(const char* group, const char* name, address begin, address end = nullptr) {
+  StubCodeDesc(const char* group, const char* name, address begin, address end = nullptr, StubId stub_id = StubId::NO_STUBID) {
     assert(!_frozen, "no modifications allowed");
     assert(name != nullptr, "no name specified");
     _next           = _list;
@@ -86,6 +88,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
     _disp           = 0;
     _list           = this;
     _loaded_from_cache = false;
+    _stub_id = stub_id;
   };
 
   static void freeze();
@@ -99,6 +102,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   int         size_in_bytes() const              { return pointer_delta_as_int(_end, _begin); }
   bool        contains(address pc) const         { return _begin <= pc && pc < _end; }
   bool        loaded_from_cache() const          { return _loaded_from_cache; }
+  StubId      stub_id() const                    { return _stub_id; }
   void        print_on(outputStream* st) const;
   void        print() const;
 };
@@ -199,7 +203,8 @@ class StubCodeMark: public StackObj {
   StubCodeGenerator* _cgen;
   StubCodeDesc*      _cdesc;
 
- public:
+  StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name, StubId stub_id);
+    public:
   StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name);
   StubCodeMark(StubCodeGenerator* cgen, StubId stub_id);
   ~StubCodeMark();
