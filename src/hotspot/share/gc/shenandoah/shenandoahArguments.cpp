@@ -217,8 +217,8 @@ void ShenandoahArguments::initialize() {
     || ShenandoahRecentAllocRateSampleWindow > ShenandoahAllocRateSampleWindow) {
     vm_exit_during_initialization(
       err_msg("Relation must hold: ShenandoahMomentaryAllocRateSampleWindow (%u) "
-              "< ShenandoahRecentAllocRateSampleWindow (%u)"
-              "< ShenandoahAllocRateSampleWindow (%u)",
+              "<= ShenandoahRecentAllocRateSampleWindow (%u) "
+              "<= ShenandoahAllocRateSampleWindow (%u)",
         ShenandoahMomentaryAllocRateSampleWindow, ShenandoahRecentAllocRateSampleWindow,
         ShenandoahAllocRateSampleWindow));
   }
