@@ -28,6 +28,7 @@
  * @author weijun.wang
  * @modules java.base/sun.security.tools.keytool
  * @compile -XDignore.symbol.file CloseFile.java
+ * @run main CloseFile
  * @run main/othervm -Dkeystore.pkcs12.macAlgorithm=HmacPBESHA256 CloseFile
  * @run main/othervm -Dkeystore.pkcs12.macAlgorithm=PBEWithHmacSHA256 CloseFile
  *

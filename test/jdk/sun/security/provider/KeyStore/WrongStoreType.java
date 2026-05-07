@@ -25,6 +25,7 @@
  * @test
  * @bug 8234744 8383813
  * @summary KeyStore.store can write wrong type of file
+ * @run main WrongStoreType
  * @run main/othervm -Dkeystore.pkcs12.macAlgorithm=HmacPBESHA256 WrongStoreType
  * @run main/othervm -Dkeystore.pkcs12.macAlgorithm=PBEWithHmacSHA256 WrongStoreType
  */
