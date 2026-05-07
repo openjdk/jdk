@@ -688,9 +688,9 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   address entry = __ pc();
 
   __ push(state);
-  __ push_cont_fastpath();
+  __ push_cont_fastpath(R11_scratch1, R12_scratch2);
   __ call_VM(noreg, runtime_entry);
-  __ pop_cont_fastpath();
+  __ pop_cont_fastpath(R11_scratch1, R12_scratch2);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
 
   return entry;
@@ -1456,9 +1456,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // j.l.Object::wait calls are preempted which don't return a result.
     __ std(result_handler_addr, _ijava_state_neg(lresult), R11_scratch1);
   }
-  __ push_cont_fastpath();
+  __ push_cont_fastpath(R11_scratch1, R12_scratch2);
   __ call_c(native_method_fd);
-  __ pop_cont_fastpath();
+  __ pop_cont_fastpath(R11_scratch1, R12_scratch2);
 
   __ li(R0, 0);
   __ ld(R11_scratch1, 0, R1_SP);
@@ -2137,7 +2137,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // we will reexecute the call that called us.
     __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*reload return_pc*/ return_pc, R11_scratch1, R12_scratch2);
     __ mtlr(return_pc);
-    __ pop_cont_fastpath();
+    __ pop_cont_fastpath(R11_scratch1, R12_scratch2);
     __ blr();
 
     // The non-deoptimized case.
@@ -2149,7 +2149,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     // Get out of the current method and re-execute the call that called us.
     __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ noreg, R11_scratch1, R12_scratch2);
-    __ pop_cont_fastpath();
+    __ pop_cont_fastpath(R11_scratch1, R12_scratch2);
     __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
     if (ProfileInterpreter) {
       __ set_method_data_pointer_for_bcp();
@@ -2208,7 +2208,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     // Remove the current activation.
     __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ noreg, R11_scratch1, R12_scratch2);
-    __ pop_cont_fastpath();
+    __ pop_cont_fastpath(R11_scratch1, R12_scratch2);
 
     __ mr(R4_ARG2, return_pc);
     __ mtlr(R3_RET);

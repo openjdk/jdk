@@ -2130,9 +2130,9 @@ void TemplateTable::_return(TosState state) {
     __ andi_(R11_scratch1, R11_scratch1, SafepointMechanism::poll_bit());
     __ beq(CR0, no_safepoint);
     __ push(state);
-    __ push_cont_fastpath();
+    __ push_cont_fastpath(R11_scratch1, R12_scratch2);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
-    __ pop_cont_fastpath();
+    __ pop_cont_fastpath(R11_scratch1, R12_scratch2);
     __ pop(state);
     __ bind(no_safepoint);
   }

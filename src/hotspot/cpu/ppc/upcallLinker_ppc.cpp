@@ -164,13 +164,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ bctrl(); // loads target Method* into R19_method
   __ block_comment("} load target ");
 
-  __ push_cont_fastpath();
+  __ push_cont_fastpath(R11_scratch1, R12_scratch2);
 
   __ ld(call_target_address, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(call_target_address);
   __ bctrl();
 
-  __ pop_cont_fastpath();
+  __ pop_cont_fastpath(R11_scratch1, R12_scratch2);
 
   // return value shuffle
   if (!needs_return_buffer) {

@@ -925,7 +925,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
   remove_top_frame_given_fp(fp, R21_sender_SP, R23_tmp3, /*return_pc*/ R0, R11_scratch1);
   mtlr(R0);
-  pop_cont_fastpath();
+  pop_cont_fastpath(R11_scratch1, R12_scratch2);
   JFR_ONLY(leave_jfr_critical_section();)
 
   BLOCK_COMMENT("} remove_activation");
@@ -2050,9 +2050,9 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address
   mr_if_needed(R4_ARG2, arg_1);
   assert(arg_2 != R4_ARG2, "smashed argument");
   mr_if_needed(R5_ARG3, arg_2, true /* allow_noreg */);
-  push_cont_fastpath();
+  push_cont_fastpath(R11_scratch1, R12_scratch2);
   call_VM(noreg /* oop_result */, entry_point, false /*check_exceptions*/, &resume_pc /* last_java_pc */);
-  pop_cont_fastpath();
+  pop_cont_fastpath(R11_scratch1, R12_scratch2);
 
 #ifdef ASSERT
   lwa(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);

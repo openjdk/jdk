@@ -4510,27 +4510,29 @@ void MacroAssembler::cache_wbsync(bool is_presync) {
   }
 }
 
-void MacroAssembler::push_cont_fastpath() {
+void MacroAssembler::push_cont_fastpath(Register tmp_fp, Register tmp_saved) {
   if (!Continuations::enabled()) return;
 
   Label done;
-  ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
-  cmpld(CR0, R1_SP, R0);
-  ble(CR0, done);          // if (SP <= _cont_fastpath) goto done;
-  st_ptr(R1_SP, JavaThread::cont_fastpath_offset(), R16_thread);
+  ld(tmp_fp, _abi0(callers_sp), R1_SP);
+  ld_ptr(tmp_saved, JavaThread::cont_fastpath_offset(), R16_thread);
+  cmpld(CR0, tmp_fp, tmp_saved);
+  ble(CR0, done);
+  st_ptr(tmp_fp, JavaThread::cont_fastpath_offset(), R16_thread);
   bind(done);
 }
 
-void MacroAssembler::pop_cont_fastpath() {
+void MacroAssembler::pop_cont_fastpath(Register tmp_fp, Register tmp_saved) {
   if (!Continuations::enabled()) return;
 
-  Label done;
-  ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
-  cmpld(CR0, R1_SP, R0);
-  blt(CR0, done);          // if (SP < _cont_fastpath) goto done;
-  li(R0, 0);
-  st_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
-  bind(done);
+   Label done;
+   ld(tmp_fp, _abi0(callers_sp), R1_SP);
+   ld_ptr(tmp_saved, JavaThread::cont_fastpath_offset(), R16_thread);
+   cmpld(CR0, tmp_fp, tmp_saved);
+   blt(CR0, done);
+   li(tmp_saved, 0);
+   st_ptr(tmp_saved, JavaThread::cont_fastpath_offset(), R16_thread);
+   bind(done);
 }
 
 // Function to flip between unlocked and locked state (fast locking).

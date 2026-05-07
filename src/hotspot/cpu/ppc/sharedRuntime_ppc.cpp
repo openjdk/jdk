@@ -1164,7 +1164,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
-  __ push_cont_fastpath(); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
+  __ push_cont_fastpath(R11_scratch1, R12_scratch2); // Set JavaThread::_cont_fastpath to the fp of the oldest interpreted frame we know about
 
   BLOCK_COMMENT("Store method");
   // Store method into thread->callee_target.
@@ -1736,7 +1736,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ lwz(reg_is_cont,    Interpreter::stackElementSize*2, R15_esp);
     __ lwz(reg_is_virtual, Interpreter::stackElementSize*1, R15_esp);
 
-    __ push_cont_fastpath();
+    __ push_cont_fastpath(R11_scratch1, R12_scratch2);
 
     OopMap* map = continuation_enter_setup(masm, framesize_words);
 
@@ -1883,6 +1883,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
                                    int& framesize_words,
                                    int& compiled_entry_offset) {
   Register tmp = R10_ARG8;
+  Register cur_fp = tmp;
 
   const int framesize_bytes = (int)align_up((int)frame::native_abi_reg_args_size, frame::alignment_in_bytes);
   framesize_words = framesize_bytes / wordSize;
@@ -1908,7 +1909,8 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   __ calculate_address_from_global_toc(tmp, last_java_pc); // will be relocated
   __ set_last_Java_frame(R1_SP, tmp);
-  __ call_VM_leaf(Continuation::freeze_entry(), R16_thread, R1_SP);
+  __ ld(cur_fp, _abi0(callers_sp), R1_SP);
+  __ call_VM_leaf(Continuation::freeze_entry(), R16_thread, cur_fp);
   __ reset_last_Java_frame();
 
   Label L_pinned;
@@ -2392,9 +2394,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // The following call will not be preempted.
     // push_cont_fastpath forces freeze slow path in case we try to preempt where we will pin the
     // vthread to the carrier (see FreezeBase::recurse_freeze_native_frame()).
-    __ push_cont_fastpath();
+    __ push_cont_fastpath(R11_scratch1, R12_scratch2);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), r_oop, r_box, R16_thread);
-    __ pop_cont_fastpath();
+    __ pop_cont_fastpath(R11_scratch1, R12_scratch2);
     __ reset_last_Java_frame();
 
     RegisterSaver::restore_argument_registers_and_pop_frame(masm, frame_size, total_c_args, out_regs);

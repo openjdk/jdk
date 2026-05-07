@@ -687,8 +687,8 @@ class MacroAssembler: public Assembler {
   // Method handle support (JSR 292).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot, Register temp_reg, int extra_slot_offset = 0);
 
-  void push_cont_fastpath();
-  void pop_cont_fastpath();
+  void push_cont_fastpath(Register tmp_fp, Register tmp_saved);
+  void pop_cont_fastpath(Register tmp_fp, Register tmp_saved);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
   void fast_lock(Register box, Register obj, Register t1, Register t2, Label& slow);
   void fast_unlock(Register obj, Register t1, Label& slow);

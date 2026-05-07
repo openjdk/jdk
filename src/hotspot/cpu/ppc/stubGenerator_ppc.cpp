@@ -313,7 +313,7 @@ class StubGenerator: public StubCodeGenerator {
       __ cmpwi(CR6, r_arg_result_type, T_FLOAT);
       __ cmpwi(CR7, r_arg_result_type, T_DOUBLE);
 
-      __ pop_cont_fastpath(); // kills CR0, uses R16_thread
+      __ pop_cont_fastpath(R11_scratch1, R12_scratch2); // kills CR0, uses R16_thread
 
       // restore non-volatile registers
       __ restore_nonvolatile_registers(r_entryframe_fp, -(frame::entry_frame_locals_size + save_nonvolatile_registers_size),
