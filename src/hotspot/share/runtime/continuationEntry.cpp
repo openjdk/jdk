@@ -76,25 +76,28 @@ ContinuationEntry* ContinuationEntry::from_frame(const frame& f) {
   return (ContinuationEntry*)f.unextended_sp();
 }
 
-NOINLINE static void flush_stack_processing(JavaThread* thread, intptr_t* sp) {
+NOINLINE static void flush_stack_processing(JavaThread* thread, intptr_t* boundary_id) {
   log_develop_trace(continuations)("flush_stack_processing");
-  for (StackFrameStream fst(thread, true, true); fst.current()->sp() <= sp; fst.next()) {
+  for(StackFrameStream fst(thread, true, true); !frame::id_is_older_than(fst.current()->id(), boundary_id) ; fst.next())
+  {
     ;
   }
 }
 
-inline void maybe_flush_stack_processing(JavaThread* thread, intptr_t* sp) {
+inline void maybe_flush_stack_processing(JavaThread* thread, intptr_t* boundary_sp, intptr_t* boundary_id) {
   StackWatermark* sw;
   uintptr_t watermark;
   if ((sw = StackWatermarkSet::get(thread, StackWatermarkKind::gc)) != nullptr
         && (watermark = sw->watermark()) != 0
-        && watermark <= (uintptr_t)sp) {
-    flush_stack_processing(thread, sp);
+        && watermark <= (uintptr_t)boundary_sp) {
+    flush_stack_processing(thread, boundary_id);
   }
 }
 
 void ContinuationEntry::flush_stack_processing(JavaThread* thread) const {
-  maybe_flush_stack_processing(thread, (intptr_t*)((uintptr_t)entry_sp() + ContinuationEntry::size()));
+  intptr_t* boundary_sp = (intptr_t*)((uintptr_t)entry_sp() + ContinuationEntry::size());
+  intptr_t* boundary_id = entry_fp();
+  maybe_flush_stack_processing(thread, boundary_sp, boundary_id);
 }
 
 #ifndef PRODUCT
@@ -130,7 +133,9 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
                     RegisterMap::WalkContinuation::skip);
     frame f;
     for (f = thread->last_frame();
-         !f.is_first_frame() && f.sp() <= unextended_sp && !Continuation::is_continuation_enterSpecial(f);
+         !f.is_first_frame() &&
+         !frame::id_is_older_than(f.id(), entry->entry_fp()) &&
+         !Continuation::is_continuation_enterSpecial(f);
          f = f.sender(&map)) {
       interpreted_bottom = f.is_interpreted_frame();
     }
