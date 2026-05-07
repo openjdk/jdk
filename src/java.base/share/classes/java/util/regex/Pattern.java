@@ -5574,7 +5574,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 ch = Character.codePointBefore(seq, i);
                 left = (isWord(ch) ||
                     ((Character.getType(ch) == Character.NON_SPACING_MARK)
-                     && hasBaseCharacter(matcher, i-1, seq)));
+                     && hasBaseCharacter(matcher, i-Character.charCount(ch), seq)));
             }
             boolean right = false;
             if (i < endIndex) {
@@ -5605,12 +5605,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     {
         int start = (!matcher.transparentBounds) ?
             matcher.from : 0;
-        for (int x=i; x >= start; x--) {
-            int ch = Character.codePointAt(seq, x);
+        for (int x=i; x > start; ) {
+            int ch = Character.codePointBefore(seq, x);
             if (Character.isLetterOrDigit(ch))
                 return true;
-            if (Character.getType(ch) == Character.NON_SPACING_MARK)
+            if (Character.getType(ch) == Character.NON_SPACING_MARK) {
+                x -= Character.charCount(ch);
                 continue;
+            }
             return false;
         }
         return false;
