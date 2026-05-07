@@ -368,6 +368,24 @@ class WindowsNativeDispatcher {
         throws WindowsException;
 
     /**
+     * GetFileInformationByName(
+     *   PCWSTR                  FileName,
+     *   FILE_INFO_BY_NAME_CLASS FileInformationClass,
+     *   PVOID                   FileInfoBuffer,
+     *   ULONG                   FileInfoBufferSize
+     * )
+     */
+    static void GetFileInformationByName(String path, int infoClass, long address, int size)
+        throws WindowsException
+    {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
+            GetFileInformationByName0(buffer.address(), infoClass, address, size);
+        }
+    }
+    private static native void GetFileInformationByName0(long pathAddress,
+        int infoClass, long infoAddress, int infoSize) throws WindowsException;
+
+    /**
      * SetFileTime(
      *   HANDLE hFile,
      *   CONST FILETIME *lpCreationTime,

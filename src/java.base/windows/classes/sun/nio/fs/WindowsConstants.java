@@ -96,6 +96,7 @@ class WindowsConstants {
     public static final int ERROR_NOT_SAME_DEVICE       = 17;
     public static final int ERROR_NOT_READY             = 21;
     public static final int ERROR_SHARING_VIOLATION     = 32;
+    public static final int ERROR_NOT_SUPPORTED         = 50;
     public static final int ERROR_NETWORK_ACCESS_DENIED = 65;
     public static final int ERROR_FILE_EXISTS           = 80;
     public static final int ERROR_INVALID_PARAMETER     = 87;
@@ -114,6 +115,12 @@ class WindowsConstants {
     public static final int ERROR_CANT_RESOLVE_FILENAME = 1921;
     public static final int ERROR_NOT_A_REPARSE_POINT   = 4390;
     public static final int ERROR_INVALID_REPARSE_DATA  = 4392;
+
+    // FILE_INFO_BY_NAME_CLASS enum values for GetFileInformationByName()
+    public static final int FileStatByNameInfo          = 0;
+    public static final int FileStatLxByNameInfo        = 1;
+    public static final int FileCaseSensitiveByNameInfo = 2;
+    public static final int FileStatBasicByNameInfo     = 3;
 
     // notify filters
     public static final int FILE_NOTIFY_CHANGE_FILE_NAME   = 0x00000001;
