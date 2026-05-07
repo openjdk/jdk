@@ -578,7 +578,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
-  __ push_cont_fastpath(xthread); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
+  __ push_cont_fastpath(xthread); // Set JavaThread::_cont_fastpath to the fp of the oldest interpreted frame we know about
 
   // 6243940 We might end up in handle_wrong_method if
   // the callee is deoptimized as we race thru here. If that
@@ -1077,7 +1077,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
   compiled_entry_offset = __ pc() - start;
   __ enter();
 
-  __ mv(c_rarg1, sp);
+  __ mv(c_rarg1, fp);
 
   // Post call nops must be natural aligned due to cmodx rules.
   __ align(NativeInstruction::instruction_size);
