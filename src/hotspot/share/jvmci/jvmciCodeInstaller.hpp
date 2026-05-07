@@ -121,6 +121,7 @@ class HotSpotCompiledCodeStream : public ResourceObj {
 
   oop get_oop(int id, JVMCI_TRAPS) const;
   JavaThread* thread() const {
+    // This is a hint for the compiler to not consider the impossible path in debug builds
     DEBUG_ONLY(guarantee(_thread != nullptr, "Current thread must be set");)
     return _thread;
   }

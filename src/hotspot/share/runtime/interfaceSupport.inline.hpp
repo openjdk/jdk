@@ -108,6 +108,7 @@ class ThreadStateTransition : public StackObj {
   }
 
   static inline void transition_from_vm(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {
+    // This is a hint for the compiler to not consider the impossible path in debug builds
     DEBUG_ONLY(guarantee(thread != nullptr, "Must be");)
     assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     if (to == _thread_in_Java) {
