@@ -80,8 +80,8 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
     const int filling_element_byte_size = type2aelembytes(ArrayKlass::cast(filling_klass)->element_type());
     assert(filling_element_byte_size == type2aelembytes(element_type), "filling element size must match ref size");
     const int max_filling_array_length = (int) ((process_size << LogBytesPerWord) / filling_element_byte_size);
-    assert(max_filling_array_length == _length || max_filling_array_length - _length == 1,
-           "max filling array length must match or exceed by at most 1 due to alignment padding");
+    assert(max_filling_array_length == _length || max_filling_array_length - _length < ObjectAlignmentInBytes / filling_element_byte_size,
+           "max filling array length must match or exceed by less than alignment padding elements");
 #endif
   }
   // Use _length directly: it matches the ref count, and the filling element size equals the ref size.
