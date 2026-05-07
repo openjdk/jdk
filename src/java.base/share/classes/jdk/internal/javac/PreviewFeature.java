@@ -64,7 +64,7 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        @JEP(number=525, title="Structured Concurrency", status="Sixth Preview")
+        @JEP(number=533, title="Structured Concurrency", status="Seventh Preview")
         STRUCTURED_CONCURRENCY,
         @JEP(number = 531, title = "Lazy Constants", status = "Third Preview")
         LAZY_CONSTANTS,
