@@ -117,32 +117,12 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
   }
 }
 
-
 bool ShenandoahYoungHeuristics::old_collection_needs_more_time(ShenandoahOldGeneration* old_generation, ShenandoahOldHeuristics* old_heuristics) {
   if (ShenandoahMinimumOldTimeMs > 0) {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
       const auto old_time_elapsed = static_cast<size_t>(old_heuristics->elapsed_cycle_time() * 1000);
       return old_time_elapsed < ShenandoahMinimumOldTimeMs;
     }
-  }
-  return false;
-}
-
-bool ShenandoahYoungHeuristics::trigger_rate(ShenandoahGenerationalHeap *heap, const size_t available, const size_t capacity) {
-  const double avg_cycle_time = _cycles.predict_duration(get_most_recent_wake_time(), _margin_of_error_sd);
-  const double avg_alloc_rate = heap->alloc_rate().upper_bound(_margin_of_error_sd);
-  size_t allocation_headroom = available;
-  const size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
-  const size_t penalties = capacity / 100 * _gc_time_penalties;
-
-  allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
-  allocation_headroom -= MIN2(allocation_headroom, penalties);
-  if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
-    log_trigger("Average GC time (%.2f ms) is above the time for average allocation rate (" PROPERFMT "/s)"
-                " to deplete free headroom (" PROPERFMT ") (margin of error = %.2f)",
-                avg_cycle_time * 1000, PROPERFMTARGS(avg_alloc_rate), PROPERFMTARGS(allocation_headroom), _margin_of_error_sd);
-    accept_trigger_with_type(RATE);
-    return true;
   }
   return false;
 }
