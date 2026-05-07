@@ -1137,7 +1137,7 @@ class JvmtiObjectAllocEventMark : public JvmtiClassEventMark  {
    jlong    _size;
  public:
    JvmtiObjectAllocEventMark(JavaThread *thread, oop obj) : JvmtiClassEventMark(thread, oop_to_klass(obj)) {
-     _jobj = (jobject)to_jobject(obj);
+     _jobj = obj->is_inline() ? nullptr : (jobject)to_jobject(obj); // nullptr for non-identity objects
      _size = obj->size() * wordSize;
    };
    jobject jni_jobject() { return _jobj; }
