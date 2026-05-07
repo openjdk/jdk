@@ -28,6 +28,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "gc/shared/plab.hpp"
+#include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/arguments.hpp"
@@ -122,7 +123,7 @@ JVMFlag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
 }
 
 static JVMFlag::Error CheckMaxHeapSizeAndSoftRefLRUPolicyMSPerMB(size_t maxHeap, intx softRef, bool verbose) {
-  if ((softRef > 0) && (integer_cast<jlong>(maxHeap / M) > (max_jlong / softRef))) {
+  if ((softRef > 0) && (maxHeap / M > (AbstractLRUReferencePolicy::MaximumMaxInterval / integer_cast<uint64_t>(softRef)))) {
     JVMFlag::printError(verbose,
                         "Desired lifetime of SoftReferences cannot be expressed correctly. "
                         "MaxHeapSize (%zu) or SoftRefLRUPolicyMSPerMB "
