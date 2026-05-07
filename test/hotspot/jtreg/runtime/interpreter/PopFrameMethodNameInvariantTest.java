@@ -77,7 +77,7 @@ public class PopFrameMethodNameInvariantTest {
         ClassPrepareRequest classPrepareRequest = eventRequestManager.createClassPrepareRequest();
         classPrepareRequest.addClassFilter(Target.class.getName());
         classPrepareRequest.enable();
-        boolean needsBreak = false;
+        outerLoop:
         while (true) {
             EventSet eventSet = vm.eventQueue().remove();
             for (Event event : eventSet) {
@@ -93,12 +93,8 @@ public class PopFrameMethodNameInvariantTest {
                     breakpointEvent.request().disable();
                     breakpointEvent.thread().popFrames(breakpointEvent.thread().frame(0));
                     eventSet.resume();
-                    needsBreak = true;
-                    break;
+                    break outerLoop;
                 }
-            }
-            if (needsBreak) {
-                break;
             }
             eventSet.resume();
         }

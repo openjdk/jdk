@@ -1505,7 +1505,9 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
 
   guarantee(member_name_oop != nullptr, "member_name_oop should not be nullptr");
   guarantee(oopDesc::is_oop(member_name_oop), "member_name_oop should be an oop");
-  guarantee(java_lang_invoke_MemberName::is_instance(member_name_oop) || java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop), "member_name_oop is not MemberName or DMH");
+  guarantee(java_lang_invoke_MemberName::is_instance(member_name_oop) ||
+    java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop),
+    "member_name_oop is not MemberName or DMH");
 
   if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
     member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
