@@ -29,7 +29,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-struct G1RefineData {
+// Thread-local refinement statistics.
+struct G1LocalRefineStats {
   size_t _cards_scanned;
   size_t _cards_clean;
   size_t _cards_not_parsable;
@@ -38,7 +39,7 @@ struct G1RefineData {
   size_t _cards_no_cross_region;
   jlong _refine_duration;
 
-  G1RefineData() :
+  G1LocalRefineStats() :
     _cards_scanned(0),
     _cards_clean(0),
     _cards_not_parsable(0),
@@ -48,9 +49,7 @@ struct G1RefineData {
     _refine_duration(0) {}
 };
 
-// Collection of statistics for concurrent refinement processing.
-// Used for collecting per-thread statistics and for summaries over a
-// collection of threads.
+// Global statistics for concurrent refinement processing.
 class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
   Atomic<jlong> _sweep_duration;              // Time spent sweeping the table finding non-clean cards
                                               // and refining them.
@@ -88,7 +87,7 @@ public:
 
   inline size_t cards_to_cset() const;
 
-  void add_atomic(const G1RefineData* other);
+  void add_atomic(const G1LocalRefineStats* other);
 
   inline void inc_sweep_duration(jlong t);
   inline void inc_yield_during_sweep_duration(jlong t);

@@ -25,7 +25,7 @@
 #include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "runtime/timer.hpp"
 
-void G1ConcurrentRefineStats::add_atomic(const G1RefineData* other) {
+void G1ConcurrentRefineStats::add_atomic(const G1LocalRefineStats* other) {
   _cards_scanned.add_then_fetch(other->_cards_scanned, memory_order_relaxed);
   _cards_clean.add_then_fetch(other->_cards_clean, memory_order_relaxed);
   _cards_not_parsable.add_then_fetch(other->_cards_not_parsable, memory_order_relaxed);

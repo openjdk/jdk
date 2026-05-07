@@ -92,7 +92,7 @@ class G1RefineRegionClosure : public G1HeapRegionClosure {
 
 public:
   bool _completed;
-  G1RefineData _per_worker_refine_data;
+  G1LocalRefineStats _per_worker_refine_data;
 
   G1RefineRegionClosure(uint worker_id, G1CardTableClaimTable* scan_state) :
     G1HeapRegionClosure(),
