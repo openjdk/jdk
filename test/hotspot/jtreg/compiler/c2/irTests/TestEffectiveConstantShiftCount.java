@@ -23,9 +23,9 @@
 
 package compiler.c2.irTests;
 
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -36,11 +36,17 @@ import jdk.test.lib.Utils;
  */
 
 public class TestEffectiveConstantShiftCount {
-    private static final int INT_LOW = Utils.getRandomInstance().nextInt(1, 32);
-    private static final int LONG_LOW = Utils.getRandomInstance().nextInt(1, 64);
-    private static final int RAND_I = Utils.getRandomInstance().nextInt();
-    private static final long RAND_L = Utils.getRandomInstance().nextLong();
-    private static final int RAND_COUNT = Utils.getRandomInstance().nextInt();
+    private static final Generator<Integer> INTS = Generators.G.ints();
+    private static final Generator<Long> LONGS = Generators.G.longs();
+
+    private static final RestrictableGenerator<Integer> INTS_32 = Generators.G.ints().restricted(1, 32);
+    private static final RestrictableGenerator<Integer> INTS_64 = Generators.G.ints().restricted(1, 64);
+
+    private static final int INT_LOW = INTS_32.next();
+    private static final int LONG_LOW = INTS_64.next();
+    private static final int RAND_I = INTS.next();
+    private static final long RAND_L = LONGS.next();
+    private static final int RAND_COUNT = INTS.next();
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -56,7 +62,7 @@ public class TestEffectiveConstantShiftCount {
 
     // ---------------- shift test for int ----------------
     @Test
-    @IR(failOn = IRNode.CMP_I)
+    @IR(failOn = IRNode.LSHIFT_I)
     public static boolean testIntLShift(int x, int count) {
         int shifted1 = x << intCount(count);
         int shifted2 = x << INT_LOW;
@@ -64,7 +70,7 @@ public class TestEffectiveConstantShiftCount {
     }
 
     @Test
-    @IR(failOn = IRNode.CMP_I)
+    @IR(failOn = IRNode.RSHIFT_I)
     public static boolean testIntRShift(int x, int count) {
         int shifted1 = x >> intCount(count);
         int shifted2 = x >> INT_LOW;
@@ -72,7 +78,7 @@ public class TestEffectiveConstantShiftCount {
     }
 
     @Test
-    @IR(failOn = IRNode.CMP_I)
+    @IR(failOn = IRNode.URSHIFT_I)
     public static boolean testIntURShift(int x, int count) {
         int shifted1 = x >>> intCount(count);
         int shifted2 = x >>> INT_LOW;
@@ -80,7 +86,7 @@ public class TestEffectiveConstantShiftCount {
     }
 
     @Test
-    @IR(failOn = IRNode.CMP_I)
+    @IR(failOn = IRNode.LSHIFT_I)
     public static boolean testIntLShiftWithLoopOpt(int x, int count) {
         int i;
         for (i = 1; i < INT_LOW; i++);
@@ -92,7 +98,7 @@ public class TestEffectiveConstantShiftCount {
 
     // ---------------- shift test for long ----------------
     @Test
-    @IR(failOn = IRNode.CMP_L)
+    @IR(failOn = IRNode.LSHIFT_L)
     public static boolean testLongLShift(long x, int count) {
         long shifted1 = x << longCount(count);
         long shifted2 = x << LONG_LOW;
@@ -100,7 +106,7 @@ public class TestEffectiveConstantShiftCount {
     }
 
     @Test
-    @IR(failOn = IRNode.CMP_L)
+    @IR(failOn = IRNode.RSHIFT_L)
     public static boolean testLongRShift(long x, int count) {
         long shifted1 = x >> longCount(count);
         long shifted2 = x >> LONG_LOW;
@@ -108,7 +114,7 @@ public class TestEffectiveConstantShiftCount {
     }
 
     @Test
-    @IR(failOn = IRNode.CMP_L)
+    @IR(failOn = IRNode.URSHIFT_L)
     public static boolean testLongURShift(long x, int count) {
         long shifted1 = x >>> longCount(count);
         long shifted2 = x >>> LONG_LOW;
@@ -116,7 +122,7 @@ public class TestEffectiveConstantShiftCount {
     }
 
     @Test
-    @IR(failOn = IRNode.CMP_L)
+    @IR(failOn = IRNode.LSHIFT_L)
     public static boolean testLongLShiftWithLoopOpt(long x, int count) {
         int i;
         for (i = 1; i < LONG_LOW; i++);
