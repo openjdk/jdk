@@ -556,7 +556,7 @@ div.inline-note {
     margin: 12px 0;
     border: 0.6px solid var(--note-border-color);
     background-color: var(--note-background-color);
-    border-radius: 4px;
+    border-radius: 2px;
 }
 div.inline-note > span.note-header {
     font-weight: bold;
@@ -615,7 +615,7 @@ dl.notes > dd.note-tag-important,
 dl.notes > dd.note-tag-critical,
 dl.notes > dd.note-tag-previewNote {
     padding: 8px 12px;
-    border-radius: 4px;
+    border-radius: 2px;
     margin: 7px 0 10px 1px;
     p:first-child, h2:first-child, h3:first-child {
         margin-top: 4px;
