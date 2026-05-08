@@ -236,13 +236,21 @@ public abstract class VirtualMachine {
      *
      * @return  A VirtualMachine representing the target VM.
      *
+     * @throws  AttachNotSupportedException
+     *          If the {@code attachVirtualmachine} method of all installed
+     *          providers throws {@code AttachNotSupportedException}, or
+     *          there aren't any providers installed.
+     *
+     * @throws  IOException
+     *          If an I/O error occurs
+     *
      * @implNote The HotSpot provider recognises the {@code id} as a live process ID, or
      * the filename of a core file (on Linux) or MiniDump (Windows).
      * When reading a core or MiniDump, the following settings are read from the Map:
      *
      * <table class="striped">
      * <caption style="display:none">
-     *     Configurable properties that may be recongised by attach provider.
+     *     Configurable properties that may be recognised by attach provider.
      * </caption>
      * <thead>
      *   <tr>
@@ -260,7 +268,7 @@ public abstract class VirtualMachine {
      *   <td>null/unset</td>
      *   <td>Directory path of where to search for shared libraries when initially reading a core file.
      *       This may be a list of multiple directories, separated by File.pathSeparator.
-     *       Required when files are transported between machines, or libraries at locations in the dump
+     *       This is required when files are transported between machines, or libraries at locations in the dump
      *       have changed.
      *   </td>
      * </tr>
