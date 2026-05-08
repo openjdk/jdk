@@ -2663,35 +2663,34 @@ void ArchDesc::buildVectorIsSameConstValue(FILE* fp) {
   fprintf(fp, "  }\n");
   fprintf(fp, "\n");
   fprintf(fp, "  MachOper* opnd1, *opnd2;\n");
-  fprintf(fp, "  switch ( node1->rule() ) {\n");
+  fprintf(fp, "  switch (node1->rule()) {\n");
 
   InstructForm* instr;
   _instructions.reset();
-  while ( (instr = (InstructForm*)_instructions.iter()) != nullptr ) {
-    if ( instr->ideal_only() ) continue;
-    if ( !instr->sets_result() ) continue;
-    if ( !instr->is_vector() ) continue;
+  while ((instr = (InstructForm*)_instructions.iter()) != nullptr) {
+    if (instr->ideal_only()) continue;
+    if (!instr->sets_result()) continue;
 
     // At least one non-result operand
-    if ( instr->num_opnds() <= 1 ) continue;
+    if (instr->num_opnds() <= 1) continue;
 
     bool all_operands_suitable = true;
     Component* comp = nullptr;
 
     instr->_components.reset();
-    while( (comp = instr->_components.iter()) != nullptr ) {
+    while ((comp = instr->_components.iter()) != nullptr) {
       Form* form = (Form*)_globalNames[comp->_type];
       assert(form != nullptr, "component type must be a defined form");
       OperandForm* op = form->is_operand();
 
-      if ( op == nullptr ) {
+      if (op == nullptr) {
         // Not an OperandForm - conservatively reject.
         all_operands_suitable = false;
         break;
       }
 
-      if ( comp->isa(Component::DEF) ) {
-        if ( comp->isa(Component::USE) ) {
+      if (comp->isa(Component::DEF)) {
+        if (comp->isa(Component::USE)) {
           // Result register is also an input.
           all_operands_suitable = false;
           break;
@@ -2700,7 +2699,8 @@ void ArchDesc::buildVectorIsSameConstValue(FILE* fp) {
         const char* result_type = op->ideal_type(_globalNames);
 
         // Only consider operations writing to a vector operand.
-        if ( strncmp(result_type, "Vec", 3) != 0 ) {
+        if (result_type == nullptr ||
+            strncmp(result_type, "Vec", 3) != 0) {
           all_operands_suitable = false;
           break;
         }
@@ -2708,34 +2708,34 @@ void ArchDesc::buildVectorIsSameConstValue(FILE* fp) {
         continue;
       }
 
-      if ( op->_interface == nullptr ||
-           op->_interface->is_ConstInterface() == nullptr ||
-           op->num_edges(_globalNames) != 0) {
+      if (op->_interface == nullptr ||
+          op->_interface->is_ConstInterface() == nullptr ||
+          op->num_edges(_globalNames) != 0) {
         // Not a constant OperandForm.
         all_operands_suitable = false;
         break;
       }
 
       Form::DataType dtype = op->is_base_constant(_globalNames);
-      switch ( dtype ) {
-        case Form::idealH:
-        case Form::idealI:
-        case Form::idealL:
-        case Form::idealF:
-        case Form::idealD:
-          break;
+      switch (dtype) {
+      case Form::idealH:
+      case Form::idealI:
+      case Form::idealL:
+      case Form::idealF:
+      case Form::idealD:
+        break;
 
-        default:
-          all_operands_suitable = false;
-          break;
+      default:
+        all_operands_suitable = false;
+        break;
       }
     }
 
-    if ( !all_operands_suitable ) continue;
+    if (!all_operands_suitable) continue;
 
-    fprintf(fp, "    case %s_rule:\n", instr->_ident);
+    fprintf(fp, "  case %s_rule:\n", instr->_ident);
     instr->_components.reset();
-    while( (comp = instr->_components.iter()) != nullptr ) {
+    while ((comp = instr->_components.iter()) != nullptr) {
       if (comp->isa(Component::DEF)) continue;
 
       Form* form = (Form*)_globalNames[comp->_type];
@@ -2746,41 +2746,41 @@ void ArchDesc::buildVectorIsSameConstValue(FILE* fp) {
       Form::DataType dtype = op->is_base_constant(_globalNames);
       const char* get_const = "";
       const char* cast = "";
-      switch ( dtype ) {
-        case Form::idealH:
-          get_const = "constantH";
-          break;
-        case Form::idealI:
-          get_const = "constant";
-          break;
-        case Form::idealL:
-          get_const = "constantL";
-          break;
-        case Form::idealF:
-          get_const = "constantF";
-          cast = "jint_cast";
-          break;
-        case Form::idealD:
-          get_const = "constantD";
-          cast = "jlong_cast";
-          break;
+      switch (dtype) {
+      case Form::idealH:
+        get_const = "constantH";
+        break;
+      case Form::idealI:
+        get_const = "constant";
+        break;
+      case Form::idealL:
+        get_const = "constantL";
+        break;
+      case Form::idealF:
+        get_const = "constantF";
+        cast = "jint_cast";
+        break;
+      case Form::idealD:
+        get_const = "constantD";
+        cast = "jlong_cast";
+        break;
 
-        default:
-          assert(false, "all other types should have been filtered out above.");
-          break;
+      default:
+        assert(false, "all other types should have been filtered out above.");
+        break;
       }
 
       int opnd_index = instr->operand_position(comp->_name, Component::USE);
-      fprintf(fp, "      opnd1 = node1->_opnds[%d];\n", opnd_index);
-      fprintf(fp, "      opnd2 = node2->_opnds[%d];\n", opnd_index);
-      fprintf(fp, "      if (%s(opnd1->%s()) != %s(opnd2->%s())) return false;\n",
+      fprintf(fp, "    opnd1 = node1->_opnds[%d];\n", opnd_index);
+      fprintf(fp, "    opnd2 = node2->_opnds[%d];\n", opnd_index);
+      fprintf(fp, "    if (%s(opnd1->%s()) != %s(opnd2->%s())) return false;\n",
         cast, get_const, cast, get_const);
     }
-    fprintf(fp, "      return true;\n");
+    fprintf(fp, "    return true;\n");
   }
 
-  fprintf(fp, "    default:\n");
-  fprintf(fp, "      return false;\n");
+  fprintf(fp, "  default:\n");
+  fprintf(fp, "    return false;\n");
   fprintf(fp, "  }\n");
   fprintf(fp, "}\n");
 }

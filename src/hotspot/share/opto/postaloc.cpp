@@ -95,6 +95,14 @@ int PhaseChaitin::yank(Node *old, Block *current_block, Node_List *value, Node_L
 }
 
 #ifdef ASSERT
+static bool is_vector_const_initializer(const Node* node) {
+  if (!node->is_Mach()) {
+    return false;
+  }
+
+  return Matcher::vector_is_same_const_value(node->as_Mach(), node->as_Mach());
+}
+
 static bool expected_yanked_node(Node *old, Node *orig_old) {
   // This code is expected only next original nodes:
   // - load from constant table node which may have next data input nodes:
@@ -118,10 +126,8 @@ static bool expected_yanked_node(Node *old, Node *orig_old) {
     return true;
   } else if (old->is_MachConstantBase()) {
     return (orig_old->is_Con() && orig_old->is_MachConstant());
-  } else if (old->is_Mach()) {
-    /* Same node is supplied twice so this is only to check if "old" is
-     * a initializer of a vector with a constant value */
-    return Matcher::vector_is_same_const_value(old->as_Mach(), old->as_Mach());
+  } else if (is_vector_const_initializer(old)) {
+    return true;
   }
   return false;
 }
