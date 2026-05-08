@@ -2562,6 +2562,7 @@ encode %{
 
   enc_class enc_load_long_constL(iRegLdst dst, immL src, iRegLdst toc) %{
     int toc_offset = 0;
+
     address const_toc_addr;
     // Create a non-oop constant, no relocation needed.
     // If it is an IC, it has a virtual_call_Relocation.
@@ -2713,7 +2714,7 @@ encode %{
         // Notify OOP recorder (don't need the relocation)
         AddressLiteral a = __ constant_metadata_address((Metadata *)val);
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      } else {
+      } else {  // non-oop pointers, e.g. card mark base, heap top
         // Create a non-oop constant, no relocation needed.
         const_toc_addr = __ long_constant((jlong)$src$$constant);
       }
