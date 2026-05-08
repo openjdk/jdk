@@ -4343,7 +4343,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   return result;
 }
 
-Node* ConnectionGraph::find_inst_mem_assert_no_new_node(Node *orig_mem, int alias_idx, GrowableArray<PhiNode *> & orig_phis) {
+Node* ConnectionGraph::find_inst_mem_assert_no_new_node(Node* orig_mem, int alias_idx, GrowableArray<PhiNode*>& orig_phis) {
   uint orig_uniq = _compile->unique();
   Node* result = find_inst_mem(orig_mem, alias_idx, orig_phis);
   assert(orig_uniq == _compile->unique(), "no new nodes");
