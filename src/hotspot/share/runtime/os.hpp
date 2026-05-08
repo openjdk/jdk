@@ -271,8 +271,6 @@ class os: AllStatic {
   static jint init_2(void);                    // Called after command line parsing
                                                // and VM ergonomics processing
 
-  static void revive_init();                   // Process revival
-
   // Get environ pointer, platform independently
   static char** get_environ();
 

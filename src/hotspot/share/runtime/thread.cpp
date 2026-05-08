@@ -610,10 +610,9 @@ struct revival_data vm_revival_data;
 void* Thread::process_revival() {
   _revived_vm = true;
 #ifdef LINUX
-  os::Linux::revive_init();
-#endif
-#ifdef _WINDOWS
-  os::win32::revive_init();
+  os::Linux::revive_init(); // Nothing required for Windows.
+#elif !defined(_WINDOWS)
+  fatal("process_revival not implemented");
 #endif
   // A Thread object is needed for our caller to call the dcmd parser.
   // Use the VMThread so threads invoking a VMOperation will run it themselves.

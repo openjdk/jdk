@@ -4477,10 +4477,6 @@ void os::init(void) {
   main_thread_id = (int) GetCurrentThreadId();
 }
 
-void os::win32::revive_init(void) {
-
-}
-
 // To install functions for atexit processing
 extern "C" {
   static void perfMemory_exit_helper() {
