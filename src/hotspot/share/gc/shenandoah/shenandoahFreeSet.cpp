@@ -1841,11 +1841,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
       }
     }
     _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator, num);
-    if (waste_bytes > 0) {
-      // For humongous allocations, waste_bytes are included in total_used.  Since this is not humongous,
-      // we need to account separately for the waste_bytes.
-      req.set_waste(waste_bytes / HeapWordSize);
-    }
   }
 
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
