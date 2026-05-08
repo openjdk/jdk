@@ -1751,12 +1751,12 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
   emit_fp_ucom(masm, pt, a, b);
 
   if (dst->encoding() != (min ? b : a)->encoding()) {
-    __ jcc(Assembler::above, above); // CF=0 & ZF=0
+    __ jccb(Assembler::above, above); // CF=0 & ZF=0
   } else {
-    __ jcc(Assembler::above, done);
+    __ jccb(Assembler::above, done);
   }
-  __ jcc(Assembler::parity, nan);  // PF=1
-  __ jcc(Assembler::below, below); // CF=1
+  __ jccb(Assembler::parity, nan);  // PF=1
+  __ jccb(Assembler::below, below); // CF=1
 
   // equal
   if (min) {
