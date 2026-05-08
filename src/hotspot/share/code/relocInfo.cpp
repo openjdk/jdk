@@ -22,7 +22,6 @@
  *
  */
 
-#include "ci/ciUtilities.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
