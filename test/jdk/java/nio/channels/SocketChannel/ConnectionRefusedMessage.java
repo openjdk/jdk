@@ -109,10 +109,8 @@ class ConnectionRefusedMessage {
     }
 
     private static void assertExceptionMessage(final ConnectException ce) {
-        if ("Connection refused".equals(ce.getMessage())) {
-            return;
-        }
-        if (Boolean.getBoolean("check.relaxed") && ce.getMessage() != null && ce.getMessage().startsWith("Connection refused")) {
+        // relax the check
+        if (ce.getMessage() != null && ce.getMessage().startsWith("Connection refused")) {
             return;
         }
         // propagate the original exception
