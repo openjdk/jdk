@@ -164,7 +164,8 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu, double upper_bound)
   char* last_slash;
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
   double lowest_limit = upper_bound;
-  double cpus = get_updated_cpu_limit(cpu, lowest_limit, upper_bound);
+  lowest_limit = get_updated_cpu_limit(cpu, lowest_limit, upper_bound);
+  double cpus = lowest_limit;
   double orig_limit = lowest_limit != upper_bound ? lowest_limit : upper_bound;
   char* limit_cg_path = nullptr;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
