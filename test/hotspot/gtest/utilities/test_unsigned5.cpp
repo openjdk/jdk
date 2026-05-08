@@ -249,10 +249,10 @@ TEST_VM(unsigned5, reader) {
     }
     // Underflow.
     int skipped = r1.try_skip(-1);
-    ASSERT_EQ(skipped, 0);
+    ASSERT_EQ(0, skipped) << skipped;
     // Overflow.
     skipped = r1.try_skip(LEN + 1);
-    ASSERT_EQ(skipped, LEN);
+    ASSERT_EQ(LEN, skipped) << skipped;
   } // End try_skip() test.
 
   // copy from reader to writer
