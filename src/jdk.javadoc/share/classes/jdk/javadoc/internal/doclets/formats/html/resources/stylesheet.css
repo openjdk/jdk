@@ -943,6 +943,9 @@ div.checkboxes > label > input {
 .col-first, .col-second, .col-constructor-name {
     overflow: auto;
 }
+.col-constructor-name, .method-summary .col-second {
+    text-indent: 0.5em hanging;
+}
 body:not(.class-declaration-page) .col-first a:link,
 .col-summary-item-name a:link {
     font-weight:bold;
