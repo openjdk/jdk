@@ -2575,7 +2575,6 @@ encode %{
 
       // Get the constant's TOC offset.
       toc_offset = __ offset_to_method_toc(const_toc_addr);
-      
       // Keep the current instruction offset in mind.
       ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
       if (Assembler::is_simm(toc_offset, 16)) {
@@ -5951,7 +5950,6 @@ instruct loadConF_Ex(regF dst, immF src, iRegLdst tmp) %{
   format %{ "LFS     $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
   postalloc_expand( postalloc_expand_load_float_constant(dst, src, tmp, constanttablebase) );
 %}
-
 
 // Expand node for constant pool load: small offset.
 instruct loadConD(regD dst, immD src, iRegLdst toc, iRegLdst tmp) %{
