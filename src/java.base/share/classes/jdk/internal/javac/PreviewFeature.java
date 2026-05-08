@@ -66,7 +66,7 @@ public @interface PreviewFeature {
     public enum Feature {
         @JEP(number=533, title="Structured Concurrency", status="Seventh Preview")
         STRUCTURED_CONCURRENCY,
-        @JEP(number = 526, title = "Lazy Constants", status = "Second Preview")
+        @JEP(number = 531, title = "Lazy Constants", status = "Third Preview")
         LAZY_CONSTANTS,
         @JEP(number=524, title="PEM Encodings of Cryptographic Objects",
             status="Second Preview")
