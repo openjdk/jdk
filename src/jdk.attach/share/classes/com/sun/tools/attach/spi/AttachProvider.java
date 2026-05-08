@@ -156,6 +156,8 @@ public abstract class AttachProvider {
      * Java virtual machine is a version to which this provider cannot attach, then
      * an {@code AttachNotSupportedException} is thrown.
      *
+     * @implSpec The default implementation of this method always throws {@link UnsupportedOperationException}
+     *
      * @param  id
      *         The abstract identifier that identifies the Java virtual machine.
      *
