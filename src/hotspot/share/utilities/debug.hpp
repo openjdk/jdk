@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,23 @@ public:
 
 #endif // End dispatch on TARGET_COMPILER_xxx
 
+#if defined(TARGET_COMPILER_visCPP)
+#define COMPILER_ASSUME(p) __assume(p)
+#elif defined(TARGET_COMPILER_gcc)
+#ifdef __has_builtin
+#if __has_builtin(__builtin_assume)
+#define COMPILER_ASSUME(p) __builtin_assume(p)
+#else
+#define COMPILER_ASSUME(p) do { if (!(p)) { __builtin_unreachable(); } } while (0)
+#endif
+#else
+#define COMPILER_ASSUME(p) do { if (!(p)) { __builtin_unreachable(); } } while (0)
+#endif
+#else
+#define COMPILER_ASSUME(p) ((void)0)
+#endif
+
+
 // If we don't have a way to detect constant evaluation, then fall back to the
 // less than ideal form of the check, and hope it works.  This succeeds at
 // least for gcc.  The support needed to use the above definition was added in
@@ -163,6 +180,22 @@ do {                                                                   \
 
 #define precond(p)   assert(p, "precond")
 #define postcond(p)  assert(p, "postcond")
+
+#ifdef ASSERT
+// Debug-only invariant which is not bypassed by DebuggingContext.
+// Use with side-effect-free predicates which are true invariants.
+#define invariant_assume(p, ...)                                                         \
+do {                                                                                     \
+  const bool invariant = (p);                                                            \
+  if (!invariant) {                                                                      \
+    TOUCH_ASSERT_POISON;                                                                 \
+    report_vm_error(__FILE__, __LINE__, "invariant_assume(" #p ") failed", __VA_ARGS__); \
+  }                                                                                      \
+  COMPILER_ASSUME(invariant);                                                            \
+} while (0)
+#else
+#define invariant_assume(p, ...) ((void)0)
+#endif
 
 #ifndef ASSERT
 #define vmassert_status(p, status, msg)

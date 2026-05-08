@@ -915,7 +915,7 @@ struct ShenandoahRegionChunk {
   size_t _chunk_size;            // HeapWordSize qty
 
   ShenandoahHeapRegion* region() const {
-    // This is a hint for the compiler to not consider the impossible path in debug builds
+    // This is a hint for the compiler to not consider the impossible path
     guarantee(_r != nullptr, "Chunk region must be set");
     return _r;
   }

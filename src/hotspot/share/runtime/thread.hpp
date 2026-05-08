@@ -653,8 +653,7 @@ class ThreadInAsgct {
 // Inline implementation of Thread::current()
 inline Thread* Thread::current() {
   Thread* current = current_or_null();
-  // This is a hint for the compiler to not consider the impossible path in debug builds
-  DEBUG_ONLY(guarantee(current != nullptr, "Thread::current() called on detached thread");)
+  invariant_assume(current != nullptr, "Thread::current() called on detached thread");
   return current;
 }
 
