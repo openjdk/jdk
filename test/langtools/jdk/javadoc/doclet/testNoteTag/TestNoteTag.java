@@ -132,11 +132,11 @@ public class TestNoteTag extends JavadocTester {
                 <div class="inline-note note-tag" id="m1-note1"><span class="note-header">Note:</span>
                 Module note</div>""");
         checkOrder("m1/p/q/package-summary.html", """
-                <dt>Note:</dt>
-                <dd id="p.q-note" class="note-tag">Package note</dd>""",
+                <dt id="p.q-note">Note:</dt>
+                <dd id="p.q-note1" class="note-tag">Package note</dd>""",
                 """
-                <dt>Warning:</dt>
-                <dd id="p.q-warning" class="note-tag-warning">Package warning</dd>""");
+                <dt id="p.q-warning">Warning:</dt>
+                <dd id="p.q-warning1" class="note-tag-warning">Package warning</dd>""");
         checkOrder("m1/p/q/I.html", """
                 <div class="inline-note note-tag-warning" id="p.q.I-warning1"><span class="note-header">Warning:</span>
                 Interface warning</div>""",
@@ -148,24 +148,24 @@ public class TestNoteTag extends JavadocTester {
                 An inline warning</div>""",
                 """
                 <dl class="notes">
-                <dt>Note:</dt>
-                <dd id="unknown-element-note" class="note-tag">a block note</dd>
+                <dt id="unknown-element-note">Note:</dt>
+                <dd id="unknown-element-note1" class="note-tag">a block note</dd>
                 </dl>""");
         checkOrder("m1/p/q/r/package-summary.html", """
                 <div class="inline-note note-tag" id="p.q.r-note1"><span class="note-header">Note:</span>
                 An inline note</div>""",
                 """
                 <dl class="notes">
-                <dt>Warning:</dt>
-                <dd id="p.q.r-warning" class="note-tag-warning">a block warning</dd>
+                <dt id="p.q.r-warning">Warning:</dt>
+                <dd id="p.q.r-warning1" class="note-tag-warning">a block warning</dd>
                 </dl>""");
         checkOrder("m1/p/q/r/C.html", """
                 <div class="inline-note note-tag-warning" id="i-warning1"><span class="note-header">Warning:</span>
                 Warning in class field</div>""",
                 """
                 <dl class="notes">
-                <dt>Note:</dt>
-                <dd id="i-note" class="note-tag">Note in class field</dd>
+                <dt id="i-note">Note:</dt>
+                <dd id="i-note1" class="note-tag">Note in class field</dd>
                 </dl>""");
     }
 
@@ -200,8 +200,8 @@ public class TestNoteTag extends JavadocTester {
                     abc <a href="C.html" title="class in p"><em>emphasized</em> link</a> def</div>""",
                 """
                     <dl class="notes">
-                    <dt>Note:</dt>
-                    <dd id="p.C-note" class="note-tag">xyz <a href="C.html" title="class in p"><strong>bold</strong> link</a></dd>
+                    <dt id="p.C-note">Note:</dt>
+                    <dd id="p.C-note1" class="note-tag">xyz <a href="C.html" title="class in p"><strong>bold</strong> link</a></dd>
                     </dl>""");
 
         checkOrder("p/doc-files/markdown.html", """
@@ -238,15 +238,15 @@ public class TestNoteTag extends JavadocTester {
 
         checkOrder("p/C.html",
                 """
-                        <dt>Note:</dt>
-                        <dd id="p.C-note" class="note-tag">First note</dd>
-                        <dd id="p.C-note1" class="note-tag">Second note</dd>""",
+                        <dt id="p.C-note">Note:</dt>
+                        <dd id="p.C-note1" class="note-tag">First note</dd>
+                        <dd id="p.C-note2" class="note-tag">Second note</dd>""",
                 """
-                        <dt>Important:</dt>
-                        <dd id="p.C-note2" class="note-tag">First important note</dd>
-                        <dd id="p.C-note3" class="note-tag">Second important note</dd>""",
+                        <dt id="p.C-note3">Important:</dt>
+                        <dd id="p.C-note4" class="note-tag">First important note</dd>
+                        <dd id="p.C-note5" class="note-tag">Second important note</dd>""",
                 """
-                        <dt>Warning:</dt>
+                        <dt id="p.C-note6">Warning:</dt>
                         <dd id="first-warning" class="note-tag-warning">First warning</dd>
                         <dd id="second-warning" class="note-tag-warning">Second warning</dd>
                         </dl>""");
@@ -326,7 +326,7 @@ public class TestNoteTag extends JavadocTester {
                     body </div>
                     </div>
                     <dl class="notes">
-                    <dt>Note:</dt>
+                    <dt id="p.C-note">Note:</dt>
                     <dd id="important-note" class="note-tag">body</dd>
                     </dl>""");
     }
@@ -366,8 +366,8 @@ public class TestNoteTag extends JavadocTester {
                     body </div>
                     </div>
                     <dl class="notes">
-                    <dt>Note:</dt>
-                    <dd id="p.C-note" class="note-tag-important">body</dd>
+                    <dt id="p.C-note">Note:</dt>
+                    <dd id="p.C-note1" class="note-tag-important">body</dd>
                     </dl>""");
     }
 
@@ -399,7 +399,7 @@ public class TestNoteTag extends JavadocTester {
                 // Block notes
                 """
                     <dl class="notes">
-                    <dt>Note:</dt>
+                    <dt id="p.C-note">Note:</dt>
                     <dd id="block-note" class="note-tag">A</dd>
                     <dd id="block-note1" class="note-tag">B</dd>
                     <dd id="block-note2" class="note-tag">C</dd>""",

@@ -76,7 +76,7 @@ public class TestCustomNoteTag extends JavadocTester {
                      abc <a href="C.html" title="class in p"><em>emphasized</em></a> def</div>""",
                 """
                      <dl class="notes">
-                     <dt>Example:</dt>
+                     <dt id="p.C-example">Example:</dt>
                      <dd id="example" class="note-tag-example auto-border"><p><strong>xyz</strong></p>""",
                 """
                      <pre class="snippet" id="snippet-p.C1"><code class="language-java">   code ...
@@ -259,8 +259,7 @@ public class TestCustomNoteTag extends JavadocTester {
                             ><span class="note-header">Warning:</span>
                             inline warning</div>""".replace("$LOCATION$", loc2.toString()),
                         """
-                            <dl class="notes">
-                            <dt>Warning:</dt>
+                            Warning:</dt>
                             <dd id="block-$LOCATION$-warning" class="note-tag-warning">block warning</dd>
                             </dl>""".replace("$LOCATION$", loc2.toString()));
             }
@@ -295,8 +294,8 @@ public class TestCustomNoteTag extends JavadocTester {
                         inline note</div>
                         </div>
                         <dl class="notes">
-                        <dt>Custom Note:</dt>
-                        <dd id="p.C-custom" class="note-tag-custom">block note</dd>
+                        <dt id="p.C-custom">Custom Note:</dt>
+                        <dd id="p.C-custom2" class="note-tag-custom">block note</dd>
                         </dl>
                         </div>""");
 
@@ -315,8 +314,8 @@ public class TestCustomNoteTag extends JavadocTester {
                 """
                         <div class="block">First sentence. </div>
                         <dl class="notes">
-                        <dt>Custom Note:</dt>
-                        <dd id="p.C-custom" class="note-tag-custom">block note</dd>
+                        <dt id="p.C-custom">Custom Note:</dt>
+                        <dd id="p.C-custom1" class="note-tag-custom">block note</dd>
                         </dl>
                         </div>""");
 
