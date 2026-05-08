@@ -133,9 +133,12 @@ public final class SNIHostName extends SNIServerName {
     /**
      * {@return an {@code SNIHostName} using the specified hostname}
      * <p>
-     * A valid SNI hostname is a DNS hostname, which is either an ASCII-encoded
-     * hostname or an {@linkplain IDN Internationalized Domain Name (IDN)}. The
-     * {@code hostname} argument is considered illegal if it:
+     * A valid SNI hostname is a DNS hostname (see <a
+     * href="http://www.ietf.org/rfc1123.txt">RFC&nbsp;1123</a> and <a
+     * href="http://www.ietf.org/rfc5280.txt">RFC&nbsp;5280</a>), which is
+     * either an ASCII-encoded hostname or an {@linkplain IDN Internationalized
+     * Domain Name (IDN)}. The {@code hostname} argument is considered illegal
+     * if it:
      * <ul>
      * <li>is empty,
      * <li>ends with a trailing dot,
@@ -155,7 +158,7 @@ public final class SNIHostName extends SNIServerName {
      *
      * <h4>Translation of non-ASCII Unicode code points</h4>
      *
-     * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
+     * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC&nbsp;6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
      * StandardCharsets#US_ASCII ASCII}. The
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
@@ -175,13 +178,16 @@ public final class SNIHostName extends SNIServerName {
      * @throws IllegalArgumentException if {@code hostname} is illegal
      *
      * @spec https://www.rfc-editor.org/info/rfc1122
-     * RFC 1122: Requirements for Internet Hosts - Communication Layers
+     *       RFC 1122: Requirements for Internet Hosts - Communication Layers
      * @spec https://www.rfc-editor.org/info/rfc1123
-     * RFC 1123: Requirements for Internet Hosts - Application and Support
+     *       RFC 1123: Requirements for Internet Hosts - Application and Support
      * @spec https://www.rfc-editor.org/info/rfc3490
-     * RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     *       RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.rfc-editor.org/info/rfc5280
+     *       RFC 5280: Internet X.509 Public Key Infrastructure Certificate and
+             Certificate Revocation List (CRL) Profile
      * @spec https://www.rfc-editor.org/info/rfc6066
-     * RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
+     *       RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      *
      * @since 27
      */
@@ -292,11 +298,12 @@ public final class SNIHostName extends SNIServerName {
      * UTF-8}
      * <p>
      * The specified byte array gets decoded into a hostname string that is
-     * required to be a valid a DNS hostname, which is either an ASCII-encoded
-     * hostname or an {@linkplain IDN Internationalized Domain Name (IDN)}. A
-     * decoded hostname string is considered illegal if it:
-     * <p>
-     * A decoded hostname string is considered illegal if it:
+     * required to be a valid a DNS hostname (see <a
+     * href="http://www.ietf.org/rfc1123.txt">RFC&nbsp;1123</a> and <a
+     * href="http://www.ietf.org/rfc5280.txt">RFC&nbsp;5280</a>), which is
+     * either an ASCII-encoded hostname or an {@linkplain
+     * IDN Internationalized Domain Name (IDN)}. A decoded hostname string is
+     * considered illegal if it:
      * <ul>
      * <li>is empty,
      * <li>ends with a trailing dot,
@@ -316,7 +323,7 @@ public final class SNIHostName extends SNIServerName {
      *
      * <h4>Translation of non-ASCII Unicode code points</h4>
      *
-     * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
+     * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC&nbsp;6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
      * StandardCharsets#US_ASCII ASCII}. The
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
@@ -340,15 +347,15 @@ public final class SNIHostName extends SNIServerName {
      * @throws IllegalArgumentException if {@code encoded} is illegal
      *
      * @spec https://www.rfc-editor.org/info/rfc1122
-     *      RFC 1122: Requirements for Internet Hosts - Communication Layers
+     *       RFC 1122: Requirements for Internet Hosts - Communication Layers
      * @spec https://www.rfc-editor.org/info/rfc1123
-     *      RFC 1123: Requirements for Internet Hosts - Application and Support
+     *       RFC 1123: Requirements for Internet Hosts - Application and Support
      * @spec https://www.rfc-editor.org/info/rfc3490
-     *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     *       RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      * @spec https://www.rfc-editor.org/info/rfc4366
-     *      RFC 4366: Transport Layer Security (TLS) Extensions
+     *       RFC 4366: Transport Layer Security (TLS) Extensions
      * @spec https://www.rfc-editor.org/info/rfc6066
-     *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
+     *       RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      *
      * @since 27
      */
