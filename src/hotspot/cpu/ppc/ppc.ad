@@ -2561,29 +2561,34 @@ encode %{
   %}
 
   enc_class enc_load_long_constL(iRegLdst dst, immL src, iRegLdst toc) %{
-
+    int toc_offset = 0;
     address const_toc_addr;
-    if (!ra_->C->output()->in_scratch_emit_size()) {
-    
-    const_toc_addr = __ long_constant((jlong)$src$$constant);
-    if (const_toc_addr == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
+    // Create a non-oop constant, no relocation needed.
+    // If it is an IC, it has a virtual_call_Relocation.
+    if (!ra_->C->output()->in_scratch_emit_size()) { 
+      const_toc_addr = __ long_constant((jlong)$src$$constant);
+      if (const_toc_addr == nullptr) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
 
-    ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
-    int toc_offset = __ offset_to_method_toc(const_toc_addr);
-    if (Assembler::is_simm(toc_offset, 16)) {
-      __ ld($dst$$Register, toc_offset, $toc$$Register);
-    } else {
-      __ addis($dst$$Register, $toc$$Register,
-               MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
-      __ ld($dst$$Register,
-            MacroAssembler::largeoffset_si16_si16_lo(toc_offset),
-            $dst$$Register);
-    }
+      // Get the constant's TOC offset.
+      toc_offset = __ offset_to_method_toc(const_toc_addr);
+      
+      // Keep the current instruction offset in mind.
+      ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
+      if (Assembler::is_simm(toc_offset, 16)) {
+        __ ld($dst$$Register, toc_offset, $toc$$Register);
+      } else {
+        __ addis($dst$$Register, $toc$$Register,
+                MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
+        __ ld($dst$$Register,
+              MacroAssembler::largeoffset_si16_si16_lo(toc_offset),
+              $dst$$Register);
+      }
     }
   %}
+
 %} // encode
 
 source %{
@@ -2684,7 +2689,6 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
-
     nodes->push(loadConLNodes._last);
 
     // some asserts
@@ -2694,43 +2698,43 @@ encode %{
 
   enc_class enc_load_long_constP(iRegLdst dst, immP src, iRegLdst toc) %{
     int toc_offset = 0;
-    if (!ra_->C->output()->in_scratch_emit_size()) {
-     
-    intptr_t val = $src$$constant;
-    relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
-    address const_toc_addr;
-    RelocationHolder r; // Initializes type to none.
-    if (constant_reloc == relocInfo::oop_type) {
-      // Create an oop constant and a corresponding relocation.
-      AddressLiteral a = __ constant_oop_address((jobject)val);
-      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      r = a.rspec();
-    } else if (constant_reloc == relocInfo::metadata_type) {
-      // Notify OOP recorder (don't need the relocation)
-      AddressLiteral a = __ constant_metadata_address((Metadata *)val);
-      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-    } else {
-      // Create a non-oop constant, no relocation needed.
-      const_toc_addr = __ long_constant((jlong)$src$$constant);
-    }
 
-    if (const_toc_addr == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    __ relocate(r); // If set above.
-    // Get the constant's TOC offset.
-    toc_offset = __ offset_to_method_toc(const_toc_addr);
-    if (Assembler::is_simm(toc_offset, 16)) {
-      __ ld($dst$$Register, toc_offset, $toc$$Register);
-    } else {
-      __ addis($dst$$Register, $toc$$Register,
-               MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
-      __ ld($dst$$Register,
-            MacroAssembler::largeoffset_si16_si16_lo(toc_offset),
-            $dst$$Register);
+    if (!ra_->C->output()->in_scratch_emit_size()) {  
+      intptr_t val = $src$$constant;
+      relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
+      address const_toc_addr;
+      RelocationHolder r; // Initializes type to none.
+      if (constant_reloc == relocInfo::oop_type) {
+        // Create an oop constant and a corresponding relocation.
+        AddressLiteral a = __ constant_oop_address((jobject)val);
+        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
+        r = a.rspec();
+      } else if (constant_reloc == relocInfo::metadata_type) {
+        // Notify OOP recorder (don't need the relocation)
+        AddressLiteral a = __ constant_metadata_address((Metadata *)val);
+        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
+      } else {
+        // Create a non-oop constant, no relocation needed.
+        const_toc_addr = __ long_constant((jlong)$src$$constant);
+      }
 
-    }
+      if (const_toc_addr == nullptr) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
+      __ relocate(r); // If set above.
+      // Get the constant's TOC offset.
+      toc_offset = __ offset_to_method_toc(const_toc_addr);
+      if (Assembler::is_simm(toc_offset, 16)) {
+        __ ld($dst$$Register, toc_offset, $toc$$Register);
+      } else {
+        __ addis($dst$$Register, $toc$$Register,
+                MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
+        __ ld($dst$$Register,
+              MacroAssembler::largeoffset_si16_si16_lo(toc_offset),
+              $dst$$Register);
+
+      }
     }
   %}
 
@@ -2758,8 +2762,7 @@ encode %{
 
   // Enc_class needed as consttanttablebase is not supported by postalloc
   // expand.
-
-enc_class postalloc_expand_load_float_constant(regF dst, immF src, iRegLdst tmp, iRegLdst toc) %{
+  enc_class postalloc_expand_load_float_constant(regF dst, immF src, iRegLdst tmp, iRegLdst toc) %{
 
     MachNode *m2;
     m2 = new loadConFNode();
@@ -3559,7 +3562,6 @@ ins_attrib ins_cost(DEFAULT_COST);
 // Is this instruction a non-matching short branch variant of some
 // long branch? Not required.
 ins_attrib ins_short_branch(0);
-
 
 ins_attrib ins_is_TrapBasedCheckNode(true);
 
@@ -5855,6 +5857,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
 // No constant pool entries required.
 instruct loadConP0or1(iRegPdst dst, immP_0or1 src) %{
   match(Set dst src);
+
   format %{ "LI      $dst, $src \t// ptr" %}
   size(4);
   ins_encode %{
@@ -5906,6 +5909,7 @@ instruct loadConP_Ex(iRegPdst dst, immP src) %{
 instruct loadConF(regF dst, immF src, iRegLdst toc, iRegLdst tmp) %{
   effect(DEF dst, USE src, USE toc,USE tmp);
   ins_cost(MEMORY_REF_COST);
+
   ins_num_consts(1);
 
   format %{ "LFS     $dst, offset, $toc \t// load float $src from TOC" %}
@@ -5920,15 +5924,15 @@ instruct loadConF(regF dst, immF src, iRegLdst toc, iRegLdst tmp) %{
       }
       int toc_offset = __ offset_to_method_toc(float_address);
 
-    if (Assembler::is_simm(toc_offset, 16)  ) {
-      __ lfs($dst$$FloatRegister, toc_offset, $toc$$Register);
-    } else {
+      if (Assembler::is_simm(toc_offset, 16)  ) {
+        __ lfs($dst$$FloatRegister, toc_offset, $toc$$Register);
+      } else {
 
-      int hi = (toc_offset + (1<<15)) >> 16;
-      int lo = toc_offset - hi * (1<<16);
-      __ addis($tmp$$Register, $toc$$Register, hi);
-      __ lfs($dst$$FloatRegister, lo, $tmp$$Register);
-    }
+        int hi = (toc_offset + (1<<15)) >> 16;
+        int lo = toc_offset - hi * (1<<16);
+        __ addis($tmp$$Register, $toc$$Register, hi);
+        __ lfs($dst$$FloatRegister, lo, $tmp$$Register);
+      }
     }
   %}
   ins_pipe(pipe_class_memory);
@@ -5959,22 +5963,21 @@ instruct loadConD(regD dst, immD src, iRegLdst toc, iRegLdst tmp) %{
   size(8);
   ins_encode %{
     if (!ra_->C->output()->in_scratch_emit_size()) {
-     
-    address float_address = __ double_constant($src$$constant);
-    if (float_address == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    int toc_offset = __ offset_to_method_toc(float_address);
-    if (Assembler::is_simm(toc_offset, 16)  ) {
-      __ lfd($dst$$FloatRegister, toc_offset, $toc$$Register);
+      address float_address = __ double_constant($src$$constant);
+      if (float_address == nullptr) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
+      int toc_offset = __ offset_to_method_toc(float_address);
+      if (Assembler::is_simm(toc_offset, 16)  ) {
+        __ lfd($dst$$FloatRegister, toc_offset, $toc$$Register);
 
-    } else {
-        int hi = (toc_offset + (1<<15)) >> 16;
-        int lo = toc_offset - hi * (1<<16);
-        __ addis($tmp$$Register, $toc$$Register, hi);
-        __ lfd($dst$$FloatRegister, lo, $tmp$$Register);
-    }
+      } else {
+          int hi = (toc_offset + (1<<15)) >> 16;
+          int lo = toc_offset - hi * (1<<16);
+          __ addis($tmp$$Register, $toc$$Register, hi);
+          __ lfd($dst$$FloatRegister, lo, $tmp$$Register);
+      }
 
     }
   %}
