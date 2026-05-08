@@ -223,8 +223,8 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   static void print_owned_locks_on_error(outputStream* st);
   static void print_lock_ranks(outputStream* st);
 
-  static void revive_all(); // Helper to clear all Mutexes in revived VM
-  void revive();            // Clear this Mutex
+  static void clear_all_for_revive(); // Helper to clear all Mutexes in revived VM
+  void clear_for_revive();            // Clear this Mutex
 };
 
 class Monitor : public Mutex {

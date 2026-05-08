@@ -638,7 +638,7 @@ void* Thread::process_revival() {
   NativeMemoryTracking = nullptr;
   UnlockDiagnosticVMOptions = true;
   DebuggingContext::force(); // Disable asserts
-  Mutex::revive_all();
+  Mutex::clear_all_for_revive();
 
   // Initialize the revival data structure to return:
   memset(&vm_revival_data, 0, sizeof(struct revival_data));

@@ -603,15 +603,15 @@ void Mutex::print_lock_ranks(outputStream* st) {
 #endif // ASSERT
 }
 
-void Mutex::revive_all() {
-  assert(Thread::is_revived(), "Must be in revived VM to revive Mutexes");
+void Mutex::clear_all_for_revive() {
+  guarantee(Thread::is_revived(), "Must be in revived VM to revive Mutexes");
   for (int i = 0; i < Mutex::_num_mutex; i++) {
-    _internal_mutex_arr[i]->revive();
+    _internal_mutex_arr[i]->clear_for_revive();
   }
 }
 
-void Mutex::revive() {
-  assert(Thread::is_revived(), "Must be in revived VM to revive Mutex");
+void Mutex::clear_for_revive() {
+  guarantee(Thread::is_revived(), "Must be in revived VM to revive Mutex");
   raw_set_owner(nullptr);
   _lock.unlock();
 }
