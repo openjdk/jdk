@@ -94,7 +94,7 @@ $(foreach m, $(ALL_MODULES), \
 # an extra rule to associate the symbolic link and the parent directory.
 #
 $(foreach m, $(ALL_MODULES), \
-  $(foreach d, $(call FindModuleValueClassSrcDirs, $m), \
+  $(foreach d, $(call FindModulePreviewSrcDirs, $m), \
     $(eval $d_TARGET := $(SRC_ZIP_WORK_DIR)/$(patsubst $(SUPPORT_OUTPUTDIR)/%,%,$d)/$m) \
     $(if $(SRC_GENERATED), , \
       $(eval $$($d_TARGET)/META-INF/preview: $d ; \
