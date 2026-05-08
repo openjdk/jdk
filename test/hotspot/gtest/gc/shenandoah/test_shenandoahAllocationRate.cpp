@@ -161,7 +161,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_decelerating) {
   // In this setup, the allocation rate is declining.
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
-  EXPECT_GE(acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(acceleration, 0.0);
   EXPECT_DOUBLE_EQ(current_rate, 1024.0);
-  EXPECT_GE(anticipated_consumption, 102400UL);
+  EXPECT_EQ(anticipated_consumption, 102400UL);
 }
