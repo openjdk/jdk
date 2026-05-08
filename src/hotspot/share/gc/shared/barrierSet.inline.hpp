@@ -31,8 +31,6 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/thread.hpp"
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>

@@ -30,7 +30,6 @@
 #include "oops/access.hpp"
 #include "oops/accessBackend.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "utilities/exceptions.hpp"
 #include "utilities/fakeRttiSupport.hpp"
 #include "utilities/macros.hpp"
 

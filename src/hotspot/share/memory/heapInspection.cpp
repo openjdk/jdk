@@ -559,10 +559,7 @@ static int compare_offset(FieldDesc* f1, FieldDesc* f2) {
 }
 
 static void print_field(outputStream* st, int level, int offset, FieldDesc& fd, bool is_inline_type, bool is_flat ) {
-  const char* flat_field_msg = "";
-  if (is_flat) {
-    flat_field_msg = is_flat ? "flat" : "not flat";
-  }
+  const char* flat_field_msg = is_flat ? "flat" : "";
   st->print_cr("  @ %d %*s \"%s\" %s %s %s",
       offset, level * 3, "",
       fd.name()->as_C_string(),
@@ -600,8 +597,6 @@ void PrintClassLayout::print_class_layout(outputStream* st, char* class_name) {
     return;
   }
 
-  Thread* THREAD = Thread::current();
-
   Symbol* classname = SymbolTable::probe(class_name, (int)strlen(class_name));
 
   GrowableArray<Klass*>* klasses = new (mtServiceability) GrowableArray<Klass*>(100, mtServiceability);
@@ -613,7 +608,6 @@ void PrintClassLayout::print_class_layout(outputStream* st, char* class_name) {
     Klass* klass = klasses->at(i);
     if (!klass->is_instance_klass()) continue;  // Skip
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    int tab = 1;
     st->print_cr("Class %s [@%s]:", klass->name()->as_C_string(),
         klass->class_loader_data()->loader_name());
     ResourceMark rm;

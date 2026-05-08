@@ -168,14 +168,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Register tmp1, Register tmp2,
                         Register obj);
 
-  // Allocate value buffer in "obj" and read in flat element at the given index
-  // NOTES:
-  //   - Return via "obj" must be r0
-  //   - kills all given regs
-  void read_flat_element(Register array, Register index,
-                         Register t1, Register t2,
-                         Register obj = r0);
-
   // load cpool->resolved_references(index);
   void load_resolved_reference_at_index(Register result, Register index, Register tmp = r5);
 

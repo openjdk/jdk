@@ -633,16 +633,6 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_
 #error "Platform should define DEFAULT_PADDING_SIZE"
 #endif
 
-
-//----------------------------------------------------------------------------------------------------
-// Prototyping
-// "Code Missing Here" macro, un-define when integrating back from prototyping stage and break
-// compilation on purpose (i.e. "forget me not")
-#define PROTOTYPE
-#ifdef PROTOTYPE
-#define CMH(m)
-#endif
-
 //----------------------------------------------------------------------------------------------------
 // Miscellaneous
 

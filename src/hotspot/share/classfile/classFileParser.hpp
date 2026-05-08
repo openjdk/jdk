@@ -32,7 +32,6 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
-#include "utilities/pair.hpp"
 
 class Annotations;
 template <typename T>
@@ -233,9 +232,7 @@ class ClassFileParser {
   bool _has_aot_runtime_setup_method;
   bool _has_strict_static_fields;
 
-  bool _is_naturally_atomic;
   bool _must_be_atomic;
-  bool _has_loosely_consistent_annotation;
 
   // precomputed flags
   bool _has_finalizer;
