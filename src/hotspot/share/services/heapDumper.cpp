@@ -963,7 +963,7 @@ public:
   }
 };
 
-// Describes flat object (flatted field or element of flat array) in the holder oop
+// Describes flat object (flat field or element of flat array) in the holder oop
 class DumperFlatObject: public CHeapObj<mtServiceability> {
   friend class DumperFlatObjectList;
 private:

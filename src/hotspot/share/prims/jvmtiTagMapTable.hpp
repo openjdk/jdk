@@ -85,7 +85,7 @@ public:
 // Value objects: keep just one tag for all equal value objects including heap allocated value objects.
 // We have to keep a strong reference to each unique value object with a non-zero tag.
 // During heap walking flattened value object tags stored in separate JvmtiFlatTagMapTable,
-// converted to standard strong entries in JvmtiTagMapTable outside of sefepoint.
+// converted to standard strong entries in JvmtiTagMapTable outside of safepoint.
 // All equal value objects should have the same tag.
 // Keep value objects alive (1 copy for each "value") until their tags are removed.
 

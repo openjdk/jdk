@@ -1071,7 +1071,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     jmp(skip);
     bind(not_null);
 
-    // Check if we are returning an non-null inline type and load its fields into registers
+    // Check if we are returning a non-null inline type and load its fields into registers
     test_oop_is_not_inline_type(rax, rscratch1, skip, /* can_be_null= */ false);
 
 #ifndef _LP64

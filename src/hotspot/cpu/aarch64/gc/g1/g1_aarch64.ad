@@ -74,7 +74,7 @@ static void write_barrier_post(MacroAssembler* masm,
 %}
 
 // TODO 8350865 (same applies to g1StoreLSpecialTwoOops)
-// - Do no set/overwrite barrier data here, also handle G1C2BarrierPostNotNull
+// - Do not set/overwrite barrier data here, also handle G1C2BarrierPostNotNull
 // - Move this into the .m4?
 instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{

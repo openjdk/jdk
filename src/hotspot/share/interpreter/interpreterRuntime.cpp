@@ -238,7 +238,7 @@ JRT_BLOCK_ENTRY(void, InterpreterRuntime::read_flat_field(JavaThread* current, o
 
   FlatFieldPayload payload(instanceOop(obj), entry);
   if (payload.is_payload_null()) {
-    // If the payload is null return before entring the JRT_BLOCK.
+    // If the payload is null return before entering the JRT_BLOCK.
     current->set_vm_result_oop(nullptr);
     return;
   }

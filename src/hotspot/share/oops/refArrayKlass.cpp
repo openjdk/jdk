@@ -225,7 +225,7 @@ void RefArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos,
     THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
   }
 
-  // Check is all offsets and lengths are non negative
+  // Check if all offsets and lengths are non negative
   if (src_pos < 0 || dst_pos < 0 || length < 0) {
     // Pass specific exception reason.
     ResourceMark rm(THREAD);

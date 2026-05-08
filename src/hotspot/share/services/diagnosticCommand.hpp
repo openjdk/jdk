@@ -336,7 +336,7 @@ public:
 
 class PrintClassLayoutDCmd : public DCmdWithParser {
 protected:
-  DCmdArgument<char*> _classname; // lass name whose layout should be printed.
+  DCmdArgument<char*> _classname; // Class name whose layout should be printed.
 public:
   PrintClassLayoutDCmd(outputStream* output, bool heap);
   static const char* name() {

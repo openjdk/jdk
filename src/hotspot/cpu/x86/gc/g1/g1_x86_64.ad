@@ -100,7 +100,7 @@ instruct g1StoreP(memory mem, any_RegP src, rRegP tmp1, rRegP tmp2, rRegP tmp3, 
 %}
 
 // TODO 8350865 (same applies to g1StoreLSpecialTwoOops)
-// - Do no set/overwrite barrier data here, also handle G1C2BarrierPostNotNull
+// - Do not set/overwrite barrier data here, also handle G1C2BarrierPostNotNull
 instruct g1StoreLSpecialOneOopOff0(memory mem, rRegL src, immI_0 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);

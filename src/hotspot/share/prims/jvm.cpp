@@ -3526,7 +3526,7 @@ JVM_ENTRY(jobject, JVM_InvokeMethod(JNIEnv *env, jobject method, jobject obj, jo
     method_handle = Handle(THREAD, JNIHandles::resolve(method));
     Handle receiver(THREAD, JNIHandles::resolve(obj));
     objArrayHandle args(THREAD, (objArrayOop)JNIHandles::resolve(args0));
-    assert(args() == nullptr || !args->is_flatArray(), "args are never flat or are they???");
+    assert(args() == nullptr || !args->is_flatArray(), "args are never flat");
 
     oop result = Reflection::invoke_method(method_handle(), receiver, args, CHECK_NULL);
     jobject res = JNIHandles::make_local(THREAD, result);
@@ -3548,7 +3548,7 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjectArray args0))
   objArrayHandle args(THREAD, (objArrayOop)JNIHandles::resolve(args0));
-  assert(args() == nullptr || !args->is_flatArray(), "args are never flat or are they???");
+  assert(args() == nullptr || !args->is_flatArray(), "args are never flat");
   oop constructor_mirror = JNIHandles::resolve(c);
   oop result = Reflection::invoke_constructor(constructor_mirror, args, CHECK_NULL);
   jobject res = JNIHandles::make_local(THREAD, result);

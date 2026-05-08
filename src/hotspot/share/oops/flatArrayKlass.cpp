@@ -184,7 +184,7 @@ size_t FlatArrayKlass::oop_size(oop obj) const {
   // because size_given_klass() calls oop_size() on objects that might be
   // concurrently forwarded, which would overwrite the Klass*.
   // Also, why we need to pass this layout_helper() to flatArrayOop::object_size.
-  assert(UseCompactObjectHeaders || obj->is_flatArray(),"must be an flat array");
+  assert(UseCompactObjectHeaders || obj->is_flatArray(),"must be a flat array");
   flatArrayOop array = flatArrayOop(obj);
   return array->object_size(layout_helper());
 }
@@ -327,7 +327,7 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
       }
     } else {
       // flatArray-to-refArray
-      assert(dk->is_refArray_klass(), "Expected objArray here");
+      assert(dk->is_refArray_klass(), "Expected refArray here");
 
       // Need to allocate each new src elem payload -> dst oop
       refArrayHandle dh(THREAD, (refArrayOop)d);
@@ -355,7 +355,7 @@ bool FlatArrayKlass::can_be_primary_super_slow() const {
 }
 
 u2 FlatArrayKlass::compute_modifier_flags() const {
-  // The modifier for an flatArray is the same as its element
+  // The modifier for a flatArray is the same as its element
   // With the addition of ACC_IDENTITY
   u2 element_flags = element_klass()->compute_modifier_flags();
 

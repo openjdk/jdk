@@ -61,7 +61,7 @@ class JvmtiTagMap :  public CHeapObj<mtServiceability> {
   void convert_flat_object_entries();
 
  public:
-  // for inernal use
+  // for internal use
   jlong find(const JvmtiHeapwalkObject& obj) const;
   void add(const JvmtiHeapwalkObject& obj, jlong tag);
   void remove(const JvmtiHeapwalkObject& obj);
