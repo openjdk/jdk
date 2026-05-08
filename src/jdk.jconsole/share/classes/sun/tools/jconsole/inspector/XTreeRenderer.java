@@ -52,7 +52,6 @@ public class XTreeRenderer extends DefaultTreeCellRenderer {
         super.getTreeCellRendererComponent(
                 tree, value, selected, expanded, leaf, row, hasFocus);
 
-        tree.putClientProperty("html.disable", Boolean.TRUE);
         Object userObject = ((DefaultMutableTreeNode) value).getUserObject();
         if (userObject instanceof XNodeInfo) {
             XNodeInfo node = (XNodeInfo) userObject;
