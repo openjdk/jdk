@@ -546,6 +546,7 @@ private:
   int address_offset(Node* adr, PhaseValues* phase);
 
   bool is_captured_store_address(Node* addp);
+  bool is_mem_read_only_string_intrinsic(Node* n);
 
   // Propagate unique types created for non-escaped allocated objects through the graph
   void split_unique_types(GrowableArray<Node *>  &alloc_worklist,
@@ -561,6 +562,7 @@ private:
 
   void  move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis);
   Node* find_inst_mem(Node* mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist, uint rec_depth = 0);
+  Node* find_inst_mem_assert_no_new_node(Node* mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
 
   Node_Array _node_map; // used for bookkeeping during type splitting
