@@ -1,0 +1,3 @@
+WerrorLint2.java:16:30: compiler.warn.empty.if
+WerrorLint2.java:17:28: compiler.warn.diamond.redundant.args
+2 warnings

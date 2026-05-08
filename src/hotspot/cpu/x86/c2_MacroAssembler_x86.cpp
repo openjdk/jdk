@@ -1706,12 +1706,8 @@ void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, Inte
 }
 
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, int vlen_in_bytes, BasicType bt) {
-  // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 64.
-  int offset = exact_log2(type2aelembytes(bt)) << 6;
-  if (is_floating_point_type(bt)) {
-    offset += 128;
-  }
-  ExternalAddress addr(StubRoutines::x86::vector_iota_indices() + offset);
+  int entry_idx = vector_iota_entry_index(bt);
+  ExternalAddress addr(StubRoutines::x86::vector_iota_indices(entry_idx));
   load_vector(T_BYTE, dst, addr, vlen_in_bytes);
 }
 
@@ -2150,8 +2146,8 @@ void C2_MacroAssembler::mulreduce16B(int opcode, Register dst, Register src1, XM
   } else {
     pmovsxbw(vtmp2, src2);
     reduce8S(opcode, dst, src1, vtmp2, vtmp1, vtmp2);
-    pshufd(vtmp2, src2, 0x1);
-    pmovsxbw(vtmp2, src2);
+    pshufd(vtmp2, src2, 0xe);
+    pmovsxbw(vtmp2, vtmp2);
     reduce8S(opcode, dst, dst, vtmp2, vtmp1, vtmp2);
   }
 }
@@ -2160,7 +2156,7 @@ void C2_MacroAssembler::mulreduce32B(int opcode, Register dst, Register src1, XM
   if (UseAVX > 2 && VM_Version::supports_avx512bw()) {
     int vector_len = Assembler::AVX_512bit;
     vpmovsxbw(vtmp1, src2, vector_len);
-    reduce32S(opcode, dst, src1, vtmp1, vtmp1, vtmp2);
+    reduce32S(opcode, dst, src1, vtmp1, vtmp2, vtmp1);
   } else {
     assert(UseAVX >= 2,"Should not reach here.");
     mulreduce16B(opcode, dst, src1, src2, vtmp1, vtmp2);
@@ -2207,6 +2203,7 @@ void C2_MacroAssembler::reduce8S(int opcode, Register dst, Register src1, XMMReg
     }
     phaddw(vtmp1, src2);
   } else {
+    assert_different_registers(src2, vtmp1);
     pshufd(vtmp1, src2, 0xE);
     reduce_operation_128(T_SHORT, opcode, vtmp1, src2);
   }
@@ -2219,6 +2216,7 @@ void C2_MacroAssembler::reduce16S(int opcode, Register dst, Register src1, XMMRe
     vphaddw(vtmp2, src2, src2, vector_len);
     vpermq(vtmp2, vtmp2, 0xD8, vector_len);
   } else {
+    assert_different_registers(src2, vtmp2);
     vextracti128_high(vtmp2, src2);
     reduce_operation_128(T_SHORT, opcode, vtmp2, src2);
   }
@@ -2226,6 +2224,7 @@ void C2_MacroAssembler::reduce16S(int opcode, Register dst, Register src1, XMMRe
 }
 
 void C2_MacroAssembler::reduce32S(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  assert_different_registers(src2, vtmp1);
   int vector_len = Assembler::AVX_256bit;
   vextracti64x4_high(vtmp1, src2);
   reduce_operation_256(T_SHORT, opcode, vtmp1, vtmp1, src2);
@@ -5559,7 +5558,7 @@ void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Regi
       }
       break;
     case Op_VectorMaskFirstTrue:
-      if (VM_Version::supports_bmi1()) {
+      if (UseCountTrailingZerosInstruction) {
         if (masklen < 32) {
           orl(tmp, 1 << masklen);
           tzcntl(dst, tmp);
@@ -6351,7 +6350,7 @@ void C2_MacroAssembler::udivI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movl(rdx, rax);
   subl(rdx, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rdx, rax);
   } else {
     notl(rdx);
@@ -6375,7 +6374,7 @@ void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rax, rdx);
   } else {
     notl(rax);
@@ -6404,7 +6403,7 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rax, rdx);
   } else {
     notl(rax);
@@ -6516,7 +6515,7 @@ void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movq(rdx, rax);
   subq(rdx, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rdx, rax);
   } else {
     notq(rdx);
@@ -6540,7 +6539,7 @@ void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rax, rdx);
   } else {
     notq(rax);
@@ -6568,7 +6567,7 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rax, rdx);
   } else {
     notq(rax);
@@ -7159,5 +7158,26 @@ void C2_MacroAssembler::vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMReg
     assert(opcode == Op_MinVHF, "");
     // dst = min(src1, src2)
     evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
+  }
+}
+
+int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
+  // The vector iota entries array is ordered by type B/S/I/L/F/D, and
+  // the offset between two types is 16.
+  switch(bt) {
+  case T_BYTE:
+    return 0;
+  case T_SHORT:
+    return 1;
+  case T_INT:
+    return 2;
+  case T_LONG:
+    return 3;
+  case T_FLOAT:
+    return 4;
+  case T_DOUBLE:
+    return 5;
+  default:
+    ShouldNotReachHere();
   }
 }

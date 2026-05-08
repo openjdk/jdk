@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
 import jdk.jpackage.internal.util.Slot;
@@ -70,7 +71,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror AppVersionTest.java
- * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=2880 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppVersionTest
  */
 
@@ -171,6 +172,16 @@ public final class AppVersionTest {
             }
 
             AppTestSpec.create(builder, testCases::add);
+        }
+
+        if (TKit.isOSX()) {
+            // Ensure "0.1" is a valid version on macOS.
+            AppTestSpec.create("Hello", TestSpec.build()
+                    .versionFromCmdline("0.1"), testCases::add);
+
+            // Ensure "1.2.3.4.5" is a valid version on macOS.
+            AppTestSpec.create("Hello", TestSpec.build()
+                    .versionFromCmdline("1.2.3.4.5"), testCases::add);
         }
 
         return testCases.stream().map(v -> {
@@ -484,10 +495,13 @@ public final class AppVersionTest {
                             : cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
                     var plist = MacHelper.readPListFromAppImage(bundleRoot);
                     var expectedVersion = expected.get(cmd.packageType()).version();
-                    for (var prop : List.of("CFBundleVersion", "CFBundleShortVersionString")) {
-                        TKit.assertEquals(expectedVersion, plist.queryValue(prop),
-                                String.format("Check the value of '%s' property in [%s] bundle", prop, bundleRoot));
-                    }
+                    TKit.assertEquals(expectedVersion, plist.queryValue("CFBundleVersion"),
+                            String.format("Check the value of '%s' property in [%s] bundle",
+                            "CFBundleVersion", bundleRoot));
+                    TKit.assertEquals(DottedVersion.lazy(expectedVersion).trim(3).toComponentsString(),
+                            plist.queryValue("CFBundleShortVersionString"),
+                            String.format("Check the value of '%s' property in [%s] bundle",
+                            "CFBundleShortVersionString", bundleRoot));
                 });
             }
         }
@@ -753,6 +767,11 @@ public final class AppVersionTest {
         AppTestSpec {
             Objects.requireNonNull(appDesc);
             Objects.requireNonNull(spec);
+            spec.findVersionSource(ModuleVersionSource.class).map(ModuleVersionSource::appDesc).ifPresent(moduleAppDesc -> {
+                if (!moduleAppDesc.equals(appDesc)) {
+                    throw new IllegalArgumentException();
+                }
+            });
         }
 
         AppTestSpec(TestSpec spec) {
@@ -988,9 +1007,6 @@ public final class AppVersionTest {
                         }));
                     });
                     yield MacBundle.fromPath(predefinedRuntimeDir).orElseThrow().homeDir();
-                }
-                default -> {
-                    throw new AssertionError();
                 }
             };
 

@@ -30,7 +30,7 @@
  * @build jdk.test.lib.net.SimpleSSLContext ShortResponseBody ShortResponseBodyGet
  * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=headers,errors,channel
- *       ShortResponseBodyGet
+ *       ${test.main.class}
  */
 
 import java.io.IOException;

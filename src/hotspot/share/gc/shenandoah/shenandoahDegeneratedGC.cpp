@@ -55,10 +55,11 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    bool is_bootstrap_gc = heap->old_generation()->is_bootstrapping();
-    heap->mmu_tracker()->record_degenerated(GCId::current(), is_bootstrap_gc);
-    const char* msg = is_bootstrap_gc? "At end of Degenerated Bootstrap Old GC": "At end of Degenerated Young GC";
-    heap->log_heap_status(msg);
+    bool is_bootstrap_gc = heap->young_generation()->is_bootstrap_cycle();
+    FormatBuffer<32> buf("Degenerated %s GC", _generation->name());
+    const char* msg = is_bootstrap_gc ? "Degenerated Bootstrap Old GC" : buf.buffer();
+    heap->mmu_tracker()->record_degenerated(GCId::current(), msg);
+    heap->log_heap_status(FormatBuffer<64>("At end of %s", msg));
   }
   return true;
 }
@@ -275,6 +276,11 @@ void ShenandoahDegenGC::op_degenerated() {
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       } else {
         _abbreviated = true;
+      }
+
+      // labs are retired, walk the old regions and update remembered set
+      if (ShenandoahHeap::heap()->mode()->is_generational()) {
+        ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
       }
 
     case _degenerated_update_refs:

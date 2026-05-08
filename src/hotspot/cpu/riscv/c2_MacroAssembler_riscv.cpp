@@ -3069,12 +3069,12 @@ void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, Vecto
     //    If the operation is MUL, then the identity value is one.
     vmv_v_i(vtmp1, 1);
     vmerge_vvm(vtmp2, vtmp1, src2); // vm == v0
-    vslidedown_vi(vtmp1, vtmp2, vector_length);
+    slidedown_v(vtmp1, vtmp2, vector_length);
 
     vsetvli_helper(bt, vector_length);
     vmul_vv(vtmp1, vtmp1, vtmp2);
   } else {
-    vslidedown_vi(vtmp1, src2, vector_length);
+    slidedown_v(vtmp1, src2, vector_length);
 
     vsetvli_helper(bt, vector_length);
     vmul_vv(vtmp1, vtmp1, src2);
@@ -3082,7 +3082,7 @@ void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, Vecto
 
   while (vector_length > 1) {
     vector_length /= 2;
-    vslidedown_vi(vtmp2, vtmp1, vector_length);
+    slidedown_v(vtmp2, vtmp1, vector_length);
     vsetvli_helper(bt, vector_length);
     vmul_vv(vtmp1, vtmp1, vtmp2);
   }
@@ -3281,40 +3281,44 @@ VFCVT_SAFE(vfcvt_rtz_x_f_v);
 
 // Extract a scalar element from an vector at position 'idx'.
 // The input elements in src are expected to be of integral type.
-void C2_MacroAssembler::extract_v(Register dst, VectorRegister src, BasicType bt,
-                                  int idx, VectorRegister tmp) {
+void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
+                                  BasicType bt, int idx, VectorRegister vtmp) {
   assert(is_integral_type(bt), "unsupported element type");
   assert(idx >= 0, "idx cannot be negative");
   // Only need the first element after vector slidedown
   vsetvli_helper(bt, 1);
   if (idx == 0) {
     vmv_x_s(dst, src);
-  } else if (idx <= 31) {
-    vslidedown_vi(tmp, src, idx);
-    vmv_x_s(dst, tmp);
   } else {
-    mv(t0, idx);
-    vslidedown_vx(tmp, src, t0);
-    vmv_x_s(dst, tmp);
+    slidedown_v(vtmp, src, idx);
+    vmv_x_s(dst, vtmp);
   }
 }
 
 // Extract a scalar element from an vector at position 'idx'.
 // The input elements in src are expected to be of floating point type.
-void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt,
-                                     int idx, VectorRegister tmp) {
+void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src,
+                                     BasicType bt, int idx, VectorRegister vtmp) {
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(idx >= 0, "idx cannot be negative");
   // Only need the first element after vector slidedown
   vsetvli_helper(bt, 1);
   if (idx == 0) {
     vfmv_f_s(dst, src);
-  } else if (idx <= 31) {
-    vslidedown_vi(tmp, src, idx);
-    vfmv_f_s(dst, tmp);
   } else {
-    mv(t0, idx);
-    vslidedown_vx(tmp, src, t0);
-    vfmv_f_s(dst, tmp);
+    slidedown_v(vtmp, src, idx);
+    vfmv_f_s(dst, vtmp);
+  }
+}
+
+// Move elements down a vector register group.
+// Offset is the start index (offset) for the source.
+void C2_MacroAssembler::slidedown_v(VectorRegister dst, VectorRegister src,
+                                    uint32_t offset, Register tmp) {
+  if (is_uimm5(offset)) {
+    vslidedown_vi(dst, src, offset);
+  } else {
+    mv(tmp, offset);
+    vslidedown_vx(dst, src, tmp);
   }
 }

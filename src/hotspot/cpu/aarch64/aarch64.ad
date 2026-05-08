@@ -1182,12 +1182,12 @@ class CallStubImpl {
  public:
   // Size of call trampoline stub.
   static uint size_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return MacroAssembler::max_trampoline_stub_size();
   }
 
   // number of relocations needed by a call trampoline stub
   static uint reloc_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return 5; // metadata; call dest; trampoline address; trampoline destination; trampoline_owner_metadata
   }
 };
 
@@ -7708,10 +7708,11 @@ instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesUS src));
 
   ins_cost(INSN_COST);
-  format %{ "rev16w  $dst, $src" %}
+  format %{ "rev16w $dst, $src\t# $dst -> unsigned short" %}
 
   ins_encode %{
     __ rev16w(as_Register($dst$$reg), as_Register($src$$reg));
+    __ narrow_subword_type(as_Register($dst$$reg), T_CHAR);
   %}
 
   ins_pipe(ialu_reg);
