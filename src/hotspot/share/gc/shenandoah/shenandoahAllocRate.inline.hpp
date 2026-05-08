@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 
@@ -96,4 +96,4 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
   return static_cast<size_t>(current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
 }
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_INLINE_HPP
