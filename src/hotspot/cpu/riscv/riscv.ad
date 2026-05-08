@@ -1446,13 +1446,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   }
 }
 
-uint MachPrologNode::size(PhaseRegAlloc* ra_) const
-{
-  assert_cond(ra_ != nullptr);
-  return MachNode::size(ra_); // too many variables; just compute it
-                              // the hard way
-}
-
 int MachPrologNode::reloc() const
 {
   return 0;
@@ -1510,12 +1503,6 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     __ relocate(relocInfo::poll_return_type);
     __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
-}
-
-uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  assert_cond(ra_ != nullptr);
-  // Variable size. Determine dynamically.
-  return MachNode::size(ra_);
 }
 
 int MachEpilogNode::reloc() const {
@@ -1797,6 +1784,18 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 //=============================================================================
 
 #ifndef PRODUCT
+void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
+{
+  Unimplemented();
+}
+#endif
+
+void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
+{
+  Unimplemented();
+}
+
+#ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   assert_cond(st != nullptr);
@@ -1816,12 +1815,6 @@ void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 
   // ic_check() aligns to CodeEntryAlignment >= InteriorEntryAlignment(min 16) > NativeInstruction::instruction_size(4).
   assert(((__ offset()) % CodeEntryAlignment) == 0, "Misaligned verified entry point");
-}
-
-uint MachUEPNode::size(PhaseRegAlloc* ra_) const
-{
-  assert_cond(ra_ != nullptr);
-  return MachNode::size(ra_);
 }
 
 // REQUIRED EMIT CODE

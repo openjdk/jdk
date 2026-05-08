@@ -70,15 +70,15 @@ define_pd_global(bool, RewriteFrequentPairs,  true);
 
 define_pd_global(bool, PreserveFramePointer,  false);
 
-define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
-define_pd_global(bool, InlineTypeReturnedAsFields, false);
-
 define_pd_global(uintx, TypeProfileLevel, 111);
 
 define_pd_global(bool, CompactStrings, true);
 
 // 2x unrolled loop is shorter with more than 9 HeapWords.
 define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
+
+define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
+define_pd_global(bool, InlineTypeReturnedAsFields, false);
 
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop,                                                 \

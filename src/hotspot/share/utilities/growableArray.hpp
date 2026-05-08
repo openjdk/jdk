@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "oops/array.hpp"
-#include "oops/oop.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"

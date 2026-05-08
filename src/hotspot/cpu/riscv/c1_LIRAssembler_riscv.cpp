@@ -1731,6 +1731,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   COMMENT("} emit_profile_type");
 }
 
+void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+  Unimplemented();
+}
+
 void LIR_Assembler::align_backward_branch_target() { }
 
 void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
@@ -2154,4 +2158,26 @@ void LIR_Assembler::store_parameter(jint c, int offset_from_rsp_in_words) {
   __ sd(t0, Address(sp, offset_from_rsp_in_bytes));
 }
 
+// Valhalla support
+
+void LIR_Assembler::check_orig_pc() {
+  Unimplemented();
+}
+
+int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
+  Unimplemented();
+  return 0;
+}
+
+void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {
+  Unimplemented();
+}
 #undef __

@@ -3078,4 +3078,26 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   __ z_lgfr(res, crc);
 }
 
+// Valhalla support
+
+void LIR_Assembler::check_orig_pc() {
+  Unimplemented();
+}
+
+int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
+  Unimplemented();
+  return 0;
+}
+
+void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {
+  Unimplemented();
+}
 #undef __

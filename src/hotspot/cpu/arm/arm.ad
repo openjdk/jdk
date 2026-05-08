@@ -339,10 +339,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   }
 }
 
-uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
-  return MachNode::size(ra_);
-}
-
 int MachPrologNode::reloc() const {
   return 10; // a large enough number
 }
@@ -382,10 +378,6 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   if (do_polling() && ra_->C->is_method_compilation()) {
     __ read_polling_page(Rtemp, relocInfo::poll_return_type);
   }
-}
-
-uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  return MachNode::size(ra_);
 }
 
 int MachEpilogNode::reloc() const {
@@ -850,6 +842,18 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 #ifndef PRODUCT
+void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
+{
+  Unimplemented();
+}
+#endif
+
+void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
+{
+  Unimplemented();
+}
+
+#ifndef PRODUCT
 #define R_RTEMP "R_R12"
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
@@ -862,11 +866,6 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 void MachUEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   __ ic_check(InteriorEntryAlignment);
 }
-
-uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
-  return MachNode::size(ra_);
-}
-
 
 //=============================================================================
 

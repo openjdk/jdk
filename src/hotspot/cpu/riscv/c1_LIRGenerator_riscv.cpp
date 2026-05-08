@@ -913,12 +913,14 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr reg = result_register_for(x->type());
   new_instance(reg, x->klass(), x->is_unresolved(),
+               /* allow_inline */ false,
                FrameMap::r12_oop_opr,
                FrameMap::r15_oop_opr,
                FrameMap::r14_oop_opr,
                LIR_OprFact::illegalOpr,
                FrameMap::r13_metadata_opr,
                info);
+
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
 }
@@ -1077,7 +1079,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   __ checkcast(reg, obj.result(), x->klass(),
                new_register(objectType), new_register(objectType), tmp3,
                x->direct_compare(), info_for_exception, patching_info, stub,
-               x->profiled_method(), x->profiled_bci());
+               x->profiled_method(), x->profiled_bci(), /*is_null_free*/ false);
 }
 
 void LIRGenerator::do_InstanceOf(InstanceOf* x) {

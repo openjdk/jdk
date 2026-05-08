@@ -124,7 +124,7 @@ private:
 #undef DECLARE_CDS_MUST_MATCH_FLAG
 
   inline static void do_print(outputStream* st, bool v);
-  inline static void do_print(outputStream* st, uint v);
+  LP64_ONLY(inline static void do_print(outputStream* st, uint v);)
   inline static void do_print(outputStream* st, intx v);
   inline static void do_print(outputStream* st, uintx v);
   inline static void do_print(outputStream* st, double v);

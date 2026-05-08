@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,10 +44,10 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
 #endif
 
 // Used by compiler only; may use only caller saved, non-argument registers.
-VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
-  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -147,10 +147,10 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   return s;
 }
 
-VtableStub* VtableStubs::create_itable_stub(int itable_index) {
+VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
-  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;

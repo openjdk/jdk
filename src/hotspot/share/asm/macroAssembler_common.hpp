@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,19 @@
                            int sp_inc, Register val_array);
   bool shuffle_inline_args_spill(bool is_packing, const GrowableArray<SigEntry>* sig, int sig_index,
                                  VMRegPair* regs_from, int from_index, int regs_from_count, RegState* reg_state);
+
+  int store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter = true);
+  bool move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]);
+  bool unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                            VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                            RegState reg_state[]);
+  bool pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                          VMRegPair* from, int from_count, int& from_index, VMReg to,
+                          RegState reg_state[], Register val_array);
+  int extend_stack_for_inline_args(int args_on_stack);
+  void remove_frame(int initial_framesize, bool needs_stack_repair);
+  VMReg spill_reg_for(VMReg reg);
+
 // };
 
 #endif // SHARE_ASM_MACROASSEMBLER_COMMON_HPP

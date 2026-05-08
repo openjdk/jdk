@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ inline address ContinuationHelper::Frame::real_pc(const frame& f) {
   return nullptr;
 }
 
-inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc, bool callee_augmented) {
+inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
   Unimplemented();
 }
 

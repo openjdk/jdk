@@ -1498,17 +1498,6 @@ public:
   // Inline type specific methods
   #include "asm/macroAssembler_common.hpp"
 
-  int store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter = true);
-  bool move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]);
-  bool unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
-                            VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
-                            RegState reg_state[]);
-  bool pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
-                          VMRegPair* from, int from_count, int& from_index, VMReg to,
-                          RegState reg_state[], Register val_array);
-  int extend_stack_for_inline_args(int args_on_stack);
-  void remove_frame(int initial_framesize, bool needs_stack_repair);
-  VMReg spill_reg_for(VMReg reg);
   void save_stack_increment(int sp_inc, int frame_size);
 
   void tableswitch(Register index, jint lowbound, jint highbound,

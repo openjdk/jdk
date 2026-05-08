@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -843,7 +843,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   LIR_Opr tmp2 = FrameMap::R6_oop_opr;
   LIR_Opr tmp3 = FrameMap::R7_oop_opr;
   LIR_Opr tmp4 = FrameMap::R8_oop_opr;
-  new_instance(reg, x->klass(), x->is_unresolved(), tmp1, tmp2, tmp3, tmp4, klass_reg, info);
+  new_instance(reg, x->klass(), x->is_unresolved(), /* allow_inline */ false, tmp1, tmp2, tmp3, tmp4, klass_reg, info);
 
   // Must prevent reordering of stores for object initialization
   // with stores that publish the new object.
@@ -1027,7 +1027,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   LIR_Opr tmp3 = FrameMap::R6_oop_opr; // temp
   __ checkcast(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
                x->direct_compare(), info_for_exception, patching_info, stub,
-               x->profiled_method(), x->profiled_bci());
+               x->profiled_method(), x->profiled_bci(), /*is_null_free*/ false);
 }
 
 

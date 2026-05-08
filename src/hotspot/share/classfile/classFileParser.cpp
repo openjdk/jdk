@@ -5363,7 +5363,16 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
   }
 
   int64_t mask = 0;
-#ifdef VM_LITTLE_ENDIAN
+#ifndef VM_LITTLE_ENDIAN
+  // Leaving the mask and offset to default values (that is just "return;") is a correct and easy way to implement
+  // this for other endianness, but it will have a runtime cost in do_acmp, without the benefit. It is better, and
+  // probably easy with access to such an architecture, to adapt the logic below
+  // for big-endian architectures, but filling the mask from the other end. I prefer not to do it blindly.
+  vk->set_fast_acmp_offset(0);
+  vk->set_fast_acmp_mask(mask);
+
+#else
+
   // Compute the mask for a memory zone with offset "start" and of size "size", both in bytes,
   // assuming it won't overflow the long. In little endian, the byte with smallest address/smallest offset/closest from header
   // will be the least significant byte.
@@ -5373,12 +5382,6 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
   // make_mask_piece(1, 1) = 0x0000 0000 0000 ff00 => 00 | ff | 00 | 00 | 00 | 00 | 00 | 00
   // make_mask_piece(1, 3) = 0x0000 0000 ffff ff00 => 00 | ff | ff | ff | 00 | 00 | 00 | 00
   auto make_mask_piece = [](int start, int size) -> int64_t { return right_n_bits<int64_t>(size * BitsPerByte) << (start * BitsPerByte); };
-#else
-  // Leaving the mask and offset to default values (that is just "return;") is a correct and easy way to implement this for other endianness, but it will
-  // have a runtime cost in do_acmp, without the benefit. It is better, and probably easy with access to such an architecture, to adapt the logic above
-  // for big-endian architectures, but filling the mask from the other end. I prefer not to do it blindly.
-  Unimplemented()
-#endif
 
   // We build the mask for a 64-bit load from the start of the payload. For each contiguous piece of memory
   // we build the mask containing 1's where it would be in the loaded long: it must be as
@@ -5405,14 +5408,16 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
     vk->set_fast_acmp_offset(0);
     vk->set_fast_acmp_mask(mask);
   } else {
-#ifdef VM_LITTLE_ENDIAN
     // In little endian, if the payload is not a full 64 bits, the mask will have leading 0s (most significant bytes are bytes with
     // higher addresses/higher offset/further from the header). We can shift the mask so that there aren't leading 0s anymore, and
     // decrease the offset by the same amount.
-    // For instance, let's say _payload_offset is 16, and the mask is 0x0000 ffff ffff 00ff, we have 16 leading 0s (the bubble at offset 1 is fine:
-    // it might be due to padding). Reading from the start of the payload might read 2 bytes after the end of the payload. To avoid that, we
-    // are going to shift the payload by 16 bits, and remove 2 bytes from the offset we should load from. At the end, fast_acmp_offset will be 14
-    // and the mask 0xffff ffff 00ff 0000. The lowest 16 0s introduced by the shift will filter out the 2 bytes we read from the header.
+    // For instance, let's say _payload_offset is 16, and the mask is 0x0000 ffff ffff 00ff, we have 16 leading 0s
+    // (the bubble at offset 1 is fine: it might be due to padding). Reading from the start of the payload might read 2 bytes
+    // after the end of the payload. To avoid that, we are going to shift the payload by 16 bits, and remove 2 bytes
+    // from the offset we should load from. At the end, fast_acmp_offset will be 14 and the mask 0xffff ffff 00ff 0000.
+    // The lowest 16 0s introduced by the shift will filter out the 2 bytes we read from the header.
+    // Big endian architectures probably need to look at count_trailing_zeros, and shift right until the last bit is 1.
+    // The offset still needs to be decreased.
     int leading_zeroes = static_cast<int>(count_leading_zeros(mask));
     assert(leading_zeroes % BitsPerByte == 0, "we should mask full bytes");
     mask <<= leading_zeroes;
@@ -5421,12 +5426,8 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
     assert(offset >= 0, "fast acmp path shouldn't load before the object");
     vk->set_fast_acmp_offset(offset);
     vk->set_fast_acmp_mask(mask);
-#else
-    // Big endian architectures probably need to look at count_trailing_zeros, and shift right until the last bit is 1.
-    // The offset still needs to be decreased.
-    Unimplemented()
-#endif
   }
+#endif // VM_LITTLE_ENDIAN
 }
 
 void ClassFileParser::fill_instance_klass(InstanceKlass* ik,

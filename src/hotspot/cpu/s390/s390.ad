@@ -1159,12 +1159,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   C->output()->set_frame_complete(__ offset());
 }
-
-uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. Determine dynamically.
-  return MachNode::size(ra_);
-}
-
 int MachPrologNode::reloc() const {
   // Return number of relocatable values contained in this instruction.
   return 1; // One reloc entry for load_const(toc).
@@ -1205,11 +1199,6 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     __ relocate(relocInfo::poll_return_type);
     __ load_from_polling_page(Z_R1_scratch);
   }
-}
-
-uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. determine dynamically.
-  return MachNode::size(ra_);
 }
 
 int MachEpilogNode::reloc() const {
@@ -1616,6 +1605,18 @@ class CallStubImpl {
 
 source %{
 
+#ifndef PRODUCT
+void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
+{
+  Unimplemented();
+}
+#endif
+
+void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
+{
+  Unimplemented();
+}
+
 #if !defined(PRODUCT)
 void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
   os->print_cr("---- MachUEPNode ----");
@@ -1633,11 +1634,6 @@ void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 void MachUEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // This is Unverified Entry Point
   __ ic_check(CodeEntryAlignment);
-}
-
-uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
-  // Determine size dynamically.
-  return MachNode::size(ra_);
 }
 
 //=============================================================================

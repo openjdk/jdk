@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1631,7 +1631,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       if (instr->is_ideal_call() != Form::invalid_type &&
           instr->is_ideal_call() != Form::JAVA_LEAF) {
         // MachConstantBase goes behind arguments, but before jvms.
-        fprintf(fp,"assert(tf() && tf()->domain(), \"\"); return tf()->domain()->cnt();");
+        fprintf(fp,"assert(tf() && tf()->domain_cc(), \"\"); return tf()->domain_cc()->cnt();");
       } else {
         fprintf(fp,"return req()-1;");
       }

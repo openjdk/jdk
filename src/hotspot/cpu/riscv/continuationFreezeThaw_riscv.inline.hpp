@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ inline frame FreezeBase::sender(const frame& f) {
     : frame(sender_sp, sender_sp, *link_addr, sender_pc);
 }
 
-template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
+template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& caller, int size_adjust) {
   assert(FKind::is_instance(f), "");
   assert(!caller.is_interpreted_frame()
     || caller.unextended_sp() == (intptr_t*)caller.at(frame::interpreter_frame_last_sp_offset), "");
@@ -182,7 +182,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
                                        : (intptr_t)hf.fp();
 }
 
-inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
+inline void FreezeBase::patch_pd(frame& hf, const frame& caller, bool is_bottom_frame) {
   if (caller.is_interpreted_frame()) {
     assert(!caller.is_empty(), "");
     patch_callee_link_relative(caller, caller.fp());
@@ -256,7 +256,7 @@ inline frame ThawBase::new_entry_frame() {
   return frame(sp, sp, _cont.entryFP(), _cont.entryPC());
 }
 
-template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom) {
+template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom, int size_adjust) {
   assert(FKind::is_instance(hf), "");
   // The values in the returned frame object will be written into the callee's stack in patch.
 

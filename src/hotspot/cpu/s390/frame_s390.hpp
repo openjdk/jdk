@@ -555,9 +555,15 @@
     metadata_words_at_top    = 0,
     frame_alignment          = 16,
     // size, in words, of maximum shift in frame position due to alignment
-    align_wiggle             =  1
+    align_wiggle             =  1,
+    // This is wrong and unimplemented
+    sender_sp_offset         =  0
   };
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }
+
+  intptr_t* repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const;
+  static intptr_t* repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr);
+  bool was_augmented_on_entry(int& real_size) const;
 
 #endif // CPU_S390_FRAME_S390_HPP

@@ -2092,9 +2092,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 }
 
 static address gen_c2i_adapter(MacroAssembler  *masm,
-                               int total_args_passed,
                                int comp_args_on_stack,
-                               const BasicType *sig_bt,
+                               const GrowableArray<SigEntry>* sig,
                                const VMRegPair *regs,
                                Label &skip_fixup) {
   // Before we get into the guts of the C2I adapter, see if we should be here
@@ -2123,7 +2122,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   // Since all args are passed on the stack, total_args_passed*wordSize is the
   // space we need. We need ABI scratch area but we use the caller's since
   // it has already been allocated.
-
+  int       total_args_passed = sig->length();
   const int abi_scratch = frame::z_top_ijava_frame_abi_size;
   int       extraspace  = align_up(total_args_passed, 2)*wordSize + abi_scratch;
   Register  sender_SP   = Z_R10;
@@ -2144,6 +2143,8 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
 
   // Now write the args into the outgoing interpreter space.
   for (int i = 0; i < total_args_passed; i++) {
+    BasicType bt = sig->at(i)._bt;
+
     VMReg r_1 = regs[i].first();
     VMReg r_2 = regs[i].second();
     if (!r_1->is_valid()) {
@@ -2160,7 +2161,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
       } else {
         // longs are given 2 64-bit slots in the interpreter,
         // but the data is passed in only 1 slot.
-        if (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
+        if (bt == T_LONG || bt == T_DOUBLE) {
 #ifdef ASSERT
           __ clear_mem(Address(Z_SP, st_off), sizeof(void *));
 #endif
@@ -2175,7 +2176,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
         } else {
           // longs are given 2 64-bit slots in the interpreter, but the
           // data is passed in only 1 slot.
-          if (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
+          if (bt == T_LONG || bt == T_DOUBLE) {
 #ifdef ASSERT
             __ clear_mem(Address(Z_SP, st_off), sizeof(void *));
 #endif
@@ -2240,12 +2241,12 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
 //    Z_SP      r15 - SP prepared by call stub such that caller's outgoing args are near top
 //
 void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
-                                    int total_args_passed,
                                     int comp_args_on_stack,
-                                    const BasicType *sig_bt,
+                                    const GrowableArray<SigEntry>* sig,
                                     const VMRegPair *regs) {
   const Register value = Z_R12;
   const Register ld_ptr= Z_esp;
+  int total_args_passed = sig->length();
 
   int ld_offset = total_args_passed * wordSize;
 
@@ -2265,8 +2266,9 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // Now generate the shuffle code. Pick up all register args and move the
   // rest through register value=Z_R12.
   for (int i = 0; i < total_args_passed; i++) {
-    if (sig_bt[i] == T_VOID) {
-      assert(i > 0 && (sig_bt[i-1] == T_LONG || sig_bt[i-1] == T_DOUBLE), "missing half");
+    BasicType bt = sig->at(i)._bt;
+    if (bt == T_VOID) {
+      assert(i > 0 && (sig->at(i - 1)._bt == T_LONG || sig->at(i - 1)._bt == T_DOUBLE), "missing half");
       continue;
     }
 
@@ -2298,7 +2300,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
         } else {
           // In 64bit, longs are given 2 64-bit slots in the interpreter, but the
           // data is passed in only 1 slot.
-          if (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
+          if (bt == T_LONG || bt == T_DOUBLE) {
             ld_offset -= wordSize;
           }
           __ z_mvc(Address(Z_SP, st_off), Address(ld_ptr, ld_offset), sizeof(void*));
@@ -2306,7 +2308,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
       } else {
         if (!r_2->is_valid()) {
           // Not sure we need to do this but it shouldn't hurt.
-          if (is_reference_type(sig_bt[i]) || sig_bt[i] == T_ADDRESS) {
+          if (is_reference_type(bt) || bt == T_ADDRESS) {
             __ z_lg(r_1->as_Register(), ld_offset, ld_ptr);
           } else {
             __ z_l(r_1->as_Register(), ld_offset, ld_ptr);
@@ -2314,7 +2316,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
         } else {
           // In 64bit, longs are given 2 64-bit slots in the interpreter, but the
           // data is passed in only 1 slot.
-          if (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
+          if (bt == T_LONG || bt == T_DOUBLE) {
             ld_offset -= wordSize;
           }
           __ z_lg(r_1->as_Register(), ld_offset, ld_ptr);
@@ -2343,15 +2345,20 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   __ z_br(Z_R1_scratch);
 }
 
-void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                            int total_args_passed,
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
                                             int comp_args_on_stack,
-                                            const BasicType *sig_bt,
-                                            const VMRegPair *regs,
-                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+                                            const GrowableArray<SigEntry>* sig,
+                                            const VMRegPair* regs,
+                                            const GrowableArray<SigEntry>* sig_cc,
+                                            const VMRegPair* regs_cc,
+                                            const GrowableArray<SigEntry>* sig_cc_ro,
+                                            const VMRegPair* regs_cc_ro,
+                                            address entry_address[AdapterBlob::ENTRY_COUNT],
+                                            AdapterBlob*& new_adapter,
+                                            bool allocate_code_blob) {
   __ align(CodeEntryAlignment);
   entry_address[AdapterBlob::I2C] = __ pc();
-  gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
+  gen_i2c_adapter(masm, comp_args_on_stack, sig, regs);
 
   Label skip_fixup;
   {
@@ -2396,7 +2403,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
   __ bind(L_skip_barrier);
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
-  gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
+  gen_c2i_adapter(masm, comp_args_on_stack, sig, regs, skip_fixup);
   return;
 }
 
@@ -3407,3 +3414,16 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 }
 
 #endif // INCLUDE_JFR
+
+const uint SharedRuntime::java_return_convention_max_int = Argument::n_int_register_parameters_j;
+const uint SharedRuntime::java_return_convention_max_float = Argument::n_float_register_parameters_j;
+
+int SharedRuntime::java_return_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
+BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+  Unimplemented();
+  return nullptr;
+}

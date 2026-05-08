@@ -91,9 +91,11 @@ inline void CDSMustMatchFlags::do_print(outputStream* st, bool v) {
   st->print("%s", v ? "true" : "false");
 }
 
+#ifdef _LP64
 inline void CDSMustMatchFlags::do_print(outputStream* st, uint v) {
   st->print("%u", v);
 }
+#endif
 
 inline void CDSMustMatchFlags::do_print(outputStream* st, intx v) {
   st->print("%zd", v);
