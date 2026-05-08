@@ -1910,9 +1910,6 @@ table.striped > tbody > tr > th {
     }
 }
 @media screen and (max-width: 600px) {
-    main {
-        padding: 10px 6px;
-    }
     dl.notes {
         margin-right: 0;
     }
