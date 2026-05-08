@@ -176,10 +176,6 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     return true;
   }
 
-  // if (trigger_rate(heap, available, capacity)) {
-  //   return true;
-  // }
-
   if (trigger_expedite_promotions(heap, old_generation)) {
     return true;
   }
