@@ -346,6 +346,63 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ vzeroall();
 }
 
+void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const Register rLimbs, const Register tmp, MacroAssembler* _masm) {
+  Register rscratch = tmp;
+  Register a  = r8;
+  Register c5 = r9;
+  Register c6 = r10;
+  Register c7 = r11;
+  Register c8 = r12;
+  Register c9 = rdx;
+  Register b  = r13;
+  Register c0 = r14;
+  Register c1 = r15;
+  Register c2 = rcx;
+  Register c3 = rsi;
+  Register c4 = rdi;
+
+  // Row 0
+  __ movq(b, Address(bLimbs, 0));
+
+  __ movq(rax, b);
+  __ movq(a, Address(aLimbs, 0));
+  __ imulq(a0);
+  __ addq(c0, rax);
+  __ movq(c1, rdx);
+
+  __ movq(rax, b);
+  __ movq(a, Address(aLimbs, 8));
+  __ imulq(a);
+  __ addq(c1, rax);
+  __ addq(c2, rdx);
+
+  __ movq(rax, b);
+  __ movq(a, Address(aLimbs, 16));
+  __ imulq(a2);
+  __ addq(c2, rax);
+  __ addq(c3, rdx);
+
+  __ movq(rax, b);
+  __ movq(a, Address(aLimbs, 24));
+
+  __ imulq(a);
+  __ addq(c3, rax);
+  __ addq(c4, rdx);
+
+  __ movq(rax, b);
+  __ movq(a, Address(aLimbs, 32));
+  __ imulq(a);
+  __ addq(c4, rax);
+  __ addq(c5, rdx);
+
+  __ movq(Address(rLimbs, 0), Acc1L);
+  __ vpermq(Acc1L, Shift1R, Acc1L, Assembler::AVX_512bit);
+  __ evmovdquq(Address(rLimbs, 8), Acc1L, Assembler::AVX_256bit);
+  // Cleanup
+  // Zero out zmm0-zmm15, higher registers not used by intrinsics
+  __ vzeroall();
+}
+
 address StubGenerator::generate_intpoly_mult_25519() {
   StubId stub_id = StubId::stubgen_intpoly_mult_25519_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -367,6 +424,14 @@ address StubGenerator::generate_intpoly_mult_25519() {
     const Register tmp     = r9;
 
     multiply_25519_avx512(aLimbs, bLimbs, rLimbs, tmp, _masm);
+  } else {
+    // Register Map
+    const Register aLimbs  = c_rarg0; // rdi | rcx
+    const Register bLimbs  = c_rarg1; // rsi | rdx
+    const Register rLimbs  = c_rarg2; // rdx | r8
+    const Register tmp     = r9;
+
+    multiply_25519_scalar(aLimbs, bLimbs, rLimbs, tmp, _masm);
   }
 
   __ leave();
