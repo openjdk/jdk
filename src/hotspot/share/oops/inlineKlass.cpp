@@ -289,6 +289,7 @@ void InlineKlass::initialize_calling_convention(TRAPS) {
     }
     if (!can_be_returned_as_fields() && !can_be_passed_as_fields()) {
       MetadataFactory::free_array<SigEntry>(class_loader_data(), extended_sig);
+      set_extended_sig(nullptr);
       assert(return_regs() == nullptr, "sanity");
     }
   }
