@@ -22,7 +22,7 @@
  *
  */
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
-#include "logging/log.hpp"
+
 #include "memory/allocation.hpp"
 
 #include <cmath>
