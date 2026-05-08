@@ -36,18 +36,18 @@ class MyRecord {
   [] {                                     // Constant Pool
     ;                                      // first element is empty
     Method #2 #3;                          // #1
-    Class #4;                              // #2
+    class #4;                              // #2
     NameAndType #5 #6;                     // #3
     Utf8 "java/lang/Record";               // #4
     Utf8 "<init>";                         // #5
     Utf8 "()V";                            // #6
     Field #8 #9;                           // #7
-    Class #11;                             // #8
+    class #11;                             // #8
     NameAndType #10 #12;                   // #9
     Utf8 "filter";                         // #10
     Utf8 "MyRecord";                       // #11
     Utf8 "Ljava/lang/String;";             // #12
-    Class #34;                             // #13
+    class #34;                             // #13
     Utf8 "LMyTypeUseAnnotation;";          // #14
     String #16;                            // #15
     Utf8 "Filter cannot be null";          // #16
@@ -94,15 +94,15 @@ class MyRecord {
     MethodHandle 1b #7;                    // #57
     MethodHandle 6b #59;                   // #58
     Method #60 #61;                        // #59
-    Class #62;                             // #60
+    class #62;                             // #60
     NameAndType #63 #64;                   // #61
     Utf8 "java/lang/runtime/ObjectMethods";  // #62
     Utf8 "bootstrap";                      // #63
     Utf8 "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;";  // #64
     Utf8 "InnerClasses";                   // #65
-    Class #67;                             // #66
+    class #67;                             // #66
     Utf8 "java/lang/invoke/MethodHandles$Lookup";  // #67
-    Class #69;                             // #68
+    class #69;                             // #68
     Utf8 "java/lang/invoke/MethodHandles";  // #69
     Utf8 "Lookup";                         // #70
   }
