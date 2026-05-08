@@ -76,7 +76,7 @@
     --pre-text-color: var(--snippet-text-color);
     /* Note colors */
     --note-background-color: var(--body-background-color);
-    --note-border-color: #646464;
+    --note-border-color: #434343;
     --note-header-color: #434343;
     --note-text-color: var(--block-text-color);
     --note-important-background-color: #f1f7ff;
@@ -552,7 +552,7 @@ section.class-description > div.horizontal-scroll > :last-child > :is(li, dd):la
  * Styles for notes.
  */
 div.inline-note {
-    padding: 10px 12px;
+    padding: 8px 12px;
     margin: 12px 0;
     border: 0.6px solid var(--note-border-color);
     background-color: var(--note-background-color);
