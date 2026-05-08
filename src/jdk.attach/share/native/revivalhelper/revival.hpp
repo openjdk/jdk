@@ -58,9 +58,10 @@
 #define SYMBOLS_FILENAME "jvm.symbols"
 #define REVIVAL_SUFFIX ".revival"
 
-// Essential symbols to resolve are defined in SYM_... macros.
-// This one is "C" and common to all platforms:
+// Essential symbols to resolve are defined in "SYM_" macros.
+// These are "C" and common to all platforms:
 #define SYM_REVIVE_VM "process_revival"
+#define SYM_VM_RELEASE "_s_vm_release_global"
 
 //
 // Platform specifics
@@ -81,8 +82,6 @@
 #define FILE_SEPARATOR  "/"
 #define PATH_SEPARATOR  ":"
 
-#define SYM_VM_RELEASE "_ZN19Abstract_VM_Version13_s_vm_releaseE"
-
 //
 // Windows
 //
@@ -100,8 +99,6 @@ void tls_fixup_pd(void* tlsPtr);
 #define JVM_FILENAME "jvm.dll"
 #define FILE_SEPARATOR  "\\"
 #define PATH_SEPARATOR  ";"
-
-#define SYM_VM_RELEASE "_s_vm_release_global"
 
 #else
 #error "revival.hpp: OS Not implemented."

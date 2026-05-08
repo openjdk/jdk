@@ -33,7 +33,7 @@
 const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release();
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
 
-// Duplicate the _s_vm_release member to give externally visible symbol on Windows.
+// Duplicate the _s_vm_release member to give a standard externally visible symbol:
 extern "C" {
 JNIEXPORT const char* _s_vm_release_global = Abstract_VM_Version::vm_release();
 }
