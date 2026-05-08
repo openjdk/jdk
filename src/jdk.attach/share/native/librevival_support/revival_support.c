@@ -30,8 +30,12 @@
 // This library is not Java related, but include jni_md to get JNIEXPORT to set visibility.
 #include <jni_md.h>
 
+#ifndef TRUE
 #define TRUE 1
+#endif
+#ifndef FALSE
 #define FALSE 0
+#endif
 
 #ifndef WINDOWS
 #include <dlfcn.h>
