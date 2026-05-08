@@ -4146,8 +4146,9 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
       record_for_optimizer(use);
       --i;
     } else if (is_mem_read_only_string_intrinsic(use)) {
-      if (alias_idx == general_idx)
+      if (alias_idx == general_idx) {
         continue;
+      }
       if (use->in(MemNode::Memory) == n) {
         // Move to general memory slice and assert no new node is created.
         Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
