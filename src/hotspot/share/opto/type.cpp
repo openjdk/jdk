@@ -704,7 +704,7 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= nullptr;
 
-  TypeVect::VECTMASK = (TypeVect*)(new TypeVectMask(T_BOOLEAN, MaxVectorSize))->hashcons();
+  TypeVect::VECTMASK = (TypeVect*)(new TypePVectMask(T_BOOLEAN, MaxVectorSize))->hashcons();
   mreg2type[Op_RegVectMask] = TypeVect::VECTMASK;
 
   if (Matcher::supports_scalable_vector()) {
@@ -2466,7 +2466,7 @@ const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
 }
 
 // Create a vector mask type with the given element basic type and length.
-// - Returns "TypeVectMask" (PVectMask) for platforms that support the predicate
+// - Returns "TypePVectMask" (PVectMask) for platforms that support the predicate
 //   feature and it is implemented properly in the backend, allowing the mask to
 //   be stored in a predicate/mask register.
 // - Returns a normal vector type "TypeVectA ~ TypeVectZ" (NVectMask) otherwise,
@@ -2474,7 +2474,7 @@ const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
 const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
   if (Matcher::has_predicated_vectors() &&
       Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
-    return TypeVectMask::make(elem_bt, length);
+    return TypePVectMask::make(elem_bt, length);
   } else {
     return make(elem_bt, length);
   }
@@ -2574,8 +2574,8 @@ void TypeVect::dump2(Dict& d, uint depth, outputStream* st) const {
 }
 #endif
 
-const TypeVectMask* TypeVectMask::make(const BasicType elem_bt, uint length) {
-  return (TypeVectMask*) (new TypeVectMask(elem_bt, length))->hashcons();
+const TypePVectMask* TypePVectMask::make(const BasicType elem_bt, uint length) {
+  return (TypePVectMask*) (new TypePVectMask(elem_bt, length))->hashcons();
 }
 
 //=============================================================================
@@ -4064,29 +4064,6 @@ const TypeInterfaces* TypePtr::interfaces(ciKlass*& k, bool klass, bool interfac
     }
   }
   return TypeAryPtr::_array_interfaces;
-}
-
-/**
- *  Create constant type for a constant boxed value
- */
-const Type* TypeInstPtr::get_const_boxed_value() const {
-  assert(is_ptr_to_boxed_value(), "should be called only for boxed value");
-  assert((const_oop() != nullptr), "should be called only for constant object");
-  ciConstant constant = const_oop()->as_instance()->field_value_by_offset(offset());
-  BasicType bt = constant.basic_type();
-  switch (bt) {
-    case T_BOOLEAN:  return TypeInt::make(constant.as_boolean());
-    case T_INT:      return TypeInt::make(constant.as_int());
-    case T_CHAR:     return TypeInt::make(constant.as_char());
-    case T_BYTE:     return TypeInt::make(constant.as_byte());
-    case T_SHORT:    return TypeInt::make(constant.as_short());
-    case T_FLOAT:    return TypeF::make(constant.as_float());
-    case T_DOUBLE:   return TypeD::make(constant.as_double());
-    case T_LONG:     return TypeLong::make(constant.as_long());
-    default:         break;
-  }
-  fatal("Invalid boxed value type '%s'", type2name(bt));
-  return nullptr;
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
