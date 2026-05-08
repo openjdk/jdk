@@ -195,7 +195,14 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   assert_different_registers(dst, scratch);
   assert_different_registers(Z_R2, scratch);
 
-  __ z_ldgr(Z_F0, scratch);
+  //__ z_ldgr(Z_F0, scratch);
+
+  int nbytes_save = 3 * BytesPerWord; // SP, PC, scratch
+  int offset = 160;
+
+  __ push_frame_abi160(nbytes_save);        offset += 8;
+  __ save_return_pc();                      offset += 8;
+  __ z_stg(scratch, offset, Z_SP);
 
   Label done;
   Label stop;
@@ -271,7 +278,9 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   __ bind(done);
 
-  __ z_lgdr(scratch, Z_F0);
+  __ z_lg(scratch, 176, Z_SP);
+  __ restore_return_pc();
+  __ pop_frame();
 }
 
 // Purpose  we are checking if the address stored at ref_addr is good, bad or null.
@@ -633,9 +642,7 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
     __ align(32);
     __ bind(medium_path);
     // TODO: Check for slow_path_continuation -> done
-    __ z_ldgr(Z_F0, Z_tmp_1);
     store_barrier_medium(masm, Address(addr, 0), Z_tmp_1, Z_tmp_2, false, false, continuation, slow_path, slow_path_continuation);
-    __ z_lgdr(Z_tmp_1, Z_F0);
     __ bind(slow_path);
     {
       ZRuntimeCallSpill rcs(masm, noreg);
@@ -684,8 +691,8 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 }
 
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
-  __ load_const_optimized(Z_R1, (uintptr_t)&conjoint_fubar);
-  __ z_agsi(0, Z_R1, 1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&conjoint_fubar);
+  //__ z_agsi(0, Z_R1, 1);
   const Register zpointer = Z_R1;
   // TODO: Where is zpointer stored?
   Label done, loop, load_bad, load_good, store_bad, store_good;
@@ -757,45 +764,48 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
                                                          Register robj,
                                                          Register temp,
                                                          Label& slowpath) {
-  BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
+  //BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
+//
+  //Label done, tagged, weak_tagged, uncolor;
+//
+  //// test for tag
+  //__ z_cgr(robj, JNIHandles::tag_mask);
+  //__ branch_optimized(Assembler::bcondNotEqual, tagged);
+//
+  //// Resolve local handle
+  //__ z_lg(robj, Address(robj, 0));
+  //__ branch_optimized(Assembler::bcondAlways, done);
+//
+  //__ bind(tagged);
+//
+  //// Test for weak tag
+  //__ z_cgr(robj, JNIHandles::TypeTag::weak_global);
+  //__ branch_optimized(Assembler::bcondNotEqual, weak_tagged);
+//
+  //// Resolve global handle
+  //__ z_lg(robj, Address(robj, -JNIHandles::TypeTag::global));
+  //__ z_ltg(robj, load_bad_mask_from_jni_env(jni_env));
+  //__ branch_optimized(Assembler::bcondNotEqual, slowpath);
+  //__ branch_optimized(Assembler::bcondAlways, uncolor);
+//
+  //__ bind(weak_tagged);
+//
+  //// Resolve weak handle
+  //__ z_lg(robj, Address(robj, -JNIHandles::TypeTag::weak_global));
+  //__ z_ltg(robj, mark_bad_mask_from_jni_env(jni_env));
+  //__ branch_optimized(Assembler::bcondNotEqual, slowpath);
+//
+  //__ bind(uncolor);
+//
+  //// Uncolor
+  //__ z_srlg(robj, robj, ZPointerLoadShift);
+//
+  //__ bind(done);
+//
+  //BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
 
-  Label done, tagged, weak_tagged, uncolor;
-
-  // test for tag
-  __ z_cgr(robj, JNIHandles::tag_mask);
-  __ branch_optimized(Assembler::bcondNotEqual, tagged);
-
-  // Resolve local handle
-  __ z_lg(robj, Address(robj, 0));
-  __ branch_optimized(Assembler::bcondAlways, done);
-
-  __ bind(tagged);
-
-  // Test for weak tag
-  __ z_cgr(robj, JNIHandles::TypeTag::weak_global);
-  __ branch_optimized(Assembler::bcondNotEqual, weak_tagged);
-
-  // Resolve global handle
-  __ z_lg(robj, Address(robj, -JNIHandles::TypeTag::global));
-  __ z_ltg(robj, load_bad_mask_from_jni_env(jni_env));
-  __ branch_optimized(Assembler::bcondNotEqual, slowpath);
-  __ branch_optimized(Assembler::bcondAlways, uncolor);
-
-  __ bind(weak_tagged);
-
-  // Resolve weak handle
-  __ z_lg(robj, Address(robj, -JNIHandles::TypeTag::weak_global));
-  __ z_ltg(robj, mark_bad_mask_from_jni_env(jni_env));
-  __ branch_optimized(Assembler::bcondNotEqual, slowpath);
-
-  __ bind(uncolor);
-
-  // Uncolor
-  __ z_srlg(robj, robj, ZPointerLoadShift);
-
-  __ bind(done);
-
-  BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
+  // Idk what is going on, It will start to give error not in CodeBuffer memory while emitting but it's never emmitted, It never get executed
+  __ stop("try resolve jobject in native");
 }
 
 #undef __
@@ -915,7 +925,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   __ pop_frame();
 
   // Runtime TODO: verify the result is stored in Z_R0 -> it is being stored in Z_F0
-  __ z_lgdr(ref, Z_F0);
+  __ z_lgr(ref, Z_R0);
   __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
 
@@ -972,10 +982,17 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
   //__ z_agsi(0, scratch, 1);
  
   // Pass store address in the stack
-  __ z_lay(Z_R0, ce->as_Address(stub->ref_addr()->as_address_ptr()));
+  __ z_lay(scratch, ce->as_Address(stub->ref_addr()->as_address_ptr()));
 
-  __ z_ldgr(Z_F0, Z_R0);
+  int nbytes_save = 3 * BytesPerWord;            // SP, PC, R0
+  __ push_frame(nbytes_save);
+  __ save_return_pc();
+  __ z_stg(scratch, 16, Z_SP);
+
   __ call_stub(stub->runtime_stub());
+
+  __ restore_return_pc();
+  __ pop_frame();
 
   // Stub exit
   __ branch_optimized(Assembler::bcondAlways, slow_continuation);
@@ -988,34 +1005,36 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
                                                                  DecoratorSet decorators) const {
 
-  int offset = 176;
-  __ z_ldy(Z_F0, offset, Z_SP);              offset += 8;     // ref
-  __ z_ldy(Z_F1, offset, Z_SP);                               // ref_addr
+  //int offset = 176;
+  //__ z_ldy(Z_F0, offset, Z_SP);              offset += 8;     // ref
+  //__ z_ldy(Z_F1, offset, Z_SP);                               // ref_addr
 
   int nbytes_save = 15 * BytesPerWord;                        // R1 to R5, F0 to F7, SP, PC
   // TODO: use frame::z_abi_160_size instead of just writing 160
-  offset = 160;
+  int offset = 160;
 
   __ push_frame_abi160(nbytes_save);         offset += 8;
   __ save_return_pc();                       offset += 8;
   // TODO: If anything goes wrong, check here if something useful was stored in the float registers or i can save these register if the c1_load_stub
-  __ save_volatile_regs(Z_SP, offset, false, false);
+  __ save_volatile_regs(Z_SP, offset, true, false);
 
-  __ z_lgdr(Z_ARG1, Z_F0);                                    // ref
-  __ z_lgdr(Z_ARG2, Z_F1);                                    // ref_addr
+  offset = 16 + 160 + nbytes_save + 160;
+
+  __ z_lg(Z_ARG1, offset, Z_SP);            offset += 8;            // ref
+  __ z_lg(Z_ARG2, offset, Z_SP);                                    // ref_addr
 
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
 
-  __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_runtime_fubar);
-  __ z_agsi(0, Z_R1, 1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&c1_load_runtime_fubar);
+  //__ z_agsi(0, Z_R1, 1);
 
   //TODO: Why are we verifying oop, ppc does it but x86 and aarch64 does not -> they are also doing it, but in the load_stub
   __ verify_oop(Z_RET, "Bad pointer after barrier invocation");
-  __ z_ldgr(Z_F0, Z_RET);
+  __ z_lgr(Z_R0, Z_RET);
 
   offset = 168;
   __ restore_return_pc();                    offset += 8;
-  __ restore_volatile_regs(Z_SP, offset, false, false);
+  __ restore_volatile_regs(Z_SP, offset, true, false);
   __ pop_frame();
 
   __ z_br(Z_R14);
@@ -1032,7 +1051,8 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   __ save_return_pc();                      offset += 8;
   __ save_volatile_regs(Z_SP, offset, true, false);
 
-  __ z_lgdr(Z_ARG1, Z_F0);
+  //__ z_lgdr(Z_ARG1, Z_F0);
+  __ z_lg(Z_ARG1, 160 + nbytes_save + 16, Z_SP);
 
   //__ push_frame(nbytes_save);
   //__ save_return_pc();
@@ -1054,10 +1074,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   __ restore_return_pc();                   offset += 8;
   __ restore_volatile_regs(Z_SP, offset, true, false);
   __ pop_frame();
-
-  //__ restore_volatile_regs(Z_SP, stack_parameters, true, false);
-  //__ pop_frame();
-  //__ restore_return_pc();
 
   __ z_br(Z_R14);
 }
