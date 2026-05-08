@@ -1970,57 +1970,6 @@ static enum RC rc_class(OptoReg::Name reg) {
   return rc_stack;
 }
 
-// Check if the MachSpillCopyNode can use `movprfx` for fusion optimization.
-// (see https://documentation-service.arm.com/static/668bc0a369e89f01e39c4668?token=)
-// For example:
-//   movprfx z16.b, z18.b
-//   add z16.b, p0/m, z16.b, z17.b
-// will be fused as if one instruction:
-//   add z16.b, p0/m, z18.b, z17.b
-// and the execution of the instruction pair will be accelerated.
-static bool use_movprfx_for_spill_copy(const MachSpillCopyNode* copy_node,
-                                       OptoReg::Name dst_reg, PhaseRegAlloc* ra_) {
-  if (UseSVE == 0) {
-    return false;
-  }
-
-  // Conservatively require that MachSpillCopyNode has only one use.
-  if (copy_node->outcnt() != 1) {
-    return false;
-  }
-
-  Node* use = copy_node->unique_out();
-  if (!use->is_Mach()) {
-    return false;
-  }
-  MachNode* mach_use = use->as_Mach();
-  OptoReg::Name use_dst_lo = ra_->get_reg_first(mach_use);
-  if (rc_class(use_dst_lo) != rc_float) {
-    return false;
-  }
-
-  // Need at least one data input, the first operand is destination
-  uint num_opnds = mach_use->num_opnds();
-  if (num_opnds < 2) {
-    return false;
-  }
-
-  // Get the first source register (input 1, as input 0 is usually control/memory),
-  // the MachSpillCopyNode must be the first source.
-  Node* first_input = mach_use->in(1);
-  if (first_input != copy_node) {
-    return false;
-  }
-
-  // Check if destination register of the use node equals the copy node's
-  // destination. This means the use node has the pattern: dst = op(dst, ...)
-  if (use_dst_lo != dst_reg) {
-    return false;
-  }
-
-  return true;
-}
-
 uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream *st) const {
   Compile* C = ra_->C;
 
@@ -2070,9 +2019,9 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ unspill_sve_vector(as_FloatRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo),
                               sve_vector_reg_size_in_bytes);
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
-        __ spill_copy_register_to_register(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-                                           as_FloatRegister(Matcher::_regEncode[src_lo]),
-                                           use_movprfx_for_spill_copy(this, dst_lo, ra_));
+        __ sve_orr(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+                   as_FloatRegister(Matcher::_regEncode[src_lo]),
+                   as_FloatRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
@@ -2089,11 +2038,9 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
           __ spill_copy128(src_offset, dst_offset);
         }
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
-        __ spill_copy_register_to_register(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-                                           as_FloatRegister(Matcher::_regEncode[src_lo]),
-                                           use_movprfx_for_spill_copy(this, dst_lo, ra_),
-                                           /* use_sve */ false,
-                                           ireg == Op_VecD ? __ T8B : __ T16B);
+        __ mov(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+               ireg == Op_VecD ? __ T8B : __ T16B,
+               as_FloatRegister(Matcher::_regEncode[src_lo]));
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_stack) {
         __ spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
                  ireg == Op_VecD ? __ D : __ Q,

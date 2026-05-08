@@ -781,7 +781,8 @@ instruct vaddB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (AddVB (Binary dst_src1 src2) pg));
   format %{ "vaddB_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_add($dst_src1$$FloatRegister, __ B, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_add($dst_src1$$FloatRegister, __ B, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -791,7 +792,8 @@ instruct vaddS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (AddVS (Binary dst_src1 src2) pg));
   format %{ "vaddS_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_add($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_add($dst_src1$$FloatRegister, __ H, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -801,7 +803,8 @@ instruct vaddI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (AddVI (Binary dst_src1 src2) pg));
   format %{ "vaddI_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_add($dst_src1$$FloatRegister, __ S, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_add($dst_src1$$FloatRegister, __ S, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -811,7 +814,8 @@ instruct vaddL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (AddVL (Binary dst_src1 src2) pg));
   format %{ "vaddL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_add($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_add($dst_src1$$FloatRegister, __ D, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -821,7 +825,8 @@ instruct vaddF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (AddVF (Binary dst_src1 src2) pg));
   format %{ "vaddF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fadd($dst_src1$$FloatRegister, __ S, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_fadd($dst_src1$$FloatRegister, __ S, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -831,7 +836,8 @@ instruct vaddD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (AddVD (Binary dst_src1 src2) pg));
   format %{ "vaddD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fadd($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_fadd($dst_src1$$FloatRegister, __ D, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -845,9 +851,9 @@ instruct vaddImmB(vReg dst_src, immBAddSubV con) %{
   ins_encode %{
     int val = (int)$con$$constant;
     if (val > 0) {
-      __ sve_add($dst_src$$FloatRegister, __ B, val);
+      __ sve_add($dst_src$$FloatRegister, __ B, $dst_src$$FloatRegister, val);
     } else {
-      __ sve_sub($dst_src$$FloatRegister, __ B, -val);
+      __ sve_sub($dst_src$$FloatRegister, __ B, $dst_src$$FloatRegister, -val);
     }
   %}
   ins_pipe(pipe_slow);
@@ -860,9 +866,9 @@ instruct vaddImmS(vReg dst_src, immIAddSubV con) %{
   ins_encode %{
     int val = (int)$con$$constant;
     if (val > 0) {
-      __ sve_add($dst_src$$FloatRegister, __ H, val);
+      __ sve_add($dst_src$$FloatRegister, __ H, $dst_src$$FloatRegister, val);
     } else {
-      __ sve_sub($dst_src$$FloatRegister, __ H, -val);
+      __ sve_sub($dst_src$$FloatRegister, __ H, $dst_src$$FloatRegister, -val);
     }
   %}
   ins_pipe(pipe_slow);
@@ -875,9 +881,9 @@ instruct vaddImmI(vReg dst_src, immIAddSubV con) %{
   ins_encode %{
     int val = (int)$con$$constant;
     if (val > 0) {
-      __ sve_add($dst_src$$FloatRegister, __ S, val);
+      __ sve_add($dst_src$$FloatRegister, __ S, $dst_src$$FloatRegister, val);
     } else {
-      __ sve_sub($dst_src$$FloatRegister, __ S, -val);
+      __ sve_sub($dst_src$$FloatRegister, __ S, $dst_src$$FloatRegister, -val);
     }
   %}
   ins_pipe(pipe_slow);
@@ -890,9 +896,9 @@ instruct vaddImmL(vReg dst_src, immLAddSubV con) %{
   ins_encode %{
     int val = (int)$con$$constant;
     if (val > 0) {
-      __ sve_add($dst_src$$FloatRegister, __ D, val);
+      __ sve_add($dst_src$$FloatRegister, __ D, $dst_src$$FloatRegister, val);
     } else {
-      __ sve_sub($dst_src$$FloatRegister, __ D, -val);
+      __ sve_sub($dst_src$$FloatRegister, __ D, $dst_src$$FloatRegister, -val);
     }
   %}
   ins_pipe(pipe_slow);
@@ -1021,7 +1027,8 @@ instruct vsubB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (SubVB (Binary dst_src1 src2) pg));
   format %{ "vsubB_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_sub($dst_src1$$FloatRegister, __ B, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_sub($dst_src1$$FloatRegister, __ B, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1031,7 +1038,8 @@ instruct vsubS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (SubVS (Binary dst_src1 src2) pg));
   format %{ "vsubS_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_sub($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_sub($dst_src1$$FloatRegister, __ H, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1041,7 +1049,8 @@ instruct vsubI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (SubVI (Binary dst_src1 src2) pg));
   format %{ "vsubI_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_sub($dst_src1$$FloatRegister, __ S, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_sub($dst_src1$$FloatRegister, __ S, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1051,7 +1060,8 @@ instruct vsubL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (SubVL (Binary dst_src1 src2) pg));
   format %{ "vsubL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_sub($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_sub($dst_src1$$FloatRegister, __ D, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1061,7 +1071,8 @@ instruct vsubF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (SubVF (Binary dst_src1 src2) pg));
   format %{ "vsubF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fsub($dst_src1$$FloatRegister, __ S, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_fsub($dst_src1$$FloatRegister, __ S, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1071,7 +1082,8 @@ instruct vsubD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (SubVD (Binary dst_src1 src2) pg));
   format %{ "vsubD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fsub($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_fsub($dst_src1$$FloatRegister, __ D, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1097,7 +1109,8 @@ instruct vmulB_sve(vReg dst_src1, vReg src2) %{
   format %{ "vmulB_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
-    __ sve_mul($dst_src1$$FloatRegister, __ B, ptrue, $src2$$FloatRegister);
+    __ sve_mul($dst_src1$$FloatRegister, __ B, ptrue,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1119,7 +1132,8 @@ instruct vmulS_sve(vReg dst_src1, vReg src2) %{
   format %{ "vmulS_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
-    __ sve_mul($dst_src1$$FloatRegister, __ H, ptrue, $src2$$FloatRegister);
+    __ sve_mul($dst_src1$$FloatRegister, __ H, ptrue,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1141,7 +1155,8 @@ instruct vmulI_sve(vReg dst_src1, vReg src2) %{
   format %{ "vmulI_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
-    __ sve_mul($dst_src1$$FloatRegister, __ S, ptrue, $src2$$FloatRegister);
+    __ sve_mul($dst_src1$$FloatRegister, __ S, ptrue,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1172,7 +1187,8 @@ instruct vmulL_sve(vReg dst_src1, vReg src2) %{
   match(Set dst_src1 (MulVL dst_src1 src2));
   format %{ "vmulL_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_mul($dst_src1$$FloatRegister, __ D, ptrue, $src2$$FloatRegister);
+    __ sve_mul($dst_src1$$FloatRegister, __ D, ptrue,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1234,7 +1250,8 @@ instruct vmulB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (MulVB (Binary dst_src1 src2) pg));
   format %{ "vmulB_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_mul($dst_src1$$FloatRegister, __ B, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_mul($dst_src1$$FloatRegister, __ B, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1244,7 +1261,8 @@ instruct vmulS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (MulVS (Binary dst_src1 src2) pg));
   format %{ "vmulS_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_mul($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_mul($dst_src1$$FloatRegister, __ H, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1254,7 +1272,8 @@ instruct vmulI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (MulVI (Binary dst_src1 src2) pg));
   format %{ "vmulI_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_mul($dst_src1$$FloatRegister, __ S, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_mul($dst_src1$$FloatRegister, __ S, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1264,7 +1283,8 @@ instruct vmulL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (MulVL (Binary dst_src1 src2) pg));
   format %{ "vmulL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_mul($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_mul($dst_src1$$FloatRegister, __ D, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1274,7 +1294,8 @@ instruct vmulF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (MulVF (Binary dst_src1 src2) pg));
   format %{ "vmulF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fmul($dst_src1$$FloatRegister, __ S, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_fmul($dst_src1$$FloatRegister, __ S, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1284,7 +1305,8 @@ instruct vmulD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (MulVD (Binary dst_src1 src2) pg));
   format %{ "vmulD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fmul($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_fmul($dst_src1$$FloatRegister, __ D, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1310,7 +1332,8 @@ instruct vdivHF_sve(vReg dst_src1, vReg src2) %{
   format %{ "vdivHF_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
-    __ sve_fdiv($dst_src1$$FloatRegister, __ H, ptrue, $src2$$FloatRegister);
+    __ sve_fdiv($dst_src1$$FloatRegister, __ H, ptrue,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1332,7 +1355,8 @@ instruct vdivF_sve(vReg dst_src1, vReg src2) %{
   format %{ "vdivF_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
-    __ sve_fdiv($dst_src1$$FloatRegister, __ S, ptrue, $src2$$FloatRegister);
+    __ sve_fdiv($dst_src1$$FloatRegister, __ S, ptrue,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1354,7 +1378,8 @@ instruct vdivD_sve(vReg dst_src1, vReg src2) %{
   format %{ "vdivD_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
-    __ sve_fdiv($dst_src1$$FloatRegister, __ D, ptrue, $src2$$FloatRegister);
+    __ sve_fdiv($dst_src1$$FloatRegister, __ D, ptrue,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1366,7 +1391,8 @@ instruct vdivF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (DivVF (Binary dst_src1 src2) pg));
   format %{ "vdivF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fdiv($dst_src1$$FloatRegister, __ S, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_fdiv($dst_src1$$FloatRegister, __ S, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1376,7 +1402,8 @@ instruct vdivD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   match(Set dst_src1 (DivVD (Binary dst_src1 src2) pg));
   format %{ "vdivD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_fdiv($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+    __ sve_fdiv($dst_src1$$FloatRegister, __ D, $pg$$PRegister,
+               $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1410,7 +1437,7 @@ instruct vand_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_and($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $src2$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1422,7 +1449,8 @@ instruct vandImmB(vReg dst_src, immBLog con) %{
   match(Set dst_src (AndV dst_src (Replicate con)));
   format %{ "vandImmB $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_and($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
+    __ sve_and($dst_src$$FloatRegister, __ B, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1432,7 +1460,8 @@ instruct vandImmS(vReg dst_src, immSLog con) %{
   match(Set dst_src (AndV dst_src (Replicate con)));
   format %{ "vandImmS $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_and($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
+    __ sve_and($dst_src$$FloatRegister, __ H, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1442,7 +1471,8 @@ instruct vandImmI(vReg dst_src, immILog con) %{
   match(Set dst_src (AndV dst_src (Replicate con)));
   format %{ "vandImmI $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_and($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
+    __ sve_and($dst_src$$FloatRegister, __ S, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1452,7 +1482,8 @@ instruct vandImmL(vReg dst_src, immLLog con) %{
   match(Set dst_src (AndV dst_src (Replicate con)));
   format %{ "vandImmL $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_and($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
+    __ sve_and($dst_src$$FloatRegister, __ D, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1486,7 +1517,7 @@ instruct vor_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_orr($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $src2$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1498,7 +1529,8 @@ instruct vorImmB(vReg dst_src, immBLog con) %{
   match(Set dst_src (OrV dst_src (Replicate con)));
   format %{ "vorImmB $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_orr($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
+    __ sve_orr($dst_src$$FloatRegister, __ B, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1508,7 +1540,8 @@ instruct vorImmS(vReg dst_src, immSLog con) %{
   match(Set dst_src (OrV dst_src (Replicate con)));
   format %{ "vorImmS $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_orr($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
+    __ sve_orr($dst_src$$FloatRegister, __ H, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1518,7 +1551,8 @@ instruct vorImmI(vReg dst_src, immILog con) %{
   match(Set dst_src (OrV dst_src (Replicate con)));
   format %{ "vorImmI $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_orr($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
+    __ sve_orr($dst_src$$FloatRegister, __ S, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1528,7 +1562,8 @@ instruct vorImmL(vReg dst_src, immLLog con) %{
   match(Set dst_src (OrV dst_src (Replicate con)));
   format %{ "vorImmL $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_orr($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
+    __ sve_orr($dst_src$$FloatRegister, __ D, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1562,7 +1597,7 @@ instruct vxor_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_eor($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $src2$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1574,7 +1609,8 @@ instruct vxorImmB(vReg dst_src, immBLog con) %{
   match(Set dst_src (XorV dst_src (Replicate con)));
   format %{ "vxorImmB $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_eor($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
+    __ sve_eor($dst_src$$FloatRegister, __ B, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1584,7 +1620,8 @@ instruct vxorImmS(vReg dst_src, immSLog con) %{
   match(Set dst_src (XorV dst_src (Replicate con)));
   format %{ "vxorImmS $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_eor($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
+    __ sve_eor($dst_src$$FloatRegister, __ H, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1594,7 +1631,8 @@ instruct vxorImmI(vReg dst_src, immILog con) %{
   match(Set dst_src (XorV dst_src (Replicate con)));
   format %{ "vxorImmI $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_eor($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
+    __ sve_eor($dst_src$$FloatRegister, __ S, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1604,7 +1642,8 @@ instruct vxorImmL(vReg dst_src, immLLog con) %{
   match(Set dst_src (XorV dst_src (Replicate con)));
   format %{ "vxorImmL $dst_src, $dst_src, $con" %}
   ins_encode %{
-    __ sve_eor($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
+    __ sve_eor($dst_src$$FloatRegister, __ D, $dst_src$$FloatRegister,
+               (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1628,7 +1667,8 @@ instruct veor3_sve(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (XorV dst_src1 (XorV src2 src3)));
   format %{ "veor3_sve $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
-    __ sve_eor3($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+    __ sve_eor3($dst_src1$$FloatRegister, $dst_src1$$FloatRegister,
+                $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1759,7 +1799,7 @@ instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, pRegGov pg) %{
   format %{ "vand_notI_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
     __ sve_bic($dst_src1$$FloatRegister, get_reg_variant(this),
-               $pg$$PRegister, $src2$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1770,7 +1810,7 @@ instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, pRegGov pg) %{
   format %{ "vand_notL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
     __ sve_bic($dst_src1$$FloatRegister, get_reg_variant(this),
-               $pg$$PRegister, $src2$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1805,7 +1845,7 @@ instruct vsqadd_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_sqadd($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 $pg$$PRegister, $src2$$FloatRegister);
+                 $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1838,7 +1878,7 @@ instruct vuqadd_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_uqadd($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 $pg$$PRegister, $src2$$FloatRegister);
+                 $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1873,7 +1913,7 @@ instruct vsqsub_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_sqsub($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 $pg$$PRegister, $src2$$FloatRegister);
+                 $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1906,7 +1946,7 @@ instruct vuqsub_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_uqsub($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 $pg$$PRegister, $src2$$FloatRegister);
+                 $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2158,7 +2198,7 @@ instruct vfabd_sve(vReg dst_src1, vReg src2) %{
     assert(UseSVE > 0, "must be sve");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fabd($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                ptrue, $src2$$FloatRegister);
+                ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2173,7 +2213,7 @@ instruct vfabd_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fabd($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                $pg$$PRegister, $src2$$FloatRegister);
+                $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2446,7 +2486,8 @@ instruct vminL_sve(vReg dst_src1, vReg src2) %{
   match(Set dst_src1 (MinV dst_src1 src2));
   format %{ "vminL_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_smin($dst_src1$$FloatRegister, __ D, ptrue, $src2$$FloatRegister);
+    __ sve_smin($dst_src1$$FloatRegister, __ D, ptrue,
+                $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2482,11 +2523,11 @@ instruct vmin_sve(vReg dst_src1, vReg src2) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (is_floating_point_type(bt)) {
       __ sve_fmin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  ptrue, $src2$$FloatRegister);
+                  ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
     } else {
       assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
       __ sve_smin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  ptrue, $src2$$FloatRegister);
+                  ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2510,7 +2551,7 @@ instruct vmin_HF_sve(vReg dst_src1, vReg src2) %{
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     __ sve_fmin($dst_src1$$FloatRegister, __ H,
-                ptrue, $src2$$FloatRegister);
+                ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2525,11 +2566,11 @@ instruct vmin_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (is_floating_point_type(bt)) {
       __ sve_fmin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  $pg$$PRegister, $src2$$FloatRegister);
+                  $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
     } else {
       assert(is_integral_type(bt), "unsupported type");
       __ sve_smin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  $pg$$PRegister, $src2$$FloatRegister);
+                  $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2554,7 +2595,8 @@ instruct vuminL_sve(vReg dst_src1, vReg src2) %{
   match(Set dst_src1 (UMinV dst_src1 src2));
   format %{ "vuminL_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_umin($dst_src1$$FloatRegister, __ D, ptrue, $src2$$FloatRegister);
+    __ sve_umin($dst_src1$$FloatRegister, __ D, ptrue,
+                $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2585,7 +2627,7 @@ instruct vumin_sve(vReg dst_src1, vReg src2) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
     __ sve_umin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                ptrue, $src2$$FloatRegister);
+                ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2600,7 +2642,7 @@ instruct vumin_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(bt), "unsupported type");
     __ sve_umin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                $pg$$PRegister, $src2$$FloatRegister);
+                $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2626,7 +2668,8 @@ instruct vmaxL_sve(vReg dst_src1, vReg src2) %{
   match(Set dst_src1 (MaxV dst_src1 src2));
   format %{ "vmaxL_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_smax($dst_src1$$FloatRegister, __ D, ptrue, $src2$$FloatRegister);
+    __ sve_smax($dst_src1$$FloatRegister, __ D, ptrue,
+                $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2662,11 +2705,11 @@ instruct vmax_sve(vReg dst_src1, vReg src2) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (is_floating_point_type(bt)) {
       __ sve_fmax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  ptrue, $src2$$FloatRegister);
+                  ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
     } else {
       assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
       __ sve_smax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  ptrue, $src2$$FloatRegister);
+                  ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2690,7 +2733,7 @@ instruct vmax_HF_sve(vReg dst_src1, vReg src2) %{
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     __ sve_fmax($dst_src1$$FloatRegister, __ H,
-                ptrue, $src2$$FloatRegister);
+                ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2705,11 +2748,11 @@ instruct vmax_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (is_floating_point_type(bt)) {
       __ sve_fmax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  $pg$$PRegister, $src2$$FloatRegister);
+                  $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
     } else {
       assert(is_integral_type(bt), "unsupported type");
       __ sve_smax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  $pg$$PRegister, $src2$$FloatRegister);
+                  $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2734,7 +2777,8 @@ instruct vumaxL_sve(vReg dst_src1, vReg src2) %{
   match(Set dst_src1 (UMaxV dst_src1 src2));
   format %{ "vumaxL_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
-    __ sve_umax($dst_src1$$FloatRegister, __ D, ptrue, $src2$$FloatRegister);
+    __ sve_umax($dst_src1$$FloatRegister, __ D, ptrue,
+                $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2765,7 +2809,7 @@ instruct vumax_sve(vReg dst_src1, vReg src2) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
     __ sve_umax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                ptrue, $src2$$FloatRegister);
+                ptrue, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2780,7 +2824,7 @@ instruct vumax_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(bt), "unsupported type");
     __ sve_umax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                $pg$$PRegister, $src2$$FloatRegister);
+                $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2804,7 +2848,8 @@ instruct vmla(vReg dst_src1, vReg src2, vReg src3) %{
     } else {
       assert(UseSVE > 0, "must be sve");
       __ sve_mla($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+                 ptrue, $dst_src1$$FloatRegister,
+                 $src2$$FloatRegister, $src3$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2817,7 +2862,8 @@ instruct vmlaL(vReg dst_src1, vReg src2, vReg src3) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_mla($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+               ptrue, $dst_src1$$FloatRegister,
+               $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2832,7 +2878,8 @@ instruct vmla_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_mla($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister,
+               $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2855,7 +2902,8 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
       assert(UseSVE > 0, "must be sve");
       BasicType bt = Matcher::vector_element_basic_type(this);
       __ sve_fmla($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+                  ptrue, $dst_src1$$FloatRegister,
+                  $src2$$FloatRegister, $src3$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2873,7 +2921,8 @@ instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
     assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fmad($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+                $pg$$PRegister, $dst_src1$$FloatRegister,
+                $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2895,7 +2944,8 @@ instruct vmls(vReg dst_src1, vReg src2, vReg src3) %{
     } else {
       assert(UseSVE > 0, "must be sve");
       __ sve_mls($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+                 ptrue, $dst_src1$$FloatRegister,
+                 $src2$$FloatRegister, $src3$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2908,7 +2958,8 @@ instruct vmlsL(vReg dst_src1, vReg src2, vReg src3) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_mls($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+               ptrue, $dst_src1$$FloatRegister,
+               $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2923,7 +2974,8 @@ instruct vmls_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_mls($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister,
+               $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2946,7 +2998,8 @@ instruct vfmls(vReg dst_src1, vReg src2, vReg src3) %{
       assert(UseSVE > 0, "must be sve");
       BasicType bt = Matcher::vector_element_basic_type(this);
       __ sve_fmls($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                  ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+                  ptrue, $dst_src1$$FloatRegister,
+                  $src2$$FloatRegister, $src3$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2964,7 +3017,8 @@ instruct vfmsb_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
     assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fmsb($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+                $pg$$PRegister, $dst_src1$$FloatRegister,
+                $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2982,7 +3036,8 @@ instruct vfnmla(vReg dst_src1, vReg src2, vReg src3) %{
     assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fnmla($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+                 ptrue, $dst_src1$$FloatRegister,
+                 $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2999,7 +3054,8 @@ instruct vfnmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
     assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fnmad($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+                 $pg$$PRegister, $dst_src1$$FloatRegister,
+                 $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3016,7 +3072,8 @@ instruct vfnmls(vReg dst_src1, vReg src2, vReg src3) %{
     assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fnmls($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+                 ptrue, $dst_src1$$FloatRegister,
+                 $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3033,7 +3090,8 @@ instruct vfnmsb_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
     assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fnmsb($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-                 $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+                 $pg$$PRegister, $dst_src1$$FloatRegister,
+                 $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3148,7 +3206,7 @@ instruct vlsl_sve(vReg dst_src, vReg shift) %{
     assert(UseSVE > 0, "must be sve");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_lsl($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               ptrue, $shift$$FloatRegister);
+               ptrue, $dst_src$$FloatRegister, $shift$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3197,7 +3255,7 @@ instruct vasr_sve(vReg dst_src, vReg shift) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_asr($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               ptrue, $shift$$FloatRegister);
+               ptrue, $dst_src$$FloatRegister, $shift$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3246,7 +3304,7 @@ instruct vlsr_sve(vReg dst_src, vReg shift) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_lsr($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               ptrue, $shift$$FloatRegister);
+               ptrue, $dst_src$$FloatRegister, $shift$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3425,7 +3483,7 @@ instruct vlsl_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_lsl($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $src2$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3440,7 +3498,7 @@ instruct vasr_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_asr($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $src2$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3455,7 +3513,7 @@ instruct vlsr_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_lsr($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $src2$$FloatRegister);
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3475,7 +3533,7 @@ instruct vlsl_imm_masked(vReg dst_src, immI shift, pRegGov pg) %{
     int con = (int)$shift$$constant;
     assert(con >= 0 && con < esize_in_bits, "invalid shift immediate");
     __ sve_lsl($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, con);
+               $pg$$PRegister, $dst_src$$FloatRegister, con);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3493,7 +3551,7 @@ instruct vasr_imm_masked(vReg dst_src, immI_positive shift, pRegGov pg) %{
     int con = (int)$shift$$constant;
     assert(con > 0 && con < esize_in_bits, "invalid shift immediate");
     __ sve_asr($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, con);
+               $pg$$PRegister, $dst_src$$FloatRegister, con);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3511,7 +3569,7 @@ instruct vlsr_imm_masked(vReg dst_src, immI_positive shift, pRegGov pg) %{
     int con = (int)$shift$$constant;
     assert(con > 0 && con < esize_in_bits, "invalid shift immediate");
     __ sve_lsr($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, con);
+               $pg$$PRegister, $dst_src$$FloatRegister, con);
   %}
   ins_pipe(pipe_slow);
 %}

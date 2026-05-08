@@ -49,6 +49,42 @@ class MacroAssembler: public Assembler {
  public:
   using Assembler::mov;
   using Assembler::movi;
+  using Assembler::sve_add;
+  using Assembler::sve_and;
+  using Assembler::sve_asr;
+  using Assembler::sve_bic;
+  using Assembler::sve_eor;
+  using Assembler::sve_eor3;
+  using Assembler::sve_fabd;
+  using Assembler::sve_fadd;
+  using Assembler::sve_fdiv;
+  using Assembler::sve_fmad;
+  using Assembler::sve_fmax;
+  using Assembler::sve_fmin;
+  using Assembler::sve_fmla;
+  using Assembler::sve_fmls;
+  using Assembler::sve_fmsb;
+  using Assembler::sve_fmul;
+  using Assembler::sve_fnmad;
+  using Assembler::sve_fnmla;
+  using Assembler::sve_fnmls;
+  using Assembler::sve_fnmsb;
+  using Assembler::sve_fsub;
+  using Assembler::sve_lsl;
+  using Assembler::sve_lsr;
+  using Assembler::sve_mla;
+  using Assembler::sve_mls;
+  using Assembler::sve_mul;
+  using Assembler::sve_orr;
+  using Assembler::sve_sqadd;
+  using Assembler::sve_sqsub;
+  using Assembler::sve_smax;
+  using Assembler::sve_smin;
+  using Assembler::sve_sub;
+  using Assembler::sve_uqadd;
+  using Assembler::sve_uqsub;
+  using Assembler::sve_umax;
+  using Assembler::sve_umin;
 
  protected:
 
@@ -1722,17 +1758,6 @@ public:
     sve_str(ptrue, sve_spill_address(sve_predicate_reg_size_in_bytes, dst_offset));
     reinitialize_ptrue();
   }
-  void spill_copy_register_to_register(FloatRegister dst, FloatRegister src,
-                                       bool use_movprfx, bool use_sve = true,
-                                       SIMD_Arrangement T = T16B) {
-    if (use_movprfx) {
-      sve_movprfx(dst, src);
-    } else if (use_sve) {
-      sve_orr(dst, src, src);
-    } else {
-      mov(dst, T, src);
-    }
-  }
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
@@ -1746,7 +1771,121 @@ public:
 private:
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
+  void maybe_replace_prev_vector_copy_with_movprfx(FloatRegister dst);
 
+public:
+// Wrappers for SVE explicit destructive instructions for movprfx fusion
+// optimization. Destination register must be equal to the destructive operand.
+#define SVE_DESTRUCTIVE_BINARY_INS(NAME)                                       \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
+            FloatRegister Zn, FloatRegister Zm) {                              \
+    assert(Zd == Zn, "destructive operand mismatch");                          \
+    if (Zd != Zm) {                                                            \
+      maybe_replace_prev_vector_copy_with_movprfx(Zd);                         \
+    }                                                                          \
+    Assembler::NAME(Zd, T, Pg, Zm);                                            \
+  }
+
+  SVE_DESTRUCTIVE_BINARY_INS(sve_add);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_and);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_asr);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_bic);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_eor);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_fabd);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_fadd);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_fdiv);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_fmax);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_fmin);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_fmul);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_fsub);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_lsl);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_lsr);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_mul);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_orr);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_smax);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_smin);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_sqadd);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_sqsub);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_sub);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_uqadd);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_uqsub);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_umax);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_umin);
+
+#undef SVE_DESTRUCTIVE_BINARY_INS
+
+#define SVE_DESTRUCTIVE_SHIFT_IMM_INS(NAME)                                    \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
+            FloatRegister Zn, int shift) {                                     \
+    assert(Zd == Zn, "destructive operand mismatch");                          \
+    maybe_replace_prev_vector_copy_with_movprfx(Zd);                           \
+    Assembler::NAME(Zd, T, Pg, shift);                                         \
+  }
+
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_asr);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsl);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsr);
+
+#undef SVE_DESTRUCTIVE_SHIFT_IMM_INS
+
+#define SVE_DESTRUCTIVE_ADD_SUB_IMM_INS(NAME)                                  \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn,             \
+            unsigned imm8) {                                                   \
+    assert(Zd == Zn, "destructive operand mismatch");                          \
+    maybe_replace_prev_vector_copy_with_movprfx(Zd);                           \
+    Assembler::NAME(Zd, T, imm8);                                              \
+  }
+
+  SVE_DESTRUCTIVE_ADD_SUB_IMM_INS(sve_add);
+  SVE_DESTRUCTIVE_ADD_SUB_IMM_INS(sve_sub);
+
+#undef SVE_DESTRUCTIVE_ADD_SUB_IMM_INS
+
+#define SVE_DESTRUCTIVE_LOGICAL_IMM_INS(NAME)                                  \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn,             \
+            uint64_t imm) {                                                    \
+    assert(Zd == Zn, "destructive operand mismatch");                          \
+    maybe_replace_prev_vector_copy_with_movprfx(Zd);                           \
+    Assembler::NAME(Zd, T, imm);                                               \
+  }
+
+  SVE_DESTRUCTIVE_LOGICAL_IMM_INS(sve_and);
+  SVE_DESTRUCTIVE_LOGICAL_IMM_INS(sve_eor);
+  SVE_DESTRUCTIVE_LOGICAL_IMM_INS(sve_orr);
+
+#undef SVE_DESTRUCTIVE_LOGICAL_IMM_INS
+
+#define SVE_DESTRUCTIVE_TERNARY_INS(NAME)                                      \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
+            FloatRegister Zda, FloatRegister Zn, FloatRegister Zm) {           \
+    assert(Zd == Zda, "destructive operand mismatch");                         \
+    if (Zd != Zn && Zd != Zm) {                                                \
+      maybe_replace_prev_vector_copy_with_movprfx(Zd);                         \
+    }                                                                          \
+    Assembler::NAME(Zd, T, Pg, Zn, Zm);                                        \
+  }
+
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmad);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmls);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmsb);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmad);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmls);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmsb);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_mla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_mls);
+
+#undef SVE_DESTRUCTIVE_TERNARY_INS
+
+  void sve_eor3(FloatRegister Zd, FloatRegister Zdn, FloatRegister Zm,
+                FloatRegister Zk) {
+    assert(Zd == Zdn, "destructive operand mismatch");
+    if (Zd != Zm && Zd != Zk) {
+      maybe_replace_prev_vector_copy_with_movprfx(Zd);
+    }
+    Assembler::sve_eor3(Zd, Zm, Zk);
+  }
 };
 
 #ifdef ASSERT
