@@ -392,6 +392,7 @@ ObjArrayKlass* ObjArrayKlass::klass_from_description(ArrayDescription ad, TRAPS)
   element_klass()->validate_array_description(ad);
 
   const ArrayProperties props = ad._properties;
+  assert(props.is_valid(), "must be");
 
   if (properties() == props && kind() == ad._kind) {
     assert(is_refined_objArray_klass(), "Must be a refined array klass");
@@ -405,13 +406,15 @@ ObjArrayKlass* ObjArrayKlass::klass_from_description(ArrayDescription ad, TRAPS)
 
     if (next_refined_array_klass() == nullptr) {
       ObjArrayKlass* first = this;
-      if (is_unrefined_objArray_klass() && props != ArrayProperties::Default()) {
-        assert(props.is_valid(), "must be");
+      if (is_unrefined_objArray_klass()) {
         // Make sure that the first entry in the linked list is always the default refined klass because
         // C2 relies on this for a fast lookup (see LibraryCallKit::load_default_refined_array_klass).
         ArrayDescription default_ad = array_layout_selection(element_klass(), ArrayProperties::Default());
-        first = allocate_klass_from_description(default_ad, CHECK_NULL);
-        release_set_next_refined_klass(first);
+        if (default_ad._kind != ad._kind || default_ad._properties != ad._properties
+            || default_ad._layout_kind != ad._layout_kind) {
+          first = allocate_klass_from_description(default_ad, CHECK_NULL);
+          release_set_next_refined_klass(first);
+        }
       }
       ak = allocate_klass_from_description(ad, CHECK_NULL);
       first->release_set_next_refined_klass(ak);

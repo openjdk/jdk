@@ -1636,8 +1636,8 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *cmp = in(1);
   if( !cmp->is_Sub() ) return nullptr;
   int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock ||
-      cmp->is_SubTypeCheck() || cop == Op_VectorTest ) {
+  if (cop == Op_FastLock || cop == Op_FastUnlock || cop == Op_FlatArrayCheck ||
+      cmp->is_SubTypeCheck() || cop == Op_VectorTest) {
     return nullptr;
   }
   Node *cmp1 = cmp->in(1);

@@ -2932,7 +2932,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   // introducing a new debug info operator for Klass.java_mirror).
   //
   // This optimization does not apply to arrays because if k is not a
-  // constant, it was obtained via load_klass which returns the VM type
+  // constant, it was obtained via load_klass which returns the refined type
   // and '.java_mirror.as_klass' should return the Java type instead.
 
   if (toop->isa_instptr() && toop->is_instptr()->instance_klass() == phase->C->env()->Class_klass()

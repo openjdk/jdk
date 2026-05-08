@@ -2808,10 +2808,11 @@ public class TestArrays {
 
     // Arrays.copyOf with constant source and destination arrays
     @Test
-    @IR(applyIf = {"UseArrayFlattening", "true"},
-        counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
-    @IR(applyIf = {"UseArrayFlattening", "false"},
-        failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    // TODO 8251971 Re-enable
+    // @IR(applyIf = {"UseArrayFlattening", "true"},
+    //     counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+    // @IR(applyIf = {"UseArrayFlattening", "false"},
+    //     failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
     public Object[] test110() {
         return Arrays.copyOf(val_src, 8, Object[].class);
     }
@@ -2878,10 +2879,11 @@ public class TestArrays {
     // after the arraycopy intrinsic is emitted (with incremental inlining).
 
     @Test
-    @IR(applyIf = {"UseArrayFlattening", "true"},
-        counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
-    @IR(applyIf = {"UseArrayFlattening", "false"},
-        failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    // TODO 8251971 Re-enable
+    // @IR(applyIf = {"UseArrayFlattening", "true"},
+    //     counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+    // @IR(applyIf = {"UseArrayFlattening", "false"},
+    //     failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
     public Object[] test114() {
         return Arrays.copyOf((Object[])get_val_src(), 8, get_obj_class());
     }
@@ -2895,8 +2897,9 @@ public class TestArrays {
     // TODO 8251971: Should be optimized but we are bailing out because
     // at parse time it looks as if src could be flat and dst could be not flat
     @Test
-    @IR(applyIf = {"UseArrayFlattening", "false"},
-        failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    // TODO 8251971 Re-enable
+    // @IR(applyIf = {"UseArrayFlattening", "false"},
+    //    failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
     public Object[] test115() {
         return Arrays.copyOf((Object[])get_val_src(), 8, get_val_class());
     }
@@ -3194,9 +3197,10 @@ public class TestArrays {
 
     // Verify that copyOf with known source and unknown destination class is optimized
     @Test
-    @IR(applyIf = {"UseArrayFlattening", "true"},
-        counts = {JLONG_ARRAYCOPY, "= 1"},
-        failOn = CHECKCAST_ARRAYCOPY)
+    // TODO 8251971 Re-enable
+    //@IR(applyIf = {"UseArrayFlattening", "true"},
+    //    counts = {JLONG_ARRAYCOPY, "= 1"},
+    //    failOn = CHECKCAST_ARRAYCOPY)
     public Object[] test128(Class klass) {
         return Arrays.copyOf(val_src, 8, klass);
     }

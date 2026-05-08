@@ -5058,43 +5058,10 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     generate_negative_guard(length, bailout, &length);
 
     // Handle inline type arrays
-    bool can_validate = !too_many_traps(Deoptimization::Reason_class_check);
-    if (!stopped()) {
-      // TODO 8251971
-      if (!orig_t->is_null_free()) {
-        // Not statically known to be null free, add a check
-        generate_fair_guard(null_free_array_test(original), bailout);
-      }
-      orig_t = _gvn.type(original)->isa_aryptr();
-      if (orig_t != nullptr && orig_t->is_flat()) {
-        // Src is flat, check that dest is flat as well
-        if (exclude_flat) {
-          // Dest can't be flat, bail out
-          bailout->add_req(control());
-          set_control(top());
-        } else {
-          generate_fair_guard(flat_array_test(refined_klass_node, /* flat = */ false), bailout);
-        }
-        // TODO 8251971 This is not correct anymore. Write tests and fix logic similar to arraycopy.
-      } else if (UseArrayFlattening && (orig_t == nullptr || !orig_t->is_not_flat()) &&
-                 // If dest is flat, src must be flat as well (guaranteed by src <: dest check if validated).
-                 ((!tklass->is_flat() && tklass->can_be_inline_array()) || !can_validate)) {
-        // Src might be flat and dest might not be flat. Go to the slow path if src is flat.
-        // TODO 8251971: Optimize for the case when src/dest are later found to be both flat.
-        generate_fair_guard(flat_array_test(load_object_klass(original)), bailout);
-        if (orig_t != nullptr) {
-          orig_t = orig_t->cast_to_not_flat();
-          original = _gvn.transform(new CheckCastPPNode(control(), original, orig_t));
-        }
-      }
-      if (!can_validate) {
-        // No validation. The subtype check emitted at macro expansion time will not go to the slow
-        // path but call checkcast_arraycopy which can not handle flat/null-free inline type arrays.
-        // TODO 8251971: Optimize for the case when src/dest are later found to be both flat/null-free.
-        generate_fair_guard(flat_array_test(refined_klass_node), bailout);
-        generate_fair_guard(null_free_array_test(original), bailout);
-      }
-    }
+    // TODO 8251971 This is too strong
+    generate_fair_guard(flat_array_test(load_object_klass(original)), bailout);
+    generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+    generate_fair_guard(null_free_array_test(original), bailout);
 
     // Bail out if start is larger than the original length
     Node* orig_tail = _gvn.transform(new SubINode(orig_length, start));
@@ -5141,7 +5108,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       bool validated = false;
       // Reason_class_check rather than Reason_intrinsic because we
       // want to intrinsify even if this traps.
-      if (can_validate) {
+      if (!too_many_traps(Deoptimization::Reason_class_check)) {
         Node* not_subtype_ctrl = gen_subtype_check(original, klass_node);
 
         if (not_subtype_ctrl != top()) {
