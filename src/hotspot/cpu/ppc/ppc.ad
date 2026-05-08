@@ -1426,16 +1426,14 @@ int ConstantTable::calculate_table_base_offset() const {
 
 bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
 void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  iRegPdstOper *op_dst = new iRegPdstOper();
+  iRegLdstOper *op_dst = new iRegLdstOper();
   MachNode *m1 = new loadToc_hiNode();
   MachNode *m2 = new loadToc_loNode();
 
   m1->add_req(nullptr);
   m2->add_req(nullptr, m1);
   m1->_opnds[0] = op_dst;
-  m1->_bottom_type = bottom_type(); // MachNode::bottom_type() can't derive type from op_dst
   m2->_opnds[0] = op_dst;
-  m2->_bottom_type = bottom_type(); // MachNode::bottom_type() can't derive type from op_dst
   m2->_opnds[1] = op_dst;
   ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
   ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2634,7 +2632,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // operands for new nodes
     m1->_opnds[0] = new iRegLdstOper(); // dst
     m1->_opnds[1] = immSrc;             // src
-    m1->_opnds[2] = new iRegPdstOper(); // toc
+    m1->_opnds[2] = new iRegLdstOper(); // toc
     m2->_opnds[0] = new iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;             // src
     m2->_opnds[2] = new iRegLdstOper(); // base
@@ -2665,7 +2663,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // operands for new nodes
     m2->_opnds[0] = new iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;             // src
-    m2->_opnds[2] = new iRegPdstOper(); // toc
+    m2->_opnds[2] = new iRegLdstOper(); // toc
 
     // Initialize ins_attrib instruction offset.
     m2->_cbuf_insts_offset = -1;
@@ -2716,7 +2714,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     // operands for new nodes
     m1->_opnds[0] = new  iRegLdstOper(); // dst
     m1->_opnds[1] = immSrc;              // src
-    m1->_opnds[2] = new  iRegPdstOper(); // toc
+    m1->_opnds[2] = new  iRegLdstOper(); // toc
 
     m2->_opnds[0] = new  iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;              // src
@@ -2762,7 +2760,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     // operands for new nodes
     m2->_opnds[0] = new  iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;              // src
-    m2->_opnds[2] = new  iRegPdstOper(); // toc
+    m2->_opnds[2] = new  iRegLdstOper(); // toc
 
     m3->_opnds[0] = new  vecXOper();     // dst
     m3->_opnds[1] = new  iRegLdstOper(); // src
@@ -2814,127 +2812,6 @@ encode %{
     assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
   %}
 
-  enc_class enc_load_long_constP(iRegLdst dst, immP src, iRegLdst toc) %{
-    int toc_offset = 0;
-
-    intptr_t val = $src$$constant;
-    relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
-    address const_toc_addr;
-    RelocationHolder r; // Initializes type to none.
-    if (constant_reloc == relocInfo::oop_type) {
-      // Create an oop constant and a corresponding relocation.
-      AddressLiteral a = __ constant_oop_address((jobject)val);
-      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      r = a.rspec();
-    } else if (constant_reloc == relocInfo::metadata_type) {
-      // Notify OOP recorder (don't need the relocation)
-      AddressLiteral a = __ constant_metadata_address((Metadata *)val);
-      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-    } else {
-      // Create a non-oop constant, no relocation needed.
-      const_toc_addr = __ long_constant((jlong)$src$$constant);
-    }
-
-    if (const_toc_addr == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    __ relocate(r); // If set above.
-    // Get the constant's TOC offset.
-    toc_offset = __ offset_to_method_toc(const_toc_addr);
-
-    __ ld($dst$$Register, toc_offset, $toc$$Register);
-  %}
-
-  enc_class enc_load_long_constP_hi(iRegLdst dst, immP src, iRegLdst toc) %{
-    if (!ra_->C->output()->in_scratch_emit_size()) {
-      intptr_t val = $src$$constant;
-      relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
-      address const_toc_addr;
-      RelocationHolder r; // Initializes type to none.
-      if (constant_reloc == relocInfo::oop_type) {
-        // Create an oop constant and a corresponding relocation.
-        AddressLiteral a = __ constant_oop_address((jobject)val);
-        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-        r = a.rspec();
-      } else if (constant_reloc == relocInfo::metadata_type) {
-        // Notify OOP recorder (don't need the relocation)
-        AddressLiteral a = __ constant_metadata_address((Metadata *)val);
-        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      } else {  // non-oop pointers, e.g. card mark base, heap top
-        // Create a non-oop constant, no relocation needed.
-        const_toc_addr = __ long_constant((jlong)$src$$constant);
-      }
-
-      if (const_toc_addr == nullptr) {
-        ciEnv::current()->record_out_of_memory_failure();
-        return;
-      }
-      __ relocate(r); // If set above.
-      // Get the constant's TOC offset.
-      const int toc_offset = __ offset_to_method_toc(const_toc_addr);
-      // Store the toc offset of the constant.
-      ((loadConP_hiNode*)this)->_const_toc_offset = toc_offset;
-    }
-
-    __ addis($dst$$Register, $toc$$Register, MacroAssembler::largeoffset_si16_si16_hi(_const_toc_offset));
-  %}
-
-  // Postalloc expand emitter for loading a ptr constant from the method's TOC.
-  // Enc_class needed as consttanttablebase is not supported by postalloc
-  // expand.
-  enc_class postalloc_expand_load_ptr_constant(iRegPdst dst, immP src, iRegLdst toc) %{
-    const bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
-    if (large_constant_pool) {
-      // Create new nodes.
-      loadConP_hiNode *m1 = new loadConP_hiNode();
-      loadConP_loNode *m2 = new loadConP_loNode();
-
-      // inputs for new nodes
-      m1->add_req(nullptr, n_toc);
-      m2->add_req(nullptr, m1);
-
-      // operands for new nodes
-      m1->_opnds[0] = new iRegPdstOper(); // dst
-      m1->_opnds[1] = op_src;             // src
-      m1->_opnds[2] = new iRegPdstOper(); // toc
-      m1->_bottom_type = bottom_type();   // MachNode::bottom_type() can't derive type from op_dst
-      m2->_opnds[0] = new iRegPdstOper(); // dst
-      m2->_opnds[1] = op_src;             // src
-      m2->_opnds[2] = new iRegLdstOper(); // base
-      m2->_bottom_type = op_src->type();  // result is an oop, MachNode::bottom_type() requires setting it
-
-      // Initialize ins_attrib TOC fields.
-      m1->_const_toc_offset = -1;
-      m2->_const_toc_offset_hi_node = m1;
-
-      // Register allocation for new nodes.
-      ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-      nodes->push(m1);
-      nodes->push(m2);
-      assert(m2->bottom_type()->isa_ptr(), "must be ptr");
-    } else {
-      loadConPNode *m2 = new loadConPNode();
-
-      // inputs for new nodes
-      m2->add_req(nullptr, n_toc);
-
-      // operands for new nodes
-      m2->_opnds[0] = new iRegPdstOper(); // dst
-      m2->_opnds[1] = op_src;             // src
-      m2->_opnds[2] = new iRegPdstOper(); // toc
-      m2->_bottom_type = op_src->type();  // result is an oop, MachNode::bottom_type() requires setting it
-
-      // Register allocation for new nodes.
-      ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-      nodes->push(m2);
-      assert(m2->bottom_type()->isa_ptr(), "must be ptr");
-    }
-  %}
-
   // Enc_class needed as consttanttablebase is not supported by postalloc
   // expand.
   enc_class postalloc_expand_load_float_constant(regF dst, immF src, iRegLdst toc) %{
@@ -2952,7 +2829,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2976,7 +2853,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -4045,17 +3922,6 @@ operand immNKlass_NM() %{
 // Pointer Immediate: 64-bit
 operand immP() %{
   match(ConP);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Operand to avoid match of loadConP.
-// This operand can be used to avoid matching of an instruct
-// with chain rule.
-operand immP_NM() %{
-  match(ConP);
-  predicate(false);
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -6098,72 +5964,28 @@ instruct loadConP0or1(iRegPdst dst, immP_0or1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Expand node for constant pool load: small offset.
-// The match rule is needed to generate the correct bottom_type(),
-// however this node should never match. The use of predicate is not
-// possible since ADLC forbids predicates for chain rules. The higher
-// costs do not prevent matching in this case. For that reason the
-// operand immP_NM with predicate(false) is used.
-instruct loadConP(iRegPdst dst, immP_NM src, iRegLdst toc) %{
+instruct loadConP(iRegPdst dst, immP src) %{
   match(Set dst src);
-  effect(TEMP toc);
-
-  ins_num_consts(1);
-
-  format %{ "LD      $dst, offset, $toc \t// load ptr $src from TOC" %}
-  size(4);
-  ins_encode( enc_load_long_constP(dst, src, toc) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Expand node for constant pool load: large offset.
-instruct loadConP_hi(iRegPdst dst, immP_NM src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
-  predicate(false);
-
-  ins_num_consts(1);
-  ins_field_const_toc_offset(int);
-
-  format %{ "ADDIS   $dst, $toc, offset \t// load ptr $src from TOC (hi)" %}
-  size(4);
-  ins_encode( enc_load_long_constP_hi(dst, src, toc) );
-  ins_pipe(pipe_class_default);
-%}
-
-// Expand node for constant pool load: large offset.
-instruct loadConP_lo(iRegPdst dst, immP_NM src, iRegLdst base) %{
-  match(Set dst src);
-  effect(TEMP base);
-
-  ins_field_const_toc_offset_hi_node(loadConP_hiNode*);
-
-  format %{ "LD      $dst, offset, $base \t// load ptr $src from TOC (lo)" %}
-  size(4);
+  ins_cost(5 * DEFAULT_COST);
+  format %{ "load_const $dst, $src \t// pointer constant" %}
   ins_encode %{
-    int offset = ra_->C->output()->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
-    __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(offset), $base$$Register);
+    switch($src->constant_reloc()) {
+      case relocInfo::oop_type: {
+        AddressLiteral oop = __ constant_oop_address((jobject)$src$$constant);
+        __ load_const($dst$$Register, oop, R0);
+        break;
+      }
+      case relocInfo::metadata_type: {
+        AddressLiteral md = __ constant_metadata_address((Metadata*)$src$$constant); // Notify OOP recorder (don't need the relocation)
+        __ load_const_optimized($dst$$Register, md.value(), R0);
+        break;
+      }
+      default: {
+        __ load_const_optimized($dst$$Register, (jlong)$src$$constant, R0);
+      }
+    }
   %}
-  ins_pipe(pipe_class_memory);
-%}
-
-// Load pointer constant from constant table. Expand in case an
-// offset > 16 bit is needed.
-// Adlc adds toc node MachConstantTableBase.
-instruct loadConP_Ex(iRegPdst dst, immP src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  // This rule does not use "expand" because then
-  // the result type is not known to be an Oop.  An ADLC
-  // enhancement will be needed to make that work - not worth it!
-
-  // If this instruction rematerializes, it prolongs the live range
-  // of the toc node, causing illegal graphs.
-  // assert(edge_from_to(_reg_node[reg_lo],def)) fails in verify_good_schedule().
-  ins_cannot_rematerialize(true);
-
-  format %{ "LD    $dst, offset, $constanttablebase \t//  load ptr $src from table, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_load_ptr_constant(dst, src, constanttablebase) );
+  ins_pipe(pipe_class_default);
 %}
 
 // Expand node for constant pool load: small offset.
@@ -6221,7 +6043,9 @@ instruct loadConF_Ex(regF dst, immF src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
 
-  // See loadConP.
+  // If this instruction rematerializes, it prolongs the live range
+  // of the toc node, causing illegal graphs.
+  // assert(edge_from_to(_reg_node[reg_lo],def)) fails in verify_good_schedule().
   ins_cannot_rematerialize(true);
 
   format %{ "LFS     $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
@@ -6284,7 +6108,9 @@ instruct loadConD_Ex(regD dst, immD src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
 
-  // See loadConP.
+  // If this instruction rematerializes, it prolongs the live range
+  // of the toc node, causing illegal graphs.
+  // assert(edge_from_to(_reg_node[reg_lo],def)) fails in verify_good_schedule().
   ins_cannot_rematerialize(true);
 
   format %{ "ConD    $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
