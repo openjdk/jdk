@@ -37,8 +37,8 @@ import javax.annotation.processing.SupportedSourceVersion;
  * appropriate for the {@link SourceVersion#RELEASE_6 RELEASE_6}
  * source version.
  *
- * @apiNote [header="Warning:" id=note_for_subclasses kind=important]
- * The {@code AnnotationValueVisitor} interface implemented by this class may
+ * @apiNote [id=note_for_subclasses kind=outlined]
+ * <strong>WARNING:</strong> The {@code AnnotationValueVisitor} interface implemented by this class may
  * have methods added to it in the future to accommodate new,
  * currently unknown, language structures added to future versions of
  * the Java programming language.  Therefore, methods whose
