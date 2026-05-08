@@ -156,7 +156,7 @@ public final class SNIHostName extends SNIServerName {
      * (ACE)
      * </ul>
      *
-     * <h4>Translation of non-ASCII Unicode code points</h4>
+     * <h4>Non-ASCII Unicode code points</h4>
      *
      * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC&nbsp;6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
@@ -270,6 +270,14 @@ public final class SNIHostName extends SNIServerName {
     }
 
     private SNIHostName(byte[] encoded, boolean strict) {
+        // Note that `encoded` field gets populated using the user-provided
+        // value. This is different from `new(String)`, which *first* converts
+        // non-ASCII to ACE, and then uses ACE-formatted string to obtain
+        // `encoded`. As a result, `getEncoded()` will return different for
+        // `new("\u00ebxample.com")` and
+        // new("\u00ebxample.com".getBytes(UTF_8))`. This behavior is
+        // implemented to tolerate the switch from UTF-8 (RFC 4366) to ASCII
+        // (RFC 6066).
         super(StandardConstants.SNI_HOST_NAME, encoded);
         assert encoded != null : "\"super(int,byte[])\" was supposed to check if \"encoded\" is null";
         var decoded = decodeHostName(encoded);
@@ -323,13 +331,19 @@ public final class SNIHostName extends SNIServerName {
      * ASCII-Compatible Encoding (ACE)
      * </ul>
      *
-     * <h4>Translation of non-ASCII Unicode code points</h4>
+     * <h4>Non-ASCII Unicode code points</h4>
      *
      * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC&nbsp;6066</a>,
-     * the server name value of a hostname is encoded in {@linkplain
-     * StandardCharsets#US_ASCII ASCII}. The
+     * the encoded name value of a hostname is encoded in {@linkplain
+     * StandardCharsets#US_ASCII ASCII}. However, in the previous version of the
+     * SNI extension (<a href="http://www.ietf.org/rfc/rfc4366.txt">RFC&nbsp;4366</a>),
+     * the encoded hostname is represented as a UTF-8 byte string. For the
+     * purpose of version tolerance, this method allows both ASCII and UTF-8
+     * inputs.
+     * <p>
+     * The specified byte string gets decoded into a UTF-8 hostname string, and
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
-     * method is used to translate non-ASCII Unicode code points into their
+     * is used to translate non-ASCII Unicode code points into their
      * corresponding ASCII-Compatible Encoding (ACE).
      *
      * @apiNote

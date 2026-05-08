@@ -25,12 +25,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SNIHostName;
+import javax.net.ssl.StandardConstants;
+import java.net.IDN;
+import java.nio.charset.Charset;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
@@ -89,7 +93,8 @@ class SNIHostNamePositiveTest {
     @ParameterizedTest
     @MethodSource("validStringArgs")
     void testNewString(Arg<String> arg) {
-        assertDoesNotThrow(() -> new SNIHostName(arg.hostName));
+        var sni = new SNIHostName(arg.hostName);
+        verifySNIHostName(arg.hostName, US_ASCII, sni);
     }
 
     @ParameterizedTest
@@ -98,7 +103,8 @@ class SNIHostNamePositiveTest {
         if (arg.failsOnlyOnStrictCheck) {
             assertThrows(IllegalArgumentException.class, () -> SNIHostName.ofHostName(arg.hostName));
         } else {
-            assertDoesNotThrow(() -> SNIHostName.ofHostName(arg.hostName));
+            var sni = SNIHostName.ofHostName(arg.hostName);
+            verifySNIHostName(arg.hostName, US_ASCII, sni);
         }
     }
 
@@ -115,7 +121,8 @@ class SNIHostNamePositiveTest {
     @ParameterizedTest
     @MethodSource("validAsciiArgs")
     void testNewEncodedUsingAscii(Arg<byte[]> arg) {
-        assertDoesNotThrow(() -> new SNIHostName(arg.hostName));
+        var sni = new SNIHostName(arg.hostName);
+        verifySNIHostName(new String(arg.hostName, US_ASCII), US_ASCII, sni);
     }
 
     @ParameterizedTest
@@ -124,19 +131,24 @@ class SNIHostNamePositiveTest {
         if (arg.failsOnlyOnStrictCheck) {
             assertThrows(IllegalArgumentException.class, () -> SNIHostName.ofEncoded(arg.hostName));
         } else {
-            assertDoesNotThrow(() -> SNIHostName.ofEncoded(arg.hostName));
+            var sni = SNIHostName.ofEncoded(arg.hostName);
+            verifySNIHostName(new String(arg.hostName, US_ASCII), US_ASCII, sni);
         }
     }
 
     static Stream<Arg<byte[]>> validUtf8Args() {
         return validStringArgs()
-                .map(arg -> new Arg<>(arg.failsOnlyOnStrictCheck, arg.hostName.getBytes(UTF_8)));
+                .map(arg -> {
+                    var asciiHostName = IDN.toASCII(arg.hostName, IDN.USE_STD3_ASCII_RULES);
+                    return new Arg<>(arg.failsOnlyOnStrictCheck, asciiHostName.getBytes(UTF_8));
+                });
     }
 
     @ParameterizedTest
     @MethodSource("validUtf8Args")
     void testNewEncodedUsingUtf8(Arg<byte[]> arg) {
-        assertDoesNotThrow(() -> new SNIHostName(arg.hostName));
+        var sni = new SNIHostName(arg.hostName);
+        verifySNIHostName(new String(arg.hostName, UTF_8), UTF_8, sni);
     }
 
     @ParameterizedTest
@@ -145,8 +157,33 @@ class SNIHostNamePositiveTest {
         if (arg.failsOnlyOnStrictCheck) {
             assertThrows(IllegalArgumentException.class, () -> SNIHostName.ofEncoded(arg.hostName));
         } else {
-            assertDoesNotThrow(() -> SNIHostName.ofEncoded(arg.hostName));
+            var sni = SNIHostName.ofEncoded(arg.hostName);
+            verifySNIHostName(
+                    new String(arg.hostName, UTF_8),
+                    // We explicitly pass the `encoded` instead of letting
+                    // `verifySNIHostName()` do `hostName.getBytes(encoding)`
+                    // for us. This is necessary because the latter will result
+                    // in obtaining byte string for the ACE-formatted value,
+                    // whereas `new(byte[])` preserves the user-provided (i.e.,
+                    // UTF-8) byte string.
+                    arg.hostName,
+                    sni);
         }
+    }
+
+    private static void verifySNIHostName(String hostName, Charset encoding, SNIHostName sni) {
+        assertEquals(StandardConstants.SNI_HOST_NAME, sni.getType());
+        var asciiHostName = IDN.toASCII(hostName, IDN.USE_STD3_ASCII_RULES);
+        assertEquals(asciiHostName, sni.getAsciiName());
+        var encodedHostName = asciiHostName.getBytes(encoding);
+        assertArrayEquals(encodedHostName, sni.getEncoded());
+    }
+
+    private static void verifySNIHostName(String hostName, byte[] encodedHostName, SNIHostName sni) {
+        assertEquals(StandardConstants.SNI_HOST_NAME, sni.getType());
+        var asciiHostName = IDN.toASCII(hostName, IDN.USE_STD3_ASCII_RULES);
+        assertEquals(asciiHostName, sni.getAsciiName());
+        assertArrayEquals(encodedHostName, sni.getEncoded());
     }
 
 }
