@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,10 +178,25 @@ inline void init_ints(int len, int* ints) {
   }
 }
 
+// Knuth multiplicative hashing
+static uint32_t hash_function(int value) {
+  const uint32_t k = static_cast<uint32_t>(value);
+  return k * UINT32_C(2654435761);
+}
+
 struct MyReaderHelper {
   uint8_t operator()(char* a, int i) const { return a[i]; }
 };
 using MyReader = UNSIGNED5::Reader<char*, int, MyReaderHelper>;
+
+static void test_try_skip(int* array, int idx, MyReader& r) {
+  const int skipped = r.try_skip(idx);
+  ASSERT_EQ(idx, skipped);
+  const int x = r.next_uint();
+  const int y = array[idx];
+  ASSERT_EQ(x, y) << idx;
+  r.set_position(0);
+}
 
 TEST_VM(unsigned5, reader) {
   const int LEN = 100;
@@ -221,6 +236,25 @@ TEST_VM(unsigned5, reader) {
     ASSERT_EQ(x, y) << i;
   }
   ASSERT_TRUE(i < LEN);
+
+  { // Begin try_skip() test.
+    r1.set_position(0);
+    i = 0;
+    for (; i < LEN; i++) {
+      // Serial access.
+      test_try_skip(ints, i, r1);
+      // Random access.
+      const int idx = hash_function(i) % LEN;
+      test_try_skip(ints, idx, r1);
+    }
+    // Underflow.
+    int skipped = r1.try_skip(-1);
+    ASSERT_EQ(skipped, 0);
+    // Overflow.
+    skipped = r1.try_skip(LEN + 1);
+    ASSERT_EQ(skipped, LEN);
+  } // End try_skip() test.
+
   // copy from reader to writer
   UNSIGNED5::Reader<char*,int> r3(buf);
   int array_limit = 1;
