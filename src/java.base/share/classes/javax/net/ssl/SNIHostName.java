@@ -289,7 +289,7 @@ public final class SNIHostName extends SNIServerName {
 
     /**
      * {@return an {@code SNIHostName} using the specified hostname encoded in
-     * either ASCII or UTF-8}
+     * UTF-8}
      * <p>
      * The specified byte array gets decoded into a hostname string that is
      * required to be a valid a DNS hostname, which is either an ASCII-encoded
@@ -313,14 +313,6 @@ public final class SNIHostName extends SNIServerName {
      * <li>{@code "xn--xample-ova.com".getBytes(US_ASCII)} &mdash; IDN in
      * ASCII-Compatible Encoding (ACE)
      * </ul>
-     *
-     * <h4>Supported encodings</h4>
-     *
-     * Per <a href="http://www.ietf.org/rfc/rfc4366.txt">RFC 4366</a>, the
-     * hostname is encoded in {@linkplain StandardCharsets#UTF_8 UTF-8}. Though
-     * its successor <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>
-     * requires {@linkplain StandardCharsets#US_ASCII ASCII}. To tolarate this,
-     * this constructor accepts both encodings.
      *
      * <h4>Translation of non-ASCII Unicode code points</h4>
      *
