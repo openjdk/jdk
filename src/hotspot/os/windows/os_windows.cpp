@@ -465,36 +465,63 @@ void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   *stack_size = size;
 }
 
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  MEMORY_BASIC_INFORMATION minfo;
-  committed_start = nullptr;
-  committed_size = 0;
-  address top = start + size;
-  const address start_addr = start;
-  while (start < top) {
-    VirtualQuery(start, &minfo, sizeof(minfo));
-    if ((minfo.State & MEM_COMMIT) == 0) {  // not committed
-      if (committed_start != nullptr) {
-        break;
-      }
-    } else {  // committed
-      if (committed_start == nullptr) {
-        committed_start = start;
-      }
-      size_t offset = start - (address)minfo.BaseAddress;
-      committed_size += minfo.RegionSize - offset;
-    }
-    start = (address)minfo.BaseAddress + minfo.RegionSize;
-  }
+bool os::live_in_range(address start, size_t size, address& live_start, size_t& live_size) {
+  constexpr size_t stripe = 1024;  // query this many pages each time
+  PSAPI_WORKING_SET_EX_INFORMATION wsinfo[stripe];
 
-  if (committed_start == nullptr) {
-    assert(committed_size == 0, "Sanity");
-    return false;
-  } else {
-    assert(committed_start >= start_addr && committed_start < top, "Out of range");
-    // current region may go beyond the limit, trim to the limit
-    committed_size = MIN2(committed_size, size_t(top - committed_start));
+  size_t page_sz = os::vm_page_size();
+  uintx pages_left = size / page_sz;
+
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
+  assert(is_aligned(size, page_sz), "Size must be page aligned");
+
+  live_start = nullptr;
+
+  uintx loops = (pages_left + stripe - 1) / stripe;
+  uintx live_pages = 0;
+  address pos = start;
+  bool found_range = false;
+
+  for (uintx index = 0; index < loops && !found_range; index++) {
+    assert(pages_left > 0, "Nothing to do");
+    uintx pages_to_query = MIN2(pages_left, stripe);
+    pages_left -= pages_to_query;
+
+    for (int i = 0; i < pages_to_query; i++) {
+      wsinfo[i].VirtualAddress = (PVOID)(pos + i * page_sz);
+    }
+
+    BOOL success = QueryWorkingSetEx(GetCurrentProcess(), wsinfo, pages_to_query * sizeof(PSAPI_WORKING_SET_EX_INFORMATION));
+    if (!success) {
+      return false;
+    }
+
+    for (int i = 0; i < pages_to_query; i++) {
+      if (wsinfo[i].VirtualAttributes.Valid == 0) {
+        if (live_start != nullptr) {
+          found_range = true;
+          break;
+        }
+        // Still searching for start of live region
+      } else {
+        if (live_start == nullptr) {
+          // Found first live page in region
+          live_start = pos + i * page_sz;
+        }
+        live_pages++;
+      }
+    }
+    pos += pages_to_query * page_sz;
+  }
+  if (live_start != nullptr) {
+    assert(live_pages > 0, "Must have live region");
+    assert(live_pages <= size / page_sz, "Region cannot be smaller than size of live pages");
+    assert(live_start >= start && live_start < start + size, "Out of range");
+    live_size = page_sz * live_pages;
     return true;
+  } else {
+    assert(live_pages == 0, "Should not have live region");
+    return false;
   }
 }
 

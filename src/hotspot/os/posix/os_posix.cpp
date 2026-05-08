@@ -167,11 +167,11 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
   }
 }
 
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+bool os::live_in_range(address start, size_t size, address& live_start, size_t& live_size) {
 
 #ifdef _AIX
-  committed_start = start;
-  committed_size = size;
+  live_start = start;
+  live_size = size;
   return true;
 #else
 
@@ -188,10 +188,10 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
 
-  committed_start = nullptr;
+  live_start = nullptr;
 
   int loops = checked_cast<int>((pages + stripe - 1) / stripe);
-  int committed_pages = 0;
+  int live_pages = 0;
   address loop_base = start;
   bool found_range = false;
 
@@ -226,30 +226,30 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
       if ((vec[vecIdx] & 0x01) == 0) { // not committed
         // End of current contiguous region
-        if (committed_start != nullptr) {
+        if (live_start != nullptr) {
           found_range = true;
           break;
         }
       } else { // committed
         // Start of region
-        if (committed_start == nullptr) {
-          committed_start = loop_base + page_sz * vecIdx;
+        if (live_start == nullptr) {
+          live_start = loop_base + page_sz * vecIdx;
         }
-        committed_pages ++;
+        live_pages ++;
       }
     }
 
     loop_base += pages_to_query * page_sz;
   }
 
-  if (committed_start != nullptr) {
-    assert(committed_pages > 0, "Must have committed region");
-    assert(committed_pages <= int(size / page_sz), "Can not commit more than it has");
-    assert(committed_start >= start && committed_start < start + size, "Out of range");
-    committed_size = page_sz * committed_pages;
+  if (live_start != nullptr) {
+    assert(live_pages > 0, "Must have live region");
+    assert(live_pages <= int(size / page_sz), "Region cannot be smaller than size of live pages");
+    assert(live_start >= start && live_start < start + size, "Out of range");
+    live_size = page_sz * live_pages;
     return true;
   } else {
-    assert(committed_pages == 0, "Should not have committed region");
+    assert(live_pages == 0, "Should not have live region");
     return false;
   }
 #endif
