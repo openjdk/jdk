@@ -51,6 +51,6 @@ public class TestSimpleTagInherit extends JavadocTester {
         checkOutput("p/TestClass.html", true,
                 """
                     <dt><em>Custom:</em></dt>
-                    <dd>doc for BaseClass method</dd>""");
+                    <dd id="m()-custom" class="note-tag-custom">doc for BaseClass method</dd>""");
     }
 }

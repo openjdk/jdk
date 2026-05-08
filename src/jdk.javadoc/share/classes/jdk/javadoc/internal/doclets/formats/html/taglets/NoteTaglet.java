@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html.taglets;
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.NoteTree;
+import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
@@ -59,6 +60,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     private final boolean isBlockTag;
 
     private static final String CSS_CLASS_PREFIX = "note-tag";
+    private static final String AUTO_BORDER      = "auto-border";
 
     NoteTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE,
@@ -108,37 +110,31 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             return null;
         }
 
-        var map = new LinkedHashMap<String, HtmlTree>();
+        var map = new LinkedHashMap<String, Content>();
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
+
         for (DocTree tag : tags) {
             if (tag instanceof NoteTree note) {
+
                 var attr = getAttributes(note);
+                var content = htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note));
                 var header = attr.getOrDefault("header", defaultHeader);
                 var kind = attr.getOrDefault("kind", defaultKind);
-                var body = HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note)));
                 var id = attr.getOrDefault("id", null);
+                var body = HtmlTree.DD(content)
+                        .setId(getId(id, holder, false))
+                        .addStyle(getCSSClass(kind));
 
-                // Block notes with the same header are grouped under a single <dt> element, followed by
-                // a <dd> for each note body. Because the style is applied to the enclosing <div> element,
-                // mixing multiple styles in such a grouped note would not lead to a desired outcome.
-                // The first note in a group therefore determines the style of the group.
+                if (kind == defaultKind && (body.charCount() > 1000 || useAutoBorder(note.getBody()))) {
+                    body.addStyle(AUTO_BORDER);
+                }
+
                 map.compute(header, (hdr, cnt) -> {
                     if (cnt == null) {
-                        return HtmlTree.DIV(HtmlStyles.blockNote)
-                                .setId(getId(id, holder, false))
-                                .addStyle(getCSSClass(kind))
-                                .add(HtmlTree.DT(RawHtml.of(hdr)))
-                                .add(body);
+                        return new ContentBuilder(HtmlTree.DT(RawHtml.of(hdr)), body);
                     } else {
-                        if (id != null) {
-                            body.setId(config.htmlIds.makeUnique(id, tagletWriter.htmlWriter.getExistingIds()));
-                        }
-                        if (kind != defaultKind) {
-                            messages.warning("doclet.note.kind_attribute_ignored");
-                        }
-                        cnt.add(body);
-                        return cnt;
+                        return cnt.add(body);
                     }
                 });
             }
@@ -196,6 +192,20 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         return id != null
             ? config.htmlIds.makeUnique(id, existingIds)
             : config.htmlIds.forNote(e, defaultKind, inline, existingIds);
+    }
+
+    private boolean useAutoBorder(List<? extends DocTree> body) {
+        return body.stream().anyMatch(dt ->
+            switch (dt.getKind()) {
+                case START_ELEMENT -> {
+                    var tagName = ((StartElementTree) dt).getName().toString();
+                    yield  tagName.equalsIgnoreCase("pre") || tagName.matches("(?i)h[1-6]")
+                            || tagName.equalsIgnoreCase("ul") || tagName.equalsIgnoreCase("ol" )
+                            || tagName.equalsIgnoreCase("dl" );
+                }
+                case SNIPPET -> true;
+                default -> false;
+        });
     }
 
     private static String stringValueOf(AttributeTree at) {
