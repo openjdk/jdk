@@ -2741,13 +2741,14 @@ const TypePtr *TypePtr::with_offset(intptr_t offset) const {
 // Structural equality check for Type representations
 bool TypePtr::eq( const Type *t ) const {
   const TypePtr *a = (const TypePtr*)t;
-  return _ptr == a->ptr() && _offset == a->offset() && eq_speculative(a) && _inline_depth == a->_inline_depth;
+  return _ptr == a->ptr() && _offset == a->offset() && _reloc == a->reloc() &&
+         eq_speculative(a) && _inline_depth == a->_inline_depth;
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 uint TypePtr::hash(void) const {
-  return (uint)_ptr + (uint)_offset + (uint)hash_speculative() + (uint)_inline_depth;
+  return (uint)_ptr + (uint)_offset + (uint)_reloc + (uint)hash_speculative() + (uint)_inline_depth;
 }
 
 /**
@@ -3176,7 +3177,7 @@ const TypePtr* TypeRawPtr::add_offset(intptr_t offset) const {
     } else if ( sum == 0 ) {
       return TypePtr::NULL_PTR;
     } else {
-      return make( (address)sum );
+      return make((address)sum, _reloc);
     }
   }
   default:  ShouldNotReachHere();
