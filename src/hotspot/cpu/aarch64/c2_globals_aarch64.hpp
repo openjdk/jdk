@@ -75,4 +75,5 @@ define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed.
+
 #endif // CPU_AARCH64_C2_GLOBALS_AARCH64_HPP
