@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,6 +363,15 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
            DEBUG_ONLY(|| true)));
 }
 
+bool PhaseOutput::need_register_stack_bang() const {
+  // Determine if we need to generate a register stack overflow check.
+  // This is only used on architectures which have split register
+  // and memory stacks.
+  // Bang if the method is not a stub function and has java calls
+  return (C->stub_function() == nullptr && C->has_java_calls());
+}
+
+
 // Compute the size of first NumberOfLoopInstrToAlign instructions at the top
 // of a loop. When aligning a loop we need to provide enough instructions
 // in cpu's fetch buffer to feed decoders. The loop alignment could be
@@ -516,11 +525,7 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           has_short_branch_candidate = true;
         }
       }
-      uint nj_size = nj->size(C->regalloc());
-      if (_toc_is_short && nj->is_Mach()) {
-        nj_size -= nj->as_Mach()->ins_toc_short_size();
-      }
-      blk_size += nj_size;
+      blk_size += nj->size(C->regalloc());
       // Remember end of call offset
       if (nj->is_MachCall() && !nj->is_MachCallLeaf()) {
         last_call_adr = blk_starts[i]+blk_size;
@@ -1323,7 +1328,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
     const_req = constant_table().alignment() + constant_table().size() + add_size;
-    _toc_is_short = (add_size + constant_table().size() < ConstantTableSizeThreshold);
   }
 
   // Initialize the space for the BufferBlob used to find and verify
@@ -2919,29 +2923,16 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
 
     Node *m = b->get_node(i);
 
-    if (last_safept_node != end_node &&
+    // Add precedence edge from following safepoint to use of derived pointer
+    if( last_safept_node != end_node &&
         m != last_safept_node) {
-      bool need_safept_prec = false;
-      // Add precedence edge from following safepoint to use of derived pointer
       for (uint k = 1; k < m->req(); k++) {
         const Type *t = m->in(k)->bottom_type();
-        if (t->isa_oop_ptr() &&
-            t->is_ptr()->offset() != 0) {
-          need_safept_prec = true;
+        if( t->isa_oop_ptr() &&
+            t->is_ptr()->offset() != 0 ) {
+          last_safept_node->add_prec( m );
           break;
         }
-      }
-      // A CheckCastPP whose input is still RawPtr must stay above the following safepoint.
-      // Otherwise post-regalloc block-local scheduling can leave a live raw oop at the safepoint.
-      if (!need_safept_prec && m->is_Mach() &&
-          m->as_Mach()->ideal_Opcode() == Op_CheckCastPP) {
-        Node* def = m->in(1);
-        if (def != nullptr && def->bottom_type()->base() == Type::RawPtr) {
-          need_safept_prec = true;
-        }
-      }
-      if (need_safept_prec) {
-        last_safept_node->add_prec(m);
       }
     }
 
