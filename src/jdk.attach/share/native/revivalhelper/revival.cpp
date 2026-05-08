@@ -744,12 +744,12 @@ char* find_filename_in_one_dir(const char* dir, const char* filename) {
  * which is a single string that may contain multiple directories separated by
  * PATH_SEPARATOR characters.
  */
-char* find_filename_in_libdir(const char* libdir, const char* filename) {
+char* find_filename_in_libdirs(const char* libdirs, const char* filename) {
     char dir[BUFLEN];
     char* result = nullptr;
 
-    // On Windows, filename may begin with "C:\", which does not work inside libdir, but is removed on next iteration.
-    char* start = (char*) libdir;
+    // On Windows, filename may begin with C:\ which does not work inside a directory, but is removed on next iteration.
+    char* start = (char*) libdirs;
     char* end = strstr(start, PATH_SEPARATOR);
     while (end != nullptr) {
         // Separator found, check that directory.  Skip if zero length.
@@ -759,7 +759,7 @@ char* find_filename_in_libdir(const char* libdir, const char* filename) {
             dir[len] = 0;
             result = find_filename_in_one_dir(dir, filename);
             if (result != nullptr) {
-                logv("find_filename_in_libdir: query '%s' found '%s'", filename, result);
+                logv("find_filename_in_libdirs: query '%s' found '%s'", filename, result);
                 return result;
             }
         }
@@ -977,7 +977,7 @@ bool revival_cache_exists(char* dirname, const char* mappings_filename) {
     return true;
 }
 
-int revive_image(const char* corename, const char* libdir, const char* revival_data_path) {
+int revive_image(const char* corename, const char* libdirs, const char* revival_data_path) {
     int e;
     char* dirname;
     if (rdata != nullptr && rdata->vm_thread) {
@@ -1044,7 +1044,7 @@ int revive_image(const char* corename, const char* libdir, const char* revival_d
             }
         }
         logv("Creating revival data cache in directory: %s", dirname);
-        e = create_revival_cache_pd(corename, dirname, libdir);
+        e = create_revival_cache_pd(corename, dirname, libdirs);
         logv("revive_image: create_revival_cache_pd returns: %d", e);
         waitHitRet();
         if (e != 0) {

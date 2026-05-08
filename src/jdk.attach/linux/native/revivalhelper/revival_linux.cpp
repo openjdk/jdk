@@ -658,10 +658,10 @@ void copy_and_relocate(ELFFile core, const char* destdir) {
  *
  * Also take a copy of libjvm.debuginfo if present.
  */
-int create_revival_cache_pd(const char* corename, const char* revival_dirname, const char* libdir) {
+int create_revival_cache_pd(const char* corename, const char* revival_dirname, const char* libdirs) {
     logv("create_revival_cache_pd");
 
-    ELFFile core(corename, libdir);
+    ELFFile core(corename, libdirs);
     if  (!core.is_core()) {
         error("Not a core file: %s", corename);
     }

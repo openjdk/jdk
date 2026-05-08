@@ -131,10 +131,10 @@ bool ELFFile::verify() {
     return true;
 }
 
-ELFFile::ELFFile(const char* filename, const char* libdir, bool write) {
+ELFFile::ELFFile(const char* filename, const char* libdirs, bool write) {
     logd("ELFFile: %s (write = %d)", filename, write);
     this->filename = filename;
-    this->libdir = libdir;
+    this->libdirs = libdirs;
     fd = -1;
     length = 0;
     m = nullptr;
@@ -450,8 +450,8 @@ char* ELFFile::find_note_data(Elf64_Phdr* notes_ph, Elf64_Word type) {
 
 // Return the filename to use in our sharedlib list, for a name from NT_FILE info.
 // Handle any name filtering, and return nullptr if file should not be included in library list.
-// Handle libdir substitution.
-char* file_name_for_nt_file(char* name, const char* libdir) {
+// Handle substitution from the libdirs list.
+char* file_name_for_nt_file(char* name, const char* libdirs) {
     // Filter on name from the NT_FILE list.
     // Keep all files in NT_FILE list, not just ELF sharedlibs.
     // But not classes.jsa or other ".jsa" file, we need the core file data for that.
@@ -474,10 +474,10 @@ char* file_name_for_nt_file(char* name, const char* libdir) {
         }
     }
 
-    if (libdir != nullptr) {
-        char* alt_name = find_filename_in_libdir(libdir, name);
+    if (libdirs != nullptr) {
+        char* alt_name = find_filename_in_libdirs(libdirs, name);
         if (alt_name != nullptr) {
-            logv("Using from libdir: '%s'", alt_name);
+            logv("Using from libdirs: '%s'", alt_name);
             name = alt_name; // heap allocated
             if (name2 != nullptr) {
                 free(name2);
@@ -536,13 +536,13 @@ void ELFFile::read_file_mappings() {
         note_nt_file++; // terminator
     }
 
-    // Reread that info to build final library list. Use libdir if set, to rewrite paths.
+    // Reread that info to build final library list. Use libdirs if set, to rewrite paths.
     // Do not skip duplicate names, as would need to coalesce entries/ranges for same filename.
     // Lookups will get first match, and want to find base address, so all good.
     for (int i = 0; i < nt_file_count; i++) {
         logd("NT_FILE: 0x%lx - 0x%lx %s", (uint64_t) files[i].vaddr, (uint64_t) files[i].end(), files[i].name);
         Segment lib = files[i];
-        char* name = file_name_for_nt_file(lib.name, libdir);
+        char* name = file_name_for_nt_file(lib.name, libdirs);
         if (name != nullptr) {
             if (name != lib.name) {
                 // name changed, is now heap allocated

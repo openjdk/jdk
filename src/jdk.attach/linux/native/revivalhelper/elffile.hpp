@@ -38,7 +38,7 @@
  */
 class ELFFile {
   public:
-    ELFFile(const char* filename, const char* libdir = nullptr, bool write = false);
+    ELFFile(const char* filename, const char* libdirs = nullptr, bool write = false);
     ~ELFFile();
 
     bool is_valid();
@@ -67,7 +67,7 @@ class ELFFile {
 
   private:
     const char* filename;
-    const char* libdir;
+    const char* libdirs;
     int fd;
     long long length;
     void* m;            // Address of mapped ELF file

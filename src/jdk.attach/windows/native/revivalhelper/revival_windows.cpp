@@ -820,11 +820,11 @@ void copy_and_relocate(MiniDump dump, const char* destdir) {
     }
 }
 
-int create_revival_cache_pd(const char* corename, const char* revival_dirname, const char* libdir) {
+int create_revival_cache_pd(const char* corename, const char* revival_dirname, const char* libdirs) {
     logv("create_revival_cache_pd");
     editbin = check_editbin();
 
-    MiniDump dump(corename, libdir);
+    MiniDump dump(corename, libdirs);
     if (!dump.is_valid()) {
         error("Cannot open MiniDump: '%s'", corename);
     }

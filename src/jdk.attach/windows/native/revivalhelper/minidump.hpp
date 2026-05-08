@@ -51,7 +51,7 @@
  */
 class MiniDump {
   public:
-    MiniDump(const char* filename, const char* libdir);
+    MiniDump(const char* filename, const char* libdirs);
     ~MiniDump();
 
     bool is_valid() { return fd >= 0; }
@@ -83,7 +83,7 @@ class MiniDump {
 
   private:
     const char* filename;
-    const char* libdir;
+    const char* libdirs;
     int fd;
     _MINIDUMP_HEADER hdr;
     std::list<Segment> libs;

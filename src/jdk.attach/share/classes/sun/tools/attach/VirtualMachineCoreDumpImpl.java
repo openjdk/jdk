@@ -46,6 +46,8 @@ import java.util.concurrent.*;
 import java.util.List;
 import java.util.Map;
 
+import jdk.internal.util.OperatingSystem;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
@@ -94,11 +96,11 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
             if (e < HEADER_READ_SIZE) {
                 throw new IOException("Truncated file '" + filename + "'");
             }
-            if (System.getProperty("os.name").startsWith("Windows")) {
+            if (OperatingSystem.isWindows()) {
                 if (bytes[0] != 'M' || bytes[1] != 'D' || bytes[2] != 'M' || bytes[3] != 'P') {
                     throw new IOException("Not a MiniDump: '" + filename + "'");
                 }
-            } else if (System.getProperty("os.name").startsWith("Linux")) {
+            } else if (OperatingSystem.isLinux()) {
                 if (bytes[0] != 0x7f || bytes[1] != 'E' || bytes[2] != 'L' || bytes[3] != 'F'
                     || bytes[16] != 4 /* ET_CORE */) {
                     throw new IOException("Not a core file: '" + filename + "'");
@@ -139,7 +141,7 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
         }
 
         // Invoke "JDK/lib/revivalhelper corefilename jcmd command..."
-        String jdkLibDir = System.getProperty("java.home") + File.separator + "lib";
+        String jdkLibDir = Path.of(System.getProperty("java.home"), "lib").toString();
         String helper = jdkLibDir + File.separator + "revivalhelper"
                         + (System.getProperty("os.name").startsWith("Windows") ? ".exe" : "");
         if (!(new File(helper).exists())) {

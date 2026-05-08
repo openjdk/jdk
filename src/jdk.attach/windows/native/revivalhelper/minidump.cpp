@@ -93,9 +93,9 @@ char *string_at_offset_minidump(int fd, ULONG32 offset) {
 /**
  * Open a MiniDump, read header.
  */
-MiniDump::MiniDump(const char* filename, const char* libdir) {
+MiniDump::MiniDump(const char* filename, const char* libdirs) {
     this->filename = filename;
-    this->libdir = libdir;
+    this->libdirs = libdirs;
     this->teb = 0;
     fd = ::open(filename, O_RDONLY | O_BINARY);
     if (fd < 0) {
@@ -241,11 +241,11 @@ void MiniDump::read_sharedlibs() {
             continue;
         }
         logd("MiniDump::read_shared_libs MODULE 0x%llx: (size 0x%lx) '%s'", module.BaseOfImage, module.SizeOfImage, name);
-        // Possibly adjust name using libdir if set:
-        if (libdir != nullptr) {
-            char *alt_name = find_filename_in_libdir(libdir, name);
+        // Possibly adjust name using libdirs if set:
+        if (libdirs != nullptr) {
+            char *alt_name = find_filename_in_libdirs(libdirs, name);
             if (alt_name != nullptr) {
-                logv("Using from libdir: '%s'", alt_name);
+                logv("Using from libdirs: '%s'", alt_name);
                 name = alt_name;
             }
         }

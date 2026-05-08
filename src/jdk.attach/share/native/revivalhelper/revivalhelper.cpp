@@ -41,7 +41,7 @@ void usageExit(const char* s) {
 
 int main(int argc, char** argv) {
     char* corename;
-    const char* libdir = nullptr;
+    const char* libdirs = nullptr;
     const char* revival_data = nullptr;
     char command[BUFLEN];
     memset(command, 0, BUFLEN);
@@ -54,8 +54,9 @@ int main(int argc, char** argv) {
     while (true) {
         if (strncmp(argv[n], "-L", 2) == 0) {
             // -L/path/to/libdir
+            // Can be a list of directories, delimited by path separator char : or ;
             if (strlen(argv[n]) > 2) {
-                libdir = argv[n] + 2;
+                libdirs = argv[n] + 2;
                 n++;
             } else {
                 error("Use -L/PATH to specify library directory, e.g. -L/my/libs");
@@ -90,7 +91,7 @@ int main(int argc, char** argv) {
         strncat(command, argv[i], BUFLEN - 1);
     }
 
-    int e = revive_image(corename, libdir, revival_data);
+    int e = revive_image(corename, libdirs, revival_data);
     if (e < 0) {
         logv("revivalhelper: revive failed: %d\n", e);
         // Will call revived_exit below, don't call error().
