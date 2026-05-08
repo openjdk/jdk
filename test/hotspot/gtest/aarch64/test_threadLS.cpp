@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.event.gc.stacktrace;
 
-/**
- * @test
- * @requires vm.flagless
- * @requires vm.hasJFR
- *
- * @requires vm.gc == "null" | vm.gc == "G1"
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseG1GC -Xlog:gc* -Xmx64M -XX:G1IHOP=100
- *                   -XX:FlightRecorderOptions:stackdepth=256
- *                   jdk.jfr.event.gc.stacktrace.TestG1HumongousAllocationPendingStackTrace
- */
-public class TestG1HumongousAllocationPendingStackTrace {
+#if defined(AARCH64) && !defined(ZERO)
 
-    public static void main(String[] args) throws Exception {
-        AllocationStackTrace.testG1HumonAllocEvent();
-    }
+#include "runtime/javaThread.hpp"
+#include "unittest.hpp"
+
+TEST_VM(ThreadLS, get_thread_helper) {
+  Thread* expected = Thread::current();
+  Thread* actual = JavaThread::aarch64_get_thread_helper();
+  ASSERT_EQ(actual, expected);
 }
+
+#endif  // AARCH64 && !ZERO

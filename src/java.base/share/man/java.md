@@ -2350,11 +2350,11 @@ Java HotSpot VM.
     option is disabled by default and can be enabled only with the `-XX:+UseG1GC` option.
 
 [`-XX:G1AdaptiveIHOPNumInitialSamples=`]{#-XX_G1AdaptiveIHOPNumInitialSamples}*number*
-:   When `-XX:UseAdaptiveIHOP` is enabled, this option sets the number of
-    completed marking cycles used to gather samples until G1 adaptively
-    determines the optimum value of `-XX:InitiatingHeapOccupancyPercent`. Before,
-    G1 uses the value of `-XX:InitiatingHeapOccupancyPercent` directly for
-    this purpose. The default value is 3.
+:   When `-XX:UseAdaptiveIHOP` is enabled, this option sets the number
+    of completed concurrent cycles used to gather samples until G1
+    adaptively determines the optimum value of `-XX:G1IHOP`. Before,
+    G1 uses the value of `-XX:G1IHOP` directly for this purpose. The
+    default value is 3.
 
 [`-XX:G1HeapRegionSize=`]{#-XX_G1HeapRegionSize}*size*
 :   Sets the size of the regions into which the Java heap is subdivided when
@@ -2416,15 +2416,14 @@ Java HotSpot VM.
     >   `-XX:G1ReservePercent=20`
 
 [`-XX:+G1UseAdaptiveIHOP`]{#-XX__G1UseAdaptiveIHOP}
-:   Controls adaptive calculation of the old generation occupancy to start
-    background work preparing for an old generation collection. If enabled,
-    G1 uses `-XX:InitiatingHeapOccupancyPercent` for the first few times as
-    specified by the value of `-XX:G1AdaptiveIHOPNumInitialSamples`, and after
-    that adaptively calculates a new optimum value for the initiating
-    occupancy automatically.
-    Otherwise, the old generation collection process always starts at the
-    old generation occupancy determined by
-    `-XX:InitiatingHeapOccupancyPercent`.
+:   Controls adaptive calculation of the old generation occupancy to
+    start background work preparing for an old generation collection.
+    If enabled, G1 uses `-XX:G1IHOP` for the first few times as
+    specified by the value of `-XX:G1AdaptiveIHOPNumInitialSamples`,
+    and after that adaptively calculates a new optimum value for the
+    initiating occupancy automatically. Otherwise, the old generation
+    collection process always starts at the old generation occupancy
+    determined by `-XX:G1IHOP`.
 
     The default is enabled.
 
@@ -2491,7 +2490,7 @@ Java HotSpot VM.
 
     >   `-XX:InitialSurvivorRatio=4`
 
-[`-XX:InitiatingHeapOccupancyPercent=`]{#-XX_InitiatingHeapOccupancyPercent}*percent*
+[`-XX:G1IHOP=`]{#-XX_G1IHOP}*percent*
 :   Sets the percentage of the old generation occupancy (0 to 100) at which to
     start the first few concurrent marking cycles for the G1 garbage collector.
 
@@ -2504,7 +2503,7 @@ Java HotSpot VM.
 
     The following example shows how to set the initiating heap occupancy to 75%:
 
-    >   `-XX:InitiatingHeapOccupancyPercent=75`
+    >   `-XX:G1IHOP=75`
 
 [`-XX:MaxGCPauseMillis=`]{#-XX_MaxGCPauseMillis}*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
