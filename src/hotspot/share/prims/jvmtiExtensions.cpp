@@ -31,6 +31,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/macros.hpp"
 
 #if INCLUDE_JFR
@@ -232,11 +233,6 @@ static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
   user_data = va_arg(ap, jlong);
   va_end(ap);
 
-  // Only sampling the current thread is supported (thread must be null).
-  if (thread != nullptr) {
-    return JVMTI_ERROR_UNSUPPORTED_OPERATION;
-  }
-
   // Use current_or_null_safe() because this is called from a signal handler
   // and the signal may fire on a thread that is detaching from the VM.
   Thread* current = Thread::current_or_null_safe();
@@ -252,22 +248,58 @@ static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
     return JVMTI_ERROR_NOT_AVAILABLE;
   }
 
-  JavaThread* java_thread = JavaThread::cast(current);
+  JavaThread* const current_jt = JavaThread::cast(current);
 
-  // Filter out threads that are exiting or excluded, matching the JFR CPU
-  // time sampler's get_java_thread_if_valid() checks.
-  if (java_thread->is_exiting() ||
-      java_thread->is_hidden_from_external_view() ||
-      java_thread->jfr_thread_local()->is_excluded()) {
-    return JVMTI_ERROR_WRONG_PHASE;
+  // Helper that issues the actual request once the target is known and
+  // (when foreign) protected by a live ThreadsListHandle in the caller.
+  auto submit = [&](JavaThread* target) -> jvmtiError {
+    // Filter out threads that are exiting or excluded, matching the JFR
+    // CPU time sampler's get_java_thread_if_valid() checks.
+    if (target->is_exiting() ||
+        target->is_hidden_from_external_view() ||
+        target->jfr_thread_local()->is_excluded()) {
+      return JVMTI_ERROR_WRONG_PHASE;
+    }
+    // The walker can read frame state directly only when the target is the
+    // calling thread (we hold its state by virtue of executing on it) or
+    // when the caller has externally suspended the target and provided a
+    // captured ucontext. Otherwise we queue a biased request, processed at
+    // the target's next safepoint.
+    const bool thread_is_suspended = (target == current_jt) || (ucontext != nullptr);
+
+    JfrStackWalkRequest request;
+    request.set_max_frames(JfrOptionSet::stackdepth());
+    request.construct_callback<JfrStackTraceRequestCallback>(user_data);
+    JfrStackWalker::request_stack_trace(request, target, ucontext, thread_is_suspended);
+    return JVMTI_ERROR_NONE;
+  };
+
+  if (thread == nullptr) {
+    // Signal-safe path: no JNI handle resolution, no ThreadsListHandle.
+    return submit(current_jt);
   }
 
-  JfrStackWalkRequest request;
-  request.set_max_frames(JfrOptionSet::stackdepth());
-  request.construct_callback<JfrStackTraceRequestCallback>(user_data);
-  JfrStackWalker::request_stack_trace(request, java_thread, ucontext, true /* thread_is_suspended */);
-
-  return JVMTI_ERROR_NONE;
+  // Resolving a non-null jthread uses ThreadsListHandle and JNI handle
+  // resolution; the latter requires the calling thread to be in_VM. The
+  // JfrStackWalker submit path, in contrast, requires _thread_in_Java or
+  // _thread_in_native (it would silently drop the request otherwise), so
+  // we scope the in_VM transition narrowly to just the resolution.
+  // ThreadsListHandle stays alive across the submit so the resolved
+  // target JavaThread* cannot be freed underneath us. None of this is
+  // async-signal-safe; the JEP only promises signal-safety for the
+  // current-thread case (thread == nullptr).
+  ThreadsListHandle tlh;
+  JavaThread* target = nullptr;
+  {
+    ThreadInVMfromNative tiv(current_jt);
+    oop thread_oop = nullptr;
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(
+        tlh.list(), thread, &target, &thread_oop);
+    if (err != JVMTI_ERROR_NONE) {
+      return err;
+    }
+  }
+  return submit(target);
 #endif // !INCLUDE_JFR
 }
 

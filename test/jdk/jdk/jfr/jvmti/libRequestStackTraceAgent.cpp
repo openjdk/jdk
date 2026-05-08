@@ -116,6 +116,15 @@ Java_jdk_jfr_jvmti_RequestStackTraceHelper_requestStackTrace
 }
 
 JNIEXPORT jint JNICALL
+Java_jdk_jfr_jvmti_RequestStackTraceHelper_requestStackTraceWithThread
+  (JNIEnv* /*env*/, jclass /*cls*/, jthread thread, jlong user_data) {
+  if (g_request_stacktrace == nullptr) {
+    return JVMTI_ERROR_NOT_AVAILABLE;
+  }
+  return (jint) g_request_stacktrace(g_jvmti, thread, nullptr, user_data);
+}
+
+JNIEXPORT jint JNICALL
 Java_jdk_jfr_jvmti_RequestStackTraceHelper_requestStackTraceFromSignalHandler
   (JNIEnv* /*env*/, jclass /*cls*/, jlong user_data) {
 #ifdef _WIN32
