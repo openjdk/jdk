@@ -1634,9 +1634,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Shutdown the connection for reading without closing the socket.
      * <p>
-     * If you read from a socket {@code InputStream} after invoking this method,
-     * the stream's {@code available} method will return {@code 0}, and its
-     * {@code read} methods will return {@code -1} (end of stream).
+     * If you read from a {@linkplain Socket#getInputStream() socket input stream}
+     * after invoking this method, the stream's {@code available} method will
+     * return {@code 0}, and its {@code read} methods will return {@code -1} (end of stream).
      *
      * @throws IOException if an I/O error occurs when shutting down this socket, the
      *         socket is not connected, the socket is already shutdown for reading,
@@ -1663,8 +1663,8 @@ public class Socket implements java.io.Closeable {
     /**
      * Shutdown the connection for writing without closing the socket.
      * <p>
-     * If you write to a socket {@code OutputStream} after invoking this method,
-     * the stream will throw an {@code IOException}.
+     * If you write to a {@linkplain Socket#getOutputStream() socket output stream}
+     * after invoking this method, the stream will throw an {@code IOException}.
      *
      * @throws IOException if an I/O error occurs when shutting down this socket, the
      *         socket is not connected, the socket is already shutdown for writing,
