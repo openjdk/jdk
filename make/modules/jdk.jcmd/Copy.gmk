@@ -27,12 +27,15 @@
 
 include CopyCommon.gmk
 
-JCMD_CONF_DIR := $(TOPDIR)/src/jdk.jcmd/share/conf
-$(eval $(call SetupCopyFiles, COPY_JCMD_BASH_COMPLETION, \
-    DEST := $(CONF_DST_DIR)/bash-completion, \
-    SRC := $(JCMD_CONF_DIR)/bash-completion, \
-    FILES := jcmd, \
-))
+# all platforms where a Bash is part of the native environment.
+ifneq ($(call isTargetOsType, windows), true)
+  JCMD_CONF_DIR := $(TOPDIR)/src/jdk.jcmd/share/conf
+  $(eval $(call SetupCopyFiles, COPY_JCMD_BASH_COMPLETION, \
+      DEST := $(CONF_DST_DIR)/bash-completion, \
+      SRC := $(JCMD_CONF_DIR)/bash-completion, \
+      FILES := jcmd, \
+  ))
+endif
 
 TARGETS += $(COPY_JCMD_BASH_COMPLETION)
 
