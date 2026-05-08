@@ -516,12 +516,7 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           has_short_branch_candidate = true;
         }
       }
-      uint nj_size = nj->size(C->regalloc());
-      if (_toc_is_short && nj->is_Mach()) {
-        nj_size -= nj->as_Mach()->ins_toc_short_size();
-      }
-      blk_size += nj_size;
-
+      blk_size += nj->size(C->regalloc());
       // Remember end of call offset
       if (nj->is_MachCall() && !nj->is_MachCallLeaf()) {
         last_call_adr = blk_starts[i]+blk_size;
@@ -1324,7 +1319,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
     const_req = constant_table().alignment() + constant_table().size() + add_size;
-    _toc_is_short = (add_size + constant_table().size() < ConstantTableSizeThreshold);
   }
 
   // Initialize the space for the BufferBlob used to find and verify

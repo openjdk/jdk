@@ -90,6 +90,4 @@ define_pd_global(size_t,   CodeCacheMinimumUseSpace,     400*K);
 
 define_pd_global(bool,     TrapBasedRangeChecks,          true);
 
-define_pd_global(size_t, ConstantTableSizeThreshold, 32 * 1024);
-
 #endif // CPU_PPC_C2_GLOBALS_PPC_HPP

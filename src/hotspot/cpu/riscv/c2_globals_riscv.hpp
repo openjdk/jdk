@@ -76,5 +76,4 @@ define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool, TrapBasedRangeChecks,         false); // Not needed.
 
-define_pd_global(size_t, ConstantTableSizeThreshold, 0); //Currently unused.
 #endif // CPU_RISCV_C2_GLOBALS_RISCV_HPP
