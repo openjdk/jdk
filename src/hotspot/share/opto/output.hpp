@@ -82,7 +82,9 @@ private:
   relocInfo*             _scratch_locs_memory;   // For temporary code buffers.
   int                    _scratch_const_size;    // For temporary code buffers.
   bool                   _in_scratch_emit_size;  // true when in scratch_emit_size.
-
+  bool                   _toc_is_short;          // true when the method's TOC fits in a 16-bit signed
+                                                 // immediate (≤ 32 KB), so constants can be loaded with
+                                                 // a single LD insruction.
   int                    _frame_slots;           // Size of total frame in stack slots
   CodeOffsets            _code_offsets;          // Offsets into the code for various interesting entries
 
@@ -111,6 +113,9 @@ public:
   bool need_stack_bang(int frame_size_in_bytes) const;
   bool need_register_stack_bang() const;
   void compute_loop_first_inst_sizes();
+  bool toc_is_short() const {
+    return PPC64_ONLY(_toc_is_short) NOT_PPC64(false);
+  }
 
   void install_code(ciMethod*         target,
                     int               entry_bci,
