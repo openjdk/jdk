@@ -95,7 +95,7 @@ public:
   size_t accelerated_consumption(double& acceleration, double& current_rate, double time_delta);
 
   // Returns the weighted average of the samples.
-  double average() {
+  double weighted_average() {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     return _baseline.weighted_average();
   }

@@ -63,7 +63,7 @@ constexpr uint MINIMUM_SAMPLE_SIZE = 1024;
 TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_sample) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
   rate.allocated(512);
-  EXPECT_DOUBLE_EQ(rate.average(), 0);
+  EXPECT_DOUBLE_EQ(rate.weighted_average(), 0);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
@@ -72,7 +72,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
   allocate(rate, 2048); // t = 2
   double acceleration(0), current_rate(0);
   rate.accelerated_consumption(acceleration, current_rate, 100);
-  EXPECT_DOUBLE_EQ(rate.average(), 2048.0);
+  EXPECT_DOUBLE_EQ(rate.weighted_average(), 2048.0);
 }
 
 // disabled because the current implementation needs at least two samples to compute rates
@@ -95,7 +95,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
 
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
-  EXPECT_DOUBLE_EQ(rate.average(), 1024);  // Average rate, 1024 bytes per tick
+  EXPECT_DOUBLE_EQ(rate.weighted_average(), 1024);  // Average rate, 1024 bytes per tick
   EXPECT_DOUBLE_EQ(acceleration, 0.0);   // No acceleration, rate is constant
   EXPECT_DOUBLE_EQ(current_rate, 1024);  // Momentary rate is the same as the average
   EXPECT_EQ(anticipated_consumption, 102400UL); // 100 clock ticks at 1024 bytes per tick
