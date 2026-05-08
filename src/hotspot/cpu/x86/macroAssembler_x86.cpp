@@ -9809,7 +9809,6 @@ void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
 void MacroAssembler::cache_wb(Address line)
 {
   // 64 bit cpus always support clflush
-  assert(VM_Version::supports_clflush(), "clflush should be available");
   bool optimized = VM_Version::supports_clflushopt();
   bool no_evict = VM_Version::supports_clwb();
 
@@ -9831,7 +9830,6 @@ void MacroAssembler::cache_wb(Address line)
 
 void MacroAssembler::cache_wbsync(bool is_pre)
 {
-  assert(VM_Version::supports_clflush(), "clflush should be available");
   bool optimized = VM_Version::supports_clflushopt();
   bool no_evict = VM_Version::supports_clwb();
 

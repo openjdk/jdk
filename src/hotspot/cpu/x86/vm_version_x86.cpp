@@ -80,20 +80,6 @@ static detect_virt_stub_t detect_virt_stub = nullptr;
 static clear_apx_test_state_t clear_apx_test_state_stub = nullptr;
 static getCPUIDBrandString_stub_t getCPUIDBrandString_stub = nullptr;
 
-bool VM_Version::supports_clflush() {
-  // clflush should always be available on x86_64
-  // if not we are in real trouble because we rely on it
-  // to flush the code cache.
-  // Unfortunately, Assembler::clflush is currently called as part
-  // of generation of the code cache flush routine. This happens
-  // under Universe::init before the processor features are set
-  // up. Assembler::flush calls this routine to check that clflush
-  // is allowed. So, we give the caller a free pass if Universe init
-  // is still in progress.
-  assert ((!Universe::is_fully_initialized() || _features.supports_feature(CPU_FLUSH)), "clflush should be available");
-  return true;
-}
-
 #define CPUID_STANDARD_FN   0x0
 #define CPUID_STANDARD_FN_1 0x1
 #define CPUID_STANDARD_FN_4 0x4
@@ -898,18 +884,6 @@ void VM_Version::get_processor_features() {
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
 
-  // flush_icache_stub have to be generated first.
-  // That is why Icache line size is hard coded in ICache class,
-  // see icache_x86.hpp. It is also the reason why we can't use
-  // clflush instruction in 32-bit VM since it could be running
-  // on CPU which does not support it.
-  //
-  // The only thing we can do is to verify that flushed
-  // ICache::line_size has correct value.
-  guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
-  // clflush_size is size in quadwords (8 bytes).
-  guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == 8, "such clflush size is not supported");
-
   // assigning this field effectively enables Unsafe.writebackMemory()
   // by initing UnsafeConstant.DATA_CACHE_LINE_FLUSH_SIZE to non-zero
   // that is only implemented on x86_64 and only if the OS plays ball
@@ -1122,7 +1096,6 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
-  assert(supports_clflush(), "Always present");
   if (X86ICacheSync == -1) {
     // Auto-detect, choosing the best performant one that still flushes
     // the cache. We could switch to CPUID/SERIALIZE ("4"/"5") going forward.
@@ -2862,17 +2835,14 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
 
   // check the features that must be present
   guarantee(std_cpuid1_edx.bits.sse2 != 0, "sse2 is not supported");
+  guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
+  // clflush_size is size in quadwords (8 bytes).
+  guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == ICache::line_size/8, "clflush size is not supported");
 
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
     vm_features.set_feature(CPU_CX8);
   if (std_cpuid1_edx.bits.cmov != 0)
     vm_features.set_feature(CPU_CMOV);
-  if (std_cpuid1_edx.bits.clflush != 0)
-    vm_features.set_feature(CPU_FLUSH);
-  // clflush should always be available on x86_64
-  // if not we are in real trouble because we rely on it
-  // to flush the code cache.
-  assert (vm_features.supports_feature(CPU_FLUSH), "clflush should be available");
   if (std_cpuid1_edx.bits.fxsr != 0 || (is_amd_family() &&
       ext_cpuid1_edx.bits.fxsr != 0))
     vm_features.set_feature(CPU_FXSR);

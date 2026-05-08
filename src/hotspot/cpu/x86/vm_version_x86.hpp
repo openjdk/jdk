@@ -416,7 +416,6 @@ protected:
     decl(AVX512_VPCLMULQDQ, avx512_vpclmulqdq ) /* Vector carryless multiplication */ \
     decl(AVX512_VAES,       avx512_vaes       ) /* Vector AES instruction */ \
     decl(AVX512_VNNI,       avx512_vnni       ) /* Vector Neural Network Instructions */ \
-    decl(FLUSH,             clflush           ) /* flush instruction */ \
     decl(FLUSHOPT,          clflushopt        ) /* flusopth instruction */ \
     decl(CLWB,              clwb              ) /* clwb instruction */ \
     decl(AVX512_VBMI2,      avx512_vbmi2      ) /* VBMI2 shift left double instructions */ \
@@ -1025,7 +1024,6 @@ public:
   // pending in-cache changes.
   //
   // 64 bit cpus always support clflush which writes back and evicts
-  // on 32 bit cpus support is recorded via a feature flag
   //
   // clflushopt is optional and acts like clflush except it does
   // not synchronize with other memory ops. it needs a preceding
@@ -1035,8 +1033,6 @@ public:
   // writes back without evicting the line. it also does not
   // synchronize with other memory ops. so, it needs preceding
   // and trailing StoreStore fences.
-
-  static bool supports_clflush(); // Can't inline due to header file conflict
 
   // Note: CPU_FLUSHOPT and CPU_CLWB bits should always be zero for 32-bit
   static bool supports_clflushopt() { return (_features.supports_feature(CPU_FLUSHOPT)); }
