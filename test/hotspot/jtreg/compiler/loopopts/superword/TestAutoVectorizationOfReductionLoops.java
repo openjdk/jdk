@@ -53,6 +53,30 @@ public class TestAutoVectorizationOfReductionLoops {
         TestFramework.runWithFlags("-XX:-TieredCompilation");
     }
 
+    static float getFloat() {
+        // `RANDOM.nextFloat()` will produce a value in the range [0.0f, 1.0f)
+        // all of which have the same magnitude, so we instead generate `int`
+        // values and convert them to `float`, discarding NaN and +/-Inifinity.
+        float value = 0.0f;
+        do {
+            int bits = RANDOM.nextInt();
+            value = Float.intBitsToFloat(bits);
+        } while (value == 0.0f || !Float.isFinite(value));
+        return value;
+    }
+
+    static double getDouble() {
+        // `RANDOM.nextDouble()` will produce a value in the range [0.0, 1.0)
+        // all of which have the same magnitude, so we instead generate `long`
+        // values and convert them to `double`, discarding NaN and +/-Inifinity.
+        double value = 0.0;
+        do {
+            long bits = RANDOM.nextLong();
+            value = Double.longBitsToDouble(bits);
+        } while (value == 0.0 || !Double.isFinite(value));
+        return value;
+    }
+
     public TestAutoVectorizationOfReductionLoops() {
         fx = new float[SIZE];
         fy = new float[SIZE];
@@ -65,17 +89,17 @@ public class TestAutoVectorizationOfReductionLoops {
         dm2 = new double[SIZE * DIM];
 
         for (int i = 0; i < SIZE; i++) {
-            fx[i] = RANDOM.nextFloat();
-            fy[i] = RANDOM.nextFloat();
-            dx[i] = RANDOM.nextDouble();
-            dy[i] = RANDOM.nextDouble();
+            fx[i] = getFloat();
+            fy[i] = getFloat();
+            dx[i] = getDouble();
+            dy[i] = getDouble();
         }
 
         for (int i = 0; i < SIZE * DIM; i++) {
-            fm[i] = RANDOM.nextFloat();
-            fm2[i] = RANDOM.nextFloat();
-            dm[i] = RANDOM.nextDouble();
-            dm2[i] = RANDOM.nextDouble();
+            fm[i] = getFloat();
+            fm2[i] = getFloat();
+            dm[i] = getDouble();
+            dm2[i] = getDouble();
         }
     }
 
