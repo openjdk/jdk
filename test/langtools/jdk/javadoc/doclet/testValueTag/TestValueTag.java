@@ -102,8 +102,8 @@ public class TestValueTag extends JavadocTester {
         checkOutput("pkg1/CustomTagUsage.html", true,
                 // Test @value tag used with custom tag.
                 """
-                    <dt>Todo:</dt>
-                    <dd id="CONSTANT_INT-todo" class="note-tag-todo">the value of this constant is 55.</dd>""");
+                    <dt id="CONSTANT_INT-todo">Todo:</dt>
+                    <dd id="CONSTANT_INT-todo1" class="note-tag-todo">the value of this constant is 55.</dd>""");
 
         checkOutput(Output.OUT, true,
                 // Test @value errors printed due to invalid use or when used with

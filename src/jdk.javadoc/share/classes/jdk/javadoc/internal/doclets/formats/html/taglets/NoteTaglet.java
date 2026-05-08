@@ -60,7 +60,8 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     private final boolean isBlockTag;
 
     private static final String CSS_CLASS_PREFIX = "note-tag";
-    private static final String AUTO_BORDER      = "auto-border";
+    private static final String AUTO_BORDER = "auto-border";
+    private static final int AUTO_BORDER_THRESHOLD = 1000;
 
     NoteTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE,
@@ -121,22 +122,27 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 var content = htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note));
                 var header = attr.getOrDefault("header", defaultHeader);
                 var kind = attr.getOrDefault("kind", defaultKind);
+
+                // We go out of our way to obtain the header id before
+                // the note ids to maintain logical order of ids.
+                var notes = map.get(header);
+                var headerId = notes == null ? getId(null, holder, true) : null;
+
                 var id = attr.getOrDefault("id", null);
                 var body = HtmlTree.DD(content)
                         .setId(getId(id, holder, false))
                         .addStyle(getCSSClass(kind));
 
-                if (kind == defaultKind && (body.charCount() > 1000 || useAutoBorder(note.getBody()))) {
+                if (body.charCount() > AUTO_BORDER_THRESHOLD || useAutoBorder(note.getBody())) {
                     body.addStyle(AUTO_BORDER);
                 }
 
-                map.compute(header, (hdr, cnt) -> {
-                    if (cnt == null) {
-                        return new ContentBuilder(HtmlTree.DT(RawHtml.of(hdr)), body);
-                    } else {
-                        return cnt.add(body);
-                    }
-                });
+                if (notes == null) {
+                    var dt = HtmlTree.DT(RawHtml.of(header)).setId(headerId);
+                    map.put(header, new ContentBuilder(dt, body));
+                } else {
+                    notes.add(body);
+                }
             }
         }
 
@@ -159,7 +165,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var id = attr.getOrDefault("id", null);
 
         HtmlTree result = HtmlTree.DIV(HtmlStyles.inlineNote)
-                .setId(getId(id, element, true))
+                .setId(getId(id, element, false))
                 .add(HtmlTree.SPAN(HtmlStyles.noteHeader, RawHtml.of(header)))
                 .add(Text.NL)
                 .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
@@ -187,13 +193,15 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                                           (oldValue, _) -> oldValue));
     }
 
-    private HtmlId getId(String id, Element e, boolean inline) {
+    private HtmlId getId(String id, Element e, boolean ofHeader) {
         var existingIds = tagletWriter.htmlWriter.getExistingIds();
         return id != null
             ? config.htmlIds.makeUnique(id, existingIds)
-            : config.htmlIds.forNote(e, defaultKind, inline, existingIds);
+            : config.htmlIds.forNote(e, defaultKind, ofHeader, existingIds);
     }
 
+     // Look at note content to see whether it could benefit from a note border.
+     // A border is created for mixed content notes containing snippets/code samples/headers.
     private boolean useAutoBorder(List<? extends DocTree> body) {
         return body.stream().anyMatch(dt ->
             switch (dt.getKind()) {
@@ -216,6 +224,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 .collect(Collectors.joining());
     }
 
+    // Returns the main CSS class for a note depending on its kind.
     private String getCSSClass(String kind) {
         return kind == null
                 ? CSS_CLASS_PREFIX

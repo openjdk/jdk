@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8008768 8026567
+ * @bug      8008768 8026567 8358754
  * @summary  Using {@inheritDoc} in simple tag defined via -tag fails
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -50,7 +50,7 @@ public class TestSimpleTagInherit extends JavadocTester {
 
         checkOutput("p/TestClass.html", true,
                 """
-                    <dt><em>Custom:</em></dt>
-                    <dd id="m()-custom" class="note-tag-custom">doc for BaseClass method</dd>""");
+                    <dt id="m()-custom"><em>Custom:</em></dt>
+                    <dd id="m()-custom1" class="note-tag-custom">doc for BaseClass method</dd>""");
     }
 }

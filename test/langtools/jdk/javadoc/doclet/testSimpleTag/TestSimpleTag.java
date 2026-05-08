@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4695326 4750173 4920381 8078320 8071982 8239804
+ * @bug 4695326 4750173 4920381 8078320 8071982 8239804 8358754
  * @summary Test the declaration of simple tags using -tag. Verify that
  * "-tag name" is a shortcut for "-tag name:a:Name:".  Also verity that
  * you can escape the ":" character with a back slash so that it is not
@@ -57,10 +57,13 @@ public class TestSimpleTag extends JavadocTester {
 
         checkOutput("C.html", true,
                 "<dl class=\"notes\">",
-                "<dt>Todo:</dt>",
-                "<dt>EJB Beans:</dt>",
-                "<dt>Regular Tag:</dt>",
-                "<dt>Tag-With-Hyphens:</dt>",
+                "<dt id=\"C-todo\">Todo:</dt>",
+                "<dt id=\"C-ejb:bean\">EJB Beans:</dt>",
+                "<dd id=\"C-ejb:bean1\" class=\"note-tag-ejb:bean\">This is a bean.</dd>",
+                "<dt id=\"C-regular\">Regular Tag:</dt>",
+                "<dd id=\"C-regular1\" class=\"note-tag-regular\">Just a regular simple tag.</dd>",
+                "<dt id=\"C-tag-with-hyphens\">Tag-With-Hyphens:</dt>",
+                "<dd id=\"C-tag-with-hyphens1\" class=\"note-tag-tag-with-hyphens\">a tag that contains hyphens.</dd>",
                 """
                     <dt>Parameters:</dt>
                     <dd><code>arg</code> - this is an int argument.</dd>""");
