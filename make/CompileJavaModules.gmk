@@ -159,7 +159,7 @@ ifneq ($(COMPILER), bootjdk)
         HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
         DISABLED_WARNINGS := $(DISABLED_WARNINGS_java) preview, \
         EXCLUDES := $(EXCLUDES), \
-        EXCLUDE_FILES := $(EXCLUDE_FILES) \
+        EXCLUDE_FILES := $(EXCLUDE_FILES), \
         KEEP_ALL_TRANSLATIONS := $(KEEP_ALL_TRANSLATIONS), \
         DEPENDS := $($(MODULE)), \
         JAVAC_FLAGS := \
