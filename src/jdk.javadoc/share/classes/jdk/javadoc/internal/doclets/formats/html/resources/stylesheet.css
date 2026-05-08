@@ -75,8 +75,8 @@
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
     /* Note colors */
-    --note-background-color: #fdfdfd;
-    --note-border-color: #a5a5a5;
+    --note-background-color: var(--body-background-color);
+    --note-border-color: #646464;
     --note-header-color: #434343;
     --note-text-color: var(--block-text-color);
     --note-important-background-color: #f1f7ff;
@@ -87,10 +87,9 @@
     --note-critical-border-color: #d01414;
     --note-critical-header-color: #ffffff;
     --note-critical-pre-color: #fee3e3;
-    --jdk-note-border-color: #d6d6d6;
     /* Border colors for structural elements and user defined tables */
     --border-color: #e6e6e6;
-    --table-border-color: #000000;
+    --table-border-color: #434343;
     /* Styles for table tabs */
     --tab-border-radius: 2px 2px 0 0;
     /* Search input colors */
@@ -149,7 +148,7 @@
     --snippet-highlight-color: #f7c590;
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
-    --note-background-color: #282a2c;
+    --note-background-color: var(--body-background-color);
     --note-border-color: #747474;
     --note-header-color: #e5e5e5;
     --note-text-color: var(--block-text-color);
@@ -161,9 +160,8 @@
     --note-critical-border-color: #b82222;
     --note-critical-header-color: #ffffff;
     --note-critical-pre-color: #391a1a;
-    --jdk-note-border-color: #606060;
     --border-color: #444444;
-    --table-border-color: #717171;
+    --table-border-color: #747474;
     --tab-border-radius: 2px 2px 0 0;
     --search-input-background-color: #303030;
     --search-input-text-color: #d0d0d0;
@@ -219,7 +217,7 @@ body {
     width:100%;
 }
 main [id] {
-    scroll-margin-top: calc(var(--nav-height) + 6px);
+    scroll-margin-top: calc(var(--nav-height) + 14px);
 }
 div.main-grid {
     max-width: var(--max-content-width);
@@ -247,6 +245,7 @@ pre {
     color: var(--pre-text-color);
     padding: 10px;
     overflow-x:auto;
+    margin: 10px 2px;
 }
 h1 {
     font-size:1.425em;
@@ -555,7 +554,7 @@ section.class-description > div.horizontal-scroll > :last-child > :is(li, dd):la
 div.inline-note {
     padding: 10px 12px;
     margin: 12px 0;
-    border: 1px solid var(--note-border-color);
+    border: 0.8px solid var(--note-border-color);
     background-color: var(--note-background-color);
     border-radius: 4px;
 }
@@ -564,15 +563,22 @@ div.inline-note > span.note-header {
     font-family: var(--body-font-family);
     font-size: 0.93em;
 }
+div.inline-note.note-tag-no-border {
+    border: none;
+    padding: 0 14px;
+}
+div.inline-note.note-tag-strong-border {
+    border: 1.2px solid var(--note-border-color);
+}
 div.inline-note.note-tag-important {
-    border-color: var(--note-important-border-color);
+    border: 1.4px solid var(--note-important-border-color);
     background-color: var(--note-important-background-color);
     pre, pre.snippet, div.snippet-container {
         background-color: var(--note-important-pre-color);
     }
 }
 div.inline-note.note-tag-critical {
-    border-color: var(--note-critical-border-color);
+    border: 1.4px solid var(--note-critical-border-color);
     background-color: var(--note-critical-background-color);
     pre, pre.snippet, div.snippet-container {
         background-color: var(--note-critical-pre-color);
@@ -581,69 +587,60 @@ div.inline-note.note-tag-critical {
 dl.notes {
     margin-right: 10px;
 }
-dl.notes > dt,
-dl.notes > div > dt {
+dl.notes > dt {
     font-family: var(--body-font-family);
     font-size:0.856em;
     font-weight:bold;
     margin:10px 0 0 0;
     color:var(--note-header-color);
 }
-dl.notes > dd,
-dl.notes > div > dd {
+dl.notes > dd {
     margin:6px 10px 10px 15px;
     font-size:var(--block-font-size);
     font-family:var(--block-font-family);
     line-height:var(--block-line-height);
 }
-dl.notes > div.block-note.note-tag-infobox,
-dl.notes > div.block-note.note-tag-important,
-dl.notes > div.block-note.note-tag-critical,
-dl.notes > div.block-note.note-tag-apiNote,
-dl.notes > div.block-note.note-tag-implNote,
-dl.notes > div.block-note.note-tag-implSpec,
-dl.notes > div.block-note.note-tag-previewNote {
-    margin: 12px 0;
-    padding: 0 12px;
+dl.notes > dd:not(.note-tag-no-border).auto-border,
+dl.notes > dd.note-tag-subtle-border,
+dl.notes > dd.note-tag-strong-border,
+dl.notes > dd.note-tag-important,
+dl.notes > dd.note-tag-critical,
+dl.notes > dd.note-tag-previewNote {
+    padding: 8px 12px;
     border-radius: 4px;
-    overflow-x: auto;
-    dt, dd {
-        margin: 8px 0;
-        padding: 0 1px;
-        display: block;
+    margin: 7px 0 10px 1px;
+    p:first-child, h2:first-child, h3:first-child {
+        margin-top: 4px;
+    }
+    div.snippet-container:last-child, pre:last-child {
+        margin-bottom: 8px;
+    }
+    p:last-child {
+        margin-bottom: 0;
     }
 }
-dl.notes > div.block-note.note-tag-infobox,
-dl.notes > div.block-note.note-tag-apiNote,
-dl.notes > div.block-note.note-tag-implNote,
-dl.notes > div.block-note.note-tag-implSpec,
-dl.notes > div.block-note.note-tag-previewNote {
-    background-color: var(--note-background-color);
-    border: 1px solid var(--note-border-color);
+dl.notes > dd:not(.note-tag-no-border).auto-border,
+dl.notes > dd.note-tag-subtle-border {
+    border: 0.8px solid var(--note-border-color);
 }
-dl.notes > div.block-note.note-tag-important {
+dl.notes > dd.note-tag-strong-border,
+dl.notes > dd.note-tag-previewNote {
+    background-color: var(--note-background-color);
+    border: 1.2px solid var(--note-border-color);
+}
+dl.notes > dd.note-tag-important {
     background-color: var(--note-important-background-color);
-    border: 1px solid var(--note-important-border-color);
+    border: 1.4px solid var(--note-important-border-color);
     pre, pre.snippet, div.snippet-container {
         background-color: var(--note-important-pre-color);
     }
 }
-dl.notes > div.block-note.note-tag-critical {
+dl.notes > dd.note-tag-critical {
     background-color: var(--note-critical-background-color);
-    border: 1px solid var(--note-critical-border-color);
+    border: 1.4px solid var(--note-critical-border-color);
     pre, pre.snippet, div.snippet-container {
         background-color: var(--note-critical-pre-color);
     }
-}
-dl.notes > div.block-note.note-tag-apiNote,
-dl.notes > div.block-note.note-tag-implNote,
-dl.notes > div.block-note.note-tag-implSpec {
-    border-color: var(--jdk-note-border-color);
-}
-div.block-note > dd > ul,
-div.block-note > dd > ol {
-    margin-bottom: 1em;
-    margin-top: 1em;
 }
 dl.name-value > dt {
     margin-left:1px;
@@ -1148,6 +1145,9 @@ sup.restricted-mark > a:link {
     margin-bottom:10px;
     margin-right:10px;
     display:inline-block;
+    p:last-child {
+        margin-bottom: 0;
+    }
 }
 .deprecation-block code, .preview-block code, .restricted-block code {
     font-size: 0.97em;
@@ -1691,8 +1691,7 @@ button.snippet-copy span {
 table.borderless,
 table.plain,
 table.striped {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 10px 2px;
 }
 table.borderless > caption,
 table.plain > caption,
@@ -1886,6 +1885,9 @@ table.striped > tbody > tr > th {
     main {
         padding: 10px 12px;
     }
+    main [id] {
+        scroll-margin-top: calc(var(--nav-height) + 10px);
+    }
     body {
         -webkit-text-size-adjust: none;
     }
@@ -1930,11 +1932,13 @@ pre.snippet {
     background-color: var(--snippet-background-color);
     color: var(--snippet-text-color);
     padding: 12px;
+    margin: 10px 0;
 }
 div.snippet-container {
     position: relative;
     padding-right: 30px;
     background-color: var(--snippet-background-color);
+    margin: 14px 2px;
 }
 pre.snippet .italic {
     font-style: italic;

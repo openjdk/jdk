@@ -76,9 +76,8 @@ public class TestCustomNoteTag extends JavadocTester {
                      abc <a href="C.html" title="class in p"><em>emphasized</em></a> def</div>""",
                 """
                      <dl class="notes">
-                     <div class="block-note note-tag-example" id="example">
                      <dt>Example:</dt>
-                     <dd><p><strong>xyz</strong></p>""",
+                     <dd id="example" class="note-tag-example auto-border"><p><strong>xyz</strong></p>""",
                 """
                      <pre class="snippet" id="snippet-p.C1"><code class="language-java">   code ...
                      </code></pre>
@@ -261,10 +260,8 @@ public class TestCustomNoteTag extends JavadocTester {
                             inline warning</div>""".replace("$LOCATION$", loc2.toString()),
                         """
                             <dl class="notes">
-                            <div class="block-note note-tag-warning" id="block-$LOCATION$-warning">
                             <dt>Warning:</dt>
-                            <dd>block warning</dd>
-                            </div>
+                            <dd id="block-$LOCATION$-warning" class="note-tag-warning">block warning</dd>
                             </dl>""".replace("$LOCATION$", loc2.toString()));
             }
         }
@@ -298,10 +295,8 @@ public class TestCustomNoteTag extends JavadocTester {
                         inline note</div>
                         </div>
                         <dl class="notes">
-                        <div class="block-note note-tag-custom" id="p.C-custom">
                         <dt>Custom Note:</dt>
-                        <dd>block note</dd>
-                        </div>
+                        <dd id="p.C-custom" class="note-tag-custom">block note</dd>
                         </dl>
                         </div>""");
 
@@ -320,10 +315,8 @@ public class TestCustomNoteTag extends JavadocTester {
                 """
                         <div class="block">First sentence. </div>
                         <dl class="notes">
-                        <div class="block-note note-tag-custom" id="p.C-custom">
                         <dt>Custom Note:</dt>
-                        <dd>block note</dd>
-                        </div>
+                        <dd id="p.C-custom" class="note-tag-custom">block note</dd>
                         </dl>
                         </div>""");
 

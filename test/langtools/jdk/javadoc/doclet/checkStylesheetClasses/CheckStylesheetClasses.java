@@ -144,6 +144,7 @@ public class CheckStylesheetClasses {
 
         // used for note tags
         styleSheetNames.removeIf(s -> s.startsWith("note-tag-"));
+        styleSheetNames.remove("auto-border");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");

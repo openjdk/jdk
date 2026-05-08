@@ -632,11 +632,6 @@ public enum HtmlStyles implements HtmlStyle {
     noteHeader,
 
     /**
-     * The class of an element containing a block note tag.
-     */
-    blockNote,
-
-    /**
      * The class of an element containing an inline note tag.
      */
     inlineNote,
