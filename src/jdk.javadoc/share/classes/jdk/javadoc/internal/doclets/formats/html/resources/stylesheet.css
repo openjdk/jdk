@@ -617,13 +617,13 @@ dl.notes > dd.note-tag-previewNote {
     padding: 8px 12px;
     border-radius: 2px;
     margin: 7px 0 10px 1px;
-    p:first-child, h2:first-child, h3:first-child {
+    > p:first-child, > h2:first-child, > h3:first-child {
         margin-top: 4px;
     }
-    div.snippet-container:last-child, pre:last-child {
+    > :last-child {
         margin-bottom: 8px;
     }
-    p:last-child {
+    > p:last-child {
         margin-bottom: 0;
     }
 }
@@ -1910,9 +1910,6 @@ table.striped > tbody > tr > th {
     }
 }
 @media screen and (max-width: 600px) {
-    main {
-        padding: 10px 6px;
-    }
     dl.notes {
         margin-right: 0;
     }
