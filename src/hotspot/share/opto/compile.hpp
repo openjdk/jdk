@@ -513,7 +513,7 @@ public:
   void add_vector_late_inline(CallGenerator* cg) {
     _vector_late_inlines.push(cg);
   }
-  void transfer_vector_late_inlines();
+  void process_vector_late_inlines();
 
   void* barrier_set_state() const { return _barrier_set_state; }
 

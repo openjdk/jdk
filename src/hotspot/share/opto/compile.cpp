@@ -2161,7 +2161,7 @@ void Compile::shuffle_late_inlines() {
   shuffle_array(*C, _late_inlines);
 }
 
-void Compile::transfer_vector_late_inlines() {
+void Compile::process_vector_late_inlines() {
   for (int i = 0; i < _vector_late_inlines.length(); i++) {
     CallGenerator* cg = _vector_late_inlines.at(i);
     // When a vector intrinsic fails, set_generator(cg) caches the
@@ -2237,8 +2237,8 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 
     if (failing())  return;
 
-    if (_late_inlines.length() == 0 && _vector_late_inlines.length() > 0) {
-      transfer_vector_late_inlines();
+    if (_late_inlines.length() == 0) {
+      process_vector_late_inlines();
     }
   }
 
