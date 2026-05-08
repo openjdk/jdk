@@ -147,6 +147,11 @@ const int ObjectAlignmentInBytes = 8;
 
 #endif // _LP64
 
+// Default value for PrintAssemblyOptions, set via --with-print-assembly-options.
+#ifndef DEFAULT_PRINT_ASSEMBLY_OPTIONS
+#define DEFAULT_PRINT_ASSEMBLY_OPTIONS nullptr
+#endif
+
 #define RUNTIME_FLAGS(develop,                                              \
                       develop_pd,                                           \
                       product,                                              \
@@ -611,7 +616,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintAssembly, false, DIAGNOSTIC,                           \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
-  product(ccstr, PrintAssemblyOptions, nullptr, DIAGNOSTIC,                 \
+  product(ccstr, PrintAssemblyOptions, DEFAULT_PRINT_ASSEMBLY_OPTIONS,      \
+          DIAGNOSTIC,                                                       \
           "Print options string passed to disassembler.so")                 \
                                                                             \
   develop(bool, PrintNMethodStatistics, false,                              \
@@ -870,6 +876,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TimeOopMap, false,                                          \
           "Time calls to GenerateOopMap::compute_map() in sum")             \
+                                                                            \
+  develop(bool, GenerateOopMapALot, false,                                  \
+          "Generate interpreter oopmaps at all safepoints")                 \
                                                                             \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
@@ -1514,6 +1523,10 @@ const int ObjectAlignmentInBytes = 8;
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
+  product(size_t, HotCodeHeapSize, 0, EXPERIMENTAL,                         \
+          "Size of code heap with predicted hot methods (in bytes)")        \
+          range(0, SIZE_MAX)                                                \
+                                                                            \
   product_pd(size_t, CodeCacheExpansionSize,                                \
           "Code cache expansion size (in bytes)")                           \
           range(32*K, SIZE_MAX)                                             \
@@ -1838,9 +1851,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
-                                                                            \
-  product(bool, AlwaysAtomicAccesses, false, EXPERIMENTAL,                  \
-          "Accesses to all variables should always be atomic")              \
                                                                             \
   product(bool, UseUnalignedAccesses, false, DIAGNOSTIC,                    \
           "Use unaligned memory accesses in Unsafe")                        \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import test.java.awt.regtesthelpers.Util;
  * <p> See base class for usage
  *
  * @author Sergey Grinev
-*/
+ */
 public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
 
     {
@@ -59,6 +59,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
 
     /**
      * Constructor which sets {@link SimpleOverlappingTestBase#useDefaultClickValidation }
+     *
      * @param defaultClickValidation
      */
     protected SimpleOverlappingTestBase(boolean defaultClickValidation) {
@@ -66,7 +67,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         this.useDefaultClickValidation = defaultClickValidation;
     }
 
-    protected boolean isMultiFramesTest(){
+    protected boolean isMultiFramesTest() {
         return true;
     }
 
@@ -75,8 +76,10 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
     }
 
     //overridables
+
     /**
      * Successors override this method providing swing component for testing
+     *
      * @return swing component to test
      */
     protected abstract JComponent getSwingComponent();
@@ -93,6 +96,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
 
     /**
      * Current tested lightweight component
+     *
      * @see SimpleOverlappingTestBase#getSwingComponent()
      */
     protected JComponent testedComponent;
@@ -141,6 +145,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
     /**
      * Run test by {@link OverlappingTestBase#clickAndBlink(java.awt.Robot, java.awt.Point) } validation for current lightweight component.
      * <p>Called by base class.
+     *
      * @return true if test passed
      */
     protected boolean performTest() {
@@ -156,23 +161,27 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         /* this is a workaround for certain jtreg(?) focus issue:
            tests fail starting after failing mixing tests but always pass alone.
          */
+        final CountDownLatch latch = new CountDownLatch(1);
+
         JFrame ancestor = (JFrame) (testedComponent.getTopLevelAncestor());
         if (ancestor != null) {
-            final CountDownLatch latch = new CountDownLatch(1);
             ancestor.addFocusListener(new FocusAdapter() {
-                @Override public void focusGained(FocusEvent e) {
+                @Override
+                public void focusGained(FocusEvent e) {
                     latch.countDown();
                 }
             });
             ancestor.requestFocus();
-            try {
-                if (!latch.await(1L, TimeUnit.SECONDS)) {
-                    throw new RuntimeException(
-                            "Ancestor frame didn't receive focus");
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+        } else {
+            latch.countDown();
+        }
+
+        try {
+            if (!latch.await(1, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Ancestor frame didn't receive " + "focus");
             }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
         clickAndBlink(robot, lLoc);
@@ -184,14 +193,18 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
     }
 
     public boolean isOel7orLater() {
-        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
-            System.getProperty("os.version").toLowerCase().contains("el")) {
+        if (System.getProperty("os.name")
+                  .toLowerCase()
+                  .contains("linux") && System.getProperty("os.version")
+                                              .toLowerCase()
+                                              .contains("el")) {
             Pattern p = Pattern.compile("el(\\d+)");
             Matcher m = p.matcher(System.getProperty("os.version"));
             if (m.find()) {
                 try {
                     return Integer.parseInt(m.group(1)) >= 7;
-                } catch (NumberFormatException nfe) {}
+                } catch (NumberFormatException nfe) {
+                }
             }
         }
         return false;

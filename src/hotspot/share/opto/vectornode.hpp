@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +49,7 @@
 //
 // - PVectMask: Platform-specific mask stored in predicate/mask registers. Generated
 //   on architectures with predicate/mask feature, such as AArch64 SVE, x86 AVX-512,
-//   and RISC-V Vector Extension (RVV). The corresponding type is TypeVectMask.
+//   and RISC-V Vector Extension (RVV). The corresponding type is TypePVectMask.
 //
 // NVectMask and PVectMask encode element data type and vector length information.
 // They are the primary mask representations used in most mask and masked vector
@@ -195,6 +196,7 @@ class VectorNode : public TypeNode {
   static bool is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc);
   static bool is_reinterpret_opcode(int opc);
 
+  static Node* uncast_mask(Node* n);
 
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
@@ -321,7 +323,7 @@ class ReductionNode : public Node {
   virtual uint size_of() const { return sizeof(*this); }
 
   // Floating-point addition and multiplication are non-associative, so
-  // AddReductionVF/D and MulReductionVF/D require strict ordering
+  // AddReductionVHF/F/D and MulReductionVHF/F/D require strict ordering
   // in auto-vectorization. Vector API can generate AddReductionVF/D
   // and MulReductionVF/VD without strict ordering, which can benefit
   // some platforms.
@@ -358,6 +360,35 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector add half float as a reduction
+class AddReductionVHFNode : public ReductionNode {
+private:
+  // True if add reduction operation for half floats requires strict ordering.
+  // As an example - The value is true when add reduction for half floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
+
+public:
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
+  AddReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
+  int Opcode() const override;
+  bool requires_strict_order() const override { return _requires_strict_order; }
+
+  uint hash() const override { return Node::hash() + _requires_strict_order; }
+
+  bool cmp(const Node& n) const override {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  uint size_of() const override { return sizeof(*this); }
+
+  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
+  uint ideal_reg() const override { return Op_RegF; }
+};
+
 // Vector add float as a reduction
 class AddReductionVFNode : public ReductionNode {
 private:
@@ -367,7 +398,7 @@ private:
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
 public:
-  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
   AddReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
@@ -393,7 +424,7 @@ private:
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
 public:
-  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
   AddReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
@@ -577,6 +608,35 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector multiply half float as a reduction
+class MulReductionVHFNode : public ReductionNode {
+private:
+  // True if mul reduction operation for half floats requires strict ordering.
+  // As an example - The value is true when mul reduction for half floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
+
+public:
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
+  MulReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
+  int Opcode() const override;
+  bool requires_strict_order() const override { return _requires_strict_order; }
+
+  uint hash() const override { return Node::hash() + _requires_strict_order; }
+
+  bool cmp(const Node& n) const override {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  uint size_of() const override { return sizeof(*this); }
+
+  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
+  uint ideal_reg() const override { return Op_RegF; }
+};
+
 // Vector multiply float as a reduction
 class MulReductionVFNode : public ReductionNode {
   // True if mul reduction operation for floats requires strict ordering.
@@ -585,7 +645,7 @@ class MulReductionVFNode : public ReductionNode {
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
 public:
-  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
   MulReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
@@ -610,7 +670,7 @@ class MulReductionVDNode : public ReductionNode {
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
 public:
-  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
   MulReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
@@ -662,10 +722,22 @@ public:
   virtual int Opcode() const;
 };
 
-// Vector Min
-class MinVNode : public VectorNode {
+// Common superclass for Min/Max vector nodes
+class MinMaxVNode : public VectorNode {
 public:
-  MinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MinMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int min_opcode() const = 0;
+  virtual int max_opcode() const = 0;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
+// Vector Min
+class MinVNode : public MinMaxVNode {
+public:
+  MinVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {}
+  virtual int min_opcode() const { return Op_MinV; }
+  virtual int max_opcode() const { return Op_MaxV; }
   virtual int Opcode() const;
 };
 
@@ -684,31 +756,33 @@ public:
 };
 
 // Vector Unsigned Min
-class UMinVNode : public VectorNode {
+class UMinVNode : public MinMaxVNode {
  public:
-  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
+  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
+  virtual int min_opcode() const { return Op_UMinV; }
+  virtual int max_opcode() const { return Op_UMaxV; }
   virtual int Opcode() const;
 };
 
 // Vector Max
-class MaxVNode : public VectorNode {
+class MaxVNode : public MinMaxVNode {
  public:
-  MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {}
+  virtual int min_opcode() const { return Op_MinV; }
+  virtual int max_opcode() const { return Op_MaxV; }
   virtual int Opcode() const;
 };
 
 // Vector Unsigned Max
-class UMaxVNode : public VectorNode {
+class UMaxVNode : public MinMaxVNode {
  public:
-  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
+  virtual int min_opcode() const { return Op_UMinV; }
+  virtual int max_opcode() const { return Op_UMaxV; }
   virtual int Opcode() const;
 };
 
@@ -1258,7 +1332,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatterMasked);
      assert(indices->bottom_type()->is_vect(), "indices must be in vector");
-     assert(mask->bottom_type()->isa_vectmask(), "sanity");
+     assert(mask->bottom_type()->isa_pvectmask(), "sanity");
      add_req(indices);
      add_req(mask);
      assert(req() == MemNode::ValueIn + 3, "match_edge expects that last input is in MemNode::ValueIn+2");
@@ -1813,7 +1887,7 @@ class VectorMaskCastNode : public VectorNode {
     assert(in_vt->length() == vt->length(), "vector length must match");
     assert((in_vt->element_basic_type() == T_BOOLEAN) == (vt->element_basic_type() == T_BOOLEAN),
            "Cast from/to BVectMask not allowed, use VectorLoadMask/VectorStoreMask instead");
-    assert((in_vt->isa_vectmask() == nullptr) == (vt->isa_vectmask() == nullptr),
+    assert((in_vt->isa_pvectmask() == nullptr) == (vt->isa_pvectmask() == nullptr),
            "Both BVectMask, or both NVectMask, or both PVectMask");
   }
   Node* Identity(PhaseGVN* phase);
@@ -1830,7 +1904,7 @@ class VectorReinterpretNode : public VectorNode {
  public:
   VectorReinterpretNode(Node* in, const TypeVect* src_vt, const TypeVect* dst_vt)
      : VectorNode(in, dst_vt), _src_vt(src_vt) {
-     assert((!dst_vt->isa_vectmask() && !src_vt->isa_vectmask()) ||
+     assert((!dst_vt->isa_pvectmask() && !src_vt->isa_pvectmask()) ||
             (type2aelembytes(src_vt->element_basic_type()) >= type2aelembytes(dst_vt->element_basic_type())),
             "unsupported mask widening reinterpretation");
      init_class_id(Class_VectorReinterpret);
