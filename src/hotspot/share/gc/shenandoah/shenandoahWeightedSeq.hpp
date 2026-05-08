@@ -57,7 +57,7 @@ public:
   explicit ShenandoahWeightedSeq(uint size);
   ~ShenandoahWeightedSeq();
 
-  // Return last item added to the sequence (zero if sequence is empty).
+  // Return last item x value added to the sequence (zero if sequence is empty).
   double last() const {
     if (_num_samples == 0) {
       return 0.0;

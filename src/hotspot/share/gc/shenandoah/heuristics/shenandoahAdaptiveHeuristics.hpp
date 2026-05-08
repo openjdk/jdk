@@ -82,7 +82,7 @@ public:
  private:
   void adjust_margin_of_error(double amount);
 
-  // Returns number of words that can be allocated before we need to trigger next GC, given available in bytes.
+  // Returns number of bytes that can be allocated before we need to trigger next GC, given available in bytes.
   size_t allocatable(size_t available) const {
     return available > _headroom_adjustment ? available - _headroom_adjustment : 0;
   }
