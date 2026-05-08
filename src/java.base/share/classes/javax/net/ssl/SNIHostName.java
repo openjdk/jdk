@@ -131,7 +131,7 @@ public final class SNIHostName extends SNIServerName {
     }
 
     /**
-     * {@return an {@code SNIHostName} using the specified hostname}
+     * Returns an {@code SNIHostName} using the specified hostname.
      * <p>
      * A valid SNI hostname is a DNS hostname (see <a
      * href="http://www.ietf.org/rfc1123.txt">RFC&nbsp;1123</a> and <a
@@ -173,6 +173,8 @@ public final class SNIHostName extends SNIServerName {
      * the SNI server name configuration}.
      *
      * @param hostname the hostname of this server name
+     *
+     * @return an {@code SNIHostName} using the specified hostname
      *
      * @throws NullPointerException if {@code hostname} is {@code null}
      * @throws IllegalArgumentException if {@code hostname} is illegal
@@ -294,8 +296,8 @@ public final class SNIHostName extends SNIServerName {
     }
 
     /**
-     * {@return an {@code SNIHostName} using the specified hostname encoded in
-     * UTF-8}
+     * Returns an {@code SNIHostName} using the specified hostname encoded in
+     * UTF-8.
      * <p>
      * The specified byte array gets decoded into a hostname string that is
      * required to be a valid a DNS hostname (see <a
@@ -342,6 +344,9 @@ public final class SNIHostName extends SNIServerName {
      * modification.
      *
      * @param encoded the encoded hostname of this server name
+     *
+     * @return an {@code SNIHostName} using the specified hostname encoded in
+     *         UTF-8
      *
      * @throws NullPointerException if {@code encoded} is {@code null}
      * @throws IllegalArgumentException if {@code encoded} is illegal
