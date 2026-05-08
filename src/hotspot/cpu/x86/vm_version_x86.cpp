@@ -898,9 +898,6 @@ void VM_Version::get_processor_features() {
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
 
-  // OS should support SSE for x64 and hardware should support at least SSE2.
-  guarantee(_cpuid_info.std_cpuid1_edx.bits.sse2 != 0, "Unknown x64 processor: SSE2 not supported");
-
   // flush_icache_stub have to be generated first.
   // That is why Icache line size is hard coded in ICache class,
   // see icache_x86.hpp. It is also the reason why we can't use
@@ -2862,6 +2859,10 @@ int64_t VM_Version::maximum_qualified_cpu_frequency(void) {
 
 VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   VM_Features vm_features;
+
+  // check the features that must be present
+  guarantee(std_cpuid1_edx.bits.sse2 != 0, "sse2 is not supported");
+
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
     vm_features.set_feature(CPU_CX8);
   if (std_cpuid1_edx.bits.cmov != 0)
