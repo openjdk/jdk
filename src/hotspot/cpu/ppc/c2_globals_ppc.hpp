@@ -47,7 +47,6 @@ define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, InteriorEntryAlignment,       16);
-define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
@@ -91,7 +90,6 @@ define_pd_global(size_t,   CodeCacheMinimumUseSpace,     400*K);
 
 define_pd_global(bool,     TrapBasedRangeChecks,          true);
 
-// Ergonomics related flags
-define_pd_global(bool,     NeverActAsServerClassMachine, false);
+define_pd_global(size_t, ConstantTableSizeThreshold, 32 * 1024);
 
 #endif // CPU_PPC_C2_GLOBALS_PPC_HPP
