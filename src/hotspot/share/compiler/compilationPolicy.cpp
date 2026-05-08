@@ -63,70 +63,6 @@ void compilationPolicy_init() {
   CompilationPolicy::initialize();
 }
 
-void CompilationPolicy::apply_ergo_ci_compiler_count() {
-#if !COMPILER1_OR_COMPILER2
-  return;
-#else
-  if (CompilerConfig::is_interpreter_only()) {
-    FLAG_SET_ERGO(CICompilerCount, 0);
-    return;
-  }
-
-  int count = CICompilerCount;
-  bool c1_only = CompilerConfig::is_c1_only();
-  bool c2_only = CompilerConfig::is_c2_or_jvmci_compiler_only();
-  int min_count = (c1_only || c2_only) ? 1 : 2;
-
-#ifdef _LP64
-  // Turn on ergonomic compiler count selection
-  if (FLAG_IS_DEFAULT(CICompilerCountPerCPU) && FLAG_IS_DEFAULT(CICompilerCount)) {
-    FLAG_SET_DEFAULT(CICompilerCountPerCPU, true);
-  }
-  if (CICompilerCountPerCPU) {
-    // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
-    int log_cpu = log2i(os::active_processor_count());
-    int loglog_cpu = log2i(MAX2(log_cpu, 1));
-    count = MAX2(log_cpu * loglog_cpu * 3 / 2, min_count);
-    // Make sure there is enough space in the code cache to hold all the compiler buffers
-    size_t c1_size = 0;
-#ifdef COMPILER1
-    c1_size = Compiler::code_buffer_size();
-#endif
-    size_t c2_size = 0;
-#ifdef COMPILER2
-    c2_size = C2Compiler::initial_code_buffer_size();
-#endif
-    size_t buffer_size = 0;
-    if (c1_only) {
-      buffer_size = c1_size;
-    } else if (c2_only) {
-      buffer_size = c2_size;
-    } else {
-      buffer_size = c1_size / 3 + 2 * c2_size / 3;
-    }
-    size_t max_count = (NonNMethodCodeHeapSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / buffer_size;
-    if ((size_t)count > max_count) {
-      // Lower the compiler count such that all buffers fit into the code cache
-      count = MAX2((int)max_count, min_count);
-    }
-    FLAG_SET_ERGO(CICompilerCount, count);
-  }
-#else
-  // On 32-bit systems, the number of compiler threads is limited to 3.
-  // On these systems, the virtual address space available to the JVM
-  // is usually limited to 2-4 GB (the exact value depends on the platform).
-  // As the compilers (especially C2) can consume a large amount of
-  // memory, scaling the number of compiler threads with the number of
-  // available cores can result in the exhaustion of the address space
-  /// available to the VM and thus cause the VM to crash.
-  if (FLAG_IS_DEFAULT(CICompilerCount)) {
-    count = 3;
-    FLAG_SET_ERGO(CICompilerCount, count);
-  }
-#endif // _LP64
-#endif // COMPILER1_OR_COMPILER2
-}
-
 int CompilationPolicy::compiler_count(CompLevel comp_level) {
   if (is_c1_compile(comp_level)) {
     return c1_count();
@@ -620,12 +556,59 @@ void CompilationPolicy::print_event(EventType type, Method* m, Method* im, int b
 }
 
 void CompilationPolicy::initialize() {
-  apply_ergo_ci_compiler_count();
-
   if (!CompilerConfig::is_interpreter_only()) {
     int count = CICompilerCount;
     bool c1_only = CompilerConfig::is_c1_only();
     bool c2_only = CompilerConfig::is_c2_or_jvmci_compiler_only();
+    int min_count = (c1_only || c2_only) ? 1 : 2;
+
+#ifdef _LP64
+    // Turn on ergonomic compiler count selection
+    if (FLAG_IS_DEFAULT(CICompilerCountPerCPU) && FLAG_IS_DEFAULT(CICompilerCount)) {
+      FLAG_SET_DEFAULT(CICompilerCountPerCPU, true);
+    }
+    if (CICompilerCountPerCPU) {
+      // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
+      int log_cpu = log2i(os::active_processor_count());
+      int loglog_cpu = log2i(MAX2(log_cpu, 1));
+      count = MAX2(log_cpu * loglog_cpu * 3 / 2, min_count);
+      // Make sure there is enough space in the code cache to hold all the compiler buffers
+      size_t c1_size = 0;
+#ifdef COMPILER1
+      c1_size = Compiler::code_buffer_size();
+#endif
+      size_t c2_size = 0;
+#ifdef COMPILER2
+      c2_size = C2Compiler::initial_code_buffer_size();
+#endif
+      size_t buffer_size = 0;
+      if (c1_only) {
+        buffer_size = c1_size;
+      } else if (c2_only) {
+        buffer_size = c2_size;
+      } else {
+        buffer_size = c1_size / 3 + 2 * c2_size / 3;
+      }
+      size_t max_count = (NonNMethodCodeHeapSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / buffer_size;
+      if ((size_t)count > max_count) {
+        // Lower the compiler count such that all buffers fit into the code cache
+        count = MAX2((int)max_count, min_count);
+      }
+      FLAG_SET_ERGO(CICompilerCount, count);
+    }
+#else
+    // On 32-bit systems, the number of compiler threads is limited to 3.
+    // On these systems, the virtual address space available to the JVM
+    // is usually limited to 2-4 GB (the exact value depends on the platform).
+    // As the compilers (especially C2) can consume a large amount of
+    // memory, scaling the number of compiler threads with the number of
+    // available cores can result in the exhaustion of the address space
+    /// available to the VM and thus cause the VM to crash.
+    if (FLAG_IS_DEFAULT(CICompilerCount)) {
+      count = 3;
+      FLAG_SET_ERGO(CICompilerCount, count);
+    }
+#endif // _LP64
 
     if (c1_only) {
       // No C2 compiler threads are needed
@@ -649,6 +632,9 @@ void CompilationPolicy::initialize() {
     }
     assert(count == c1_count() + c2_count(), "inconsistent compiler thread count");
     set_increase_threshold_at_ratio();
+  } else {
+    // Interpreter mode creates no compilers
+    FLAG_SET_ERGO(CICompilerCount, 0);
   }
   set_start_time(nanos_to_millis(os::javaTimeNanos()));
 }

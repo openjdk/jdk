@@ -23,7 +23,6 @@
  */
 
 #include "code/codeCache.hpp"
-#include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "jvm_io.h"
@@ -538,10 +537,6 @@ void CompilerConfig::ergo_initialize() {
 
   set_legacy_emulation_flags();
   set_compilation_policy_flags();
-
-  // Align CICompilerCount with CompilationPolicy heuristics before AfterErgo constraints
-  // (same logic as CompilationPolicy::initialize()).
-  CompilationPolicy::apply_ergo_ci_compiler_count();
 
 #if INCLUDE_JVMCI
   // Check that JVMCI supports selected GC.
