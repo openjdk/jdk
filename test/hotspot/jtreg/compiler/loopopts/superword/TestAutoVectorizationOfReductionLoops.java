@@ -61,7 +61,7 @@ public class TestAutoVectorizationOfReductionLoops {
         do {
             int bits = RANDOM.nextInt();
             value = Float.intBitsToFloat(bits);
-        } while (value == 0.0f || !Float.isFinite(value));
+        } while (!Float.isFinite(value));
         return value;
     }
 
@@ -73,7 +73,7 @@ public class TestAutoVectorizationOfReductionLoops {
         do {
             long bits = RANDOM.nextLong();
             value = Double.longBitsToDouble(bits);
-        } while (value == 0.0 || !Double.isFinite(value));
+        } while (!Double.isFinite(value));
         return value;
     }
 
