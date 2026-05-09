@@ -218,7 +218,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * details.
      *
      * @apiNote [kind=outlined]
-     * <strong>WARNING:</strong> It is possible that methods will be added to
+     * It is possible that methods will be added to
      * this interface to accommodate new, currently unknown, language
      * structures added to future versions of the Java programming
      * language. Methods to accommodate new language constructs will

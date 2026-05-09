@@ -36,7 +36,7 @@ import static javax.lang.model.SourceVersion.*;
  * source version.
  *
  * @apiNote [id=note_for_subclasses  kind=outlined]
- * <strong>WARNING:</strong> The {@code TypeVisitor} interface implemented by this class may have methods
+ * The {@code TypeVisitor} interface implemented by this class may have methods
  * added to it in the future to accommodate new, currently unknown,
  * language structures added to future versions of the Java
  * programming language.  Therefore, methods whose names begin with
