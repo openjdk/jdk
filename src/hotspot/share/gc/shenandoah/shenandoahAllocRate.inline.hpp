@@ -32,6 +32,13 @@
 #include <cmath>
 
 template<typename Clock>
+void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t available) {
+  const size_t min_sample_size = clamp(available / ALLOC_SAMPLE_PORTION, ALLOC_SAMPLE_MIN, ALLOC_SAMPLE_MAX);
+  log_info(gc, ergo)("Adjust minimum allocation sample size to: " PROPERFMT, PROPERFMTARGS(min_sample_size));
+  set_minimum_sample_size(min_sample_size);
+}
+
+template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   size_t unsampled = _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes);
   if (unsampled < _minimum_sample_size) {

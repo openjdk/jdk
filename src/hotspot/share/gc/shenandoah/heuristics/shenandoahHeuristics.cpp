@@ -26,6 +26,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -186,9 +187,7 @@ void ShenandoahHeuristics::record_cycle_end() {
   }
 
   const size_t available = capacity > usage ? capacity - usage: 0;
-  const size_t min_sample_size = MAX2(available / ShenandoahHeap::ALLOC_SAMPLE_PORTION, M);
-  log_info(gc, ergo)("Adjust minimum allocation sample size to: " PROPERFMT, PROPERFMTARGS(min_sample_size));
-  heap->alloc_rate().set_minimum_sample_size(min_sample_size);
+  heap->alloc_rate().update_minimum_sample_size(available);
 }
 
 bool ShenandoahHeuristics::should_start_gc() {

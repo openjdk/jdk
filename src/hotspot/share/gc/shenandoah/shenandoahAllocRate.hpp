@@ -55,18 +55,21 @@ public:
 // estimates increases.
 template<typename Clock = ShenandoahAllocationClock>
 class ShenandoahAllocRate {
+  static constexpr size_t ALLOC_SAMPLE_PORTION = 128;
+  static constexpr size_t ALLOC_SAMPLE_MIN = M;
+  static constexpr size_t ALLOC_SAMPLE_MAX = G;
+
   Atomic<size_t> _allocated_bytes_since_last_sample;
   PaddedMonitor _sample_lock;
   jlong _last_sample_time;
   size_t _minimum_sample_size; // bytes
-
 
   ShenandoahWeightedSeq _baseline;
   ShenandoahWeightedSeq _recent;
   ShenandoahWeightedSeq _momentary;
 
 public:
-  explicit ShenandoahAllocRate(const uint minimum_sample_size = 1024 * 1024,
+  explicit ShenandoahAllocRate(const uint minimum_sample_size = ALLOC_SAMPLE_MIN,
                                const uint baseline_window_size = ShenandoahAllocRateSampleWindow,
                                const uint recent_window_size = ShenandoahRecentAllocRateSampleWindow,
                                const uint momentary_window_size = ShenandoahMomentaryAllocRateSampleWindow)
@@ -79,6 +82,9 @@ public:
     , _momentary(momentary_window_size)
   {
   }
+
+  // Update minimum sample size based on the given available bytes
+  void update_minimum_sample_size(size_t available);
 
   // Set minimum sample size in bytes
   void set_minimum_sample_size(const size_t minimum_sample_size) {
