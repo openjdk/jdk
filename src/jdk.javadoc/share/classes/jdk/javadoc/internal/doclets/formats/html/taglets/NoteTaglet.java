@@ -207,9 +207,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             switch (dt.getKind()) {
                 case START_ELEMENT -> {
                     var tagName = ((StartElementTree) dt).getName().toString();
-                    yield  tagName.equalsIgnoreCase("pre") || tagName.matches("(?i)h[1-6]")
-                            || tagName.equalsIgnoreCase("ul") || tagName.equalsIgnoreCase("ol" )
-                            || tagName.equalsIgnoreCase("dl" );
+                    yield  tagName.equalsIgnoreCase("pre") || tagName.matches("(?i)h[1-6]");
                 }
                 case SNIPPET -> true;
                 default -> false;
