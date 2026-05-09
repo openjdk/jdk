@@ -132,7 +132,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_success() const                { return _is_success; }
   DirectiveSet* directive() const                { return _comp_directive_matcher.directive_set(); }
   void         transfer_directive(CompilerDirectiveMatcher& matcher) { _comp_directive_matcher.transfer_from(matcher); }
-  void         release_directive()               { _comp_directive_matcher.release_early(); }
   CompileReason compile_reason() const           { return _compile_reason; }
   CodeSection::csize_t nm_content_size() { return _nm_content_size; }
   void         set_nm_content_size(CodeSection::csize_t size) { _nm_content_size = size; }

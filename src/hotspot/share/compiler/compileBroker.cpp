@@ -2415,9 +2415,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     task->print_post(tty);
   }
 
-  // We don't need directive further, release it
-  task->release_directive();
-
   Log(compilation, codecache) log;
   if (log.is_debug()) {
     LogStream ls(log.debug());

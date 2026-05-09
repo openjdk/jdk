@@ -357,10 +357,6 @@ public:
     release_match();
   }
 
-  void release_early() {
-    release_match();
-  }
-
   DirectiveSet* directive_set() const { return _match; }
 
   void transfer_from(CompilerDirectiveMatcher& src) {
