@@ -860,17 +860,11 @@ static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint num_
 
   if (tcount != nullptr) {
     uint mask = num_bits - 1;
-    if (tcount->is_con()) {
-      int real_shift = tcount->get_con();
-      masked_shift = real_shift & mask;
-      replace = real_shift != (int)masked_shift;
-      return true;
-    }
-    // canonicalize shift count via type-level masking to expose constants
+    // Canonicalize shift count via type-level masking to expose constants
     const TypeInt* masked_type = RangeInference::infer_and(tcount, TypeInt::make(mask));
     if (masked_type != nullptr && masked_type->is_con()) {
       masked_shift = masked_type->get_con();
-      replace = true;
+      replace = !tcount->is_con() || (tcount->get_con() != (int)masked_shift);
       return true;
     }
   }
@@ -879,8 +873,8 @@ static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint num_
 
 // Convenience for when we don't care about the 'replace' output.
 static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint num_bits, uint& masked_shift) {
-  bool replace;
-  return mask_shift_amount(phase, shift_node, num_bits, masked_shift, replace);
+  bool unused;
+  return mask_shift_amount(phase, shift_node, num_bits, masked_shift, unused);
 }
 
 // Use this in ::Ideal only with shiftNode == this!
@@ -1063,8 +1057,7 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       }
 
       uint add2Con = 0;
-      mask_shift_amount(phase, add2, num_bits, add2Con);
-      if (add2Con > 0) {
+      if (mask_shift_amount(phase, add2, num_bits, add2Con) && add2Con > 0) {
         if (phase->is_IterGVN()) {
           // Convert to "((x >> C1) << C2) & (Y << C2)"
 
