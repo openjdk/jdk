@@ -500,6 +500,8 @@ private:
   void mov_immediate64(Register dst, uint64_t imm64);
   void mov_immediate32(Register dst, uint32_t imm32);
 
+  void mov(Register dst, Address a);
+
 public:
 
   int push(RegSet regset, Register stack);
@@ -545,8 +547,6 @@ public:
     else
       mov(dst, src.as_constant());
   }
-
-  void mov(Register dst, Address a);
 
   void movptr(Register r, uintptr_t imm64);
 
