@@ -617,14 +617,11 @@ dl.notes > dd.note-tag-previewNote {
     padding: 8px 12px;
     border-radius: 2px;
     margin: 7px 0 10px 1px;
-    > p:first-child, > h2:first-child, > h3:first-child {
-        margin-top: 4px;
+    > :first-child {
+        margin-top: 2px;
     }
     > :last-child {
-        margin-bottom: 8px;
-    }
-    > p:last-child {
-        margin-bottom: 0;
+        margin-bottom: 2px;
     }
 }
 dl.notes > dd:not(.note-tag-no-border).auto-border,

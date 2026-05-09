@@ -246,8 +246,8 @@ public class TestNoteTag extends JavadocTester {
                         <dd id="p.C-note4" class="note-tag">First important note</dd>
                         <dd id="p.C-note5" class="note-tag">Second important note</dd>""",
                 """
-                        <dt id="p.C-note6">Warning:</dt>
-                        <dd id="first-warning" class="note-tag-warning">First warning</dd>
+                        <dt id="first-warning">Warning:</dt>
+                        <dd id="first-warning1" class="note-tag-warning">First warning</dd>
                         <dd id="second-warning" class="note-tag-warning">Second warning</dd>
                         </dl>""");
     }
@@ -326,8 +326,8 @@ public class TestNoteTag extends JavadocTester {
                     body </div>
                     </div>
                     <dl class="notes">
-                    <dt id="p.C-note">Note:</dt>
-                    <dd id="important-note" class="note-tag">body</dd>
+                    <dt id="important-note">Note:</dt>
+                    <dd id="important-note1" class="note-tag">body</dd>
                     </dl>""");
     }
 
@@ -399,10 +399,10 @@ public class TestNoteTag extends JavadocTester {
                 // Block notes
                 """
                     <dl class="notes">
-                    <dt id="p.C-note">Note:</dt>
-                    <dd id="block-note" class="note-tag">A</dd>
-                    <dd id="block-note1" class="note-tag">B</dd>
-                    <dd id="block-note2" class="note-tag">C</dd>""",
+                    <dt id="block-note">Note:</dt>
+                    <dd id="block-note1" class="note-tag">A</dd>
+                    <dd id="block-note2" class="note-tag">B</dd>
+                    <dd id="block-note3" class="note-tag">C</dd>""",
                 // The first two inline notes are duplicated in the method summary table.
                 """
                     <div class="inline-note note-tag" id="inline-note"><span class="note-header">Note:</span>

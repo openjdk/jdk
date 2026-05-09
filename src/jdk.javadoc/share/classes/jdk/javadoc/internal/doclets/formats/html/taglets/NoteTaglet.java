@@ -122,13 +122,13 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 var content = htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note));
                 var header = attr.getOrDefault("header", defaultHeader);
                 var kind = attr.getOrDefault("kind", defaultKind);
-
-                // We go out of our way to obtain the header id before
-                // the note ids to maintain logical order of ids.
-                var notes = map.get(header);
-                var headerId = notes == null ? getId(null, holder, true) : null;
-
                 var id = attr.getOrDefault("id", null);
+
+                // Put note id on the header if this is the first note in its group to improve
+                // linking behavior. Reusing the id on the note body will create a derived unique id.
+                var notes = map.get(header);
+                var headerId = notes == null ? getId(id, holder, true) : null;
+
                 var body = HtmlTree.DD(content)
                         .setId(getId(id, holder, false))
                         .addStyle(getCSSClass(kind));
@@ -207,9 +207,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             switch (dt.getKind()) {
                 case START_ELEMENT -> {
                     var tagName = ((StartElementTree) dt).getName().toString();
-                    yield  tagName.equalsIgnoreCase("pre") || tagName.matches("(?i)h[1-6]")
-                            || tagName.equalsIgnoreCase("ul") || tagName.equalsIgnoreCase("ol" )
-                            || tagName.equalsIgnoreCase("dl" );
+                    yield  tagName.equalsIgnoreCase("pre") || tagName.matches("(?i)h[1-6]");
                 }
                 case SNIPPET -> true;
                 default -> false;
