@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/xmlstream.hpp"
 #ifdef ASSERT
 #include "runtime/atomicAccess.hpp"
 #endif
@@ -213,6 +214,7 @@ public:
   }
 
   void print_state(outputStream* st) const;
+  void print_state_xml(xmlStream* st) const;
   DEBUG_ONLY(void print_map(outputStream* st) const;)
   DEBUG_ONLY(void verify() const;)
 
@@ -373,6 +375,7 @@ public:
   }
 
   static void print_state(outputStream* st);
+  static void print_state_xml(xmlStream* st);
   static void print_map(outputStream* st);
   DEBUG_ONLY(static void verify();)
 };

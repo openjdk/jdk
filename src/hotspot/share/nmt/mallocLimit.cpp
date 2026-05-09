@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,23 @@ void MallocLimitSet::print_on(outputStream* st) const {
   }
 }
 
+void MallocLimitSet::print_xml_on(xmlStream* xs) const {
+  if (_glob.sz > 0) {
+    XmlParent("globalLimit");
+    XmlElem("amount", "%zu", _glob.sz);
+    XmlElem("name", "%s", mode_to_name(_glob.mode));
+  } else {
+    XmlParent("memTagLimit");
+    for (int i = 0; i < mt_number_of_tags; i++) {
+      if (_mtag[i].sz > 0) {
+        XmlElem("memTag", "%s", NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)));
+        XmlElem("amount", "%zu", _mtag[i].sz);
+        XmlElem("modeName", "%s", mode_to_name(_mtag[i].mode));
+      }
+    }
+  }
+}
+
 bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
 
 #define BAIL_UNLESS(condition, errormessage) if (!(condition)) { *err = errormessage; return false; }
@@ -226,5 +243,14 @@ void MallocLimitHandler::print_on(outputStream* st) {
     _limits.print_on(st);
   } else {
     st->print_cr("MallocLimit: unset");
+  }
+}
+
+void MallocLimitHandler::print_xml_on(xmlStream* xs) {
+  if (have_limit()) {
+    XmlParent("mallocLimits")
+    _limits.print_xml_on(xs);
+  } else {
+    XmlElem("mallocLimit", "unset");
   }
 }

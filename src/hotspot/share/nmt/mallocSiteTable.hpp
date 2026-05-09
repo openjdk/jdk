@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/xmlstream.hpp"
 
 // MallocSite represents a code path that eventually calls
 // os::malloc() to allocate memory
@@ -168,6 +169,7 @@ class MallocSiteTable : AllStatic {
   static bool walk_malloc_site(MallocSiteWalker* walker);
 
   static void print_tuning_statistics(outputStream* st);
+  static void print_tuning_statistics_xml(xmlStream* st);
 
  private:
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MemTag mem_tag);

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "nmt/memTag.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/xmlstream.hpp"
 
 enum class MallocLimitMode {
   trigger_fatal = 0,
@@ -60,6 +61,7 @@ public:
   const malloclimit* mem_tag_limit(MemTag mem_tag) const { return &_mtag[(int)mem_tag]; }
 
   void print_on(outputStream* st) const;
+  void print_xml_on(xmlStream* st) const;
 };
 
 class MallocLimitHandler : public AllStatic {
@@ -73,6 +75,7 @@ public:
 
   static void initialize(const char* options);
   static void print_on(outputStream* st);
+  static void print_xml_on(xmlStream* st);
 
   // True if there is any limit established
   static bool have_limit() { return _have_limit; }
