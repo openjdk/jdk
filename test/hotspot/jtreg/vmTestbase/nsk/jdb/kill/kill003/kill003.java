@@ -76,7 +76,10 @@ public class kill003 extends JdbTest {
         // after creating all the threads. Get the list of debuggee threads.
         threads = jdb.getThreadIdsByName("main");
 
-        // Stopped at kill.main, so step into synchronized block
+        // Make sure we stop in jdb when the NPE is thrown
+        reply = jdb.receiveReplyFor(JdbCommand._catch + "all java.lang.NullPointerException");
+
+        // Stopped at kill003a.main(), so step into synchronized block
         reply = jdb.receiveReplyFor(JdbCommand.next);
 
         if (threads.length != 1) {
@@ -85,24 +88,28 @@ public class kill003 extends JdbTest {
             success = false;
         }
 
-        // Execution is at a bytecode that is not expected to handle an async exception.  Throw one here
-        // to make sure it gets handled without crashing.  The exception will be delivered at the next
-        // bytecode that can handle the async exception.
+        // Execution is at a bytecode that is not expected to handle an async exception.
+        // Throw one here to make sure it gets handled without crashing. The exception
+        // will be delivered at the next bytecode that can handle the async exception.
         reply = jdb.receiveReplyForWithMessageWait(JdbCommand.kill + threads[0] + " " + DEBUGGEE_EXCEPTION,
                                                    "killed");
 
         // Continue the debuggee - the async exception will be delivered to the debuggee.
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        // Ask the debuggee for its local variables at the bytecode where the async exception was delivered, which
-        // should be reachable.
+        // jdb got notified of the NPE for the kill command. continue and jdb will get
+        // notified again when it is rethrown from the synchronized block's implicit
+        // exception handler, which is where we want to execute the locals command from.
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
+
+        // Ask the debuggee for its local variables at the bytecode where the async
+        // exception was rethrown, which should be reachable.
         reply = jdb.receiveReplyForWithMessageWait(JdbCommand.locals, "Local variables");
 
         if (jdb.terminated()) {
             throw new Failure("Debuggee exited");
         }
 
-        // The lack of exception handler in the debuggee should cause it to exit when continued.
         jdb.contToExit(1);
     }
 }
