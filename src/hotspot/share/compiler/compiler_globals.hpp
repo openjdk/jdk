@@ -392,7 +392,8 @@
                                                                             \
   product(uint, DisableAOTCode, 0, DIAGNOSTIC,                              \
           "Disable AOT code on some compilation levels "                    \
-          "(T1=1; T2=2; T4=4; T5/preload=8)")                               \
+          "(T1=1; T2=10; T4=1000; T5/preload=10000)")                       \
+          constraint(DisableAOTCodeConstraintFunc, AtParse)                 \
                                                                             \
   product(uint, ClassInitBarrierMode, 0, DIAGNOSTIC,                        \
           "Produce AOT preload code which could be called on first "        \

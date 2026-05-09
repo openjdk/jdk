@@ -948,19 +948,27 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
     return nullptr; // Already requested JIT compilation
   }
 
+  // DisableAOTCode uses decimal values as bitmask:
+  // Tier 1 (A1)                  |     1
+  // Tier 2 (A1 + counters)       |    10
+  // Tier 3 (A1 + counters + mdo) |   100
+  // Tier 4 (A4)                  |  1000
+  // Tier 5 (AP4)                 | 10000
+  // All C1 tiers                 |   111
+  // All tiers                    | 11111
   switch (comp_level) {
     case CompLevel_simple:
-      if ((DisableAOTCode & (1 << 0)) != 0) {
+      if ((DisableAOTCode % 10) == 1) {
         return nullptr;
       }
       break;
     case CompLevel_limited_profile:
-      if ((DisableAOTCode & (1 << 1)) != 0) {
+      if ((DisableAOTCode / 10) % 10 == 1) {
         return nullptr;
       }
       break;
     case CompLevel_full_optimization:
-      if ((DisableAOTCode & (1 << 2)) != 0) {
+      if ((DisableAOTCode / 1000) % 10 == 1) {
         return nullptr;
       }
       break;
@@ -2361,7 +2369,7 @@ void AOTCodeCache::preload_code(JavaThread* thread) {
     return;
   }
 
-  if ((DisableAOTCode & (1 << 3)) != 0) {
+  if ((DisableAOTCode / 10000) % 10 == 1) {
     return; // no preloaded code (level 5);
   }
   _cache->preload_aot_code(thread);
