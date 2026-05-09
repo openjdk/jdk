@@ -36,11 +36,11 @@
  * interpreted as described in the class specification of {@link File}.
  *
  * <h2>Object Serialization</h2>
- * <p><strong>Warning: Deserialization of untrusted data is inherently dangerous
+ * {@note [header="Warning:" kind=critical] Deserialization of untrusted data is inherently dangerous
  * and should be avoided. Untrusted data should be carefully validated according to the
  * "Serialization and Deserialization" section of the
- * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.
- * </strong></p>
+ * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.}
+ *
  * <ul>
  *   <li><a href="{@docRoot}/../specs/serialization/index.html">
  *       <cite>Java Object Serialization Specification</cite></a>
