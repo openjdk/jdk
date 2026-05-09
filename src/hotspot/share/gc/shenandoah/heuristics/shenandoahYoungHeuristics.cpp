@@ -193,17 +193,16 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
 // generation at the end of the current cycle (as represented by young_regions_to_be_reclaimed) and on the anticipated
 // amount of time required to perform a GC.
 size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_reclaimed) {
-  size_t capacity = _space_info->max_capacity();
-  size_t usage = _space_info->used();
-  size_t available = (capacity > usage)? capacity - usage: 0;
-  size_t anticipated_available = available + young_regions_to_be_reclaimed * ShenandoahHeapRegion::region_size_bytes();
+  const size_t capacity = _space_info->max_capacity();
+  const size_t usage = _space_info->used();
+  const size_t available = (capacity > usage)? capacity - usage: 0;
+  const size_t anticipated_available = available + young_regions_to_be_reclaimed * ShenandoahHeapRegion::region_size_bytes();
 
-  size_t spike_headroom = capacity * ShenandoahAllocSpikeFactor / 100;
-  size_t penalties      = capacity * _gc_time_penalties / 100;
+  const size_t spike_headroom = capacity * ShenandoahAllocSpikeFactor / 100;
+  const size_t penalties      = capacity * _gc_time_penalties / 100;
 
-  // At what value of available, would avg and spike triggers occur?
+  // At what value of available, would avg rate trigger occur?
   //  if allocation_headroom < avg_cycle_time * avg_alloc_rate, then we experience avg trigger
-  //  if allocation_headroom < avg_cycle_time * rate, then we experience spike trigger if is_spiking
   //
   // allocation_headroom =
   //     0, if penalties > available or if penalties + spike_headroom > available
@@ -216,9 +215,6 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   // since avg_cycle_time * avg_alloc_rate > 0, the first test is sufficient to test both conditions
   //
   // thus, evac_slack_avg is MIN2(0,  available - avg_cycle_time * avg_alloc_rate + penalties + spike_headroom)
-  //
-  // similarly, evac_slack_spiking is MIN2(0, available - avg_cycle_time * rate + penalties + spike_headroom)
-  // but evac_slack_spiking is only relevant if is_spiking, as defined below.
 
   const double avg_cycle_time = _cycles.predict_duration(os::elapsedTime(), _margin_of_error_sd);
   const double avg_alloc_rate = ShenandoahHeap::heap()->alloc_rate().upper_bound(_margin_of_error_sd);
@@ -230,8 +226,7 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
     evac_slack_avg = 0;
   }
 
-
-  size_t threshold = min_free_threshold(capacity);
-  size_t evac_min_threshold = (anticipated_available > threshold)? anticipated_available - threshold: 0;
+  const size_t threshold = min_free_threshold(capacity);
+  const size_t evac_min_threshold = (anticipated_available > threshold)? anticipated_available - threshold: 0;
   return MIN2(evac_slack_avg, evac_min_threshold);
 }
