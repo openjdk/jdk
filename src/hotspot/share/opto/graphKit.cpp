@@ -3078,6 +3078,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
 void GraphKit::guard_init_thread(Node* klass) {
   int init_thread_off = in_bytes(InstanceKlass::init_thread_offset());
   Node* adr = off_heap_plus_addr(klass, init_thread_off);
+
   Node* init_thread = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                      TypePtr::NOTNULL, T_ADDRESS, MemNode::unordered);
   init_thread = _gvn.transform(init_thread);

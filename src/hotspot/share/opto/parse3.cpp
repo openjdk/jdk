@@ -316,6 +316,8 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
       intptr_t offset = header + ((intptr_t)i << LogBytesPerHeapOop);
       Node*    eaddr  = basic_plus_adr(array, offset);
+      assert(C->get_alias_index(TypeAryPtr::OOPS) == C->get_alias_index(_gvn.type(eaddr)->isa_ptr()),
+        "slice of address and input slice don't match");
       access_store_at(array, eaddr, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
     }
   }

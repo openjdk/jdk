@@ -4258,6 +4258,8 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   int unit = BytesPerLong;
   if ((offset % unit) != 0) {
     Node* adr = make_address(dest, phase->MakeConX(offset), raw_base, phase);
+    assert(phase->C->get_alias_index(phase->type(adr)->isa_ptr()) == Compile::AliasIdxRaw,
+           "Computed slice mismatch");
     mem = StoreNode::make(*phase, ctl, mem, adr, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
     offset += BytesPerInt;
@@ -4317,6 +4319,8 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   }
   if (done_offset < end_offset) { // emit the final 32-bit store
     Node* adr = make_address(dest, phase->MakeConX(done_offset), raw_base, phase);
+    assert(phase->C->get_alias_index(phase->type(adr)->isa_ptr()) == Compile::AliasIdxRaw,
+           "Computed slice mismatch");
     mem = StoreNode::make(*phase, ctl, mem, adr, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
     done_offset += BytesPerInt;

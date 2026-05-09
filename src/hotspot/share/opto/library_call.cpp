@@ -1739,6 +1739,8 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     return false;
   }
   old_state.discard();
+  assert(C->get_alias_index(TypeAryPtr::BYTES) == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
+    "slice of address and input slice don't match");
   if (is_store) {
     access_store_at(value, adr, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -2999,6 +3001,7 @@ bool LibraryCallKit::inline_native_vthread_end_transition(address funcAddr, cons
   IdealKit ideal(this);
 
   Node* _notify_jvmti_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::notify_jvmti_events_address()));
+  assert(C->get_alias_index(gvn().type(_notify_jvmti_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   Node* _notify_jvmti = ideal.load(ideal.ctrl(), _notify_jvmti_addr, TypeInt::BOOL, T_BOOLEAN);
 
   ideal.if_then(_notify_jvmti, BoolTest::eq, ideal.ConI(1)); {
