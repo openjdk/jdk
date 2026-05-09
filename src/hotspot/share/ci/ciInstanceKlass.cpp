@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,14 +140,8 @@ InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
   if (_is_shared && is_loaded()) {
     // Return cached init state of shared klass
     ciEnv* env = CURRENT_ENV;
-    if (env != nullptr && env->task() != nullptr) {
-      return env->get_cached_init_state(ident());
-    } else {
-      GUARDED_VM_ENTRY(
-        InstanceKlass* ik = get_instanceKlass();
-        _init_state = ik->init_state();
-      )
-    }
+    precond(env != nullptr && env->task() != nullptr);
+    return env->get_cached_init_state(ident());
   }
   return _init_state;
 }
