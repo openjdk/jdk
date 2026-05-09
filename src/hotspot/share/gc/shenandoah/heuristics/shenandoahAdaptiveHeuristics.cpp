@@ -73,14 +73,12 @@ void ShenandoahCycleDuration::record_duration(double time_at_start, double gc_ti
 
 double ShenandoahCycleDuration::predict_duration(double timestamp_at_start, double margin_of_error) {
   MonitorLocker locker(&_gc_times_lock, Mutex::_no_safepoint_check_flag);
-  double slope(0.0), intercept(0.0);
-  _gc_times.fit_line(slope, intercept);
-  if (std::isfinite(slope)) {
-    const double prediction = slope * timestamp_at_start + intercept + _gc_times.residual_sd() * margin_of_error;
-    if (prediction > 0.0) {
-      return prediction;
-    }
+
+  const double prediction = _gc_times.predict_y(timestamp_at_start);
+  if (std::isfinite(prediction) && prediction > 0.0) {
+    return prediction + _gc_times.residual_sd() * margin_of_error;
   }
+
   // return average time, rather than negative or zero time
   return _gc_times.weighted_average();
 }

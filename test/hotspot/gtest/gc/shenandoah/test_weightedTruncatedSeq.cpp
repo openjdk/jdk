@@ -75,6 +75,33 @@ TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared_overfow) {
   EXPECT_NEAR(seq.predict(5, 1), 17.138, 0.001);
 }
 
+TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_long_uptime) {
+  // Simulates a JVM running ~66 days, using os::elapsedTime() as x.
+  // With tight sampling (50ms intervals) this hits catastrophic cancellation
+  // in x_spread = samples * _xx_sum − _x_sum_squared — both operands have magnitude
+  // whose double-precision LSB is ~0.065, but the true spread is ~0.015.
+  constexpr double OFFSET = 66.0 * 86400.0;  // 66 days of uptime in seconds
+  constexpr double DT     = 0.05;            // 50ms between samples
+
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
+  uint i = 1;
+  for (uint n = SAMPLE_SIZE * 2; i <= n; i++) {
+    seq.add(OFFSET + i * DT, i);
+  }
+
+  // Relationship: y = (x − OFFSET)/DT, so predict(OFFSET + i·DT) should give i
+  EXPECT_NEAR(seq.predict(OFFSET + (i + 1) * DT, 0), i + 1, 0.001);
+}
+
+TEST_VM(ShenandoahWeightedSeqTest, identical_timestamps) {
+  ShenandoahWeightedSeq seq(SAMPLE_SIZE);
+  seq.add(100.0, 1.0);
+  seq.add(100.0, 2.0);
+
+  // Should return a finite prediction (e.g. the average of y).
+  EXPECT_TRUE(std::isfinite(seq.predict(101.0, 0)));
+}
+
 TEST_VM(ShenandoahWeightedSeqTest, simple_average_no_samples) {
   ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   EXPECT_DOUBLE_EQ(seq.average(), 0.0);

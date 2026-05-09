@@ -36,9 +36,12 @@ class ShenandoahWeightedSeq {
   uint _size;
   uint _first_sample_index;
   uint _num_samples;
+
   double* const _x_values;
   double* const _y_values;
   double* const _weights;
+
+  double _x_origin;
   double _x_sum;
   double _y_sum;
   double _weighted_y_sum;
@@ -70,9 +73,6 @@ public:
   // Add x, y to the sequence. Weight will be calculated as x - last().
   void add(double x, double y);
 
-  void deduct_oldest(double x, double y, double weight);
-
-  void add_latest(double x, double y, double weight);
 
   // Add x, y to the sequence using given weight.
   void add(double x, double y, double weight);
@@ -95,11 +95,26 @@ public:
   // Standard deviation for the weighted mean.
   double weighted_sd() const;
 
-  // Provides the slope and y-intercept for the line of best fit through the sequence
-  void fit_line(double& slope, double& intercept) const {
-    slope = _slope;
-    intercept = _y_intercept;
+  // The slope for a line of best fit through the samples
+  double slope() const { return _slope; }
+
+  // Predict the y-value for the given x value based on linear reg
+  double predict_y(double x_absolute) const {
+    return _slope * (x_absolute - _x_origin) + _y_intercept;
   }
+
+  // Provides the slope and y-intercept for the line of best fit through the sequence
+  void fit_line(const double x_absolute, double& slope, double& intercept) const {
+    slope = _slope;
+    intercept = _slope * (x_absolute - _x_origin) + _y_intercept;
+  }
+
+private:
+  // Removes about to be overwritten sample from x accumulators and rebases x origin
+  void deduct_oldest_and_rebase(double x, double y, double weight);
+
+  // Record the sample into the sequence, update x, y accumulators
+  void add_latest(double x, double y, double weight);
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHWEIGHTEDSEQ_HPP

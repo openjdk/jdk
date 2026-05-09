@@ -33,6 +33,7 @@ ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
   _x_values(NEW_C_HEAP_ARRAY(double, _size, mtGC)),
   _y_values(NEW_C_HEAP_ARRAY(double, _size, mtGC)),
   _weights(NEW_C_HEAP_ARRAY(double, _size, mtGC)),
+  _x_origin(0),
   _x_sum(0),
   _y_sum(0),
   _weighted_y_sum(0),
@@ -58,25 +59,43 @@ void ShenandoahWeightedSeq::add(double x, double y) {
   add(x, y, weight);
 }
 
-void ShenandoahWeightedSeq::deduct_oldest(const double x, const double y, const double weight) {
-  _x_sum -= x;
+void ShenandoahWeightedSeq::deduct_oldest_and_rebase(const double x_absolute, const double y, const double weight) {
+  // Suppose we want to shift _x_origin by delta. Our accumulators for x
+  // components are based on the relative value 'x - x_origin', call this 'a'.
+  // We want to update our accumulators to hold 'a - delta'.
+  // Our new value for
+  // updated sum(x) = sum(a - delta)
+  //                = sum(a) - n * delta.
+  // Similarly
+  // updated sum(x^2) = sum((a - delta)^2)
+  //                  = sum(a^2 - 2 * delta * a + delta^2)
+  //                  = sum(a^2) - 2 * delta * sum(a) + n * delta^2
+  // Finally
+  // updated sum(xy) = sum(a - delta) * y
+  //                 = sum(xy) - delta * sum(y)
+  const double delta = x_absolute - _x_origin;
+  // order matters here, we must use old _x_sum
+  _xx_sum = _xx_sum - 2.0 * delta * _x_sum + _num_samples * delta * delta;
+  _xy_sum = _xy_sum - delta * _y_sum;
+  _x_sum  = _x_sum  - _num_samples * delta;
+  _x_origin = x_absolute;
+
   _y_sum -= y;
-  _xy_sum -= x * y;
-  _xx_sum -= x * x;
   _yy_sum -= y * y;
-  _weighted_y_sum -= y * weight;
   _weighted_sum -= weight;
+  _weighted_y_sum -= y * weight;
   _weighted_yy_sum -= y * y * weight;
 }
 
-void ShenandoahWeightedSeq::add_latest(double x, double y, double weight) {
+void ShenandoahWeightedSeq::add_latest(double x_absolute, double y, double weight) {
+  const double x = x_absolute - _x_origin;
   _x_sum += x;
   _y_sum += y;
   _xy_sum += x * y;
   _xx_sum += x * x;
   _yy_sum += y * y;
-  _weighted_y_sum += y * weight;
   _weighted_sum += weight;
+  _weighted_y_sum += y * weight;
   _weighted_yy_sum += y * y * weight;
 }
 
@@ -84,7 +103,9 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   // Update best-fit linear regression
   const uint index = (_first_sample_index + _num_samples) % _size;
   if (_num_samples == _size) {
-    deduct_oldest(_x_values[index], _y_values[index], _weights[index]);
+    deduct_oldest_and_rebase(_x_values[index], _y_values[index], _weights[index]);
+  } else if (_num_samples == 0) {
+    _x_origin = x;
   }
 
   _x_values[index] = x;
@@ -99,18 +120,15 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
     _first_sample_index = (_first_sample_index + 1) % _size;
   }
 
-  if (_num_samples == 1) {
-    // The predictor is constant (horizontal line)
+  const double x_spread = _num_samples * _xx_sum - _x_sum * _x_sum;
+  if (x_spread <= 0.0 || _num_samples < 2) {
+    // All samples are the sample point, can't make a line
     _slope = 0;
     _y_intercept = y;
     _residual_sd = 0.0;
     return;
   }
 
-  // Assume x values are monotonically increasing, denominator does not equal zero.
-  const double x_spread = _num_samples * _xx_sum - _x_sum * _x_sum;
-  assert(x_spread != 0.0, "Invariant: samples: %u, sum_of_xx: %.6f, sum_of_x_values: %.6f",
-         _num_samples, _xx_sum, _x_sum);
   _slope = (_num_samples * _xy_sum - _x_sum * _y_sum) / x_spread;
   _y_intercept = (_y_sum - _slope * _x_sum) / _num_samples;
   const double total_sum_of_squares = _yy_sum - _y_sum * _y_sum / _num_samples;
@@ -119,7 +137,8 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   _residual_sd = std::sqrt(MAX2(residual_sum_of_squares, 0.0) / _num_samples);
 }
 
-double ShenandoahWeightedSeq::predict(double x, double margin_of_error) const {
+double ShenandoahWeightedSeq::predict(double x_absolute, double margin_of_error) const {
+  const double x = x_absolute - _x_origin;
   const double prediction = _slope * x + _y_intercept + _residual_sd * margin_of_error;
   if (prediction <= 0.0) {
     // return average time, rather than negative or zero time

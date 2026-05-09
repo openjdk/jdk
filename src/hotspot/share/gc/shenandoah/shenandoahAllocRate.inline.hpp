@@ -92,12 +92,10 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
   acceleration = 0.0;
   current_rate = _momentary.weighted_average();
   if (_recent.weighted_average() > _baseline.weighted_average()) {
-    double slope(0), intercept(0);
-    _recent.fit_line(slope, intercept);
+    const double slope = _recent.slope();
     if (slope > 0 && std::isfinite(slope)) {
-      const double proposed_current_rate = slope * _recent.last() + intercept;
       acceleration = slope;
-      current_rate = proposed_current_rate;
+      current_rate = _recent.predict_y(_recent.last());
     }
   }
 
