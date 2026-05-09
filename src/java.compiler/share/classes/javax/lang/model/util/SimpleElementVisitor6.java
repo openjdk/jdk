@@ -43,11 +43,6 @@ import static javax.lang.model.SourceVersion.*;
  * For constructs introduced in {@code RELEASE_7} and later, {@code
  * visitUnknown} is called instead.
  *
- *
- * @apiNote
- * Methods in this class may be overridden subject to their general
- * contract.
- *
  * @apiNote [id=note_for_subclasses kind=outlined]
  * The {@code ElementVisitor} interface implemented by this class may have
  * methods added to it in the future to accommodate new, currently
@@ -66,6 +61,10 @@ import static javax.lang.model.SourceVersion.*;
  * behavior for the visit method in question.  When a new visitor is
  * introduced, portions of this visitor class may be deprecated,
  * including its constructors.
+ *
+ * @apiNote
+ * Methods in this class may be overridden subject to their general
+ * contract.
  *
  * @param <R> the return type of this visitor's methods.  Use {@code Void}
  *             for visitors that do not need to return results.
