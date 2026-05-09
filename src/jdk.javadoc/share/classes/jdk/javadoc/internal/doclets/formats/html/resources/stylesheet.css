@@ -76,9 +76,10 @@
     --pre-text-color: var(--snippet-text-color);
     /* Note colors */
     --note-background-color: var(--body-background-color);
-    --note-border-color: #434343;
+    --note-border-color: #909090;
     --note-header-color: #434343;
     --note-text-color: var(--block-text-color);
+    --note-auto-border-color: #888888;
     --note-important-background-color: #f1f7ff;
     --note-important-border-color: #7b95a5;
     --note-important-header-color: #ffffff;
@@ -149,9 +150,10 @@
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
     --note-background-color: var(--body-background-color);
-    --note-border-color: #747474;
+    --note-border-color: #adadad;
     --note-header-color: #e5e5e5;
     --note-text-color: var(--block-text-color);
+    --note-auto-border-color: #808080;
     --note-important-background-color: #353f4e;
     --note-important-border-color: #446c86;
     --note-important-header-color: #ffffff;
@@ -554,18 +556,29 @@ section.class-description > div.horizontal-scroll > :last-child > :is(li, dd):la
 div.inline-note {
     padding: 8px 12px;
     margin: 12px 0;
-    border: 0.6px solid var(--note-border-color);
+    border: 1px solid var(--note-border-color);
     background-color: var(--note-background-color);
-    border-radius: 2px;
+    border-radius: 4px;
+    > :is(p, h2, h3, h4, ul, ol):first-child {
+        margin-top: 4px;
+    }
+    > :is(p, div, pre, ul, ol):last-child {
+        margin-bottom: 8px;
+    }
+}
+p + div.inline-note {
+    margin-top: -2px;
+}
+div.inline-note + p {
+    margin-top: 10px;
 }
 div.inline-note > span.note-header {
     font-weight: bold;
-    font-family: var(--body-font-family);
-    font-size: 0.93em;
 }
 div.inline-note.note-tag-no-border {
     border: none;
-    padding: 0 14px;
+    padding: 0;
+    margin: 12px 13px;
 }
 div.inline-note.note-tag-previewNote {
     border-color: var(--block-text-color);
@@ -608,25 +621,24 @@ dl.notes > dd {
     font-family:var(--block-font-family);
     line-height:var(--block-line-height);
 }
-dl.notes > dd:not(.note-tag-no-border).auto-border,
-dl.notes > dd.note-tag-auto-border,
+dd:not(.note-tag-no-border).auto-border,
+dl.notes > dd.note-tag-border,
 dl.notes > dd.note-tag-outlined,
 dl.notes > dd.note-tag-important,
 dl.notes > dd.note-tag-critical,
 dl.notes > dd.note-tag-previewNote {
     padding: 8px 12px;
-    border-radius: 2px;
+    border-radius: 4px;
     margin: 7px 0 10px 1px;
-    > :first-child {
-        margin-top: 2px;
+    > :is(p, h2, h3, h4, ul, ol):first-child {
+        margin-top: 4px;
     }
-    > :last-child {
-        margin-bottom: 2px;
+    > :is(p, div, pre, ul, ol):last-child {
+        margin-bottom: 8px;
     }
 }
-dl.notes > dd:not(.note-tag-no-border).auto-border,
-dl.notes > dd.note-tag-auto-border {
-    border: 0.6px solid var(--note-border-color);
+dl.notes > dd.note-tag-border, dd:not(.note-tag-no-border).auto-border {
+    border: 0.6px solid var(--note-auto-border-color);
 }
 dl.notes > dd.note-tag-outlined {
     border: 1px solid var(--note-border-color);
@@ -649,6 +661,10 @@ dl.notes > dd.note-tag-critical {
     pre, pre.snippet, div.snippet-container {
         background-color: var(--note-critical-pre-color);
     }
+}
+dl.notes > dd > ul, dl.notes > dd > ol {
+    margin-bottom: 1em;
+    margin-top: 1em;
 }
 dl.name-value > dt {
     margin-left:1px;
@@ -1937,7 +1953,7 @@ pre.snippet {
     background-color: var(--snippet-background-color);
     color: var(--snippet-text-color);
     padding: 12px;
-    margin: 10px 0;
+    margin: 0;
 }
 div.snippet-container {
     position: relative;
