@@ -76,7 +76,7 @@ public class kill003 extends JdbTest {
         // after creating all the threads. Get the list of debuggee threads.
         threads = jdb.getThreadIdsByName("main");
 
-        // Make sure we stop in jdb when the NPE is thrown
+        // Make sure we stop in jdb when the NPE is thrown or rethrown.
         reply = jdb.receiveReplyFor(JdbCommand._catch + "all java.lang.NullPointerException");
 
         // Stopped at kill003a.main(), so step into synchronized block
