@@ -255,7 +255,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
   CompileTask* task = env->task();
   if (install_code && task->is_aot_load()) {
-    assert(!task->preload(), "Pre-loading AOT code is not implemeted for C1 code");
+    assert(!task->preload(), "Pre-loading AOT code is not implemented for C1 code");
     bool success = AOTCodeCache::load_nmethod(env, method, entry_bci, this, CompLevel(task->comp_level()));
     if (success) {
       assert(task->is_success(), "sanity");

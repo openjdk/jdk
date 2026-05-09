@@ -286,7 +286,7 @@ bool AOTCodeCache::is_code_load_thread_on() {
 
 // It is called from AOTMetaspace::initialize_shared_spaces()
 // which is called from universe_init().
-// At this point all AOT class linking seetings are finalized
+// At this point all AOT class linking settings are finalized
 // and AOT cache is open so we can map AOT code region.
 void AOTCodeCache::initialize() {
   if (!is_caching_enabled()) {
@@ -735,7 +735,7 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
 
   size_t codeCacheSize = pointer_delta(CodeCache::high_bound(), CodeCache::low_bound(), 1);
   if (codeCacheSize > _codeCacheSize) { // Only allow smaller or equal CodeCache size in production run
-    load_failure_log().print_cr("AOT Code Cache disabled: it was created with CodeCache size = %dKb vs current %dKb", (int)(_codeCacheSize/K), (int)(codeCacheSize/K));
+    load_failure_log().print_cr("AOT Code Cache disabled: it was created with smaller CodeCache size = %dKb vs current %dKb", (int)(_codeCacheSize/K), (int)(codeCacheSize/K));
     return false;
   }
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {

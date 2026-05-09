@@ -51,7 +51,6 @@ class CompilerStatistics {
     }
   };
 
- public:
   Data _standard;  // stats for non-OSR compilations
   Data _osr;       // stats for OSR compilations
   Data _bailout;

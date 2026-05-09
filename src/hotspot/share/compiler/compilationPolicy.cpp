@@ -109,7 +109,7 @@ void CompilationPolicy::maybe_compile_early(const methodHandle& m, MethodTrainin
       // request normal compilation
       requires_online_compilation = (ctd->init_deps_left_acquire() > 0);
     }
-    // Skip compilation if next_level doesn't have CDT or CDT
+    // Skip compilation if next_level doesn't have CTD or CTD
     // does not have all class init dependencies satisfied.
     if (requires_online_compilation) {
       return;

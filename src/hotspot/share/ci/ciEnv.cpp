@@ -985,12 +985,6 @@ void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
 bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool install_code, bool is_loading_aot_code, bool preload) {
   methodHandle method(thread, target->get_Method());
 
-  // We require method counters to store some method state (max compilation levels) required by the compilation policy.
-  if (method->get_method_counters(thread) == nullptr) {
-    record_failure("can't create method counters");
-    return false;
-  }
-
   // Change in Jvmti state may invalidate compilation.
   if (!failing() && jvmti_state_changed()) {
     record_failure("Jvmti state change invalidated dependencies");
@@ -1111,6 +1105,12 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
     methodHandle method(thread, target->get_Method());
     bool preload = task()->preload(); // Code is preloaded before Java method execution
 
+    // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+    if (method->get_method_counters(thread) == nullptr) {
+      record_failure("can't create method counters");
+      return nullptr;
+    }
+
     // Check if memory should be freed before allocation
     CodeCache::gc_on_allocation();
 
@@ -1192,6 +1192,16 @@ void ciEnv::register_method(ciMethod* target,
   nmethod* nm = nullptr;
   {
     methodHandle method(THREAD, target->get_Method());
+
+    // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+    if (method->get_method_counters(THREAD) == nullptr) {
+      record_failure("can't create method counters");
+      // All buffers in the CodeBuffer are allocated in the CodeCache.
+      // If the code buffer is created on each compile attempt
+      // as in C2, then it must be freed.
+      code_buffer->free_blob();
+      return;
+    }
 
     // Check if memory should be freed before allocation
     CodeCache::gc_on_allocation();

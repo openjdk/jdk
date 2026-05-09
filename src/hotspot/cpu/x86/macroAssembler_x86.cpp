@@ -5734,7 +5734,7 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
       CompressedKlassPointers::shift() == 0) {
     // The best case scenario is that there is no base or shift. Then it is already
     // a pointer that needs nothing but a register rename.
-    movptr(dst, src);
+    movl(dst, src);
   } else {
     if (CompressedKlassPointers::shift() <= Address::times_8) {
       if (CompressedKlassPointers::base() != nullptr) {

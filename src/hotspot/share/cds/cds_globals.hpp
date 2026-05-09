@@ -156,7 +156,7 @@
   /* AOT Code flags */                                                      \
                                                                             \
   product(bool, AOTCodeCaching, false, DIAGNOSTIC,                          \
-          "Enable saving and restoring JIT comiled code in AOT cache")      \
+          "Enable saving and restoring JIT compiled code in AOT cache")     \
                                                                             \
   product(bool, AOTAdapterCaching, false, DIAGNOSTIC,                       \
           "Enable saving and restoring i2c2i adapters in AOT cache")        \

@@ -1328,7 +1328,9 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
   // Tiered policy requires MethodCounters to exist before adding a method to
   // the queue. Create if we don't have them yet.
-  method->get_method_counters(thread);
+  if (method->get_method_counters(thread) == nullptr) {
+    return; // metaspace has hit an OOM
+  }
 
   precond(compile_reason != CompileTask::Reason_Preload || aot_code_entry != nullptr);
   if (!requires_online_compilation && aot_code_entry == nullptr) {

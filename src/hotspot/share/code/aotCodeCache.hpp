@@ -94,11 +94,12 @@ private:
   Kind    _kind;
   // Next field is exposed to external profilers - keep it as boolean.
   bool    _for_preload;           // Code can be used for preload (before classes initialized)
+  bool    _not_entrant;           // Deoptimized
+
   uint8_t _has_clinit_barriers:1, // Generated code has class init checks (only in for_preload code)
           _has_oop_maps:1,
           _loaded:1,              // Code was loaded for use
-          _load_fail:1,           // Failed to load due to some klass state
-          _not_entrant:1;         // Deoptimized
+          _load_fail:1;           // Failed to load due to some klass state
 
   uint   _id;          // Adapter's id, vmIntrinsic::ID for stub or Method's offset in AOTCache for nmethod
   uint   _offset;      // Offset to entry
@@ -491,7 +492,7 @@ protected:
   private:
     // Here should be version and other verification fields
     enum {
-      AOT_CODE_VERSION = 1
+      AOT_CODE_VERSION = 2
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes

@@ -1896,11 +1896,10 @@ nmethod::nmethod(
 void nmethod::log_identity(xmlStream* log) const {
   log->print(" compile_id='%d'", compile_id());
   const char* nm_kind = compile_kind();
-  if (nm_kind != nullptr)  log->print(" compile_kind='%s'", nm_kind);
   log->print(" compile_kind='%s'", nm_kind);
   log->print(" compiler='%s'", compiler_name());
   if (TieredCompilation) {
-    log->print(" compile_level='%d'", comp_level());
+    log->print(" level='%d'", comp_level());
   }
 #if INCLUDE_JVMCI
   if (jvmci_nmethod_data() != nullptr) {

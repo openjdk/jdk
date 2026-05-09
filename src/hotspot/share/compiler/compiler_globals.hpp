@@ -392,12 +392,12 @@
                                                                             \
   product(uint, DisableAOTCode, 0, DIAGNOSTIC,                              \
           "Disable AOT code on some compilation levels "                    \
-          "(T1=1; T2=2; T4=4; T5/preload=8")                                \
+          "(T1=1; T2=2; T4=4; T5/preload=8)")                               \
                                                                             \
   product(uint, ClassInitBarrierMode, 0, DIAGNOSTIC,                        \
           "Produce AOT preload code which could be called on first "        \
           "method invocation, add class initialization barriers, "          \
-          "other checks and constrains if needed "                          \
+          "other checks and constraints if needed "                         \
           "(0: no barriers; 1: uncommon trap)")                             \
           range(0, 1)                                                       \
                                                                             \
@@ -426,7 +426,7 @@
                                                                             \
   product(bool, PreloadBlocking, false, DIAGNOSTIC,                         \
           "Preload code is processed with blocking. Startup would not "     \
-          "proceed until all code preloaded code is done loading.")         \
+          "proceed until all preloaded code is done loading.")              \
                                                                             \
 
 // end of COMPILER_FLAGS

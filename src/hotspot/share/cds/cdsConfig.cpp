@@ -119,7 +119,7 @@ void CDSConfig::ergo_initialize() {
 #ifdef _LP64
   //
   // By default, when using AOTClassLinking, use the CompressedOops::HeapBasedNarrowOop
-  // mode so that AOT code can be always work regardless of runtime heap range.
+  // mode so that AOT code can always work regardless of runtime heap range.
   //
   // If you are *absolutely sure* that the CompressedOops::mode() will be the same
   // between training and production runs (e.g., if you specify -Xmx128m for
