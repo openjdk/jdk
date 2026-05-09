@@ -45,11 +45,11 @@ public:
 
 // This class tracks three moving averages of the allocation rate:
 //  1. Momentary: this is the shortest and acts as a sort of 'spike' detector
-//  2. Recent: larger than momentary, these samples are used to detect 'accleration' of the rate
+//  2. Recent: larger than momentary, these samples are used to detect 'acceleration' of the rate
 //  3. Baseline: the largest sample window, this is meant to establish the baseline allocation rate
 //
 // Samples are taken whenever the accumulating count of bytes allocated exceeds the
-// minimum sample size. The miminum sample size is generally derived from the heap
+// minimum sample size. The minimum sample size is generally derived from the heap
 // capacity. The thinking is that larger heaps require less frequent sampling. Note
 // that as the allocation rate increases, the timeliness of the averages and other
 // estimates increases.
@@ -62,7 +62,7 @@ class ShenandoahAllocRate {
   Atomic<size_t> _allocated_bytes_since_last_sample;
   PaddedMonitor _sample_lock;
   jlong _last_sample_time;
-  size_t _minimum_sample_size; // bytes
+  Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
 
   ShenandoahWeightedSeq _baseline;
   ShenandoahWeightedSeq _recent;
@@ -88,7 +88,7 @@ public:
 
   // Set minimum sample size in bytes
   void set_minimum_sample_size(const size_t minimum_sample_size) {
-    _minimum_sample_size = minimum_sample_size;
+    _minimum_sample_size.store_relaxed(minimum_sample_size);
   }
 
   // Indicate that this many bytes have been allocated (by the mutator).
@@ -115,4 +115,4 @@ public:
 
 typedef ShenandoahAllocRate<> ShenandoahAllocationRate;
 
-#endif //SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
