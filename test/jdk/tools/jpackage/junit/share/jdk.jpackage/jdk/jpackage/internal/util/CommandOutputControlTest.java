@@ -79,7 +79,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
-import jdk.jpackage.internal.util.CommandOutputControl.UnavailableExitCodeException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -260,6 +259,20 @@ public class CommandOutputControlTest {
         assertEquals("Unexpected exit code 3 from executing the command <unknown>", ex.getMessage());
     }
 
+    @Test
+    public void test_Result_expectExitCode_unavailable() {
+        var result = CommandOutputControl.Result.build().noExitCode().create();
+
+        var ex = assertThrowsExactly(CommandOutputControl.UnavailableExitCodeException.class, () -> {
+            result.expectExitCode(0);
+        });
+
+        assertNull(ex.getCause());
+        assertSame(result, ex.getResult());
+        assertEquals(String.format("Exit code unavailable from executing the command %s",
+                result.execAttrs().printableCommandLine()), ex.getMessage());
+    }
+
     @ParameterizedTest
     @MethodSource
     public void test_Result_toCharacterResult(ToCharacterResultTestSpec spec) throws IOException, InterruptedException {
@@ -352,7 +365,7 @@ public class CommandOutputControlTest {
         assertEquals(("Exit code is unavailable for timed-out command"), getExitCodeEx.getMessage());
 
         // Verify UnavailableExitCodeException
-        var expectExitCodeEx = assertThrowsExactly(UnavailableExitCodeException.class, () -> {
+        var expectExitCodeEx = assertThrowsExactly(CommandOutputControl.UnavailableExitCodeException.class, () -> {
             result.expectExitCode(0);
         });
         assertEquals(String.format("Exit code unavailable from executing the command %s",

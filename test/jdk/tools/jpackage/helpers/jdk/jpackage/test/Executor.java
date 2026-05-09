@@ -378,8 +378,8 @@ public final class Executor extends CommandArguments<Executor> {
                 if (ex instanceof UnexpectedExitCodeException uecex) {
                     throw uecex; // Pass to exception mapper
                 }
-                // Pass exception to caller
-                throw ExceptionBox.toUnchecked(ex);
+                // Unreachable, because the result must always have the exit code, as the executor never runs commands with a timeout.
+                throw ExceptionBox.reachedUnreachable();
             }
             return result;
         }).setExceptionMapper((UnexpectedExitCodeException ex) -> {
