@@ -76,8 +76,8 @@ public class TestCustomNoteTag extends JavadocTester {
                      abc <a href="C.html" title="class in p"><em>emphasized</em></a> def</div>""",
                 """
                      <dl class="notes">
-                     <dt id="p.C-example">Example:</dt>
-                     <dd id="example" class="note-tag-example auto-border"><p><strong>xyz</strong></p>""",
+                     <dt id="example">Example:</dt>
+                     <dd id="example1" class="note-tag-example auto-border"><p><strong>xyz</strong></p>""",
                 """
                      <pre class="snippet" id="snippet-p.C1"><code class="language-java">   code ...
                      </code></pre>
@@ -259,8 +259,9 @@ public class TestCustomNoteTag extends JavadocTester {
                             ><span class="note-header">Warning:</span>
                             inline warning</div>""".replace("$LOCATION$", loc2.toString()),
                         """
-                            Warning:</dt>
-                            <dd id="block-$LOCATION$-warning" class="note-tag-warning">block warning</dd>
+                            <dl class="notes">
+                            <dt id="block-$LOCATION$-warning">Warning:</dt>
+                            <dd id="block-$LOCATION$-warning1" class="note-tag-warning">block warning</dd>
                             </dl>""".replace("$LOCATION$", loc2.toString()));
             }
         }
