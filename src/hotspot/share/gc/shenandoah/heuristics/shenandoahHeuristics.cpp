@@ -176,18 +176,11 @@ void ShenandoahHeuristics::record_cycle_start() {
 void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
 
-  size_t capacity(0), usage(0);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->mode()->is_generational()) {
-    capacity = heap->young_generation()->max_capacity();
-    usage = heap->young_generation()->used();
-  } else {
-    capacity = heap->global_generation()->max_capacity();
-    usage = heap->global_generation()->used();
+  if (!heap->mode()->is_generational()) {
+    const size_t available = _space_info->soft_mutator_available();
+    heap->alloc_rate().update_minimum_sample_size(available);
   }
-
-  const size_t available = capacity > usage ? capacity - usage: 0;
-  heap->alloc_rate().update_minimum_sample_size(available);
 }
 
 bool ShenandoahHeuristics::should_start_gc() {

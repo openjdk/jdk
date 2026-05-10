@@ -27,7 +27,7 @@
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -186,6 +186,13 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
 
   // Don't decline_trigger() here  That was done in ShenandoahAdaptiveHeuristics::should_start_gc()
   return false;
+}
+
+void ShenandoahYoungHeuristics::record_cycle_end() {
+  ShenandoahGenerationalHeuristics::record_cycle_end();
+
+  ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
+  alloc_rate.update_minimum_sample_size(_space_info->soft_mutator_available());
 }
 
 // Return a conservative estimate of how much memory can be allocated before we need to start GC. The estimate is based
