@@ -26,8 +26,8 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
-#include "gc/shenandoah/shenandoahUtils.hpp"
 
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
 
 #include <cmath>

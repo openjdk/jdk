@@ -21,9 +21,9 @@
  * questions.
  */
 #include "gc/shenandoah/shenandoahCycleDuration.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "runtime/mutexLocker.hpp"
 
 
 ShenandoahCycleDuration::ShenandoahCycleDuration(uint size)
