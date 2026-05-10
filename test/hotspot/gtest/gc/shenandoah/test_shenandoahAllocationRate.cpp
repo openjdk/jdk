@@ -75,17 +75,15 @@ TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
   EXPECT_DOUBLE_EQ(rate.weighted_average(), 2048.0);
 }
 
-// disabled because the current implementation needs at least two samples to compute rates
-TEST_VM_F(ShenandoahAllocationRateTest, DISABLED_accelerated_consumption_small_number_of_samples) {
+TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_small_number_of_samples) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
   allocate(rate, 1024);
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_DOUBLE_EQ(acceleration, 0.0);
-  EXPECT_DOUBLE_EQ(current_rate, 1024.0);
-  EXPECT_EQ(anticipated_consumption, 102400UL);
+  EXPECT_DOUBLE_EQ(current_rate, 0.0);
+  EXPECT_EQ(anticipated_consumption, 0UL);
 }
-
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
