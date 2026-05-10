@@ -77,7 +77,7 @@ public class TestCustomNoteTag extends JavadocTester {
                 """
                      <dl class="notes">
                      <dt id="example">Example:</dt>
-                     <dd id="example1" class="note-tag-example auto-border"><p><strong>xyz</strong></p>""",
+                     <dd id="example1" class="note-tag-example"><p><strong>xyz</strong></p>""",
                 """
                      <pre class="snippet" id="snippet-p.C1"><code class="language-java">   code ...
                      </code></pre>

@@ -422,4 +422,99 @@ public class TestNoteTag extends JavadocTester {
                 );
     }
 
+    // Generate auto border on block notes with mixed or very long content
+    @Test
+    public void testAutoBorder(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                    package p;
+                    /**
+                     * @note
+                     * Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                     * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                     * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                     * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                     * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                     *
+                     * <h2>Lorem ipsum dolor sit amet</h2>
+                     *
+                     * <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                     * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                     * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                     * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                     * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                     *
+                     */
+                    public class C {
+                        /**
+                         * @note
+                         * Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                         * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                         * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                         * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                         * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         *
+                         * {@snippet :
+                         *  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                         *  ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                         *  ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                         *  in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                         *  cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         * }
+                         */
+                        public void snippetNote() {}
+                        /**
+                         * @note
+                         * Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                         * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                         * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                         * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                         * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         *
+                         * <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                         * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                         * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                         * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                         * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         *
+                         * <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                         * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                         * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                         * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                         * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         *
+                         * <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                         * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                         * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                         * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                         * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         */
+                         public void longNote() {}
+                        /**
+                         * @note
+                         * Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
+                         * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                         * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
+                         * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
+                         * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         */
+                         public void shortNote() {}
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOrder("p/C.html", """
+                        <dd id="p.C-note1" class="note-tag auto-border">Lorem ipsum dolor sit amet""",
+                """
+                        <dd id="snippetNote()-note1" class="note-tag auto-border">Lorem ipsum dolor sit amet""",
+                """
+                        <dd id="longNote()-note1" class="note-tag auto-border">Lorem ipsum dolor sit amet""",
+                """
+                        <dd id="shortNote()-note1" class="note-tag">Lorem ipsum dolor sit amet""");
+    }
+
 }
