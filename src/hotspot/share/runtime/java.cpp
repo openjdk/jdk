@@ -114,11 +114,16 @@ static int compare_methods(Method** a, Method** b) {
   return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
+inline CompLevel method_code_comp_level(const Method* m) {
+  const nmethod* code = m->code();
+  return code != nullptr ? static_cast<CompLevel>(code->comp_level()) : CompLevel_any;
+}
+
 static void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
   methodHandle mh(thread, m);
   if ((m->method_data() != nullptr) &&
-      (PrintMethodData || CompilerOracle::should_print(mh))) {
+      (PrintMethodData || CompilerOracle::should_print(mh, method_code_comp_level(m)))) {
     collected_profiled_methods->push(m);
   }
 }

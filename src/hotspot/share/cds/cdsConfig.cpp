@@ -108,6 +108,8 @@ void CDSConfig::ergo_initialize() {
   }
 
   AOTMapLogger::ergo_initialize();
+
+  setup_compiler_args();
 }
 
 const char* CDSConfig::default_archive_path() {
@@ -518,7 +520,7 @@ static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
     JVMFlag::Error err = JVMFlagAccess::set_ccstr(flag, &new_filename, JVMFlagOrigin::ERGONOMIC);
     assert(err == JVMFlag::SUCCESS, "must never fail");
   }
-  FREE_C_HEAP_ARRAY(char, new_filename);
+  FREE_C_HEAP_ARRAY(new_filename);
 }
 
 void CDSConfig::check_aotmode_record() {
@@ -634,8 +636,6 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     // Using any form of the new AOTMode switch enables enhanced optimizations.
     FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
   }
-
-  setup_compiler_args();
 
   if (AOTClassLinking) {
     // If AOTClassLinking is specified, enable all AOT optimizations by default.
@@ -891,10 +891,6 @@ const char* CDSConfig::type_of_archive_being_written() {
 // If an incompatible VM options is found, return a text message that explains why
 static const char* check_options_incompatible_with_dumping_heap() {
 #if INCLUDE_CDS_JAVA_HEAP
-  if (!UseCompressedClassPointers) {
-    return "UseCompressedClassPointers must be true";
-  }
-
   return nullptr;
 #else
   return "JVM not configured for writing Java heap objects";
@@ -972,17 +968,27 @@ bool CDSConfig::is_loading_heap() {
 }
 
 bool CDSConfig::is_dumping_klass_subgraphs() {
-  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+  if (is_dumping_aot_linked_classes()) {
     // KlassSubGraphs (see heapShared.cpp) is a legacy mechanism for archiving oops. It
     // has been superceded by AOT class linking. This feature is used only when
     // AOT class linking is disabled.
-    //
-    // KlassSubGraphs are disabled in the preimage static archive, which contains a very
-    // limited set of oops.
-    return is_dumping_heap() && !is_dumping_aot_linked_classes();
-  } else {
     return false;
   }
+
+  if (is_dumping_preimage_static_archive()) {
+    // KlassSubGraphs are disabled in the preimage static archive, which contains a very
+    // limited set of oops.
+    return false;
+  }
+
+  if (!is_dumping_full_module_graph()) {
+    // KlassSubGraphs cannot be partially disabled. Since some of the KlassSubGraphs
+    // are used for (legacy support) of the archived full module graph, if
+    // is_dumping_full_module_graph() is calse, we must disable all KlassSubGraphs.
+    return false;
+  }
+
+  return is_dumping_heap();
 }
 
 bool CDSConfig::is_using_klass_subgraphs() {

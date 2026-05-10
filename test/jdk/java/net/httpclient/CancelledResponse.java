@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
  * @modules java.net.http/jdk.internal.net.http.common
  * @build jdk.test.lib.net.SimpleSSLContext
  * @build MockServer ReferenceTracker
- * @run main/othervm/timeout=480 CancelledResponse
- * @run main/othervm/timeout=480 CancelledResponse SSL
+ * @run main/othervm/timeout=480 ${test.main.class}
+ * @run main/othervm/timeout=480 ${test.main.class} SSL
  */
 
 /**
