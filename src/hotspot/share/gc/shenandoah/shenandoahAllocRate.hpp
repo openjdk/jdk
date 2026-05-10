@@ -59,10 +59,10 @@ class ShenandoahAllocRate {
   static constexpr size_t ALLOC_SAMPLE_MIN = M;
   static constexpr size_t ALLOC_SAMPLE_MAX = G;
 
-  Atomic<size_t> _allocated_bytes_since_last_sample;
   PaddedMonitor _sample_lock;
-  jlong _last_sample_time;
+  Atomic<size_t> _allocated_bytes_since_last_sample;
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
+  jlong _last_sample_time;
 
   ShenandoahWeightedSeq _baseline;
   ShenandoahWeightedSeq _recent;
@@ -73,10 +73,10 @@ public:
                                const uint baseline_window_size = ShenandoahAllocRateSampleWindow,
                                const uint recent_window_size = ShenandoahRecentAllocRateSampleWindow,
                                const uint momentary_window_size = ShenandoahMomentaryAllocRateSampleWindow)
-    : _allocated_bytes_since_last_sample(0)
-    , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
-    , _last_sample_time(Clock::elapsed_counter())
+    : _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
+    , _allocated_bytes_since_last_sample(0)
     , _minimum_sample_size(minimum_sample_size)
+    , _last_sample_time(Clock::elapsed_counter())
     , _baseline(baseline_window_size)
     , _recent(recent_window_size)
     , _momentary(momentary_window_size)
