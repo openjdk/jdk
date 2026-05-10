@@ -60,8 +60,10 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     private final boolean isBlockTag;
 
     private static final String CSS_CLASS_PREFIX = "note-tag";
+
     private static final String AUTO_BORDER = "auto-border";
-    private static final int AUTO_BORDER_THRESHOLD = 1000;
+    private static final int TEXT_BORDER_THRESHOLD = 1500;
+    private static final int MIXED_CONTENT_BORDER_THRESHOLD = 200;
 
     NoteTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE,
@@ -133,7 +135,9 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                         .setId(getId(id, holder, false))
                         .addStyle(getCSSClass(kind));
 
-                if (body.charCount() > AUTO_BORDER_THRESHOLD || useAutoBorder(note.getBody())) {
+                var contentLength = body.charCount();
+                var mixedContent = hasMixedContent(note.getBody());
+                if (contentLength > (mixedContent ? MIXED_CONTENT_BORDER_THRESHOLD : TEXT_BORDER_THRESHOLD)) {
                     body.addStyle(AUTO_BORDER);
                 }
 
@@ -200,9 +204,9 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             : config.htmlIds.forNote(e, defaultKind, ofHeader, existingIds);
     }
 
-     // Look at note content to see whether it could benefit from a note border.
-     // A border is created for mixed content notes containing snippets/code samples/headers.
-    private boolean useAutoBorder(List<? extends DocTree> body) {
+    // Check note content for mixed content to decide whether to apply a border.
+    // The mixed content recognized by this method is intentionally narrow.
+    private boolean hasMixedContent(List<? extends DocTree> body) {
         return body.stream().anyMatch(dt ->
             switch (dt.getKind()) {
                 case START_ELEMENT -> {
