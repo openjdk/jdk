@@ -65,7 +65,7 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
   }
 
   if (bytes_allocated > threshold_bytes_allocated) {
-    log_trigger("Allocated since last cycle (" PROPERFMT ") is larger than allocation threshold (" PROPERFMT ")",
+    log_trigger("Allocated since last cycle started (" PROPERFMT ") is larger than allocation threshold (" PROPERFMT ")",
                 PROPERFMTARGS(bytes_allocated), PROPERFMTARGS(threshold_bytes_allocated));
     accept_trigger();
     return true;

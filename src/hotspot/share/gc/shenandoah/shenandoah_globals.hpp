@@ -245,7 +245,7 @@
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahAllocationThreshold, 0, EXPERIMENTAL,            \
-          "How many new allocations should happen since the last GC cycle " \
+          "How many bytes may be allocated since the last GC cycle started "\
           "before some heuristics trigger the collection. In percents of "  \
           "(soft) max heap size. Set to zero to effectively disable.")      \
           range(0,100)                                                      \
