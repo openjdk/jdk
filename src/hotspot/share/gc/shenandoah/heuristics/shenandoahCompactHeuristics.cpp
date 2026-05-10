@@ -20,7 +20,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 
@@ -28,6 +27,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
@@ -100,5 +100,5 @@ size_t ShenandoahCompactHeuristics::estimate_bytes_allocated_since_gc_start() {
   const double average_allocation_rate = heap->alloc_rate().weighted_average();
   const double now = os::elapsedTime();
   const double elapsed_seconds = now - heap->heuristics()->cycle_start_time_seconds();
-  return average_allocation_rate * elapsed_seconds;
+  return shenandoah_safe_size_cast(average_allocation_rate * elapsed_seconds);
 }

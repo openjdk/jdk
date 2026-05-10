@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 
 #include "logging/log.hpp"
 
@@ -91,15 +92,24 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
 
   acceleration = 0.0;
   current_rate = _momentary.weighted_average();
-  if (_recent.weighted_average() > _baseline.weighted_average()) {
-    const double slope = _recent.slope();
-    if (slope > 0 && std::isfinite(slope)) {
-      acceleration = slope;
-      current_rate = _recent.predict_y(_recent.last());
-    }
+  if (_recent.weighted_average() <= _baseline.weighted_average()) {
+    // We are not accelerating, just use the momentary average.
+    const double anticipated_consumption = current_rate * time_delta;
+    return shenandoah_safe_size_cast(anticipated_consumption);
   }
 
-  return static_cast<size_t>(current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
+  // recent average is higher than baseline average, compute accleration
+  const double slope = _recent.slope();
+  const double predicted_rate = _recent.predict_y(_recent.last());
+  const double anticipated_consumption = predicted_rate * time_delta + 0.5 * slope * time_delta * time_delta;
+  const size_t result = shenandoah_safe_size_cast(anticipated_consumption);
+  if (result > 0) {
+    acceleration = slope;
+    current_rate = predicted_rate;
+    return result;
+  }
+
+  return 0;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_INLINE_HPP

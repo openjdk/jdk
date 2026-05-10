@@ -26,17 +26,14 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcWhen.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/debug.hpp"
+
+#include <cmath>
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
@@ -174,4 +171,12 @@ ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
 
 ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
   _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
+}
+
+size_t shenandoah_safe_size_cast(const double d) {
+  static constexpr double size_max_as_double = static_cast<double>(std::numeric_limits<size_t>::max());
+  if (std::isfinite(d)) {
+    return static_cast<size_t>(clamp(d, 0.0, size_max_as_double));
+  }
+  return 0;
 }

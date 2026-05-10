@@ -235,5 +235,7 @@ public:
   }
 };
 
+size_t shenandoah_safe_size_cast(double d);
+
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
