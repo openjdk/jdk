@@ -49,14 +49,16 @@ import java.io.Serializable;
  * <a href="SequencedCollection.html#encounter">encounter order</a>
  * are generally subtypes of the {@link SequencedMap} interface.
  *
- * {@note Great care must be exercised if mutable objects are used as map
+ * {@note [kind=indented]
+ * Great care must be exercised if mutable objects are used as map
  * keys.  The behavior of a map is not specified if the value of an object is
  * changed in a manner that affects {@code equals} comparisons while the
  * object is a key in the map.  A special case of this prohibition is that it
  * is not permissible for a map to contain itself as a key.  While it is
  * permissible for a map to contain itself as a value, extreme caution is
  * advised: the {@code equals} and {@code hashCode} methods are no longer
- * well defined on such a map.}
+ * well defined on such a map.
+ * }
  *
  * <p>All general-purpose map implementation classes should provide two
  * "standard" constructors: a void (no arguments) constructor which creates an
