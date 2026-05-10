@@ -47,7 +47,7 @@ protected:
 
 
 private:
-  static size_t estimate_bytes_allocated_since_gc_start();
+  size_t estimate_bytes_allocated_since_gc_start() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
