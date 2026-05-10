@@ -41,7 +41,7 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   size_t unsampled = _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes);
-  const size_t minimum_sample_size = _minimum_sample_size.load_acquire();
+  const size_t minimum_sample_size = _minimum_sample_size.load_relaxed();
   if (unsampled < minimum_sample_size) {
     // Not enough to sample yet
     return;
