@@ -37,7 +37,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.NoSuchFileException;
 import java.security.KeyStore;
 
 public class WrongStoreType {
@@ -49,12 +48,9 @@ public class WrongStoreType {
         ks.load(null, null);
         System.out.println(ks.getType());
 
-        try {
-            Files.delete(Path.of("emptyfile"));
-        } catch (NoSuchFileException e) {
-            // ignore
-        }
-        Files.createFile(Path.of("emptyfile"));
+        Path emptyfile = Path.of("emptyfile");
+        Files.deleteIfExists(emptyfile);
+        Files.createFile(emptyfile);
         try (InputStream in = new FileInputStream("emptyfile")) {
             ks.load(in, password);
         } catch (Exception e) {
