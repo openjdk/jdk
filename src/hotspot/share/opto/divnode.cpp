@@ -43,7 +43,6 @@
 #include <math.h>
 
 ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf, address addr, const char* name) : CallLeafPureNode(tf, addr, name) {
-  add_flag(Flag_is_macro);
   C->add_macro_node(this);
 }
 

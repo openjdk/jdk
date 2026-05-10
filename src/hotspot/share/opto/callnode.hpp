@@ -882,19 +882,20 @@ class CallStaticJavaNode : public CallJavaNode {
   // If this is an uncommon trap guarded by some condition, is it safe to change the condition to a narrower condition?
   // See comment in PhaseIdealLoop::do_split_if()
   bool _safe_for_fold_compare;
+  bool _is_boxing_method;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
-    : CallJavaNode(tf, addr, method), _safe_for_fold_compare(true) {
+    : CallJavaNode(tf, addr, method), _safe_for_fold_compare(true),
+      _is_boxing_method(C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
     init_class_id(Class_CallStaticJava);
-    if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
-      init_flags(Flag_is_macro);
+    if (_is_boxing_method) {
       C->add_macro_node(this);
     }
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, nullptr), _safe_for_fold_compare(true) {
+    : CallJavaNode(tf, addr, nullptr), _safe_for_fold_compare(true), _is_boxing_method(false) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
@@ -907,7 +908,7 @@ public:
   static int extract_uncommon_trap_request(const Node* call);
 
   bool is_boxing_method() const {
-    return is_macro() && (method() != nullptr) && method()->is_boxing_method();
+    return _is_boxing_method;
   }
   // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
@@ -1331,7 +1332,6 @@ public:
   virtual uint size_of() const; // Size is bigger
   LockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf ) {
     init_class_id(Class_Lock);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual bool        guaranteed_safepoint()  { return false; }
@@ -1360,7 +1360,6 @@ public:
 #endif
   {
     init_class_id(Class_Unlock);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);

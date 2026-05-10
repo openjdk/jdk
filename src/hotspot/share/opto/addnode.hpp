@@ -428,7 +428,6 @@ public:
 class MaxLNode : public MinMaxNode {
 public:
   MaxLNode(Compile* C, Node* in1, Node* in2) : MinMaxNode(in1, in2) {
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual int Opcode() const;
@@ -447,7 +446,6 @@ public:
 class MinLNode : public MinMaxNode {
 public:
   MinLNode(Compile* C, Node* in1, Node* in2) : MinMaxNode(in1, in2) {
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual int Opcode() const;

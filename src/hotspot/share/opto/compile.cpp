@@ -4731,6 +4731,21 @@ void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
   }
 }
 
+void Compile::add_macro_node(Node* n) {
+  assert(!_macro_nodes.contains(n), "duplicate entry in expand list");
+  n->add_flag(Node::Flag_is_macro);
+  _macro_nodes.append(n);
+}
+
+void Compile::remove_macro_node(Node* n) {
+  _macro_nodes.remove_if_existing(n);
+  n->remove_flag(Node::Flag_is_macro);
+  // Remove from coarsened locks list if present
+  if (coarsened_count() > 0) {
+    remove_coarsened_lock(n);
+  }
+}
+
 void Compile::add_expensive_node(Node * n) {
   assert(!_expensive_nodes.contains(n), "duplicate entry in expensive list");
   assert(n->is_expensive(), "expensive nodes with non-null control here only");

@@ -1759,7 +1759,6 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
   : CallNode(atype, nullptr, TypeRawPtr::BOTTOM)
 {
   init_class_id(Class_Allocate);
-  init_flags(Flag_is_macro);
   _is_scalar_replaceable = false;
   _is_non_escaping = false;
   _is_allocation_MemBar_redundant = false;
@@ -2494,7 +2493,6 @@ PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
         OptoRuntime::Math_DD_D_Type(),
         StubRoutines::dpow() != nullptr ? StubRoutines::dpow() : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
         "pow") {
-  add_flag(Flag_is_macro);
   C->add_macro_node(this);
 
   init_req(TypeFunc::Parms + 0, base);

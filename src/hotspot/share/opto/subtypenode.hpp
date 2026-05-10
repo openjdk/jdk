@@ -38,7 +38,6 @@ public:
   SubTypeCheckNode(Compile* C, Node* obj_or_subklass, Node* superklass, ciMethod* method, int bci)
     : CmpNode(obj_or_subklass, superklass), _method(method), _bci(bci) {
     init_class_id(Class_SubTypeCheck);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 

@@ -41,7 +41,6 @@ ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_ne
     _src_type(TypeOopPtr::BOTTOM),
     _dest_type(TypeOopPtr::BOTTOM) {
   init_class_id(Class_ArrayCopy);
-  init_flags(Flag_is_macro);
   C->add_macro_node(this);
 }
 
