@@ -56,33 +56,6 @@ constexpr double HIGHEST_EXPECTED_AVAILABLE_AT_END = 0.5;
 constexpr double MINIMUM_CONFIDENCE = 0.319; // 25%
 constexpr double MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
-// To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,
-// for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
-// allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
-constexpr uint GC_TIME_SAMPLE_SIZE = 15;
-
-ShenandoahCycleDuration::ShenandoahCycleDuration()
-  : _gc_times_lock(Mutex::nosafepoint - 2, "ShenandoahCycleTimes_lock", true)
-  , _gc_times(GC_TIME_SAMPLE_SIZE) {}
-
-void ShenandoahCycleDuration::record_duration(double time_at_start, double gc_time) {
-  log_debug(gc, sampling)("Cycle started at: %.3f, completed in %.3fs", time_at_start, gc_time);
-  MonitorLocker locker(&_gc_times_lock, Mutex::_no_safepoint_check_flag);
-  _gc_times.add(time_at_start, gc_time);
-}
-
-double ShenandoahCycleDuration::predict_duration(double timestamp_at_start, double margin_of_error) {
-  MonitorLocker locker(&_gc_times_lock, Mutex::_no_safepoint_check_flag);
-
-  const double prediction = _gc_times.predict_y(timestamp_at_start);
-  if (std::isfinite(prediction) && prediction > 0.0) {
-    return prediction + _gc_times.residual_sd() * margin_of_error;
-  }
-
-  // return average time, rather than negative or zero time
-  return _gc_times.weighted_average();
-}
-
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),

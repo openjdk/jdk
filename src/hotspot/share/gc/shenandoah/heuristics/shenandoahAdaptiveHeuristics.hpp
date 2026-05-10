@@ -28,20 +28,10 @@
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
+#include "gc/shenandoah/shenandoahCycleDuration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "utilities/numberSeq.hpp"
 
-class ShenandoahCycleDuration {
-  // Written by control thread, read by regulator thread
-  Monitor _gc_times_lock;
-  ShenandoahWeightedSeq _gc_times;
-
-public:
-  ShenandoahCycleDuration();
-  void record_duration(double timestamp_at_start, double duration);
-  double predict_duration(double timestamp_at_start, double margin_of_error);
-};
 
 /*
  * The adaptive heuristic tracks the allocation behavior and average cycle

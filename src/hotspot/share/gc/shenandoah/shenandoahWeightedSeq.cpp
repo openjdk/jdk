@@ -54,9 +54,13 @@ ShenandoahWeightedSeq::~ShenandoahWeightedSeq() {
 }
 
 void ShenandoahWeightedSeq::add(double x, double y) {
-  const uint index = (_first_sample_index + _num_samples - 1) % _size;
-  const double weight = _num_samples > 0 ? x - _x_values[index] : 0;
-  add(x, y, weight);
+  if (_num_samples == 0) {
+    add(x, y, 0.0);
+  } else {
+    const uint index = (_first_sample_index + _num_samples - 1) % _size;
+    const double weight = x - _x_values[index];
+    add(x, y, weight);
+  }
 }
 
 void ShenandoahWeightedSeq::deduct_oldest_and_rebase(const double x_absolute, const double y, const double weight) {
@@ -147,6 +151,14 @@ double ShenandoahWeightedSeq::predict(double x_absolute, double margin_of_error)
   return prediction;
 }
 
+double ShenandoahWeightedSeq::weighted_average() const {
+  if (_weighted_sum <= 0.0) {
+    return 0.0;
+  }
+
+  return _weighted_y_sum / _weighted_sum;
+}
+
 double ShenandoahWeightedSeq::weighted_sd() const {
   if (_weighted_sum <= 0.0) {
     return 0.0;
@@ -154,5 +166,15 @@ double ShenandoahWeightedSeq::weighted_sd() const {
 
   const double weighted_mean = _weighted_y_sum / _weighted_sum;
   const double variance = _weighted_yy_sum / _weighted_sum - weighted_mean * weighted_mean;
+  return std::sqrt(MAX2(variance, 0.0));
+}
+
+double ShenandoahWeightedSeq::sd() const {
+  if (_num_samples < 2) {
+    return 0.0;
+  }
+
+  const double mean = _y_sum / _num_samples;
+  const double variance = _yy_sum / _num_samples - mean * mean;
   return std::sqrt(MAX2(variance, 0.0));
 }

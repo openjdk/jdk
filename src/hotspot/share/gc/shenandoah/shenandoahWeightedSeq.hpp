@@ -90,10 +90,13 @@ public:
   double average() const { return _y_sum / MAX2(_num_samples, 1u); }
 
   // The weighted mean for the sequence.
-  double weighted_average() const { return _weighted_y_sum / MAX2(_weighted_sum, 1.0); }
+  double weighted_average() const;
 
   // Standard deviation for the weighted mean.
   double weighted_sd() const;
+
+  // An unweighted standard deviation of the unweighted mean
+  double sd() const;
 
   // The slope for a line of best fit through the samples
   double slope() const { return _slope; }
