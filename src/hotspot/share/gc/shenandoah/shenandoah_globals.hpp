@@ -39,7 +39,8 @@
           "average. This window serves to detect momentary spikes in the "  \
           "allocation rate. A smaller value allows quicker response to "    \
           "changes in the allocation rate but is more vulnerable to noise " \
-          "and requires more monitoring effort.")                           \
+          "and requires more monitoring effort. Must not be greater than "  \
+          "ShenandoahRecentAllocRateSampleWindow")                          \
           range(1, 1000)                                                    \
                                                                             \
   product(uint, ShenandoahRecentAllocRateSampleWindow, 20, EXPERIMENTAL,    \
@@ -57,7 +58,7 @@
           "detected.  If the last several of all samples are signficantly " \
           "larger than the other samples, the best fit line through all "   \
           "sampled values will have an upward slope, manifesting as "       \
-          "acceleration.")                                                  \
+          "acceleration. Must not be greater than ShenandoahAllocRateSampleWindow") \
           range(1,5000)                                                     \
                                                                             \
   product(uint, ShenandoahAllocRateSampleWindow, 100, EXPERIMENTAL,         \
