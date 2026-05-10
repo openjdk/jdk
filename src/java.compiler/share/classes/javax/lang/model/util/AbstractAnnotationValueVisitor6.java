@@ -37,7 +37,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * appropriate for the {@link SourceVersion#RELEASE_6 RELEASE_6}
  * source version.
  *
- * @apiNote [id=note_for_subclasses kind=outlined]
+ * {@note [id=note_for_subclasses header=Warning:]
  * The {@code AnnotationValueVisitor} interface implemented by this class may
  * have methods added to it in the future to accommodate new,
  * currently unknown, language structures added to future versions of
@@ -55,6 +55,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * different default behavior for the visit method in question.  When
  * a new visitor is introduced, portions of this visitor class may be
  * deprecated, including its constructors.
+ * }
  *
  * @param <R> the return type of this visitor's methods
  * @param <P> the type of the additional parameter to this visitor's methods.

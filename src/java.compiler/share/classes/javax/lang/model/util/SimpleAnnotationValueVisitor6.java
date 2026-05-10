@@ -41,7 +41,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * #defaultAction} passing their arguments to {@code defaultAction}'s
  * corresponding parameters.
  *
- * @apiNote [id=note_for_subclasses kind=outlined]
+ * {@note [id=note_for_subclasses header=Warning:]
  * The {@code AnnotationValueVisitor} interface implemented by this class may
  * have methods added to it in the future to accommodate new,
  * currently unknown, language structures added to future versions of
@@ -59,6 +59,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * different default behavior for the visit method in question.  When
  * a new visitor is introduced, portions of this visitor class may be
  * deprecated, including its constructors.
+ * }
  *
  * @apiNote
  * Methods in this class may be overridden subject to their general
