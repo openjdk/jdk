@@ -34,6 +34,7 @@
 #include "utilities/debug.hpp"
 
 #include <cmath>
+#include <limits>
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
@@ -175,8 +176,10 @@ ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
 
 size_t shenandoah_safe_size_cast(const double d) {
   static constexpr double size_max_as_double = static_cast<double>(std::numeric_limits<size_t>::max());
-  if (std::isfinite(d)) {
-    return static_cast<size_t>(clamp(d, 0.0, size_max_as_double));
+  if (std::isnan(d) || d < 0 || d >= size_max_as_double) {
+    // NaN is unordered, all comparisons will be false.
+    // +Inf is always greater than, -Inf is always less than
+    return 0;
   }
-  return 0;
+  return static_cast<size_t>(d);
 }
