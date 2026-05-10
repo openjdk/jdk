@@ -1502,14 +1502,13 @@ void CompileBroker::preload_aot_method(const methodHandle& method, AOTCodeEntry*
       method->jmethod_id();
     }
 
-    DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
+    CompilerDirectiveMatcher matcher(method, comp);
     bool is_blocking = ReplayCompiles                                             ||
-                       !directive->BackgroundCompilationOption                    ||
+                       !matcher.directive_set()->BackgroundCompilationOption      ||
                        (PreloadBlocking && (compile_reason == CompileTask::Reason_Preload));
     // CompileBroker::compile_method can trap and can have pending async exception.
     compile_method_base(method, aot_code_entry, osr_bci, comp_level, hot_count, compile_reason,
                         requires_online_compilation, is_blocking, THREAD);
-    DirectivesStack::release(directive);
   }
 }
 
@@ -1534,10 +1533,9 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   }
 #endif
 
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
+  CompilerDirectiveMatcher matcher(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, requires_online_compilation, compile_reason, directive, THREAD);
-  DirectivesStack::release(directive);
+  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, requires_online_compilation, compile_reason, matcher.directive_set(), THREAD);
   return nm;
 }
 
@@ -2606,7 +2604,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     ResourceMark rm;
     task->print_post(tty);
   }
-  DirectivesStack::release(directive);
 
   Log(compilation, codecache) log;
   if (log.is_debug()) {

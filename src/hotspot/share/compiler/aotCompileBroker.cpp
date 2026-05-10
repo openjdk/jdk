@@ -54,8 +54,8 @@ public:
     if (m->is_native() || m->is_abstract() || !m->method_holder()->is_linked()) {
       return false;
     }
-    DirectiveSet* directives = DirectivesStack::getMatchingDirective(methodHandle(_thread, m), nullptr);
-    if (directives->DontAOTCompileOption) {
+    CompilerDirectiveMatcher matcher(methodHandle(_thread, m), nullptr);
+    if (matcher.directive_set()->DontAOTCompileOption) {
       return false;
     }
     int high_top_level = mtd->highest_top_level();

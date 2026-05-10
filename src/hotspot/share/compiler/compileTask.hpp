@@ -28,14 +28,15 @@
 #include "ci/ciMethod.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/xmlstream.hpp"
 
+class AOTCodeEntry;
 class CompileQueue;
 class CompileTrainingData;
 class DirectiveSet;
-class AOTCodeEntry;
 
 JVMCI_ONLY(class JVMCICompileState;)
 
@@ -107,15 +108,15 @@ class CompileTask : public CHeapObj<mtCompiler> {
   CodeSection::csize_t _nm_content_size;
   CodeSection::csize_t _nm_total_size;
   CodeSection::csize_t _nm_insts_size;
-  DirectiveSet*        _directive;
+  int                  _comp_level;
   AbstractCompiler*    _compiler;
   AOTCodeEntry*        _aot_code_entry;
+  CompilerDirectiveMatcher _comp_directive_matcher;
 #if INCLUDE_JVMCI
   bool                 _has_waiter;
   // Compilation state for a blocking JVMCI compilation
   JVMCICompileState*   _blocking_jvmci_compile_state;
 #endif
-  int                  _comp_level;
   int                  _num_inlined_bytecodes;
   CompileTask*         _next;
   CompileTask*         _prev;
@@ -153,8 +154,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         clear_aot()                          { _aot_code_entry = nullptr; }
   AOTCodeEntry* aot_code_entry()                    { return _aot_code_entry; }
   bool         requires_online_compilation() const  { return _requires_online_compilation; }
-  DirectiveSet* directive() const                   { return _directive; }
+  DirectiveSet* directive() const                   { return _comp_directive_matcher.directive_set(); }
   CompileReason compile_reason() const              { return _compile_reason; }
+
   CodeSection::csize_t nm_content_size() { return _nm_content_size; }
   void         set_nm_content_size(CodeSection::csize_t size) { _nm_content_size = size; }
   CodeSection::csize_t nm_insts_size() { return _nm_insts_size; }
