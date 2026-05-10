@@ -58,9 +58,9 @@ private:
   bool old_collection_needs_more_time(ShenandoahOldGeneration* old_generation,
                                       ShenandoahOldHeuristics* old_heuristics);
 
-  bool trigger_expedite_promotions(ShenandoahGenerationalHeap *heap, ShenandoahOldGeneration *old_generation);
+  bool trigger_expedite_promotions(ShenandoahGenerationalHeap* heap, ShenandoahOldGeneration* old_generation);
 
-  bool trigger_expedite_mixed(ShenandoahGenerationalHeap *heap, ShenandoahOldHeuristics *old_heuristics);
+  bool trigger_expedite_mixed(ShenandoahGenerationalHeap* heap, ShenandoahOldHeuristics* old_heuristics);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHYOUNGHEURISTICS_HPP

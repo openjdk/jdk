@@ -21,6 +21,7 @@
  * questions.
  *
  */
+
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "memory/allocation.hpp"
 

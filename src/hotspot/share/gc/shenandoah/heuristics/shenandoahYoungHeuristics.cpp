@@ -127,7 +127,7 @@ bool ShenandoahYoungHeuristics::old_collection_needs_more_time(ShenandoahOldGene
   return false;
 }
 
-bool ShenandoahYoungHeuristics::trigger_expedite_promotions(ShenandoahGenerationalHeap *heap, ShenandoahOldGeneration *old_generation) {
+bool ShenandoahYoungHeuristics::trigger_expedite_promotions(ShenandoahGenerationalHeap* heap, ShenandoahOldGeneration* old_generation) {
   // Get through promotions and mixed evacuations as quickly as possible.  These cycles sometimes require significantly
   // more time than traditional young-generation cycles so start them up as soon as possible.  This is a "mitigation"
   // for the reality that old-gen and young-gen activities are not truly "concurrent".  If there is old-gen work to
@@ -145,7 +145,7 @@ bool ShenandoahYoungHeuristics::trigger_expedite_promotions(ShenandoahGeneration
   return false;
 }
 
-bool ShenandoahYoungHeuristics::trigger_expedite_mixed(ShenandoahGenerationalHeap *heap, ShenandoahOldHeuristics *old_heuristics) {
+bool ShenandoahYoungHeuristics::trigger_expedite_mixed(ShenandoahGenerationalHeap* heap, ShenandoahOldHeuristics* old_heuristics) {
   const size_t mixed_candidates = old_heuristics->unprocessed_old_collection_candidates();
   if (mixed_candidates > ShenandoahExpediteMixedThreshold && !heap->is_concurrent_weak_root_in_progress()) {
     // We need to run young GC in order to open up some free heap regions so we can finish mixed evacuations.
@@ -202,7 +202,7 @@ void ShenandoahYoungHeuristics::record_cycle_end() {
 size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_reclaimed) {
   const size_t capacity = _space_info->max_capacity();
   const size_t usage = _space_info->used();
-  const size_t available = (capacity > usage)? capacity - usage: 0;
+  const size_t available = (capacity > usage) ? capacity - usage: 0;
   const size_t anticipated_available = available + young_regions_to_be_reclaimed * ShenandoahHeapRegion::region_size_bytes();
 
   const size_t spike_headroom = capacity * ShenandoahAllocSpikeFactor / 100;

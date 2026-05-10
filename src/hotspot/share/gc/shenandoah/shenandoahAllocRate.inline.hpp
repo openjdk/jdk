@@ -30,8 +30,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
 
-#include <cmath>
-
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t available) {
   const size_t min_sample_size = clamp(available / ALLOC_SAMPLE_PORTION, ALLOC_SAMPLE_MIN, ALLOC_SAMPLE_MAX);

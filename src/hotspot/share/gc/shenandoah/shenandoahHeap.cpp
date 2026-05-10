@@ -108,7 +108,6 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
-
 class ShenandoahPretouchHeapTask : public WorkerTask {
 private:
   ShenandoahRegionIterator _regions;
