@@ -32,10 +32,10 @@ ShenandoahCycleDuration::ShenandoahCycleDuration(uint size)
   : _gc_times_lock(Mutex::nosafepoint - 2, "ShenandoahCycleTimes_lock", true)
   , _gc_times(size) {}
 
-void ShenandoahCycleDuration::record_duration(double time_at_start, double gc_time) {
-  log_debug(gc, sampling)("Cycle started at: %.3f, completed in %.3fs", time_at_start, gc_time);
+void ShenandoahCycleDuration::record_duration(double timestamp_at_start, double duration) {
+  log_debug(gc, sampling)("Cycle started at: %.3f, completed in %.3fs", timestamp_at_start, duration);
   MonitorLocker locker(&_gc_times_lock, Mutex::_no_safepoint_check_flag);
-  _gc_times.add(time_at_start, gc_time);
+  _gc_times.add(timestamp_at_start, duration);
 }
 
 double ShenandoahCycleDuration::predict_duration(double timestamp_at_start, double margin_of_error) {
