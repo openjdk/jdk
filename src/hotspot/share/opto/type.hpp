@@ -1586,9 +1586,6 @@ public:
     return make(ptr, k, interfaces, xk, o, offset, instance_id);
   }
 
-  /** Create constant type for a constant boxed value */
-  const Type* get_const_boxed_value() const;
-
   // If this is a java.lang.Class constant, return the type for it or null.
   // Pass to Type::get_const_type to turn it to a type, which will usually
   // be a TypeInstPtr, but may also be a TypeInt::INT for int.class, etc.
