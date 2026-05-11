@@ -172,7 +172,6 @@ class frame {
   // A null id is only valid when comparing for equality.
 
   intptr_t* id(void) const;
-  bool is_younger(intptr_t* id) const;
   bool is_older(intptr_t* id) const;
   static bool id_is_older_than(intptr_t* id, intptr_t* other_id);
   static bool id_is_younger_than(intptr_t* id, intptr_t* other_id);
