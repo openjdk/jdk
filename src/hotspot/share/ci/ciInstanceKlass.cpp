@@ -140,7 +140,7 @@ InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
   if (_is_shared && is_loaded()) {
     // Return cached init state of shared klass
     ciEnv* env = CURRENT_ENV;
-    precond(env != nullptr && env->task() != nullptr);
+    assert(env->task() != nullptr, "only calls from compilation are expected here");
     return env->get_cached_init_state(ident());
   }
   return _init_state;
