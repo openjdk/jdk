@@ -786,8 +786,6 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 #
 # Enable or disable the default CDS archive generation for Compact Object Headers
 #
-# Default disabled within Valhalla until support added (JDK-8348568)
-#
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
 [
   UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_COH,
