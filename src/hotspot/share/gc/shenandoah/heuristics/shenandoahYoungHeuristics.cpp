@@ -225,15 +225,16 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
 
   const double avg_cycle_time = _cycles.predict_duration(os::elapsedTime(), _margin_of_error_sd);
   const double avg_alloc_rate = ShenandoahHeap::heap()->alloc_rate().upper_bound(_margin_of_error_sd);
+  const double remaining_before_gc = avg_cycle_time * avg_alloc_rate + penalties + spike_headroom;
   size_t evac_slack_avg;
-  if (anticipated_available > avg_cycle_time * avg_alloc_rate + penalties + spike_headroom) {
-    evac_slack_avg = anticipated_available - (avg_cycle_time * avg_alloc_rate + penalties + spike_headroom);
+  if (anticipated_available > remaining_before_gc) {
+    evac_slack_avg = shenandoah_safe_size_cast(anticipated_available - remaining_before_gc);
   } else {
     // we have no slack because it's already time to trigger
     evac_slack_avg = 0;
   }
 
   const size_t threshold = min_free_threshold(capacity);
-  const size_t evac_min_threshold = (anticipated_available > threshold)? anticipated_available - threshold: 0;
+  const size_t evac_min_threshold = anticipated_available > threshold ? anticipated_available - threshold: 0;
   return MIN2(evac_slack_avg, evac_min_threshold);
 }
