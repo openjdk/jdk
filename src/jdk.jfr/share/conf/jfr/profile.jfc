@@ -223,7 +223,7 @@
 
     <event name="jdk.StackTraceRequest">
       <setting name="enabled">true</setting>
-      <setting name="throttle">300/s</setting>
+      <setting name="throttle">10ms</setting>
       <setting name="stackTrace">true</setting>
     </event>
 
