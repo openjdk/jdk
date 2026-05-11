@@ -184,7 +184,7 @@ abstract sealed class AbstractVector<E> extends Vector<E>
     }
 
     @ForceInline
-    protected static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
+    static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
         final int lanes = targetSpecies.laneCount();
 
         if ((lanes % subLanesPerSrc) != 0) {
@@ -205,7 +205,7 @@ abstract sealed class AbstractVector<E> extends Vector<E>
     }
 
     @ForceInline
-    protected final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
+    final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
         if (java.nio.ByteOrder.nativeOrder() != ByteOrder.BIG_ENDIAN) {
             return -1;
         }

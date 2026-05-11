@@ -3389,12 +3389,13 @@ encode %{
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
         // load fake address constants using a normal move
         if (! __ is_valid_AArch64_address(con) ||
-            con < (address)(uintptr_t)os::vm_page_size()) {
+            con < (address)(uintptr_t)os::vm_page_size() ||
+            rtype == relocInfo::none) {
           __ mov(dst_reg, con);
         } else {
-          // no reloc so just use adrp and add
+          // use shorter adrp/add sequence for external_word relocation
           uint64_t offset;
-          __ adrp(dst_reg, con, offset);
+          __ adrp(dst_reg, Address(con, rtype), offset);
           __ add(dst_reg, dst_reg, offset);
         }
       }
