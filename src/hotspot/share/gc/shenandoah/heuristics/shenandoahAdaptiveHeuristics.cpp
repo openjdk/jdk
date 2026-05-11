@@ -117,16 +117,13 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
   const size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
-  const size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
+  const size_t max_cset    = shenandoah_safe_size_cast(1.0 * capacity / 100 * ShenandoahEvacReserve / ShenandoahEvacWaste);
   const size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
   const size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
 
-  log_info(gc, ergo)("Adaptive CSet Selection. Target Free: %zu%s, Actual Free: "
-                     "%zu%s, Max Evacuation: %zu%s, Min Garbage: %zu%s",
-                     byte_size_in_proper_unit(free_target), proper_unit_for_byte_size(free_target),
-                     byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
-                     byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
-                     byte_size_in_proper_unit(min_garbage), proper_unit_for_byte_size(min_garbage));
+  log_info(gc, ergo)("Adaptive CSet Selection. Target Free: " PROPERFMT ", Actual Free: " PROPERFMT
+                         ", Max Evacuation: " PROPERFMT ", Min Garbage: " PROPERFMT ,
+                     PROPERFMTARGS(free_target), PROPERFMTARGS(actual_free), PROPERFMTARGS(max_cset), PROPERFMTARGS(min_garbage));
 
   // Better select garbage-first regions
   QuickSort::sort(data, size, compare_by_garbage);

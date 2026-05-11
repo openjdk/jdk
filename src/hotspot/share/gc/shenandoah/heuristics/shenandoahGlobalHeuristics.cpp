@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "utilities/quickSort.hpp"
 
@@ -248,17 +249,17 @@ void ShenandoahGlobalCSetBudget::assert_budget_constraints_hold(size_t original_
   assert(young_evac.live_bytes() * young_evac.waste_factor() <=
          young_evac.reserve() + young_evac.region_count(),
          "Young evac consumption (%zu) exceeds reserve (%zu) + region count (%zu)",
-         (size_t)(young_evac.live_bytes() * young_evac.waste_factor()),
+         shenandoah_safe_size_cast(young_evac.live_bytes() * young_evac.waste_factor()),
          young_evac.reserve(), young_evac.region_count());
   assert(old_evac.live_bytes() * old_evac.waste_factor() <=
          old_evac.reserve() + old_evac.region_count(),
          "Old evac consumption (%zu) exceeds reserve (%zu) + region count (%zu)",
-         (size_t)(old_evac.live_bytes() * old_evac.waste_factor()),
+         shenandoah_safe_size_cast(old_evac.live_bytes() * old_evac.waste_factor()),
          old_evac.reserve(), old_evac.region_count());
   assert(promo.live_bytes() * promo.waste_factor() <=
          promo.reserve() + promo.region_count(),
          "Promo consumption (%zu) exceeds reserve (%zu) + region count (%zu)",
-         (size_t)(promo.live_bytes() * promo.waste_factor()),
+         shenandoah_safe_size_cast(promo.live_bytes() * promo.waste_factor()),
          promo.reserve(), promo.region_count());
 
   size_t total_post_reserves = young_evac.reserve() + old_evac.reserve() + promo.reserve();

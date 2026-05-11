@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "utilities/quickSort.hpp"
@@ -372,7 +373,7 @@ void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahHeap*
   ShenandoahYoungGeneration* const young_generation = heap->young_generation();
 
   const size_t old_evacuated = collection_set->get_live_bytes_in_old_regions();
-  size_t old_evacuated_committed = (size_t) (ShenandoahOldEvacWaste * double(old_evacuated));
+  size_t old_evacuated_committed = shenandoah_safe_size_cast(ShenandoahOldEvacWaste * static_cast<double>(old_evacuated));
   size_t old_evacuation_reserve = old_generation->get_evacuation_reserve();
 
   if (old_evacuated_committed > old_evacuation_reserve) {
@@ -390,11 +391,11 @@ void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahHeap*
     old_generation->set_evacuation_reserve(old_evacuation_reserve);
   }
 
-  size_t young_advance_promoted = collection_set->get_live_bytes_in_tenurable_regions();
-  size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * double(young_advance_promoted));
+  const double young_advance_promoted = collection_set->get_live_bytes_in_tenurable_regions();
+  size_t young_advance_promoted_reserve_used = shenandoah_safe_size_cast(ShenandoahPromoEvacWaste * young_advance_promoted);
 
-  size_t young_evacuated = collection_set->get_live_bytes_in_untenurable_regions();
-  size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
+  const double young_evacuated = collection_set->get_live_bytes_in_untenurable_regions();
+  const size_t young_evacuated_reserve_used = shenandoah_safe_size_cast(ShenandoahEvacWaste * young_evacuated);
 
   // In top_off_collection_set(), we shrunk planned future reserve by _add_regions_to_old * region_size_bytes, but we
   // didn't shrink available. The current reserve is not affected by the planned future reserve. Current available is

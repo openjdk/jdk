@@ -84,7 +84,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
   // If this is mixed evacuation, the old-gen candidate regions have already been added.
   size_t cur_cset = 0;
   size_t cur_young_garbage = cset->garbage();
-  const size_t max_cset = (size_t) (heap->young_generation()->get_evacuation_reserve() / ShenandoahEvacWaste);
+  const size_t max_cset = shenandoah_safe_size_cast(heap->young_generation()->get_evacuation_reserve() / ShenandoahEvacWaste);
   const size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
   const size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
