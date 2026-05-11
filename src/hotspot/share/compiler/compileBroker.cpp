@@ -1382,7 +1382,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   }
 #endif
 
-  CompilerDirectiveMatcher matcher(method, comp);
+  CompilerDirectiveMatcher matcher(method, comp_level);
   // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, compile_reason, matcher.directive_set(), THREAD);
   return nm;

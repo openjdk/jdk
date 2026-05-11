@@ -59,15 +59,6 @@ final class DemoContainerInjectionTest {
     }
 
     @Test
-    void SettableComponents() {
-        SettableContainer container = SettableScratchContainer.of(Set.of(Foo.class, Bar.class));
-        container.set(Foo.class, new FooImpl());
-        container.set(Bar.class, new BarImpl());
-        assertContainerPopulated(container);
-    }
-
-
-    @Test
     void ProviderComponents() {
         Container container = ProviderContainer.of(Map.of(
                 Foo.class, FooImpl::new,
@@ -93,10 +84,6 @@ final class DemoContainerInjectionTest {
         <T> T get(Class<T> type);
     }
 
-    interface SettableContainer extends Container {
-        <T> void set(Class<T> type, T implementation);
-    }
-
     record ComputedContainer(Map<Class<?>, ?> components) implements Container {
 
         @Override
@@ -110,26 +97,6 @@ final class DemoContainerInjectionTest {
 
     }
 
-    record SettableScratchContainer(Map<Class<?>, Object> scratch, Map<Class<?>, ?> components) implements SettableContainer {
-
-        @Override
-        public <T> void set(Class<T> type, T implementation) {
-            if (scratch.putIfAbsent(type, type.cast(implementation)) != null) {
-                throw new IllegalStateException("Can only set once for " + type);
-            }
-        }
-
-        @Override
-        public <T> T get(Class<T> type) {
-            return type.cast(components.get(type));
-        }
-
-        static SettableContainer of(Set<Class<?>> components) {
-            Map<Class<?>, Object> scratch = new ConcurrentHashMap<>();
-            return new SettableScratchContainer(scratch, Map.ofLazy(components, scratch::get));
-        }
-
-    }
 
     record ProviderContainer(Map<Class<?>, ?> components) implements Container {
 
