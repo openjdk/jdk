@@ -1908,7 +1908,8 @@ public class ForkJoinPool extends AbstractExecutorService
                           c, ((UMASK & (c + RC_UNIT)) | (c & TC_MASK) |
                               (v.stackPred & LMASK))))) {
                 v.phase = sp;
-                U.unpark(v.owner);
+                if (v.parking == sp)
+                    U.unpark(v.owner);
             }
         }
     }
@@ -1975,7 +1976,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if ((e & STOP) != 0L || qs == null || (n = qs.length) <= 0)
                     break;
                 boolean rescan = false;               // scan queues
-                scan: for (int j = (src < 0) ? n : n << 2; j != 0; --j, i += step) {
+                scan: for (int j = (src < 0) ? n : n << 3; j != 0; --j, i += step) {
                     int qid, cap; WorkQueue q; ForkJoinTask<?>[] a;
                     if ((q = qs[qid = i & (n - 1)]) != null &&
                         (a = q.array) != null && (cap = a.length) > 0) {
@@ -2024,8 +2025,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     }
                 }
                 i = r;                                // move unless deactivated
-                if (!rescan && runState == e &&
-                    phase != (phase = deactivate(w, phase, src))) {
+                if (!rescan && phase != (phase = deactivate(w, phase, src))) {
                     if ((phase & IDLE) != 0)
                         break;                        // terminated
                     if (src >= 0) {
@@ -2042,69 +2042,68 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      * @param w the worker
      * @param phase current phase
-     * @param src nonzero if ran tasks
+     * @param src nonnegative if ran tasks
      * @return current phase, with IDLE set if worker should exit
      */
     private int deactivate(WorkQueue w, int phase, int src) {
         if (w != null) {                         // always true; hoist checks
             int activePhase = phase + (IDLE << 1);
             long pc = ctl;
-            long qc = ((pc - RC_UNIT) & UMASK) | (activePhase & LMASK), qac;
+            long qc = ((pc - RC_UNIT) & UMASK) | (activePhase & LMASK);
+            long qac = qc & RC_MASK, e;
             w.stackPred = (int)pc;               // try to enqueue
             w.phase = phase | IDLE;
             if (!U.compareAndSetLong(this, CTL, pc, qc))
                 w.phase = phase;                 // back out on contention
-            else if ((qac = qc & RC_MASK) == 0L && (runState & SHUTDOWN) != 0L &&
-                     quiescent() > 0)
+            else if (((e = runState) & STOP) != 0L ||
+                     ((e & SHUTDOWN) != 0L && qac == 0L && quiescent() > 0))
                 phase = IDLE;                    // quiescent termination
             else {
-                WorkQueue[] qs; int n;
-                if (src >= 0) {
-                    if ((w.config & CLEAR_TLS) != 0 &&
-                        (Thread.currentThread() instanceof ForkJoinWorkerThread f))
-                        f.resetThreadLocals();  // (instanceof check always true)
-                    phase = w.phase;
-                }
-                else {                           // reduce flailing on empty scans
-                    int spins = SPIN_WAITS + (((short)(qc >>> TC_SHIFT) | 1) & SMASK);
-                    while (((phase = w.phase) != activePhase) && --spins != 0)
-                        Thread.onSpinWait();
-                }
-                if (phase != activePhase &&      // check for missed signal
-                    (runState & STOP) == 0L &&
-                    (qs = queues) != null && (n = qs.length) > 0) {
-                    for (int k = n, i = activePhase; k-- > 0 ; ++i) {
-                        WorkQueue q; int cap, m; ForkJoinTask<?>[] a;
-                        if ((q = qs[i & (n - 1)]) != null &&
-                            (a = q.array) != null && (cap = a.length) > 0) {
-                            if (a[(m = cap - 1) & q.base] != null) {
-                                WorkQueue v; int sp, j; long c;
-                                if (((c = ctl) & RC_MASK) <= qac &&
-                                    (sp = (int)c) != 0 &&
-                                    (j = sp & SMASK) < n && (v = qs[j]) != null) {
-                                    long nc = ((v.stackPred & LMASK) |
-                                               ((c + RC_UNIT) & UMASK));
-                                    if (sp != activePhase &&
-                                        (phase = w.phase) == activePhase)
-                                        break;
-                                    if (U.compareAndSetLong(this, CTL, c, nc)) {
-                                        if ((v.phase = sp) == activePhase)
-                                            phase = activePhase;
-                                        else if (v.parking == sp)
-                                            U.unpark(v.owner);
-                                        break;
+                ForkJoinWorkerThread o; WorkQueue[] qs; int n;
+                if (src >= 0 && (w.config & CLEAR_TLS) != 0 && (o = w.owner) != null)
+                    o.resetThreadLocals();
+                if ((qs = queues) != null && (n = qs.length) > 0) {
+                    int spins = (short)(qac >> RC_SHIFT) + (src >= 0 ? 0 : n);
+                    while ((phase = w.phase) != activePhase && --spins > 0)
+                        Thread.onSpinWait();     // reduce activation flailing
+                    if (phase != activePhase) {  // missed signal check
+                        for (int k = n, i = activePhase + 1; k-- > 0 ; ++i) {
+                            WorkQueue q; int cap; ForkJoinTask<?>[] a;
+                            if ((q = qs[i & (n - 1)]) != null &&
+                                (a = q.array) != null && (cap = a.length) > 0) {
+                                int b = q.base; long bp;
+                                if (U.getReferenceAcquire(
+                                        a, bp = slotOffset((cap - 1) & b)) != null) {
+                                    WorkQueue v; int sp, j; long c;
+                                    if (((c = ctl) & RC_MASK) <= qac &&
+                                        (sp = (int)c) != 0 &&
+                                        (j = sp & SMASK) < n && (v = qs[j]) != null) {
+                                        long nc = ((v.stackPred & LMASK) |
+                                                   ((c + RC_UNIT) & UMASK));
+                                        if ((phase = w.phase) == activePhase)
+                                            break;
+                                        if (U.getReference(a, bp) != null &&
+                                            U.compareAndSetLong(this, CTL, c, nc)) {
+                                            if ((v.phase = sp) == activePhase)
+                                                phase = activePhase;
+                                            else if (v.parking == sp)
+                                                U.unpark(v.owner);
+                                            break;
+                                        }
                                     }
+                                    if (U.getReference(a, bp) != null)
+                                        k = n;   // revisit
                                 }
+                                else if (q.base != b)
+                                    k = n;       // inconsistent; retry later
+                                if ((phase = w.phase) == activePhase)
+                                    break;
                             }
-                            if ((phase = w.phase) == activePhase)
-                                break;
-                            if (a[m & q.base] != null)
-                                k = n;           // ensure re-encounter
                         }
                     }
-                    if (phase != activePhase)
-                        phase = awaitWork(w, phase);
                 }
+                if (phase != activePhase)
+                    phase = awaitWork(w, phase);
             }
         }
         return phase;
@@ -2118,14 +2117,16 @@ public class ForkJoinPool extends AbstractExecutorService
      * @return current phase, with IDLE set if worker should exit
      */
     private int awaitWork(WorkQueue w, int phase) {
-        if (w != null) {
+        if (w != null) {                      // always true; hoist checks
             long deadline = 0L;
             int parking = 0, activePhase = phase + IDLE;
-            while ((phase = w.phase) != activePhase && (runState & STOP) == 0L) {
+            while ((phase = w.phase) != activePhase) {
+                Thread.interrupted();         // clear status
+                if ((runState & STOP) != 0L)
+                    break;
                 boolean trimmable = false;    // true if at ctl head and quiescent
                 long d = 0L, c;
                 if ((int)(c = ctl) == activePhase && (c & RC_MASK) == 0L) {
-                    trimmable = true;
                     boolean trim = false;
                     long now = System.currentTimeMillis();
                     if (deadline == 0L) {
@@ -2137,12 +2138,11 @@ public class ForkJoinPool extends AbstractExecutorService
                         trim = true;
                     if (trim && tryTrim(w, c, activePhase))
                         break;
+                    trimmable = true;
                 }
-                if ((phase = w.phase) == activePhase)
-                    break;
-                if (parking != 0)
-                    Thread.interrupted();     // clear status
-                else {
+                if (parking == 0) {           // emable unpark
+                    if ((phase = w.phase) == activePhase)
+                        break;
                     LockSupport.setCurrentBlocker(this);
                     parking = w.parking = activePhase;
                 }
