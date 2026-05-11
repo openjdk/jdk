@@ -1345,12 +1345,16 @@ Node* VPointer::make_pointer_expression(Node* iv_value, Node* ctrl) const {
         variable = new CastP2XNode(ctrl, variable);
         phase->register_new_node(variable, ctrl);
       }
-      NOT_LP64( // On 32-bit CastP2X produces TypeInt
-        if (variable->bottom_type()->isa_int()) {
-          variable = new ConvI2LNode(variable);
-          phase->register_new_node(variable, ctrl);
-        }
-      )
+#ifndef _LP64 // On 32-bit CastP2X produces TypeInt
+      if (variable->bottom_type()->isa_int()) {
+        // adding zero-extended I2L conversion
+        variable = new ConvI2LNode(variable);
+        phase->register_new_node(variable, ctrl);
+        // avoid sign extension
+        variable = new AndLNode(variable, igvn.longcon(0xFFFFFFFFL));
+        phase->register_new_node(variable, ctrl);
+      }
+#endif
       node = new MulLNode(scaleL, variable);
       phase->register_new_node(node, ctrl);
     }
