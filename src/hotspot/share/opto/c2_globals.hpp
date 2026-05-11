@@ -117,6 +117,14 @@
           "(e.g. copy,cmp) acceleration.")                                  \
           range(0, 256)                                                     \
                                                                             \
+  product(uint, DremFremOpt, 1111, DIAGNOSTIC, /* DO NOT MERGE */           \
+          "ModD/ModF integer optimization flags =DCBA, with:"               \
+          "  A: FOLD_BASE conversion folding (ConvL2D/ConvD2L roundtrip)"   \
+          "  B: FOLD_CMP CmpD self-comparison + worklist propagation"       \
+          "  C: STATIC static path (is_integral_fp)"                        \
+          "  D: SPECULATIVE speculative path (runtime guards)"              \
+          "Each can be 0=off or 1=on")                                      \
+                                                                            \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
                                                                             \

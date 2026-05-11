@@ -50,7 +50,7 @@ public class ModDIntegerOptTests {
         }
     }
 
-    @Run(test = {"staticConvI2D", "staticSumOfInts", "staticSubD", "staticFloatSum", "staticSubF",
+    @Run(test = {"staticConvI2D", "staticConvF2D", "staticSumOfInts", "staticSubD", "staticFloatSum", "staticSubF",
                  "staticFloatWithConst", "staticFloatLargeConst", "staticHugeConst",
                  "staticConvL2D", "staticNegD", "staticNegF", "staticAbsD", "staticAbsF",
                  "staticDivisorOne", "staticNegativeDivisor", "staticLargeDivisor",
@@ -66,6 +66,7 @@ public class ModDIntegerOptTests {
         int[] intValues = { a, b, c, 0, 1, -1, 42, -42, Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1 };
         for (int v : intValues) {
             assertDremEQ(staticConvI2D(v), (double)v % 42.0d, "staticConvI2D(" + v + ")");
+            assertDremEQ(staticConvF2D(v), (double)(float)v % 42.0d, "staticConvF2D(" + v + ")");
             assertDremEQ(staticDivisorOne(v), (double)v % 1.0d, "staticDivisorOne(" + v + ")");
             assertDremEQ(staticNegativeDivisor(v), (double)v % -7.0d, "staticNegDivisor(" + v + ")");
             assertDremEQ(staticLargeDivisor(v), (double)v % 1000000007.0d, "staticLargeDivisor(" + v + ")");
@@ -141,10 +142,18 @@ public class ModDIntegerOptTests {
     @Test
     @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.AFTER_PARSING)
     @IR(failOn = {IRNode.MOD_D})
-    @IR(counts = {IRNode.CONV_D2L, "1"})
+    @IR(failOn = {IRNode.CONV_D2L})
+    @IR(counts = {IRNode.CONV_I2L, "1"})
     @IR(failOn = {".*CallLeaf.*drem.*"}, phase = CompilePhase.BEFORE_MATCHING)
     public double staticConvI2D(int a) {
         return (double)a % 42.0d;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_D})
+    @IR(failOn = {".*CallLeaf.*drem.*"}, phase = CompilePhase.BEFORE_MATCHING)
+    public double staticConvF2D(int a) {
+        return (double)(float)a % 42.0d;
     }
 
     @Test
@@ -297,6 +306,20 @@ public class ModDIntegerOptTests {
     @IR(counts = {".*CallLeaf.*drem.*", "1"}, phase = CompilePhase.BEFORE_MATCHING)
     public double nonIntegerDivisor(double x) {
         return x % 31.5d;
+    }
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(failOn = {".*CallLeaf.*drem.*"}, phase = CompilePhase.BEFORE_MATCHING)
+    public double foldedAfterLoopOpts(int input) {
+        int a = 77;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+        double x = (double) input + (b == 77 ? 0.0 : 0.5);
+        return x % 42.0d;
     }
 
     @Test

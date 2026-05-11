@@ -61,77 +61,6 @@ ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntim
   init_req(TypeFunc::Parms + 1, b);
 }
 
-// Max recursion depth for is_integral_fp. Increasing accepts deeper expression trees
-// but grows worst-case compile cost (2^D recursive calls).
-//
-// Expressions beyond the limit fall to the speculative path (correct, just less optimized).
-static const int INTEGRAL_FP_DEPTH_LIMIT = 4;
-
-// Check if a node provably produces an integral floating-point value that fits
-// in jlong (-2^63 <= value < 2^63), so ConvD2L does not saturate.
-//
-// Integrality is inductive: IEEE 754 add/sub/neg/abs of integral values always yields an
-// integral result. A sub-tree at depth d has magnitude < 2^(63-d).
-// Constants at depth d capped at < 2^(63-d); AddD/SubD doubles the bound per level up.
-// ConvI2D/ConvI2F leaves (max 2^31) have more headroom.
-// ConvL2D is depth-0 only (arithmetic above it could sum past 2^63).
-//
-// Recognized patterns (d = node depth):
-//   ConF(c) where |c| < 2^(63-d) and c == (float)(jlong)c  -> true
-//   ConD(c) where |c| < 2^(63-d) and c == (double)(jlong)c -> true
-//   ConvI2F/ConvI2D(x)                                     -> true
-//   ConvF2D(integral_fp)                                   -> true
-//   ConvL2D(x) at depth 0, type(x) won't round to 2^63     -> true
-//   NegD/AbsD/CastDD/NegF/AbsF/CastFF(integral_fp)         -> true
-//   AddD/SubD/AddF/SubF(integral_fp, integral_fp)          -> true
-static bool is_integral_fp(PhaseGVN* phase, Node* n, int depth) {
-  if (depth > INTEGRAL_FP_DEPTH_LIMIT) return false;
-  switch (n->Opcode()) {
-  case Op_ConvI2D:
-  case Op_ConvI2F:
-    return true;
-  case Op_ConvL2D: {
-    // ConvL2D always produces integral values, but longs near max_jlong
-    // may round up to 2^63 via ConvL2D, causing ConvD2L to saturate.
-    // Only accept at depth 0 (direct dividend to %) as inside AddD/SubD/NegD,
-    // arithmetic could push the result above 2^63.
-    // The ULP of doubles in [2^62, 2^63) is 2^(63 - DBL_MANT_DIG) = 1024.
-    // At the midpoint (max_jlong - 511 = 2^63 - 512), round-to-even goes
-    // to 2^63 (even mantissa), so the safe bound is max_jlong - 512.
-    if (depth > 0) return false;
-    const TypeLong* tl = phase->type(n->in(1))->isa_long();
-    return tl != nullptr && tl->_hi <= max_jlong - (1LL << (63 - DBL_MANT_DIG - 1));
-  }
-  case Op_ConvF2D:
-  case Op_NegD:
-  case Op_NegF:
-  case Op_AbsD:
-  case Op_AbsF:
-  case Op_CastDD:
-  case Op_CastFF:
-    return is_integral_fp(phase, n->in(1), depth + 1);
-  case Op_AddD: case Op_SubD:
-  case Op_AddF: case Op_SubF:
-    return is_integral_fp(phase, n->in(1), depth + 1) && is_integral_fp(phase, n->in(2), depth + 1);
-  default: {
-    const TypeD* td = phase->type(n)->isa_double_constant();
-    if (td != nullptr) {
-      double d = td->getd();
-      // Integral double constant within sum-safe range at this depth
-      return g_isfinite(d) && fabs(d) < (1ULL << (63 - depth)) && d == (double)(jlong)d;
-    }
-    const TypeF* tf = phase->type(n)->isa_float_constant();
-    if (tf != nullptr) {
-      jfloat f = tf->getf();
-      // Integral float constant within sum-safe range at this depth
-      return g_isfinite(f) && fabsf(f) < (1ULL << (63 - depth)) && f == (float)(jlong)f;
-    }
-    // Not a recognized integral pattern
-    return false;
-  }
-  }
-}
-
 // Copy sign bit from sign_src to magnitude using bit manipulation.
 // JLS 15.17.3: If the result is not NaN, the sign of the result equals the sign of the dividend.
 static Node* copy_sign_d(PhaseIterGVN* igvn, Node* magnitude, Node* sign_src) {
@@ -198,12 +127,16 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Dividend is provably integral, no branch needed
-  if (is_integral_fp(phase, x, 0)) {
+  if (DREM_OPT_STATIC && is_integral_fp(phase, x, 0)) {
     Node* x_as_long = igvn->transform(new ConvD2LNode(x));
     Node* mod_l = igvn->transform(new ModLNode(in(TypeFunc::Control), x_as_long, igvn->longcon(divisor_l)));
     Node* result = igvn->transform(new ConvL2DNode(mod_l));
     result = igvn->transform(copy_sign_d(igvn, result, x));
     return make_tuple_of_input_state_and_result(igvn, result);
+  }
+
+  if (!DREM_OPT_SPECULATIVE) {
+    return CallLeafPureNode::Ideal(phase, can_reshape);
   }
 
   // Runtime check if dividend is integral

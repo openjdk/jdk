@@ -28,6 +28,13 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 
+// DEBUG ONLY DremFremOpt digit accessors (decimal digit encoding like VerifyIterativeGVN)
+#define DREM_OPT_FOLD_BASE  ((DremFremOpt % 10) == 1)          // A: ConvL2D/ConvD2L roundtrip fold
+#define DREM_OPT_FOLD_CMP   (((DremFremOpt % 100) / 10) == 1)  // B: CmpD self-comparison + worklist
+#define DREM_OPT_STATIC     (((DremFremOpt % 1000) / 100) == 1) // C: static path
+#define DREM_OPT_SPECULATIVE (((DremFremOpt % 10000) / 1000) == 1) // D: speculative path
+
+bool is_integral_fp(const PhaseGVN* phase, const Node* n, int depth = 0);
 
 //------------------------------Conv2BNode-------------------------------------
 // Convert int/pointer to a Boolean.  Map zero to zero, all else to 1.
@@ -186,6 +193,7 @@ public:
   virtual int Opcode() const;
   virtual const Type* in_type() const { return TypeLong::LONG; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------ConvL2FNode------------------------------------
