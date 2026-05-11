@@ -659,7 +659,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   }
 
   __ mov(rscratch2, rscratch1);
-  __ push_cont_fastpath(rthread); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about; kills rscratch1
+  __ push_cont_fastpath(rthread); // Set JavaThread::_cont_fastpath to the id of the oldest interpreted frame we know about; kills rscratch1
   __ mov(rscratch1, rscratch2);
 
   // 6243940 We might end up in handle_wrong_method if
