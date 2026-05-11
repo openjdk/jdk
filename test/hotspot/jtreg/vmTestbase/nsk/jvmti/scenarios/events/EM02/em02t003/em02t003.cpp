@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,26 +465,24 @@ static bool setCallBacks(int step) {
             break;
 
         case 2:
-            for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
-                newEventCount[i] = 0;
-            }
-
             eventCallbacks.CompiledMethodLoad   = cbNewCompiledMethodLoad;
             eventCallbacks.CompiledMethodUnload = cbNewCompiledMethodUnload;
             break;
 
         case 3:
-
-            for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
-                newEventCount[i] = 0;
-            }
-
             eventCallbacks.VMDeath                   = cbVMDeath;
             break;
 
     }
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return false;
+
+    /* Give some time to complete already started cbNew* events without additional synchronization. */
+    nsk_jvmti_sleep(100);
+    for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
+        newEventCount[i] = 0;
+    }
+
 
     return true;
 }
