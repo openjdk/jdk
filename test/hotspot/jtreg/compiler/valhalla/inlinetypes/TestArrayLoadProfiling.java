@@ -109,45 +109,51 @@ public class TestArrayLoadProfiling {
         i.m();
     }
 
-    // @Test
-    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "5", IRNode.IF, "5" })
-    // @IR(failOn = { IRNode.CLASS_CHECK_TRAP })
-    // public static void test2(I[] array) {
-    //     test2Inline(array[0]);
-    // }
+    static void trapAndRecompile(String name, Runnable causesTrap) throws Exception {
+	Method m = TestArrayLoadProfiling.class.getDeclaredMethod(name, I[].class);
+	if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+	    throw new RuntimeException("should be compiled");
+	}
+	int i = 0;
+	do {
+	    causesTrap.run();
+	    i++;
+	    if (i > 10) {
+		throw new RuntimeException("should not be compiled anymore");
+	    }
+	} while (WHITE_BOX.isMethodCompiled(m));
+	WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+	if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+	    throw new RuntimeException("should be compiled");
+	}
+    }
+    
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.DYNAMIC_CALL_OF_METHOD, "m", "1", IRNode.UNHANDLED_TRAP, "2", IRNode.CALL, "6", IRNode.ALLOC, "2" },
+	phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, applyIf = { "ProfileInterpreter", "true"})
+    @IR(failOn = { IRNode.CLASS_CHECK_TRAP } , applyIf = { "ProfileInterpreter", "true" })
+    public static void test2(I[] array) {
+        test2Inline(array[0]);
+    }
 
-    // @Run(test = "test2")
-    // public static void test2Runner(RunInfo info)  throws Exception {
-    //     if (info.isWarmUp()) {
-    //         test2(array1);
-    //         test2Inline(array2[0]);
-    //         test2Inline(array3[0]);
-    //         test2Inline(array4[0]);
-    //         test2Inline(array5[0]);
-    //     } else {
-    //         Method m = TestArrayLoadProfiling.class.getDeclaredMethod("test2", I[].class);
-    //         if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-    //             throw new RuntimeException("should be compiled");
-    //         }
-    //         int i = 0;
-    //         do {
-    //             test2(array2);
-    //             i++;
-    //             if (i > 10) {
-    //                 throw new RuntimeException("should not be compiled anymore");
-    //             }
-    //         } while (WHITE_BOX.isMethodCompiled(m));
-    //         WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-    //         if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-    //             throw new RuntimeException("should be compiled");
-    //         }
-    //     }
-    // }
+    @Run(test = "test2")
+    @Warmup(10_000)
+    public static void test2Runner(RunInfo info) throws Exception {
+        if (info.isWarmUp()) {
+            test2(array1);
+            test2Inline(array2[0]);
+            test2Inline(array3[0]);
+            test2Inline(array4[0]);
+            test2Inline(array5[0]);
+        } else {
+	    trapAndRecompile("test2", () -> { test2(array2); });
+        }
+    }
 
-    // @ForceInline
-    // static void test2Inline(I i) {
-    //     i.m();
-    // }
+    @ForceInline
+    static void test2Inline(I i) {
+        i.m();
+    }
 
     @Test
     @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "4" })
@@ -165,6 +171,28 @@ public class TestArrayLoadProfiling {
 
     @ForceInline
     static void test3Inline(I i) {
+        i.m();
+    }
+
+    @Test
+    @IR(failOn = { IRNode.CLASS_CHECK_TRAP } , applyIf = { "ProfileInterpreter", "true" })
+    public static void test4(I[] array) {
+        test4Inline(array[0]);
+    }
+
+    @Run(test = "test4")
+    @Warmup(10_000)
+    public static void test4Runner(RunInfo info) throws Exception {
+        if (info.isWarmUp()) {
+	    test4(array3);
+	    test4(array4);
+        } else {
+	    trapAndRecompile("test4", () -> { test4(array1); });
+        }
+    }
+
+    @ForceInline
+    static void test4Inline(I i) {
         i.m();
     }
 
@@ -188,6 +216,28 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
+    @IR(failOn = { IRNode.CLASS_CHECK_TRAP } , applyIf = { "ProfileInterpreter", "true" })
+    public static void test6(I[] array) {
+        test6Inline(array[0]);
+    }
+
+    @Run(test = "test6")
+    @Warmup(10_000)
+    public static void test6Runner(RunInfo info) throws Exception {
+        if (info.isWarmUp()) {
+	    test6(array1);
+	    test6(array2);
+	} else {
+	    trapAndRecompile("test6", () -> { test6(array3); });
+	}
+    }
+
+    @ForceInline
+    static void test6Inline(I i) {
+        i.m();
+    }
+
+    @Test
     @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "6" })
     @IR(failOn = IRNode.ALLOC)
     public static void test7(I[] array) {
@@ -206,6 +256,31 @@ public class TestArrayLoadProfiling {
 
     @ForceInline
     static void test7Inline(I i) {
+        i.m();
+    }
+
+    @Test
+    @IR(failOn = { IRNode.CLASS_CHECK_TRAP } , applyIf = { "ProfileInterpreter", "true" })
+    public static void test8(I[] array) {
+        test8Inline(array[0]);
+    }
+
+    @Run(test = "test8")
+    @Warmup(10_000)
+    public static void test8Runner(RunInfo info) throws Exception {
+        if (info.isWarmUp()) {
+	    test8Inline(array1[0]);
+	    test8Inline(array2[0]);
+	    test8Inline(array3[0]);
+	    test8Inline(array4[0]);
+	    test8(array5);
+	} else {
+	    trapAndRecompile("test8", () -> { test8(array1); });
+	}
+    }
+
+    @ForceInline
+    static void test8Inline(I i) {
         i.m();
     }
 
@@ -262,6 +337,30 @@ public class TestArrayLoadProfiling {
         i.m();
     }
 
+    @Test
+    @IR(failOn = { IRNode.CLASS_CHECK_TRAP } , applyIf = { "ProfileInterpreter", "true" })
+    public static void test10(I[] array) {
+        test10Inline(array[0]);
+    }
+
+    @Run(test = "test10")
+    @Warmup(10_000)
+    public static void test10Runner(RunInfo info) throws Exception {
+        if (info.isWarmUp()) {
+	    test10(array1);
+	    test10(array2);
+	    test10(array6);
+	    test10(array7);
+	} else {
+	    trapAndRecompile("test10", () -> { test10(array3); });
+	}
+    }
+
+    @ForceInline
+    static void test10Inline(I i) {
+        i.m();
+    }
+
     // if (array == null) {
     //   trap1;
     // }
@@ -314,6 +413,32 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
+    @IR(failOn = { IRNode.CLASS_CHECK_TRAP } , applyIf = { "ProfileInterpreter", "true" })
+    public static void test12(I[] array) {
+        test12Inline(array[0]);
+    }
+
+    @Run(test = "test12")
+    @Warmup(10_000)
+    public static void test12Runner(RunInfo info) throws Exception {
+        if (info.isWarmUp()) {
+	    for (int i = 0; i < 50; i++) {
+		test12(array1);
+	    }
+	    test12(array2);
+	    test12(array3);
+	    test12(array4);
+	} else {
+	    trapAndRecompile("test12", () -> { test12(array5); });
+	}
+    }
+
+    @ForceInline
+    static void test12Inline(I i) {
+        i.m();
+    }
+
+    @Test
     @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP, "1", IRNode.TRAP, "5", IRNode.CALL, "6", IRNode.IF, "7" })
     @IR(failOn = IRNode.ALLOC)
     public static void test13(I[] array) {
@@ -331,6 +456,30 @@ public class TestArrayLoadProfiling {
 
     @ForceInline
     static void test13Inline(I i) {
+        i.m();
+    }
+
+    @Test
+    @IR(failOn = { IRNode.CLASS_CHECK_TRAP } , applyIf = { "ProfileInterpreter", "true" })
+    public static void test14(I[] array) {
+        test14Inline(array[0]);
+    }
+
+    @Run(test = "test14")
+    @Warmup(10_000)
+    public static void test14Runner(RunInfo info) throws Exception {
+        if (info.isWarmUp()) {
+	    test14(array1);
+	    test14(array2);
+	    test14(array3);
+	    test14(array4);
+ 	} else {
+	    trapAndRecompile("test14", () -> { test14(array5); });
+	}
+    }
+
+    @ForceInline
+    static void test14Inline(I i) {
         i.m();
     }
 
@@ -354,6 +503,32 @@ public class TestArrayLoadProfiling {
 
     @ForceInline
     static void test15Inline(I i) {
+        i.m();
+    }
+
+    @Test
+    @IR(failOn = { IRNode.CLASS_CHECK_TRAP, IRNode.BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP } )
+    public static void test16(I[] array) {
+        test16Inline(array[0]);
+    }
+
+    @Run(test = "test16")
+    @Warmup(10_000)
+    public static void test16Runner(RunInfo info) throws Exception {
+        if (info.isWarmUp()) {
+	    test16(array1);
+	    test16(array2);
+	    test16(array3);
+	    test16(array4);
+	    test16(array6);
+	    test16(array7);
+ 	} else {
+	    trapAndRecompile("test16", () -> { test16(array5); });
+	}
+    }
+
+    @ForceInline
+    static void test16Inline(I i) {
         i.m();
     }
 
