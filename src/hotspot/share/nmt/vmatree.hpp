@@ -252,6 +252,7 @@ public:
       KVEntry(MemTag mt, SingleDiff sd) : mt(mt), single_diff(sd) {}
     };
 
+
     using Table = OpenAddressedHashTable<KVEntry,
                                          decltype(&KVEntry::key),
                                          decltype(&KVEntry::hash),
