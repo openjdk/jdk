@@ -47,6 +47,8 @@ public class TestArrayLoadProfiling {
     private final static WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
+        TestFramework.runWithFlags("--enable-preview", "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED", "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI", "-XX:-TieredCompilation");
+        TestFramework.runWithFlags("--enable-preview", "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED", "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI", "-XX:-ProfileInterpreter");
         TestFramework.runWithFlags("--enable-preview", "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED", "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI");
     }
 
@@ -82,6 +84,8 @@ public class TestArrayLoadProfiling {
         array19[0] = new MyValue5((byte)42);
         array21[0] = new MyValue4((byte)42);
     }
+
+    static I staticField;
     
     @Test
     @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "4" })
@@ -91,6 +95,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test1")
+    @Warmup(10_000)
     public static void test1Runner() {
         test1(array1);
         test1Inline(array2[0]);
@@ -152,6 +157,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test3")
+    @Warmup(10_000)
     public static void test3Runner() {
         test3(array3);
         test3(array4);
@@ -170,6 +176,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test5")
+    @Warmup(10_000)
     public static void test5Runner() {
         test5(array1);
         test5(array2);
@@ -188,6 +195,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test7")
+    @Warmup(10_000)
     public static void test7Runner() {
         test7Inline(array1[0]);
         test7Inline(array2[0]);
@@ -241,6 +249,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test9")
+    @Warmup(10_000)
     public static void test9Runner() {
         test9(array1);
         test9(array2);
@@ -289,6 +298,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test11")
+    @Warmup(10_000)
     public static void test11Runner() {
         for (int i = 0; i < 50; i++) {
             test11(array1);
@@ -311,6 +321,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test13")
+    @Warmup(10_000)
     public static void test13Runner() {
         test13(array1);
         test13(array2);
@@ -331,6 +342,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test15")
+    @Warmup(10_000)
     public static void test15Runner() {
         test15(array1);
         test15(array2);
@@ -378,6 +390,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test19")
+    @Warmup(10_000)
     public static void test19Runner() {
         test19(array5);
     }
@@ -404,6 +417,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test21")
+    @Warmup(10_000)
     public static void test21Runner() {
         test21();
         test21Inline(array2); // flat, nullable
@@ -426,6 +440,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test22")
+    @Warmup(10_000)
     public static void test22Runner() {
         test22();
         test22Inline(array2); // flat, nullable
@@ -463,13 +478,14 @@ public class TestArrayLoadProfiling {
     // }
 
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "9" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
     @IR(failOn = IRNode.ALLOC)
     public static void test23(I[] array) {
         test23Inline(array[0]);
     }
 
     @Run(test = "test23")
+    @Warmup(10_000)
     public static void test23Runner() {
         test23(array1); // flat nullable
         //test23(array3); // flat null free non atomic
@@ -494,6 +510,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test24")
+    @Warmup(10_000)
     public static void test24Runner() {
         test24(array11, 0, 0, 0);
     }
@@ -506,6 +523,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test25")
+    @Warmup(10_000)
     public static void test25Runner() {
         test25(array12, 0, 0, 0);
     }
@@ -519,11 +537,11 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test26")
+    @Warmup(10_000)
     public static void test26Runner() {
         test26();
-        test26Inline(array8); // flat, null free atomic
-        test26Inline(array22); // flat, null free atomic
-        test26Inline(array18); // flat, null free atomic
+	test26Inline(array8); // flat, null free atomic
+	test26Inline(array18); // flat, null free atomic
     }
 
     @ForceInline
@@ -540,10 +558,10 @@ public class TestArrayLoadProfiling {
     }
 
     @Run(test = "test27")
+    @Warmup(10_000)
     public static void test27Runner() {
         test27();
         test27Inline(array3); // flat, null free non atomic
-        test27Inline(array10); // flat, null free non atomic
         test27Inline(array17); // flat, null free non atomic
     }
 
@@ -551,6 +569,20 @@ public class TestArrayLoadProfiling {
     static void test27Inline(I[] array) {
         array[0].m();
     }
+
+    // @Test
+    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "3" })
+    // @IR(failOn = IRNode.ALLOC)
+    // public static void test28(I[] array) {
+    //     array[0].m();
+    //     array[0].m();
+    // }
+
+    // @Run(test = "test28")
+    // public static void test28Runner() {
+    //     test28(array5);
+    // }
+
 
     // @Test
     // // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "4" })

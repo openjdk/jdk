@@ -1632,13 +1632,13 @@ InlineTypeNode* InlineTypeNode::make_from_flat_array(GraphKit* kit, ciInlineKlas
       // Non-Atomic
       kit->set_control(kit->IfFalse(iff_atomic));
       if (!kit->stopped()) {
+        assert(vk->has_null_free_non_atomic_layout(),
+               "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
+        kit->set_all_memory(input_memory_state);
         if (null_free_atomic_prob == 1 && !kit->too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
           PreserveJVMState pjvms(kit);
           kit->uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
         } else {
-          assert(vk->has_null_free_non_atomic_layout(),
-                 "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
-          kit->set_all_memory(input_memory_state);
           Node *cast = kit->cast_to_flat_array_exact(base, vk, true, false);
           Node *ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
           vt_non_atomic = InlineTypeNode::make_from_flat(kit, vk, cast, ptr, false, false, true, decorators);
