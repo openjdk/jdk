@@ -37,6 +37,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/bytecodeTracer.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -431,6 +432,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _no_safepoint_count(0),
   _visited_for_critical_count(false),
 #endif
+
+  NOT_PRODUCT(_bytecode_tracer_data{} COMMA)
 
   _terminated(_not_terminated),
   _in_deopt_handler(0),

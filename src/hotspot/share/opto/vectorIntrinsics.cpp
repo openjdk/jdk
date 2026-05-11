@@ -1645,7 +1645,7 @@ bool LibraryCallKit::inline_vector_test() {
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   Node* opd2;
   if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
-                                                opd1->bottom_type()->isa_vectmask())) {
+                                                opd1->bottom_type()->isa_pvectmask())) {
     opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   } else {
     opd2 = opd1;
@@ -1656,7 +1656,7 @@ bool LibraryCallKit::inline_vector_test() {
 
   Node* cmp = gvn().transform(trace_vector(new VectorTestNode(opd1, opd2, booltest)));
   BoolTest::mask test = Matcher::vectortest_mask(booltest == BoolTest::overflow,
-                                                 opd1->bottom_type()->isa_vectmask(), num_elem);
+                                                 opd1->bottom_type()->isa_pvectmask(), num_elem);
   Node* bol = gvn().transform(new BoolNode(cmp, test));
   Node* res = gvn().transform(new CMoveINode(bol, gvn().intcon(0), gvn().intcon(1), TypeInt::BOOL));
 
@@ -2421,8 +2421,8 @@ bool LibraryCallKit::inline_vector_convert() {
   // where certain masks (depending on the species) are either propagated
   // through a vector or predicate register.
   if (is_mask &&
-      ((src_type->isa_vectmask() == nullptr && dst_type->isa_vectmask()) ||
-       (dst_type->isa_vectmask() == nullptr && src_type->isa_vectmask()))) {
+      ((src_type->isa_pvectmask() == nullptr && dst_type->isa_pvectmask()) ||
+       (dst_type->isa_pvectmask() == nullptr && src_type->isa_pvectmask()))) {
     return false;
   }
 

@@ -656,11 +656,12 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
 #endif // _LP64
 
 ReservedHeapSpace HeapReserver::Instance::reserve_heap(size_t size, size_t alignment, size_t page_size) {
-  if (UseCompressedOops) {
 #ifdef _LP64
+  if (UseCompressedOops) {
     return reserve_compressed_oops_heap(size, alignment, page_size);
+  } else
 #endif
-  } else {
+  {
     return reserve_uncompressed_oops_heap(size, alignment, page_size);
   }
 }
