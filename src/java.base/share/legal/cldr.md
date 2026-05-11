@@ -1,4 +1,4 @@
-## Unicode Common Local Data Repository (CLDR) v48
+## Unicode Common Local Data Repository (CLDR) v48.2
 
 ### CLDR License
 
@@ -9,7 +9,7 @@ UNICODE LICENSE V3
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 1991-2025 Unicode, Inc.
+Copyright © 1991-2026 Unicode, Inc.
 
 NOTICE TO USER: Carefully read the following legal agreement. BY
 DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR
