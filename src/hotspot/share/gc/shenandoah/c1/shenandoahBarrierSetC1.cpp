@@ -133,7 +133,6 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
   addr = ensure_in_register(gen, addr, T_ADDRESS);
   assert(addr->is_register(), "must be a register at this point");
   LIR_Opr result = gen->result_register_for(obj->value_type());
-  __ move(obj, result);
   LIR_Opr tmp1 = gen->new_register(T_ADDRESS);
   LIR_Opr tmp2 = gen->new_register(T_ADDRESS);
 
@@ -164,6 +163,11 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
 
   CodeStub* slow = new ShenandoahLoadReferenceBarrierStub(obj, addr, result, tmp1, tmp2, decorators);
   __ branch(lir_cond_notEqual, slow);
+
+  // No barrier is needed, move obj to result now.
+  __ move(obj, result);
+
+  // Slow-path re-enters here with result set.
   __ branch_destination(slow->continuation());
 
   return result;

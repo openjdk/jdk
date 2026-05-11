@@ -127,6 +127,7 @@ public:
     visitor->do_input(_addr);
     visitor->do_temp(_addr);
     visitor->do_temp(_result);
+    visitor->do_output(_result);
     visitor->do_temp(_tmp1);
     visitor->do_temp(_tmp2);
   }
