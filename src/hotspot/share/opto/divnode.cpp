@@ -127,16 +127,12 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Dividend is provably integral, no branch needed
-  if (DREM_OPT_STATIC && is_integral_fp(phase, x, 0)) {
+  if (is_integral_fp(phase, x, 0)) {
     Node* x_as_long = igvn->transform(new ConvD2LNode(x));
     Node* mod_l = igvn->transform(new ModLNode(in(TypeFunc::Control), x_as_long, igvn->longcon(divisor_l)));
     Node* result = igvn->transform(new ConvL2DNode(mod_l));
     result = igvn->transform(copy_sign_d(igvn, result, x));
     return make_tuple_of_input_state_and_result(igvn, result);
-  }
-
-  if (!DREM_OPT_SPECULATIVE) {
-    return CallLeafPureNode::Ideal(phase, can_reshape);
   }
 
   // Runtime check if dividend is integral

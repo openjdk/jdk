@@ -273,7 +273,7 @@ const Type* ConvD2LNode::Value(PhaseGVN* phase) const {
     // is_integral_fp guarantees |value| < 2^63, so ConvD2L never saturates
     // to max_jlong. max_jlong isn't representable as double (rounds to 2^63),
     // so the output is always < max_jlong.
-    return (DREM_OPT_FOLD_BASE && is_integral_fp(phase, in(1), 0))
+    return is_integral_fp(phase, in(1), 0)
       ? TypeLong::make(min_jlong, max_jlong - 1, Type::WidenMax)
       : TypeLong::LONG;
   }
@@ -912,7 +912,7 @@ const Type* ConvL2DNode::Value(PhaseGVN* phase) const {
 //----------------------------Identity-----------------------------------------
 Node* ConvL2DNode::Identity(PhaseGVN* phase) {
   // Convert L2D(D2L(x)) => x when x is provably integral
-  return (DREM_OPT_FOLD_BASE && in(1)->Opcode() == Op_ConvD2L && is_integral_fp(phase, in(1)->in(1)))
+  return (in(1)->Opcode() == Op_ConvD2L && is_integral_fp(phase, in(1)->in(1)))
     ? in(1)->in(1)
     : this;
 }

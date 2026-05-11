@@ -1260,7 +1260,7 @@ const Type* CmpDNode::Value(PhaseGVN* phase) const {
   if( t2 == Type::TOP ) return Type::TOP;
 
   // Same node compared to itself: equal unless it could be NaN, integral FP values are never NaN
-  if (DREM_OPT_FOLD_CMP && in1 == in2 && is_integral_fp(phase, in1)) {
+  if (in1 == in2 && is_integral_fp(phase, in1)) {
     return TypeInt::CC_EQ;
   }
 

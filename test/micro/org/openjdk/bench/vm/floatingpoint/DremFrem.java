@@ -26,11 +26,9 @@ package org.openjdk.bench.vm.floatingpoint;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -119,7 +117,46 @@ public class DremFrem {
         regressionValue = sum % 2 == 1;
     }
 
-    // Baseline: same data as specFastAlways but non-integer divisor disables opt.
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void staticPathOpaque() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += (double) ints[i] % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void specFastAlways() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += intDoubles[i] % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void specSlowAlways() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += fracDoubles[i] % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void specMixed50() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += mixedDoubles[i] % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
     @Benchmark
     @OperationsPerInvocation(DEFAULT_X_RANGE)
     public void baselineSlow() {
@@ -130,7 +167,6 @@ public class DremFrem {
         regressionValue = sum % 2 == 1;
     }
 
-    // Integrality proven after loop opts: speculative guards should fold away.
     @Benchmark
     @OperationsPerInvocation(DEFAULT_X_RANGE)
     public void foldedAfterLoopOpts() {
@@ -148,143 +184,4 @@ public class DremFrem {
         regressionValue = sum % 2 == 1;
     }
 
-    // --- DremFremOpt=0000: no optimization ---
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=0"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void staticPathOpaque_0000() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += (double) ints[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=0"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void specFastAlways_0000() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += intDoubles[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=0"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void specSlowAlways_0000() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += fracDoubles[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    // --- DremFremOpt=0100: static path only ---
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=100"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void staticPathOpaque_0100() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += (double) ints[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=100"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void specFastAlways_0100() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += intDoubles[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=100"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void specSlowAlways_0100() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += fracDoubles[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    // --- DremFremOpt=1100: static + speculative, no folding ---
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=1100"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void staticPathOpaque_1100() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += (double) ints[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=1100"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void specFastAlways_1100() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += intDoubles[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=1100"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void specSlowAlways_1100() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += fracDoubles[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    // --- DremFremOpt=1111: all optimizations ---
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=1111"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void staticPathOpaque_1111() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += (double) ints[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=1111"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void specFastAlways_1111() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += intDoubles[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
-
-    @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DremFremOpt=1111"})
-    @OperationsPerInvocation(DEFAULT_X_RANGE)
-    public void specSlowAlways_1111() {
-        double sum = 0;
-        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            sum += fracDoubles[i] % 42.0D;
-        }
-        regressionValue = sum % 2 == 1;
-    }
 }
