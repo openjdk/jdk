@@ -3194,7 +3194,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
           }
         }
 
-        CompilerDirectiveMatcher matcher(method, CompileBroker::compiler(CompLevel_simple));
+        CompilerDirectiveMatcher matcher(method, CompLevel_simple);
         if (matcher.directive_set()->PrintAssemblyOption) {
           nm->print_code();
         }
