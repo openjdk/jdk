@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,7 @@ public:
 // ADLC inherit from this class.
 class MachNode : public Node {
 public:
-  MachNode() : Node((uint)0), _bottom_type(nullptr), _barrier(0), _num_opnds(0), _opnds(nullptr) {
+  MachNode() : Node((uint)0), _barrier(0), _num_opnds(0), _opnds(nullptr) {
     init_class_id(Class_Mach);
   }
   // Required boilerplate
@@ -282,9 +282,6 @@ public:
   // output have choices - but they must use the same choice.
   virtual uint two_adr( ) const { return 0; }
 
-  // Capture the type of the matched ideal node
-  const Type* _bottom_type;
-
   // The GC might require some barrier metadata for machine code emission.
   uint8_t _barrier;
 
@@ -334,17 +331,7 @@ public:
   virtual MachNode *Expand( State *, Node_List &proj_list, Node* mem ) { return this; }
 
   // Bottom_type call; value comes from operand0
-  virtual const Type* bottom_type() const {
-    if (_bottom_type != nullptr) {
-      return _bottom_type;
-    }
-    const Type* res = _opnds[0]->type();
-    // The type system around pointers is complex, do not rely on operand type then
-    assert(res != nullptr, "must be not null");
-    assert(is_MachTemp() || res->isa_ptr() == nullptr, "must not be a pointer");
-    return res;
-  }
-
+  virtual const class Type *bottom_type() const { return _opnds[0]->type(); }
   virtual uint ideal_reg() const {
     const Type *t = _opnds[0]->type();
     if (t == TypeInt::CC) {
@@ -431,6 +418,20 @@ public:
   virtual const class Type *bottom_type() const { return _opnds == nullptr ? Type::CONTROL : MachNode::bottom_type(); }
 };
 
+//------------------------------MachTypeNode----------------------------
+// Machine Nodes that need to retain a known Type.
+class MachTypeNode : public MachNode {
+  virtual uint size_of() const { return sizeof(*this); } // Size is bigger
+public:
+  MachTypeNode( ) {}
+  const Type *_bottom_type;
+
+  virtual const class Type *bottom_type() const { return _bottom_type; }
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
+};
+
 //------------------------------MachBreakpointNode----------------------------
 // Machine breakpoint or interrupt Node
 class MachBreakpointNode : public MachIdealNode {
@@ -476,12 +477,12 @@ public:
 
 //------------------------------MachConstantNode-------------------------------
 // Machine node that holds a constant which is stored in the constant table.
-class MachConstantNode : public MachNode {
+class MachConstantNode : public MachTypeNode {
 protected:
   ConstantTable::Constant _constant;  // This node's constant.
 
 public:
-  MachConstantNode() : MachNode() {
+  MachConstantNode() : MachTypeNode() {
     init_class_id(Class_MachConstant);
   }
 
