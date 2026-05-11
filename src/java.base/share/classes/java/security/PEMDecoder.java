@@ -194,12 +194,13 @@ public final class PEMDecoder {
                     BinaryEncodable d;
                     PKCS8Key p8key = null;
                     PKCS8EncodedKeySpec p8spec = null;
+                    byte[] encoding = pem.decode();
 
                     try {
-                        p8key = new PKCS8Key(pem.decode());
+                        p8key = new PKCS8Key(encoding);
                         String algo = p8key.getAlgorithm();
                         KeyFactory kf = getKeyFactory(algo);
-                        p8spec = new PKCS8EncodedKeySpec(pem.decode(), algo);
+                        p8spec = new PKCS8EncodedKeySpec(encoding, algo);
                         d = kf.generatePrivate(p8spec);
 
                         // Look for a public key inside the pkcs8 encoding.
@@ -223,22 +224,22 @@ public final class PEMDecoder {
                             yield d;
                         }
                     } finally {
-                        KeyUtil.clear(p8spec, p8key);
+                        KeyUtil.clear(encoding, p8spec, p8key);
                     }
                 }
                 case Pem.ENCRYPTED_PRIVATE_KEY -> {
                     byte[] p8 = null;
-                        var ekpi = new EncryptedPrivateKeyInfo(pem.decode());
-                        if (keySpec == null) {
-                            yield ekpi;
-                        }
+                    var ekpi = new EncryptedPrivateKeyInfo(pem.decode());
+                    if (keySpec == null) {
+                        yield ekpi;
+                    }
                     try {
                         p8 = Pem.decryptEncoding(ekpi, keySpec);
                     } catch (GeneralSecurityException e) {
                         throw new CryptoException(e);
                     }
                     try {
-                        yield Pem.toPKCS8Encodable(p8, true, factory);
+                        yield Pem.toPKCS8Encodable(p8, factory);
                     } finally {
                         Reference.reachabilityFence(this);
                         KeyUtil.clear(p8);
@@ -432,6 +433,9 @@ public final class PEMDecoder {
             if ((PublicKey.class).isAssignableFrom(tClass) ||
                 (X509EncodedKeySpec.class).isAssignableFrom(tClass)) {
                 so = kp.getPublic();
+                if (kp.getPrivate() instanceof PKCS8Key p8Key) {
+                    KeyUtil.clear(p8Key);
+                }
             }
         }
 
@@ -461,6 +465,10 @@ public final class PEMDecoder {
                 throw new ClassCastException("Invalid KeySpec " +
                     "specified: " + tClass.getName() + " for key " +
                     key.getClass().getName());
+            } finally {
+                if (key instanceof PKCS8Key p8Key) {
+                    KeyUtil.clear(p8Key);
+                }
             }
         }
 

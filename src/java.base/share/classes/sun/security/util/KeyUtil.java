@@ -31,6 +31,7 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
+import java.util.function.Function;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -569,10 +570,6 @@ public final class KeyUtil {
         }
     }
 
-    public interface ByteArrayOp<T> {
-        T apply(byte[] bytes);
-    }
-
     /**
      * Executes {@code op} with {@code encoding} and then zeroes {@code encoding}
      * in a {@code finally} block before returning or propagating an exception.
@@ -583,7 +580,7 @@ public final class KeyUtil {
      * any value backed by the same array. Otherwise, the returned data will already
      * be zeroed when this method returns.
      */
-    public static <T> T clear(byte[] encoding, ByteArrayOp<T> op) {
+    public static <T> T clear(byte[] encoding, Function<byte[], T> op) {
         try {
             return op.apply(encoding);
         } finally {

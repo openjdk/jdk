@@ -191,7 +191,7 @@ public final class PEM implements BinaryEncodable {
     /**
      * Returns the Base64-encoded content.
      *
-     * @return the Base64-encoded content byte array
+     * @return a copy of the Base64-encoded content byte array
      */
     public byte[] content() {
         return content.clone();

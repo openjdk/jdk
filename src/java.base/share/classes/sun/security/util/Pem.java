@@ -186,6 +186,7 @@ public class Pem {
         var readbuf = new ByteArrayOutputStream(64);  // header/footer
         var pem = new ClearableBufferStream(1024); // PEM
         String headerType, footerType;
+        byte[] encoding = null;
 
         try {
             // Find 5 hyphens followed by a 'B' to start processing the header.
@@ -271,7 +272,6 @@ public class Pem {
                 switch (c = is.read()) {
                     case -1 -> throw new EOFException("Incomplete header");
                     case '-' -> hyphen++;
-                    case '\s', '\t', '\r', '\n' -> {} // skip whitespace and tab
                     default -> {
                         // If reading a legacy format, allow for one dash
                         if (hyphen == 1) {
@@ -355,12 +355,12 @@ public class Pem {
                 preData = Arrays.copyOf(os.getBuffer(), os.size() - 6);
             }
 
+            encoding = pem.toByteArray();
             return (preData == null) ?
-                new PEM(typeConverter(headerType), pem.toByteArray()) :
-                new PEM(typeConverter(headerType), pem.toByteArray(), preData);
-
+                new PEM(typeConverter(headerType), encoding) :
+                new PEM(typeConverter(headerType), encoding, preData);
         } finally {
-            os.clear();
+            KeyUtil.clear(encoding);
             os.close();
             pem.clear();
             pem.close();
@@ -465,11 +465,9 @@ public class Pem {
      * otherwise, a PrivateKey is returned.
      *
      * @param encoded PKCS8 encoding
-     * @param pair set to true for returning a KeyPair, if possible. Otherwise,
-     *             return a PrivateKey
      * @param provider KeyFactory provider
      */
-    public static BinaryEncodable toPKCS8Encodable(byte[] encoded, boolean pair,
+    public static BinaryEncodable toPKCS8Encodable(byte[] encoded,
         Provider provider) throws InvalidKeyException {
 
         PrivateKey privKey;
@@ -499,12 +497,6 @@ public class Pem {
 
         try {
             privKey = kf.generatePrivate(p8KeySpec);
-
-            // Only want the PrivateKey? then return it.
-            if (!pair) {
-                return privKey;
-            }
-
             if (p8key.hasPublicKey()) {
                 // PKCS8Key.decode() has extracted the public key already
                 pubKey = kf.generatePublic(

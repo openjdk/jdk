@@ -40,7 +40,6 @@ import java.security.spec.X509EncodedKeySpec;
  * {@code permits} clause to remain fixed.  An exhaustive {@code switch} may
  * result in a {@link MatchException}.
  *
- *
  * @see AsymmetricKey
  * @see KeyPair
  * @see PKCS8EncodedKeySpec

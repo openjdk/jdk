@@ -116,7 +116,7 @@ import java.util.Objects;
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
- * @since 25
+ * @since 27
  */
 public final class PEMEncoder {
 
@@ -171,6 +171,10 @@ public final class PEMEncoder {
     public String encodeToString(BinaryEncodable be) {
         Objects.requireNonNull(be);
         if (be instanceof PEM pem) {
+            if (key != null) {
+                throw new IllegalArgumentException("PEM cannot be " +
+                    "encrypted");
+            }
             return Pem.pemEncodedToString(pem);
         }
         return KeyUtil.clear(encode(be),

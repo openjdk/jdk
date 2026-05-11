@@ -576,8 +576,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
         PBEKeySpec keySpec = new PBEKeySpec(password);
         BinaryEncodable d;
         try {
-            d = Pem.toPKCS8Encodable(Pem.decryptEncoding(this, keySpec), true,
-                null);
+            d = Pem.toPKCS8Encodable(Pem.decryptEncoding(this, keySpec), null);
         } finally {
             keySpec.clearPassword();
         }
@@ -612,7 +611,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
         byte[] data = null;
         try {
             data = decryptData(decryptKey, null);
-            d = Pem.toPKCS8Encodable(data, true, null);
+            d = Pem.toPKCS8Encodable(data, null);
         } finally {
             KeyUtil.clear(data);
         }
