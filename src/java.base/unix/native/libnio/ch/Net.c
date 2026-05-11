@@ -929,13 +929,13 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv *env, jobject this, jobject fdo, jlong ti
         errno = 0;
         result = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n);
         if (result < 0) {
-            handleSocketErrorWithMessage(env, errno, "getsockopt return value indicates error");
+            handleSocketErrorWithMessage(env, errno, "getsockopt failed");
             return JNI_FALSE;
         } else if (error) {
-            handleSocketErrorWithMessage(env, error, "getsockopt error parameter indicates error");
+            handleSocketErrorWithMessage(env, error, "connect failed");
             return JNI_FALSE;
         } else if ((poller.revents & POLLHUP) != 0) {
-            handleSocketErrorWithMessage(env, ENOTCONN, "connection was hung up");
+            handleSocketErrorWithMessage(env, ENOTCONN, "peer closed connection after accepting");
             return JNI_FALSE;
         }
         // connected
