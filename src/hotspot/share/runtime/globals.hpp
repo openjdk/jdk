@@ -1940,7 +1940,7 @@ const int ObjectAlignmentInBytes = 8;
           "Use a table to record inflated monitors rather than the first "  \
           "word of the object.")                                            \
                                                                             \
-  product(int, FastLockingSpins, 13, DIAGNOSTIC,                            \
+  product(int, FastLockingSpins, 8, DIAGNOSTIC,                             \
           "Specifies the number of times fast locking will attempt to "     \
           "CAS the markWord before inflating. Between each CAS it will "    \
           "spin for exponentially more time, resulting in a total number "  \
