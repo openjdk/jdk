@@ -4738,6 +4738,8 @@ void Compile::add_macro_node(Node* n) {
 }
 
 void Compile::remove_macro_node(Node* n) {
+  // This function may be called twice for a node so we can only remove it
+  // if it's still existing.
   _macro_nodes.remove_if_existing(n);
   n->remove_flag(Node::Flag_is_macro);
   // Remove from coarsened locks list if present
