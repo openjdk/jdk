@@ -603,6 +603,10 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
   return true;
 }
 
+// Returns true if the CastPP's control is simple enough to reduce the Phi; i.e.:
+//  1) no control,
+//  2) the same region as the phi, or
+//  3) an IfTrue/IfFalse coming from an CmpP/N between the phi and a constant.
 bool ConnectionGraph::can_reduce_phi_at_castpp(Node* phi, Node* castpp, bool trace) const {
   bool is_trivial_control = castpp->in(0) == nullptr || castpp->in(0) == phi->in(0);
 
