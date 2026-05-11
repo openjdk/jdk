@@ -533,8 +533,8 @@ static void event_storage_add(EventStorage* storage,
   jint count;
   jvmtiError err;
 
-  if (jni->IsValueObject(object)) {
-    // weak references are prohibited for value objects, skip them
+  if (!jni->HasIdentity(object)) {
+    // weak references are prohibited for non-identity objects, skip them
     return;
   }
 

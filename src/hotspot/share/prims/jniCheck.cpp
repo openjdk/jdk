@@ -2056,10 +2056,10 @@ JNI_ENTRY_CHECKED(jboolean,
 JNI_END
 
 JNI_ENTRY_CHECKED(jboolean,
-  checked_jni_IsValueObject(JNIEnv *env,
+  checked_jni_HasIdentity(JNIEnv *env,
                             jobject obj))
     functionEnter(thr);
-    jboolean result = UNCHECKED()->IsValueObject(env, obj);
+    jboolean result = UNCHECKED()->HasIdentity(env, obj);
     functionExit(thr);
     return result;
 JNI_END
@@ -2361,7 +2361,7 @@ struct JNINativeInterface_  checked_jni_NativeInterface = {
 
     // Value classes
 
-    checked_jni_IsValueObject
+    checked_jni_HasIdentity
 
 };
 

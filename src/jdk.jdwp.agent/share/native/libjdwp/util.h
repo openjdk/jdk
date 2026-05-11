@@ -73,7 +73,7 @@ typedef struct RefNode {
     jobject      ref;           /* could be strong or weak */
     struct RefNode *next;       /* next RefNode* in bucket chain */
     jint         count;         /* count of references */
-    jboolean     isValueObject; /* references to value objects are always strong */
+    jboolean     hasIdentity  ; /* references to non-identity objects are always strong */
     jboolean     isPinAll;      /* true if this is a strong reference due to a commonRef_pinAll() */
     jboolean     isCommonPin;   /* true if this is a strong reference due to a commonRef_pin() */
 } RefNode;

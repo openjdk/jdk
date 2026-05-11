@@ -89,7 +89,7 @@ newSeqNum(void)
 static jboolean
 isStrong(RefNode* node)
 {
-    return node->isValueObject || node->isPinAll || node->isCommonPin;
+    return !node->hasIdentity || node->isPinAll || node->isCommonPin;
 }
 
 /* Create a fresh RefNode structure, create a weak ref and tag the object */
@@ -100,7 +100,7 @@ createNode(JNIEnv *env, jobject ref)
     jobject    strongOrWeakRef;
     jvmtiError error;
     jboolean   pinAll = gdata->pinAllCount != 0;
-    jboolean   isValueObject;
+    jboolean   hasIdentity;
 
     /* Could allocate RefNode's in blocks, not sure it would help much */
     node = (RefNode*)jvmtiAllocate((int)sizeof(RefNode));
@@ -108,9 +108,9 @@ createNode(JNIEnv *env, jobject ref)
         return NULL;
     }
 
-    isValueObject = JNI_FUNC_PTR(env,IsValueObject)(env, ref);
+    hasIdentity = JNI_FUNC_PTR(env,HasIdentity)(env, ref);
 
-    if (pinAll || isValueObject) {
+    if (pinAll || !hasIdentity) {
         /* Create strong reference to make sure we have a reference */
         strongOrWeakRef = JNI_FUNC_PTR(env,NewGlobalRef)(env, ref);
     } else {
@@ -141,7 +141,7 @@ createNode(JNIEnv *env, jobject ref)
     /* Fill in RefNode */
     node->ref         = strongOrWeakRef;
     node->count       = 1;
-    node->isValueObject = isValueObject;
+    node->hasIdentity = hasIdentity;
     node->isPinAll    = pinAll;
     node->isCommonPin = JNI_FALSE;
     node->seqNum      = newSeqNum();
@@ -207,7 +207,7 @@ strengthenNode(JNIEnv *env, RefNode *node, jboolean isPinAll)
 static jweak
 weakenNode(JNIEnv *env, RefNode *node, jboolean isUnpinAll)
 {
-    jboolean willStillBeStrong = node->isValueObject || (node->isPinAll && !isUnpinAll) || (node->isCommonPin && isUnpinAll);
+    jboolean willStillBeStrong = !node->hasIdentity || (node->isPinAll && !isUnpinAll) || (node->isCommonPin && isUnpinAll);
 
     // If the node is strong, but the reason(s) for it being strong
     // will no longer exist, then weaken it.

@@ -3191,14 +3191,14 @@ JNI_ENTRY(jboolean, jni_IsVirtualThread(JNIEnv* env, jobject obj))
   return ret;
 JNI_END
 
-JNI_ENTRY(jboolean, jni_IsValueObject(JNIEnv* env, jobject obj))
-  HOTSPOT_JNI_ISVALUEOBJECT_ENTRY(env, obj);
+JNI_ENTRY(jboolean, jni_HasIdentity(JNIEnv* env, jobject obj))
+  HOTSPOT_JNI_HASIDENTITY_ENTRY(env, obj);
   oop o = JNIHandles::resolve(obj);
-  if (o != nullptr && o->klass()->is_inline_klass()) {
-    HOTSPOT_JNI_ISVALUEOBJECT_RETURN(JNI_TRUE);
+  if (o != nullptr && !o->klass()->is_inline_klass()) {
+    HOTSPOT_JNI_HASIDENTITY_RETURN(JNI_TRUE);
     return JNI_TRUE;
   } else {
-    HOTSPOT_JNI_ISVALUEOBJECT_RETURN(JNI_FALSE);
+    HOTSPOT_JNI_HASIDENTITY_RETURN(JNI_FALSE);
     return JNI_FALSE;
   }
 JNI_END
@@ -3498,7 +3498,7 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // Value classes
 
-    jni_IsValueObject
+    jni_HasIdentity
 };
 
 

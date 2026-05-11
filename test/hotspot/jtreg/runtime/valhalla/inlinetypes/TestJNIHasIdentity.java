@@ -21,9 +21,38 @@
  * questions.
  */
 
-#include <jni.h>
+package runtime.valhalla.inlinetypes;
 
-JNIEXPORT jboolean JNICALL
-Java_runtime_valhalla_inlinetypes_TestJNIIsValueObject_isValueObject(JNIEnv* env, jclass klass, jobject target) {
-  return (*env)->IsValueObject(env, target);
+import jdk.test.lib.Asserts;
+
+/*
+ * @test
+ * @summary Test JNI HasIdentity with inline types
+ * @library /test/lib
+ * @enablePreview
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *                          runtime.valhalla.inlinetypes.TestJNIHasIdentity
+ */
+public class TestJNIHasIdentity {
+
+    static value class Value {
+        int i;
+
+        public Value(int i) {
+            this.i = i;
+        }
+    }
+
+    native static boolean hasIdentity(Object target);
+
+    static {
+        System.loadLibrary("JNIHasIdentity");
+    }
+
+    public static void main(String[] args) {
+        Asserts.assertFalse(hasIdentity(new Value(1)));
+        Asserts.assertFalse(hasIdentity(Integer.valueOf("25")));
+        Asserts.assertTrue(hasIdentity(new String("Hello")));
+        Asserts.assertFalse(hasIdentity(null));
+    }
 }

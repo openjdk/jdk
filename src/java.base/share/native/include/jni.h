@@ -785,7 +785,7 @@ struct JNINativeInterface_ {
 
     /* Value classes */
 
-    jboolean (JNICALL *IsValueObject)
+    jboolean (JNICALL *HasIdentity)
       (JNIEnv* env, jobject obj);
 
 };
@@ -1897,8 +1897,8 @@ struct JNIEnv_ {
 
     /* Value classes */
 
-    jboolean IsValueObject(jobject obj) {
-        return functions->IsValueObject(this, obj);
+    jboolean HasIdentity(jobject obj) {
+        return functions->HasIdentity(this, obj);
     }
 
 #endif /* __cplusplus */
