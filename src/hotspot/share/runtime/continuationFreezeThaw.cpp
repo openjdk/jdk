@@ -2122,7 +2122,7 @@ private:
   inline void patch_pd(frame& f, intptr_t* caller_sp);
   inline intptr_t* align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom);
 
-  void maybe_set_fastpath(intptr_t* id) { if (id > _fastpath) _fastpath = id; }
+  void maybe_set_fastpath(intptr_t* id) { if (frame::id_is_older_than(id, _fastpath)) _fastpath = id; }
 
   static inline void derelativize_interpreted_frame_metadata(const frame& hf, const frame& f);
 

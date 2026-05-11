@@ -152,12 +152,10 @@ inline bool frame::is_older(intptr_t* id) const {
 }
 
 inline bool frame::id_is_older_than(intptr_t* id, intptr_t* other_id) {
-  assert(id != nullptr && other_id != nullptr, "null frame id");
   return id > other_id;
 }
 
 inline bool frame::id_is_younger_than(intptr_t* id, intptr_t* other_id) {
-  assert(id != nullptr && other_id != nullptr, "null frame id");
   return id < other_id;
 }
 

@@ -703,7 +703,7 @@ private:
   // Continuation support
   ContinuationEntry* last_continuation() const { return _cont_entry; }
   void set_cont_fastpath(intptr_t* x)          { _cont_fastpath = x; }
-  void push_cont_fastpath(intptr_t* fp)        { if (fp > _cont_fastpath) _cont_fastpath = fp; }
+  void push_cont_fastpath(intptr_t* fp)        { if (frame::id_is_older_than(fp, _cont_fastpath)) _cont_fastpath = fp; }
   void set_cont_fastpath_thread_state(bool x)  { _cont_fastpath_thread_state = (int)x; }
   intptr_t* raw_cont_fastpath() const          { return _cont_fastpath; }
   bool cont_fastpath() const                   { return _cont_fastpath == nullptr && _cont_fastpath_thread_state != 0; }
