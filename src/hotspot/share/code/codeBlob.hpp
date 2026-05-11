@@ -226,7 +226,7 @@ public:
   nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
   // we may want to force an actual buffer blob or subtype instance
-  BufferBlob* as_buffer_blob(bool strict = true) const { assert(is_buffer_blob(), "must be %sbuffer blob", (strict ? "strict " : "")); return (BufferBlob*) this; }
+  BufferBlob* as_buffer_blob(bool strict = true) const { assert(is_buffer_blob(strict), "must be %sbuffer blob", (strict ? "strict " : "")); return (BufferBlob*) this; }
   AdapterBlob* as_adapter_blob() const        { assert(is_adapter_blob(), "must be adapter blob"); return (AdapterBlob*) this; }
   ExceptionBlob* as_exception_blob() const    { assert(is_exception_stub(), "must be exception stub"); return (ExceptionBlob*) this; }
   // this will always return a subtype instance

@@ -362,6 +362,11 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ jcc(Assembler::zero, error); // if klass is null it is broken
 }
 
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath) {
+  // Load the oop from the weak handle without barriers.
+  __ movptr(obj, Address(weak_handle));
+}
+
 #ifdef COMPILER2
 
 OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
@@ -394,11 +399,6 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 // We use the vec_spill_helper from the x86.ad file to avoid reinventing this wheel
 extern void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
-
-void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
-  // Load the oop from the weak handle.
-  __ movptr(obj, Address(obj));
-}
 
 #undef __
 #define __ _masm->

@@ -118,6 +118,26 @@ public:
   static address k256_W_addr()    { return _k256_W_adr; }
   static address k512_W_addr()    { return _k512_W_addr; }
 
+  // declare storage for jump tables used by string index stubs
+
+  // we assert this equals the number of tags in
+  // StrIntrinsicNode::ArgEncoding in code that uses the value to
+  // avoid having to inlcude opto headers here
+  static constexpr int STRING_INDEXOF_TABLE_COUNT = 4;
+  static constexpr int STRING_INDEXOF_NUMBER_OF_CASES = 10;
+  static address small_jump_table[STRING_INDEXOF_TABLE_COUNT * STRING_INDEXOF_NUMBER_OF_CASES];
+  static address big_jump_table[STRING_INDEXOF_TABLE_COUNT * STRING_INDEXOF_NUMBER_OF_CASES];
+
+  static address *small_jump_table_base(int idx) {
+    assert(idx >= 0 && idx < STRING_INDEXOF_TABLE_COUNT, "invalid jump table index %d", idx);
+    return small_jump_table + (idx * STRING_INDEXOF_NUMBER_OF_CASES);
+  }
+
+  static address *big_jump_table_base(int idx) {
+    assert(idx >= 0 && idx < STRING_INDEXOF_TABLE_COUNT, "invalid jump table index %d", idx);
+    return big_jump_table + (idx * STRING_INDEXOF_NUMBER_OF_CASES);
+  }
+
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
 

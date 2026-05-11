@@ -197,11 +197,13 @@ public:
   bool is_regular()                const { return state() == _regular; }
   bool is_humongous_continuation() const { return state() == _humongous_cont; }
   bool is_regular_pinned()         const { return state() == _pinned; }
-  bool is_trash()                  const { return state() == _trash; }
+  bool is_trash()                  const { return is_trash(state()); }
 
   // Derived state predicates (boolean combinations of individual states)
+  bool static is_trash(RegionState state) { return state == _trash; }
   bool static is_empty_state(RegionState state) { return state == _empty_committed || state == _empty_uncommitted; }
   bool static is_humongous_start_state(RegionState state) { return state == _humongous_start || state == _pinned_humongous_start; }
+  bool is_empty_or_trash()         const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _trash; }
   bool is_empty()                  const { return is_empty_state(this->state()); }
   bool is_active()                 const { auto cur_state = state(); return !is_empty_state(cur_state) && cur_state != _trash; }
   bool is_humongous_start()        const { return is_humongous_start_state(state()); }
@@ -209,6 +211,7 @@ public:
   bool is_committed()              const { return !is_empty_uncommitted(); }
   bool is_cset()                   const { auto cur_state = state(); return cur_state == _cset || cur_state == _pinned_cset; }
   bool is_pinned()                 const { auto cur_state = state(); return cur_state == _pinned || cur_state == _pinned_cset || cur_state == _pinned_humongous_start; }
+  bool is_regular_or_regular_pinned() const { auto cur_state = state(); return cur_state == _regular || cur_state == _pinned; }
 
   inline bool is_young() const;
   inline bool is_old() const;
@@ -218,7 +221,7 @@ public:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
 
-  RegionState state()              const { return _state.load_relaxed(); }
+  RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
   void record_pin();
@@ -272,12 +275,20 @@ private:
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
+  // Set when an evacuation failure self-forwarded at least one object in this
+  // region. The drain at degen/full GC entry scans flagged regions and CAS-
+  // clears the self_fwd bits. Safety-net reset on region recycle.
+  ShenandoahSharedFlag _has_self_forwards;
+
   bool _needs_bitmap_reset;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
+  // Absolute minimums and maximums we should not ever break.
   static const size_t MIN_NUM_REGIONS = 10;
+  static const size_t MIN_REGION_SIZE = 256*K;
+  static const size_t MAX_REGION_SIZE = 32*M;
 
   // Return adjusted max heap size
   static size_t setup_sizes(size_t max_heap_size);
@@ -525,6 +536,13 @@ public:
   inline void unset_needs_bitmap_reset() {
     _needs_bitmap_reset = false;
   }
+
+  // Self-forward accounting: set by an evacuating thread after it successfully
+  // installs a self-forward mark on an object in this region. Tested and cleared
+  // at the drain phase (degen/full GC entry) and again on region recycle.
+  bool has_self_forwards() const { return _has_self_forwards.is_set(); }
+  void set_has_self_forwards()   { _has_self_forwards.set(); }
+  void clear_has_self_forwards() { _has_self_forwards.unset(); }
 
 private:
   void decrement_humongous_waste();

@@ -336,7 +336,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       // Check if object matches.
       movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, rax_reg, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
       cmpptr(rax_reg, obj);
       jcc(Assembler::notEqual, slow_path);
 
@@ -483,7 +483,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     movptr(reg_rax, mark);
-    andptr(reg_rax, ~(int32_t)markWord::lock_mask);
+    andptr(reg_rax, ~(int32_t)markWord::lock_mask_in_place);
     orptr(mark, markWord::unlocked_value);
     lock(); cmpxchgptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     jcc(Assembler::notEqual, push_and_slow_path);
@@ -5558,7 +5558,7 @@ void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Regi
       }
       break;
     case Op_VectorMaskFirstTrue:
-      if (VM_Version::supports_bmi1()) {
+      if (UseCountTrailingZerosInstruction) {
         if (masklen < 32) {
           orl(tmp, 1 << masklen);
           tzcntl(dst, tmp);
@@ -6350,7 +6350,7 @@ void C2_MacroAssembler::udivI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movl(rdx, rax);
   subl(rdx, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rdx, rax);
   } else {
     notl(rdx);
@@ -6374,7 +6374,7 @@ void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rax, rdx);
   } else {
     notl(rax);
@@ -6403,7 +6403,7 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rax, rdx);
   } else {
     notl(rax);
@@ -6515,7 +6515,7 @@ void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movq(rdx, rax);
   subq(rdx, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rdx, rax);
   } else {
     notq(rdx);
@@ -6539,7 +6539,7 @@ void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rax, rdx);
   } else {
     notq(rax);
@@ -6567,7 +6567,7 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rax, rdx);
   } else {
     notq(rax);
