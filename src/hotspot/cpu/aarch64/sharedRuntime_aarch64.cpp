@@ -633,7 +633,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   Register tmp2 = r16;
   Register tmp3 = r17;
 
-#ifndef ASSERT
+#ifdef ASSERT
   RegSet clobbered_gp_regs = MacroAssembler::call_clobbered_gp_registers();
   assert(clobbered_gp_regs.contains(buf_array), "buf_array must be saved explicitly if it's not a clobber");
   assert(clobbered_gp_regs.contains(buf_oop), "buf_oop must be saved explicitly if it's not a clobber");
