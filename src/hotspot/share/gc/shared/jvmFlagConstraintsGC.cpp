@@ -32,6 +32,7 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/javaThread.hpp"
@@ -280,12 +281,12 @@ JVMFlag::Error InitialHeapSizeConstraintFunc(size_t value, bool verbose) {
 }
 
 JVMFlag::Error MaxHeapSizeConstraintFunc(size_t value, bool verbose) {
-  JVMFlag::Error status = MaxSizeForHeapAlignment("MaxHeapSize", value, verbose);
-
-  if (status == JVMFlag::SUCCESS) {
-    status = CheckMaxHeapSizeAndSoftRefLRUPolicyMSPerMB(value, SoftRefLRUPolicyMSPerMB, verbose);
+  if (JVMFlagLimit::validating_phase() >= JVMFlagConstraintPhase::AfterMemoryInit) {
+    JVMFlag::printError(verbose, "MaxHeapSize must not change after memory initialization\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
   }
-  return status;
+
+  return MaxSizeForHeapAlignment("MaxHeapSize", value, verbose);
 }
 
 JVMFlag::Error SoftMaxHeapSizeConstraintFunc(size_t value, bool verbose) {
