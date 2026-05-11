@@ -195,6 +195,13 @@ bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, siz
   return MallocArrayAllocator<bm_word_t>::reallocate(map, new_size_in_words, _mem_tag);
 }
 
+void CHeapBitMap::swap(CHeapBitMap &other) {
+  free(map(), size_in_words());
+  update(other.map(), other.size());
+  other.update(nullptr, 0);
+}
+
+
 #ifdef ASSERT
 void BitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
