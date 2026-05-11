@@ -179,7 +179,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      *
      * @implSpec
      * The default implementation converts the specified {@code Instant} to
-     * {@code Date} and calls {@code checkValidity(date)}.
+     * a {@code Date} and calls {@code checkValidity(Date)} with it.
      *
      * @param instant the {@code Instant} to check against to see if this
      *                certificate is valid at that instant.
@@ -188,7 +188,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      * with respect to {@code Instant} supplied.
      * @throws    CertificateNotYetValidException if the certificate is not
      * yet valid with respect to {@code Instant} supplied.
-     * @throws    NullPointerException if supplied is {@code Instant} is null.
+     * @throws    NullPointerException if supplied instant is null.
      *
      * @see #checkValidity()
      * @since 27
@@ -385,7 +385,6 @@ public abstract non-sealed class X509Certificate extends Certificate
      * @implSpec
      * The default implementation calls {@code getNotAfter()}
      * and returns the output as an {@code Instant} value.
-     * The {@code Date} returned by {@code getNotAfter()} should not be null.
      * If {@code getNotAfter()} returns {@code null}, this method throws a
      * {@code NullPointerException}
      *
