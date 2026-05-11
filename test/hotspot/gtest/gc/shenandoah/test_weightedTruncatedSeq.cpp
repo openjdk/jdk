@@ -60,7 +60,7 @@ TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared) {
   EXPECT_NEAR(seq.predict(5, 1), 17.138, 0.001);
 }
 
-TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared_overfow) {
+TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared_overflow) {
   ShenandoahWeightedSeq seq(SAMPLE_SIZE);
   for (uint i = 0; i < SAMPLE_SIZE; i++) {
     seq.add(1, 1);
