@@ -58,24 +58,11 @@
 class ShenandoahBreakpointGCScope : public StackObj {
 private:
   const GCCause::Cause _cause;
-  // Add support for generational mode.
-  const bool _is_generational;
 public:
-  ShenandoahBreakpointGCScope(GCCause::Cause cause, bool is_generational) :
-    _cause(cause), _is_generational(is_generational) {
+  ShenandoahBreakpointGCScope(GCCause::Cause cause) : _cause(cause) {
     if (cause == GCCause::_wb_breakpoint) {
       ShenandoahBreakpoint::start_gc();
       ShenandoahBreakpoint::at_before_gc();
-    }
-  }
-
-  // Generational Shenandoah can notify the WhiteBox thread that the cycle is completed once the
-  // breakpoint goes out of scope because it handles GC requests differently than non-generational
-  // Shenandoah. Non-generational Shenandoah will notify the WhiteBox thread afer the Control Thread
-  // unsets the gc requested flag, so both threads do not compete for the flag.
-  ~ShenandoahBreakpointGCScope() {
-    if (_is_generational && _cause == GCCause::_wb_breakpoint) {
-      ShenandoahBreakpoint::at_after_gc();
     }
   }
 };
@@ -142,7 +129,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   _generation->ref_processor()->set_soft_reference_policy(
       GCCause::should_clear_all_soft_refs(cause));
 
-  ShenandoahBreakpointGCScope breakpoint_gc_scope(cause, heap->mode()->is_generational());
+  ShenandoahBreakpointGCScope breakpoint_gc_scope(cause);
 
   // Reset for upcoming marking
   entry_reset();

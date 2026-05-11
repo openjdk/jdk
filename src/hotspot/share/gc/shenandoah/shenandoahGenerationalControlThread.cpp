@@ -26,6 +26,7 @@
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
@@ -314,6 +315,10 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     _heap->free_set()->log_status_under_lock();
   }
 
+  // Notify the waiting WhiteBox thread that the requested cycle was completed.
+  if (request.cause == GCCause::_wb_breakpoint) {
+    ShenandoahBreakpoint::at_after_gc();
+  }
 
   // Notify Universe about new heap usage. This has implications for
   // global soft refs policy, and we better report it every time heap

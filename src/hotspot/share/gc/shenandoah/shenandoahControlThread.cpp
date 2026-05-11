@@ -172,18 +172,16 @@ void ShenandoahControlThread::run_service() {
       // If this was the requested GC cycle, notify waiters about it
       if (is_gc_requested) {
         notify_gc_waiters();
-
-        // After the gc requested flag is unset, notify the waiting WhiteBox thread that
-        // the requested cycle was completed. This prevents contention for the flag
-        // between the WhiteBox and Control thread if WhiteBox requests a GC.
-        if (cause == GCCause::_wb_breakpoint) {
-          ShenandoahBreakpoint::at_after_gc();
-        }
       }
 
       // If this cycle completed without being cancelled, notify waiters about it
       if (!heap->cancelled_gc()) {
         notify_alloc_failure_waiters();
+      }
+
+      // Notify the waiting WhiteBox thread that the requested cycle was completed.
+      if (cause == GCCause::_wb_breakpoint) {
+        ShenandoahBreakpoint::at_after_gc();
       }
 
       // Report current free set state at the end of cycle, whether
