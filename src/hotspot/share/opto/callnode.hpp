@@ -897,6 +897,9 @@ public:
 // calls and optimized virtual calls, plus calls to wrappers for run-time
 // routines); generates static stub.
 class CallStaticJavaNode : public CallJavaNode {
+  // If this is an uncommon trap guarded by some condition, is it safe to change the condition to a narrower condition?
+  // See comment in PhaseIdealLoop::do_split_if()
+  bool _safe_for_fold_compare;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 
@@ -905,7 +908,7 @@ class CallStaticJavaNode : public CallJavaNode {
 
 public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
-    : CallJavaNode(tf, addr, method) {
+    : CallJavaNode(tf, addr, method), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
     if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
       init_flags(Flag_is_macro);
@@ -924,7 +927,7 @@ public:
     }
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, nullptr) {
+    : CallJavaNode(tf, addr, nullptr), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
@@ -947,6 +950,14 @@ public:
 
   virtual int         Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+  void clear_safe_for_fold_compare() {
+    _safe_for_fold_compare = false;
+  }
+
+  bool safe_for_fold_compare() const {
+    return _safe_for_fold_compare;
+  }
 
 #ifndef PRODUCT
   virtual void        dump_spec(outputStream *st) const;

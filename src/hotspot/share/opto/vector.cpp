@@ -365,7 +365,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // If boxed mask value is present in a predicate register, it must be
   // spilled to a vector though a VectorStoreMaskOperation before actual StoreVector
   // operation to vector payload field.
-  if (is_mask && (value->bottom_type()->isa_vectmask() || bt != T_BOOLEAN)) {
+  if (is_mask && (value->bottom_type()->isa_pvectmask() || bt != T_BOOLEAN)) {
     value = gvn.transform(VectorStoreMaskNode::make(gvn, value, bt, num_elem));
     // Although type of mask depends on its definition, in terms of storage everything is stored in boolean array.
     bt = T_BOOLEAN;

@@ -1108,19 +1108,19 @@ void VM_Version::get_processor_features() {
     }
     if (UseAPX) {
       if (!FLAG_IS_DEFAULT(UseAPX)) {
-        warning("APX is not supported on this CPU, setting it to false)");
+        warning("APX instructions are not available on this CPU");
       }
       FLAG_SET_DEFAULT(UseAPX, false);
     }
   }
 
-  CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseFMA, FMA, supports_fma(), MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseCountLeadingZerosInstruction, LZCNT, supports_lzcnt(), SINGLE_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), "CLMUL" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseFMA, FMA, supports_fma(), "FMA" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseCountLeadingZerosInstruction, LZCNT, supports_lzcnt(), "lzcnt" SINGLE_INST_WARNING_MSG);
   // BMI instructions (except tzcnt) use an encoding with VEX prefix.
   // VEX prefix is generated only when AVX > 0.
-  CHECK_CPU_FEATURE(UseBMI1Instructions, BMI1, supports_bmi1(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseBMI1Instructions, BMI1, supports_bmi1(), "BMI1" MULTI_INST_WARNING_MSG);
 
   if (supports_bmi2() && supports_avx()) {
     if (FLAG_IS_DEFAULT(UseBMI2Instructions)) {
@@ -1140,8 +1140,8 @@ void VM_Version::get_processor_features() {
     }
   }
 
-  CHECK_CPU_FEATURE(UsePopCountInstruction, POPCNT, supports_popcnt(), SINGLE_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseSHA, SHA, supports_sha() || (supports_avx2() && supports_bmi2()), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UsePopCountInstruction, POPCNT, supports_popcnt(), "popcnt" SINGLE_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseSHA, SHA, supports_sha() || (supports_avx2() && supports_bmi2()), "SHA" MULTI_INST_WARNING_MSG);
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();

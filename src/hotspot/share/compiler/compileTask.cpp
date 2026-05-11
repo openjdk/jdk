@@ -44,43 +44,36 @@ CompileTask::CompileTask(int compile_id,
                          int comp_level,
                          int hot_count,
                          CompileReason compile_reason,
-                         bool is_blocking) {
-  Thread* thread = Thread::current();
-  _compile_id = compile_id;
-  _method = method();
-  _method_holder = JNIHandles::make_weak_global(Handle(thread, method->method_holder()->klass_holder()));
-  _osr_bci = osr_bci;
-  _is_blocking = is_blocking;
-  _comp_level = comp_level;
-  _num_inlined_bytecodes = 0;
-
-  _is_complete = false;
-  _is_success = false;
-
-  _hot_count = hot_count;
-  _time_created = os::elapsed_counter();
-  _time_queued = 0;
-  _time_started = 0;
-  _time_finished = 0;
-  _compile_reason = compile_reason;
-  _nm_content_size = 0;
-  _nm_insts_size = 0;
-  _nm_total_size = 0;
-  _failure_reason = nullptr;
-  _failure_reason_on_C_heap = false;
-  _training_data = nullptr;
-
-  AbstractCompiler* comp = CompileBroker::compiler(comp_level);
-  _compiler = comp;
-  _directive = DirectivesStack::getMatchingDirective(method, comp);
-
-  JVMCI_ONLY(_has_waiter = comp->is_jvmci();)
-  JVMCI_ONLY(_blocking_jvmci_compile_state = nullptr;)
-  _arena_bytes = 0;
-
-  _next = nullptr;
-  _prev = nullptr;
-
+                         bool is_blocking) :
+  _compile_id(compile_id),
+  _method(method()),
+  _method_holder(JNIHandles::make_weak_global(Handle(Thread::current(), method->method_holder()->klass_holder()))),
+  _osr_bci(osr_bci),
+  _is_complete(false),
+  _is_success(false),
+  _is_blocking(is_blocking),
+  _nm_content_size(0),
+  _nm_total_size(0),
+  _nm_insts_size(0),
+  _comp_level(comp_level),
+  _compiler(CompileBroker::compiler(comp_level)),
+  _comp_directive_matcher(method, _compiler),
+  JVMCI_ONLY(_has_waiter(_compiler->is_jvmci()) COMMA)
+  JVMCI_ONLY(_blocking_jvmci_compile_state(nullptr) COMMA)
+  _num_inlined_bytecodes(0),
+  _next(nullptr),
+  _prev(nullptr),
+  _time_created(os::elapsed_counter()),
+  _time_queued(0),
+  _time_started(0),
+  _time_finished(0),
+  _hot_count(hot_count),
+  _compile_reason(compile_reason),
+  _failure_reason(nullptr),
+  _failure_reason_on_C_heap(false),
+  _training_data(nullptr),
+  _arena_bytes(0)
+{
   AtomicAccess::add(&_active_tasks, 1, memory_order_relaxed);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,31 @@
 package sun.util.locale.provider;
 
 import java.time.DateTimeException;
+import java.time.format.DateTimeFormatterPatternProvider;
+import java.time.format.FormatStyle;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import sun.text.spi.JavaTimeDateTimePatternProvider;
 
 /**
- * Concrete implementation of the {@link sun.text.spi.JavaTimeDateTimePatternProvider
- * } class for the JRE LocaleProviderAdapter.
+ * Concrete implementation of the {@link java.time.format.DateTimeFormatterPatternProvider
+ * } class
  *
  */
-public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider implements AvailableLanguageTags {
+public class DateTimeFormatterPatternProviderImpl extends DateTimeFormatterPatternProvider implements AvailableLanguageTags {
 
     private final LocaleProviderAdapter.Type type;
     private final Set<String> langtags;
 
-    public JavaTimeDateTimePatternImpl(LocaleProviderAdapter.Type type, Set<String> langtags) {
+    public DateTimeFormatterPatternProviderImpl(LocaleProviderAdapter.Type type, Set<String> langtags) {
         this.type = type;
         this.langtags = langtags;
     }
 
     /**
-     * Returns an array of all locales for which this locale service provider
-     * can provide localized objects or names.
-     *
-     * @return An array of all locales for which this locale service provider
-     * can provide localized objects or names.
+     * {@return an array of all locales for which this locale service provider
+     * can provide localized objects or names}
      */
     @Override
     public Locale[] getAvailableLocales() {
@@ -64,13 +62,21 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
     }
 
     @Override
-    public String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType, Locale locale) {
+    public String getDateTimeFormatterPattern(FormatStyle dateStyle, FormatStyle timeStyle, String calType, Locale locale) {
+        Objects.requireNonNull(calType);
+        Objects.requireNonNull(locale);
+        if (dateStyle == null && timeStyle == null) {
+            throw new IllegalArgumentException("Both \"dateStyle\" and \"timeStyle\" are null.");
+        }
         LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased().getLocaleResources(locale);
-        return lr.getJavaTimeDateTimePattern(timeStyle, dateStyle, calType);
+        return lr.getDateTimeFormatterPattern(dateStyle, timeStyle, calType);
     }
 
     @Override
-    public String getJavaTimeDateTimePattern(String requestedTemplate, String calType, Locale locale) {
+    public String getDateTimeFormatterPattern(String requestedTemplate, String calType, Locale locale) {
+        Objects.requireNonNull(requestedTemplate);
+        Objects.requireNonNull(calType);
+        Objects.requireNonNull(locale);
         LocaleProviderAdapter lpa = LocaleProviderAdapter.getResourceBundleBased();
         return ((ResourceBundleBasedAdapter)lpa).getCandidateLocales("", locale).stream()
                 .map(lpa::getLocaleResources)
@@ -78,7 +84,7 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
                 .filter(Objects::nonNull)
                 .findFirst()
                 .or(() -> calType.equals("generic") ? Optional.empty():
-                        Optional.of(getJavaTimeDateTimePattern(requestedTemplate, "generic", locale)))
+                        Optional.of(getDateTimeFormatterPattern(requestedTemplate, "generic", locale)))
                 .orElseThrow(() -> new DateTimeException("Requested template \"" + requestedTemplate +
                         "\" cannot be resolved in the locale \"" + locale + "\""));
     }

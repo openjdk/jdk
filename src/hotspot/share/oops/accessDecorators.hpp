@@ -138,10 +138,26 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_RELAXED |
 //  - Accesses on HeapWord* translate to a runtime check choosing one of the above
 //  - Accesses on other types translate to raw memory accesses without runtime checks
 // * AS_NO_KEEPALIVE: The barrier is used only on oop references and will not keep any involved objects
-//   alive, regardless of the type of reference being accessed. It will however perform the memory access
-//   in a consistent way w.r.t. e.g. concurrent compaction, so that the right field is being accessed,
-//   or maintain, e.g. intergenerational or interregional pointers if applicable. This should be used with
-//   extreme caution in isolated scopes.
+//   alive, regardless of the type of reference being accessed. This should be used with extreme caution
+//   in isolated scopes.
+//   AS_NO_KEEPALIVE stores are currently used primarily by the VM implementation of java.lang.ref.Reference
+//   and reference processing. AS_NO_KEEPALIVE loads have broader use, e.g. VM / serviceability introspection,
+//   printing, liveness checks, and weak (hash) table lookups.
+//   AS_NO_KEEPALIVE does not establish liveness for the current GC cycle. The oop returned by such
+//   a load, and any oop reached only by traversing from it, must not be stored as a new oop edge into
+//   GC-visible state (GC roots and the object graph). For SATB marking, violating this rule breaks
+//   the snapshot invariant. This includes, but is not limited to:
+//  - object graph storage (e.g. static and non-static Object fields, Object array elements)
+//  - local root storage (e.g. Handles, OopMap/GC-tracked frame / register slots)
+//  - other root storage (e.g. OopHandles, WeakHandles, nmethod and class metadata)
+//   Before such an oop is stored into GC-visible state, liveness must first be explicitly re-established,
+//   for example by:
+//  - re-resolving without AS_NO_KEEPALIVE
+//  - using CollectedHeap::keep_alive(oop)
+//   Related special case: for CLD-owned OopHandles (notably java mirrors), loading the oop does not
+//   keep the owning CLD / Klass alive. In those cases, a plain resolve() is insufficient; use the corresponding
+//   owner keep-alive helper (e.g. Klass::keep_alive()) or CollectedHeap::keep_alive(oop), or have some
+//   other guarantee of liveness before storing the oop into GC-visible state.
 // * AS_NORMAL: The accesses will be resolved to an accessor on the BarrierSet class, giving the
 //   responsibility of performing the access and what barriers to be performed to the GC. This is the default.
 //   Note that primitive accesses will only be resolved on the barrier set if the appropriate build-time

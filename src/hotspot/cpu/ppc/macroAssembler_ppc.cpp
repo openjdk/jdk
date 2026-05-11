@@ -2788,7 +2788,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
       // Check if object matches.
       ld(tmp3, in_bytes(ObjectMonitor::object_offset()), monitor);
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle(this, tmp3, tmp2, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
       cmpd(CR0, tmp3, obj);
       bne(CR0, slow_path);
 
