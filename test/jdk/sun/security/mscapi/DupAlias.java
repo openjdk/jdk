@@ -83,11 +83,17 @@ public class DupAlias {
     }
 
     static void ps(String f) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("powershell", "-Command", f);
+        ProcessBuilder pb = new ProcessBuilder(powershellPath(), "-Command", f);
         pb.inheritIO();
         if (pb.start().waitFor() != 0) {
             throw new RuntimeException("Failed");
         }
+    }
+
+    static String powershellPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        String suffix = "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+        return systemRoot == null ? "powershell" : systemRoot + suffix;
     }
 
     static String thumbprint(X509Certificate c) throws Exception {

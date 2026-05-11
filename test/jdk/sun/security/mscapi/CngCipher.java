@@ -57,7 +57,7 @@ public class CngCipher {
         SecurityTools.keytool("-storetype Windows-MY -genkeypair -alias "
                 + PREFIX + "m -keyalg RSA -dname CN=" + PREFIX + "m");
         // This will generate a CNG key
-        ProcessBuilder pb = new ProcessBuilder("powershell", "-Command",
+        ProcessBuilder pb = new ProcessBuilder(powershellPath(), "-Command",
                 "New-SelfSignedCertificate",  "-DnsName", PREFIX + "c",
                 // -KeyAlgorithm not supported on Windows Server 2012
                 //"-KeyAlgorithm", "RSA",
@@ -72,6 +72,12 @@ public class CngCipher {
         ks.deleteEntry(PREFIX +"c");
         ks.deleteEntry(PREFIX +"m");
         ks.store(null, null);
+    }
+
+    static String powershellPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        String suffix = "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+        return systemRoot == null ? "powershell" : systemRoot + suffix;
     }
 
     static void test(String alias) throws Exception {
