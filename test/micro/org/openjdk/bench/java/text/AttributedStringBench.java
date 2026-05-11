@@ -26,7 +26,6 @@ import java.awt.Color;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -69,47 +68,53 @@ public class AttributedStringBench {
     }
 
     @Benchmark
-    public void iterationWithNoAttributes(Blackhole blackhole) {
-        AttributedCharacterIterator it = string1.getIterator();
+    public void iterateMissingWithNoAttributes(Blackhole blackhole) {
+        iterate(string1, TextAttribute.BIDI_EMBEDDING, blackhole);
+    }
+
+    @Benchmark
+    public void iterateMissingWithOneAttribute(Blackhole blackhole) {
+        iterate(string2, TextAttribute.BIDI_EMBEDDING, blackhole);
+    }
+
+    @Benchmark
+    public void iterateMissingWithThreeAttributes(Blackhole blackhole) {
+        iterate(string3, TextAttribute.BIDI_EMBEDDING, blackhole);
+    }
+
+    @Benchmark
+    public void iteratePresentWithOneAttribute(Blackhole blackhole) {
+        iterate(string2, TextAttribute.SIZE, blackhole);
+    }
+
+    @Benchmark
+    public void iteratePresentWithThreeAttributes(Blackhole blackhole) {
+        iterate(string3, TextAttribute.SIZE, blackhole);
+    }
+
+    private static void iterate(AttributedString as, TextAttribute att, Blackhole blackhole) {
+        AttributedCharacterIterator it = as.getIterator();
         for (char c = it.first(); c != AttributedCharacterIterator.DONE; c = it.next()) {
-            Object level = it.getAttribute(TextAttribute.BIDI_EMBEDDING);
-            blackhole.consume(level);
+            Object val = it.getAttribute(att);
+            blackhole.consume(val);
         }
     }
 
     @Benchmark
-    public void iterationWithOneAttribute(Blackhole blackhole) {
-        AttributedCharacterIterator it = string2.getIterator();
-        for (char c = it.first(); c != AttributedCharacterIterator.DONE; c = it.next()) {
-            Object level = it.getAttribute(TextAttribute.BIDI_EMBEDDING);
-            blackhole.consume(level);
-        }
-    }
-
-    @Benchmark
-    public void iterationWithFourAttributes(Blackhole blackhole) {
-        AttributedCharacterIterator it = string3.getIterator();
-        for (char c = it.first(); c != AttributedCharacterIterator.DONE; c = it.next()) {
-            Object level = it.getAttribute(TextAttribute.BIDI_EMBEDDING);
-            blackhole.consume(level);
-        }
-    }
-
-    @Benchmark
-    public void creationWithNoAttributes(Blackhole blackhole) {
+    public void createWithNoAttributes(Blackhole blackhole) {
         AttributedString string = new AttributedString("this is an attributed string test");
         blackhole.consume(string);
     }
 
     @Benchmark
-    public void creationWithOneAttribute(Blackhole blackhole) {
+    public void createWithOneAttribute(Blackhole blackhole) {
         AttributedString string = new AttributedString("this is an attributed string test");
         string.addAttribute(TextAttribute.SIZE, 20);
         blackhole.consume(string);
     }
 
     @Benchmark
-    public void creationWithFourAttributes(Blackhole blackhole) {
+    public void createWithThreeAttributes(Blackhole blackhole) {
         AttributedString string = new AttributedString("this is an attributed string test");
         string.addAttribute(TextAttribute.SIZE, 20);
         string.addAttribute(TextAttribute.FOREGROUND, Color.BLACK);
