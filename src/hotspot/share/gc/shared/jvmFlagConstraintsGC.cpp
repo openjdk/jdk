@@ -123,16 +123,28 @@ JVMFlag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
 }
 
 static JVMFlag::Error CheckMaxHeapSizeAndSoftRefLRUPolicyMSPerMB(size_t maxHeap, intx softRef, bool verbose) {
-  if ((softRef > 0) && (maxHeap / M > (AbstractLRUReferencePolicy::MaximumMaxInterval / integer_cast<uint64_t>(softRef)))) {
+  // SoftRefLRUPolicyMSPerMB option's range constraint
+  precond(softRef >= 0);
+
+  if (softRef == 0) {
+    // SoftRefLRUPolicyMSPerMB == 0 is always valid
+    return JVMFlag::SUCCESS;
+  }
+
+  // These are constrains to avoid overflows in the AbstractLRUReferencePolicy arithmetic
+  const size_t maxHeap_in_mb = maxHeap / M;
+  const uint64_t size_in_mb_for_maximum_max_interval = AbstractLRUReferencePolicy::MaximumMaxInterval / integer_cast<uint64_t>(softRef);
+
+  if (maxHeap_in_mb > size_in_mb_for_maximum_max_interval) {
     JVMFlag::printError(verbose,
                         "Desired lifetime of SoftReferences cannot be expressed correctly. "
                         "MaxHeapSize (%zu) or SoftRefLRUPolicyMSPerMB "
                         "(%zd) is too large\n",
                         maxHeap, softRef);
     return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
   }
+
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error SoftRefLRUPolicyMSPerMBConstraintFunc(intx value, bool verbose) {
