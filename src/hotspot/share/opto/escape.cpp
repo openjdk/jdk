@@ -623,7 +623,7 @@ bool ConnectionGraph::can_reduce_phi_at_castpp(Node* phi, Node* castpp, bool tra
     bool can_reduce = iff->Opcode() == Op_If &&
                       iff->in(1)->is_Bool() &&
                       iff->in(1)->in(1)->is_Cmp() &&
-                      (iff->in(1)->in(1)->Opcode() == Op_CmpP || iff->in(1)->in(1)->Opcode() == Op_CmpP) &&
+                      (iff->in(1)->in(1)->Opcode() == Op_CmpP || iff->in(1)->in(1)->Opcode() == Op_CmpN) &&
                       can_reduce_cmp(phi, iff->in(1)->in(1));
     if (can_reduce) {
       return true;
