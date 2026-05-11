@@ -116,7 +116,7 @@ public class ParamsPreferences {
                         "keystore.pkcs12.macAlgorithm", "NONE"),
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
-                SHA_256, 10000);
+                PBMAC1, 10000);
 
         // change everything with system property
         test(c++,
