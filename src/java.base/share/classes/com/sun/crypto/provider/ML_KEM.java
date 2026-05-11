@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,9 @@ public final class ML_KEM {
     private static final int BARRETT_ADDEND = 1665;
     private static final int BARRETT_SHIFT = 26;
 
-    private static final int[] MONT_ZETAS_FOR_NTT = new int[]{
+    // The values from Appendix A of the FIPS 203 standard converted to the
+    // Montgomery domain, i.e. toMont(zeta^ (bitrev_7(i)) for i = 0..127
+    private static final int[] MONT_ZETAS_FOR_NTT = new int[] {
             1188, 914, -969, 585, -551, 1263, -97, 593,
             -35, -1400, -417, -1253, 742, -281, 185, -819,
             -1226, 895, -530, 52, 25, 1000, 1249, -909,
@@ -73,7 +75,7 @@ public final class ML_KEM {
             -1599, -709, -789, -1317, -57, 1049, -584
     };
 
-    private static final short[] montZetasForVectorNttArr = new short[]{
+    private static final short[] montZetasForVectorNttArr = new short[] {
             // level 0
             -758, -758, -758, -758, -758, -758, -758, -758,
             -758, -758, -758, -758, -758, -758, -758, -758,
@@ -195,26 +197,7 @@ public final class ML_KEM {
             958, 958, -1460, -1460, 1522, 1522, 1628, 1628
     };
 
-    private static final int[] MONT_ZETAS_FOR_INVERSE_NTT = new int[]{
-            584, -1049, 57, 1317, 789, 709, 1599, -1601,
-            -990, 604, 348, 857, 612, 474, 1177, -1014,
-            -88, -982, -191, 668, 1386, 486, -1153, -534,
-            514, 137, 586, -1178, 227, 339, -907, 244,
-            1200, -833, 1394, -30, 1074, 636, -317, -1192,
-            -1259, -355, -425, -884, -977, 1430, 868, 607,
-            184, 1448, 702, 1327, 431, 497, 595, -94,
-            1649, -1497, -620, 42, -172, 1107, -222, 1003,
-            426, -845, 395, -510, 1613, 825, 1269, -290,
-            -1429, 623, -567, 1617, 36, 1007, 1440, 332,
-            -201, 1313, -1382, -744, 669, -1538, 128, -1598,
-            1401, 1183, -553, 714, 405, -1155, -445, 406,
-            -1496, -49, 82, 1369, 259, 1604, 373, 909,
-            -1249, -1000, -25, -52, 530, -895, 1226, 819,
-            -185, 281, -742, 1253, 417, 1400, 35, -593,
-            97, -1263, 551, -585, 969, -914, -1188
-    };
-
-    private static final short[] montZetasForVectorInverseNttArr = new short[]{
+    private static final short[] montZetasForVectorInverseNttArr = new short[] {
             // level 0
             -1628, -1628, -1522, -1522, 1460, 1460, -958, -958,
             -991, -991, -996, -996, 308, 308, 108, 108,
@@ -336,7 +319,9 @@ public final class ML_KEM {
             758, 758, 758, 758, 758, 758, 758, 758
     };
 
-    private static final int[] ZETAS_FOR_NTT_MULT = new int[]{
+    // modulo MLKEM_Q positive equivalents of the values listed for
+    // the MultiplyNTTs algorithm in the FIPS 203 standard
+    private static final int[] ZETAS_FOR_NTT_MULT = new int[] {
             17, 3312, 2761, 568, 583, 2746, 2649, 680,
             1637, 1692, 723, 2606, 2288, 1041, 1100, 2229,
             1409, 1920, 2662, 667, 3281, 48, 233, 3096,
@@ -355,7 +340,7 @@ public final class ML_KEM {
             2110, 1219, 2935, 394, 885, 2444, 2154, 1175
     };
 
-    private static final short[] montZetasForVectorNttMultArr = new short[]{
+    private static final short[] montZetasForVectorNttMultArr = new short[] {
             -1103, 1103, 430, -430, 555, -555, 843, -843,
             -1251, 1251, 871, -871, 1550, -1550, 105, -105,
             422, -422, 587, -587, 177, -177, -235, 235,
@@ -1152,7 +1137,7 @@ public final class ML_KEM {
             int b0 = nttb[m];
             int b1 = nttb[m + 1];
             long r = a1 * b1;
-            r = r - ((r * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q;
+            r -= ((r * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q;
             r *= ZETAS_FOR_NTT_MULT[m >> 1];
             r += a0 * b0;
             result[m] = (short) (r - (((r + BARRETT_ADDEND) *
