@@ -116,6 +116,37 @@ public class EnumSourceOutput {
                 .writeAll();
     }
 
+    @Test
+    void testExplicitConstructors() throws Exception {
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+        new JavacTask(tb)
+                .options("-d", classes.toString(), "-printsource")
+                .sources("""
+                         public enum E {
+                             ONE(1);
+                             E(int i) {}
+                         }
+                         """)
+                .run()
+                .writeAll();
+        Path printed = classes.resolve("E.java");
+        String printedContent = Files.readString(printed);
+        Assertions.assertEquals("""
+                                public enum E {
+                                    /*public static final*/ ONE /*enum*/ (1);
+                                    E(int i) {
+                                    }
+                                }
+                                """.replaceAll("\\s+", " ").trim(),
+                printedContent.replaceAll("\\s+", " ").trim());
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(printed)
+                .run()
+                .writeAll();
+    }
+
     @BeforeEach
     public void setUp(TestInfo info) {
         base = Paths.get(".")

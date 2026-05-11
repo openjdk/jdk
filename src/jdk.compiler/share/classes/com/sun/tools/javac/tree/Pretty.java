@@ -75,6 +75,10 @@ public class Pretty extends JCTree.Visitor {
      */
     Name enclClassName;
 
+    /** The enclosing class flags.
+     */
+    long enclClassFlags;
+
     /** A table mapping trees to their documentation comments
      *  (can be null)
      */
@@ -615,6 +619,8 @@ public class Pretty extends JCTree.Visitor {
             printFlags(tree.mods.flags & ~INTERFACE);
             Name enclClassNamePrev = enclClassName;
             enclClassName = tree.name;
+            long enclClassFlagsPrev = enclClassFlags;
+            enclClassFlags = tree.mods.flags;
             if ((tree.mods.flags & INTERFACE) != 0) {
                 print("interface ");
                 print(tree.name);
@@ -661,6 +667,7 @@ public class Pretty extends JCTree.Visitor {
                 printBlock(tree.defs);
             }
             enclClassName = enclClassNamePrev;
+            enclClassFlags = enclClassFlagsPrev;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -683,25 +690,7 @@ public class Pretty extends JCTree.Visitor {
                 print(' ');
                 print(tree.name);
             }
-            if (isCompactRecordConstructor(tree)) {
-                print(' ');
-                ListBuffer<JCStatement> buf = new ListBuffer<>();
-                for (List<JCStatement> l = tree.body.stats; l.nonEmpty(); l = l.tail) {
-                    // Filter out constructor calls
-                    if (!Optional.of(l.head)
-                            .filter(t -> t.hasTag(EXEC))
-                            .map(t -> ((JCExpressionStatement) t).expr)
-                            .filter(t -> t.hasTag(APPLY))
-                            .map(t -> ((JCMethodInvocation) t).meth)
-                            .filter(t -> t.hasTag(IDENT))
-                            .map(t -> ((JCIdent) t).sym)
-                            .filter(s -> s.isConstructor())
-                            .isPresent()) {
-                        buf.append(l.head);
-                    }
-                }
-                printBlock(buf.toList());
-            } else {
+            if (!isCompactRecordConstructor(tree)) {
                 print('(');
                 if (tree.recvparam!=null) {
                     printExpr(tree.recvparam);
@@ -719,12 +708,25 @@ public class Pretty extends JCTree.Visitor {
                     print(" default ");
                     printExpr(tree.defaultValue);
                 }
-                if (tree.body != null) {
-                    print(' ');
-                    printStat(tree.body);
+            }
+            if (tree.body != null) {
+                print(' ');
+                if (tree.name == tree.name.table.names.init &&
+                        ((enclClassFlags & ENUM) != 0 ||
+                        (enclClassFlags & RECORD) != 0)) {
+                    ListBuffer<JCStatement> buf = new ListBuffer<>();
+                    for (List<JCStatement> l = tree.body.stats; l.nonEmpty(); l = l.tail) {
+                        // Filter out super constructor calls
+                        if (!TreeInfo.isSuperCall(l.head)) {
+                            buf.append(l.head);
+                        }
+                    }
+                    printBlock(buf.toList());
                 } else {
-                    print(';');
+                    printStat(tree.body);
                 }
+            } else {
+                print(';');
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

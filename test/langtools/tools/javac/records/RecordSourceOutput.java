@@ -161,6 +161,38 @@ public class RecordSourceOutput {
     }
 
     @Test
+    void testExplicitConstructor() throws Exception {
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+        new JavacTask(tb)
+                .options("-d", classes.toString(), "-printsource")
+                .sources("""
+                         public record R(int x) {
+                             public R(int x) {
+                                 this.x = x;
+                             }
+                         }
+                         """)
+                .run()
+                .writeAll();
+        Path printed = classes.resolve("R.java");
+        String printedContent = Files.readString(printed);
+        Assertions.assertEquals("""
+                                public record R(int x) {
+                                    public R(int x) {
+                                        this.x = x;
+                                    }
+                                }
+                                """.replaceAll("\\s+", " ").trim(),
+                printedContent.replaceAll("\\s+", " ").trim());
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(printed)
+                .run()
+                .writeAll();
+    }
+
+    @Test
     void testExplicitAccessor() throws Exception {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
