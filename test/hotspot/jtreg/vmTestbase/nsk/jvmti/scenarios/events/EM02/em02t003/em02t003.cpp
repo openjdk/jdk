@@ -477,7 +477,7 @@ static bool setCallBacks(int step) {
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return false;
 
-    /* Give some time to complete already started cbNew* events without additional synchronization. */
+    /* Give some time to complete already processing cbNew* events. */
     nsk_jvmti_sleep(100);
     for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
         newEventCount[i] = 0;
