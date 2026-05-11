@@ -54,7 +54,7 @@ class Register {
   constexpr explicit Register(int encoding) : _encoding(encoding) {}
 
  public:
-  enum {
+  enum : uint8_t {
     number_of_registers      = 32,
     max_slots_per_register   = 2,
 
@@ -71,16 +71,16 @@ class Register {
 
    public:
     // accessors
-    constexpr int raw_encoding() const { return checked_cast<int>(this - first()); }
-    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr uint8_t raw_encoding() const { return checked_cast<uint8_t>(this - first()); }
+    constexpr uint8_t     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool        is_valid() const { return raw_encoding() < number_of_registers; }
 
     // for rvc
-    int compressed_raw_encoding() const {
+    uint8_t compressed_raw_encoding() const {
       return raw_encoding() - compressed_register_base;
     }
 
-    int compressed_encoding() const {
+    uint8_t compressed_encoding() const {
       assert(is_compressed_valid(), "invalid compressed register");
       return encoding() - compressed_register_base;
     }
@@ -172,7 +172,7 @@ class FloatRegister {
  public:
   inline friend constexpr FloatRegister as_FloatRegister(int encoding);
 
-  enum {
+  enum : uint8_t {
     number_of_registers     = 32,
     max_slots_per_register  = 2,
 
@@ -188,16 +188,16 @@ class FloatRegister {
 
    public:
     // accessors
-    constexpr int raw_encoding() const { return checked_cast<int>(this - first()); }
-    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr uint8_t raw_encoding() const { return checked_cast<uint8_t>(this - first()); }
+    constexpr uint8_t     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool        is_valid() const { return raw_encoding() < number_of_registers; }
 
     // for rvc
-    int compressed_raw_encoding() const {
+    uint8_t compressed_raw_encoding() const {
       return raw_encoding() - compressed_register_base;
     }
 
-    int compressed_encoding() const {
+    uint8_t compressed_encoding() const {
       assert(is_compressed_valid(), "invalid compressed register");
       return encoding() - compressed_register_base;
     }
@@ -396,20 +396,20 @@ typedef AbstractRegSet<VectorRegister> VectorRegSet;
 
 template <>
 inline Register AbstractRegSet<Register>::first() {
-  uint32_t first = _bitset & -_bitset;
-  return first ? as_Register(exact_log2(first)) : noreg;
+  uint64_t first = _bitset & -_bitset;
+  return first ? as_Register(log2i_exact(first)) : noreg;
 }
 
 template <>
 inline FloatRegister AbstractRegSet<FloatRegister>::first() {
-  uint32_t first = _bitset & -_bitset;
-  return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
+  uint64_t first = _bitset & -_bitset;
+  return first ? as_FloatRegister(log2i_exact(first)) : fnoreg;
 }
 
 template<>
 inline VectorRegister AbstractRegSet<VectorRegister>::first() {
-  uint32_t first = _bitset & -_bitset;
-  return first ? as_VectorRegister(exact_log2(first)) : vnoreg;
+  uint64_t first = _bitset & -_bitset;
+  return first ? as_VectorRegister(log2i_exact(first)) : vnoreg;
 }
 
 #endif // CPU_RISCV_REGISTER_RISCV_HPP

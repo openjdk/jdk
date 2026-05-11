@@ -2867,12 +2867,13 @@ public:
   }
 
   // patch a 16-bit instruction.
-  static void c_patch(address a, unsigned msb, unsigned lsb, uint16_t val) {
+  static void c_patch(address a, unsigned msb, unsigned lsb, uint64_t val16) {
+    uint16_t val = integer_cast<uint16_t>(val16);
     assert_cond(a != nullptr);
     assert_cond(msb >= lsb && msb <= 15);
     unsigned nbits = msb - lsb + 1;
     guarantee(val < (1U << nbits), "Field too big for insn");
-    uint16_t mask = (1U << nbits) - 1;
+    uint16_t mask = integer_cast<uint16_t>((1U << nbits) - 1U);
     val <<= lsb;
     mask <<= lsb;
     uint16_t target = ld_c_instr(a);
@@ -2881,8 +2882,8 @@ public:
     sd_c_instr(a, target);
   }
 
-  static void c_patch(address a, unsigned bit, uint16_t val) {
-    c_patch(a, bit, bit, val);
+  static void c_patch(address a, unsigned bit, uint64_t val16) {
+    c_patch(a, bit, bit, val16);
   }
 
   // patch a 16-bit instruction with a general purpose register ranging [0, 31] (5 bits)
@@ -3120,7 +3121,7 @@ public:
     assert_cond(dest != nullptr);
     int64_t distance = dest - pc();
     assert(is_simm12(distance) && ((distance % 2) == 0), "invalid encoding");
-    c_j(distance);
+    c_j(integer_cast<int32_t>(distance));
   }
 
   void c_j(Label &L) {
@@ -3147,7 +3148,7 @@ public:
     assert_cond(dest != nullptr);                                                            \
     int64_t distance = dest - pc();                                                          \
     assert(is_simm9(distance) && ((distance % 2) == 0), "invalid encoding");                 \
-    NAME(Rs1, distance);                                                                     \
+    NAME(Rs1, integer_cast<int32_t>(distance));                                              \
   }                                                                                          \
   void NAME(Register Rs1, Label &L) {                                                        \
     wrap_label(L, Rs1, &Assembler::NAME);                                                    \
