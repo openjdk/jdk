@@ -227,7 +227,7 @@ template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thr
 // Called from gen_continuation_yield() in sharedRuntime_<cpu>.cpp through Continuation::freeze_entry();
 template<typename ConfigT>
 static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* fp))
-  assert(fp == current->frame_anchor()->last_Java_fp(), "");
+  assert(fp == (intptr_t*)(current->frame_anchor()->last_Java_fp()), "");
   intptr_t* boundary = current->raw_cont_fastpath();
   if (boundary != nullptr && (frame::id_is_older_than(boundary, current->last_continuation()->entry_fp()) ||
       frame::id_is_younger_than(boundary, fp))) {
@@ -2122,7 +2122,7 @@ private:
   inline void patch_pd(frame& f, intptr_t* caller_sp);
   inline intptr_t* align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom);
 
-  void maybe_set_fastpath(intptr_t* sp) { if (sp > _fastpath) _fastpath = sp; }
+  void maybe_set_fastpath(intptr_t* id) { if (id > _fastpath) _fastpath = id; }
 
   static inline void derelativize_interpreted_frame_metadata(const frame& hf, const frame& f);
 
@@ -2798,7 +2798,7 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
 
   CONT_JFR_ONLY(_jfr_info.record_interpreted_frame();)
 
-  maybe_set_fastpath(f.sp());
+  maybe_set_fastpath(f.id());
 
   Method* m = hf.interpreter_frame_method();
   assert(!m->is_native() || !is_bottom_frame, "should be top frame of thaw_top case; missing caller frame");
