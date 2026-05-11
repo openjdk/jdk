@@ -27,6 +27,8 @@
 #include "logging/logTag.hpp"
 #include "runtime/mutexLocker.hpp"
 
+#include <cmath>
+
 
 ShenandoahCycleDuration::ShenandoahCycleDuration(uint size)
   : _gc_times_lock(Mutex::nosafepoint - 2, "ShenandoahCycleTimes_lock", true)
