@@ -93,6 +93,8 @@ class VirtualMemoryAllocationSite : public AllocationSite {
   VirtualMemoryAllocationSite(const NativeCallStack& stack, MemTag mem_tag) :
     AllocationSite(stack, mem_tag) { }
 
+  VirtualMemoryAllocationSite(const VirtualMemoryAllocationSite& other) = default;
+
   inline void reserve_memory(size_t sz)  { _c.reserve_memory(sz);  }
   inline void commit_memory (size_t sz)  { _c.commit_memory(sz);   }
   inline size_t reserved() const  { return _c.reserved(); }
