@@ -25,24 +25,14 @@
  * @test
  * @bug 8357381
  * @summary C2 compilation fails with C2: assert(false) failed: should not be here
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xbatch -XX:CompileCommand=compileonly,compiler.escapeAnalysis.Ce::cem
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xbatch -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestReadOnlyStringIntrinsicDuringEA::main
  *                   compiler.escapeAnalysis.TestReadOnlyStringIntrinsicDuringEA
  */
 
 package compiler.escapeAnalysis;
 
 public class TestReadOnlyStringIntrinsicDuringEA extends c159.HelperBase {
-    public static void main(String[] strArr) {
-        for (int var16 = 0; var16 < 100000; var16++) {
-            Ce.VALUE2.cem("123456abc", "123456abc");
-        }
-    }
-}
-
-enum Ce {
-    VALUE2;
-
-    int cem(String id, String nameKey) {
+    static int test1(String id, String nameKey) {
         try {
             java.io.ByteArrayOutputStream stream = new java.io.ByteArrayOutputStream();
             java.math.BigInteger num = java.math.BigInteger.valueOf(123);
@@ -55,9 +45,22 @@ enum Ce {
             ;
         return 0;
     }
-}
 
-class c159 {
-    static class HelperBase {
+    static boolean test2(String b) {
+        String t1 = "";
+        var s1 = new StringBuffer();
+        var s2 = s1.append(String.valueOf(t1));
+        var s3 = s2.append(7);
+        var s4 = String.valueOf("AB");
+        var s5 = s4.equals(String.valueOf(b));
+        return s5;
+    }
+
+    public static void main(String[] strArr) {
+        for (int t = 0; t < 10_000; t++) {
+            test1("123456abc", "123456abc");
+            test2("X");
+        }
     }
 }
+
