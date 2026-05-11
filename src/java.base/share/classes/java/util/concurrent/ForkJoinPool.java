@@ -2012,10 +2012,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 w.nsteals = ++nsteals;
                                 int prevSrc = src;
                                 w.source = src = qid; // volatile
-                                if (nt != null &&
-                                    (qid != prevSrc ||
-                                     ((qid & 1) == 0 &&
-                                      (fifo != 0 || t.noUserHelp() != 0))))
+                                if (nt != null && (qid != prevSrc || (qid & 1) == 0))
                                     signalWork();     // propagate
                                 w.topLevelExec(t, fifo);
                                 rescan = true;
@@ -2066,38 +2063,33 @@ public class ForkJoinPool extends AbstractExecutorService
                     int spins = (short)(qac >> RC_SHIFT) + (src >= 0 ? 0 : n);
                     while ((phase = w.phase) != activePhase && --spins > 0)
                         Thread.onSpinWait();     // reduce activation flailing
-                    if (phase != activePhase) {  // missed signal check
-                        for (int k = n, i = activePhase + 1; k-- > 0 ; ++i) {
-                            WorkQueue q; int cap; ForkJoinTask<?>[] a;
-                            if ((q = qs[i & (n - 1)]) != null &&
-                                (a = q.array) != null && (cap = a.length) > 0) {
-                                int b = q.base; long bp;
-                                if (U.getReferenceAcquire(
-                                        a, bp = slotOffset((cap - 1) & b)) != null) {
-                                    WorkQueue v; int sp, j; long c;
-                                    if (((c = ctl) & RC_MASK) <= qac &&
-                                        (sp = (int)c) != 0 &&
-                                        (j = sp & SMASK) < n && (v = qs[j]) != null) {
-                                        long nc = ((v.stackPred & LMASK) |
-                                                   ((c + RC_UNIT) & UMASK));
-                                        if ((phase = w.phase) == activePhase)
-                                            break;
-                                        if (U.getReference(a, bp) != null &&
-                                            U.compareAndSetLong(this, CTL, c, nc)) {
-                                            if ((v.phase = sp) == activePhase)
-                                                phase = activePhase;
-                                            else if (v.parking == sp)
-                                                U.unpark(v.owner);
-                                            break;
-                                        }
-                                    }
-                                    if (U.getReference(a, bp) != null)
-                                        k = n;   // revisit
-                                }
-                                else if (q.base != b)
-                                    k = n;       // inconsistent; retry later
-                                if ((phase = w.phase) == activePhase)
-                                    break;
+                    outer: for (int k = n, i = activePhase; k-- > 0 ; ++i) {
+                        WorkQueue q;             // missed signal check
+                        while ((q = qs[i & (n - 1)]) != null) {
+                            int cap, sp, j; ForkJoinTask<?>[] a;
+                            long bp, c; Object t; WorkQueue v;
+                            if ((phase = w.phase) == activePhase)
+                                break outer;
+                            if ((a = q.array) == null || (cap = a.length) <= 0)
+                                break;
+                            int b = q.base;
+                            do {
+                                t = U.getReferenceAcquire(
+                                    a, bp = slotOffset((cap - 1) & b));
+                            } while (b != (b = q.base));
+                            if (t == null || (sp = (int)(c = ctl)) == 0 ||
+                                (j = sp & SMASK) >= n || (v = qs[j]) == null)
+                                break;
+                            long nc = (v.stackPred & LMASK) | ((c + RC_UNIT) & UMASK);
+                            if ((phase = w.phase) == activePhase)
+                                break outer;
+                            if (U.getReference(a, bp) != null &&
+                                U.compareAndSetLong(this, CTL, c, nc)) {
+                                if ((v.phase = sp) == activePhase)
+                                    phase = activePhase;
+                                else if (v.parking == sp)
+                                    U.unpark(v.owner);
+                                break outer;
                             }
                         }
                     }
