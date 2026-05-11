@@ -602,9 +602,22 @@ public class Basic {
     private static final String classpath =
         System.getProperty("java.class.path");
 
+    private static String launchMechanismOverride(){
+        if (Unix.is()) {
+            // Propagate any launchMechanism mode specified for the
+            // parent process to spawned java child processes.
+            var launchMechanism = System.getProperty("jdk.lang.Process.launchMechanism");
+            if (launchMechanism != null) {
+               return "-Djdk.lang.Process.launchMechanism=" + launchMechanism;
+            }
+        }
+        return "";
+    }
+
     private static final List<String> javaChildArgs =
         Arrays.asList(javaExe,
                       "-XX:+DisplayVMOutputToStderr",
+                      launchMechanismOverride(),
                       "-classpath", absolutifyPath(classpath),
                       "Basic$JavaChild");
 
