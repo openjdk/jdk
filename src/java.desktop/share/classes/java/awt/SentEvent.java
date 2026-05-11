@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package java.awt;
 
 import java.io.Serial;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
 /**
@@ -51,22 +50,16 @@ class SentEvent extends AWTEvent implements ActiveEvent {
 
     boolean dispatched;
     private AWTEvent nested;
-    @SuppressWarnings("serial") // Not statically typed as Serializable
-    private AppContext toNotify;
 
     SentEvent() {
         this(null);
     }
     SentEvent(AWTEvent nested) {
-        this(nested, null);
-    }
-    SentEvent(AWTEvent nested, AppContext toNotify) {
         super((nested != null)
                   ? nested.getSource()
                   : Toolkit.getDefaultToolkit(),
               ID);
         this.nested = nested;
-        this.toNotify = toNotify;
     }
 
     public void dispatch() {
@@ -76,9 +69,6 @@ class SentEvent extends AWTEvent implements ActiveEvent {
             }
         } finally {
             dispatched = true;
-            if (toNotify != null) {
-                SunToolkit.postEvent(toNotify, new SentEvent());
-            }
             synchronized (this) {
                 notifyAll();
             }
@@ -86,9 +76,6 @@ class SentEvent extends AWTEvent implements ActiveEvent {
     }
     final void dispose() {
         dispatched = true;
-        if (toNotify != null) {
-            SunToolkit.postEvent(toNotify, new SentEvent());
-        }
         synchronized (this) {
             notifyAll();
         }

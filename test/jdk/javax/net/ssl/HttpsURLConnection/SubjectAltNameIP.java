@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @modules java.base/sun.net.util
  * @comment Insert -Djavax.net.debug=all into the following lines to enable SSL debugging
  * @run main/othervm SubjectAltNameIP 127.0.0.1
- * @run main/othervm SubjectAltNameIP [::1]
+ * @run main/othervm SubjectAltNameIP ::1
  */
 
 import javax.net.ssl.HandshakeCompletedListener;
@@ -101,7 +101,7 @@ public class SubjectAltNameIP {
      */
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslssf =
-            new SimpleSSLContext().get().getServerSocketFactory();
+            SimpleSSLContext.findSSLContext().getServerSocketFactory();
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(
                     serverPort, 0,
@@ -139,7 +139,7 @@ public class SubjectAltNameIP {
             throw new RuntimeException("Server failed to start.", serverException);
         }
 
-        SSLSocketFactory sf = new SimpleSSLContext().get().getSocketFactory();
+        SSLSocketFactory sf = SimpleSSLContext.findSSLContext().getSocketFactory();
         URI uri = new URI("https://" + hostName + ":" + serverPort + "/index.html");
         HttpsURLConnection conn = (HttpsURLConnection)uri.toURL().openConnection();
 
@@ -166,14 +166,19 @@ public class SubjectAltNameIP {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean isIpv6Addr = IPAddressUtil.isIPv6LiteralAddress(args[0]);
 
-        if (IPAddressUtil.isIPv6LiteralAddress(args[0]) && !IPSupport.hasIPv6()) {
+        if (isIpv6Addr && !IPSupport.hasIPv6()) {
             throw new SkippedException("Skipping test - IPv6 is not supported");
         }
         /*
          * Start the tests.
          */
-        new SubjectAltNameIP(args[0]);
+        if (isIpv6Addr) { // use the URL notion wrapper
+            new SubjectAltNameIP("[" + args[0] + "]");
+        } else {
+            new SubjectAltNameIP(args[0]);
+        }
     }
 
     Thread serverThread = null;

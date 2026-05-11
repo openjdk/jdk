@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,11 @@
 /* @test
  * @bug 8184119
  * @summary test permutation when return value is directly derived from an argument
- * @run testng/othervm test.java.lang.invoke.PermuteArgsReturnVoidTest
+ * @run junit/othervm test.java.lang.invoke.PermuteArgsReturnVoidTest
  */
 
 
 package test.java.lang.invoke;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -39,6 +36,9 @@ import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodHandles.dropArguments;
 import static java.lang.invoke.MethodHandles.identity;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PermuteArgsReturnVoidTest {
 
@@ -65,8 +65,8 @@ public class PermuteArgsReturnVoidTest {
         MethodHandle p = MethodHandles.permuteArguments(f, MethodType.methodType(String.class, String.class, int.class, int.class), 0, 2, 1);
 
         String s = (String) p.invoke("IN", 0, 0);
-        Assert.assertEquals(s.getClass(), String.class);
-        Assert.assertEquals(s, "IN");
+        assertEquals(String.class, s.getClass());
+        assertEquals("IN", s);
     }
 
     @Test
@@ -84,7 +84,7 @@ public class PermuteArgsReturnVoidTest {
         MethodHandle p = MethodHandles.permuteArguments(f, MethodType.methodType(String.class, String.class, int.class, int.class), 0, 2, 1);
 
         String s = (String) p.invoke("IN", 0, 0);
-        Assert.assertEquals(s.getClass(), String.class);
-        Assert.assertEquals(s, "IN");
+        assertEquals(String.class, s.getClass());
+        assertEquals("IN", s);
     }
 }

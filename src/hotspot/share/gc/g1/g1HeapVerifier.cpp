@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "code/nmethod.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.hpp"
@@ -236,7 +237,7 @@ private:
   VerifyOption     _vo;
   bool             _failures;
 
-  bool is_in_full_gc() const { return G1CollectedHeap::heap()->collector_state()->in_full_gc(); }
+  bool is_in_full_gc() const { return G1CollectedHeap::heap()->collector_state()->is_in_full_gc(); }
 
 public:
   VerifyRegionClosure(VerifyOption vo)
@@ -349,7 +350,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
   bool failures = rootsCl.failures() || codeRootsCl.failures();
 
-  if (!_g1h->policy()->collector_state()->in_full_gc()) {
+  if (!_g1h->policy()->collector_state()->is_in_full_gc()) {
     // If we're verifying during a full GC then the region sets
     // will have been torn down at the start of the GC. Therefore
     // verifying the region sets will fail. So we only verify
@@ -460,41 +461,40 @@ public:
 
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
 
-    bool part_of_marking = r->is_old_or_humongous() && !r->is_collection_set_candidate();
     HeapWord* top_at_mark_start = cm->top_at_mark_start(r);
 
-    if (part_of_marking) {
-      guarantee(r->bottom() != top_at_mark_start,
-                "region %u (%s) does not have TAMS set",
-                r->hrm_index(), r->get_short_type_str());
-      size_t marked_bytes = cm->live_bytes(r->hrm_index());
-
+    if (r->is_old_or_humongous()) {
+      if (!cm->is_root_region(r)) {
+        guarantee(r->bottom() != top_at_mark_start,
+            "region %u (%s) does not have TAMS set although it's going to be marked through",
+            r->hrm_index(), r->get_short_type_str());
+      }
       MarkedBytesClosure cl;
       r->apply_to_marked_objects(cm->mark_bitmap(), &cl);
 
+      size_t marked_bytes = cm->live_bytes(r->hrm_index());
       guarantee(cl.marked_bytes() == marked_bytes,
                 "region %u (%s) live bytes actual %zu and cache %zu differ",
                 r->hrm_index(), r->get_short_type_str(), cl.marked_bytes(), marked_bytes);
-    } else {
+    } else if (r->is_young()) {
       guarantee(r->bottom() == top_at_mark_start,
                 "region %u (%s) has TAMS set " PTR_FORMAT " " PTR_FORMAT,
                 r->hrm_index(), r->get_short_type_str(), p2i(r->bottom()), p2i(top_at_mark_start));
       guarantee(cm->live_bytes(r->hrm_index()) == 0,
                 "region %u (%s) has %zu live bytes recorded",
                 r->hrm_index(), r->get_short_type_str(), cm->live_bytes(r->hrm_index()));
-      guarantee(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->end()) == r->end(),
-                "region %u (%s) has mark",
-                r->hrm_index(), r->get_short_type_str());
-      guarantee(cm->is_root_region(r),
-                "region %u (%s) should be root region",
-                r->hrm_index(), r->get_short_type_str());
+      guarantee(cm->is_root_region(r), "must be for %u (%s)", r->hrm_index(), r->get_short_type_str());
     }
+
+    guarantee(cm->mark_bitmap()->get_next_marked_addr(top_at_mark_start, r->end()) == r->end(),
+            "region %u (%s) has mark from TAMS to top",
+            r->hrm_index(), r->get_short_type_str());
     return false;
   }
 };
 
 void G1HeapVerifier::verify_marking_state() {
-  assert(G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc(), "must be");
+  assert(G1CollectedHeap::heap()->collector_state()->is_in_concurrent_start_gc(), "must be");
 
   // Verify TAMSes, bitmaps and liveness statistics.
   //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,7 +585,7 @@ C2V_END
 
 C2V_VMENTRY_0(jboolean, hasNeverInlineDirective,(JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method (THREAD, UNPACK_PAIR(Method, method));
-  return !Inline || CompilerOracle::should_not_inline(method) || method->dont_inline();
+  return !Inline || CompilerOracle::should_not_inline(method, CompLevel_full_optimization) || method->dont_inline();
 C2V_END
 
 C2V_VMENTRY_0(jboolean, shouldInlineMethod,(JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
@@ -1218,7 +1218,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
   return result;
 C2V_END
 
-C2V_VMENTRY_0(jobject, getInvalidationReasonDescription, (JNIEnv *env, jobject, jint invalidation_reason))
+C2V_VMENTRY_NULL(jobject, getInvalidationReasonDescription, (JNIEnv *env, jobject, jint invalidation_reason))
   HandleMark hm(THREAD);
   JNIHandleMark jni_hm(thread);
   nmethod::InvalidationReason reason = static_cast<nmethod::InvalidationReason>(invalidation_reason);

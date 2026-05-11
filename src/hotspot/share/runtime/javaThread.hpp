@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,9 @@
 #ifndef SHARE_RUNTIME_JAVATHREAD_HPP
 #define SHARE_RUNTIME_JAVATHREAD_HPP
 
+#ifndef PRODUCT
+#include "interpreter/bytecodeTracer.hpp"
+#endif // PRODUCT
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -81,6 +84,7 @@ class JavaThread;
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
+class ThreadWXEnable;
 
 class JavaThread: public Thread {
   friend class VMStructs;
@@ -290,6 +294,16 @@ class JavaThread: public Thread {
   }
 #endif // ASSERT
 
+#ifndef PRODUCT
+ private:
+  BytecodeTracerData _bytecode_tracer_data;
+
+ public:
+  BytecodeTracerData* bytecode_tracer_data() {
+    return &_bytecode_tracer_data;
+  }
+#endif // PRODUCT
+
   // JavaThread termination support
  public:
   enum TerminatedTypes {
@@ -444,8 +458,11 @@ class JavaThread: public Thread {
   volatile address _exception_handler_pc;        // PC for handler of exception
 
  private:
-  // support for JNI critical regions
+  // support for JNI critical regions interaction with GC
   jint    _jni_active_critical;                  // count of entries into JNI critical region
+
+  // support for JNI critical regions deferral of JVM TI suspension
+  jint    _jni_deferred_suspension_count;
 
   // Checked JNI: function name requires exception check
   char* _pending_jni_exception_check_fn;
@@ -734,14 +751,14 @@ public:
 
 private:
   bool _is_in_vthread_transition;                    // thread is in virtual thread mount state transition
-  DEBUG_ONLY(bool _is_vthread_transition_disabler;)  // thread currently disabled vthread transitions
+  JVMTI_ONLY(bool _is_vthread_transition_disabler;)  // thread currently disabled vthread transitions
   DEBUG_ONLY(bool _is_disabler_at_start;)            // thread at process of disabling vthread transitions
 public:
   bool is_in_vthread_transition() const;
   void set_is_in_vthread_transition(bool val);
+  JVMTI_ONLY(bool is_vthread_transition_disabler() const { return _is_vthread_transition_disabler; })
+  JVMTI_ONLY(void set_is_vthread_transition_disabler(bool val);)
 #ifdef ASSERT
-  bool is_vthread_transition_disabler() const       { return _is_vthread_transition_disabler; }
-  void set_is_vthread_transition_disabler(bool val);
   bool is_disabler_at_start() const                 { return _is_disabler_at_start; }
   void set_is_disabler_at_start(bool val);
 #endif
@@ -966,9 +983,18 @@ public:
     _jni_active_critical--;
     assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
   }
-
   // Atomic version; invoked by a thread other than the owning thread.
   bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
+
+  bool jni_deferred_suspension() { return AtomicAccess::load(&_jni_deferred_suspension_count); }
+  inline void enter_jni_deferred_suspension();
+  void exit_jni_deferred_suspension() {
+    precond(Thread::current() == this);
+    int sc = AtomicAccess::load(&_jni_deferred_suspension_count);
+    AtomicAccess::store(&_jni_deferred_suspension_count, sc - 1);
+    assert(_jni_deferred_suspension_count >= 0,
+           "JNI deferred suspension nesting problem?");
+  }
 
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the
@@ -1288,6 +1314,15 @@ public:
   bool get_and_clear_interrupted();
 
 private:
+
+#ifdef MACOS_AARCH64
+  friend class ThreadWXEnable;
+  friend class PosixSignals;
+
+  ThreadWXEnable* _cur_wx_enable;
+  WXMode* _cur_wx_mode;
+#endif
+
   LockStack _lock_stack;
   OMCache _om_cache;
 

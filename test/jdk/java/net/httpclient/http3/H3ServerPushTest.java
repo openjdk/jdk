@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *          /test/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm/timeout=240 H3ServerPushTest
+ * @run junit/othervm/timeout=240 ${test.main.class}
  */
 
 /**
@@ -95,15 +95,7 @@ class H3ServerPushTest {
 
     private static final HttpHeaders EMPTY_HEADERS = HttpHeaders.of(Map.of(), (_, _) -> false);
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     @Test
     @Order(1)

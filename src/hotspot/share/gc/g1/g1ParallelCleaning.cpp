@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 
 #include "gc/g1/g1ParallelCleaning.hpp"
-#include "runtime/atomicAccess.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
@@ -35,11 +34,11 @@ JVMCICleaningTask::JVMCICleaningTask() :
 }
 
 bool JVMCICleaningTask::claim_cleaning_task() {
-  if (AtomicAccess::load(&_cleaning_claimed)) {
+  if (_cleaning_claimed.load_relaxed()) {
     return false;
   }
 
-  return !AtomicAccess::cmpxchg(&_cleaning_claimed, false, true);
+  return _cleaning_claimed.compare_set(false, true);
 }
 
 void JVMCICleaningTask::work(bool unloading_occurred) {

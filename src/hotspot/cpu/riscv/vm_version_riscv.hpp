@@ -55,7 +55,7 @@ class VM_Version : public Abstract_VM_Version {
 
    public:
     RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)) {
+      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit<uint64_t>(linux_bit_num)) {
     }
     virtual void enable_feature(int64_t value = 0) = 0;
     virtual void disable_feature() = 0;
@@ -289,6 +289,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zvfh        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, &ext_v, &ext_Zfh, nullptr)) \
   /* Shorthand for Zvkned + Zvknhb + Zvkb + Zvkt */                                                    \
   decl(Zvkn        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, &ext_v, nullptr))           \
+  /* Zvkg crypto extension for ghash and gcm */                                                        \
+  decl(Zvkg        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkg, &ext_v, nullptr))           \
 
   #define DECLARE_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)                             \
   struct ext_##PRETTY##RVExtFeatureValue : public RVExtFeatureValue {                           \

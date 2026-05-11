@@ -49,7 +49,7 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -61,7 +61,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed);
+  size_t new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns null on OOB.
   return _heap->get_region(new_index - 1);
 }
@@ -75,15 +75,15 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
 }
 
 inline void ShenandoahHeap::notify_gc_progress() {
-  AtomicAccess::store(&_gc_no_progress_count, (size_t) 0);
+  _gc_no_progress_count.store_relaxed((size_t) 0);
 
 }
 inline void ShenandoahHeap::notify_gc_no_progress() {
-  AtomicAccess::inc(&_gc_no_progress_count);
+  _gc_no_progress_count.add_then_fetch((size_t) 1);
 }
 
 inline size_t ShenandoahHeap::get_gc_no_progress_count() const {
-  return AtomicAccess::load(&_gc_no_progress_count);
+  return _gc_no_progress_count.load_relaxed();
 }
 
 inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) const {
@@ -98,14 +98,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   ShenandoahHeapRegion* const result = get_region(index);
   assert(addr >= result->bottom() && addr < result->end(), "Heap region contains the address: " PTR_FORMAT, p2i(addr));
   return result;
-}
-
-inline void ShenandoahHeap::enter_evacuation(Thread* t) {
-  _oom_evac_handler.enter_evacuation(t);
-}
-
-inline void ShenandoahHeap::leave_evacuation(Thread* t) {
-  _oom_evac_handler.leave_evacuation(t);
 }
 
 template <class T>
@@ -272,7 +264,6 @@ inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
 inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(GCCause::_no_gc);
   reset_cancellation_time();
-  _oom_evac_handler.clear();
 }
 
 inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
@@ -344,9 +335,8 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   }
   if (w.has_monitor()) {
     w = w.monitor()->header();
-  } else if (w.is_being_inflated() || w.has_displaced_mark_helper()) {
-    // Informs caller that we aren't able to determine the age
-    return markWord::max_age + 1; // sentinel
+  } else {
+    assert(!w.has_displaced_mark_helper(), "Mark word should not be displaced");
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
@@ -453,6 +443,17 @@ inline bool ShenandoahHeap::in_collection_set(oop p) const {
 inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   assert(collection_set() != nullptr, "Sanity");
   return collection_set()->is_in_loc(p);
+}
+
+inline char ShenandoahHeap::gc_state() const {
+  return integer_cast<char>(_gc_state.raw_value());
+}
+
+inline bool ShenandoahHeap::is_gc_state(GCState state) const {
+  // If the global gc state has been changed, but hasn't yet been propagated to all threads, then
+  // the global gc state is the correct value. Once the gc state has been synchronized with all threads,
+  // _gc_state_changed will be toggled to false and we need to use the thread local state.
+  return _gc_state_changed ? _gc_state.is_set(state) : ShenandoahThreadLocalData::is_gc_state(state);
 }
 
 inline bool ShenandoahHeap::is_idle() const {

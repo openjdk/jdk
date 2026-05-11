@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "mlib_image.h"
 #include "mlib_ImageConv.h"
 #include "mlib_c_ImageConv.h"
+#include "safe_math.h"
 
 /*
  * This define switches between functions of different data types
@@ -270,8 +271,14 @@ static mlib_status mlib_ImageConv1xN_ext(mlib_image       *dst,
   if (max_hsize > hgt) max_hsize = hgt;
 
   shgt = hgt + (n - 1);
+  if (!SAFE_TO_ADD(max_hsize, (n - 1))) {
+    return MLIB_FAILURE;
+  }
   smax_hsize = max_hsize + (n - 1);
 
+  if (!SAFE_TO_ADD(smax_hsize, 1) || !SAFE_TO_MULT(2, (smax_hsize + 1))) {
+    return MLIB_FAILURE;
+  }
   bsize = 2 * (smax_hsize + 1);
 
   if (bsize > BUFF_SIZE) {
@@ -519,8 +526,16 @@ mlib_status CONV_FUNC_MxN
     FREE_AND_RETURN_STATUS;
   }
 
+  if (!SAFE_TO_ADD(wid, (m - 1))) {
+    status = MLIB_FAILURE;
+    FREE_AND_RETURN_STATUS;
+  }
   swid = wid + (m - 1);
 
+  if (!SAFE_TO_MULT((n + 3), swid)) {
+    status = MLIB_FAILURE;
+    FREE_AND_RETURN_STATUS;
+  }
   bsize = (n + 3)*swid;
 
   if ((bsize > BUFF_SIZE) || (n > MAX_N)) {
@@ -927,8 +942,14 @@ mlib_status CONV_FUNC_MxN_I
   chan1 = nchannel;
   chan2 = chan1 + chan1;
 
+  if (!SAFE_TO_ADD(wid, (m - 1))) {
+    return MLIB_FAILURE;
+  }
   swid = wid + (m - 1);
 
+  if (!SAFE_TO_MULT((n + 2), swid)) {
+    return MLIB_FAILURE;
+  }
   bsize = (n + 2)*swid;
 
   if ((bsize > BUFF_SIZE) || (n > MAX_N)) {

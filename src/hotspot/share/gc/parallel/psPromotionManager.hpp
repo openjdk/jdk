@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,8 @@ class PSPromotionManager {
 
   inline static PSPromotionManager* manager_array(uint index);
 
-  template <class T> void  process_array_chunk_work(oop obj,
-                                                    int start, int end);
   void process_array_chunk(PartialArrayState* state, bool stolen);
+  void process_array_chunk(objArrayOop obj, size_t start, size_t end);
   void push_objArray(oop old_obj, oop new_obj);
 
   inline void promotion_trace_event(oop new_obj, Klass* klass, size_t obj_size,
@@ -166,7 +165,7 @@ class PSPromotionManager {
 
   template <class T> inline void claim_or_forward_depth(T* p);
 
-  void push_contents(oop obj);
+  void push_contents(oop obj, Klass* klass);
   void push_contents_bounded(oop obj, HeapWord* left, HeapWord* right);
 };
 

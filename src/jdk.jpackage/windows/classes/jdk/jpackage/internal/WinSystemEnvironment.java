@@ -34,6 +34,6 @@ record WinSystemEnvironment(WixToolset wixToolset) implements SystemEnvironment 
     }
 
     static Result<WinSystemEnvironment> create() {
-        return Result.create(WixTool::createToolset).map(WinSystemEnvironment::new);
+        return Result.of(WixTool::createToolset).map(WinSystemEnvironment::new);
     }
 }

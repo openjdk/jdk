@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368 8366968 8364991
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368 8366968 8364991 8383414
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1486,9 +1486,7 @@ public class Exhaustiveness extends TestRunner {
                        }
                    }
                }
-               """,
-               "Test.java:11:9: compiler.err.not.exhaustive.statement",
-               "1 error");
+               """);
     }
 
     @Test
@@ -2487,6 +2485,96 @@ public class Exhaustiveness extends TestRunner {
                "1 error");
     }
 
+    @Test //JDK-8383414
+    public void testVerifyCoverageCheckWithApplicablePermittedSubTypes(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J {}
+                   static sealed interface II<T> permits A2, B2 {}
+                   static final class A2 implements II<Long>, J {}
+                   static final class B2 implements II<Long>, J {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J j -> {}
+                       }
+                   }
+               }
+               """);
+        //deeper hierarchy:
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J {}
+                   static sealed interface II<T> permits Med, B2 {}
+                   static sealed interface Med extends II<Long> {}
+                   static final class A2 implements Med, J {}
+                   static final class B2 implements II<Long>, J {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J j -> {}
+                       }
+                   }
+               }
+               """);
+        //even deeper hierarchy:
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J {}
+                   static sealed interface II<T> permits Med1, B2 {}
+                   static sealed interface Med1 extends II<Long> {}
+                   static sealed interface Med2 extends Med1 {}
+                   static sealed interface Med3 extends Med2 {}
+                   static sealed interface Med4 extends Med3 {}
+                   static sealed interface Med5 extends Med4 {}
+                   static final class A2 implements Med5, J {}
+                   static final class B2 implements II<Long>, J {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J j -> {}
+                       }
+                   }
+               }
+               """);
+        //a class that does not implement J, but is not applicable:
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J {}
+                   static sealed interface II<T> permits A2, B2 {}
+                   static final class A2 implements II<String> {}
+                   static final class B2 implements II<Long>, J {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J j -> {}
+                       }
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J1 {}
+                   interface J2 {}
+                   static sealed interface II<T> permits A2, B2 {}
+                   static final class A2 implements II<Long>, J1 {}
+                   static final class B2 implements II<Long>, J2 {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J1 j -> {}
+                           case J2 j -> {}
+                       }
+                   }
+               }
+               """);
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         doTest(base, libraryCode, testCode, false, expectedErrors);
     }
@@ -2523,6 +2611,7 @@ public class Exhaustiveness extends TestRunner {
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
                              "-XDshould-stop.at=FLOW",
+                             "-XDexhaustivityMaxBaseChecks=0",
                              stopAtFlow ? "-XDshould-stop.ifNoError=FLOW"
                                         : "-XDnoop")
                     .outdir(classes)

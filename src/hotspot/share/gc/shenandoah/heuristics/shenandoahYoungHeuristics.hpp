@@ -38,9 +38,9 @@ public:
   explicit ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation);
 
 
-  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                             RegionData* data, size_t size,
-                                             size_t actual_free) override;
+  void select_collection_set_regions(ShenandoahCollectionSet* cset,
+                                     RegionData* data, size_t size,
+                                     size_t actual_free) override;
 
   bool should_start_gc() override;
 
@@ -49,8 +49,7 @@ public:
 private:
   void choose_young_collection_set(ShenandoahCollectionSet* cset,
                                    const RegionData* data,
-                                   size_t size, size_t actual_free,
-                                   size_t cur_young_garbage) const;
+                                   size_t size, size_t actual_free) const;
 
 };
 

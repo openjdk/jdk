@@ -2667,12 +2667,16 @@ threadControl_setEventMode(jvmtiEventMode mode, EventIndex ei, jthread thread)
 
 /*
  * Returns the current thread.
+ * Returns NULL on error (JVMTI_ERROR_WRONG_PHASE, JVMTI_ERROR_UNATTACHED_THREAD).
  */
 jthread
 threadControl_currentThread(void)
 {
     jthread thread = NULL;
     jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetCurrentThread)(gdata->jvmti, &thread);
+    if (error != JVMTI_ERROR_NONE) {
+        return NULL;
+    }
     return thread;
 }
 
@@ -2700,11 +2704,9 @@ threadControl_getFrameGeneration(jthread thread)
 jthread *
 threadControl_allVThreads(jint *numVThreads)
 {
-    JNIEnv *env;
     ThreadNode *node;
     jthread* vthreads;
 
-    env = getEnv();
     debugMonitorEnter(threadLock);
     *numVThreads = numRunningVThreads;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ class     TypeVectD;
 class     TypeVectX;
 class     TypeVectY;
 class     TypeVectZ;
-class     TypeVectMask;
+class     TypePVectMask;
 class   TypePtr;
 class     TypeRawPtr;
 class     TypeOopPtr;
@@ -313,8 +313,8 @@ public:
   const TypeAry    *isa_ary() const;             // Returns null of not ary
   const TypeVect   *is_vect() const;             // Vector
   const TypeVect   *isa_vect() const;            // Returns null if not a Vector
-  const TypeVectMask *is_vectmask() const;       // Predicate/Mask Vector
-  const TypeVectMask *isa_vectmask() const;      // Returns null if not a Vector Predicate/Mask
+  const TypePVectMask *is_pvectmask() const;     // Predicate/Mask Vector
+  const TypePVectMask *isa_pvectmask() const;    // Returns null if not a Vector Predicate/Mask
   const TypePtr    *is_ptr() const;              // Asserts it is a ptr type
   const TypePtr    *isa_ptr() const;             // Returns null if not ptr type
   const TypeRawPtr *isa_rawptr() const;          // NOT Java oop
@@ -798,6 +798,10 @@ public:
   // must always specify w
   static const TypeInt* make(jint lo, jint hi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jint, juint>& t, int widen);
+  static const TypeInt* make(const TypeIntPrototype<jint, juint>& t, int widen) { return make_or_top(t, widen)->is_int(); }
+  static const TypeInt* make(const TypeIntMirror<jint, juint>& t, int widen) {
+    return (new TypeInt(TypeIntPrototype<jint, juint>{{t._lo, t._hi}, {t._ulo, t._uhi}, t._bits}, widen, false))->hashcons()->is_int();
+  }
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
@@ -807,6 +811,11 @@ public:
   // argument are also elements of this type)
   bool contains(jint i) const;
   bool contains(const TypeInt* t) const;
+
+#ifdef ASSERT
+  // Check whether t is a proper subset (i.e. a subset that is not equal to the superset) of this
+  bool strictly_contains(const TypeInt* t) const;
+#endif // ASSERT
 
   virtual bool is_finite() const;  // Has a finite value
 
@@ -879,6 +888,10 @@ public:
   // must always specify w
   static const TypeLong* make(jlong lo, jlong hi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen);
+  static const TypeLong* make(const TypeIntPrototype<jlong, julong>& t, int widen) { return make_or_top(t, widen)->is_long(); }
+  static const TypeLong* make(const TypeIntMirror<jlong, julong>& t, int widen) {
+    return (new TypeLong(TypeIntPrototype<jlong, julong>{{t._lo, t._hi}, {t._ulo, t._uhi}, t._bits}, widen, false))->hashcons()->is_long();
+  }
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
@@ -888,6 +901,11 @@ public:
   // argument are also elements of this type)
   bool contains(jlong i) const;
   bool contains(const TypeLong* t) const;
+
+#ifdef ASSERT
+  // Check whether t is a proper subset (i.e. a subset that is not equal to the superset) of this
+  bool strictly_contains(const TypeLong* t) const;
+#endif // ASSERT
 
   // Check for positive 32-bit value.
   int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
@@ -1010,7 +1028,7 @@ public:
 };
 
 //------------------------------TypeVect---------------------------------------
-// Class of Vector Types
+// Basic class of vector (mask) types.
 class TypeVect : public Type {
   const BasicType _elem_bt;  // Vector's element type
   const uint _length;  // Elements in vector (power of 2)
@@ -1050,6 +1068,16 @@ public:
 #endif
 };
 
+// TypeVect subclasses representing vectors or vector masks with "BVectMask" or "NVectMask"
+// layout (see vectornode.hpp for detailed notes on vector mask representations), mapped
+// to vector registers and distinguished by vector register size:
+//
+// - TypeVectA: Scalable vector type (variable size, e.g., AArch64 SVE, RISC-V RVV)
+// - TypeVectS: 32-bit vector type
+// - TypeVectD: 64-bit vector type
+// - TypeVectX: 128-bit vector type
+// - TypeVectY: 256-bit vector type
+// - TypeVectZ: 512-bit vector type
 class TypeVectA : public TypeVect {
   friend class TypeVect;
   TypeVectA(BasicType elem_bt, uint length) : TypeVect(VectorA, elem_bt, length) {}
@@ -1080,11 +1108,14 @@ class TypeVectZ : public TypeVect {
   TypeVectZ(BasicType elem_bt, uint length) : TypeVect(VectorZ, elem_bt, length) {}
 };
 
-class TypeVectMask : public TypeVect {
+// Class of TypePVectMask, representing vector masks with "PVectMask" layout (see
+// vectornode.hpp for detailed notes on vector mask representations), mapped to
+// dedicated hardware predicate/mask registers.
+class TypePVectMask : public TypeVect {
 public:
   friend class TypeVect;
-  TypeVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
-  static const TypeVectMask* make(const BasicType elem_bt, uint length);
+  TypePVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
+  static const TypePVectMask* make(const BasicType elem_bt, uint length);
 };
 
 // Set of implemented interfaces. Referenced from TypeOopPtr and TypeKlassPtr.
@@ -1554,9 +1585,6 @@ public:
     const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(ptr, k, interfaces, xk, o, offset, instance_id);
   }
-
-  /** Create constant type for a constant boxed value */
-  const Type* get_const_boxed_value() const;
 
   // If this is a java.lang.Class constant, return the type for it or null.
   // Pass to Type::get_const_type to turn it to a type, which will usually
@@ -2274,13 +2302,13 @@ inline const TypeAry *Type::isa_ary() const {
   return ((_base == Array) ? (TypeAry*)this : nullptr);
 }
 
-inline const TypeVectMask *Type::is_vectmask() const {
+inline const TypePVectMask *Type::is_pvectmask() const {
   assert( _base == VectorMask, "Not a Vector Mask" );
-  return (TypeVectMask*)this;
+  return (TypePVectMask*)this;
 }
 
-inline const TypeVectMask *Type::isa_vectmask() const {
-  return (_base == VectorMask) ? (TypeVectMask*)this : nullptr;
+inline const TypePVectMask *Type::isa_pvectmask() const {
+  return (_base == VectorMask) ? (TypePVectMask*)this : nullptr;
 }
 
 inline const TypeVect *Type::is_vect() const {

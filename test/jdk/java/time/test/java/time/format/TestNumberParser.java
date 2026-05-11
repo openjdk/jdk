@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,10 @@ import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.ParsePosition;
 import java.time.format.DateTimeFormatter;
@@ -74,17 +75,17 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQueries;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test NumberPrinterParser.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestNumberParser extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="error")
     Object[][] data_error() {
         return new Object[][] {
             {DAY_OF_MONTH, 1, 2, SignStyle.NEVER, "12", -1, IndexOutOfBoundsException.class},
@@ -92,7 +93,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="error")
+    @ParameterizedTest
+    @MethodSource("data_error")
     public void test_parse_error(TemporalField field, int min, int max, SignStyle style, String text, int pos, Class<?> expected) {
         try {
             getFormatter(field, min, max, style).parseUnresolved(text, new ParsePosition(pos));
@@ -103,7 +105,6 @@ public class TestNumberParser extends AbstractTestPrinterParser {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseData")
     Object[][] provider_parseData() {
         return new Object[][] {
             // normal
@@ -163,7 +164,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="parseData")
+    @ParameterizedTest
+    @MethodSource("provider_parseData")
     public void test_parse_fresh(int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth, String text, int pos, int expectedPos, long expectedValue) {
         ParsePosition ppos = new ParsePosition(pos);
         DateTimeFormatter dtf = getFormatter(DAY_OF_MONTH, minWidth, maxWidth, signStyle);
@@ -173,17 +175,18 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         }
         TemporalAccessor parsed = dtf.parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
-            assertEquals(ppos.getErrorIndex(), expectedPos);
+            assertEquals(expectedPos, ppos.getErrorIndex());
         } else {
             assertTrue(subsequentWidth >= 0);
-            assertEquals(ppos.getIndex(), expectedPos + subsequentWidth);
-            assertEquals(parsed.getLong(DAY_OF_MONTH), expectedValue);
-            assertEquals(parsed.query(TemporalQueries.chronology()), null);
-            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
+            assertEquals(expectedPos + subsequentWidth, ppos.getIndex());
+            assertEquals(expectedValue, parsed.getLong(DAY_OF_MONTH));
+            assertEquals(null, parsed.query(TemporalQueries.chronology()));
+            assertEquals(null, parsed.query(TemporalQueries.zoneId()));
         }
     }
 
-    @Test(dataProvider="parseData")
+    @ParameterizedTest
+    @MethodSource("provider_parseData")
     public void test_parse_textField(int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth, String text, int pos, int expectedPos, long expectedValue) {
         ParsePosition ppos = new ParsePosition(pos);
         DateTimeFormatter dtf = getFormatter(DAY_OF_WEEK, minWidth, maxWidth, signStyle);
@@ -193,18 +196,17 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         }
         TemporalAccessor parsed = dtf.parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
-            assertEquals(ppos.getErrorIndex(), expectedPos);
+            assertEquals(expectedPos, ppos.getErrorIndex());
         } else {
             assertTrue(subsequentWidth >= 0);
-            assertEquals(ppos.getIndex(), expectedPos + subsequentWidth);
-            assertEquals(parsed.getLong(DAY_OF_WEEK), expectedValue);
-            assertEquals(parsed.query(TemporalQueries.chronology()), null);
-            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
+            assertEquals(expectedPos + subsequentWidth, ppos.getIndex());
+            assertEquals(expectedValue, parsed.getLong(DAY_OF_WEEK));
+            assertEquals(null, parsed.query(TemporalQueries.chronology()));
+            assertEquals(null, parsed.query(TemporalQueries.zoneId()));
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseSignsStrict")
     Object[][] provider_parseSignsStrict() {
         return new Object[][] {
             // basics
@@ -304,22 +306,22 @@ public class TestNumberParser extends AbstractTestPrinterParser {
        };
     }
 
-    @Test(dataProvider="parseSignsStrict")
+    @ParameterizedTest
+    @MethodSource("provider_parseSignsStrict")
     public void test_parseSignsStrict(String input, int min, int max, SignStyle style, int parseLen, Integer parseVal) throws Exception {
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor parsed = getFormatter(DAY_OF_MONTH, min, max, style).parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
-            assertEquals(pos.getErrorIndex(), parseLen);
+            assertEquals(parseLen, pos.getErrorIndex());
         } else {
-            assertEquals(pos.getIndex(), parseLen);
-            assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
-            assertEquals(parsed.query(TemporalQueries.chronology()), null);
-            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
+            assertEquals(parseLen, pos.getIndex());
+            assertEquals((long)parseVal, parsed.getLong(DAY_OF_MONTH));
+            assertEquals(null, parsed.query(TemporalQueries.chronology()));
+            assertEquals(null, parsed.query(TemporalQueries.zoneId()));
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseSignsLenient")
     Object[][] provider_parseSignsLenient() {
         return new Object[][] {
             // never
@@ -413,23 +415,23 @@ public class TestNumberParser extends AbstractTestPrinterParser {
        };
     }
 
-    @Test(dataProvider="parseSignsLenient")
+    @ParameterizedTest
+    @MethodSource("provider_parseSignsLenient")
     public void test_parseSignsLenient(String input, int min, int max, SignStyle style, int parseLen, Integer parseVal) throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor parsed = getFormatter(DAY_OF_MONTH, min, max, style).parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
-            assertEquals(pos.getErrorIndex(), parseLen);
+            assertEquals(parseLen, pos.getErrorIndex());
         } else {
-            assertEquals(pos.getIndex(), parseLen);
-            assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
-            assertEquals(parsed.query(TemporalQueries.chronology()), null);
-            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
+            assertEquals(parseLen, pos.getIndex());
+            assertEquals((long)parseVal, parsed.getLong(DAY_OF_MONTH));
+            assertEquals(null, parsed.query(TemporalQueries.chronology()));
+            assertEquals(null, parsed.query(TemporalQueries.zoneId()));
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseDigitsLenient")
     Object[][] provider_parseDigitsLenient() {
         return new Object[][] {
                 // never
@@ -504,23 +506,23 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="parseDigitsLenient")
+    @ParameterizedTest
+    @MethodSource("provider_parseDigitsLenient")
     public void test_parseDigitsLenient(String input, int min, int max, SignStyle style, int parseLen, Integer parseVal) throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor parsed = getFormatter(DAY_OF_MONTH, min, max, style).parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
-            assertEquals(pos.getErrorIndex(), parseLen);
+            assertEquals(parseLen, pos.getErrorIndex());
         } else {
-            assertEquals(pos.getIndex(), parseLen);
-            assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
-            assertEquals(parsed.query(TemporalQueries.chronology()), null);
-            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
+            assertEquals(parseLen, pos.getIndex());
+            assertEquals((long)parseVal, parsed.getLong(DAY_OF_MONTH));
+            assertEquals(null, parsed.query(TemporalQueries.chronology()));
+            assertEquals(null, parsed.query(TemporalQueries.zoneId()));
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseDigitsAdjacentLenient")
     Object[][] provider_parseDigitsAdjacentLenient() {
         return new Object[][] {
                 // never
@@ -538,7 +540,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="parseDigitsAdjacentLenient")
+    @ParameterizedTest
+    @MethodSource("provider_parseDigitsAdjacentLenient")
     public void test_parseDigitsAdjacentLenient(String input, int parseLen, Integer parseMonth, Integer parsedDay) throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
@@ -547,13 +550,13 @@ public class TestNumberParser extends AbstractTestPrinterParser {
                 .appendValue(DAY_OF_MONTH, 2).toFormatter(locale).withDecimalStyle(decimalStyle);
         TemporalAccessor parsed = f.parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
-            assertEquals(pos.getErrorIndex(), parseLen);
+            assertEquals(parseLen, pos.getErrorIndex());
         } else {
-            assertEquals(pos.getIndex(), parseLen);
-            assertEquals(parsed.getLong(MONTH_OF_YEAR), (long) parseMonth);
-            assertEquals(parsed.getLong(DAY_OF_MONTH), (long) parsedDay);
-            assertEquals(parsed.query(TemporalQueries.chronology()), null);
-            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
+            assertEquals(parseLen, pos.getIndex());
+            assertEquals((long) parseMonth, parsed.getLong(MONTH_OF_YEAR));
+            assertEquals((long) parsedDay, parsed.getLong(DAY_OF_MONTH));
+            assertEquals(null, parsed.query(TemporalQueries.chronology()));
+            assertEquals(null, parsed.query(TemporalQueries.zoneId()));
         }
     }
 

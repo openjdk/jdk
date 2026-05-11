@@ -60,6 +60,8 @@ public:
 
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
+  static bool need_satb_barrier(DecoratorSet decorators, BasicType type);
+  static bool need_card_barrier(DecoratorSet decorators, BasicType type);
 
   static bool is_strong_access(DecoratorSet decorators) {
     return (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) == 0;
@@ -94,7 +96,6 @@ public:
   void on_thread_detach(Thread* thread) override;
 
   static inline oop resolve_forwarded_not_null(oop p);
-  static inline oop resolve_forwarded_not_null_mutator(oop p);
   static inline oop resolve_forwarded(oop p);
 
   template <DecoratorSet decorators, typename T>
@@ -107,7 +108,7 @@ public:
 
   inline oop load_reference_barrier(oop obj);
 
-  template <class T>
+  template <DecoratorSet decorators, class T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
   template <class T>
@@ -173,9 +174,9 @@ public:
     static oop oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value);
 
     template <typename T>
-    static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
-                                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
-                                      size_t length);
+    static OopCopyResult oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                               size_t length);
 
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size);
