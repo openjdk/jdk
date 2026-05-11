@@ -72,7 +72,7 @@ static address perm_lowH() {
   return (address)PERMLOWH;
 }
 
-// High term of unsiged to signed normalization 
+// High term of unsiged to signed normalization
 ATTRIBUTE_ALIGNED(64) constexpr uint64_t HTERM[] = {
   0x000000000000004CULL, 0x0000000000000004ULL,
   0x0000000000000004ULL, 0x0000000000000004ULL,
