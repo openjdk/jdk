@@ -41,7 +41,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @requires vm.hasJFR & vm.gc.Shenandoah
  * @requires vm.flagless
  * @library /test/lib /test/jdk
- * @run main/othervm -Xmx64m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=1m -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational jdk.jfr.event.gc.detailed.TestShenandoahEvacuationInformationEvent
+ * @run main/othervm -Xmx64m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=1m -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGenerationalMinPIPUsage=100 -XX:ShenandoahImmediateThreshold=100 jdk.jfr.event.gc.detailed.TestShenandoahEvacuationInformationEvent
  */
 
 public class TestShenandoahEvacuationInformationEvent {
@@ -68,8 +68,8 @@ public class TestShenandoahEvacuationInformationEvent {
             long setUsedAfter = Events.assertField(event, "cSetUsedAfter").atLeast(0L).getValue();
             long setUsedBefore = Events.assertField(event, "cSetUsedBefore").atLeast(setUsedAfter).getValue();
             long freeRegions = Events.assertField(event, "freeRegions").atLeast(0L).getValue();
-            Events.assertField(event, "collectedOld").atLeast(0L).getValue();
-            Events.assertField(event, "collectedYoung").atLeast(0L).getValue();
+            Events.assertField(event, "regionsImmediate").atLeast(0L).getValue();
+            Events.assertField(event, "immediateBytes").atLeast(0L).getValue();
 
             Asserts.assertGreaterThanOrEqual(shenandoahMaxHeapRegionCount, freeRegions + cSetRegions, "numRegions >= freeRegions + cSetRegions");
             Asserts.assertGreaterThanOrEqual(shenandoahHeapRegionSize * cSetRegions, setUsedAfter, "ShenandoahHeapRegionSize * cSetRegions >= setUsedAfter");
