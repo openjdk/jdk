@@ -235,8 +235,8 @@ const TypeFunc* OptoRuntime::_base64_decodeBlock_Type             = nullptr;
 const TypeFunc* OptoRuntime::_string_IndexOf_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_poly1305_processBlocks_Type         = nullptr;
 const TypeFunc* OptoRuntime::_intpoly_montgomeryMult_P256_Type    = nullptr;
-const TypeFunc* OptoRuntime::_intpoly_mult_25519_Type             = nullptr;
 const TypeFunc* OptoRuntime::_intpoly_assign_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_intpoly_mult_25519_Type             = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32_Type               = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
@@ -1748,14 +1748,15 @@ static const TypeFunc* make_intpoly_montgomeryMult_P256_Type() {
   return TypeFunc::make(domain, range);
 }
 
-static const TypeFunc* make_intpoly_mult_25519_Type() {
-  int argcnt = 3;
+static const TypeFunc* make_intpoly_assign_Type() {
+  int argcnt = 4;
 
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
-  fields[argp++] = TypePtr::NOTNULL;    // a array
-  fields[argp++] = TypePtr::NOTNULL;    // b array
-  fields[argp++] = TypePtr::NOTNULL;    // r(esult) array
+  fields[argp++] = TypeInt::INT;        // set flag
+  fields[argp++] = TypePtr::NOTNULL;    // a array (result)
+  fields[argp++] = TypePtr::NOTNULL;    // b array (if set is set)
+  fields[argp++] = TypeInt::INT;        // array length
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1766,15 +1767,14 @@ static const TypeFunc* make_intpoly_mult_25519_Type() {
   return TypeFunc::make(domain, range);
 }
 
-static const TypeFunc* make_intpoly_assign_Type() {
-  int argcnt = 4;
+static const TypeFunc* make_intpoly_mult_25519_Type() {
+  int argcnt = 3;
 
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
-  fields[argp++] = TypeInt::INT;        // set flag
-  fields[argp++] = TypePtr::NOTNULL;    // a array (result)
-  fields[argp++] = TypePtr::NOTNULL;    // b array (if set is set)
-  fields[argp++] = TypeInt::INT;        // array length
+  fields[argp++] = TypePtr::NOTNULL;    // a array
+  fields[argp++] = TypePtr::NOTNULL;    // b array
+  fields[argp++] = TypePtr::NOTNULL;    // r(esult) array
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -2351,8 +2351,8 @@ void OptoRuntime::initialize_types() {
   _string_IndexOf_Type                = make_string_IndexOf_Type();
   _poly1305_processBlocks_Type        = make_poly1305_processBlocks_Type();
   _intpoly_montgomeryMult_P256_Type   = make_intpoly_montgomeryMult_P256_Type();
-  _intpoly_mult_25519_Type            = make_intpoly_mult_25519_Type();
   _intpoly_assign_Type                = make_intpoly_assign_Type();
+  _intpoly_mult_25519_Type            = make_intpoly_mult_25519_Type();
   _updateBytesCRC32_Type              = make_updateBytesCRC32_Type();
   _updateBytesCRC32C_Type             = make_updateBytesCRC32C_Type();
   _updateBytesAdler32_Type            = make_updateBytesAdler32_Type();

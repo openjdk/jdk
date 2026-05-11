@@ -1449,6 +1449,10 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseIntPolyIntrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseIntPoly25519Intrinsics)) {
+    UseIntPoly25519Intrinsics = true;
+  }
+
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
   }

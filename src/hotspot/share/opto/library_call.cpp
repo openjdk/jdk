@@ -661,10 +661,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_poly1305_processBlocks();
   case vmIntrinsics::_intpoly_montgomeryMult_P256:
     return inline_intpoly_montgomeryMult_P256();
-  case vmIntrinsics::_intpoly_mult_25519:
-    return inline_intpoly_mult_25519();
   case vmIntrinsics::_intpoly_assign:
     return inline_intpoly_assign();
+  case vmIntrinsics::_intpoly_mult_25519:
+    return inline_intpoly_mult_25519();
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
     return inline_encodeISOArray(false);
@@ -8218,10 +8218,37 @@ bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
   return true;
 }
 
+bool LibraryCallKit::inline_intpoly_assign() {
+  assert(UseIntPolyIntrinsics, "need intpoly intrinsics support");
+  assert(callee()->signature()->size() == 3, "intpoly_assign has %d parameters", callee()->signature()->size());
+  const char *stubName = "intpoly_assign";
+  address stubAddr = StubRoutines::intpoly_assign();
+  if (!stubAddr) return false;
+
+  Node* set = argument(0);
+  Node* a = argument(1);
+  Node* b = argument(2);
+  Node* arr_length = load_array_length(a);
+
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is null");
+  Node* b_start = array_element_address(b, intcon(0), T_LONG);
+  assert(b_start, "b array is null");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_assign_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 set, a_start, b_start, arr_length);
+  return true;
+}
+
 bool LibraryCallKit::inline_intpoly_mult_25519() {
   address stubAddr;
   const char *stubName;
-  assert(UseIntPolyIntrinsics, "need intpoly intrinsics support");
+  assert(UseIntPoly25519Intrinsics, "need intpoly25519 intrinsics support");
   assert(callee()->signature()->size() == 3, "intpoly_mult_25519 has %d parameters", callee()->signature()->size());
   stubAddr = StubRoutines::intpoly_mult_25519();
   stubName = "intpoly_mult_25519";
@@ -8249,33 +8276,6 @@ bool LibraryCallKit::inline_intpoly_mult_25519() {
                                  OptoRuntime::intpoly_mult_25519_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  a_start, b_start, r_start);
-  return true;
-}
-
-bool LibraryCallKit::inline_intpoly_assign() {
-  assert(UseIntPolyIntrinsics, "need intpoly intrinsics support");
-  assert(callee()->signature()->size() == 3, "intpoly_assign has %d parameters", callee()->signature()->size());
-  const char *stubName = "intpoly_assign";
-  address stubAddr = StubRoutines::intpoly_assign();
-  if (!stubAddr) return false;
-
-  Node* set = argument(0);
-  Node* a = argument(1);
-  Node* b = argument(2);
-  Node* arr_length = load_array_length(a);
-
-  a = must_be_not_null(a, true);
-  b = must_be_not_null(b, true);
-
-  Node* a_start = array_element_address(a, intcon(0), T_LONG);
-  assert(a_start, "a array is null");
-  Node* b_start = array_element_address(b, intcon(0), T_LONG);
-  assert(b_start, "b array is null");
-
-  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
-                                 OptoRuntime::intpoly_assign_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 set, a_start, b_start, arr_length);
   return true;
 }
 

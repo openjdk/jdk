@@ -494,8 +494,9 @@ class StubGenerator: public StubCodeGenerator {
                                const XMMRegister YTMP1, const Register rscratch);
 
   address generate_intpoly_montgomeryMult_P256();
-  address generate_intpoly_mult_25519();
   address generate_intpoly_assign();
+
+  address generate_intpoly_mult_25519();
 
   // SHA3 stubs
   void generate_sha3_stubs();
@@ -665,7 +666,6 @@ class StubGenerator: public StubCodeGenerator {
   static void init_AOTAddressTable_log(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_poly1305(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_poly_mont(GrowableArray<address>& external_addresses);
-  static void init_AOTAddressTable_poly_25519(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_pow(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_sha3(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_sin(GrowableArray<address>& external_addresses);

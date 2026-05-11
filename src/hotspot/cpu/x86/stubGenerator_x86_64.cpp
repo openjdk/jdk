@@ -4888,8 +4888,11 @@ void StubGenerator::generate_compiler_stubs() {
 
   if (UseIntPolyIntrinsics) {
     StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
-    StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
     StubRoutines::_intpoly_assign = generate_intpoly_assign();
+  }
+
+  if (UseIntPoly25519Intrinsics) {
+    StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
   }
 
   if (UseMD5Intrinsics) {
@@ -5045,7 +5048,6 @@ void StubGenerator::init_AOTAddressTable(GrowableArray<address>& external_addres
   init_AOTAddressTable_log(external_addresses);
   init_AOTAddressTable_poly1305(external_addresses);
   init_AOTAddressTable_poly_mont(external_addresses);
-  init_AOTAddressTable_poly_25519(external_addresses);
   init_AOTAddressTable_pow(external_addresses);
   init_AOTAddressTable_sha3(external_addresses);
   init_AOTAddressTable_sin(external_addresses);

@@ -126,7 +126,6 @@ void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const R
   __ pop(r12);
   __ pop(rbx);
   __ pop(rbp);
-
 }
 
 address StubGenerator::generate_intpoly_mult_25519() {

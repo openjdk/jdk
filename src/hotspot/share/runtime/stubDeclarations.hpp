@@ -791,11 +791,11 @@
   do_stub(compiler, intpoly_montgomeryMult_P256)                        \
   do_entry(compiler, intpoly_montgomeryMult_P256,                       \
            intpoly_montgomeryMult_P256, intpoly_montgomeryMult_P256)    \
+  do_stub(compiler, intpoly_assign)                                     \
+  do_entry(compiler, intpoly_assign, intpoly_assign, intpoly_assign)    \
   do_stub(compiler, intpoly_mult_25519)                                 \
   do_entry(compiler, intpoly_mult_25519,                                \
            intpoly_mult_25519, intpoly_mult_25519)                      \
-  do_stub(compiler, intpoly_assign)                                     \
-  do_entry(compiler, intpoly_assign, intpoly_assign, intpoly_assign)    \
   do_stub(compiler, md5_implCompress)                                   \
   do_entry(compiler, md5_implCompress, md5_implCompress,                \
            md5_implCompress)                                            \
