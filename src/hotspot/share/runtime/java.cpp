@@ -29,6 +29,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -157,7 +158,7 @@ static void print_method_profiling_data() {
           m->method_data()->parameters_type_data()->print_data_on(&ss);
         }
         // Buffering to a stringStream, disable internal buffering so it's not done twice.
-        m->print_codes_on(&ss, 0, false);
+        m->print_codes_on(&ss, ClassPrinter::PRINT_METHOD_DATA, false);
         tty->print("%s", ss.as_string()); // print all at once
         total_size += m->method_data()->size_in_bytes();
       }
