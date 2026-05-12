@@ -39,16 +39,14 @@ class ShenandoahYoungHeuristics : public ShenandoahGenerationalHeuristics {
 public:
   explicit ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation);
 
+  bool should_start_gc() override;
 
+  size_t bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_reclaimed);
+
+protected:
   void select_collection_set_regions(ShenandoahCollectionSet* cset,
                                      RegionData* data, size_t size,
                                      size_t actual_free) override;
-
-  bool should_start_gc() override;
-
-  void record_cycle_end() override;
-
-  size_t bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_reclaimed);
 
 private:
   void choose_young_collection_set(ShenandoahCollectionSet* cset,

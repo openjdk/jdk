@@ -188,13 +188,6 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   return false;
 }
 
-void ShenandoahYoungHeuristics::record_cycle_end() {
-  ShenandoahGenerationalHeuristics::record_cycle_end();
-
-  ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
-  alloc_rate.update_minimum_sample_size(_space_info->soft_mutator_available());
-}
-
 // Return a conservative estimate of how much memory can be allocated before we need to start GC. The estimate is based
 // on memory that is currently available within young generation plus all of the memory that will be added to the young
 // generation at the end of the current cycle (as represented by young_regions_to_be_reclaimed) and on the anticipated

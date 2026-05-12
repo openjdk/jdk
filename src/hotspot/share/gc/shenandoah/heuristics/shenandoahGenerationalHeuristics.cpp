@@ -24,6 +24,7 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -50,6 +51,13 @@ static int compare_by_aged_live(AgedRegionData a, AgedRegionData b) {
 void ShenandoahGenerationalHeuristics::post_initialize() {
   ShenandoahHeuristics::post_initialize();
   compute_headroom_adjustment();
+}
+
+void ShenandoahGenerationalHeuristics::record_cycle_end() {
+  ShenandoahAdaptiveHeuristics::record_cycle_end();
+
+  ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
+  alloc_rate.update_minimum_sample_size(_space_info->soft_mutator_available());
 }
 
 inline void assert_no_in_place_promotions() {
