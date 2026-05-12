@@ -22,13 +22,23 @@
  */
 /*
  * @test
- * @summary Verify enhanced for declarations with all analyzers enabled
+ * @summary Verify enhanced for declarations with ThisEscape analyzer enabled
  * @enablePreview
- * @compile -XDfind=all EnhancedVariableDeclInEnhancedForTestAllAnalyzers.java
+ * @compile -Xlint:this-escape EnhancedVariableDeclInEnhancedForThisEscapeAnalyzer.java
  */
-public class EnhancedVariableDeclInEnhancedForTestAllAnalyzers {
-    private void test(Iterable<? extends R> l) {
-        for (R(Object a) : l) { }
+import java.util.Iterator;
+import java.util.List;
+
+public class EnhancedVariableDeclInEnhancedForThisEscapeAnalyzer implements Iterable<EnhancedVariableDeclInEnhancedForThisEscapeAnalyzer.R> {
+    record R(int x) {}
+
+    public EnhancedVariableDeclInEnhancedForThisEscapeAnalyzer() {
+        for (R(var x) : this) {
+        }
     }
-    record R(Object a) {}
+
+    @Override
+    public Iterator<R> iterator() {
+        return List.of(new R(1)).iterator();
+    }
 }

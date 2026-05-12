@@ -814,6 +814,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
                     refs.discardExprs(depth);
             } else {
                 // Follows the same comment as above: "Currently we don't attempt to explicitly track references stored in fields (for future study)."
+                refs.discardExprs(depth);
             }
             // Scan loop body
             scan(foreach.body);
