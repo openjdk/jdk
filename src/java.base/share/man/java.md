@@ -1800,6 +1800,35 @@ performed by the Java HotSpot VM.
         You can suppress this by specifying the `-XX:CompileCommand=quiet`
         option before other `-XX:CompileCommand` options.
 
+    Compilation levels can be specified in the `compileonly`, `exclude`, `print`,
+    and `break` commands using a bitmask as an optional value:
+
+    ```
+    -XX:CompileCommand=exclude,java/lang/String.indexOf,1011
+    -XX:CompileCommand=compileonly,java/lang/String.indexOf,100
+    -XX:CompileCommand=print,java/lang/String.indexOf,100
+    -XX:CompileCommand=break,java/lang/StringBuffer.append,1000
+    ```
+
+    The bitmask is calculated by summing the desired compilation level values:
+
+    `1`
+    : C1 JIT compiler without profiling.
+
+    `10`
+    : C1 JIT compiler with limited profiling.
+
+    `100`
+    : C1 JIT compiler with full profiling.
+
+    `1000`
+    : C2 JIT compiler: no profiling, full optimization.
+
+    If the bitmask is not specified, all levels are assumed.
+
+    Note: Excluding specific compilation levels may disrupt normal state transitions
+    between the levels, as the VM will not automatically work around the excluded ones.
+
 [`-XX:CompileCommandFile=`]{#-XX_CompileCommandFile}*filename*
 :   Sets the file from which JIT compiler commands are read. By default, the
     `.hotspot_compiler` file is used to store commands performed by the JIT

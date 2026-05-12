@@ -54,7 +54,7 @@ public:
     if (m->is_native() || m->is_abstract() || !m->method_holder()->is_linked()) {
       return false;
     }
-    CompilerDirectiveMatcher matcher(methodHandle(_thread, m), nullptr);
+    CompilerDirectiveMatcher matcher(methodHandle(_thread, m), _comp_level);
     if (matcher.directive_set()->DontAOTCompileOption) {
       return false;
     }

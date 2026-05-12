@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
                                  int expected_size)
                                  : _arena(arena),
                                    _ci_metadata(arena, expected_size, 0, nullptr),
-                                   _shared_init_state(arena, expected_size, 0, (u1)0),
+                                   _cached_init_state(arena, _shared_ident_limit, 0, (u1)0),
                                    _unloaded_methods(arena, 4, 0, nullptr),
                                    _unloaded_klasses(arena, 8, 0, nullptr),
                                    _unloaded_instances(arena, 4, 0, nullptr),
@@ -107,12 +107,18 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
     int len = _ci_metadata.length();
     for (int i = 0; i < len; i++) {
       ciMetadata* obj = _ci_metadata.at(i);
-      if (obj->is_loaded() && obj->is_instance_klass() &&
-          obj->as_instance_klass()->is_shared()) {
+      if (obj->is_loaded() && obj->is_instance_klass()) {
         ciInstanceKlass* cik = obj->as_instance_klass();
-        u1 state = 0;
-        GUARDED_VM_ENTRY( state = (u1)ciInstanceKlass::compute_init_state(cik->get_instanceKlass()); )
-        _shared_init_state.at_put_grow(cik->ident(), state, 0);
+        precond(cik->is_shared());
+        InstanceKlass::ClassState current_state = cik->_init_state;
+        InstanceKlass::ClassState state = InstanceKlass::fully_initialized;
+        if (current_state != state) {
+          GUARDED_VM_ENTRY( state = cik->get_instanceKlass()->init_state(); )
+          // Update state of shared ciInstanceKlass
+          cik->_init_state = state;
+        }
+        // Cache state for current compilation
+        _cached_init_state.at_put_grow(cik->ident(), (u1)state, 0);
       }
     }
   }

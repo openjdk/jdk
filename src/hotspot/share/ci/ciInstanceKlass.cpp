@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,19 +144,18 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
 
 
 // ------------------------------------------------------------------
-// ciInstanceKlass::compute_shared_is_initialized
-InstanceKlass::ClassState ciInstanceKlass::compute_shared_init_state() {
-  GUARDED_VM_ENTRY(
-    InstanceKlass* ik = get_instanceKlass();
-    // Update state of shared instance to be used by next compilation
-    _init_state = compute_init_state(ik);
-    // But return its cached state for current compilation
+InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
+  if (_is_shared && is_loaded()) {
+    // Return cached init state of shared klass
     ciEnv* env = CURRENT_ENV;
-    if (env != nullptr && env->task() != nullptr) {
-      return env->get_shared_init_state(ident());
+    assert(env->task() != nullptr, "only calls from compilation are expected here");
+    if (env->is_aot_compile()) {
+      GUARDED_VM_ENTRY( return env->compute_init_state_for_aot_compile(get_instanceKlass()); )
+    } else {
+      return env->get_cached_init_state(ident());
     }
-    return _init_state;
-  )
+  }
+  return _init_state;
 }
 
 InstanceKlass::ClassState ciInstanceKlass::compute_init_state(InstanceKlass* ik) {

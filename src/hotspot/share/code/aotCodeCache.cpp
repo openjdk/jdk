@@ -996,7 +996,7 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
 #endif
     }
 
-    CompilerDirectiveMatcher matcher(method, nullptr);
+    CompilerDirectiveMatcher matcher(method, comp_level);
     DirectiveSet* directives = matcher.directive_set();
     if (directives->IgnoreAOTCompiledOption || directives->ExcludeOption) {
       LogStreamHandle(Info, aot, codecache, compilation) log;
@@ -2346,7 +2346,7 @@ bool skip_preload(methodHandle mh) {
   if (!mh->method_holder()->is_loaded()) {
     return true;
   }
-  CompilerDirectiveMatcher matcher(mh, nullptr);
+  CompilerDirectiveMatcher matcher(mh, CompLevel_full_optimization);
   DirectiveSet* directives = matcher.directive_set();
   if (directives->DontPreloadOption || directives->ExcludeOption) {
     LogStreamHandle(Info, aot, codecache, init) log;

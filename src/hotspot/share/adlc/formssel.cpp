@@ -453,6 +453,14 @@ Form::DataType InstructForm::is_ideal_store() const {
   return  _matrule->is_ideal_store();
 }
 
+// Return 'true' if this instruction matches an ideal vector node
+bool InstructForm::is_vector() const {
+  if( _matrule == nullptr ) return false;
+
+  return _matrule->is_vector();
+}
+
+
 // Return the input register that must match the output register
 // If this is not required, return 0
 uint InstructForm::two_address(FormDict &globals) {
@@ -758,6 +766,51 @@ int InstructForm::memory_operand(FormDict &globals) const {
 
   return NO_MEMORY_OPERAND;
 }
+
+// This instruction captures the machine-independent bottom_type
+// Expected use is for pointer vs oop determination for LoadP
+bool InstructForm::captures_bottom_type(FormDict &globals) const {
+  if (_matrule && _matrule->_rChild &&
+      (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"CastDD")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastFF")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastII")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastLL")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastVV")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
+       !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
+       !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||
+       !strcmp(_matrule->_rChild->_opType,"EncodePKlass") ||
+       !strcmp(_matrule->_rChild->_opType,"LoadN")        ||
+       !strcmp(_matrule->_rChild->_opType,"LoadNKlass")   ||
+       !strcmp(_matrule->_rChild->_opType,"CreateEx")     ||  // type of exception
+       !strcmp(_matrule->_rChild->_opType,"CheckCastPP")  ||
+       !strcmp(_matrule->_rChild->_opType,"GetAndSetP")   ||
+       !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
+       !strcmp(_matrule->_rChild->_opType,"RotateLeft")   ||
+       !strcmp(_matrule->_rChild->_opType,"RotateRight")   ||
+#if INCLUDE_SHENANDOAHGC
+       !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
+       !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
+#endif
+       !strcmp(_matrule->_rChild->_opType,"StrInflatedCopy") ||
+       !strcmp(_matrule->_rChild->_opType,"VectorCmpMasked")||
+       !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
+       !strcmp(_matrule->_rChild->_opType,"VerifyVectorAlignment")||
+       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
+       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
+  else if ( is_ideal_load() == Form::idealP )                return true;
+  else if ( is_ideal_store() != Form::none  )                return true;
+
+  if (needs_base_oop_edge(globals)) return true;
+
+  if (is_vector()) return true;
+  if (is_mach_constant()) return true;
+
+  return  false;
+}
+
 
 // Access instr_cost attribute or return null.
 const char* InstructForm::cost() {
@@ -1128,6 +1181,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if (is_mach_constant()) {
     return "MachConstantNode";
+  }
+  else if (captures_bottom_type(globals)) {
+    return "MachTypeNode";
   } else {
     return "MachNode";
   }
@@ -4280,6 +4336,58 @@ Form::DataType MatchRule::is_ideal_load() const {
 
   return ideal_load;
 }
+
+bool MatchRule::is_vector() const {
+  static const char *vector_list[] = {
+    "AddVB","AddVS","AddVI","AddVL","AddVHF","AddVF","AddVD",
+    "SubVB","SubVS","SubVI","SubVL","SubVHF","SubVF","SubVD",
+    "MulVB","MulVS","MulVI","MulVL","MulVHF","MulVF","MulVD",
+    "DivVHF","DivVF","DivVD",
+    "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
+    "NegVF","NegVD","NegVI","NegVL",
+    "SqrtVD","SqrtVF","SqrtVHF",
+    "AndV" ,"XorV" ,"OrV",
+    "MaxV", "MinV", "MinVHF", "MaxVHF", "UMinV", "UMaxV",
+    "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
+    "AddReductionVI", "AddReductionVL",
+    "AddReductionVHF", "AddReductionVF", "AddReductionVD",
+    "MulReductionVI", "MulReductionVL",
+    "MulReductionVHF", "MulReductionVF", "MulReductionVD",
+    "MaxReductionV", "MinReductionV",
+    "AndReductionV", "OrReductionV", "XorReductionV",
+    "MulAddVS2VI", "MacroLogicV",
+    "LShiftCntV","RShiftCntV",
+    "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
+    "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
+    "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
+    "Replicate","ReverseV","ReverseBytesV",
+    "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
+    "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
+    "SelectFromTwoVector", "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
+    "VectorRearrange", "VectorLoadShuffle", "VectorLoadConst",
+    "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
+    "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
+    "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
+    "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
+    "FmaVD", "FmaVF", "FmaVHF", "PopCountVI", "PopCountVL", "PopulateIndex", "VectorLongToMask",
+    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
+    // Next are vector mask ops.
+    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
+    "RoundVF", "RoundVD",
+    // Next are not supported currently.
+    "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
+    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"
+  };
+  int cnt = sizeof(vector_list)/sizeof(char*);
+  if (_rChild) {
+    const char  *opType = _rChild->_opType;
+    for (int i=0; i<cnt; i++)
+      if (strcmp(opType,vector_list[i]) == 0)
+        return true;
+  }
+  return false;
+}
+
 
 bool MatchRule::skip_antidep_check() const {
   // Some loads operate on what is effectively immutable memory so we

@@ -155,6 +155,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   AOTCodeEntry* aot_code_entry()                    { return _aot_code_entry; }
   bool         requires_online_compilation() const  { return _requires_online_compilation; }
   DirectiveSet* directive() const                   { return _comp_directive_matcher.directive_set(); }
+  void         transfer_directive(CompilerDirectiveMatcher& matcher) { _comp_directive_matcher.transfer_from(matcher); }
   CompileReason compile_reason() const              { return _compile_reason; }
 
   CodeSection::csize_t nm_content_size() { return _nm_content_size; }
