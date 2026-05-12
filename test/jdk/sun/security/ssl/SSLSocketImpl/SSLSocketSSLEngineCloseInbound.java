@@ -121,7 +121,7 @@ public class SSLSocketSSLEngineCloseInbound {
      * including specific handshake messages, and might be best examined
      * after gaining some familiarity with this application.
      */
-    private static final boolean debug = false;
+    private static final boolean debug = Boolean.getBoolean("test.debug");
     private final SSLContext sslc;
     private SSLEngine serverEngine;     // server-side SSLEngine
     private SSLSocket clientSocket;
