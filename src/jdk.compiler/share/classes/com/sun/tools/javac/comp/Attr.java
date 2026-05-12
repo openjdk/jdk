@@ -1342,9 +1342,9 @@ public class Attr extends JCTree.Visitor {
 
     private void doQueueScanTreeAndTypeAnnotateForVarInit(JCVariableDecl tree, Env<AttrContext> env) {
         if (tree.init != null &&
-            (tree.mods.flags & Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED) == 0 &&
+            (tree.sym.flags_field & Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED) == 0 &&
             env.info.scope.owner.kind != MTH && env.info.scope.owner.kind != VAR) {
-            tree.mods.flags |= Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED;
+            tree.sym.flags_field |= Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED;
             // Field initializer expression need to be entered.
             annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym);
             annotate.flush();
@@ -3241,7 +3241,7 @@ public class Attr extends JCTree.Visitor {
                 attribStats(that.params, localEnv);
 
                 if (arityMismatch) {
-                    resultInfo.checkContext.report(that, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
+                    resultInfo.checkContext.report(that, diags.fragment(Fragments.WrongNumberArgsInLambda(currentTarget.tsym)));
                         result = that.type = types.createErrorType(currentTarget);
                         return;
                 }
@@ -3274,7 +3274,7 @@ public class Attr extends JCTree.Visitor {
             flow.analyzeLambda(env, that, make, isSpeculativeRound);
 
             that.type = currentTarget; //avoids recovery at this stage
-            checkLambdaCompatible(that, lambdaType, resultInfo.checkContext);
+            checkLambdaCompatible(that, lambdaType, currentTarget.tsym, resultInfo.checkContext);
 
             if (!isSpeculativeRound) {
                 //add thrown types as bounds to the thrown types free variables if needed:
@@ -3550,7 +3550,7 @@ public class Attr extends JCTree.Visitor {
         * (i) parameter types must be identical to those of the target descriptor; (ii) return
         * types must be compatible with the return type of the expected descriptor.
         */
-        void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext) {
+        void checkLambdaCompatible(JCLambda tree, Type descriptor, TypeSymbol target, CheckContext checkContext) {
             Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
 
             //return values have already been checked - but if lambda has no return
@@ -3567,7 +3567,9 @@ public class Attr extends JCTree.Visitor {
 
             List<Type> argTypes = checkContext.inferenceContext().asUndetVars(descriptor.getParameterTypes());
             if (!types.isSameTypes(argTypes, TreeInfo.types(tree.params))) {
-                checkContext.report(tree, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
+                checkContext.report(tree, diags.fragment(argTypes.size() != tree.params.size()
+                        ? Fragments.WrongNumberArgsInLambda(target)
+                        : Fragments.IncompatibleArgTypesInLambda(argTypes, TreeInfo.types(tree.params))));
             }
         }
 

@@ -1485,7 +1485,7 @@ static Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type
     } else {
       con = phase->intcon(con_value);
     }
-    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, vt->isa_vectmask() != nullptr);
+    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, vt->isa_pvectmask() != nullptr);
     // Convert back to the original floating-point data type.
     if (is_floating_point_type(bt)) {
       res = new VectorMaskCastNode(phase->transform(res), vt);
@@ -1752,7 +1752,7 @@ MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node
   assert(in1->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
   assert(in2->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
   assert(in3->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
-  assert(!mask || mask->bottom_type()->isa_vectmask(), "predicated register type expected");
+  assert(!mask || mask->bottom_type()->isa_pvectmask(), "predicated register type expected");
   Node* fn = gvn.intcon(truth_table);
   return new MacroLogicVNode(in1, in2, in3, fn, mask, vt);
 }
@@ -1962,7 +1962,7 @@ Node* VectorMaskGenNode::make(Node* length, BasicType mask_bt) {
 }
 
 Node* VectorMaskGenNode::make(Node* length, BasicType mask_bt, int mask_len) {
-  const TypeVectMask* t_vmask = TypeVectMask::make(mask_bt, mask_len);
+  const TypePVectMask* t_vmask = TypePVectMask::make(mask_bt, mask_len);
   return new VectorMaskGenNode(length, t_vmask);
 }
 
@@ -2051,7 +2051,7 @@ Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
 Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeVect* dst_type = bottom_type()->is_vect();
   uint vlen = dst_type->length();
-  const TypeVectMask* is_mask = dst_type->isa_vectmask();
+  const TypePVectMask* is_mask = dst_type->isa_pvectmask();
 
   // Pattern:      (VectorLongToMask (AndL (VectorMaskToLong src) mask))
   // Replace with: (VectorMaskCast src)
@@ -2065,7 +2065,7 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* src = in(1)->in(1)->in(1);
     const TypeVect* src_type = src->bottom_type()->is_vect();
     if (src_type->length() == vlen &&
-        ((src_type->isa_vectmask() == nullptr) == (is_mask == nullptr))) {
+        ((src_type->isa_pvectmask() == nullptr) == (is_mask == nullptr))) {
       return new VectorMaskCastNode(src, dst_type);
     }
   }
@@ -2398,7 +2398,7 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!is_predicated_vector() && (in(1) == in(2))) {
     BasicType bt = vect_type()->element_basic_type();
     Node* zero = phase->transform(phase->zerocon(bt));
-    return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_vectmask() != nullptr);
+    return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_pvectmask() != nullptr);
   }
 
   Node* res = Ideal_XorV_VectorMaskCmp(phase, can_reshape);

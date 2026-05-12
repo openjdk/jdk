@@ -70,15 +70,15 @@ ShenandoahAgeCensus::~ShenandoahAgeCensus() {
   for (uint i = 0; i < MAX_SNAPSHOTS; i++) {
     delete _global_age_tables[i];
   }
-  FREE_C_HEAP_ARRAY(AgeTable*, _global_age_tables);
-  FREE_C_HEAP_ARRAY(uint, _tenuring_threshold);
-  CENSUS_NOISE(FREE_C_HEAP_ARRAY(ShenandoahNoiseStats, _global_noise));
+  FREE_C_HEAP_ARRAY(_global_age_tables);
+  FREE_C_HEAP_ARRAY(_tenuring_threshold);
+  CENSUS_NOISE(FREE_C_HEAP_ARRAY(_global_noise));
   if (_local_age_tables) {
     for (uint i = 0; i < _max_workers; i++) {
       delete _local_age_tables[i];
     }
-    FREE_C_HEAP_ARRAY(AgeTable*, _local_age_tables);
-    CENSUS_NOISE(FREE_C_HEAP_ARRAY(ShenandoahNoiseStats, _local_noise));
+    FREE_C_HEAP_ARRAY(_local_age_tables);
+    CENSUS_NOISE(FREE_C_HEAP_ARRAY(_local_noise));
   }
 }
 
