@@ -49,16 +49,15 @@ import jdk.test.whitebox.WhiteBox;
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -ea -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation compiler.c2.irTests.TestCheckIndexIntrinsics
+ * @run main/othervm -ea -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0 compiler.c2.irTests.TestCheckIndexIntrinsics
  */
 public class TestCheckIndexIntrinsics {
     private static final Random RNG = Utils.getRandomInstance();
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
-        TestFramework.runWithFlags("-XX:CompileOnly=" + TestCheckIndexIntrinsics.class.getName() + "::*", "-XX:LoopMaxUnroll=0");
-
-//        testCorrectness();
+       TestFramework.run();
+       testCorrectness();
     }
 
     // Calling intrinsified functions and having them inlined.
@@ -224,7 +223,7 @@ public class TestCheckIndexIntrinsics {
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "2"}) // range check in main loop hoisted and main loop is eliminated
     @IR(counts = {IRNode.RANGE_CHECK_TRAP, "3"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.RANGE_CHECK_TRAP, "2"})
+    @IR(failOn = {IRNode.RANGE_CHECK_TRAP})
     public static void testCheckFromToIndex(int start, int stop, int length, int offset, int size) {
         final int scale = 2;
         final int stride = 1;
@@ -240,7 +239,7 @@ public class TestCheckIndexIntrinsics {
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "1"}) // inner counted loop of the strip mined
     @IR(counts = {IRNode.RANGE_CHECK_TRAP, "3"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.RANGE_CHECK_TRAP, "2"})
+    @IR(failOn = {IRNode.RANGE_CHECK_TRAP})
     public static void testCheckFromToIndexL(long start, long stop, long length, long offset, long size) {
         final long scale = 2;
         final long stride = 1;
@@ -295,8 +294,8 @@ public class TestCheckIndexIntrinsics {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "2"}) // range check in pre/post loop, main loop becomes empty and eliminated
-    @IR(counts = {IRNode.RANGE_CHECK_TRAP, "2"})
+    @IR(counts = {IRNode.RANGE_CHECK_TRAP, "2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP, IRNode.RANGE_CHECK_TRAP})
     public static void testCheckFromIndexSize(int start, int stop, int length, int offset, int size) {
         final int scale = 2;
         final int stride = 1;
@@ -309,8 +308,8 @@ public class TestCheckIndexIntrinsics {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "1"})
-    @IR(counts = {IRNode.RANGE_CHECK_TRAP, "2"})
+    @IR(counts = {IRNode.RANGE_CHECK_TRAP, "2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP, IRNode.RANGE_CHECK_TRAP})
     public static void testCheckFromIndexSizeL(long start, long stop, long length, long offset, long size) {
         final long scale = 2;
         final long stride = 1;
@@ -568,123 +567,5 @@ public class TestCheckIndexIntrinsics {
                 }
             }
         }
-    }
-
-    static abstract class Buffer {
-        //        static Buffer buffer(int size) {
-        //            return new BufferImpl(size);
-        //        }
-
-        abstract void setByte(int index, byte b);
-
-        abstract byte getByte(int index);
-    }
-
-    static class BufferImplBytecode extends Buffer {
-        ByteBuffer buffer;
-
-        BufferImplBytecode(int size) {
-            buffer = ByteBuffer.heapBuffer(size);
-        }
-
-        void setByte(int index, byte b) {
-            // ensureLength
-            buffer.setByte(index, b);
-        }
-
-        @Override
-        byte getByte(int index) {
-            checkUpperBound(index, 1);
-            return buffer.getByte(index);
-        }
-
-        int checkFromIndexSize(int fromIndex, int size, int length) {
-            if ((length | fromIndex | size) < 0 || size > length - fromIndex)
-                throw new IndexOutOfBoundsException("obb");
-            return fromIndex;
-        }
-
-        private void checkUpperBound(int index, int size) {
-            int length = buffer.writerIndex();
-
-            checkFromIndexSize(index, size, length);
-        }
-    }
-
-    static class BufferImplIntrinsified extends Buffer {
-        ByteBuffer buffer;
-
-        BufferImplIntrinsified(int size) {
-            buffer = ByteBuffer.heapBuffer(size);
-        }
-
-        void setByte(int index, byte b) {
-            // ensureLength
-            buffer.setByte(index, b);
-        }
-
-        @Override
-        byte getByte(int index) {
-            checkUpperBound(index, 1);
-            return buffer.getByte(index);
-        }
-
-        private void checkUpperBound(int index, int size) {
-            int length = buffer.writerIndex();
-
-            Objects.checkFromIndexSize(index, size, length);
-        }
-    }
-
-    static class ByteBuffer {
-        byte[] bytes;
-
-        ByteBuffer(int size) {
-            bytes = new byte[size];
-        }
-
-        static ByteBuffer heapBuffer(int size) {
-            return new ByteBuffer(size);
-        }
-
-        public void setByte(int index, byte b) {
-            this.bytes[index] = b;
-        }
-
-        public byte getByte(int index) {
-            return bytes[index];
-        }
-
-        int writerIndex() {
-            return bytes.length;
-        }
-    }
-
-//    @Test
-//    public void bytecodeBuffer(Blackhole bh) {
-//        Buffer buffer = this.bytecodeBuffer;
-//        for (int i = 0, size = batchSize; i < size; i++) {
-//            bh.consume(buffer.getByte(i));
-//        }
-//    }
-
-    int batchSize;
-    {
-        batchSize = 64;
-    }
-    Buffer intrinsifiedBuffer = new BufferImplIntrinsified(batchSize);
-
-
-    @Test
-    @IR
-    public int intrinsifiedBuffer() {
-        int acc = 0;
-
-        Buffer buffer = this.intrinsifiedBuffer;
-        for (int i = 0, size = batchSize; i < size; i++) {
-            acc += buffer.getByte(i);
-        }
-
-        return acc;
     }
 }
