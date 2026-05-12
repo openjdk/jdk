@@ -149,7 +149,7 @@ inline bool frame::is_older(intptr_t* id) const {
 
 inline int frame::frame_size() const {
   // Stack grows towards smaller addresses on z/Linux: sender is at a higher address.
-  return sender_sp() - sp();
+  return integer_cast<int>(sender_sp() - sp());
 }
 
 // Ignore c2i adapter frames.
