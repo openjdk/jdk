@@ -180,7 +180,7 @@ final class Unit {
                     .toList();
             // Set the outer wrap for this snippet
             List<String> additionalExtraImports = units.stream().flatMap(u -> u.snippet().getExtraImports().stream())
-                    .map(ei -> "import static " + ei.from().classFullName() + "." + ei.name() + "_;")
+                    .map(ei -> "import static " + ei.from().classFullName() + "." + ei.name() + ";")
                     .toList();
             si.setOuterWrap(state.outerMap.wrapInClass(except, plus, additionalExtraImports, snippets, wraps));
             state.debug(DBG_WRAP, "++setWrap() %s\n%s\n",

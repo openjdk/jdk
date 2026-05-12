@@ -90,6 +90,7 @@ import static jdk.jshell.Snippet.SubKind.SINGLE_STATIC_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.TYPE_IMPORT_ON_DEMAND_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.STATIC_IMPORT_ON_DEMAND_SUBKIND;
 import static jdk.jshell.ExpressionToTypeInfo.BindingInfo;
+import static jdk.jshell.Wrap.hygienicEnhancedLocalVariableDeclBindingNames;
 
 /**
  * The Evaluation Engine. Source internal analysis, wrapping control,
@@ -300,8 +301,9 @@ class Eval {
         }
 
         List<Snippet> result = new ArrayList<>();
+        List<String> hygienicBindingNames = hygienicEnhancedLocalVariableDeclBindingNames(bindings);
 
-        Wrap primaryGuts = Wrap.primaryEnhancedLocalVariableDeclWrap(compileSource, bindings);
+        Wrap primaryGuts = Wrap.primaryEnhancedLocalVariableDeclWrap(compileSource, bindings, hygienicBindingNames);
         DiagList dl = trialCompile(primaryGuts);
         if (dl.hasErrors()){
             return compileFailResult(dl, userSource, kindOfTree(unitTree));
@@ -323,18 +325,24 @@ class Eval {
                 Set.of(),
                 tds.declareReferences(), null, List.of());
         result.add(primarySnippet);
-        bindings.stream().skip(1).map(bi -> new VarSnippet(
-                state.keyMap.keyForVariable((bi.bindingName())),
-                userSource,
-                Wrap.secondaryEnhancedLocalVariableDeclWrap(compileSource, bi),
-                bi.bindingName(),
-                bi.bindingName(),
-                SubKind.VAR_BINDING_SUBKIND,
-                bi.displayTypeName(),
-                bi.hasEnhancedType() ? bi.fullTypeName() : null,
-                Set.of(),
-                tds.declareReferences(), null, List.of(new Snippet.ExtraImport(primarySnippet, bi.bindingName()))))
-                .forEach(result::add);
+
+        for (int i = 1; i < bindings.size(); i++) {
+            BindingInfo bi = bindings.get(i);
+            String hygienicName = hygienicBindingNames.get(i);
+            result.add(new VarSnippet(
+                    state.keyMap.keyForVariable((bi.bindingName())),
+                    userSource,
+                    Wrap.secondaryEnhancedLocalVariableDeclWrap(compileSource, bi, hygienicName),
+                    bi.bindingName(),
+                    bi.bindingName(),
+                    SubKind.VAR_BINDING_SUBKIND,
+                    bi.displayTypeName(),
+                    bi.hasEnhancedType() ? bi.fullTypeName() : null,
+                    Set.of(),
+                    tds.declareReferences(),
+                    null,
+                    List.of(new Snippet.ExtraImport(primarySnippet, hygienicName))));
+        }
 
         return result;
     }

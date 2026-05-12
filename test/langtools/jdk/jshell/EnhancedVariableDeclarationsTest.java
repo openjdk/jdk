@@ -293,6 +293,24 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
         assertEval("y", "1");
     }
 
+    @Test
+    public void testSecondaryStorageNameCollision() {
+        assertEval("record R(int x_, int x) {}");
+        assertEval("R r = new R(1, 2);");
+        assertEnhancedVarDeclEval("R(int x_, int x) = r;", 2);
+        assertEval("x_", "1");
+        assertEval("x", "2");
+    }
+
+    @Test
+    public void testSecondaryStorageNameCollision2() {
+        assertEval("record R(int x, int $binding$1) {}");
+        assertEval("R r = new R(1, 2);");
+        assertEnhancedVarDeclEval("R(int x, int $binding$1) = r;", 2);
+        assertEval("x", "1");
+        assertEval("$binding$1", "2");
+    }
+
     private void assertEnhancedVarDeclEval(String input, int bindingCount) {
         EventChain[] eventChains = new EventChain[bindingCount];
         for (int i = 0; i < bindingCount; i++) {
@@ -300,7 +318,6 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
         }
         assertEval(input, DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, eventChains);
     }
-
 
     @BeforeEach
     public void setUp() {

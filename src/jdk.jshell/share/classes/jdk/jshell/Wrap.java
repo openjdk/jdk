@@ -27,7 +27,10 @@ package jdk.jshell;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
+import java.util.stream.Collectors;
 import static java.util.stream.Collectors.joining;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 import static jdk.jshell.ExpressionToTypeInfo.BindingInfo;
@@ -184,29 +187,33 @@ abstract class Wrap implements GeneralWrap {
         return cnt;
     }
 
-    public static Wrap primaryEnhancedLocalVariableDeclWrap(String compileSource, List<BindingInfo> bindings) {
+    public static Wrap primaryEnhancedLocalVariableDeclWrap(String compileSource, List<BindingInfo> bindings, List<String> hygienicNames) {
         List<Wrap> members = new ArrayList<>();
         List<String> methodsForAssigningBindings = new ArrayList<>(bindings.size());
 
-        // public static Type bindingName;
-        String suffix = "";
-        for (var b : bindings) {
+        // public static Type hygienicName;
+        for (int i = 0; i < bindings.size(); i++) {
+            BindingInfo b = bindings.get(i);
             members.add(new CompoundWrap(
-                    "     public static\n    ", b.declareTypeName(), " ", b.bindingName() + suffix, ";\n"
+                    "     public static\n    ", b.declareTypeName(), " ", hygienicNames.get(i), ";\n"
             ));
-            suffix = "_";
         }
 
-        // public static Type $setBindingMethodName(Type $v) { return bindingName = $v; }
+        // private static Type $setBindingMethodName$i(Type bindingName$0) {
+        //     return hygienicName = bindingName$0;
+        // }
         String setBindingMethodName = "$setBindingMethodName";
         for (int i = 0; i < bindings.size(); i++) {
             BindingInfo bi = bindings.get(i);
             String methodName = setBindingMethodName + "$" + i;
             methodsForAssigningBindings.add(methodName);
+            String parameterName = bi.bindingName() + "$0";
+            String hygienicName = hygienicNames.get(i);
             members.add(new CompoundWrap(
-                    "   private static ", bi.declareTypeName(), " ", methodName, "(", bi.declareTypeName(), " " + bi.bindingName() + "__", ") { \n",
-                         "        return ", bi.bindingName() + (i == 0 ? "" : "_"), " = " + bi.bindingName() + "__", ";\n",
-                         "}\n"));
+                    "   private static ", bi.declareTypeName(), " ", methodName,
+                    "(", bi.declareTypeName(), " ", parameterName, ") { \n",
+                    "        return ", hygienicName, " = ", parameterName, ";\n",
+                    "}\n"));
         }
 
         // public static Object do_it$() throws Throwable {
@@ -230,7 +237,7 @@ abstract class Wrap implements GeneralWrap {
         return new CompoundWrap(members.toArray());
     }
 
-    public static Wrap secondaryEnhancedLocalVariableDeclWrap(String compileSource, BindingInfo binding) {
+    public static Wrap secondaryEnhancedLocalVariableDeclWrap(String compileSource, BindingInfo binding, String hygienicName) {
         List<Wrap> members = new ArrayList<>();
 
         // public static Type bindingName;
@@ -238,9 +245,26 @@ abstract class Wrap implements GeneralWrap {
                 "     public static\n    ", binding.declareTypeName(), " ", binding.bindingName(), ";\n"
         ));
 
-        members.add(new DoitMethodWrap(new CompoundWrap(" return " + binding.bindingName() + " = " + binding.bindingName() + "_;")));
+        members.add(new DoitMethodWrap(new CompoundWrap(" return " + binding.bindingName() + " = " + hygienicName + ";")));
 
         return new CompoundWrap(members.toArray());
+    }
+
+    // returns hygienic bindings names for binding 2 ... n, preserving initial order
+    static List<String> hygienicEnhancedLocalVariableDeclBindingNames(List<BindingInfo> bindings) {
+        Set<String> existingNames = bindings.stream().map(BindingInfo::bindingName).collect(Collectors.toCollection(HashSet::new));
+
+        List<String> hygienicNames = new ArrayList<>(bindings.size());
+        hygienicNames.add(bindings.getFirst().bindingName());
+        for (int i = 1; i < bindings.size(); i++) {
+            String temp = "$binding$" + i;
+            // as long as there is a conflicting name, append $'s
+            while (!existingNames.add(temp)) {
+                temp += "$";
+            }
+            hygienicNames.add(temp);
+        }
+        return hygienicNames;
     }
 
     public static final class Range {
