@@ -2430,9 +2430,9 @@ public class Types {
     }
 
     /**
-     * This method returns true if the narrowing reference conversion from {@code t}
-     * to {@code s} is unambiguously safe due to {@code s} being a unique subtype of
-     * {@code t}.
+     * This method returns true if the checked narrowing reference conversion from
+     * {@code t} to {@code s} is unambiguously safe due to {@code s} being a unique
+     * subtype of {@code t}.
      *
      * The source type {@code t} must denote a sealed interface or an abstract
      * sealed class. The assignment to the target type {@code s} is checked
@@ -2456,7 +2456,9 @@ public class Types {
             Type current = pending.removeFirst();
 
             if (isSameType(t, current)) {
-                return true;
+                Warner castWarner = new Warner();
+                return isCastable(t, s, castWarner) &&
+                        !castWarner.hasLint(LintCategory.UNCHECKED);
             }
 
             for (Type supertype : directSupertypes(current)) {

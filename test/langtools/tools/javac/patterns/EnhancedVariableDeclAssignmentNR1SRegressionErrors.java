@@ -102,6 +102,11 @@ public class EnhancedVariableDeclAssignmentNR1SRegressionErrors {
         }
     }
 
+    static sealed interface CheckedI<T> permits CheckedR {}
+    static record CheckedR<T>(T value) implements CheckedI<String> {}
+    static void rejectUncheckedSafeSubtypeConversion(CheckedI<String> i) {
+        CheckedR<Integer> r = i; // always error: equivalent cast is unchecked
+    }
 
     // Errors despite the existence of exhaustive switches
     // taken from test/langtools/tools/javac/patterns/Exhaustiveness.java
