@@ -176,7 +176,15 @@ inline intptr_t* frame::id(void) const { return unextended_sp(); }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != nullptr && id != nullptr, "null frame id");
-                                                    return this->id() > id ; }
+                                                    return id_is_older_than(this->id(), id); }
+
+inline bool frame::id_is_older_than(intptr_t* id, intptr_t* other_id) {
+  return id > other_id;
+}
+
+inline bool frame::id_is_younger_than(intptr_t* id, intptr_t* other_id) {
+  return id < other_id;
+}
 
 inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
 

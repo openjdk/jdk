@@ -250,7 +250,7 @@ inline intptr_t* frame::id(void) const { return real_fp(); }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != nullptr && id != nullptr, "null frame id");
-                                                    return this->id() > id ; }
+                                                    return id_is_older_than(this->id(), id); }
 
 inline bool frame::id_is_older_than(intptr_t* id, intptr_t* other_id) {
   return id > other_id;

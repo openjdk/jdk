@@ -148,7 +148,7 @@ inline intptr_t* frame::id(void) const {
 inline bool frame::is_older(intptr_t* id) const {
    assert(this->id() != nullptr && id != nullptr, "null frame id");
    // Stack grows towards smaller addresses on ppc64.
-   return this->id() > id;
+   return id_is_older_than(this->id(), id);
 }
 
 inline bool frame::id_is_older_than(intptr_t* id, intptr_t* other_id) {

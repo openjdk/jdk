@@ -167,6 +167,14 @@ inline bool frame::is_older(intptr_t* id) const {
   return false;
 }
 
+inline bool frame::id_is_older_than(intptr_t* id, intptr_t* other_id) {
+  return id > other_id;
+}
+
+inline bool frame::id_is_younger_than(intptr_t* id, intptr_t* other_id) {
+  return id < other_id;
+}
+
 inline intptr_t* frame::entry_frame_argument_at(int offset) const {
   ShouldNotCallThis();
   return nullptr;
