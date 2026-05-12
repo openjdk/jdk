@@ -4533,7 +4533,7 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
   }
 }
 
-static void convertHF2I_slowpath(C2_MacroAssembler& masm, C2GeneralStub<Register, Register, address>& stub) {
+static void convertHF2X_slowpath(C2_MacroAssembler& masm, C2GeneralStub<Register, Register, address>& stub) {
 #define __ masm.
   Register dst = stub.data<0>();
   Register src = stub.data<1>();
@@ -4548,7 +4548,7 @@ static void convertHF2I_slowpath(C2_MacroAssembler& masm, C2GeneralStub<Register
 #undef __
 }
 
-void C2_MacroAssembler::convertHF2I(BasicType dst_bt, Register dst, Register src, XMMRegister xtmp) {
+void C2_MacroAssembler::convertHF2X(BasicType dst_bt, Register dst, Register src, XMMRegister xtmp) {
   assert(dst_bt == T_INT || dst_bt == T_LONG, "");
 
   address slowpath_target;
@@ -4566,7 +4566,7 @@ void C2_MacroAssembler::convertHF2I(BasicType dst_bt, Register dst, Register src
 
   // Using the APX extended general purpose registers increases the instruction encoding size by 1 byte.
   int max_size = 23 + (UseAPX ? 1 : 0);
-  auto stub = C2CodeStub::make<Register, Register, address>(dst, src, slowpath_target, max_size, convertHF2I_slowpath);
+  auto stub = C2CodeStub::make<Register, Register, address>(dst, src, slowpath_target, max_size, convertHF2X_slowpath);
   jcc(Assembler::equal, stub->entry());
   bind(stub->continuation());
 }

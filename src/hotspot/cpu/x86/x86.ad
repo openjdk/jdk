@@ -14718,7 +14718,7 @@ instruct convHF2I_reg_reg(rRegI dst, rRegI src, regF xtmp, rFlagsReg cr)
   ins_cost(50);
   format %{ "convert_hf2i $dst, $src !\t using $xtmp as TEMP" %}
   ins_encode %{
-    __ convertHF2I(T_INT, $dst$$Register, $src$$Register, $xtmp$$XMMRegister);
+    __ convertHF2X(T_INT, $dst$$Register, $src$$Register, $xtmp$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14731,7 +14731,7 @@ instruct convHF2L_reg_reg(rRegL dst, rRegI src, regF xtmp, rFlagsReg cr)
   ins_cost(50);
   format %{ "convert_hf2l $dst, $src !\t using $xtmp as TEMP" %}
   ins_encode %{
-    __ convertHF2I(T_LONG, $dst$$Register, $src$$Register, $xtmp$$XMMRegister);
+    __ convertHF2X(T_LONG, $dst$$Register, $src$$Register, $xtmp$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}

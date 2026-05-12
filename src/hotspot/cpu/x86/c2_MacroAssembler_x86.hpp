@@ -307,7 +307,7 @@ public:
 
   void convertF2I(BasicType dst_bt, BasicType src_bt, Register dst, XMMRegister src);
 
-  void convertHF2I(BasicType dst_bt, Register dst, Register src, XMMRegister xtmp);
+  void convertHF2X(BasicType dst_bt, Register dst, Register src, XMMRegister xtmp);
 
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
