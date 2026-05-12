@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,8 +325,11 @@ public class MOAT {
 
         // Immutable Set
         testEmptySet(Set.of());
+        testEmptySet(Set.ofLazy(Set.of(), _ -> true));
         testCollMutatorsAlwaysThrow(Set.of());
+        testCollMutatorsAlwaysThrow(Set.ofLazy(Set.of(1), _ -> true));
         testEmptyCollMutatorsAlwaysThrow(Set.of());
+        testEmptyCollMutatorsAlwaysThrow(Set.ofLazy(Set.of(), _ -> false));
         for (Set<Integer> set : Arrays.asList(
                 Set.<Integer>of(),
                 Set.of(1),
@@ -339,7 +342,10 @@ public class MOAT {
                 Set.of(1, 2, 3, 4, 5, 6, 7, 8),
                 Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9),
                 Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                Set.of(integerArray))) {
+                Set.of(integerArray),
+                Set.ofLazy(Set.<Integer>of(), _ -> true),
+                Set.ofLazy(Set.of(1), _ -> true),
+                Set.ofLazy(Set.of(1, 2, 3), _ -> true))) {
             testCollection(set);
             testImmutableSet(set, 99);
             testCollMutatorsAlwaysThrow(set);

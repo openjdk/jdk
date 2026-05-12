@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -818,7 +818,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       cb = nm;
       if (compile_state == nullptr) {
         // This compile didn't come through the CompileBroker so perform the printing here
-        CompilerDirectiveMatcher matcher(method, compiler);
+        CompilerDirectiveMatcher matcher(method, CompLevel_full_optimization);
         nm->maybe_print_nmethod(matcher.directive_set());
 
         // Since this compilation didn't pass through the broker it wasn't logged yet.

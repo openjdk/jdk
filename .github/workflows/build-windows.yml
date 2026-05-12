@@ -31,6 +31,9 @@ on:
       platform:
         required: true
         type: string
+      runs-on:
+        required: true
+        type: string
       extra-conf-options:
         required: false
         type: string
@@ -67,7 +70,7 @@ env:
 jobs:
   build-windows:
     name: build
-    runs-on: windows-2025
+    runs-on: ${{ inputs.runs-on }}
     defaults:
       run:
         shell: bash
