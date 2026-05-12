@@ -23,11 +23,8 @@
 
 package jdk.jfr.jvmti;
 
-import java.util.List;
-
 import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
-import jdk.jfr.consumer.RecordedEvent;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
@@ -47,8 +44,13 @@ public class TestRequestStackTraceJfcDefault {
 
     private static final String EVENT_NAME = "jdk.StackTraceRequest";
 
+    // profile.jfc throttles at 100/s; the throttler uses 200ms windows with a
+    // budget of 20 events per window.  A burst of CALLS requests will complete
+    // in roughly one window, so at least one window's worth of events (20)
+    // should be accepted.  Use 10 as the lower bound to leave room for the
+    // window not being full at the start of the recording.
     private static final int CALLS      = 100;
-    private static final int MIN_EVENTS = 30;
+    private static final int MIN_EVENTS = 10;
 
     public static void main(String[] args) throws Exception {
         runWithConfiguration("default", false);
