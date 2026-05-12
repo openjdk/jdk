@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,7 @@ class CodeCache : AllStatic {
   static uint64_t cold_gc_count();
   static void update_cold_gc_count();
   static void gc_on_allocation();
+  static void clear_unloading_gc_request();
 
   // The GC epoch and marking_cycle code below is there to support sweeping
   // nmethods in loom stack chunks.
