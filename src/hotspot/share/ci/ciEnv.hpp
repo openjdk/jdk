@@ -542,7 +542,7 @@ public:
   void find_dynamic_call_sites();
 
   bool is_aot_compile() NOT_CDS_RETURN_(false);
-  CDS_ONLY( InstanceKlass::ClassState compute_init_state_for_aot_compile(InstanceKlass* ik); )
+  InstanceKlass::ClassState compute_init_state_for_aot_compile(InstanceKlass* ik) NOT_CDS_RETURN_((InstanceKlass::ClassState)0);
 };
 
 #endif // SHARE_CI_CIENV_HPP

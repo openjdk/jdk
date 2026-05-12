@@ -1258,8 +1258,8 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                         bool blocking,
                                         Thread* thread) {
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
-  assert(method->method_holder()->is_instance_klass(),
-         "sanity check");
+  precond(method->method_holder()->is_instance_klass());
+  precond(compile_reason != CompileTask::Reason_Preload || aot_code_entry != nullptr);
   assert(!method->method_holder()->is_not_initialized()   ||
          compile_reason == CompileTask::Reason_Preload    ||
          CompileTask::reason_is_aot_compile(compile_reason), "method holder must be initialized");
@@ -1332,7 +1332,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     return; // metaspace has hit an OOM
   }
 
-  precond(compile_reason != CompileTask::Reason_Preload || aot_code_entry != nullptr);
   if (!requires_online_compilation && aot_code_entry == nullptr) {
     aot_code_entry = find_aot_code_entry(method, osr_bci, comp_level, compile_reason);
   }
@@ -1463,8 +1462,7 @@ AOTCodeEntry* CompileBroker::find_aot_code_entry(const methodHandle& method, int
   }
   AOTCodeEntry* aot_code_entry = nullptr;
   if (osr_bci == InvocationEntryBci && AOTCodeCache::is_using_code()) {
-    // Check for AOT preload code first.
-    precond(compile_reason != CompileTask::Reason_Preload); // should call it for AOT code preload.
+    assert(compile_reason != CompileTask::Reason_Preload, "should not call it for AOT code preload");
     aot_code_entry = AOTCodeCache::find_code_entry(method, comp_level);
   }
   return aot_code_entry;

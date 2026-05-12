@@ -1068,7 +1068,7 @@ void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool preload,
 #if INCLUDE_CDS
       if (preload) {
         MethodCounters* mc = method->get_method_counters(thread);
-        precond(mc != nullptr);
+        assert(mc != nullptr, "CompileBroker should create MethodCounters if it is missing");
         mc->set_aot_preload_code_entry(aot_code_entry);
         nm->set_preloaded(true);
       }
@@ -1271,17 +1271,17 @@ void ciEnv::register_method(ciMethod* target,
           {
             TrainingData::TrainingDataLocker l;
             MethodTrainingData* mtd = MethodTrainingData::find(method);
-            precond(mtd != nullptr);
+            assert(mtd != nullptr, "AOT compiled method should have MethodTrainingData");
             ctd = mtd->compile_data_for_aot_code(nm->comp_level());
           }
-          precond(ctd != nullptr);
+          assert(ctd != nullptr, "AOT compiled method should have CompileTrainingData");
           int inline_size = ctd->inline_instructions_size();
           aot_code_entry->set_inline_instructions_size(inline_size);
           if (for_preload) {
             // To have reference from method to AOT preload code
             // during assembly phase.
             MethodCounters* mc = method->get_method_counters(thread);
-            precond(mc != nullptr);
+            assert(mc != nullptr, "CompileBroker should create MethodCounters if it is missing");
             mc->set_aot_preload_code_entry(aot_code_entry);
             nm->set_preloaded(true);
           }

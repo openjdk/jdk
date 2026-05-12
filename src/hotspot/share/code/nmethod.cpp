@@ -2647,7 +2647,7 @@ void nmethod::post_compiled_method(CompileTask* task) {
   CompileTrainingData* ctd = task->training_data();
   if (ctd != nullptr) {
     // Record inline code size during training to help inlining during production run
-    precond(TrainingData::need_data()); // training run
+    assert(TrainingData::need_data(), "should be called only during training"); // training run
     int inline_size = inline_instructions_size();
     if (inline_size < 0) inline_size = 0;
     ctd->set_inline_instructions_size(inline_size);

@@ -109,7 +109,7 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
       ciMetadata* obj = _ci_metadata.at(i);
       if (obj->is_loaded() && obj->is_instance_klass()) {
         ciInstanceKlass* cik = obj->as_instance_klass();
-        precond(cik->is_shared());
+        assert(cik->is_shared(), "only shared instances are expected here");
         InstanceKlass::ClassState current_state = cik->_init_state;
         InstanceKlass::ClassState state = InstanceKlass::fully_initialized;
         if (current_state != state) {

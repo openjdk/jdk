@@ -1254,14 +1254,14 @@ void Parse::count_aot_code_calls() {
     // to invocations of AOT code during production run to trigger JIT
     // compilation and replace AOT code with normal JITed code.
     ciMetadata* mcp = method()->ensure_method_counters();
-    precond(mcp != nullptr);
+    assert(mcp != nullptr, "CompileBroker should create MethodCounters if it is missing");
     const TypePtr* mc_type = TypeMetadataPtr::make(TypePtr::Constant, mcp, 0);
     Node* mc = makecon(mc_type);
 
-    precond(MethodTrainingData::have_data());
+    assert(MethodTrainingData::have_data(), "TrainingData should be present for AOT compialtion");
     methodHandle mh(Thread::current(), method()->get_Method());
     MethodTrainingData* mtd = MethodTrainingData::find_fast(mh);
-    precond(mtd != nullptr);
+    assert(mtd != nullptr, "AOT compilated method should have MethodTrainingData");
     int64_t limit = mtd->invocation_count();
     int step = InvocationCounter::count_increment;
     int scaled_limit = step * scale_limit(limit);
