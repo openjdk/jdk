@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,11 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -80,6 +82,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
@@ -174,6 +177,11 @@ void SharedRuntime::generate_stubs() {
                           CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
 
   generate_deopt_blob();
+
+#if INCLUDE_CDS
+  // disallow any further generation of runtime stubs
+  AOTCodeCache::set_shared_stubs_complete();
+#endif // INCLUDE_CDS
 }
 
 void SharedRuntime::init_adapter_library() {
@@ -929,7 +937,7 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   // bindings.
   current->clear_scopedValueBindings();
   // Increment counter for hs_err file reporting
-  AtomicAccess::inc(&Exceptions::_stack_overflow_errors);
+  Exceptions::increment_stack_overflow_errors();
   throw_and_post_jvmti_exception(current, exception);
 }
 
@@ -2933,8 +2941,7 @@ public:
       assert(buffered_entry != nullptr,"sanity check");
 
       uint hash = fp->compute_hash();
-      u4 delta = _builder->buffer_to_offset_u4((address)buffered_entry);
-      _writer->add(hash, delta);
+      _writer->add(hash, AOTCompressedPointers::encode_not_null(buffered_entry));
       if (lsh.is_enabled()) {
         address fp_runtime_addr = (address)buffered_fp + ArchiveBuilder::current()->buffer_to_requested_delta();
         address entry_runtime_addr = (address)buffered_entry + ArchiveBuilder::current()->buffer_to_requested_delta();
@@ -3078,7 +3085,7 @@ AdapterHandlerEntry::~AdapterHandlerEntry() {
     _fingerprint = nullptr;
   }
 #ifdef ASSERT
-  FREE_C_HEAP_ARRAY(unsigned char, _saved_code);
+  FREE_C_HEAP_ARRAY(_saved_code);
 #endif
   FreeHeap(this);
 }
@@ -3187,11 +3194,10 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
           }
         }
 
-        DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, CompileBroker::compiler(CompLevel_simple));
-        if (directive->PrintAssemblyOption) {
+        CompilerDirectiveMatcher matcher(method, CompileBroker::compiler(CompLevel_simple));
+        if (matcher.directive_set()->PrintAssemblyOption) {
           nm->print_code();
         }
-        DirectivesStack::release(directive);
       }
     }
   } // Unlock AdapterHandlerLibrary_lock
@@ -3369,7 +3375,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
 JRT_END
 
 JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
-  FREE_C_HEAP_ARRAY(intptr_t, buf);
+  FREE_C_HEAP_ARRAY(buf);
 JRT_END
 
 const char* AdapterHandlerLibrary::name(AdapterHandlerEntry* handler) {

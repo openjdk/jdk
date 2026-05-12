@@ -76,6 +76,7 @@
 # include <fcntl.h>
 # include <fenv.h>
 # include <inttypes.h>
+# include <mach/mach.h>
 # include <poll.h>
 # include <pthread.h>
 # include <pwd.h>
@@ -102,8 +103,17 @@
 #endif
 
 #ifdef __APPLE__
+  #include <libproc.h>
   #include <mach/task_info.h>
   #include <mach-o/dyld.h>
+
+  // needed by current_stack_base_and_size() workaround for Mavericks
+  #define DEFAULT_MAIN_THREAD_STACK_PAGES 2048
+  #define OS_X_10_9_0_KERNEL_MAJOR_VERSION 13
+#endif
+
+#if !defined(__APPLE__) && !defined(__NetBSD__)
+  #include <pthread_np.h>
 #endif
 
 #ifndef MAP_ANONYMOUS
@@ -442,14 +452,14 @@ void os::init_system_properties_values() {
     char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
     os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     Arguments::set_library_path(ld_library_path);
-    FREE_C_HEAP_ARRAY(char, ld_library_path);
+    FREE_C_HEAP_ARRAY(ld_library_path);
   }
 
   // Extensions directories.
   os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 
 #else // __APPLE__
 
@@ -536,7 +546,7 @@ void os::init_system_properties_values() {
     os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
     Arguments::set_library_path(ld_library_path);
-    FREE_C_HEAP_ARRAY(char, ld_library_path);
+    FREE_C_HEAP_ARRAY(ld_library_path);
   }
 
   // Extensions directories.
@@ -548,7 +558,7 @@ void os::init_system_properties_values() {
                        user_home_dir, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 
 #undef SYS_EXTENSIONS_DIR
 #undef SYS_EXTENSIONS_DIRS
@@ -1782,10 +1792,8 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return os::commit_memory(addr, size, !ExecMem);
 }
 
-// If this is a growable mapping, remove the guard pages entirely by
-// munmap()ping them.  If not, just call uncommit_memory().
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+void os::remove_stack_guard_pages(char* addr, size_t size) {
+  os::uncommit_memory(addr, size);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
@@ -1885,11 +1893,6 @@ void os::large_page_init() {
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on BSD.");
   return nullptr;
-}
-
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  fatal("os::release_memory_special should not be called on BSD.");
-  return false;
 }
 
 size_t os::large_page_size() {
@@ -2550,6 +2553,106 @@ bool os::start_debugging(char *buf, int buflen) {
   return yes;
 }
 
+// Java thread:
+//
+//   Low memory addresses
+//    +------------------------+
+//    |                        |\  Java thread created by VM does not have glibc
+//    |    glibc guard page    | - guard, attached Java thread usually has
+//    |                        |/  1 glibc guard page.
+// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
+//    |                        |\
+//    |  HotSpot Guard Pages   | - red, yellow and reserved pages
+//    |                        |/
+//    +------------------------+ StackOverflow::stack_reserved_zone_base()
+//    |                        |\
+//    |      Normal Stack      | -
+//    |                        |/
+// P2 +------------------------+ Thread::stack_base()
+//
+// Non-Java thread:
+//
+//   Low memory addresses
+//    +------------------------+
+//    |                        |\
+//    |  glibc guard page      | - usually 1 page
+//    |                        |/
+// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
+//    |                        |\
+//    |      Normal Stack      | -
+//    |                        |/
+// P2 +------------------------+ Thread::stack_base()
+//
+// ** P1 (aka bottom) and size are the address and stack size
+//    returned from pthread_attr_getstack().
+// ** P2 (aka stack top or base) = P1 + size
+
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
+#ifdef __APPLE__
+  pthread_t self = pthread_self();
+  *base = (address) pthread_get_stackaddr_np(self);
+  *size = pthread_get_stacksize_np(self);
+# ifdef __x86_64__
+  // workaround for OS X 10.9.0 (Mavericks)
+  // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages
+  if (pthread_main_np() == 1) {
+    // At least on Mac OS 10.12 we have observed stack sizes not aligned
+    // to pages boundaries. This can be provoked by e.g. setrlimit() (ulimit -s xxxx in the
+    // shell). Apparently Mac OS actually rounds upwards to next multiple of page size,
+    // however, we round downwards here to be on the safe side.
+    *size = align_down(*size, getpagesize());
+
+    if ((*size) < (DEFAULT_MAIN_THREAD_STACK_PAGES * (size_t)getpagesize())) {
+      char kern_osrelease[256];
+      size_t kern_osrelease_size = sizeof(kern_osrelease);
+      int ret = sysctlbyname("kern.osrelease", kern_osrelease, &kern_osrelease_size, nullptr, 0);
+      if (ret == 0) {
+        // get the major number, atoi will ignore the minor amd micro portions of the version string
+        if (atoi(kern_osrelease) >= OS_X_10_9_0_KERNEL_MAJOR_VERSION) {
+          *size = (DEFAULT_MAIN_THREAD_STACK_PAGES*getpagesize());
+        }
+      }
+    }
+  }
+# endif
+  bottom = *base - *size;
+#elif defined(__OpenBSD__)
+  stack_t ss;
+  int rslt = pthread_stackseg_np(pthread_self(), &ss);
+
+  if (rslt != 0)
+    fatal("pthread_stackseg_np failed with error = %d", rslt);
+
+  *base = (address) ss.ss_sp;
+  *size = ss.ss_size;
+  bottom = *base - *size;
+#else
+  pthread_attr_t attr;
+
+  int rslt = pthread_attr_init(&attr);
+
+  // JVM needs to know exact stack location, abort if it fails
+  if (rslt != 0)
+    fatal("pthread_attr_init failed with error = %d", rslt);
+
+  rslt = pthread_attr_get_np(pthread_self(), &attr);
+
+  if (rslt != 0)
+    fatal("pthread_attr_get_np failed with error = %d", rslt);
+
+  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
+    fatal("Can not locate current stack attributes!");
+  }
+
+  *base = bottom + *size;
+
+  pthread_attr_destroy(&attr);
+#endif
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
+}
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 
 #if INCLUDE_JFR
@@ -2603,3 +2706,45 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
+
+void os::print_open_file_descriptors(outputStream* st) {
+#ifdef __APPLE__
+  char buf[1024 * sizeof(struct proc_fdinfo)];
+  os::Bsd::print_open_file_descriptors(st, buf, sizeof(buf));
+#else
+  st->print_cr("Open File Descriptors: unknown");
+#endif
+}
+
+void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t buflen) {
+#ifdef __APPLE__
+  pid_t my_pid;
+
+  // ensure the scratch buffer is big enough for at least one FD info struct
+  precond(buflen >= sizeof(struct proc_fdinfo));
+  kern_return_t kres = pid_for_task(mach_task_self(), &my_pid);
+  if (kres != KERN_SUCCESS) {
+    st->print_cr("Open File Descriptors: unknown");
+    return;
+  }
+  size_t max_fds = buflen / sizeof(struct proc_fdinfo);
+  struct proc_fdinfo* fds = reinterpret_cast<struct proc_fdinfo*>(buf);
+
+  // fill our buffer with FD info, up to the available buffer size
+  int res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, max_fds * sizeof(struct proc_fdinfo));
+  if (res <= 0) {
+    st->print_cr("Open File Descriptors: unknown");
+    return;
+  }
+
+  // print lower threshold if count exceeds buffer size
+  int nfiles = res / sizeof(struct proc_fdinfo);
+  if ((size_t)nfiles >= max_fds) {
+    st->print_cr("Open File Descriptors: > %zu", max_fds);
+    return;
+  }
+  st->print_cr("Open File Descriptors: %d", nfiles);
+#else
+  st->print_cr("Open File Descriptors: unknown");
+#endif
+}

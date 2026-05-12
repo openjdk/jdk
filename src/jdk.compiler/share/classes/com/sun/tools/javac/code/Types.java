@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -993,10 +993,12 @@ public class Types {
 
        @Override
        public boolean test(Symbol sym) {
+           List<MethodSymbol> msyms;
            return sym.kind == MTH &&
                    (sym.flags() & (ABSTRACT | DEFAULT)) == ABSTRACT &&
                    !overridesObjectMethod(origin, sym) &&
-                   (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
+                   (msyms = interfaceCandidates(origin.type, (MethodSymbol)sym)).nonEmpty() &&
+                   (msyms.head.flags() & DEFAULT) == 0;
        }
     }
 
@@ -1436,7 +1438,7 @@ public class Types {
                     return visit(s, t);
 
                 return s.hasTag(ARRAY)
-                    && containsTypeEquivalent(t.elemtype, elemtype(s));
+                    && visit(t.elemtype, elemtype(s));
             }
 
             @Override

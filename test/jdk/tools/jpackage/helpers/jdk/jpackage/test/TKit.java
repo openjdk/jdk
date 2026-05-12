@@ -37,7 +37,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -76,6 +75,9 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.internal.util.function.ThrowingUnaryOperator;
 
 public final class TKit {
+
+    private static final ScopedValue<State> STATE = ScopedValue.newInstance();
+    private static final State DEFAULT_STATE = State.build().initDefaults().mutable(false).create();
 
     public static final Path TEST_SRC_ROOT = Functional.identity(() -> {
         Path root = Path.of(System.getProperty("test.src"));
@@ -126,6 +128,15 @@ public final class TKit {
                 err.flush();
             }
         }
+    }
+
+    public static void withOperatingSystem(ThrowingRunnable<? extends Exception> action, OperatingSystem os) {
+        Objects.requireNonNull(action);
+        Objects.requireNonNull(os);
+
+        withState(action, stateBuilder -> {
+            stateBuilder.os(os);
+        });
     }
 
     public static void withState(ThrowingRunnable<? extends Exception> action, Consumer<State.Builder> stateBuilderMutator) {
@@ -233,19 +244,23 @@ public final class TKit {
     }
 
     public static boolean isWindows() {
-        return OperatingSystem.isWindows();
+        return TKit.state().os == OperatingSystem.WINDOWS;
     }
 
     public static boolean isOSX() {
-        return OperatingSystem.isMacOS();
+        return TKit.state().os == OperatingSystem.MACOS;
     }
 
     public static boolean isLinux() {
-        return OperatingSystem.isLinux();
+        return TKit.state().os == OperatingSystem.LINUX;
     }
 
     public static boolean isLinuxAPT() {
         return isLinux() && Files.exists(Path.of("/usr/bin/apt-get"));
+    }
+
+    public static boolean isMockingOperatingSystem() {
+        return TKit.state().os != OperatingSystem.current();
     }
 
     private static String addTimestamp(String msg) {
@@ -588,25 +603,6 @@ public final class TKit {
 
     public static boolean isSkippedException(Throwable t) {
         return JtregSkippedExceptionClass.INSTANCE.isInstance(t);
-    }
-
-    public static Path createRelativePathCopy(final Path file) {
-        Path fileCopy = ThrowingSupplier.toSupplier(() -> {
-            Path localPath = createTempFile(file.getFileName());
-            Files.copy(file, localPath, StandardCopyOption.REPLACE_EXISTING);
-            return localPath;
-        }).get().toAbsolutePath().normalize();
-
-        final Path basePath = Path.of(".").toAbsolutePath().normalize();
-        try {
-            return basePath.relativize(fileCopy);
-        } catch (IllegalArgumentException ex) {
-            // May happen on Windows: java.lang.IllegalArgumentException: 'other' has different root
-            trace(String.format("Failed to relativize [%s] at [%s]", fileCopy,
-                    basePath));
-            printStackTrace(ex);
-        }
-        return file;
     }
 
     public static void waitForFileCreated(Path fileToWaitFor,
@@ -1093,7 +1089,6 @@ public final class TKit {
             label = other.label;
             negate = other.negate;
             createException = other.createException;
-            anotherVerifier = other.anotherVerifier;
             value = other.value;
         }
 
@@ -1178,74 +1173,12 @@ public final class TKit {
                     }
                 }
             }
-
-            if (anotherVerifier != null) {
-                anotherVerifier.accept(lineIt);
-            }
-        }
-
-        public static TextStreamVerifier.Group group() {
-            return new TextStreamVerifier.Group();
-        }
-
-        public static final class Group {
-            public Group add(TextStreamVerifier verifier) {
-                if (verifier.anotherVerifier != null) {
-                    throw new IllegalArgumentException();
-                }
-                verifiers.add(verifier);
-                return this;
-            }
-
-            public Group add(Group other) {
-                verifiers.addAll(other.verifiers);
-                return this;
-            }
-
-            public Group mutate(Consumer<Group> mutator) {
-                mutator.accept(this);
-                return this;
-            }
-
-            public boolean isEmpty() {
-                return verifiers.isEmpty();
-            }
-
-            public Optional<Consumer<Iterator<String>>> tryCreate() {
-                if (isEmpty()) {
-                    return Optional.empty();
-                } else {
-                    return Optional.of(create());
-                }
-            }
-
-            public Consumer<Iterator<String>> create() {
-                if (verifiers.isEmpty()) {
-                    throw new IllegalStateException();
-                }
-
-                if (verifiers.size() == 1) {
-                    return verifiers.getFirst()::apply;
-                }
-
-                final var head = new TextStreamVerifier(verifiers.getFirst());
-                var prev = head;
-                for (var verifier : verifiers.subList(1, verifiers.size())) {
-                    verifier = new TextStreamVerifier(verifier);
-                    prev.anotherVerifier = verifier::apply;
-                    prev = verifier;
-                }
-                return head::apply;
-            }
-
-            private final List<TextStreamVerifier> verifiers = new ArrayList<>();
         }
 
         private BiPredicate<String, String> predicate;
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
-        private Consumer<? super Iterator<String>> anotherVerifier;
         private final String value;
     }
 
@@ -1257,11 +1190,12 @@ public final class TKit {
         return new TextStreamVerifier(what);
     }
 
-    public static Consumer<Iterator<String>> assertEndOfTextStream() {
+    public static Consumer<Iterator<String>> assertEndOfTextStream(String label) {
+        Objects.requireNonNull(label);
         return it -> {
             var tail = new ArrayList<String>();
             it.forEachRemaining(tail::add);
-            assertStringListEquals(List.of(), tail, "Check the end of the output");
+            assertStringListEquals(List.of(), tail, String.format("Check the end of %s", label));
         };
     }
 
@@ -1337,10 +1271,6 @@ public final class TKit {
         return state().currentTest;
     }
 
-    static boolean verboseJPackage() {
-        return state().verboseJPackage;
-    }
-
     static boolean verboseTestSetup() {
         return state().verboseTestSetup;
     }
@@ -1376,19 +1306,21 @@ public final class TKit {
     public static final class State {
 
         private State(
+                OperatingSystem os,
                 TestInstance currentTest,
                 PrintStream out,
                 PrintStream err,
                 Map<Object, Object> properties,
                 boolean trace,
                 boolean traceAsserts,
-                boolean verboseJPackage,
                 boolean verboseTestSetup) {
 
+            Objects.requireNonNull(os);
             Objects.requireNonNull(out);
             Objects.requireNonNull(err);
             Objects.requireNonNull(properties);
 
+            this.os = os;
             this.currentTest = currentTest;
             this.out = out;
             this.err = err;
@@ -1397,7 +1329,6 @@ public final class TKit {
             this.trace = trace;
             this.traceAsserts = traceAsserts;
 
-            this.verboseJPackage = verboseJPackage;
             this.verboseTestSetup = verboseTestSetup;
         }
 
@@ -1433,6 +1364,7 @@ public final class TKit {
         static final class Builder {
 
             Builder initDefaults() {
+                os = null;
                 currentTest = null;
                 out = System.out;
                 err = System.err;
@@ -1441,12 +1373,10 @@ public final class TKit {
                 if (logOptions == null) {
                     trace = true;
                     traceAsserts = true;
-                    verboseJPackage = true;
                     verboseTestSetup = true;
                 } else if (logOptions.contains("all")) {
                     trace = false;
                     traceAsserts = false;
-                    verboseJPackage = false;
                     verboseTestSetup = false;
                 } else {
                     Predicate<Set<String>> isNonOf = options -> {
@@ -1455,7 +1385,6 @@ public final class TKit {
 
                     trace = isNonOf.test(Set.of("trace", "t"));
                     traceAsserts = isNonOf.test(Set.of("assert", "a"));
-                    verboseJPackage = isNonOf.test(Set.of("jpackage", "jp"));
                     verboseTestSetup = isNonOf.test(Set.of("init", "i"));
                 }
 
@@ -1465,6 +1394,7 @@ public final class TKit {
             }
 
             Builder initFrom(State state) {
+                os = state.os;
                 currentTest = state.currentTest;
                 out = state.out;
                 err = state.err;
@@ -1474,9 +1404,13 @@ public final class TKit {
                 trace = state.trace;
                 traceAsserts = state.traceAsserts;
 
-                verboseJPackage = state.verboseJPackage;
                 verboseTestSetup = state.verboseTestSetup;
 
+                return this;
+            }
+
+            Builder os(OperatingSystem v) {
+                os = v;
                 return this;
             }
 
@@ -1511,16 +1445,17 @@ public final class TKit {
 
             State create() {
                 return new State(
+                        Optional.ofNullable(os).orElseGet(OperatingSystem::current),
                         currentTest,
                         out,
                         err,
                         mutable ? new HashMap<>(properties) : Map.copyOf(properties),
                         trace,
                         traceAsserts,
-                        verboseJPackage,
                         verboseTestSetup);
             }
 
+            private OperatingSystem os;
             private TestInstance currentTest;
             private PrintStream out;
             private PrintStream err;
@@ -1529,13 +1464,13 @@ public final class TKit {
             private boolean trace;
             private boolean traceAsserts;
 
-            private boolean verboseJPackage;
             private boolean verboseTestSetup;
 
             private boolean mutable = true;
         }
 
 
+        private OperatingSystem os;
         private final TestInstance currentTest;
         private final PrintStream out;
         private final PrintStream err;
@@ -1545,11 +1480,6 @@ public final class TKit {
         private final boolean trace;
         private final boolean traceAsserts;
 
-        private final boolean verboseJPackage;
         private final boolean verboseTestSetup;
     }
-
-
-    private static final ScopedValue<State> STATE = ScopedValue.newInstance();
-    private static final State DEFAULT_STATE = State.build().initDefaults().mutable(false).create();
 }

@@ -493,6 +493,21 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         putMapEntries(m, false);
     }
 
+    // Fast path for HashMap-to-HashMap copying. Eliminates megamorphic
+    // call sites described in JDK-8368292 by walking the source table.
+    // Also reuses pre-computed hash codes, avoiding redundant
+    // hashCode() calls.
+    private void putHashMapEntries(HashMap<? extends K, ? extends V> src, boolean evict) {
+        Node<? extends K, ? extends V>[] tab;
+        if (src.size > 0 && (tab = src.table) != null) {
+            for (Node<? extends K, ? extends V> e : tab) {
+                for (; e != null; e = e.next) {
+                    putVal(e.hash, e.key, e.value, false, evict);
+                }
+            }
+        }
+    }
+
     /**
      * Implements Map.putAll and Map constructor.
      *
@@ -515,6 +530,16 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 // effort by repeated doubling now vs later
                 while (s > threshold && table.length < MAXIMUM_CAPACITY)
                     resize();
+            }
+
+            // Fast path when source is a HashMap, or an UnmodifiableMap
+            // wrapping a HashMap. See JDK-8368292.
+            Map<? extends K, ? extends V> hm;
+            if ((hm = m).getClass() == HashMap.class
+                || m instanceof Collections.UnmodifiableMap<? extends K, ? extends V> umap
+                   && (hm = umap.m).getClass() == HashMap.class) {
+                putHashMapEntries((HashMap<? extends K, ? extends V>) hm, evict);
+                return;
             }
 
             for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {

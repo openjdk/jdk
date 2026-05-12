@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -44,9 +45,7 @@ private:
   void satb_barrier(MacroAssembler* masm,
                     Register obj,
                     Register pre_val,
-                    Register tmp,
-                    bool tosca_live,
-                    bool expand_call);
+                    Register tmp);
 
   void card_barrier(MacroAssembler* masm, Register obj);
 
@@ -77,6 +76,7 @@ public:
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath);
 };
 
 #endif // CPU_X86_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_X86_HPP

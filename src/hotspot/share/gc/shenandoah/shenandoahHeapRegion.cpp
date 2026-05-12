@@ -67,6 +67,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _new_top(nullptr),
   _empty_time(os::elapsedTime()),
   _top_before_promoted(nullptr),
+  _top_at_evac_start(start),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
   _tlab_allocs(0),
@@ -89,6 +90,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
   _recycling.unset();
+  _has_self_forwards.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
@@ -565,25 +567,35 @@ void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  _top_at_evac_start = _bottom;
   _mixed_candidate_garbage_words = 0;
-  set_top(bottom());
   clear_live_data();
   reset_alloc_metadata();
   heap->marking_context()->reset_top_at_mark_start(this);
   set_update_watermark(bottom());
-  if (ZapUnusedHeapArea) {
-    SpaceMangler::mangle_region(MemRegion(bottom(), end()));
+  clear_has_self_forwards();
+  if (is_old()) {
+    heap->old_generation()->clear_cards_for(this);
   }
 
-  make_empty();
+  if (ZapUnusedHeapArea) {
+    SpaceMangler::mangle_region(MemRegion(bottom(), top()));
+  }
+  set_top(bottom());
   set_affiliation(FREE);
+
+  // Lastly, set region state to empty
+  make_empty();
 }
 
 // Upon return, this region has been recycled.  We try to recycle it.
 // We may fail if some other thread recycled it before we do.
 void ShenandoahHeapRegion::try_recycle_under_lock() {
   shenandoah_assert_heaplocked();
-  if (is_trash() && _recycling.try_set()) {
+  if (!is_trash()) {
+    return;
+  }
+  if (_recycling.try_set()) {
     if (is_trash()) {
       // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
       // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
@@ -603,6 +615,7 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
         os::naked_yield();
       }
     }
+    assert(!is_trash(), "Must not");
   }
 }
 
@@ -610,7 +623,10 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
 // some GC worker thread has taken responsibility to recycle the region, eventually.
 void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
-  if (is_trash() && _recycling.try_set()) {
+  if (!is_trash()) {
+    return;
+  }
+  if (_recycling.try_set()) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
       // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
@@ -654,13 +670,6 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
 }
 
 size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
-  // Absolute minimums we should not ever break.
-  static const size_t MIN_REGION_SIZE = 256*K;
-
-  if (FLAG_IS_DEFAULT(ShenandoahMinRegionSize)) {
-    FLAG_SET_DEFAULT(ShenandoahMinRegionSize, MIN_REGION_SIZE);
-  }
-
   // Generational Shenandoah needs this alignment for card tables.
   if (strcmp(ShenandoahGCMode, "generational") == 0) {
     max_heap_size = align_up(max_heap_size , CardTable::ct_max_alignment_constraint());
@@ -668,47 +677,13 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 
   size_t region_size;
   if (FLAG_IS_DEFAULT(ShenandoahRegionSize)) {
-    if (ShenandoahMinRegionSize > max_heap_size / MIN_NUM_REGIONS) {
-      err_msg message("Max heap size (%zu%s) is too low to afford the minimum number "
-                      "of regions (%zu) of minimum region size (%zu%s).",
-                      byte_size_in_proper_unit(max_heap_size), proper_unit_for_byte_size(max_heap_size),
-                      MIN_NUM_REGIONS,
-                      byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize));
-      vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
-    }
-    if (ShenandoahMinRegionSize < MIN_REGION_SIZE) {
-      err_msg message("%zu%s should not be lower than minimum region size (%zu%s).",
-                      byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
-                      byte_size_in_proper_unit(MIN_REGION_SIZE),         proper_unit_for_byte_size(MIN_REGION_SIZE));
-      vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
-    }
-    if (ShenandoahMinRegionSize < MinTLABSize) {
-      err_msg message("%zu%s should not be lower than TLAB size size (%zu%s).",
-                      byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
-                      byte_size_in_proper_unit(MinTLABSize),             proper_unit_for_byte_size(MinTLABSize));
-      vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
-    }
-    if (ShenandoahMaxRegionSize < MIN_REGION_SIZE) {
-      err_msg message("%zu%s should not be lower than min region size (%zu%s).",
-                      byte_size_in_proper_unit(ShenandoahMaxRegionSize), proper_unit_for_byte_size(ShenandoahMaxRegionSize),
-                      byte_size_in_proper_unit(MIN_REGION_SIZE),         proper_unit_for_byte_size(MIN_REGION_SIZE));
-      vm_exit_during_initialization("Invalid -XX:ShenandoahMaxRegionSize option", message);
-    }
-    if (ShenandoahMinRegionSize > ShenandoahMaxRegionSize) {
-      err_msg message("Minimum (%zu%s) should be larger than maximum (%zu%s).",
-                      byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
-                      byte_size_in_proper_unit(ShenandoahMaxRegionSize), proper_unit_for_byte_size(ShenandoahMaxRegionSize));
-      vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize or -XX:ShenandoahMaxRegionSize", message);
-    }
-
     // We rapidly expand to max_heap_size in most scenarios, so that is the measure
     // for usual heap sizes. Do not depend on initial_heap_size here.
     region_size = max_heap_size / ShenandoahTargetNumRegions;
 
     // Now make sure that we don't go over or under our limits.
-    region_size = MAX2(ShenandoahMinRegionSize, region_size);
-    region_size = MIN2(ShenandoahMaxRegionSize, region_size);
-
+    region_size = MAX2(MIN_REGION_SIZE, region_size);
+    region_size = MIN2(MAX_REGION_SIZE, region_size);
   } else {
     if (ShenandoahRegionSize > max_heap_size / MIN_NUM_REGIONS) {
       err_msg message("Max heap size (%zu%s) is too low to afford the minimum number "
@@ -718,16 +693,16 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
-    if (ShenandoahRegionSize < ShenandoahMinRegionSize) {
+    if (ShenandoahRegionSize < MIN_REGION_SIZE) {
       err_msg message("Heap region size (%zu%s) should be larger than min region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize),
-                      byte_size_in_proper_unit(ShenandoahMinRegionSize),  proper_unit_for_byte_size(ShenandoahMinRegionSize));
+                      byte_size_in_proper_unit(MIN_REGION_SIZE),  proper_unit_for_byte_size(MIN_REGION_SIZE));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
-    if (ShenandoahRegionSize > ShenandoahMaxRegionSize) {
+    if (ShenandoahRegionSize > MAX_REGION_SIZE) {
       err_msg message("Heap region size (%zu%s) should be lower than max region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize),
-                      byte_size_in_proper_unit(ShenandoahMaxRegionSize),  proper_unit_for_byte_size(ShenandoahMaxRegionSize));
+                      byte_size_in_proper_unit(MAX_REGION_SIZE),  proper_unit_for_byte_size(MAX_REGION_SIZE));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
     region_size = ShenandoahRegionSize;
@@ -816,11 +791,7 @@ void ShenandoahHeapRegion::do_commit() {
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->is_heap_region_special()) {
-    bool success = os::uncommit_memory((char *) bottom(), RegionSizeBytes);
-    if (!success) {
-      log_warning(gc)("Region uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(bottom()), RegionSizeBytes);
-      assert(false, "Region uncommit should always succeed");
-    }
+    os::uncommit_memory((char *) bottom(), RegionSizeBytes);
   }
   if (!heap->is_bitmap_region_special()) {
     heap->uncommit_bitmap_slice(this);
@@ -838,7 +809,7 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.set_to(to);
     evt.commit();
   }
-  _state.store_relaxed(to);
+  _state.release_store(to);
 }
 
 void ShenandoahHeapRegion::record_pin() {

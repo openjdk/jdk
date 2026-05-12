@@ -96,7 +96,7 @@ struct core_data {
    int                classes_jsa_fd; // file descriptor of class share archive
    uintptr_t          dynamic_addr;  // address of dynamic section of a.out
    uintptr_t          vdso_addr;     // address of vDSO
-   off64_t            vdso_offset;   // offset of vDSO in core
+   off_t              vdso_offset;   // offset of vDSO in core
    size_t             vdso_size;     // size of vDSO
    uintptr_t          ld_base_addr;  // base address of ld.so
    size_t             num_maps;  // number of maps.
@@ -115,6 +115,10 @@ struct ps_prochandle {
    int                num_threads;
    thread_info*       threads;   // head of thread list
    struct core_data*  core;      // data only used for core dumps, NULL for process
+#ifdef __aarch64__
+   // true if the HWCAP_PACA variant of Pointer Authentication Code (PAC) is enabled.
+   bool               pac_enabled;
+#endif
 };
 
 #ifdef __cplusplus

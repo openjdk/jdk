@@ -32,11 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.cli.TestUtils.TestException;
 import jdk.jpackage.internal.cli.TestUtils.RecordingValidator;
+import jdk.jpackage.internal.cli.TestUtils.TestException;
 import jdk.jpackage.internal.cli.Validator.ParsedValue;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import jdk.jpackage.internal.cli.Validator.ValidatorException;
@@ -44,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ValidatorTest {
 
@@ -187,12 +190,30 @@ public class ValidatorTest {
         assertNotSame(builder.predicate(), copy.predicate());
     }
 
-    @Test
-    public void test_and() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void test_and(boolean greedy) {
 
         Function<Validator<String, ? extends Exception>, List<? extends Exception>> validate = validator -> {
             return validator.validate(OptionName.of("a"), ParsedValue.create("str", StringToken.of("str")));
         };
+
+        BinaryOperator<Validator<String, ? extends Exception>> composer = (a, b) -> {
+            if (greedy) {
+                return a.andGreedy(b);
+            } else {
+                return a.andLazy(b);
+            }
+        };
+
+        UnaryOperator<List<TestException>> exceptionFilter;
+        if (greedy) {
+            exceptionFilter = v -> v;
+        } else {
+            exceptionFilter = v -> {
+                return List.of(v.getFirst());
+            };
+        }
 
         var pass = new RecordingValidator<>(Validator.<String, RuntimeException>build().predicate(_ -> true).create());
 
@@ -200,29 +221,29 @@ public class ValidatorTest {
         var bar = failingValidator("bar");
         var buz = failingValidator("buz");
 
-        assertExceptionListEquals(List.of(
+        assertExceptionListEquals(exceptionFilter.apply(List.of(
                 new TestException("foo"),
                 new TestException("bar"),
                 new TestException("buz")
-        ), validate.apply(foo.and(bar).and(pass).and(buz)));
-        assertEquals(1, pass.counter());
+        )), validate.apply(Stream.of(foo, bar, pass, buz).reduce(composer).orElseThrow()));
+        assertEquals(greedy ? 1 : 0, pass.counter());
 
         pass.resetCounter();
-        assertExceptionListEquals(List.of(
+        assertExceptionListEquals(exceptionFilter.apply(List.of(
                 new TestException("bar"),
                 new TestException("buz"),
                 new TestException("foo")
-        ), validate.apply(pass.and(bar).and(buz).and(foo)));
+        )), validate.apply(Stream.of(pass, bar, buz, foo).reduce(composer).orElseThrow()));
         assertEquals(1, pass.counter());
 
-        assertExceptionListEquals(List.of(
+        assertExceptionListEquals(exceptionFilter.apply(List.of(
                 new TestException("foo"),
                 new TestException("foo")
-        ), validate.apply(foo.and(foo)));
+        )), validate.apply(composer.apply(foo, foo)));
 
         pass.resetCounter();
         assertExceptionListEquals(List.of(
-        ), validate.apply(pass.and(pass)));
+        ), validate.apply(composer.apply(pass, pass)));
         assertEquals(2, pass.counter());
     }
 

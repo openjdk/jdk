@@ -42,6 +42,11 @@
 #include "utilities/globalDefinitions.hpp"
 
 inline HeapWord* G1HeapRegion::block_start(const void* addr) const {
+  if (is_young()) {
+    // We are here because of BlockLocationPrinter.
+    // Can be invoked in any context, so this region might not be parsable.
+    return nullptr;
+  }
   return block_start(addr, parsable_bottom_acquire());
 }
 
@@ -64,6 +69,7 @@ inline HeapWord* G1HeapRegion::advance_to_block_containing_addr(const void* addr
 
 inline HeapWord* G1HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
   assert(addr >= bottom() && addr < top(), "invalid address");
+  assert(!is_young(), "Only non-young regions have BOT");
   HeapWord* first_block = _bot->block_start_reaching_into_card(addr);
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
@@ -181,7 +187,16 @@ inline void G1HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMar
     }
   }
 
-  assert(next_addr == limit, "Should stop the scan at the limit.");
+#ifdef ASSERT
+  if (is_starts_humongous() && bitmap->is_marked(bottom())) {
+    HeapWord* humongous_end = bottom() + cast_to_oop(bottom())->size();
+    assert(next_addr == MAX2(limit, humongous_end),
+           "Should stop the scan at limit or end of humongous object. r %u (%s)",
+           hrm_index(), get_short_type_str());
+  } else {
+    assert(next_addr == limit, "Should stop the scan at the limit. r %u (%s)", hrm_index(), get_short_type_str());
+  }
+#endif
 }
 
 inline HeapWord* G1HeapRegion::par_allocate(size_t min_word_size,
