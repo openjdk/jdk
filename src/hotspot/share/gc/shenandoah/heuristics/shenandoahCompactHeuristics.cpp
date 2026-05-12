@@ -80,7 +80,7 @@ void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(Shenando
   // Do not select too large CSet that would overflow the available free space
   const size_t max_cset = actual_free * 3 / 4;
 
-  log_info(gc, ergo)("CSet Selection. Actual Free: " PROPERFMT ", Max CSet: " PROPERFMT "",
+  log_info(gc, ergo)("CSet Selection. Actual Free: " PROPERFMT ", Max CSet: " PROPERFMT,
                      PROPERFMTARGS(actual_free), PROPERFMTARGS(max_cset));
 
   const size_t threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;

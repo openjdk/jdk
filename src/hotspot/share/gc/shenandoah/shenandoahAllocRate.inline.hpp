@@ -73,8 +73,8 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   // concurrently by other threads outside the lock, so we still use an atomic access.
   _allocated_bytes_since_last_sample.sub_then_fetch(unsampled);
 
-  auto timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
-  auto rate_seconds = static_cast<double>(unsampled) * Clock::elapsed_frequency() / elapsed;
+  const double timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
+  const double rate_seconds = static_cast<double>(unsampled) * Clock::elapsed_frequency() / elapsed;
 
   _baseline.add(timestamp, rate_seconds);
   _recent.add(timestamp, rate_seconds);
@@ -97,7 +97,7 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     return shenandoah_safe_size_cast(anticipated_consumption);
   }
 
-  // recent average is higher than baseline average, compute accleration
+  // recent average is higher than baseline average, compute acceleration
   const double slope = _recent.slope();
   const double predicted_rate = _recent.predict_y(_recent.last());
   const double anticipated_consumption = predicted_rate * time_delta + 0.5 * slope * time_delta * time_delta;

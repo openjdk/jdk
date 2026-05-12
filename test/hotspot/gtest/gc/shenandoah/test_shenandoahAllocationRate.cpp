@@ -124,7 +124,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike)
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(256, BASELINE_SAMPLES, RECENT_SAMPLES ,MOMENTARY_SAMPLES);
+  ShenandoahAllocRate<ShenandoahMockClock> rate(256, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
   for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
     allocate(rate, 512);
   }

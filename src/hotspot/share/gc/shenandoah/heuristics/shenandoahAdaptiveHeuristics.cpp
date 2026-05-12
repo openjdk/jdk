@@ -62,7 +62,7 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _last_trigger(OTHER),
   _available(Moving_Average_Samples),
   _headroom_adjustment(0) {
-  }
+}
 
 void ShenandoahAdaptiveHeuristics::initialize() {
   ShenandoahHeuristics::initialize();
@@ -220,7 +220,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
 
-  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", ",
+  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
                       PROPERFMTARGS(available), PROPERFMTARGS(capacity));
 
   if (_start_gc_is_pending) {
