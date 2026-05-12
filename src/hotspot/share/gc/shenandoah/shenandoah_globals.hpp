@@ -552,6 +552,15 @@
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
+  product(bool, ShenandoahCloneRuntime, false, DIAGNOSTIC,                  \
+          "Handle clone in runtime instead of in copy stubs.")              \
+                                                                            \
+  product(bool, ShenandoahElideIdealBarriers, true, DIAGNOSTIC,             \
+          "Elide redundant Shenandoah barriers on C2 Ideal level.")         \
+                                                                            \
+  product(bool, ShenandoahElideMachBarriers, true, DIAGNOSTIC,              \
+          "Elide redundant Shenandoah barriers on C2 Mach level.")          \
+                                                                            \
   develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
                                                                             \

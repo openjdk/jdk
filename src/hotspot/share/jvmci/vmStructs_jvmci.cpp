@@ -925,13 +925,18 @@
   declare_function(JVMCIRuntime::vm_error)                                \
   declare_function(JVMCIRuntime::load_and_clear_exception)                \
   G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_pre))            \
-  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong))         \
-  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong_narrow))  \
-  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak))           \
-  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak_narrow))    \
-  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom))        \
-  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom_narrow)) \
-  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::write_barrier_pre))                     \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong))                 \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong_narrow))          \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong_narrow_narrow))   \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak))                   \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak_narrow))            \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak_narrow_narrow))     \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom))                \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom_narrow))         \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom_narrow_narrow))  \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::write_barrier_pre))                             \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::write_barrier_pre_narrow))                      \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::clone))                                         \
   declare_function(JVMCIRuntime::validate_object)                         \
                                                                           \
   declare_function(JVMCIRuntime::test_deoptimize_call_int)
