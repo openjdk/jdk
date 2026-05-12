@@ -28,7 +28,6 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"

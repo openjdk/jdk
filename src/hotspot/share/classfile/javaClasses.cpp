@@ -5405,7 +5405,7 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(jdk_internal_foreign_abi_CallConv) \
   f(jdk_internal_misc_UnsafeConstants) \
   f(java_lang_boxing_object) \
-  f(vector_VectorPayload)
+  f(vector_VectorPayload) \
   //end
 
 #define BASIC_JAVA_CLASSES_DO(f) \

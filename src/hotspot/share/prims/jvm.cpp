@@ -100,7 +100,6 @@
 #include "services/threadService.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -2889,16 +2888,6 @@ JVM_END
 
 JVM_ENTRY(jlong, JVM_GetNextThreadIdOffset(JNIEnv* env, jclass threadClass))
   return ThreadIdentifier::unsafe_offset();
-JVM_END
-
-JVM_ENTRY(jboolean, JVM_JfrEpochUpdate(JNIEnv* env, jclass jfrEpoch, jobject obj))
-#if INCLUDE_JFR
-  oop oop = JNIHandles::resolve_non_null(obj);
-  return Jfr::update_epoch(oop) ? JNI_TRUE : JNI_FALSE;
-#else
-  ShouldNotCallThis();
-  return JNI_FALSE;
-#endif
 JVM_END
 
 JVM_ENTRY(void, JVM_Interrupt(JNIEnv* env, jobject jthread))
