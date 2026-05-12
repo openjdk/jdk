@@ -351,7 +351,7 @@ public:
       InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
       ld = vt;
 
-      if (_region != nullptr) {
+      if (_region != nullptr && 0) {
         Node* null_ctl = _parse.top();
         _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
 
@@ -439,7 +439,7 @@ public:
              "array can't be flat");
 
       ciArrayLoadData* array_load = profile_data();
-      if (array_load != nullptr) {
+      if (array_load != nullptr && 0) {
         int not_flat_count = profiled_not_flat_count();
         ciCallProfile profile = _parse.method()->call_profile_at_bci(_parse.bci());
         int flat_count = profile.count();
@@ -546,12 +546,12 @@ public:
 
 //---------------------------------array_load----------------------------------
 void Parse::array_load(BasicType bt) {
-  ArrayLoad array_load(bt, *this);
-  if (array_load.emit()) {
-    return;
-  }
-
-  ShouldNotReachHere();
+  // ArrayLoad array_load(bt, *this);
+  // if (array_load.emit()) {
+  //   return;
+  // }
+  //
+  // ShouldNotReachHere();
   const Type* elemtype = Type::TOP;
   Node* prep_array = prepare_array_addressing(bt, 0, elemtype);
   if (stopped())  return;     // guaranteed null or range check
