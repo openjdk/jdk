@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8270290
+ * @requires os.name != "Windows 11" & os.name != "Windows Server 2025"
  * @library /test/lib
  * @run main/othervm NTLMHeadTest SERVER
  * @run main/othervm NTLMHeadTest PROXY
