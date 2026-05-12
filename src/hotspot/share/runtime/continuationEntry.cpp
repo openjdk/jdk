@@ -84,20 +84,18 @@ NOINLINE static void flush_stack_processing(JavaThread* thread, intptr_t* bounda
   }
 }
 
-inline void maybe_flush_stack_processing(JavaThread* thread, intptr_t* boundary_sp, intptr_t* boundary_id) {
+inline void maybe_flush_stack_processing(JavaThread* thread, const ContinuationEntry* entry) {
   StackWatermark* sw;
   uintptr_t watermark;
   if ((sw = StackWatermarkSet::get(thread, StackWatermarkKind::gc)) != nullptr
         && (watermark = sw->watermark()) != 0
-        && watermark <= (uintptr_t)boundary_sp) {
-    flush_stack_processing(thread, boundary_id);
+        && entry->should_flush_stack_processing(watermark)) {
+    flush_stack_processing(thread, entry->entry_fp());
   }
 }
 
 void ContinuationEntry::flush_stack_processing(JavaThread* thread) const {
-  intptr_t* boundary_sp = (intptr_t*)((uintptr_t)entry_sp() + ContinuationEntry::size());
-  intptr_t* boundary_id = entry_fp();
-  maybe_flush_stack_processing(thread, boundary_sp, boundary_id);
+  maybe_flush_stack_processing(thread, this);
 }
 
 #ifndef PRODUCT
@@ -144,7 +142,7 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
   }
 
   assert(sp != nullptr, "");
-  assert(sp <= entry->entry_sp(), "");
+  assert(entry->is_valid_bottom_frame_sp(sp), "");
   address pc = ContinuationHelper::return_address_at(
                  sp - frame::sender_sp_ret_address_offset());
 

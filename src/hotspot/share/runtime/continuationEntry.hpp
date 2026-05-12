@@ -103,6 +103,8 @@ class ContinuationEntry {
   intptr_t* entry_sp() const { return (intptr_t*)this; }
   intptr_t* entry_fp() const;
 
+  int entry_frame_extension_words() const;
+
   static address thaw_call_pc_address() { return (address)&_thaw_call_pc; }
   static address cleanup_pc() { return _cleanup_pc; }
 
@@ -133,6 +135,8 @@ class ContinuationEntry {
   void flush_stack_processing(JavaThread* thread) const;
 
   inline intptr_t* bottom_sender_sp() const;
+  inline bool should_flush_stack_processing(uintptr_t watermark) const;
+  inline bool is_valid_bottom_frame_sp(intptr_t* sp) const;
   inline oop cont_oop(const JavaThread* thread) const;
   inline oop scope(const JavaThread* thread) const;
   inline static oop cont_oop_or_null(const ContinuationEntry* ce, const JavaThread* thread);

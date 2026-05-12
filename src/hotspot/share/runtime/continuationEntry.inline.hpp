@@ -35,14 +35,8 @@
 #include "utilities/align.hpp"
 #include CPU_HEADER_INLINE(continuationEntry)
 
-inline intptr_t* ContinuationEntry::bottom_sender_sp() const {
-  // the entry frame is extended if the bottom frame has stack arguments
-  int entry_frame_extension = argsize() > 0 ? argsize() + frame::metadata_words_at_top : 0;
-  intptr_t* sp = entry_sp() - entry_frame_extension;
-#ifdef _LP64
-  sp = align_down(sp, frame::frame_alignment);
-#endif
-  return sp;
+inline int ContinuationEntry::entry_frame_extension_words() const {
+  return argsize() > 0 ? argsize() + frame::metadata_words_at_top : 0;
 }
 
 inline bool is_stack_watermark_processing_started(const JavaThread* thread) {
@@ -69,5 +63,4 @@ inline oop ContinuationEntry::cont_oop_or_null(const ContinuationEntry* ce, cons
 inline oop ContinuationEntry::scope(const JavaThread* thread) const {
   return Continuation::continuation_scope(cont_oop(thread));
 }
-
 #endif // SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP
