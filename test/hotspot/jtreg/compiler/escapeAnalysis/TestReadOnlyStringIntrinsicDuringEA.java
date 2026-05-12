@@ -21,11 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8357381
  * @summary C2 compilation fails with C2: assert(false) failed: should not be here
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xbatch -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestReadOnlyStringIntrinsicDuringEA::main
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000 -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestReadOnlyStringIntrinsicDuringEA::test1
+ *                   compiler.escapeAnalysis.TestReadOnlyStringIntrinsicDuringEA
+ * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:CompileThreshold=1000 -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestReadOnlyStringIntrinsicDuringEA::test2
  *                   compiler.escapeAnalysis.TestReadOnlyStringIntrinsicDuringEA
  */
 
@@ -57,7 +60,7 @@ public class TestReadOnlyStringIntrinsicDuringEA extends c159.HelperBase {
     }
 
     public static void main(String[] strArr) {
-        for (int t = 0; t < 10_000; t++) {
+        for (int t = 0; t < 100_000; t++) {
             test1("123456abc", "123456abc");
             test2("X");
         }
