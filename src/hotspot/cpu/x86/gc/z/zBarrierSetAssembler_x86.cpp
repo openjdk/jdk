@@ -1329,9 +1329,9 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ jmp(slow_continuation);
 }
 
-#undef __
 #endif // COMPILER2
 
+#undef __
 #define __ masm->
 
 void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slow_path) {
