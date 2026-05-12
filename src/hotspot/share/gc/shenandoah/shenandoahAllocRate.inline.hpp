@@ -26,9 +26,22 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
-
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
+
+
+inline size_t ShenandoahAnticipatedConsumption::baseline_consumption() const {
+  return shenandoah_safe_size_cast(_baseline * _duration_seconds);
+}
+
+inline size_t ShenandoahAnticipatedConsumption::momentary_consumption() const {
+  return shenandoah_safe_size_cast(_momentary * _duration_seconds);
+}
+
+inline size_t ShenandoahAnticipatedConsumption::accelerated_consumption() const {
+  const double consumption = _predicted_rate * _duration_seconds + 0.5 * _acceleration * _duration_seconds * _duration_seconds;
+  return shenandoah_safe_size_cast(consumption);
+}
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t available) {
@@ -86,29 +99,21 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
 }
 
 template<typename Clock>
-size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration, double& current_rate, double time_delta) {
+ShenandoahAnticipatedConsumption ShenandoahAllocRate<Clock>::snapshot(const double time_delta, const double standard_deviations) {
+  ShenandoahAnticipatedConsumption result(time_delta);
   MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
 
-  acceleration = 0.0;
-  current_rate = _momentary.weighted_average();
+  result._baseline = upper_bound_no_lock(standard_deviations);
+
   if (_recent.weighted_average() <= _baseline.weighted_average()) {
     // We are not accelerating, just use the momentary average.
-    const double anticipated_consumption = current_rate * time_delta;
-    return shenandoah_safe_size_cast(anticipated_consumption);
+    result._momentary = _momentary.weighted_average();
+  } else {
+    result._acceleration = _recent.slope();
+    result._predicted_rate  = _recent.predict_y(_recent.last());
   }
 
-  // recent average is higher than baseline average, compute acceleration
-  const double slope = _recent.slope();
-  const double predicted_rate = _recent.predict_y(_recent.last());
-  const double anticipated_consumption = predicted_rate * time_delta + 0.5 * slope * time_delta * time_delta;
-  const size_t result = shenandoah_safe_size_cast(anticipated_consumption);
-  if (result > 0) {
-    acceleration = slope;
-    current_rate = predicted_rate;
-    return result;
-  }
-
-  return 0;
+  return result;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_INLINE_HPP

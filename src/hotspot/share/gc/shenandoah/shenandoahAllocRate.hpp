@@ -43,6 +43,56 @@ public:
   }
 };
 
+// Snapshot values used by heuristic triggers to avoid lock contention
+struct ShenandoahAnticipatedConsumption {
+  template<typename Clock> friend class ShenandoahAllocRate;
+  explicit ShenandoahAnticipatedConsumption(double duration_seconds)
+    : _duration_seconds(duration_seconds)
+    , _baseline(0.0)
+    , _momentary(0.0)
+    , _acceleration(0.0)
+    , _predicted_rate(0.0) {
+  }
+
+  // Anticipated duration in seconds of next gc cycle
+  double duration_seconds() const {
+    return _duration_seconds;
+  }
+
+  // Consumption in bytes based on baseline allocation rate for the next gc cycle
+  size_t baseline_consumption() const;
+  double baseline_rate() const {
+    return _baseline;
+  }
+
+  // Consumption in bytes based on momentary allocation rate for the next gc cycle
+  size_t momentary_consumption() const;
+  double momentary_rate() const {
+    return _momentary;
+  }
+
+  // Consumption in bytes based on an accelerating allocation rate for the next gc cycle
+  size_t accelerated_consumption() const;
+
+  // The acceleration of the allocation rate (based on slope of linear regression)
+  double acceleration() const {
+    return _acceleration;
+  }
+
+  // Predicated allocation rate based on weighted linear regression
+  double predicted_rate() const {
+    return _predicted_rate;
+  }
+
+private:
+  double _duration_seconds;
+  double _baseline;
+  double _momentary;
+  double _acceleration;
+  double _predicted_rate;
+};
+
+
 // This class tracks three moving averages of the allocation rate:
 //  1. Momentary: this is the shortest and acts as a sort of 'spike' detector
 //  2. Recent: larger than momentary, these samples are used to detect 'acceleration' of the rate
@@ -94,11 +144,12 @@ public:
   // Indicate that this many bytes have been allocated (by the mutator).
   void allocated(size_t allocated_bytes);
 
-  // If the recent average is above the baseline average, provide the acceleration
-  // and current rate. Returns the amount of bytes expected to be consumed in the
-  // given 'time_delta'. The prediction is based either on recent samples (acceleration)
-  // or the momentary average.
-  size_t accelerated_consumption(double& acceleration, double& current_rate, double time_delta);
+  // Returns a snapshot of the parameters necessary to evaluate allocation rate triggers.
+  // Note that momentary consumption and accelerated consumption may both be zero, but may
+  // not both be non-zero. The `time_delta` parameter is the anticipated duration of the
+  // next gc cycle. The `standard_deviations` parameter is the margin of error applied to
+  // the baseline allocation rate expressed as a multiple of the standard deviation. 
+  ShenandoahAnticipatedConsumption snapshot(double time_delta, double standard_deviations);
 
   // Returns the weighted average of the samples.
   double weighted_average() {
@@ -109,7 +160,13 @@ public:
   // Returns the upper bound of the confidence interval about the mean in terms of the given deviation.
   double upper_bound(const double standard_deviations) {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    return _baseline.weighted_average() + (standard_deviations * _baseline.weighted_sd());
+    return upper_bound_no_lock(standard_deviations);
+  }
+
+private:
+  double upper_bound_no_lock(const double standard_deviations) const {
+    assert(_sample_lock.is_locked(), "Caller must hold lock");
+    return _baseline.weighted_average() + standard_deviations * _baseline.weighted_sd();
   }
 };
 
