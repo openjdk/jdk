@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Intel Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,12 +132,23 @@ static address avx2_rotate_constsAddr() {
 static address generate_sha3_implCompress_avx512(StubId stub_id,
                                           StubGenerator *stubgen,
                                           MacroAssembler *_masm) {
+  switch(stub_id) {
+  case StubId::stubgen_sha3_implCompress_id:
+  case StubId::stubgen_sha3_implCompressMB_id:
+  case StubId::stubgen_double_keccak_id:
+  case StubId::stubgen_quad_keccak_id:
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
   address start = stubgen->load_archive_data(stub_id);
   if (start != nullptr) {
     return start;
   }
+
   __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
   start = __ pc();
@@ -621,8 +633,14 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
 static address generate_sha3_implCompress_avx2(StubId stub_id,
                                           StubGenerator *stubgen,
                                           MacroAssembler *_masm) {
-  bool multiBlock = stub_id == StubId::stubgen_sha3_implCompressMB_id;
-  bool doubleKeccak = stub_id == StubId::stubgen_double_keccak_id;
+  switch(stub_id) {
+  case StubId::stubgen_sha3_implCompress_id:
+  case StubId::stubgen_sha3_implCompressMB_id:
+  case StubId::stubgen_double_keccak_id:
+    break;
+  default:
+    ShouldNotReachHere();
+  }
 
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
@@ -630,11 +648,14 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
   if (start != nullptr) {
     return start;
   }
+
   __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
   start = __ pc();
   __ enter();
 
+  bool multiBlock = stub_id == StubId::stubgen_sha3_implCompressMB_id;
+  bool doubleKeccak = stub_id == StubId::stubgen_double_keccak_id;
   int vector_len, reg_size;
   Register buf, offset, block_size, limit;
   Register state1, state2;
