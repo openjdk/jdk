@@ -223,7 +223,9 @@ ShenandoahFreeSetPartitionId ShenandoahFreeSet::prepare_to_promote_in_place(size
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
-  return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
+  const auto state = r->state();
+  return ShenandoahHeapRegion::is_empty_state(state)
+      || (ShenandoahHeapRegion::is_trash(state) && !_heap->is_concurrent_weak_root_in_progress());
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(size_t idx) const {
@@ -666,7 +668,7 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
 #ifdef ASSERT
     ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(idx);
     assert (in_free_set(partition, idx), "Must be in partition to remove from partition");
-    assert(r->is_empty() || r->is_trash(), "Region must be empty or trash");
+    assert(r->is_empty_or_trash(), "Region must be empty or trash");
 #endif
     _membership[int(partition)].clear_bit(idx);
   }
@@ -1569,7 +1571,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   // We must call try_recycle_under_lock() even if !r->is_trash().  The reason is that if r is being recycled at this
   // moment by a GC worker thread, it may appear to be not trash even though it has not yet been fully recycled.  If
   // we proceed without waiting for the worker to finish recycling the region, the worker thread may overwrite the
-  // region's affiliation with FREE after we set the region's affiliation to req.afiliation() below
+  // region's affiliation with FREE after we set the region's affiliation to req.affiliation() below
   r->try_recycle_under_lock();
   in_new_region = r->is_empty();
   if (in_new_region) {
@@ -1585,7 +1587,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
       // coalesce-and-fill processing.
       r->end_preemptible_coalesce_and_fill();
-      _heap->old_generation()->clear_cards_for(r);
     }
 #ifdef ASSERT
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
@@ -2679,8 +2680,11 @@ void ShenandoahFreeSet::reduce_young_reserve(size_t adjusted_young_reserve, size
  *  1. Memory currently available within old and young
  *  2. Trashed regions currently residing in young and old, which will become available momentarily
  *  3. The value of old_generation->get_region_balance() which represents the number of regions that we plan
- *     to transfer from old generation to young generation.  Prior to each invocation of compute_young_and_old_reserves(),
- *     this value should computed by ShenandoahGenerationalHeap::compute_old_generation_balance().
+ *     to transfer from old generation to young generation. At the end of each GC cycle, we reset region_balance
+ *     to zero. As we prepare to rebuild free set at the end of update-refs, we call
+ *     ShenandoahGenerationalHeap::compute_old_generation_balance() to compute a new value of region_balance.
+ *     This allows us to expand or shrink the size of the Old Collector reserves based on anticipated needs of
+ *     the next GC cycle.
  */
 void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regions, size_t old_trashed_regions,
                                                        size_t& young_reserve_result, size_t& old_reserve_result) const {
@@ -2820,7 +2824,7 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
         // be collected in the near future.
         if (r->is_trash() || !r->is_affiliated()) {
           // OLD regions that have available memory are already in the old_collector free set.
-          assert(r->is_empty() || r->is_trash(), "Not affiliated implies region %zu is empty", r->index());
+          assert(r->is_empty_or_trash(), "Not affiliated implies region %zu is empty", r->index());
           if (idx < old_collector_low_idx) {
             old_collector_low_idx = idx;
           }
@@ -3164,7 +3168,7 @@ void ShenandoahFreeSet::log_status() {
           size_t free = alloc_capacity(r);
           max = MAX2(max, free);
           size_t used_in_region = r->used();
-          if (r->is_empty() || r->is_trash()) {
+          if (r->is_empty_or_trash()) {
             used_in_region = 0;
             total_free_ext += free;
             if (last_idx + 1 == idx) {
