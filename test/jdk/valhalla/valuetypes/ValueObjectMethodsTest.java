@@ -132,17 +132,17 @@ public class ValueObjectMethodsTest {
     // Classes to test
     static Stream<Arguments> classesData() {
         return Stream.of(
-                Arguments.of(int.class, false, true),       // Fabricated primitive classes
-                Arguments.of(long.class, false, true),
-                Arguments.of(short.class, false, true),
-                Arguments.of(byte.class, false, true),
-                Arguments.of(float.class, false, true),
-                Arguments.of(double.class, false, true),
-                Arguments.of(char.class, false, true),
-                Arguments.of(void.class, false, true),
+                Arguments.of(int.class, false, false),       // Fabricated primitive classes
+                Arguments.of(long.class, false, false),
+                Arguments.of(short.class, false, false),
+                Arguments.of(byte.class, false, false),
+                Arguments.of(float.class, false, false),
+                Arguments.of(double.class, false, false),
+                Arguments.of(char.class, false, false),
+                Arguments.of(void.class, false, false),
                 Arguments.of(String.class, true, false),
                 Arguments.of(Object.class, true, false),
-                Arguments.of(Function.class, false, true),  // Interface
+                Arguments.of(Function.class, false, false),  // Interface
                 Arguments.of(Optional.class, false, true),  // Concrete value classes...
                 Arguments.of(Character.class, false, true)
         );
@@ -161,16 +161,13 @@ public class ValueObjectMethodsTest {
     @ParameterizedTest
     @MethodSource("classesData")
     public void classTests(Class<?> clazz, boolean identityClass, boolean valueClass) {
-        assertEquals(identityClass, clazz.isIdentity(), "Class.isIdentity(): " + clazz);
-
         assertEquals(valueClass, clazz.isValue(), "Class.isValue(): " + clazz);
 
         assertEquals(clazz.accessFlags().contains(AccessFlag.IDENTITY),
                 identityClass, "AccessFlag.IDENTITY: " + clazz);
 
         int modifiers = clazz.getModifiers();
-        assertEquals(clazz.isIdentity(), (modifiers & ClassFile.ACC_IDENTITY) != 0, "Class.getModifiers() & ACC_IDENTITY != 0");
-        assertEquals(clazz.isValue(), (modifiers & ClassFile.ACC_IDENTITY) == 0, "Class.getModifiers() & ACC_IDENTITY == 0");
+        assertEquals(identityClass, (modifiers & ClassFile.ACC_IDENTITY) != 0, "Class.getModifiers() & ACC_IDENTITY != 0");
     }
 
     @Test

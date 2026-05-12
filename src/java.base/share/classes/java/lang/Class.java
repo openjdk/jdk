@@ -52,6 +52,7 @@ import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.constant.Constable;
+import java.lang.classfile.ClassFile;
 import java.net.URL;
 import java.security.AllPermission;
 import java.security.Permissions;
@@ -228,9 +229,6 @@ public final class Class<T> implements java.io.Serializable,
                               AnnotatedElement,
                               TypeDescriptor.OfField<Class<?>>,
                               Constable {
-    private static final int ANNOTATION = 0x00002000;
-    private static final int ENUM       = 0x00004000;
-    private static final int SYNTHETIC  = 0x00001000;
 
     private static native void registerNatives();
     static {
@@ -627,42 +625,14 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * {@return {@code true} if this {@code Class} object represents an identity class,
-     * otherwise {@code false}}
-     *
-     * <ul>
-     *      <li>
-     *          If this {@code Class} object represents an array type this method returns {@code true}.
-     *      <li>
-     *          If this {@code Class} object represents an interface, a primitive type,
-     *          or {@code void} this method returns {@code false}.
-     *      <li>
-     *          For all other {@code Class} objects, this method returns {@code true} if either
-     *          preview features are disabled or {@linkplain AccessFlag#IDENTITY IDENTITY} is
-     *          present in the {@linkplain #accessFlags() class access flags}.
-     * </ul>
-     * @see AccessFlag#IDENTITY
-     * @since Valhalla
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
-    public boolean isIdentity() {
-        return identity;
-    }
-
-    /**
      * {@return {@code true} if this {@code Class} object represents a value class,
      * otherwise {@code false}}
-     * <ul>
-     *      <li>
-     *          If this {@code Class} object represents an array type this method returns {@code false}.
-     *      <li>
-     *          If this {@code Class} object represents an interface, a primitive type,
-     *          or {@code void} this method returns {@code true} only if preview features are enabled.
-     *      <li>
-     *          For all other {@code Class} objects, this method returns {@code true} only if
-     *          preview features are enabled and {@linkplain AccessFlag#IDENTITY IDENTITY} is not
-     *          present in the {@linkplain #accessFlags() class access flags}.
-     * </ul>
+     *
+     * <p>A value class is declared with the {@code value} modifier. If this
+     * {@code Class} object represents an interface, array type, primitive type,
+     * or {@code void}, the result is {@code false}.
+     *
+     * @jls value-objects-8.1.1.5 {@code value} Classes
      * @see AccessFlag#IDENTITY
      * @since Valhalla
      */
@@ -670,8 +640,10 @@ public final class Class<T> implements java.io.Serializable,
     public boolean isValue() {
         if (!PreviewFeatures.isEnabled()) {
             return false;
+        } else {
+            int mask = ClassFile.ACC_IDENTITY | ClassFile.ACC_INTERFACE;
+            return !primitive && (getModifiers() & mask) == 0;
         }
-        return !isIdentity();
     }
 
     /**
@@ -929,7 +901,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public boolean isAnnotation() {
-        return (getModifiers() & ANNOTATION) != 0;
+        return (getModifiers() & ClassFile.ACC_ANNOTATION) != 0;
     }
 
     /**
@@ -944,7 +916,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public boolean isSynthetic() {
-        return (getModifiers() & SYNTHETIC) != 0;
+        return (getModifiers() & ClassFile.ACC_SYNTHETIC) != 0;
     }
 
     /**
@@ -3429,7 +3401,7 @@ public final class Class<T> implements java.io.Serializable,
         // An enum must both directly extend java.lang.Enum and have
         // the ENUM bit set; classes for specialized enum constants
         // don't do the former.
-        return (this.getModifiers() & ENUM) != 0 &&
+        return (this.getModifiers() & ClassFile.ACC_ENUM) != 0 &&
         this.getSuperclass() == java.lang.Enum.class;
     }
 

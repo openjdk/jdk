@@ -443,11 +443,11 @@ public final class ObjectStreamClass implements Serializable {
                     deserializationCtrs = new DeserializationConstructorsCache();
                 } else if (externalizable) {
                     factoryMode = DeserializationMode.READ_EXTERNALIZABLE;
-                    if (cl.isIdentity()) {
-                        cons = getExternalizableConstructor(cl);
-                    } else {
+                    if (cl.isValue()) {
                         serializeEx = deserializeEx = new ExceptionInfo(cl.getName(),
                                 "Externalizable not valid for value class");
+                    } else {
+                        cons = getExternalizableConstructor(cl);
                     }
                 } else if (cl.isValue()) {
                     factoryMode = DeserializationMode.READ_OBJECT_VALUE;
