@@ -223,7 +223,9 @@ ShenandoahFreeSetPartitionId ShenandoahFreeSet::prepare_to_promote_in_place(size
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
-  return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
+  const auto state = r->state();
+  return ShenandoahHeapRegion::is_empty_state(state)
+      || (ShenandoahHeapRegion::is_trash(state) && !_heap->is_concurrent_weak_root_in_progress());
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(size_t idx) const {
@@ -666,7 +668,7 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
 #ifdef ASSERT
     ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(idx);
     assert (in_free_set(partition, idx), "Must be in partition to remove from partition");
-    assert(r->is_empty() || r->is_trash(), "Region must be empty or trash");
+    assert(r->is_empty_or_trash(), "Region must be empty or trash");
 #endif
     _membership[int(partition)].clear_bit(idx);
   }
@@ -2822,7 +2824,7 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
         // be collected in the near future.
         if (r->is_trash() || !r->is_affiliated()) {
           // OLD regions that have available memory are already in the old_collector free set.
-          assert(r->is_empty() || r->is_trash(), "Not affiliated implies region %zu is empty", r->index());
+          assert(r->is_empty_or_trash(), "Not affiliated implies region %zu is empty", r->index());
           if (idx < old_collector_low_idx) {
             old_collector_low_idx = idx;
           }
@@ -3166,7 +3168,7 @@ void ShenandoahFreeSet::log_status() {
           size_t free = alloc_capacity(r);
           max = MAX2(max, free);
           size_t used_in_region = r->used();
-          if (r->is_empty() || r->is_trash()) {
+          if (r->is_empty_or_trash()) {
             used_in_region = 0;
             total_free_ext += free;
             if (last_idx + 1 == idx) {
