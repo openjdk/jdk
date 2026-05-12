@@ -26,6 +26,7 @@
 package jdk.jshell;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import jdk.jshell.Key.VarKey;
 
@@ -61,16 +62,19 @@ public class VarSnippet extends DeclarationSnippet {
 
     final String fieldName;
 
+    private final List<ExtraImport> extraImports;
+
      VarSnippet(VarKey key, String userSource, Wrap guts,
             String name, String fieldName, SubKind subkind, String typeName, String fullTypeName,
             Set<String> additionalStaticImportNames, Collection<String> declareReferences,
-            DiagList syntheticDiags) {
+            DiagList syntheticDiags, List<ExtraImport> extraImports) {
         super(key, userSource, guts, name, subkind, null, declareReferences,
                 null, syntheticDiags);
         this.typeName = typeName;
         this.fullTypeName = fullTypeName;
         this.additionalStaticImportNames = additionalStaticImportNames;
         this.fieldName = fieldName;
+        this.extraImports = extraImports;
     }
 
     String fieldName() {
@@ -90,6 +94,11 @@ public class VarSnippet extends DeclarationSnippet {
         StringBuilder imports = new StringBuilder(super.importLine(state));
         additionalStaticImportNames.forEach(name -> imports.append(staticImportLine(name)));
         return imports.toString();
+    }
+
+    @Override
+    List<ExtraImport> getExtraImports() {
+        return extraImports;
     }
 
 }

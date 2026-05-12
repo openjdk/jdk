@@ -26,8 +26,12 @@
  * @build KullaTesting TestingInputStream
  * @run junit EnhancedVariableDeclarationsTest
  */
+import jdk.jshell.VarSnippet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static jdk.jshell.Snippet.Status.DROPPED;
+import static jdk.jshell.Snippet.Status.OVERWRITTEN;
+import static jdk.jshell.Snippet.Status.VALID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,7 +50,7 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
     public void testMultipleComponentsFlat() {
         assertEval("record Point(int a, int b) {}");
         assertEquals(varKey(assertEval("Point p = new Point(1, 2);")).name(), "p");
-        assertEval("Point(int x, int y) = p;");
+        assertEnhancedVarDeclEval("Point(int x, int y) = p;", 2);
         assertEval("x + y", "3");
     }
 
@@ -55,7 +59,7 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
         assertEval("record Point(int a, int b) {}");
         assertEval("record NumberedPoint(Point p, int n) {}");
         assertEquals(varKey(assertEval("NumberedPoint p = new NumberedPoint(new Point(1, 2), 97);")).name(), "p");
-        assertEval("NumberedPoint(Point(int x, int y), int serialNumber) = p;");
+        assertEnhancedVarDeclEval("NumberedPoint(Point(int x, int y), int serialNumber) = p;", 3);
         assertEval("x + y + serialNumber", "100");
     }
 
@@ -149,7 +153,7 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
     public void testInferredFlat() {
         assertEval("record Point(int a, int b) {}");
         assertEval("Point p = new Point(1, 2);");
-        assertEval("Point(var x, var y) = p;");
+        assertEnhancedVarDeclEval("Point(var x, var y) = p;", 2);
     }
 
     @Test
@@ -180,9 +184,123 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
         assertEval("record Point(int a, int b) {}");
         assertEval("record NumberedPoint(Point p, int n) {}");
         assertEquals(varKey(assertEval("NumberedPoint p = new NumberedPoint(new Point(1, 2), 97);")).name(), "p");
-        assertEval("NumberedPoint(Point(var x, var y), var serialNumber) = p;");
+        assertEnhancedVarDeclEval("NumberedPoint(Point(var x, var y), var serialNumber) = p;", 3);
         assertEval("x + y + serialNumber", "100");
     }
+
+    @Test
+    public void testMultipleBindingsAsVariables() {
+        assertEval("record Point(int a, int b) {}");
+        assertEval("Point p = new Point(1, 2);");
+        assertEnhancedVarDeclEval("Point(int x, int y) = p;", 2);
+        assertVariables(variable("Point", "p"), variable("int", "x"), variable("int", "y"));
+
+        VarSnippet x = getState().variables()
+                .filter(v -> v.name().equals("x"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("missing VarSnippet for x"));
+
+        VarSnippet y = getState().variables()
+                .filter(v -> v.name().equals("y"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("missing VarSnippet for y"));
+
+        assertVarValue(x, "1");
+        assertVarValue(y, "2");
+        assertEval("x + y", "3");
+
+        assertDrop(y, ste(MAIN_SNIPPET, VALID, DROPPED, true, null));
+        assertEval("x", "1");
+        assertDeclareFail("y", "compiler.err.cant.resolve.location");
+        assertEval("int y = 10;");
+        assertEval("x + y", "11");
+    }
+
+    @Test
+    public void testMultipleBindingsDropPrimaryBinding() {
+        assertEval("record Point(int a, int b) {}");
+        assertEval("Point p = new Point(1, 2);");
+        assertEnhancedVarDeclEval("Point(int x, int y) = p;", 2);
+
+        VarSnippet x = getState().variables()
+                .filter(v -> v.name().equals("x"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("missing VarSnippet for x"));
+
+        VarSnippet y = getState().variables()
+                .filter(v -> v.name().equals("y"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("missing VarSnippet for y"));
+
+        assertDrop(x, ste(MAIN_SNIPPET, VALID, DROPPED, true, null));
+        assertDeclareFail("x", "compiler.err.cant.resolve.location");
+        assertEval("y", "2");
+        assertVarValue(y, "2");
+        assertEval("int x = 10;");
+        assertEval("x + y", "12");
+    }
+
+    @Test
+    public void testMultipleBindingsOverwritePeerBinding() {
+        assertEval("record Point(int a, int b) {}");
+        assertEval("Point p = new Point(1, 2);");
+        assertEnhancedVarDeclEval("Point(int x, int y) = p;", 2);
+
+        VarSnippet y = getState().variables()
+                .filter(v -> v.name().equals("y"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("missing VarSnippet for y"));
+
+        assertEval("long y = 10;",
+                ste(MAIN_SNIPPET, VALID, VALID, true, null),
+                ste(y, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+        assertVariables(variable("Point", "p"), variable("int", "x"), variable("long", "y"));
+        assertEval("x + y", "11");
+    }
+
+    @Test
+    public void testBindingNamedDollarV() {
+        assertEval("record R(int $v) {}");
+        assertEval("R r = new R(7);");
+        assertEnhancedVarDeclEval("R(int $v) = r;", 1);
+        assertVariables(variable("R", "r"), variable("int", "$v"));
+        assertEval("$v", "7");
+
+        VarSnippet dollarV = getState().variables()
+                .filter(v -> v.name().equals("$v"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("missing VarSnippet for $v"));
+        assertVarValue(dollarV, "7");
+    }
+
+    @Test
+    public void testMultipleBindingsExecuteDeclarationOnce() {
+        assertEval("record Point(int x, int y) {}");
+        assertEval("""
+                class C {
+                    static int calls;
+                    static Point next() {
+                        calls++;
+                        return new Point(calls, calls);
+                    }
+                }
+                """);
+
+        assertEnhancedVarDeclEval("Point(int x, int y) = C.next();", 2);
+
+        assertEval("C.calls", "1");
+        assertEval("x", "1");
+        assertEval("y", "1");
+    }
+
+    private void assertEnhancedVarDeclEval(String input, int bindingCount) {
+        EventChain[] eventChains = new EventChain[bindingCount];
+        for (int i = 0; i < bindingCount; i++) {
+            eventChains[i] = chain(added(VALID));
+        }
+        assertEval(input, DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, eventChains);
+    }
+
 
     @BeforeEach
     public void setUp() {
