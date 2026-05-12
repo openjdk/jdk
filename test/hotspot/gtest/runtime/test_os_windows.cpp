@@ -846,7 +846,7 @@ TEST_VM(os_windows, reserve_memory_special_concurrent) {
 
 // Test that reserve_with_numa_placeholder works correctly when
 // UseNUMAInterleaving is enabled and VirtualAlloc2 is available.
-// On UMA systems with a single NUMA node, the interleaving is trivial
+// On NUMA systems with a single NUMA node, the interleaving is trivial
 // (all chunks go to node 0) but the placeholder split/replace path
 // is still exercised.
 TEST_VM(os_windows, numa_placeholder_reserve_commit) {
