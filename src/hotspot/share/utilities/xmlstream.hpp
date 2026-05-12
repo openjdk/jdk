@@ -179,9 +179,7 @@ class xmlStream : public outputStream {
 
 };
 
-
-class XmlElemHelper : public CHeapObjBase {
- private:
+class XmlElemHelper : public StackObj {
   const char* _node;
 
  protected:
@@ -196,12 +194,12 @@ class XmlElemHelper : public CHeapObjBase {
   }
 };
 
-class XmlElemStack : public XmlElemHelper {
+class XmlCData : public XmlElemHelper {
  public:
-  XmlElemStack(xmlStream* st, const char* text) : XmlElemHelper(st, text) {
-    st->print_raw("<![CDATA[");
+  XmlCData(xmlStream* xs, const char* text) : XmlElemHelper(xs, text) {
+    xs->print_raw("<![CDATA[");
   }
-  ~XmlElemStack() {
+  ~XmlCData() {
     xs->print_raw("]]>");
   }
 };
@@ -215,7 +213,8 @@ class XmlElemStack : public XmlElemHelper {
     xs->text()->print("%s", ename);                 \
     xs->write(">\n", 2);
 
-#define XmlParent(txt) XmlElemHelper __not_used(xs, txt);
+#define XmlParent(txt) XmlElemHelper xml_parent_ ## __LINE__ (xs, txt);
+
 #define XmlElem(txt, ...) XmlElementWithTextXS(xs, txt, ##__VA_ARGS__)
 
 

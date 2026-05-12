@@ -955,7 +955,7 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
 
 
 #define XmlParentElement(txt) XmlElemHelper _not_used(xml_output(), txt)
-#define XmlStackElement XmlElemStack __not_used(xml_output(), "stack")
+#define XmlStackElement XmlCData __not_used(xml_output(), "stack")
 #define XmlElementWithText(ename, txt, ...) XmlElementWithTextXS(xs, ename, txt, ##__VA_ARGS__)
 
 XmlMemSummaryReporter::XmlMemSummaryReporter(MemBaseline& baseline, outputStream* output, size_t scale) :

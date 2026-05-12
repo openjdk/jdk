@@ -35,9 +35,7 @@ public class NMTTestUtils {
         String fullargs[] = StringArrayUtils.concat("VM.native_memory", additional_args);
         ProcessBuilder pb = new ProcessBuilder();
         pb.command(new PidJcmdExecutor().getCommandLine(fullargs));
-        Process pr = pb.start();
-        pr.waitFor();
-        OutputAnalyzer output = new OutputAnalyzer(pr);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         return output;
     }
 

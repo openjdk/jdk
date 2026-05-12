@@ -60,7 +60,18 @@ public class JcmdDetailDiffXml {
         .waitFor();
       return new NMTXmlUtils(xmlFile);
     }
+    public static void takeBaseline() throws Exception {
+        String pid = Long.toString(ProcessTools.getProcessId());
+        ProcessBuilder pb = new ProcessBuilder();
+        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"),
+                                  pid,
+                                  "VM.native_memory",
+                                  "baseline=true"});
 
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
+        output.shouldContain("Baseline taken");
+    }
     public static void main(String args[]) throws Exception {
         OutputAnalyzer output;
         NMTXmlUtils nmtXml;
@@ -70,8 +81,7 @@ public class JcmdDetailDiffXml {
         long addr;
 
         // Run 'jcmd <pid> VM.native_memory baseline=true'
-        output = NMTTestUtils.startJcmdVMNativeMemory("baseline=true");
-        output.shouldContain("Baseline taken");
+        takeBaseline();
 
         addr = wb.NMTReserveMemory(reserveSize);
         nmtXml = runAndCreateXmlReport("nmt_detail_diff_1_");
