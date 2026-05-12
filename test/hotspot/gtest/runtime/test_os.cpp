@@ -1229,11 +1229,11 @@ TEST_VM(os, dll_load_null_error_buf) {
 
 // --- Splittable Memory API tests ---
 
-#define SKIP_IF_SPLITTABLE_NOT_SUPPORTED() \
+#define SKIP_IF_SPLITTABLE_NOT_SUPPORTED \
   WINDOWS_ONLY(if (os::win32::VirtualAlloc2 == nullptr)  GTEST_SKIP() << "VirtualAlloc2 not available";)
 
 TEST_VM(os, splittable_reserve_and_convert) {
-  SKIP_IF_SPLITTABLE_NOT_SUPPORTED();
+  SKIP_IF_SPLITTABLE_NOT_SUPPORTED;
 
   const size_t size = 4 * os::vm_allocation_granularity();
 
@@ -1255,7 +1255,7 @@ TEST_VM(os, splittable_reserve_and_convert) {
 }
 
 TEST_VM(os, splittable_split_two_way) {
-  SKIP_IF_SPLITTABLE_NOT_SUPPORTED();
+  SKIP_IF_SPLITTABLE_NOT_SUPPORTED;
 
   const size_t granularity = os::vm_allocation_granularity();
   const size_t total = 4 * granularity;

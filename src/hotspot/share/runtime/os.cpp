@@ -1984,7 +1984,10 @@ os::PlaceholderRegionPair os::split_memory(const PlaceholderRegion& orig, size_t
   char* original_base = orig.base();
   size_t original_size = orig.size();
 
-  if (offset == original_size) {
+  if (offset == 0) {
+    log_debug(os, map)("Split memory has offset 0: " RANGEFMT, RANGEFMTARGS(original_base, original_size));
+    return { PlaceholderRegion(), orig };
+  } else if (offset == original_size) {
     log_debug(os, map)("Split memory consumed the whole region: " RANGEFMT, RANGEFMTARGS(original_base, original_size));
     return { orig, PlaceholderRegion() };
   }

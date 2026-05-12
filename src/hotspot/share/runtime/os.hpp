@@ -555,6 +555,7 @@ class os: AllStatic {
   // The caller must not use 'orig' afterward.
   // Offset must be page-aligned.
   // If offset == orig.size(), returns { orig, empty }.
+  // If offset == 0, returns { empty, orig }.
   // This should not fail. If unsuccessful, this function fails fatally.
   static PlaceholderRegionPair split_memory(const PlaceholderRegion& orig, size_t offset);
 
