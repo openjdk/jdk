@@ -5765,6 +5765,11 @@ PlatformMonitor::~PlatformMonitor() {
   // There is no DeleteConditionVariable API
 }
 
+void PlatformMutex::clear_for_revive() {
+  guarantee(Thread::is_revived(), "Must be in revived VM to revive PlatformMutex");
+  InitializeCriticalSection(&_mutex);
+}
+
 // Must already be locked
 int PlatformMonitor::wait(uint64_t millis) {
   int ret = OS_TIMEOUT;

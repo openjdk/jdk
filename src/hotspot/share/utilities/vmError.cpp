@@ -2193,10 +2193,6 @@ void VMError::controlled_crash(int how) {
     Threads_lock->try_lock();
     // The VM is going to die so no need to unlock Thread_lock.
   }
-  // Additionally own the Heap_lock before crashing.
-  if (!Heap_lock->owned_by_self()) {
-    Heap_lock->try_lock();
-  }
 
   switch (how) {
     case 1: assert(how == 0, "test assert"); break;

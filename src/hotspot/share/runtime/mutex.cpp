@@ -613,7 +613,7 @@ void Mutex::clear_all_for_revive() {
 void Mutex::clear_for_revive() {
   guarantee(Thread::is_revived(), "Must be in revived VM to revive Mutex");
   raw_set_owner(nullptr);
-  _lock.unlock();
+  _lock.clear_for_revive();
 }
 
 RecursiveMutex::RecursiveMutex() : _sem(1), _owner(nullptr), _recursions(0) {}

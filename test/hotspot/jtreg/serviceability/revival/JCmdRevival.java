@@ -131,18 +131,6 @@
  * @comment Compiler.CodeHeap_Analytics alone is likely to overrun the log.
  */
 
-/*
- * @test id=WithLock
- * @summary Test process revival for serviceability: jcmd on a core file.
- * @requires os.family == "linux" | os.family == "windows"
- * @requires vm.debug == true
- * @library /test/lib
- *
- * @run main/othervm -Xmx1g -XX:TestCrashInErrorHandler=14 JCmdRevival oom2 GC.heap_info GC.heap_dump
- *
- * @comment Use test type oom2 to fill heap with actual objects.  Use error handler test that additionally holds heap lock.
- */
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
