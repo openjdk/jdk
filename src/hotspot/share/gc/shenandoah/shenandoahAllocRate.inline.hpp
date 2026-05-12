@@ -76,12 +76,13 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   auto timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
   auto rate_seconds = static_cast<double>(unsampled) * Clock::elapsed_frequency() / elapsed;
 
-  log_debug(gc, sampling)("Recorded %.3f/s at %.3fs", rate_seconds, timestamp);
   _baseline.add(timestamp, rate_seconds);
   _recent.add(timestamp, rate_seconds);
   _momentary.add(timestamp, rate_seconds);
 
   _sample_lock.unlock();
+
+  log_trace(gc, sampling)("Recorded %.3f/s at %.3fs", rate_seconds, timestamp);
 }
 
 template<typename Clock>
