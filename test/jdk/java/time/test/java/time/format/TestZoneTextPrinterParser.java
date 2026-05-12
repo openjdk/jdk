@@ -54,7 +54,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 /*
  * @test
  * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434 8346948
- *      8174269
+ *      8174269 8371842
  * @key randomness
  */
 
