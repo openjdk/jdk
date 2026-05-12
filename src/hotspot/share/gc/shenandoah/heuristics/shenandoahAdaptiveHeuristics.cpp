@@ -160,7 +160,11 @@ void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start,
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
 
-  // Should we not add GC time if this was an abbreviated cycle?
+  // We add this time even if it is a shortened cycle. There is a risk that this pulls
+  // the gc time trend down, but it is still a more accurate view than excluding times
+  // from shortened cycles. Suppose we did excluded shortened times, the risk would then
+  // be running the collector more often than necessary because it continues to believe
+  // the average cycle time is much higher than it otherwise would be.
   _cycles.record_duration(_cycle_start, elapsed_cycle_time());
 
   double z_score = 0.0;
