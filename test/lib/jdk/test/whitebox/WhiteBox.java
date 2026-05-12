@@ -775,20 +775,23 @@ public class WhiteBox {
     return constant;
   }
   public native Boolean getMethodBooleanOption(Executable method, String name);
+  public native Long    getMethodIntOption(Executable method, String name);
+  public native Long    getMethodUintOption(Executable method, String name);
   public native Long    getMethodIntxOption(Executable method, String name);
   public native Long    getMethodUintxOption(Executable method, String name);
   public native Double  getMethodDoubleOption(Executable method, String name);
   public native String  getMethodStringOption(Executable method, String name);
   private final List<BiFunction<Executable,String,Object>> methodOptionGetters
-      = Arrays.asList(this::getMethodBooleanOption, this::getMethodIntxOption,
-          this::getMethodUintxOption, this::getMethodDoubleOption,
-          this::getMethodStringOption);
+      = Arrays.asList(this::getMethodBooleanOption,
+          this::getMethodIntxOption, this::getMethodUintxOption,
+          this::getMethodIntOption, this::getMethodUintOption,
+          this::getMethodDoubleOption, this::getMethodStringOption);
 
   public Object getMethodOption(Executable method, String name) {
     return methodOptionGetters.stream()
                               .map(f -> f.apply(method, name))
                               .filter(x -> x != null)
-                              .findAny()
+                              .findFirst()
                               .orElse(null);
   }
 

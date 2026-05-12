@@ -287,7 +287,13 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
       break;
 
     case JSON_NUMBER_INT:
-      if (option_key->flag_type == intxFlag) {
+      if (option_key->flag_type == intFlag) {
+        int ival = v->int_value;
+        (set->*test)((void *)&ival);
+      } else if (option_key->flag_type == uintFlag) {
+        uint ival = v->uint_value;
+        (set->*test)((void *)&ival);
+      } else if (option_key->flag_type == intxFlag) {
         intx ival = v->int_value;
         (set->*test)((void *)&ival);
       } else if (option_key->flag_type == uintxFlag) {

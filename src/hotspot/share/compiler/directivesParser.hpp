@@ -32,6 +32,8 @@ enum FlagType {
   boolFlag,
   intxFlag,
   uintxFlag,
+  intFlag,
+  uintFlag,
   doubleFlag,
   ccstrFlag,
   ccstrlistFlag,
@@ -40,6 +42,8 @@ enum FlagType {
 
 static const char* flag_type_names[] = {
     "bool",
+    "intx",
+    "uintx",
     "int",
     "uint",
     "double",
