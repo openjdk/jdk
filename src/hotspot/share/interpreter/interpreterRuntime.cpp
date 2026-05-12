@@ -327,16 +327,8 @@ JRT_ENTRY(jboolean, InterpreterRuntime::is_substitutable(JavaThread* current, oo
   methodHandle method(current, Universe::is_substitutable_method());
   method->method_holder()->initialize(CHECK_false); // Ensure class ValueObjectMethods is initialized
   JavaCalls::call(&result, method, &args, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    // Something really bad happened because isSubstitutable() should not throw exceptions
-    // If it is an error, just let it propagate
-    // If it is an exception, wrap it into an InternalError
-    if (!PENDING_EXCEPTION->is_a(vmClasses::Error_klass())) {
-      Handle e(THREAD, PENDING_EXCEPTION);
-      CLEAR_PENDING_EXCEPTION;
-      THROW_MSG_CAUSE_(vmSymbols::java_lang_InternalError(), "Internal error in substitutability test", e, false);
-    }
-  }
+  Exceptions::wrap_exception_in_internal_error("Internal error in substitutability test", CHECK_false);
+
   return result.get_jboolean();
 JRT_END
 

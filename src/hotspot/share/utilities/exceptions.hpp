@@ -182,6 +182,8 @@ class Exceptions {
 
   static void throw_stack_overflow_exception(JavaThread* thread, const char* file, int line, const methodHandle& method);
 
+  static void wrap_exception_in_internal_error(const char* message, JavaThread* thread);
+
   static void wrap_dynamic_exception(bool is_indy, JavaThread* thread);
 
   // Exception counting of interesting exceptions that may have caused a

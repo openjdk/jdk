@@ -831,13 +831,8 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
     args.push_oop(ho);
     methodHandle method(THREAD, Universe::value_object_hash_code_method());
     JavaCalls::call(&result, method, &args, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      if (!PENDING_EXCEPTION->is_a(vmClasses::Error_klass())) {
-        Handle e(THREAD, PENDING_EXCEPTION);
-        CLEAR_PENDING_EXCEPTION;
-        THROW_MSG_CAUSE_(vmSymbols::java_lang_InternalError(), "Internal error in hashCode", e, false);
-      }
-    }
+    Exceptions::wrap_exception_in_internal_error("Internal error in hashCode", CHECK_0);
+
     const intptr_t identity_hash = result.get_jint();
 
     // We now have to set the hash via CAS. It's possible that this will race

@@ -475,6 +475,19 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                    to_utf8_safe);
 }
 
+void Exceptions::wrap_exception_in_internal_error(const char* message, JavaThread* THREAD) {
+  // If there is a pending exception that is not an Error, clear it and wrap it
+  // in an InternalError instead.
+  if (THREAD->has_pending_exception()) {
+    oop exception = THREAD->pending_exception();
+    if (!exception->is_a(vmClasses::Error_klass())) {
+      Handle e(THREAD, exception);
+      THREAD->clear_pending_exception();
+      THROW_MSG_CAUSE(vmSymbols::java_lang_InternalError(), message, e);
+    }
+  }
+}
+
 // invokedynamic uses wrap_dynamic_exception for:
 //    - bootstrap method resolution
 //    - post call to MethodHandleNatives::linkCallSite
