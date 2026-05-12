@@ -34,6 +34,59 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
+  product(uint, ShenandoahAccelerationSamplePeriod, 15, EXPERIMENTAL,       \
+          "When at least this much time (measured in ms) has passed "       \
+          "since the acceleration allocation rate was most recently "       \
+          "sampled, capture another allocation rate sample for the purpose "\
+          "of detecting acceleration or momentary spikes in allocation "    \
+          "rate. A smaller value allows quicker response to changes in "    \
+          "allocation rates but is more vulnerable to noise and requires "  \
+          "more monitoring effort.")                                        \
+          range(1, 1000)                                                    \
+                                                                            \
+  product(uint, ShenandoahRateAccelerationSampleSize, 8, EXPERIMENTAL,      \
+          "In selected ShenandoahControlIntervals "                         \
+          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
+          "since previous allocation rate sample), "                        \
+          "we compute the allocation rate since the previous rate was "     \
+          "sampled.  This many samples are analyzed to determine whether "  \
+          "allocation rates are accelerating.  Acceleration may occur "     \
+          "due to increasing client demand or due to phase changes in "     \
+          "an application.  A larger value reduces sensitivity to "         \
+          "noise and delays recognition of the accelerating trend.  A "     \
+          "larger value may also cause the heuristic to miss detection "    \
+          "of very quick accelerations.  Smaller values may cause random "  \
+          "noise to be perceived as acceleration of allocation rate, "      \
+          "triggering excess collections.  Note that the acceleration "     \
+          "need not last the entire span of the sampled duration to be "    \
+          "detected.  If the last several of all samples are signficantly " \
+          "larger than the other samples, the best fit line through all "   \
+          "sampled values will have an upward slope, manifesting as "       \
+          "acceleration.")                                                  \
+          range(1,64)                                                       \
+                                                                            \
+  product(uint, ShenandoahMomentaryAllocationRateSpikeSampleSize,           \
+          2, EXPERIMENTAL,                                                  \
+          "In selected ShenandoahControlIntervals "                         \
+          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
+          "since previous allocation rate sample), we compute "             \
+          "the allocation rate since the previous rate was sampled. "       \
+          "The weighted average of this "                                   \
+          "many most recent momentary allocation rate samples is compared " \
+          "against current allocation runway and anticipated GC time to "   \
+          "determine whether a spike in momentary allocation rate "         \
+          "justifies an early GC trigger.  Momentary allocation spike "     \
+          "detection is in addition to previously implemented "             \
+          "ShenandoahAdaptiveInitialSpikeThreshold, the latter of which "   \
+          "is more effective at detecting slower spikes.  The latter "      \
+          "spike detection samples at the rate specifieid by "              \
+          "ShenandoahAdaptiveSampleFrequencyHz.  The value of this "        \
+          "parameter must be less than the value of "                       \
+          "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
+          "momentary spike detection less sensitive.  A smaller value "     \
+          "may result in excessive GC triggers.")                           \
+          range(1,64)                                                       \
+                                                                            \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \
           "should be used before we consider promoting a region in "        \
@@ -99,9 +152,6 @@
           "evvort even if the usage of old generation is below "            \
           "ShenandoahIgnoreOldGrowthBelowPercentage.")                      \
                                                                             \
-  product(bool, ShenandoahGenerationalAdaptiveTenuring, true, EXPERIMENTAL, \
-          "(Generational mode only) Dynamically adapt tenuring age.")       \
-                                                                            \
   product(bool, ShenandoahGenerationalCensusIgnoreOlderCohorts, true,       \
                                                                EXPERIMENTAL,\
           "(Generational mode only) Ignore mortality rates older than the " \
@@ -126,8 +176,7 @@
           "(Generational mode only) Cohort mortality rates below this "     \
           "value will be treated as indicative of longevity, leading to "   \
           "tenuring. A lower value delays tenuring, a higher value hastens "\
-          "it. Used only when ShenandoahGenerationalhenAdaptiveTenuring is "\
-          "enabled.")                                                       \
+          "it.")                                                       \
           range(0.001,0.999)                                                \
                                                                             \
   product(size_t, ShenandoahGenerationalTenuringCohortPopulationThreshold,  \
@@ -146,14 +195,6 @@
           "With automatic region sizing, this is the approximate number "   \
           "of regions that would be used, within min/max region size "      \
           "limits.")                                                        \
-                                                                            \
-  product(size_t, ShenandoahMinRegionSize, 256 * K, EXPERIMENTAL,           \
-          "With automatic region sizing, the regions would be at least "    \
-          "this large.")                                                    \
-                                                                            \
-  product(size_t, ShenandoahMaxRegionSize, 32 * M, EXPERIMENTAL,            \
-          "With automatic region sizing, the regions would be at most "     \
-          "this large.")                                                    \
                                                                             \
   product(ccstr, ShenandoahGCMode, "satb",                                  \
           "GC mode to use.  Among other things, this defines which "        \
@@ -510,9 +551,6 @@
                                                                             \
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
-                                                                            \
-  product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
-          "Turn on/off stack watermark barriers in Shenandoah")             \
                                                                             \
   develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \

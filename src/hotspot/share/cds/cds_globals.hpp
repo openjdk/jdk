@@ -163,7 +163,7 @@
                                                                             \
   product(uint, AOTCodeMaxSize, 10*M, DIAGNOSTIC,                           \
           "Buffer size in bytes for AOT code caching")                      \
-          range(1*M, max_jint)                                              \
+          range(1*M, CODE_CACHE_SIZE_LIMIT)                                 \
                                                                             \
   product(bool, AbortVMOnAOTCodeFailure, false, DIAGNOSTIC,                 \
           "Abort VM on the first occurrence of AOT code load or store "     \

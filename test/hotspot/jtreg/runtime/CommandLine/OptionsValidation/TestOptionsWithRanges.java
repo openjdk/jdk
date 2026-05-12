@@ -237,7 +237,6 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("G1ConcRefinementThreads");
         excludeTestMaxRange("InitialHeapSize");
         excludeTestMaxRange("MaxHeapSize");
-        excludeTestMaxRange("MaxRAM");
         excludeTestMaxRange("NewSize");
         excludeTestMaxRange("ParallelGCThreads");
         excludeTestMaxRange("TLABSize");
@@ -267,6 +266,13 @@ public class TestOptionsWithRanges {
          * refer to CompileThresholdScaling itself.
          */
         excludeTestMaxRange("CompileThresholdScaling");
+
+        /*
+         * Do not test InitiatingHeapOccupancyPercent as it is an
+         * alias that will answer with the string G1IHOP. Remove this
+         * when the alias is removed.
+         */
+        excludeTestRange("InitiatingHeapOccupancyPercent");
 
         List<JVMOption> testSubset = getTestSubset(args);
 

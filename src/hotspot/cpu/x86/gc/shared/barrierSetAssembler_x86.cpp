@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,6 +360,11 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ load_klass(obj, obj, tmp1);  // get klass
   __ testptr(obj, obj);
   __ jcc(Assembler::zero, error); // if klass is null it is broken
+}
+
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath) {
+  // Load the oop from the weak handle without barriers.
+  __ movptr(obj, Address(weak_handle));
 }
 
 #ifdef COMPILER2
