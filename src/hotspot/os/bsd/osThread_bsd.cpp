@@ -26,6 +26,8 @@
 #include "runtime/mutex.hpp"
 #include "runtime/osThread.hpp"
 
+#include <signal.h>
+
 OSThread::OSThread()
   : _thread_id(0),
     _pthread_id(nullptr),
