@@ -474,8 +474,8 @@ class NativeMovRegMem: public NativeInstruction {
     short *hi_ptr = (short*)(addr_at(0) + 2);
     short *lo_ptr = (short*)(addr_at(4) + 2);
 #endif
-    *hi_ptr = x >> 16;
-    *lo_ptr = x & 0xFFFF;
+    *hi_ptr = static_cast<short>(x >> 16);
+    *lo_ptr = static_cast<short>(x & 0xFFFF);
     if (flush_icache) {
       ICache::ppc64_flush_icache_bytes(addr_at(0), NativeMovRegMem::instruction_size);
     }

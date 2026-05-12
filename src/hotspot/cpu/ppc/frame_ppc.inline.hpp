@@ -31,6 +31,7 @@
 #include "code/vmreg.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
+#include "utilities/integerCast.hpp"
 
 // Inline functions for ppc64 frames:
 
@@ -153,7 +154,7 @@ inline bool frame::is_older(intptr_t* id) const {
 
 inline int frame::frame_size() const {
   // Stack grows towards smaller addresses on PPC64: sender is at a higher address.
-  return sender_sp() - sp();
+  return integer_cast<int>(sender_sp() - sp());
 }
 
 // Return the frame's stack pointer before it has been extended by a

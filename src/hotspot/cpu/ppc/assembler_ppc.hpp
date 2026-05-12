@@ -1144,7 +1144,7 @@ class Assembler : public AbstractAssembler {
   static long inv_st_x1(  int x)  { return  inv_opp_u_field(x, 11,  8); }
 
   //  - 8LS:D/MLS:D Formats
-  static long inv_d0_eo( long x)  { return  inv_opp_u_field(x, 31, 14); }
+  //static long inv_d0_eo( long x)  { return  inv_opp_u_field(x, 31, 14); }
 
   //  - 8RR:XX4/8RR:D Formats
   static long inv_imm0_eo(int x)  { return  inv_opp_u_field(x, 31, 16); }
@@ -1308,7 +1308,7 @@ class Assembler : public AbstractAssembler {
  protected:
   // Compute relative address for branch.
   static intptr_t disp(intptr_t x, intptr_t off) {
-    int xx = x - off;
+    intptr_t xx = x - off;
     xx = xx >> 2;
     return xx;
   }

@@ -59,10 +59,10 @@ class SafepointMechanism : public AllStatic {
 
   static uintptr_t compute_poll_word(bool armed, uintptr_t stack_watermark);
 
-  const static intptr_t _poll_bit = 1;
+  const static uint8_t _poll_bit = 1;
  public:
   static inline bool local_poll_armed(JavaThread* thread);
-  static intptr_t poll_bit() { return _poll_bit; }
+  static uint8_t poll_bit() { return _poll_bit; }
 
   static address get_polling_page()             { return _polling_page; }
   static bool    is_poll_address(address addr)  { return addr >= _polling_page && addr < (_polling_page + OSInfo::vm_page_size()); }
