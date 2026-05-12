@@ -1798,6 +1798,8 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   }
 }
 
+// A specialized version of os::pd_reserve_placeholder_memory and os::pd_split_memory
+// is needed on AIX as long as we support System V shared memory for 64K pages.
 os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
