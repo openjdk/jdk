@@ -7292,7 +7292,7 @@ void MacroAssembler::neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
   }
 }
 
-void MacroAssembler::maybe_replace_prev_vector_copy_with_movprfx(FloatRegister dst) {
+void MacroAssembler::try_to_replace_prev_vector_copy_with_movprfx(FloatRegister dst) {
   if (code_section()->is_empty()) {
     return;
   }
