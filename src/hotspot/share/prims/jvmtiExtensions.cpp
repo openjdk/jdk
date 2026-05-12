@@ -218,7 +218,7 @@ public:
 #endif // INCLUDE_JFR
 
 // Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jlong user_data)
-static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
+static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
 #if !INCLUDE_JFR
   return JVMTI_ERROR_NOT_AVAILABLE;
 #else
@@ -384,8 +384,8 @@ void JvmtiExtensions::register_extensions() {
   };
 
   static jvmtiExtensionFunctionInfo ext_func_rst = {
-    (jvmtiExtensionFunction)RequestStackTrace,
-    (char*)"com.sun.hotspot.functions.RequestStackTrace",
+    (jvmtiExtensionFunction)RequestJFRStackTrace,
+    (char*)"com.sun.hotspot.functions.RequestJFRStackTrace",
     (char*)"Request an async stack trace of the current thread, emitted as a JFR StackTraceRequest event",
     sizeof(func_params_rst)/sizeof(func_params_rst[0]),
     func_params_rst,

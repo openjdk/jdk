@@ -33,10 +33,10 @@
 
 extern "C" {
 
-typedef jvmtiError (JNICALL *RequestStackTraceFn)(jvmtiEnv*, jthread, void*, jlong);
+typedef jvmtiError (JNICALL *RequestJFRStackTraceFn)(jvmtiEnv*, jthread, void*, jlong);
 
-static jvmtiEnv*           g_jvmti              = nullptr;
-static RequestStackTraceFn g_request_stacktrace = nullptr;
+static jvmtiEnv*              g_jvmti              = nullptr;
+static RequestJFRStackTraceFn g_request_stacktrace = nullptr;
 
 #ifndef _WIN32
 // Per-call slot used by the SIGUSR1 handler to communicate userData in and
@@ -64,8 +64,8 @@ static jint resolve_request_stacktrace() {
     return JNI_ERR;
   }
   for (jint i = 0; i < count; i++) {
-    if (strcmp(funcs[i].id, "com.sun.hotspot.functions.RequestStackTrace") == 0) {
-      g_request_stacktrace = (RequestStackTraceFn) funcs[i].func;
+    if (strcmp(funcs[i].id, "com.sun.hotspot.functions.RequestJFRStackTrace") == 0) {
+      g_request_stacktrace = (RequestJFRStackTraceFn) funcs[i].func;
     }
     g_jvmti->Deallocate((unsigned char*) funcs[i].id);
     g_jvmti->Deallocate((unsigned char*) funcs[i].short_description);

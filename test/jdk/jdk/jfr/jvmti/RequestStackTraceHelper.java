@@ -25,7 +25,7 @@ package jdk.jfr.jvmti;
 
 /**
  * Bridge to the libRequestStackTraceAgent native agent. The agent resolves
- * the {@code com.sun.hotspot.functions.RequestStackTrace} JVMTI extension
+ * the {@code com.sun.hotspot.functions.RequestJFRStackTrace} JVMTI extension
  * once at load time and exposes three thin wrappers used by the tests.
  *
  * Each method returns the raw {@code jvmtiError} code from the underlying
@@ -51,7 +51,7 @@ public final class RequestStackTraceHelper {
 
     /**
      * Raises SIGUSR1 on the current thread; the agent's signal handler
-     * invokes RequestStackTrace with the captured ucontext. Returns the
+     * invokes RequestJFRStackTrace with the captured ucontext. Returns the
      * JVMTI return code observed inside the handler.
      */
     public static native int requestStackTraceFromSignalHandler(long userData);
