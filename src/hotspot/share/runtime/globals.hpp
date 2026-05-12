@@ -909,7 +909,7 @@ const int ObjectAlignmentInBytes = 8;
   product(intx, CICompilerCount, CI_COMPILER_COUNT,                         \
           "Number of compiler threads to run")                              \
           range(0, max_jint)                                                \
-          constraint(CICompilerCountConstraintFunc, AfterMemoryInit)        \
+          constraint(CICompilerCountConstraintFunc, AfterErgo)        \
                                                                             \
   product(bool, UseDynamicNumberOfCompilerThreads, true,                    \
           "Dynamically choose the number of parallel compiler threads")     \
