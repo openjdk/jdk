@@ -819,31 +819,9 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   friend class JavaClasses;
 };
 
-
 #if INCLUDE_JFR
-
-#define JFR_EPOCH_INJECTED_FIELDS(macro) \
-  macro(jdk_internal_event_JfrEpoch, jfr_epoch, int_signature, false)
-
-class jdk_internal_event_JfrEpoch : AllStatic {
- private:
-  static int _jfr_epoch_offset;
-
-  static void compute_offsets();
-
- public:
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-
-  static u2 epoch(oop field);
-  static int epoch_offset() { CHECK_INIT(_jfr_epoch_offset); }
-
-  // Debugging
-  friend class JavaClasses;
-};
-
 #define FIELD_INJECTED_FIELDS(macro) \
   macro(java_lang_reflect_Field, jfr_epoch, int_signature, false)
-
 #endif // INCLUDE_JFR
 
 // Interface to java.lang.reflect.Field objects

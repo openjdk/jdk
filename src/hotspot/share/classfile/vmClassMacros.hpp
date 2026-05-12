@@ -192,10 +192,6 @@
                                                                                                                 \
   /* Scoped Values */                                                                                           \
   do_klass(ScopedValue_Carrier_klass,                   java_lang_ScopedValue_Carrier                         ) \
-                                                                                                                \
-  /* Jfr */                                                                                                     \
-  JFR_ONLY(do_klass(jfrEpoch_klass,                     jdk_internal_event_JfrEpoch                          )) \
-                                                                                                                \
   /*end*/
 
 #endif // SHARE_CLASSFILE_VMCLASSMACROS_HPP

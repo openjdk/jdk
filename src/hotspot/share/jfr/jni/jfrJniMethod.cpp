@@ -450,3 +450,8 @@ JVM_END
 JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass jvm))
   return JfrMethodTracer::drain_stale_class_ids(thread);
 JVM_END
+
+JVM_ENTRY(jboolean, jfr_update_epoch(JNIEnv * env, jclass jvm, jobject obj))
+  oop oop = JfrJavaSupport::resolve_non_null(obj);
+  return JfrTraceIdEpoch::update(oop) ? JNI_TRUE : JNI_FALSE;
+JVM_END

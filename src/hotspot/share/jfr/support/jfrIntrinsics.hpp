@@ -54,8 +54,6 @@ class JfrIntrinsicSupport : AllStatic {
   template(getEventWriter_signature,                                  "()Ljdk/jfr/internal/event/EventWriter;")      \
   template(eventConfiguration_name,                                   "eventConfiguration")                          \
   template(commit_name,                                               "commit")                                      \
-  template(jdk_internal_event_JfrEpoch,                               "jdk/internal/event/JfrEpoch")                 \
-  template(update_JfrEpoch_signature,                                 "(Ljdk/internal/event/JfrEpoch;)Z")            \
   template(update_Field_signature,                                    "(Ljava/lang/reflect/Field;)Z")                \
 
 #define JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                                      \
@@ -66,8 +64,8 @@ class JfrIntrinsicSupport : AllStatic {
   do_intrinsic(_getEventWriter,   jdk_jfr_internal_JVM, getEventWriter_name, getEventWriter_signature, F_SN)         \
     do_name(     getEventWriter_name,                          "getEventWriter")                                     \
   do_intrinsic(_jvm_commit,   jdk_jfr_internal_JVM, commit_name, long_long_signature, F_SN)                          \
-  do_intrinsic(_update_epoch_Field, jdk_internal_event_JfrEpoch, update_name, update_Field_signature, F_SN)          \
-  do_intrinsic(_update_epoch_JfrEpoch, jdk_internal_event_JfrEpoch, update_name, update_JfrEpoch_signature, F_SN)
+    do_name(    updateEpoch_name,                              "updateEpoch")                                        \
+  do_intrinsic(_update_epoch_Field, jdk_jfr_internal_JVM, updateEpoch_name, update_Field_signature, F_SN)
 
 #else // !INCLUDE_JFR
 

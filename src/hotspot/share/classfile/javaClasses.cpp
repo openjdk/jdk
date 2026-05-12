@@ -3679,23 +3679,6 @@ void java_lang_reflect_Field::set_annotations(oop field, oop value) {
 u2 java_lang_reflect_Field::epoch(oop ref) {
   return static_cast<u2>(ref->int_field(_jfr_epoch_offset));
 }
-
-int jdk_internal_event_JfrEpoch::_jfr_epoch_offset;
-
-void jdk_internal_event_JfrEpoch::compute_offsets() {
-  InstanceKlass* k = vmClasses::jfrEpoch_klass();
-  JFR_EPOCH_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void jdk_internal_event_JfrEpoch::serialize_offsets(SerializeClosure* f) {
-  JFR_EPOCH_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-u2 jdk_internal_event_JfrEpoch::epoch(oop ref) {
-  return static_cast<u2>(ref->int_field(_jfr_epoch_offset));
-}
 #endif // INCLUDE_JFR
 
 oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordComponent* component, TRAPS) {
@@ -5422,8 +5405,7 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(jdk_internal_foreign_abi_CallConv) \
   f(jdk_internal_misc_UnsafeConstants) \
   f(java_lang_boxing_object) \
-  f(vector_VectorPayload) \
-  JFR_ONLY(f(jdk_internal_event_JfrEpoch)) \
+  f(vector_VectorPayload)
   //end
 
 #define BASIC_JAVA_CLASSES_DO(f) \
