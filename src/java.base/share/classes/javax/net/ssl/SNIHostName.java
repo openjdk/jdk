@@ -270,6 +270,8 @@ public final class SNIHostName extends SNIServerName {
     }
 
     private SNIHostName(byte[] encoded, boolean strict) {
+        // Clone `encoded` to ensure all use-sites operate on the same content
+        var encodedCopy = encoded.clone();      // Implicit null check on `encoded`
         // Note that `encoded` field gets populated using the user-provided
         // value. This is different from `new(String)`, which *first* converts
         // non-ASCII to ACE, and then uses ACE-formatted string to obtain
@@ -278,9 +280,8 @@ public final class SNIHostName extends SNIServerName {
         // new("\u00ebxample.com".getBytes(UTF_8))`. This behavior is
         // implemented to tolerate the switch from UTF-8 (RFC 4366) to ASCII
         // (RFC 6066).
-        super(StandardConstants.SNI_HOST_NAME, encoded);
-        assert encoded != null : "\"super(int,byte[])\" was supposed to check if \"encoded\" is null";
-        var decoded = decodeHostName(encoded);
+        super(StandardConstants.SNI_HOST_NAME, encodedCopy);
+        var decoded = decodeHostName(encodedCopy);
         this.hostname = asciifyHostName(decoded, strict);
     }
 
