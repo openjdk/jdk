@@ -442,7 +442,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 // and 'DomResult::EncounteredDeadCode' if we can't decide due to
 // dead code, but at the end of IGVN, we know the definite result
 // once the dead code is cleaned up.
-Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
+Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub, PhaseGVN* phase) {
   if (dom == nullptr || dom->is_top() || sub == nullptr || sub->is_top()) {
     return DomResult::EncounteredDeadCode; // Conservative answer for dead code
   }
@@ -522,6 +522,9 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
           return dom_result;
         }
       } else {
+        if (n->Value(phase) == Type::TOP) {
+          return DomResult::EncounteredDeadCode;
+        }
         // First, own control edge.
         Node* m = n->find_exact_control(n->in(0));
         if (m != nullptr) {
@@ -552,7 +555,7 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
 // if any, which have been previously discovered by the caller.
 bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
-                                      PhaseTransform* phase) {
+                                      PhaseGVN* phase) {
   // Trivial case: Non-overlapping values. Be careful, we can cast a raw pointer to an oop (e.g. in
   // the allocation pattern) so joining the types only works if both are oops. join may also give
   // an incorrect result when both pointers are nullable and the result is supposed to be
@@ -575,9 +578,9 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
     return (a1 != a2);
   } else if (a1 != nullptr) {                  // one allocation a1
     // (Note:  p2->is_Con implies p2->in(0)->is_Root, which dominates.)
-    return all_controls_dominate(p2, a1);
+    return all_controls_dominate(p2, a1, phase);
   } else { //(a2 != null)                   // one allocation a2
-    return all_controls_dominate(p1, a2);
+    return all_controls_dominate(p1, a2, phase);
   }
   return false;
 }
@@ -695,7 +698,7 @@ ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
 // specific to loads and stores, so they are handled by the callers.
 // (Currently, only LoadNode::Ideal has steps (c), (d).  More later.)
 //
-Node* MemNode::find_previous_store(PhaseValues* phase) {
+Node* MemNode::find_previous_store(PhaseGVN* phase) {
   AccessAnalyzer analyzer(phase, this);
 
   Node* mem = in(MemNode::Memory); // start searching here...
@@ -771,7 +774,7 @@ uint8_t MemNode::barrier_data(const Node* n) {
   return 0;
 }
 
-AccessAnalyzer::AccessAnalyzer(PhaseValues* phase, MemNode* n)
+AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n)
   : _phase(phase), _n(n), _memory_size(n->memory_size()), _alias_idx(-1) {
   Node* adr  = _n->in(MemNode::Address);
   _offset    = 0;
@@ -883,7 +886,7 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       known_identical = true;
     } else if (_alloc != nullptr) {
       known_independent = true;
-    } else if (MemNode::all_controls_dominate(_n, st_alloc)) {
+    } else if (MemNode::all_controls_dominate(_n, st_alloc, _phase)) {
       known_independent = true;
     }
 
@@ -1684,11 +1687,11 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   }
 
   if (!mem->is_Phi()) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
+    if (!MemNode::all_controls_dominate(mem, base->in(0), phase)) {
       return false;
     }
   } else if (base->in(0) != mem->in(0)) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
+    if (!MemNode::all_controls_dominate(mem, base->in(0), phase)) {
       return false;
     }
   }
@@ -1783,20 +1786,20 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
     region = mem->in(0);
     // Skip if the region dominates some control edge of the address.
     // We will check `dom_result` later.
-    dom_result = MemNode::maybe_all_controls_dominate(address, region);
+    dom_result = MemNode::maybe_all_controls_dominate(address, region, phase);
   } else if (!mem->is_Phi()) {
     assert(base_is_phi, "sanity");
     region = base->in(0);
     // Skip if the region dominates some control edge of the memory.
     // We will check `dom_result` later.
-    dom_result = MemNode::maybe_all_controls_dominate(mem, region);
+    dom_result = MemNode::maybe_all_controls_dominate(mem, region, phase);
   } else if (base->in(0) != mem->in(0)) {
     assert(base_is_phi && mem->is_Phi(), "sanity");
-    dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0));
+    dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0), phase);
     if (dom_result == DomResult::Dominate) {
       region = base->in(0);
     } else {
-      dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0));
+      dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0), phase);
       if (dom_result == DomResult::Dominate) {
         region = mem->in(0);
       }
@@ -1964,7 +1967,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (in(MemNode::Control) != nullptr
         && can_remove_control()
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
-        && all_controls_dominate(base, phase->C->start())) {
+        && all_controls_dominate(base, phase->C->start(), phase)) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, nullptr);
       return this;
@@ -4829,7 +4832,7 @@ bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
       // must have preceded the init, or else be equal to the init.
       // Even after loop optimizations (which might change control edges)
       // a store is never pinned *before* the availability of its inputs.
-      if (!MemNode::all_controls_dominate(n, this)) {
+      if (!MemNode::all_controls_dominate(n, this, phase)) {
         return false;                  // failed to prove a good control
       }
     }

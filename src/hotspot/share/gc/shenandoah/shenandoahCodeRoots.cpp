@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -117,7 +116,6 @@ public:
 
       // Heal oops
       if (_bs->is_armed(nm)) {
-        ShenandoahEvacOOMScope oom_evac_scope;
         ShenandoahNMethod::heal_nmethod_metadata(nm_data);
         // Must remain armed to complete remaining work in nmethod entry barrier
         assert(_bs->is_armed(nm), "Should remain armed");
