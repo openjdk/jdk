@@ -182,6 +182,8 @@ public:
 
   static int ref_kind_to_flags(int ref_kind);
 
+  DEBUG_ONLY( static const char* ref_kind_to_verify_msg(int ref_kind); )
+
 #include CPU_HEADER(methodHandles)
 
   // Tracing

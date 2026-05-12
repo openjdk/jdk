@@ -65,7 +65,7 @@ import org.junit.jupiter.api.Test;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http3.Http3TestServer
- * @run junit/othervm -Djdk.internal.httpclient.debug=true StreamLimitTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 public class StreamLimitTest {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ static void save_memory_to_file(char* addr, size_t size) {
     }
   }
 
-  FREE_C_HEAP_ARRAY(char, destfile);
+  FREE_C_HEAP_ARRAY(destfile);
 }
 
 // Shared Memory Implementation Details
@@ -319,7 +319,7 @@ static char* get_user_name_slow(int vmid) {
     DIR* subdirp = os::opendir(usrdir_name);
 
     if (subdirp == nullptr) {
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      FREE_C_HEAP_ARRAY(usrdir_name);
       continue;
     }
 
@@ -330,7 +330,7 @@ static char* get_user_name_slow(int vmid) {
     // symlink can be exploited.
     //
     if (!is_directory_secure(usrdir_name)) {
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      FREE_C_HEAP_ARRAY(usrdir_name);
       os::closedir(subdirp);
       continue;
     }
@@ -350,13 +350,13 @@ static char* get_user_name_slow(int vmid) {
         strcat(filename, udentry->d_name);
 
         if (::stat(filename, &statbuf) == OS_ERR) {
-           FREE_C_HEAP_ARRAY(char, filename);
+           FREE_C_HEAP_ARRAY(filename);
            continue;
         }
 
         // skip over files that are not regular files.
         if ((statbuf.st_mode & S_IFMT) != S_IFREG) {
-          FREE_C_HEAP_ARRAY(char, filename);
+          FREE_C_HEAP_ARRAY(filename);
           continue;
         }
 
@@ -378,18 +378,18 @@ static char* get_user_name_slow(int vmid) {
         if (statbuf.st_ctime > latest_ctime) {
           char* user = strchr(dentry->d_name, '_') + 1;
 
-          FREE_C_HEAP_ARRAY(char, latest_user);
+          FREE_C_HEAP_ARRAY(latest_user);
           latest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
           strcpy(latest_user, user);
           latest_ctime = statbuf.st_ctime;
         }
 
-        FREE_C_HEAP_ARRAY(char, filename);
+        FREE_C_HEAP_ARRAY(filename);
       }
     }
     os::closedir(subdirp);
-    FREE_C_HEAP_ARRAY(char, usrdir_name);
+    FREE_C_HEAP_ARRAY(usrdir_name);
   }
   os::closedir(tmpdirp);
 
@@ -481,7 +481,7 @@ static void remove_file(const char* dirname, const char* filename) {
     }
   }
 
-  FREE_C_HEAP_ARRAY(char, path);
+  FREE_C_HEAP_ARRAY(path);
 }
 
 // returns true if the process represented by pid is alive, otherwise
@@ -708,11 +708,11 @@ static void free_security_desc(PSECURITY_DESCRIPTOR pSD) {
     // be an ACL we enlisted. free the resources.
     //
     if (success && exists && pACL != nullptr && !isdefault) {
-      FREE_C_HEAP_ARRAY(char, pACL);
+      FREE_C_HEAP_ARRAY(pACL);
     }
 
     // free the security descriptor
-    FREE_C_HEAP_ARRAY(char, pSD);
+    FREE_C_HEAP_ARRAY(pSD);
   }
 }
 
@@ -768,7 +768,7 @@ static PSID get_user_sid(HANDLE hProcess) {
   if (!GetTokenInformation(hAccessToken, TokenUser, token_buf, rsize, &rsize)) {
     log_debug(perf)("GetTokenInformation failure: lasterror = %d, rsize = %d",
                     GetLastError(), rsize);
-    FREE_C_HEAP_ARRAY(char, token_buf);
+    FREE_C_HEAP_ARRAY(token_buf);
     CloseHandle(hAccessToken);
     return nullptr;
   }
@@ -779,15 +779,15 @@ static PSID get_user_sid(HANDLE hProcess) {
   if (!CopySid(nbytes, pSID, token_buf->User.Sid)) {
     log_debug(perf)("GetTokenInformation failure: lasterror = %d, rsize = %d",
                     GetLastError(), rsize);
-    FREE_C_HEAP_ARRAY(char, token_buf);
-    FREE_C_HEAP_ARRAY(char, pSID);
+    FREE_C_HEAP_ARRAY(token_buf);
+    FREE_C_HEAP_ARRAY(pSID);
     CloseHandle(hAccessToken);
     return nullptr;
   }
 
   // close the access token.
   CloseHandle(hAccessToken);
-  FREE_C_HEAP_ARRAY(char, token_buf);
+  FREE_C_HEAP_ARRAY(token_buf);
 
   return pSID;
 }
@@ -865,7 +865,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
 
   if (!InitializeAcl(newACL, newACLsize, ACL_REVISION)) {
     log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
-    FREE_C_HEAP_ARRAY(char, newACL);
+    FREE_C_HEAP_ARRAY(newACL);
     return false;
   }
 
@@ -876,7 +876,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
       LPVOID ace;
       if (!GetAce(oldACL, ace_index, &ace)) {
         log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
-        FREE_C_HEAP_ARRAY(char, newACL);
+        FREE_C_HEAP_ARRAY(newACL);
         return false;
       }
       if (((ACCESS_ALLOWED_ACE *)ace)->Header.AceFlags && INHERITED_ACE) {
@@ -901,7 +901,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
         if (!AddAce(newACL, ACL_REVISION, MAXDWORD, ace,
                     ((PACE_HEADER)ace)->AceSize)) {
           log_debug(perf)("AddAce failure: lasterror = %d", GetLastError());
-          FREE_C_HEAP_ARRAY(char, newACL);
+          FREE_C_HEAP_ARRAY(newACL);
           return false;
         }
       }
@@ -915,7 +915,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
                              aces[i].mask, aces[i].pSid)) {
       log_debug(perf)("AddAccessAllowedAce failure: lasterror = %d",
                       GetLastError());
-      FREE_C_HEAP_ARRAY(char, newACL);
+      FREE_C_HEAP_ARRAY(newACL);
       return false;
     }
   }
@@ -928,13 +928,13 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
       LPVOID ace;
       if (!GetAce(oldACL, ace_index, &ace)) {
         log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
-        FREE_C_HEAP_ARRAY(char, newACL);
+        FREE_C_HEAP_ARRAY(newACL);
         return false;
       }
       if (!AddAce(newACL, ACL_REVISION, MAXDWORD, ace,
                   ((PACE_HEADER)ace)->AceSize)) {
         log_debug(perf)("AddAce failure: lasterror = %d", GetLastError());
-        FREE_C_HEAP_ARRAY(char, newACL);
+        FREE_C_HEAP_ARRAY(newACL);
         return false;
       }
       ace_index++;
@@ -944,7 +944,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
   // add the new ACL to the security descriptor.
   if (!SetSecurityDescriptorDacl(pSD, TRUE, newACL, FALSE)) {
     log_debug(perf)("SetSecurityDescriptorDacl failure: lasterror = %d", GetLastError());
-    FREE_C_HEAP_ARRAY(char, newACL);
+    FREE_C_HEAP_ARRAY(newACL);
     return false;
   }
 
@@ -952,7 +952,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
   // protected prevents that.
   if (!SetSecurityDescriptorControl(pSD, SE_DACL_PROTECTED, SE_DACL_PROTECTED)) {
     log_debug(perf)("SetSecurityDescriptorControl failure: lasterror = %d", GetLastError());
-    FREE_C_HEAP_ARRAY(char, newACL);
+    FREE_C_HEAP_ARRAY(newACL);
     return false;
   }
 
@@ -1057,7 +1057,7 @@ static LPSECURITY_ATTRIBUTES make_user_everybody_admin_security_attr(
   // create a security attributes structure with access control
   // entries as initialized above.
   LPSECURITY_ATTRIBUTES lpSA = make_security_attr(aces, 3);
-  FREE_C_HEAP_ARRAY(char, aces[0].pSid);
+  FREE_C_HEAP_ARRAY(aces[0].pSid);
   FreeSid(everybodySid);
   FreeSid(administratorsSid);
   return(lpSA);
@@ -1341,8 +1341,8 @@ static char* mapping_create_shared(size_t size) {
 
   // check that the file system is secure - i.e. it supports ACLs.
   if (!is_filesystem_secure(dirname)) {
-    FREE_C_HEAP_ARRAY(char, dirname);
-    FREE_C_HEAP_ARRAY(char, user);
+    FREE_C_HEAP_ARRAY(dirname);
+    FREE_C_HEAP_ARRAY(user);
     return nullptr;
   }
 
@@ -1358,15 +1358,15 @@ static char* mapping_create_shared(size_t size) {
   assert(((size != 0) && (size % os::vm_page_size() == 0)),
          "unexpected PerfMemry region size");
 
-  FREE_C_HEAP_ARRAY(char, user);
+  FREE_C_HEAP_ARRAY(user);
 
   // create the shared memory resources
   sharedmem_fileMapHandle =
                create_sharedmem_resources(dirname, filename, objectname, size);
 
-  FREE_C_HEAP_ARRAY(char, filename);
-  FREE_C_HEAP_ARRAY(char, objectname);
-  FREE_C_HEAP_ARRAY(char, dirname);
+  FREE_C_HEAP_ARRAY(filename);
+  FREE_C_HEAP_ARRAY(objectname);
+  FREE_C_HEAP_ARRAY(dirname);
 
   if (sharedmem_fileMapHandle == nullptr) {
     return nullptr;
@@ -1480,8 +1480,8 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
   // store file, we also don't following them when attaching
   //
   if (!is_directory_secure(dirname)) {
-    FREE_C_HEAP_ARRAY(char, dirname);
-    FREE_C_HEAP_ARRAY(char, luser);
+    FREE_C_HEAP_ARRAY(dirname);
+    FREE_C_HEAP_ARRAY(luser);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");
   }
@@ -1498,10 +1498,10 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
   char* robjectname = ResourceArea::strdup(THREAD, objectname);
 
   // free the c heap resources that are no longer needed
-  FREE_C_HEAP_ARRAY(char, luser);
-  FREE_C_HEAP_ARRAY(char, dirname);
-  FREE_C_HEAP_ARRAY(char, filename);
-  FREE_C_HEAP_ARRAY(char, objectname);
+  FREE_C_HEAP_ARRAY(luser);
+  FREE_C_HEAP_ARRAY(dirname);
+  FREE_C_HEAP_ARRAY(filename);
+  FREE_C_HEAP_ARRAY(objectname);
 
   size_t size;
   if (*sizep == 0) {
@@ -1682,12 +1682,7 @@ void PerfMemory::detach(char* addr, size_t bytes) {
     return;
   }
 
-  if (MemTracker::enabled()) {
-    // it does not go through os api, the operation has to record from here
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    remove_file_mapping(addr);
-    MemTracker::record_virtual_memory_release(addr, bytes);
-  } else {
-    remove_file_mapping(addr);
-  }
+  // it does not go through os api, the operation has to record from here
+  MemTracker::record_virtual_memory_release(addr, bytes);
+  remove_file_mapping(addr);
 }

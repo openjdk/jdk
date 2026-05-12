@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8356165 8358552
+ * @bug 8356165 8358552 8378251
  * @summary Check user input works properly
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
@@ -97,6 +97,36 @@ public class InputUITest extends UITesting {
             waitOutput(out, patternQuote("==> -1"));
             inputSink.write("System.in.read()\nA\n");
             waitOutput(out, patternQuote("==> 65"));
+        }, false);
+    }
+
+    @Test
+    public void testAltBackspaceDeletesPreviousWord() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("int x = 12 24" + ESC_DEL + "\n");
+            waitOutput(out, "int x = 12 24\u001B\\[2D\u001B\\[K\n" +
+                            "\u001B\\[\\?2004lx ==> 12\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
+            inputSink.write("System.in" + ESC_DEL + "out.println(x)\n");
+            waitOutput(out, "System.in\u001B\\[2D\u001B\\[Kout.println\\(x\\)\u001B\\[3D\u001B\\[3C\n" +
+                            "\u001B\\[\\?2004l12\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
+        }, false);
+    }
+
+    @Test
+    public void testAltDDeletesNextWord() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("int x = 12 24" + ESC_B + ESC_D + "\n");
+            waitOutput(out, "int x = 12 24\u001B\\[2D\u001B\\[K\n" +
+                            "\u001B\\[\\?2004lx ==> 12\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
+            inputSink.write("System.in.println" + ESC_B + ESC_B + ESC_D +
+                            "out" + ESC_F + ESC_F + "(x)\n");
+            waitOutput(out, "System.in.println\u001B\\[7D\u001B\\[3D\u001B\\[2P" +
+                            "\u001B\\[1@o\u001B\\[1@u\u001B\\[1@t\u001B\\[C\u001B\\[7C\\(x\\)\u001B\\[3D\u001B\\[3C\n" +
+                            "\u001B\\[\\?2004l12\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
         }, false);
     }
 }

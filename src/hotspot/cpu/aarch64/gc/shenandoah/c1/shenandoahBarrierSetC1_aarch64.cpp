@@ -50,14 +50,10 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
 
   ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmpval, newval, /*acquire*/ true, /*release*/ true, /*is_cae*/ false, result);
 
-  if (CompilerConfig::is_c1_only_no_jvmci()) {
-    // The membar here is necessary to prevent reordering between the
-    // release store in the CAS above and a subsequent volatile load.
-    // However for tiered compilation C1 inserts a full barrier before
-    // volatile loads which means we don't need an additional barrier
-    // here (see LIRGenerator::volatile_field_load()).
-    __ membar(__ AnyAny);
-  }
+  // The membar here is necessary to prevent reordering between the
+  // release store in the CAS above and a subsequent volatile load.
+  // See also: LIR_Assembler::casw, LIR_Assembler::casl.
+  __ membar(__ AnyAny);
 }
 
 #undef __

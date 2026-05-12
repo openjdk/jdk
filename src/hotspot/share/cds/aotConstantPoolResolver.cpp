@@ -81,6 +81,7 @@ bool AOTConstantPoolResolver::is_resolution_deterministic(ConstantPool* cp, int 
 bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class) {
   assert(!is_in_archivebuilder_buffer(cp_holder), "sanity");
   assert(!is_in_archivebuilder_buffer(resolved_class), "sanity");
+  assert_at_safepoint(); // try_add_candidate() is called below and requires to be at safepoint.
 
   if (resolved_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_class);
@@ -346,7 +347,15 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     break;
 
   case Bytecodes::_invokehandle:
-    InterpreterRuntime::cds_resolve_invokehandle(raw_index, cp, CHECK);
+    if (CDSConfig::is_dumping_method_handles()) {
+      ResolvedMethodEntry* method_entry = cp->resolved_method_entry_at(raw_index);
+      int cp_index = method_entry->constant_pool_index();
+      Symbol* sig = cp->uncached_signature_ref_at(cp_index);
+      Klass* k;
+      if (check_methodtype_signature(cp(), sig, &k, true)) {
+        InterpreterRuntime::cds_resolve_invokehandle(raw_index, cp, CHECK);
+      }
+    }
     break;
 
   default:
@@ -400,7 +409,7 @@ void AOTConstantPoolResolver::preresolve_indy_cp_entries(JavaThread* current, In
 // Check the MethodType signatures used by parameters to the indy BSMs. Make sure we don't
 // use types that have been excluded, or else we might end up creating MethodTypes that cannot be stored
 // in the AOT cache.
-bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbol* sig, Klass** return_type_ret) {
+bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbol* sig, Klass** return_type_ret, bool is_invokehandle) {
   ResourceMark rm;
   for (SignatureStream ss(sig); !ss.is_done(); ss.next()) {
     if (ss.is_reference()) {
@@ -413,10 +422,17 @@ bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbo
       if (SystemDictionaryShared::should_be_excluded(k)) {
         if (log_is_enabled(Warning, aot, resolve)) {
           ResourceMark rm;
-          log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
+          log_warning(aot, resolve)("Cannot aot-resolve %s because %s is excluded",
+                                    is_invokehandle ? "invokehandle" : "Lambda proxy",
+                                    k->external_name());
         }
         return false;
       }
+
+      // cp->pool_holder() must be able to resolve k in production run
+      precond(CDSConfig::is_dumping_aot_linked_classes());
+      precond(SystemDictionaryShared::is_builtin_loader(cp->pool_holder()->class_loader_data()));
+      precond(SystemDictionaryShared::is_builtin_loader(k->class_loader_data()));
 
       if (ss.at_return_type() && return_type_ret != nullptr) {
         *return_type_ret = k;
@@ -475,11 +491,44 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
     return false;
   }
 
+  // klass and sigature of the method (no need to check the method name)
   Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
+  Symbol* klass_name = cp->klass_name_at(cp->method_handle_klass_index_at(mh_index));
+
   if (log_is_enabled(Debug, aot, resolve)) {
     ResourceMark rm;
     log_debug(aot, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
+
+  {
+    Klass* k = find_loaded_class(Thread::current(), cp->pool_holder()->class_loader(), klass_name);
+    if (k == nullptr) {
+      // Dumping AOT cache: all classes should have been loaded by FinalImageRecipes::load_all_classes(). k must have
+      // been a class that was excluded when FinalImageRecipes recorded all classes at the end of the training run.
+      //
+      // Dumping static CDS archive: all classes in the classlist have already been loaded, before we resolve
+      // constants. k must have been a class that was excluded when the classlist was written
+      // at the end of the training run.
+      if (log_is_enabled(Warning, aot, resolve)) {
+        ResourceMark rm;
+        log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is not loaded", klass_name->as_C_string());
+      }
+      return false;
+    }
+    if (SystemDictionaryShared::should_be_excluded(k)) {
+      if (log_is_enabled(Warning, aot, resolve)) {
+        ResourceMark rm;
+        log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
+      }
+      return false;
+    }
+
+    // cp->pool_holder() must be able to resolve k in production run
+    precond(CDSConfig::is_dumping_aot_linked_classes());
+    precond(SystemDictionaryShared::is_builtin_loader(cp->pool_holder()->class_loader_data()));
+    precond(SystemDictionaryShared::is_builtin_loader(k->class_loader_data()));
+  }
+
   return check_methodtype_signature(cp, sig);
 }
 

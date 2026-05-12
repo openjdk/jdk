@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,15 +70,15 @@ public class hs202t002 extends RedefineAgent {
         try {
             mt.start();
 
-            while (!isThreadSuspended(mt)) {
+            while (!isThreadSuspended(mt.getThread())) {
                 Thread.yield();
             }
 
-            if (!popThreadFrame(mt)) {
+            if (!popThreadFrame(mt.getThread())) {
                 throw new RuntimeException("error in popframe operation!");
             }
 
-            if (!resumeThread(mt)) {
+            if (!resumeThread(mt.getThread())) {
                 throw new RuntimeException("error in resuming thread!");
             }
 

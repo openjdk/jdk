@@ -37,16 +37,6 @@
                          range,                                                     \
                          constraint)                                                \
                                                                                     \
-  /* Whether to allow the VM to run if EXTSHM=ON. EXTSHM is an environment */       \
-  /* variable used on AIX to activate certain hacks which allow more shm segments */\
-  /* for 32bit processes. For 64bit processes, it is pointless and may have */      \
-  /* harmful side effects (e.g. for some reasonn prevents allocation of 64k pages */\
-  /* via shmctl). */                                                                \
-  /* Per default we quit with an error if that variable is found; for certain */    \
-  /* customer scenarios, we may want to be able to run despite that variable. */    \
-  product(bool, AllowExtshm, false, DIAGNOSTIC,                                     \
-          "Allow VM to run with EXTSHM=ON.")                                        \
-                                                                                    \
   /*  Maximum expected size of the data segment. That correlates with the      */   \
   /*  maximum C Heap consumption we expect.                                    */   \
   /*  We need to leave "breathing space" for the data segment when             */   \

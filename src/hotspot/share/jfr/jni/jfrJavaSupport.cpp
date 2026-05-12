@@ -228,7 +228,7 @@ void JfrJavaSupport::new_object_global_ref(JfrJavaArguments* args, TRAPS) {
 jstring JfrJavaSupport::new_string(const char* c_str, TRAPS) {
   assert(c_str != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
-  const oop result = java_lang_String::create_oop_from_str(c_str, THREAD);
+  const oop result = java_lang_String::create_oop_from_str(c_str, CHECK_NULL);
   return (jstring)local_jni_handle(result, THREAD);
 }
 
@@ -528,7 +528,7 @@ const char* JfrJavaSupport::c_str(jstring string, Thread* thread, bool c_heap /*
 
 void JfrJavaSupport::free_c_str(const char* str, bool c_heap) {
   if (c_heap) {
-    FREE_C_HEAP_ARRAY(char, str);
+    FREE_C_HEAP_ARRAY(str);
   }
 }
 

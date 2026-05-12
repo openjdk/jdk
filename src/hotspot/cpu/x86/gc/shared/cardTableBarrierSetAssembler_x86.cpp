@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ __ BIND(L_loop);
 __ BIND(L_done);
 }
 
-void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst, Register rscratch) {
+void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register rscratch) {
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
@@ -138,6 +138,8 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   __ shrptr(obj, CardTable::card_shift());
 
   Address card_addr;
+  precond(rscratch != noreg);
+  assert_different_registers(obj, rscratch);
 
   // The calculation for byte_map_base is as follows:
   // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
@@ -161,7 +163,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
     // entry and that entry is not properly handled by the relocation code.
     AddressLiteral cardtable((address)byte_map_base, relocInfo::none);
     Address index(noreg, obj, Address::times_1);
-    card_addr = __ as_Address(ArrayAddress(cardtable, index), rscratch1);
+    card_addr = __ as_Address(ArrayAddress(cardtable, index), rscratch);
   }
 
   int dirty = CardTable::dirty_card_val();
@@ -190,10 +192,10 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
   if (needs_post_barrier) {
     // flatten object address if needed
     if (!precise || (dst.index() == noreg && dst.disp() == 0)) {
-      store_check(masm, dst.base(), dst, tmp2);
+      store_check(masm, dst.base(), tmp2);
     } else {
       __ lea(tmp1, dst);
-      store_check(masm, tmp1, dst, tmp2);
+      store_check(masm, tmp1, tmp2);
     }
   }
 }

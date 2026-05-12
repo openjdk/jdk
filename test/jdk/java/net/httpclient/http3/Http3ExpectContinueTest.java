@@ -29,7 +29,7 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=errors,requests,headers
- *                     Http3ExpectContinueTest
+ *                     ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

@@ -148,7 +148,7 @@ void PreservedMarksSet::reclaim() {
   }
 
   if (_in_c_heap) {
-    FREE_C_HEAP_ARRAY(Padded<PreservedMarks>, _stacks);
+    FREE_C_HEAP_ARRAY(_stacks);
   } else {
     // the array was resource-allocated, so nothing to do
   }

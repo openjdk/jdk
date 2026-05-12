@@ -214,6 +214,9 @@ class frame {
   // tells whether this frame can be deoptimized
   bool can_be_deoptimized() const;
 
+  // used by virtual thread thaw code to fix deopt state
+  inline void set_deoptimized();
+
   // the frame size in machine words
   inline int frame_size() const;
 

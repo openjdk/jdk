@@ -55,10 +55,11 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    bool is_bootstrap_gc = heap->old_generation()->is_bootstrapping();
-    heap->mmu_tracker()->record_degenerated(GCId::current(), is_bootstrap_gc);
-    const char* msg = is_bootstrap_gc? "At end of Degenerated Bootstrap Old GC": "At end of Degenerated Young GC";
-    heap->log_heap_status(msg);
+    bool is_bootstrap_gc = heap->young_generation()->is_bootstrap_cycle();
+    FormatBuffer<32> buf("Degenerated %s GC", _generation->name());
+    const char* msg = is_bootstrap_gc ? "Degenerated Bootstrap Old GC" : buf.buffer();
+    heap->mmu_tracker()->record_degenerated(GCId::current(), msg);
+    heap->log_heap_status(FormatBuffer<64>("At end of %s", msg));
   }
   return true;
 }
@@ -94,6 +95,16 @@ void ShenandoahDegenGC::op_degenerated() {
   // GC failure via cancelled_concgc() flag. So, if we detect the failure after
   // some phase, we have to upgrade the Degenerate GC to Full GC.
   heap->clear_cancelled_gc();
+
+  // If we degenerated from evacuation or update-refs, some objects in cset may
+  // have been self-forwarded by the failing thread. Clear those marks now so
+  // the remainder of this cycle (re-evac, update-refs, verification) sees a
+  // clean forwarding state.
+  if (_degen_point == ShenandoahDegenPoint::_degenerated_evac ||
+      _degen_point == ShenandoahDegenPoint::_degenerated_update_refs) {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_un_self_forward);
+    heap->un_self_forward_cset_regions();
+  }
 
   // If it's passive mode with ShenandoahCardBarrier turned on: clean the write table
   // without swapping the tables since no scan happens in passive mode anyway
@@ -277,6 +288,11 @@ void ShenandoahDegenGC::op_degenerated() {
         _abbreviated = true;
       }
 
+      // labs are retired, walk the old regions and update remembered set
+      if (ShenandoahHeap::heap()->mode()->is_generational()) {
+        ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
+      }
+
     case _degenerated_update_refs:
       if (heap->has_forwarded_objects()) {
         op_update_refs();
@@ -298,6 +314,8 @@ void ShenandoahDegenGC::op_degenerated() {
     default:
       ShouldNotReachHere();
   }
+
+  DEBUG_ONLY(heap->assert_no_self_forwards());
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_degenerated(_generation);

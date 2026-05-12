@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public final class WindowsBorders {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static final class ProgressBarBorder extends AbstractBorder implements UIResource {
+    public static class ProgressBarBorder extends AbstractBorder implements UIResource {
         protected Color shadow;
         protected Color highlight;
 
@@ -148,7 +148,7 @@ public final class WindowsBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static final class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants {
+    public static class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants {
         protected Color shadow;
         protected Color highlight;
 
@@ -308,7 +308,7 @@ public final class WindowsBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static final class InternalFrameLineBorder extends LineBorder implements
+    public static class InternalFrameLineBorder extends LineBorder implements
             UIResource {
         protected Color activeColor;
         protected Color inactiveColor;

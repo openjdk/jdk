@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2025, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,17 +663,18 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ block_comment("} try_resolve_jobject_in_native (shenandoahgc)");
 }
 
-#ifdef COMPILER2
-void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler *masm, Register obj,
-                                                                  Register tmp, Label &slow_path) {
-  __ block_comment("try_resolve_weak_handle_in_c2 (shenandoahgc) {");
+void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler *masm, Register weak_handle,
+                                                                    Register obj, Register tmp, Label &slow_path) {
+  __ block_comment("try_peek_weak_handle_in_nmethod (shenandoahgc) {");
 
-  assert_different_registers(obj, tmp);
+  assert_different_registers(weak_handle, tmp, noreg);
+  assert_different_registers(obj, tmp, noreg);
+
 
   Label done;
 
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, tmp, slow_path);
 
   // Check if the reference is null, and if it is, take the fast path.
   __ cmpdi(CR0, obj, 0);
@@ -686,9 +687,8 @@ void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler
   __ bne(CR0, slow_path);
   __ bind(done);
 
-  __ block_comment("} try_resolve_weak_handle_in_c2 (shenandoahgc)");
+  __ block_comment("} try_peek_weak_handle_in_nmethod (shenandoahgc)");
 }
-#endif
 
 // Special shenandoah CAS implementation that handles false negatives due
 // to concurrent evacuation.  That is, the CAS operation is intended to succeed in

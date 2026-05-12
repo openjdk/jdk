@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@ import sun.security.util.HexDumpEncoder;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 
 /*
@@ -37,7 +41,6 @@ import java.util.Arrays;
  * @library /test/lib
  */
 public class HexDumpEncoderTests {
-
 
     private static String[] getTestCommand(final String encoding) {
         return new String[]{
@@ -54,24 +57,34 @@ public class HexDumpEncoderTests {
 
         final var resultIso = ProcessTools.executeTestJava(testCommandIso);
         resultIso.shouldHaveExitValue(0);
+        final String latin1ResultFromFile = Files.readString(
+                Path.of("ISO-8859-1.txt"));
 
-        // This will take all available StandardCharsets and test them all comparing to the ISO_8859_1
-        // Dome im parallel, as this is significantly faster
+        // This will take all available StandardCharsets and test them all
+        // comparing to the ISO_8859_1.
+        // Done im parallel, as this is significantly faster
         Arrays.stream(StandardCharsets.class.getDeclaredFields())
                 .parallel()
                 .forEach(field -> {
-                    if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                    if (java.lang.reflect.Modifier
+                            .isStatic(field.getModifiers())) {
                         try {
-                            final var charset = (Charset) field.get(StandardCharsets.ISO_8859_1); // getting the charset to test
+                            // getting the charset to test
+                            final var charset = (Charset) field.get(null);
 
-                            final var testCommand = getTestCommand(charset.name());
+                            final var testCommand =
+                                    getTestCommand(charset.name());
 
-                            final var result = ProcessTools.executeTestJava(testCommand);
+                            final var result =
+                                    ProcessTools.executeTestJava(testCommand);
                             result.shouldHaveExitValue(0);
+                            final String resultFromFile = Files.readString(
+                                    Path.of(charset.name()+".txt"));
 
-                            // The outputs of the ISO encoding must be identical to the one tested
-                            Asserts.assertEquals(resultIso.getStdout(),
-                                    result.getStdout(),
+                            // The outputs of the ISO encoding must be identical
+                            // to the one tested
+                            Asserts.assertEquals(latin1ResultFromFile,
+                                    resultFromFile,
                                     "Encoding " + charset.name());
                         } catch (Exception e) {
                             throw new RuntimeException(e);
@@ -86,14 +99,26 @@ public class HexDumpEncoderTests {
          * This will test the encode and encode buffer functions at once,
          * as they are both representing the string in LATIN_1
          * <p>
-         * The output is put as a system.out
+         * The output is put to the file in scratch dir with corresponding
+         * encoding name
          */
         public static void main(String[] args) throws Exception {
 
             final var encoder = new HexDumpEncoder();
 
-            System.out.printf("\nCert Encoded With Encode Buffer: %s\n", encoder.encodeBuffer(new byte[100]));
-            System.out.printf("\nCert Encoded With Encode: %s\n", encoder.encode(new byte[100]));
+            final String encodeBufferResult =
+                    encoder.encodeBuffer(new byte[100]);
+            final String encodeResult = encoder.encode(new byte[100]);
+
+            final String content = String.format("""
+                            Cert Encoded With Encode Buffer: %s
+                            Cert Encoded With Encode: %s""",
+                    encodeBufferResult, encodeResult);
+            Files.writeString(
+                    Paths.get(Charset.defaultCharset().displayName() + ".txt"),
+                    content,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4233,11 +4233,13 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
+        strcmp(opType,"AddReductionVHF")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
         strcmp(opType,"AddReductionVD")==0 ||
         strcmp(opType,"MulReductionVI")==0 ||
         strcmp(opType,"MulReductionVL")==0 ||
         strcmp(opType,"MulReductionVF")==0 ||
+        strcmp(opType,"MulReductionVHF")==0 ||
         strcmp(opType,"MulReductionVD")==0 ||
         strcmp(opType,"MinReductionV")==0 ||
         strcmp(opType,"MaxReductionV")==0 ||
@@ -4276,7 +4278,9 @@ bool MatchRule::is_ideal_membar() const {
     !strcmp(_opType,"LoadFence" ) ||
     !strcmp(_opType,"StoreFence") ||
     !strcmp(_opType,"StoreStoreFence") ||
+    !strcmp(_opType,"MemBarStoreLoad") ||
     !strcmp(_opType,"MemBarVolatile") ||
+    !strcmp(_opType,"MemBarFull") ||
     !strcmp(_opType,"MemBarCPUOrder") ||
     !strcmp(_opType,"MemBarStoreStore") ||
     !strcmp(_opType,"OnSpinWait");
@@ -4346,9 +4350,9 @@ bool MatchRule::is_vector() const {
     "MaxV", "MinV", "MinVHF", "MaxVHF", "UMinV", "UMaxV",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
-    "AddReductionVF", "AddReductionVD",
+    "AddReductionVHF", "AddReductionVF", "AddReductionVD",
     "MulReductionVI", "MulReductionVL",
-    "MulReductionVF", "MulReductionVD",
+    "MulReductionVHF", "MulReductionVF", "MulReductionVD",
     "MaxReductionV", "MinReductionV",
     "AndReductionV", "OrReductionV", "XorReductionV",
     "MulAddVS2VI", "MacroLogicV",

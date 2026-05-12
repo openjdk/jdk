@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,20 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
  * @bug 8183743
  * @summary Test to verify the new overload method with Charset functions the same
  * as the existing method that takes a charset name.
- * @run testng EncodingTest
+ * @run junit EncodingTest
  */
 public class EncodingTest {
     static String USER_DIR = System.getProperty("user.dir", ".");
@@ -50,22 +54,20 @@ public class EncodingTest {
     }
 
     /*
-     * DataProvider fields:
+     * MethodSource fields:
      * Type of the constructor, a file to be written with a charset name,
      * a file to be written with a charset, charset name, charset.
      */
-    @DataProvider(name = "parameters")
-    public Object[][] getParameters() throws IOException {
+    public static Stream<Arguments> parameters() throws IOException {
         String csn = StandardCharsets.UTF_8.name();
         Charset charset = StandardCharsets.UTF_8;
         File file1 = new File(USER_DIR, "PSCharsetTest1.txt");
         File file2 = new File(USER_DIR, "PSCharsetTest2.txt");
 
-        return new Object[][]{
-            {ConstructorType.STRING, file1, file2, csn, charset},
-            {ConstructorType.FILE, file1, file2, csn, charset},
-            {ConstructorType.OUTPUTSTREAM, file1, file2, csn, charset}
-        };
+        return Stream.of
+            (Arguments.of(ConstructorType.STRING, file1, file2, csn, charset),
+             Arguments.of(ConstructorType.FILE, file1, file2, csn, charset),
+             Arguments.of(ConstructorType.OUTPUTSTREAM, file1, file2, csn, charset));
     }
 
     /**
@@ -78,14 +80,15 @@ public class EncodingTest {
      * @param charset the charset
      * @throws IOException
      */
-    @Test(dataProvider = "parameters")
+    @ParameterizedTest
+    @MethodSource("parameters")
     public void test(ConstructorType type, File file1, File file2, String csn, Charset charset)
             throws Exception {
         createFile(getPrintStream(type, file1.getPath(), csn, null));
         createFile(getPrintStream(type, file2.getPath(), null, charset));
 
-        Assert.assertEquals(Files.readAllLines(Paths.get(file1.getPath()), charset),
-                Files.readAllLines(Paths.get(file2.getPath()), charset));
+        assertEquals(Files.readAllLines(Paths.get(file2.getPath()), charset),
+            Files.readAllLines(Paths.get(file1.getPath()), charset));
     }
 
     public void createFile(PrintStream out) throws IOException {

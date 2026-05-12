@@ -55,21 +55,21 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_F_REG, "1"},
-        failOn = {IRNode.MIN_F_REDUCTION_REG})
+    @IR(counts = {IRNode.MINMAX_F_REG, "1"},
+        failOn = {IRNode.MINMAX_F_REDUCTION_REG})
     private static float testFloatMin() {
         return Math.min(floatInput1, floatInput2);
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_F_REG, "1"},
-        failOn = {IRNode.MAX_F_REDUCTION_REG})
+    @IR(counts = {IRNode.MINMAX_F_REG, "1"},
+        failOn = {IRNode.MINMAX_F_REDUCTION_REG})
     private static float testFloatMax() {
         return Math.max(floatInput1, floatInput2);
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_F_REDUCTION_REG, ">= 1"})
+    @IR(counts = {IRNode.MINMAX_F_REDUCTION_REG, ">= 1"})
     private static float testFloatMinReduction() {
         float fmin = Float.POSITIVE_INFINITY;
         for (int i = 0; i < floatArray.length; i++) {
@@ -79,7 +79,7 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_F_REDUCTION_REG, ">= 1"})
+    @IR(counts = {IRNode.MINMAX_F_REDUCTION_REG, ">= 1"})
     private static float testFloatMinReductionPartiallyUnrolled() {
         float fmin = Float.POSITIVE_INFINITY;
         for (int i = 0; i < floatArray.length / 2; i++) {
@@ -90,7 +90,7 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_F_REDUCTION_REG, ">= 1"})
+    @IR(counts = {IRNode.MINMAX_F_REDUCTION_REG, ">= 1"})
     private static float testFloatMinReductionNonCounted() {
         float fmin = Float.POSITIVE_INFINITY;
         for (int i = 0; i < floatArray.length; i += stride) {
@@ -100,7 +100,7 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_F_REDUCTION_REG, ">= 1"})
+    @IR(counts = {IRNode.MINMAX_F_REDUCTION_REG, ">= 1"})
     private static float testFloatMinReductionGlobalAccumulator() {
         acc = Float.POSITIVE_INFINITY;
         for (int i = 0; i < floatArray.length; i++) {
@@ -110,7 +110,7 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_F_REDUCTION_REG, ">= 1"})
+    @IR(counts = {IRNode.MINMAX_F_REDUCTION_REG, ">= 1"})
     private static float testFloatMinReductionInOuterLoop() {
         float fmin = Float.POSITIVE_INFINITY;
         int count = 0;
@@ -124,7 +124,7 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_F_REDUCTION_REG, ">= 1"})
+    @IR(counts = {IRNode.MINMAX_F_REDUCTION_REG, ">= 1"})
     private static float testFloatMaxReduction() {
         float fmax = Float.NEGATIVE_INFINITY;
         for (int i = 0; i < floatArray.length; i++) {
@@ -134,21 +134,21 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_D_REG, "1"},
-        failOn = {IRNode.MIN_D_REDUCTION_REG})
+    @IR(counts = {IRNode.MINMAX_D_REG, "1"},
+        failOn = {IRNode.MINMAX_D_REDUCTION_REG})
     private static double testDoubleMin() {
         return Math.min(doubleInput1, doubleInput2);
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_D_REG, "1"},
-        failOn = {IRNode.MAX_D_REDUCTION_REG})
+    @IR(counts = {IRNode.MINMAX_D_REG, "1"},
+        failOn = {IRNode.MINMAX_D_REDUCTION_REG})
     private static double testDoubleMax() {
         return Math.max(doubleInput1, doubleInput2);
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_D_REDUCTION_REG, ">= 1"})
+    @IR(counts = {IRNode.MINMAX_D_REDUCTION_REG, ">= 1"})
     private static double testDoubleMinReduction() {
         double fmin = Double.POSITIVE_INFINITY;
         for (int i = 0; i < doubleArray.length; i++) {
@@ -158,7 +158,7 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_D_REDUCTION_REG, ">= 1"})
+    @IR(counts = {IRNode.MINMAX_D_REDUCTION_REG, ">= 1"})
     private static double testDoubleMaxReduction() {
         double fmax = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < doubleArray.length; i++) {

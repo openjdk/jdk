@@ -349,6 +349,14 @@ enum class StubId : int {
                                       init_function)                    \
   JOIN4(stubgen, arch_name, field_name, id),                            \
 
+#define STUBGEN_DECLARE_ARCH_ARRAY_TAG(arch_name, blob_name, stub_name, \
+                                       field_name, getter_name,         \
+                                       count)                           \
+  JOIN4(stubgen, arch_name, field_name, id),                            \
+  JOIN4(stubgen, arch_name, field_name, max) =                          \
+  JOIN4(stubgen, arch_name, field_name, id) +                           \
+    count - 1,                                                          \
+
 // the above macros are enough to declare the enum
 
 enum class EntryId : int {
@@ -366,7 +374,8 @@ enum class EntryId : int {
                          STUBGEN_DECLARE_INIT_TAG,
                          STUBGEN_DECLARE_ARRAY_TAG,
                          STUBGEN_DECLARE_ARCH_TAG,
-                         STUBGEN_DECLARE_ARCH_INIT_TAG)
+                         STUBGEN_DECLARE_ARCH_INIT_TAG,
+                         STUBGEN_DECLARE_ARCH_ARRAY_TAG)
   NUM_ENTRYIDS
 };
 
@@ -379,6 +388,7 @@ enum class EntryId : int {
 #undef STUBGEN_DECLARE_ARRAY_TAG
 #undef STUBGEN_DECLARE_ARCH_TAG
 #undef STUBGEN_DECLARE_ARCH_INIT_TAG
+#undef STUBGEN_DECLARE_ARCH_ARRAY_TAG
 
 // we need static init expressions for blob, stub and entry counts in
 // each stubgroup
@@ -404,7 +414,8 @@ enum class EntryId : int {
 #define STUBGEN_ENTRY_COUNT_INITIALIZER          \
   0 STUBGEN_ALL_ENTRIES_DO(COUNT4, COUNT5,       \
                            STUBGEN_COUNT5,       \
-                           COUNT5, COUNT6)
+                           COUNT5, COUNT6,       \
+                           STUBGEN_COUNT6)
 
 // Declare management class StubInfo
 
@@ -669,6 +680,11 @@ public:
   static int  c1_offset(StubId id);
   static int  c2_offset(StubId id);
   static int  stubgen_offset(StubId id);
+
+  // Convert a stub id to a unique, zero-based offset in the range of
+  // stub ids for a given blob in the stubgen stub group.
+
+  static int  stubgen_offset_in_blob(BlobId blob_id, StubId id);
 };
 
 

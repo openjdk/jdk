@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test that CommunicationException is thrown when connection is timed out or closed/cancelled,
  *  and it's text matches the failure reason.
  * @library /test/lib lib
- * @run testng NamingExceptionMessageTest
+ * @run junit NamingExceptionMessageTest
  */
 
 import javax.naming.CommunicationException;
@@ -45,8 +45,11 @@ import java.util.Hashtable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.testng.annotations.Test;
-import org.testng.Assert;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import jdk.test.lib.net.URIBuilder;
 
 public class NamingExceptionMessageTest {
@@ -58,9 +61,9 @@ public class NamingExceptionMessageTest {
             ldapServer.awaitStartup();
             var env = ldapServer.getInitialLdapCtxEnvironment(TIMEOUT_VALUE);
             var communicationException =
-                    Assert.expectThrows(CommunicationException.class, () -> new InitialDirContext(env));
+                    assertThrows(CommunicationException.class, () -> new InitialDirContext(env));
             System.out.println("Got CommunicationException:" + communicationException);
-            Assert.assertEquals(communicationException.getMessage(), EXPECTED_TIMEOUT_MESSAGE);
+            assertEquals(EXPECTED_TIMEOUT_MESSAGE, communicationException.getMessage());
         }
     }
 
@@ -70,7 +73,7 @@ public class NamingExceptionMessageTest {
             ldapServer.start();
             ldapServer.awaitStartup();
             var env = ldapServer.getInitialLdapCtxEnvironment(0);
-            var namingException = Assert.expectThrows(NamingException.class, () -> new InitialDirContext(env));
+            var namingException = assertThrows(NamingException.class, () -> new InitialDirContext(env));
             if (namingException instanceof ServiceUnavailableException) {
                 // If naming exception is ServiceUnavailableException it could mean
                 // that the connection was closed on test server-side before LDAP client starts
@@ -78,11 +81,11 @@ public class NamingExceptionMessageTest {
                 System.out.println("Got ServiceUnavailableException: Test PASSED");
             } else {
                 // If exception is not ServiceUnavailableException, CommunicationException is expected
-                Assert.assertTrue(namingException instanceof CommunicationException);
+                assertInstanceOf(CommunicationException.class, namingException);
                 var communicationException = (CommunicationException) namingException;
                 System.out.println("Got CommunicationException:" + communicationException);
                 // Check exception message
-                Assert.assertEquals(communicationException.getMessage(), EXPECTED_CLOSURE_MESSAGE);
+                assertEquals(EXPECTED_CLOSURE_MESSAGE, communicationException.getMessage());
             }
         }
     }

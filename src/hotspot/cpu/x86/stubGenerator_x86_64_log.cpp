@@ -177,8 +177,14 @@ ATTRIBUTE_ALIGNED(16) static const juint _coeff[] =
 
 address StubGenerator::generate_libmLog() {
   StubId stub_id = StubId::stubgen_dlog_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
@@ -359,6 +365,9 @@ address StubGenerator::generate_libmLog() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -516,8 +525,14 @@ ATTRIBUTE_ALIGNED(16) static const juint _coeff_log10[] =
 
 address StubGenerator::generate_libmLog10() {
   StubId stub_id = StubId::stubgen_dlog10_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
@@ -704,7 +719,38 @@ address StubGenerator::generate_libmLog10() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_log(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
+  address log2  = (address)_log2;
+  address coeff = (address)_coeff;
+  address LOG10_E     = (address)_LOG10_E;
+  address log2_log10  = (address)_log2_log10;
+  address coeff_log10 = (address)_coeff_log10;
+
+  ADD(_L_tbl);
+  ADD(log2);
+  ADD(log2 + 8);
+  ADD(coeff);
+  ADD(coeff + 16);
+  ADD(coeff + 32);
+  ADD(_HIGHSIGMASK_log10);
+  ADD(LOG10_E);
+  ADD(LOG10_E + 8);
+  ADD(_L_tbl_log10);
+  ADD(log2_log10);
+  ADD(log2_log10 + 8);
+  ADD(coeff_log10);
+  ADD(coeff_log10 + 16);
+  ADD(coeff_log10 + 32);
+#undef ADD
+}
+#endif // INCLUDE_CDS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 package jdk.vm.ci.meta;
 
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.AccessFlag.Location;
 
 /**
  * Represents a reference to a resolved Java field. Fields, like methods and types, are resolved
@@ -34,7 +34,7 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider, Annotat
     /**
      * {@inheritDoc}
      * <p>
-     * Only the {@linkplain Modifier#fieldModifiers() field flags} specified in the JVM
+     * Only the {@linkplain Location#FIELD field flags} specified in the JVM
      * specification will be included in the returned mask.
      */
     @Override

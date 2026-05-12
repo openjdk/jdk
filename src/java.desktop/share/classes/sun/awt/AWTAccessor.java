@@ -545,6 +545,11 @@ public final class AWTAccessor {
          * Returns whether the file dialog allows the multiple file selection.
          */
         boolean isMultipleMode(FileDialog fileDialog);
+
+        /*
+         * Returns whether dispose is being run
+         */
+        boolean isBeingDisposed(FileDialog fileDialog);
     }
 
     /*
@@ -755,8 +760,6 @@ public final class AWTAccessor {
      * An accessor object for the AccessibleContext class
      */
     public interface AccessibleContextAccessor {
-        void setAppContext(AccessibleContext accessibleContext, AppContext appContext);
-        AppContext getAppContext(AccessibleContext accessibleContext);
         Object getNativeAXResource(AccessibleContext accessibleContext);
         void setNativeAXResource(AccessibleContext accessibleContext, Object value);
     }

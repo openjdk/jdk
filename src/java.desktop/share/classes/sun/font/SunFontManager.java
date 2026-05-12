@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2480,30 +2480,12 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * SunGraphicsEnvironment it performs the same initialization as is
      * performed normally. There may be some duplication of effort, but
      * that code is already written to be able to perform properly if called
-     * to duplicate work. The main difference is that if we detect we are
-     * in an AppContext environment these new fonts
-     * are not placed in the "default" maps but into an AppContext instance.
-     * The font lookup mechanism in java.awt.Font.getFont2D() is also updated
-     * so that look-up for composite fonts will in that case always
-     * do a lookup rather than returning a cached result.
-     * This is inefficient but necessary else singleton java.awt.Font
-     * instances would not retrieve the correct Font2D for the appcontext.
-     * sun.font.FontManager.findFont2D is also updated to that it uses
-     * a name map cache specific to that appcontext.
-     *
-     * Getting an AppContext is expensive, so there is a global variable
-     * that records whether these methods have ever been called and can
-     * avoid the expense for almost all applications. Once the correct
-     * CompositeFont is associated with the Font, everything should work
-     * through existing mechanisms.
-     * A special case is that GraphicsEnvironment.getAllFonts() must
-     * return an AppContext specific list.
+     * to duplicate work.
      *
      * Calling the methods below is "heavyweight" but it is expected that
      * these methods will be called very rarely.
      *
-     * If _usingAlternateComposites is true, we are not in an "AppContext"
-     * environment and the (single) application has selected
+     * If _usingAlternateComposites is true, the application has selected
      * an alternate composite font behaviour.
      *
      * - Printing: The implementation delegates logical fonts to an AWT

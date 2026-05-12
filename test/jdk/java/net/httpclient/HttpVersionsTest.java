@@ -28,7 +28,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.Platform
- * @run junit/othervm HttpVersionsTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.IOException;

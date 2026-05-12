@@ -32,7 +32,7 @@
  * @run junit/othervm
  *        -Djdk.tls.acknowledgeCloseNotify=true
  *        -Djdk.internal.httpclient.debug=true
- *        -Djdk.httpclient.HttpClient.log=headers,errors EncodedCharsInURI
+ *        -Djdk.httpclient.HttpClient.log=headers,errors ${test.main.class}
  */
 //*        -Djdk.internal.httpclient.debug=true
 

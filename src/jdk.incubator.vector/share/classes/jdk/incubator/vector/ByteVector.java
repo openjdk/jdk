@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code byte} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class ByteVector extends AbstractVector<Byte> {
+public abstract sealed class ByteVector extends AbstractVector<Byte>
+         permits ByteVector64, ByteVector128, ByteVector256, ByteVector512, ByteVectorMax {
 
     ByteVector(byte[] vec) {
         super(vec);
@@ -2368,6 +2369,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteVector that = (ByteVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
         ByteVector filter = broadcast((byte)origin);
         VectorMask<Byte> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);

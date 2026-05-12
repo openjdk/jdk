@@ -42,7 +42,7 @@ public:
   }
 
   ~SimpleFakeBitmap() {
-    FREE_C_HEAP_ARRAY(char, _buffer);
+    FREE_C_HEAP_ARRAY(_buffer);
   }
 
   // Set or clear the specified bit.

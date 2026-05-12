@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @modules java.net.http
  *          jdk.httpserver
- * @run main/othervm MultiAuthTest
+ * @run main/othervm ${test.main.class}
  * @summary Basic Authentication test with multiple clients issuing
  *          multiple requests. Includes password changes
  *          on server and client side.

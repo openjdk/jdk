@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.flagless
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server"
  *
  * @run driver compiler.inlining.InlineBimorphicVirtualCallAfterMorphismChanged
  */

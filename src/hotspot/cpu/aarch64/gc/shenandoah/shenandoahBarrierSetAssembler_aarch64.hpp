@@ -46,9 +46,7 @@ private:
                     Register pre_val,
                     Register thread,
                     Register tmp1,
-                    Register tmp2,
-                    bool tosca_live,
-                    bool expand_call);
+                    Register tmp2);
 
   void card_barrier(MacroAssembler* masm, Register obj);
 
@@ -80,9 +78,8 @@ public:
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
-#ifdef COMPILER2
-  virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
-#endif
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                               Register tmp, Label& slow_path);
   void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
                    bool acquire, bool release, bool is_cae, Register result);
 };

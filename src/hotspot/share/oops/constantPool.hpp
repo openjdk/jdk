@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/bsmAttribute.inline.hpp"
+#include "oops/bsmAttribute.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopHandle.hpp"
@@ -554,8 +554,8 @@ class ConstantPool : public Metadata {
   u2 bootstrap_argument_index_at(int cp_index, int j) {
     int bsmai = bootstrap_methods_attribute_index(cp_index);
     BSMAttributeEntry* bsme = bsm_attribute_entry(bsmai);
-    assert((uint)j < (uint)bsme->argument_count(), "oob");
-    return bsm_attribute_entry(bsmai)->argument(j);
+    assert(j < bsme->argument_count(), "oob");
+    return bsm_attribute_entry(bsmai)->argument(checked_cast<u2>(j));
   }
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,

@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +26,15 @@
 /*
  * @test
  * @bug 8234011
- * @summary Check that jdk.nio.zipfs.ZipFileSystem doesn't cache more than ZipFileSystem.MAX_FLATER Inflater/Deflater objects
- * @run main ReleaseDeflater
+ * @summary Check that jdk.nio.zipfs.ZipFileSystem doesn't cache more than
+ *          ZipFileSystem.MAX_FLATER Inflater/Deflater objects.
  * @modules jdk.zipfs/jdk.nio.zipfs:+open
- * @author Volker Simonis
+ * @run junit ReleaseDeflater
  */
 
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
@@ -44,8 +48,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 public class ReleaseDeflater {
-    public static void main(String[] args) throws Throwable {
+
+    @Test
+    void cacheTest() throws IOException, IllegalAccessException {
         Path zipFile = Paths.get("ReleaseDeflaterTest.zip");
         try (FileSystem fs = FileSystems.newFileSystem(zipFile, Map.of("create", true))) {
             FileSystemProvider zprov = fs.provider();
@@ -75,15 +83,11 @@ public class ReleaseDeflater {
                 Field inflaters = fs.getClass().getDeclaredField("inflaters");
                 inflaters.setAccessible(true);
                 int inflater_count = ((List<?>) inflaters.get(fs)).size();
-                if (inflater_count > MAX_FLATERS) {
-                    throw new Exception("Too many inflaters " + inflater_count);
-                }
+                assertFalse(inflater_count > MAX_FLATERS, "Too many inflaters " + inflater_count);
                 Field deflaters = fs.getClass().getDeclaredField("deflaters");
                 deflaters.setAccessible(true);
                 int deflater_count = ((List<?>) deflaters.get(fs)).size();
-                if (deflater_count > MAX_FLATERS) {
-                    throw new Exception("Too many deflaters " + deflater_count);
-                }
+                assertFalse(deflater_count > MAX_FLATERS, "Too many deflaters " + deflater_count);
             } catch (NoSuchFieldException nsfe) {
                 // Probably the implementation has changed, so there's not much we can do...
                 throw new RuntimeException("Implementation of jdk.nio.zipfs.ZipFileSystem changed - disable or fix the test");
@@ -91,6 +95,5 @@ public class ReleaseDeflater {
         } finally {
             Files.deleteIfExists(zipFile);
         }
-
     }
 }

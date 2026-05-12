@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code float} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class FloatVector extends AbstractVector<Float> {
+public abstract sealed class FloatVector extends AbstractVector<Float>
+         permits FloatVector64, FloatVector128, FloatVector256, FloatVector512, FloatVectorMax {
 
     FloatVector(float[] vec) {
         super(vec);
@@ -2234,6 +2235,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
         FloatVector that = (FloatVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
         IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vspecies().asIntegral(), (int)origin);
         VectorMask<Float> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());

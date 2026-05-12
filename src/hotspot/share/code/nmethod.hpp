@@ -41,6 +41,7 @@ class Dependencies;
 class DirectiveSet;
 class DebugInformationRecorder;
 class ExceptionHandlerTable;
+class ICacheInvalidationContext;
 class ImplicitExceptionTable;
 class JvmtiThreadState;
 class MetadataClosure;
@@ -235,11 +236,10 @@ class nmethod : public CodeBlob {
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
 
-  uint16_t _oops_size;
 #if INCLUDE_JVMCI
   // _metadata_size is not specific to JVMCI. In the non-JVMCI case, it can be derived as:
   // _metadata_size = mutable_data_size - relocation_size
-  uint16_t _metadata_size;
+  int _metadata_size;
 #endif
 
   // Offset in immutable data section
@@ -802,15 +802,15 @@ public:
 
   // Relocation support
 private:
-  void fix_oop_relocations(address begin, address end, bool initialize_immediates);
+  bool fix_oop_relocations(bool initialize_immediates);
   inline void initialize_immediate_oop(oop* dest, jobject handle);
 
 protected:
   address oops_reloc_begin() const;
 
 public:
-  void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
-  void fix_oop_relocations()                           { fix_oop_relocations(nullptr, nullptr, false); }
+  void fix_oop_relocations(ICacheInvalidationContext* icic);
+  void fix_oop_relocations();
 
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);

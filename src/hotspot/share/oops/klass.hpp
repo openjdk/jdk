@@ -466,9 +466,9 @@ protected:
   static const int _lh_log2_element_size_shift = BitsPerByte*0;
   static const int _lh_log2_element_size_mask  = BitsPerLong-1;
   static const int _lh_element_type_shift      = BitsPerByte*1;
-  static const int _lh_element_type_mask       = right_n_bits(BitsPerByte);  // shifted mask
+  static const int _lh_element_type_mask       = right_n_bits<int>(BitsPerByte);  // shifted mask
   static const int _lh_header_size_shift       = BitsPerByte*2;
-  static const int _lh_header_size_mask        = right_n_bits(BitsPerByte);  // shifted mask
+  static const int _lh_header_size_mask        = right_n_bits<int>(BitsPerByte);  // shifted mask
   static const int _lh_array_tag_bits          = 2;
   static const int _lh_array_tag_shift         = BitsPerInt - _lh_array_tag_bits;
   static const int _lh_array_tag_obj_value     = ~0x01;   // 0x80000000 >> 30

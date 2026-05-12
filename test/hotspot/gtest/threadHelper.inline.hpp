@@ -169,7 +169,7 @@ public:
     }
   }
   ~TestThreadGroup() {
-    FREE_C_HEAP_ARRAY(BasicTestThread<F>*, _threads);
+    FREE_C_HEAP_ARRAY(_threads);
   }
 
   void doit() {

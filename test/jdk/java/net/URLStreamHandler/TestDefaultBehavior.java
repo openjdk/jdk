@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8224973
  * @summary Basic test for the default behavior of openConnection(URL,Proxy)
- * @run testng TestDefaultBehavior
+ * @run junit ${test.main.class}
  */
 
 import java.io.IOException;
@@ -35,9 +35,10 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import org.testng.annotations.Test;
 import static java.net.Proxy.*;
-import static org.testng.Assert.expectThrows;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestDefaultBehavior {
 
@@ -51,15 +52,15 @@ public class TestDefaultBehavior {
     public void testDefaultBehavior() {
         CustomURLStreamHandler handler = new CustomURLStreamHandler();
 
-        expectThrows(IAE, () -> handler.openConnection(null, null));
-        expectThrows(IAE, () -> handler.openConnection(null, NO_PROXY));
-        expectThrows(IAE, () -> handler.openConnection(null, new Proxy(Type.SOCKS, ADDR)));
-        expectThrows(IAE, () -> handler.openConnection(null, new Proxy(Type.HTTP, ADDR)));
-        expectThrows(IAE, () -> handler.openConnection(uri.toURL(), null));
+        assertThrows(IAE, () -> handler.openConnection(null, null));
+        assertThrows(IAE, () -> handler.openConnection(null, NO_PROXY));
+        assertThrows(IAE, () -> handler.openConnection(null, new Proxy(Type.SOCKS, ADDR)));
+        assertThrows(IAE, () -> handler.openConnection(null, new Proxy(Type.HTTP, ADDR)));
+        assertThrows(IAE, () -> handler.openConnection(uri.toURL(), null));
 
-        expectThrows(UOE, () -> handler.openConnection(uri.toURL(), NO_PROXY));
-        expectThrows(UOE, () -> handler.openConnection(uri.toURL(), new Proxy(Type.SOCKS, ADDR)));
-        expectThrows(UOE, () -> handler.openConnection(uri.toURL(), new Proxy(Type.HTTP, ADDR)));
+        assertThrows(UOE, () -> handler.openConnection(uri.toURL(), NO_PROXY));
+        assertThrows(UOE, () -> handler.openConnection(uri.toURL(), new Proxy(Type.SOCKS, ADDR)));
+        assertThrows(UOE, () -> handler.openConnection(uri.toURL(), new Proxy(Type.HTTP, ADDR)));
     }
 
     // A URLStreamHandler that delegates the overloaded openConnection that

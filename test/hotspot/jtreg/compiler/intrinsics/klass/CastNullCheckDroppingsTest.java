@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test NullCheckDroppingsTest
  * @bug 8054492
  * @summary Casting can result in redundant null checks in generated code
- * @requires vm.hasJFR
- * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
+ * @requires vm.hasJFR & vm.flavor == "server" & !vm.graal.enabled & vm.flagless
+ *
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -35,9 +35,6 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -Xmixed -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:CompileThreshold=1000
- *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100 -XX:-StressReflectiveCode
- *                   -XX:+UncommonNullCast -XX:-StressMethodHandleLinkerInlining -XX:TypeProfileLevel=0
- *                   -XX:-AlwaysIncrementalInline -XX:-StressIncrementalInlining
  *                   -XX:CompileCommand=exclude,compiler.intrinsics.klass.CastNullCheckDroppingsTest::runTest
  *                   compiler.intrinsics.klass.CastNullCheckDroppingsTest
  */
@@ -93,8 +90,8 @@ public class CastNullCheckDroppingsTest {
     int[]   asink;
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.isServer() || Platform.isEmulatedClient()) {
-            throw new Error("TESTBUG: Not server mode");
+        if (!Platform.isServer()) {
+            throw new Error("TESTBUG: Not server VM");
         }
         // Make sure background compilation is disabled
         if (WHITE_BOX.getBooleanVMFlag("BackgroundCompilation")) {

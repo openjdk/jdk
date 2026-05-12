@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,5 +663,23 @@ class PEMData {
                     "  (" + a.charAt(i) + " vs " + b.charAt(i) + ")" + lenerr);
             }
         }
+    }
+
+    static Entry insertPostHeaderChar(Entry entry, char c) {
+        String pem = entry.pem();
+        int secondHyphen = pem.indexOf("-----", 5);
+        int i = secondHyphen + 5;
+        return new Entry(
+            entry.name() + "[" + toChar(c) + "]" ,
+            pem.substring(0, i) + c + pem.substring(i),
+            entry.clazz(), entry.provider(), entry.password());
+    }
+
+    private static String toChar(char c) {
+        return switch (c) {
+            case '\s' -> "sp";
+            case '\t' -> "tab";
+            default -> String.valueOf(c);
+        };
     }
 }

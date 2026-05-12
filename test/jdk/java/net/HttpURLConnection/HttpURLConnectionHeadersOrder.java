@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,35 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8133686
  * @summary Ensuring that multiple header values for a given field-name are returned in
  *          the order they were added for HttpURLConnection.getRequestProperties
  *          and HttpURLConnection.getHeaderFields
  * @library /test/lib
- * @run testng HttpURLConnectionHeadersOrder
+ * @run junit ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class HttpURLConnectionHeadersOrder {
     private static final String LOCAL_TEST_ENDPOINT = "/headertest";
@@ -53,8 +59,8 @@ public class HttpURLConnectionHeadersOrder {
     private static URL serverUrl;
 
 
-    @BeforeTest
-    public void beforeTest() throws Exception {
+    @BeforeAll
+    public static void beforeTest() throws Exception {
         SimpleHandler handler = new SimpleHandler();
         server = createSimpleHttpServer(handler);
         serverUrl = URIBuilder.newBuilder()
@@ -65,8 +71,8 @@ public class HttpURLConnectionHeadersOrder {
                 .toURL();
     }
 
-    @AfterTest
-    public void afterTest() {
+    @AfterAll
+    public static void afterTest() {
         if (server != null)
             server.stop(0);
     }
@@ -77,9 +83,9 @@ public class HttpURLConnectionHeadersOrder {
      * - request to a "dummy" server with additional
      * - custom request properties
      *
-     * @throws Exception
+     * @throws Exception if failed
      */
-    @Test (priority = 1)
+    @Test
     public void testRequestPropertiesOrder() throws Exception {
         final var conn = (HttpURLConnection) serverUrl.openConnection();
 
@@ -93,8 +99,9 @@ public class HttpURLConnectionHeadersOrder {
         var customRequestProps = requestProperties.get("test_req_prop");
 
         conn.disconnect();
-        Assert.assertNotNull(customRequestProps);
-        Assert.assertEquals(customRequestProps, EXPECTED_HEADER_VALUES, String.format(ERROR_MESSAGE_TEMPLATE, EXPECTED_HEADER_VALUES.toString(), customRequestProps.toString()));
+        assertNotNull(customRequestProps);
+        assertEquals(EXPECTED_HEADER_VALUES, customRequestProps,
+                "Unexpected value for request header \"test_req_prop\"");
     }
 
     /**
@@ -105,7 +112,7 @@ public class HttpURLConnectionHeadersOrder {
      *
      * @throws Exception
      */
-    @Test (priority = 2)
+    @Test
     public void testServerSideRequestHeadersOrder() throws Exception {
         final var conn = (HttpURLConnection) serverUrl.openConnection();
         conn.addRequestProperty("test_server_handling", "a");
@@ -114,17 +121,19 @@ public class HttpURLConnectionHeadersOrder {
 
         int statusCode = conn.getResponseCode();
         conn.disconnect();
-        Assert.assertEquals(statusCode, 999, "The insertion-order was not preserved on the server-side response headers handling");
+        assertEquals(999, statusCode,
+                "The insertion-order was not preserved on the server-side response headers handling");
     }
 
-    @Test (priority = 3)
+    @Test
     public void testClientSideResponseHeadersOrder() throws Exception {
         final var conn = (HttpURLConnection) serverUrl.openConnection();
         conn.setRequestMethod("GET");
 
         var actualCustomResponseHeaders = conn.getHeaderFields().get("Test_response");
-        Assert.assertNotNull(actualCustomResponseHeaders, "Error in reading custom response headers");
-        Assert.assertEquals(EXPECTED_HEADER_VALUES, actualCustomResponseHeaders, String.format(ERROR_MESSAGE_TEMPLATE, EXPECTED_HEADER_VALUES.toString(), actualCustomResponseHeaders.toString()));
+        assertNotNull(actualCustomResponseHeaders, "Error in reading custom response headers");
+        assertEquals(EXPECTED_HEADER_VALUES, actualCustomResponseHeaders,
+                "Unexpected value for response header field \"Test_response\"");
     }
 
     private static HttpServer createSimpleHttpServer(SimpleHandler handler) throws IOException {
@@ -153,7 +162,8 @@ public class HttpURLConnectionHeadersOrder {
             }
 
             if (!actualTestRequestHeaders.equals(EXPECTED_HEADER_VALUES)) {
-                System.out.println("Error: " + String.format(ERROR_MESSAGE_TEMPLATE, EXPECTED_HEADER_VALUES.toString(), actualTestRequestHeaders.toString()));
+                System.out.printf("Error for \"test_server_handling\" " +
+                        String.format(ERROR_MESSAGE_TEMPLATE, EXPECTED_HEADER_VALUES, actualTestRequestHeaders));
                 return -1;
             }
             return 999;

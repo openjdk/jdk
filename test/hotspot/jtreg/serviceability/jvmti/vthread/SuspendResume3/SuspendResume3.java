@@ -35,6 +35,11 @@ import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Phaser;
 
+import java.lang.management.LockInfo;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+
 import jvmti.JVMTIUtils;
 
 public class SuspendResume3 {
@@ -88,7 +93,12 @@ public class SuspendResume3 {
             w1Sync1.arriveAndAwaitAdvance();
             // Let worker2 block on monitor
             w2Sync1.arriveAndAwaitAdvance();
-            await(worker2, Thread.State.BLOCKED);
+            // Wait until worker2 blocks trying to acquire lock. We can't just check
+            // for a BLOCKED state because method arriveAndAwaitAdvance might involve
+            // extra class loading/initialization where worker2 could be seen as BLOCKED
+            // and thus be suspended below. If the main thread then tries to access those
+            // same classes before resuming worker2 the test would deadlock.
+            awaitBlockedOnLock(worker2);
 
             // Suspend worker2
             JVMTIUtils.suspendThread(worker2);
@@ -141,6 +151,21 @@ public class SuspendResume3 {
             assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
             Thread.sleep(10);
             state = thread.getState();
+        }
+    }
+
+    /**
+     * Waits for the given thread to block trying to acquire lock's monitor.
+     */
+    private void awaitBlockedOnLock(Thread thread) throws InterruptedException {
+        while (true) {
+            ThreadInfo threadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(thread.threadId());
+            assertTrue(threadInfo != null, "getThreadInfo() failed");
+            LockInfo lockInfo = threadInfo.getLockInfo();
+            if (lockInfo != null && lockInfo.getIdentityHashCode() == System.identityHashCode(lock)) {
+                break;
+            }
+            Thread.sleep(10);
         }
     }
 

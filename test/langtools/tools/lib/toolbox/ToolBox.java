@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -664,6 +664,27 @@ public class ToolBox {
      */
     public Path getJDKTool(String tool) {
         return Path.of(testJDK, "bin", tool);
+    }
+
+    /**
+     * Finds a file with a path relative to the langtools test root directory.
+     *
+     * @param path the desired path from test/langtools
+     * @return the file, if found
+     */
+    public Path findFromTestRoot(String path) {
+        Path testSrc = Path.of(System.getProperty("test.src", "."));
+
+        for (Path d = testSrc; d != null; d = d.getParent()) {
+            if (Files.exists(d.resolve("TEST.ROOT"))) {
+                Path file = d.resolve(path);
+                if (Files.exists(file)) {
+                    return file;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -31,7 +31,7 @@
  * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=headers,errors,channel
  *       -Djdk.internal.httpclient.debug=true
- *       ShortResponseBodyPost
+ *       ${test.main.class}
  */
 
 import java.io.IOException;

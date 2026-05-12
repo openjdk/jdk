@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1070,13 +1070,13 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         Action oldValue = getAction();
         if (action==null || !action.equals(a)) {
             action = a;
-            if (oldValue!=null) {
+            if (oldValue != null) {
                 removeActionListener(oldValue);
                 oldValue.removePropertyChangeListener(actionPropertyChangeListener);
                 actionPropertyChangeListener = null;
             }
             configurePropertiesFromAction(action);
-            if (action!=null) {
+            if (action != null) {
                 // Don't add if it is already a listener
                 if (!isListener(ActionListener.class, action)) {
                     addActionListener(action);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 4134311 8247918
  * @summary Test if skip works correctly
- * @run testng Skip
+ * @run junit Skip
 */
 
 import java.io.CharArrayReader;
@@ -36,10 +36,16 @@ import java.io.PushbackReader;
 import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.stream.Stream;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Skip {
     private static String FILENAME =
@@ -52,52 +58,52 @@ public class Skip {
             long nchars = 8200;
             long actual = fr.skip(nchars);
 
-            Assert.assertFalse(actual > nchars,
+            assertFalse(actual > nchars,
                 "Should skip " + nchars + ", but skipped " +actual+" chars");
         }
     }
 
-    @DataProvider(name = "readers")
-    public Object[][] getReaders() throws IOException {
-        return new Object[][] {
-            {new LineNumberReader(new FileReader(file))},
-            {new CharArrayReader(new char[] {27})},
-            {new PushbackReader(new FileReader(file))},
-            {new FileReader(file)},
-            {new StringReader(new String(new byte[] {(byte)42}))}
+    public static Reader[] readers() throws IOException {
+        return new Reader[] {
+            new LineNumberReader(new FileReader(file)),
+            new CharArrayReader(new char[] {27}),
+            new PushbackReader(new FileReader(file)),
+            new FileReader(file),
+            new StringReader(new String(new byte[] {(byte)42}))
         };
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void eof(Reader r) throws IOException {
          r.skip(Long.MAX_VALUE);
-         Assert.assertEquals(r.skip(1), 0);
-         Assert.assertEquals(r.read(), -1);
+         assertEquals(0, r.skip(1));
+         assertEquals(-1, r.read());
     }
 
-    @DataProvider(name = "skipIAE")
-    public Object[][] getSkipIAEs() throws IOException {
-        return new Object[][] {
-            {new LineNumberReader(new FileReader(file))},
-            {new PushbackReader(new FileReader(file))},
-            {new FileReader(file)}
+    public static Reader[] skipIAE() throws IOException {
+        return new Reader[] {
+            new LineNumberReader(new FileReader(file)),
+            new PushbackReader(new FileReader(file)),
+            new FileReader(file)
         };
     }
 
-    @Test(dataProvider = "skipIAE", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("skipIAE")
     public void testThrowsIAE(Reader r) throws IOException {
-        r.skip(-1);
+        assertThrows(IllegalArgumentException.class, () -> r.skip(-1));
     }
 
-    @DataProvider(name = "skipNoIAE")
-    public Object[][] getSkipNoIAEs() throws IOException {
-        return new Object[][] {
-            {new CharArrayReader(new char[] {27})},
-            {new StringReader(new String(new byte[] {(byte)42}))}
+    public static Reader[] skipNoIAE() throws IOException {
+        return new Reader[] {
+            new CharArrayReader(new char[] {27}),
+            new StringReader(new String(new byte[] {(byte)42}))
         };
     }
 
-    @Test(dataProvider = "skipNoIAE")
+    @ParameterizedTest
+    @MethodSource("skipNoIAE")
     public void testNoIAE(Reader r) throws IOException {
         r.skip(-1);
     }

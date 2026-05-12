@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,12 @@
 
 PartialArrayState::PartialArrayState(oop src, oop dst,
                                      size_t index, size_t length,
+                                     size_t chunk_size,
                                      size_t initial_refcount)
   : _source(src),
     _destination(dst),
     _length(length),
+    _chunk_size(chunk_size),
     _index(index),
     _refcount(initial_refcount)
 {
@@ -77,6 +79,7 @@ PartialArrayStateAllocator::~PartialArrayStateAllocator() {
 PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
                                                         size_t index,
                                                         size_t length,
+                                                        size_t chunk_size,
                                                         size_t initial_refcount) {
   void* p;
   FreeListEntry* head = _free_list;
@@ -87,7 +90,7 @@ PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
     head->~FreeListEntry();
     p = head;
   }
-  return ::new (p) PartialArrayState(src, dst, index, length, initial_refcount);
+  return ::new (p) PartialArrayState(src, dst, index, length, chunk_size, initial_refcount);
 }
 
 void PartialArrayStateAllocator::release(PartialArrayState* state) {
@@ -111,7 +114,7 @@ PartialArrayStateManager::PartialArrayStateManager(uint max_allocators)
 
 PartialArrayStateManager::~PartialArrayStateManager() {
   reset();
-  FREE_C_HEAP_ARRAY(Arena, _arenas);
+  FREE_C_HEAP_ARRAY(_arenas);
 }
 
 Arena* PartialArrayStateManager::register_allocator() {

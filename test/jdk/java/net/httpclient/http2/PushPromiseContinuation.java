@@ -31,7 +31,7 @@
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http2.BodyOutputStream
  *        jdk.httpclient.test.lib.http2.OutgoingPushPromise
- * @run junit/othervm PushPromiseContinuation
+ * @run junit/othervm ${test.main.class}
  */
 
 import javax.net.ssl.SSLSession;

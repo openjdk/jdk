@@ -865,7 +865,6 @@ public class PopupFactory {
         /**
          * Returns the cache to use for medium weight popups.
          */
-        @SuppressWarnings("unchecked")
         private static List<MediumWeightPopup> getMediumWeightPopupCache() {
             synchronized (MediumWeightPopup.class) {
                 if (cache == null) {
@@ -925,7 +924,7 @@ public class PopupFactory {
               add to that, otherwise
               add to the window. */
             while (!(parent instanceof Window) &&
-                   (parent!=null)) {
+                   (parent != null)) {
                 parent = parent.getParent();
             }
 

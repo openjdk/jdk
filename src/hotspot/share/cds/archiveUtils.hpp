@@ -28,20 +28,24 @@
 #include "cds/cds_globals.hpp"
 #include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 
 class BootstrapInfo;
+class DumpAllocStats;
 class ReservedSpace;
 class VirtualSpace;
 
 template<class E> class Array;
-template<class E> class GrowableArray;
 
 // ArchivePtrMarker is used to mark the location of pointers embedded in a CDS archive. E.g., when an
 // InstanceKlass k is dumped, we mark the location of the k->_name pointer by effectively calling
@@ -160,6 +164,18 @@ private:
   void commit_to(char* newtop);
 
 public:
+  // Allocation gaps (due to Klass alignment)
+  class AllocGapTree;
+  class AllocGap;
+  struct AllocGapCmp;
+
+private:
+  static AllocGapTree _gap_tree;
+  static size_t _total_gap_bytes;
+  static size_t _total_gap_bytes_used;
+  static size_t _total_gap_allocs;
+
+public:
   DumpRegion(const char* name)
     : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
       _is_packed(false),
@@ -167,6 +183,7 @@ public:
 
   char* expand_top_to(char* newtop);
   char* allocate(size_t num_bytes, size_t alignment = 0);
+  char* allocate_metaspace_obj(size_t num_bytes, address src, MetaspaceClosureType type, bool read_only, DumpAllocStats* stats);
 
   void append_intptr_t(intptr_t n, bool need_to_mark = false) NOT_CDS_RETURN;
 
@@ -191,6 +208,8 @@ public:
   bool contains(char* p) {
     return base() <= p && p < top();
   }
+
+  static void report_gaps(DumpAllocStats* stats);
 };
 
 // Closure for serializing initialization data out to a data area to be
@@ -382,5 +401,40 @@ public:
   ~ArchiveWorkers();
   void run_task(ArchiveWorkerTask* task);
 };
+
+// A utility class for writing an array of unique items into the
+// AOT cache. For determinism, the order of the array is the same
+// as calls to add(). I.e., if items are added in the order
+// of A, B, A, C, B, D, then the array will be written as {A, B, C, D}
+template <typename T, unsigned SIZE = 15889>
+class ArchivableTable : public AnyObj {
+  using Table = HashTable<T, bool, SIZE, AnyObj::C_HEAP, mtClassShared>;
+  Table* _seen_items;
+  GrowableArray<T>* _ordered_array;
+public:
+  ArchivableTable() {
+    _seen_items = new (mtClassShared)Table();
+     _ordered_array = new (mtClassShared)GrowableArray<T>(128, mtClassShared);
+  }
+
+  ~ArchivableTable() {
+    delete _seen_items;
+    delete _ordered_array;
+  }
+
+  void add(T t) {
+    bool created;
+    _seen_items->put_if_absent(t, &created);
+    if (created) {
+      _ordered_array->append(t);
+    }
+  }
+
+  Array<T>* write_ordered_array() {
+    return ArchiveUtils::archive_array(_ordered_array);
+  }
+};
+
+using ArchivableKlassTable = ArchivableTable<Klass*>;
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

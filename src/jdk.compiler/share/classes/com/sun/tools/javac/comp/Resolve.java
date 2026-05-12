@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2355,9 +2355,12 @@ public class Resolve {
         for (Symbol s : scope.getSymbolsByName(name)) {
             Symbol sym = loadClass(env, s.flatName(), recoveryLoadClass);
             if (bestSoFar.kind == TYP && sym.kind == TYP &&
-                bestSoFar != sym)
+                bestSoFar != sym) {
                 return new AmbiguityError(bestSoFar, sym);
-            else
+            } else if (env.toplevel.namedImportScope == scope &&
+                    (sym == typeNotFound || (sym.kind == ERR && s.kind == ERR))) {
+                bestSoFar = bestOf(bestSoFar, new UnresolvableGobalSymbolError(s));
+            } else
                 bestSoFar = bestOf(bestSoFar, sym);
         }
         return bestSoFar;
@@ -4152,6 +4155,31 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes);
+    }
+
+    class UnresolvableGobalSymbolError extends InvalidSymbolError {
+
+        UnresolvableGobalSymbolError(Symbol sym) {
+            super(HIDDEN, sym, "unresolvable class error");
+            this.name = sym.name;
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Symbol location,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
+            //the error should have already been reported, ignore:
+            return null;
+        }
+
+        @Override
+        public Symbol access(Name name, TypeSymbol location) {
+            return sym;
+        }
     }
 
     /**

@@ -58,7 +58,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 * @test
 * @bug 8252304 8276559
 * @summary HttpRequest.newBuilder(HttpRequest) API and behaviour checks
-* @run junit/othervm HttpRequestNewBuilderTest
+* @run junit/othervm ${test.main.class}
 */
 public class HttpRequestNewBuilderTest {
     static final Class<NullPointerException> NPE = NullPointerException.class;

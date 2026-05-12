@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 // Used to track time from the end of concurrent start to the first mixed GC.
 // After calling the concurrent start/mixed gc notifications, the result can be
-// obtained in last_marking_time() once, after which the tracking resets.
+// obtained in get_and_reset_last_marking_time() once, after which the tracking resets.
 // Any pauses recorded by add_pause() will be subtracted from that results.
 class G1ConcurrentStartToMixedTimeTracker {
 private:
@@ -60,7 +60,7 @@ public:
     }
   }
 
-  double last_marking_time() {
+  double get_and_reset_last_marking_time() {
     assert(has_result(), "Do not have all measurements yet.");
     double result = (_mixed_start_time - _concurrent_start_end_time) - _total_pause_time;
     reset();
@@ -79,6 +79,8 @@ public:
       _total_pause_time += time;
     }
   }
+
+  bool is_active() const { return _active; }
 
   // Returns whether we have a result that can be retrieved.
   bool has_result() const { return _mixed_start_time > 0.0 && _concurrent_start_end_time > 0.0; }

@@ -58,6 +58,11 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
+  // See AS_NO_KEEPALIVE for peek semantics
+  // weak_handle and obj may alias
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                               Register tmp, Label& slow_path);
+
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
 
   virtual void barrier_stubs_init() {}
@@ -65,8 +70,6 @@ public:
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node,
                                 OptoReg::Name opto_reg) const;
-  virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj,
-                                             Register tmp, Label& slow_path);
 #endif // COMPILER2
 
   static const int OFFSET_TO_PATCHABLE_DATA_INSTRUCTION = 6 + 6 + 6; // iihf(6) + iilf(6) + lg(6)

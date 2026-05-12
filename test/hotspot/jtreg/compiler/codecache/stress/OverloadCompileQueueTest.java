@@ -112,9 +112,9 @@ public class OverloadCompileQueueTest implements Runnable {
             AVAILABLE_LEVELS = IntStream
                     .rangeClosed(LEVEL_SIMPLE, TIERED_STOP_AT_LEVEL)
                     .toArray();
-        } else if (Platform.isServer() && !Platform.isEmulatedClient()) {
+        } else if (Platform.isServer()) {
             AVAILABLE_LEVELS = new int[] { LEVEL_FULL_OPTIMIZATION };
-        } else if (Platform.isClient() || Platform.isMinimal() || Platform.isEmulatedClient()) {
+        } else if (Platform.isClient() || Platform.isMinimal()) {
             AVAILABLE_LEVELS = new int[] { LEVEL_SIMPLE };
         } else {
             throw new Error("TESTBUG: unknown VM: " + Platform.vmName);

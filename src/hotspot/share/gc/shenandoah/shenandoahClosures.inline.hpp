@@ -30,7 +30,6 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -132,22 +131,12 @@ void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
 
 template <bool CONCURRENT, bool STABLE_THREAD>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(oop* p) {
-  if (CONCURRENT) {
-    ShenandoahEvacOOMScope scope;
-    do_oop_work(p);
-  } else {
-    do_oop_work(p);
-  }
+  do_oop_work(p);
 }
 
 template <bool CONCURRENT, bool STABLE_THREAD>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(narrowOop* p) {
-  if (CONCURRENT) {
-    ShenandoahEvacOOMScope scope;
-    do_oop_work(p);
-  } else {
-    do_oop_work(p);
-  }
+  do_oop_work(p);
 }
 
 template <bool CONCURRENT, bool STABLE_THREAD>
@@ -209,15 +198,13 @@ void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oo
 }
 
 ShenandoahNMethodAndDisarmClosure::ShenandoahNMethodAndDisarmClosure(OopClosure* cl) :
-  NMethodToOopClosure(cl, true /* fix_relocations */),
-   _bs(BarrierSet::barrier_set()->barrier_set_nmethod()) {
-}
+  NMethodToOopClosure(cl, true /* fix_relocations */) {}
 
 void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
   assert(nm != nullptr, "Sanity");
   assert(!ShenandoahNMethod::gc_data(nm)->is_unregistered(), "Should not be here");
   NMethodToOopClosure::do_nmethod(nm);
-  _bs->disarm(nm);
+  ShenandoahNMethod::disarm_nmethod(nm);
 }
 
 

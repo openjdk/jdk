@@ -611,6 +611,20 @@ void CallGenerator::do_late_inline_helper() {
   }
 
   Compile* C = Compile::current();
+
+  uint endoff = call->jvms()->endoff();
+  if (C->inlining_incrementally()) {
+    // No reachability edges should be present when incremental inlining takes place.
+    // Inlining logic doesn't expect any extra edges past debug info and fails with
+    // an assert in SafePointNode::grow_stack.
+    assert(endoff == call->req(), "reachability edges not supported");
+  } else {
+    if (call->req() > endoff) { // reachability edges present
+      assert(OptimizeReachabilityFences, "required");
+      return; // keep the original call node as the holder of reachability info
+    }
+  }
+
   // Remove inlined methods from Compiler's lists.
   if (call->is_macro()) {
     C->remove_macro_node(call);
@@ -632,6 +646,12 @@ void CallGenerator::do_late_inline_helper() {
     for (uint i1 = 0; i1 < size; i1++) {
       map->init_req(i1, call->in(i1));
     }
+    // Call node has in(ReturnAdr) set to top() node.
+    // We have to set map->in(ReturnAdr) to correct value
+    // because it is used by uncommon traps.
+    Node* ret_adr = C->start()->proj_out_or_null(TypeFunc::ReturnAdr);
+    precond(ret_adr != nullptr);
+    map->set_req(TypeFunc::ReturnAdr, ret_adr);
 
     // Make sure the state is a MergeMem for parsing.
     if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
@@ -647,6 +667,7 @@ void CallGenerator::do_late_inline_helper() {
       map->set_req(TypeFunc::Parms + i1, top);
     }
     jvms->set_map(map);
+    precond(ret_adr == jvms->map()->returnadr());
 
     // Make enough space in the expression stack to transfer
     // the incoming arguments and return value.

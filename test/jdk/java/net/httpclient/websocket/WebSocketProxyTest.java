@@ -33,7 +33,7 @@
  *         -Djdk.internal.httpclient.websocket.debug=true
  *         -Djdk.httpclient.HttpClient.log=errors,requests,headers
  *         -Djdk.http.auth.tunneling.disabledSchemes=
- *         WebSocketProxyTest
+ *         ${test.main.class}
  */
 
 import java.io.IOException;

@@ -164,11 +164,8 @@ public abstract class EmbeddedFrame extends Frame
     }
 
     /**
-     * Because there may be many AppContexts, and we can't be sure where this
-     * EmbeddedFrame is first created or shown, we can't automatically determine
-     * the correct KeyboardFocusManager to attach to as KeyEventDispatcher.
      * Those who want to use the functionality of traversing out of the EmbeddedFrame
-     * must call this method on the AppContext. After that, all the changes
+     * must call this method. After that, all the changes
      * can be handled automatically, including possible replacement of
      * KeyboardFocusManager.
      */
@@ -184,7 +181,7 @@ public abstract class EmbeddedFrame extends Frame
 
     /**
      * Needed to avoid memory leak: we register this EmbeddedFrame as a listener with
-     * KeyboardFocusManager of an AppContext. We don't want the KFM to keep
+     * the KeyboardFocusManager. We don't want the KFM to keep
      * reference to our EmbeddedFrame forever if the Frame is no longer in use, so we
      * add listeners in show() and remove them in hide().
      */
@@ -198,7 +195,7 @@ public abstract class EmbeddedFrame extends Frame
 
     /**
      * Needed to avoid memory leak: we register this EmbeddedFrame as a listener with
-     * KeyboardFocusManager of an AppContext. We don't want the KFM to keep
+     * the KeyboardFocusManager. We don't want the KFM to keep
      * reference to our EmbeddedFrame forever if the Frame is no longer in use, so we
      * add listeners in show() and remove them in hide().
      */

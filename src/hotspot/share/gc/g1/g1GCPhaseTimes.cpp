@@ -180,8 +180,7 @@ void G1GCPhaseTimes::reset() {
   _cur_post_evacuate_cleanup_2_time_ms = 0.0;
   _cur_resize_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
-  _root_region_scan_wait_time_ms = 0.0;
-  _external_accounted_time_ms = 0.0;
+  _root_region_scan_time_ms = 0.0;
   _recorded_prepare_heap_roots_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
@@ -416,8 +415,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
-  // Concurrent tasks of ResetMarkingState and NoteStartOfMark are triggered during
-  // young collection. However, their execution time are not included in _gc_pause_time_ms.
   if (_cur_prepare_concurrent_task_time_ms > 0.0) {
     debug_time("Prepare Concurrent Start", _cur_prepare_concurrent_task_time_ms);
     debug_phase(_gc_par_phases[ResetMarkingState], 1);
@@ -543,14 +540,13 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
   info_time("Other", _gc_pause_time_ms - accounted_ms);
 }
 
-// Root-region-scan-wait, verify-before and verify-after are part of young GC,
+// Root region scan, verify before and verify after are part of young GC,
 // but these are not measured by G1Policy. i.e. these are not included in
 // G1Policy::record_young_collection_start() and record_young_collection_end().
-// In addition, these are not included in G1GCPhaseTimes::_gc_pause_time_ms.
 // See G1YoungCollector::collect().
 void G1GCPhaseTimes::print(bool evacuation_failed) {
-  if (_root_region_scan_wait_time_ms > 0.0) {
-    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+  if (_root_region_scan_time_ms > 0.0) {
+    debug_time("Root Region Scan", _root_region_scan_time_ms);
   }
 
   // Check if some time has been recorded for verification and only then print

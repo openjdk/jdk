@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @key headful
@@ -59,11 +60,9 @@ public class LastVisibleRow {
         Point clkPoint;
         try {
             testRobot = new Robot();
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
+            testRobot.setAutoWaitForIdle(true);
+            testRobot.setAutoDelay(30);
+            SwingUtilities.invokeAndWait(LastVisibleRow::createAndShowGUI);
             testRobot.delay(1000);
             testRobot.waitForIdle();
             BufferedImage bufferedImageBefore = testRobot.createScreenCapture(getCaptureRect());
@@ -73,7 +72,7 @@ public class LastVisibleRow {
             mouseEvents(clkPoint);
             testRobot.waitForIdle();
             clearSelect();
-            testRobot.delay(1000);
+            resetMousePos();
             testRobot.waitForIdle();
             BufferedImage bufferedImageAfter = testRobot.createScreenCapture(getCaptureRect());
 
@@ -137,43 +136,37 @@ public class LastVisibleRow {
         testRobot.delay(50);
     }
 
+    private static void resetMousePos() {
+        testRobot.mouseMove(50, 50);
+        testRobot.delay(50);
+    }
+
     // getMousePosition Actions for last row click
     private static Point getMousePosition() throws Exception {
         final Point[] clickPoint = new Point[1];
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                clickPoint[0] = getCellClickPoint(2, 0);
-            }
-        });
+        SwingUtilities.invokeAndWait((Runnable) () -> clickPoint[0] = getCellClickPoint(2, 0));
         return clickPoint[0];
     }
 
     // Clears the selected table row
     private static void clearSelect() throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                table.getSelectionModel().clearSelection();
-                table.setFocusable(false);
-            }
+        SwingUtilities.invokeAndWait((Runnable) () -> {
+            table.getSelectionModel().clearSelection();
+            table.setFocusable(false);
         });
     }
 
     // getCaptureRect Method - To Compute the Rectangle Area of last row
     private static Rectangle getCaptureRect() throws InterruptedException, InvocationTargetException {
         final Rectangle[] captureRect = new Rectangle[1];
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                Rectangle cellRect = table.getCellRect(2, 0, true);
-                Point point = new Point(cellRect.x, cellRect.y);
-                SwingUtilities.convertPointToScreen(point, table);
+        SwingUtilities.invokeAndWait((Runnable) () -> {
+            Rectangle cellRect = table.getCellRect(2, 0, true);
+            Point point = new Point(cellRect.x, cellRect.y);
+            SwingUtilities.convertPointToScreen(point, table);
 
-                captureRect[0] = new Rectangle(point.x+5, point.y+2,
-                        table.getColumnCount() * cellRect.width - 10,
-                        cellRect.height-2);
-            }
+            captureRect[0] = new Rectangle(point.x + 5, point.y + 2,
+                    table.getColumnCount() * cellRect.width - 10,
+                    cellRect.height - 2);
         });
         return captureRect[0];
     }

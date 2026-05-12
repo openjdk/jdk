@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ public class MalformedAnnotationProcessorTests extends TestRunner{
                     .getOutputLines(Task.OutputKind.DIRECT);
 
         System.out.println(actualErrors.get(0));
-        if (!actualErrors.get(0).contains("- compiler.err.proc.cant.load.class: " +
-                                          "Incompatible magic value")) {
+        if (!actualErrors.get(0).contains("- compiler.err.proc.bad.config.file: " +
+            "javax.annotation.processing.Processor: Provider BadAnnoProcessor not found")) {
             throw new AssertionError("Unexpected errors reported: " + actualErrors);
         }
     }
@@ -162,8 +162,8 @@ public class MalformedAnnotationProcessorTests extends TestRunner{
                     .writeAll()
                     .getOutputLines(Task.OutputKind.DIRECT);
 
-        if (!actualErrors.get(0).contains("- compiler.err.proc.cant.load.class: " +
-            "WrongClassFileVersion has been compiled by a more recent version")) {
+        if (!actualErrors.get(0).contains("- compiler.err.proc.bad.config.file: " +
+            "javax.annotation.processing.Processor: Provider WrongClassFileVersion not found")) {
             throw new AssertionError("Unexpected errors reported: " + actualErrors);
         }
     }

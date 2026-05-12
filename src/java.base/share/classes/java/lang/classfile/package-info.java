@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,9 +493,9 @@
  *
  * {@snippet lang="text" :
  * ClassElement =
- *     FieldModel*(UtfEntry name, Utf8Entry descriptor)
- *     | MethodModel*(UtfEntry name, Utf8Entry descriptor)
- *     | ModuleAttribute?(int flags, ModuleEntry moduleName, UtfEntry moduleVersion,
+ *     FieldModel*(Utf8Entry name, Utf8Entry descriptor)
+ *     | MethodModel*(Utf8Entry name, Utf8Entry descriptor)
+ *     | ModuleAttribute?(int flags, ModuleEntry moduleName, Utf8Entry moduleVersion,
  *                        List<ModuleRequireInfo> requires, List<ModuleOpenInfo> opens,
  *                        List<ModuleExportInfo> exports, List<ModuleProvidesInfo> provides,
  *                        List<ClassEntry> uses)
@@ -588,7 +588,7 @@
  *     | LabelTarget(Label label)
  *     | LineNumber(int line)
  *     | ExceptionCatch(Label tryStart, Label tryEnd, Label handler, ClassEntry exception)
- *     | LocalVariable(int slot, UtfEntry name, Utf8Entry type, Label startScope, Label endScope)
+ *     | LocalVariable(int slot, Utf8Entry name, Utf8Entry type, Label startScope, Label endScope)
  *     | LocalVariableType(int slot, Utf8Entry name, Utf8Entry type, Label startScope, Label endScope)
  *     | CharacterRange(int rangeStart, int rangeEnd, int flags, Label startScope, Label endScope)
  * }

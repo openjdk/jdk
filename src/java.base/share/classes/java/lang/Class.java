@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,17 +323,18 @@ public final class Class<T> implements java.io.Serializable,
                 } while (component.isArray());
                 sb.append(component.getName());
             } else {
-                // Class modifiers are a superset of interface modifiers
-                int modifiers = getModifiers() & Modifier.classModifiers();
-                if (modifiers != 0) {
-                    sb.append(Modifier.toString(modifiers));
-                    sb.append(' ');
-                }
+                int modifiers = getModifiers();
+                Reflection.appendAccessControlModifiers(sb, modifiers);
+                if (Modifier.isAbstract(modifiers))
+                    sb.append("abstract "); // Intentionally printed for interfaces
+                if (Modifier.isStatic(modifiers))
+                    sb.append("static ");
+                if (Modifier.isFinal(modifiers))
+                    sb.append("final ");
 
-                // A class cannot be strictfp and sealed/non-sealed so
-                // it is sufficient to check for sealed-ness after all
-                // modifiers are printed.
                 addSealingInfo(modifiers, sb);
+
+                // Note: class strictfp modifier is not recoverable from a class file
 
                 if (isAnnotation()) {
                     sb.append('@');
@@ -3841,7 +3842,7 @@ public final class Class<T> implements java.io.Serializable,
             return false;
         }
 
-        return getNestHost() == c.getNestHost();
+        return Reflection.areNestMates(this, c);
     }
 
     private native Class<?>[] getNestMembers0();

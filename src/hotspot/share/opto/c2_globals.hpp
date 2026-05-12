@@ -76,6 +76,17 @@
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
+  product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
+          "Optimize reachability fences "                                   \
+          "(leave reachability fence nodes intact when turned off)")        \
+                                                                            \
+  product(bool, PreserveReachabilityFencesOnConstants, false, DIAGNOSTIC,   \
+          "Keep reachability fences on compile-time constants")             \
+                                                                            \
+  product(bool, StressReachabilityFences, false, DIAGNOSTIC,                \
+          "Aggressively insert reachability fences "                        \
+          "for all oop method arguments")                                   \
+                                                                            \
   develop(uint, StressBailoutMean, 100000,                                  \
           "The expected number of failing() checks made until "             \
           "a random bailout.")                                              \
@@ -249,6 +260,9 @@
   develop(bool, TraceLoopOpts, false,                                       \
           "Trace executed loop optimizations")                              \
                                                                             \
+  develop(bool, TraceSplitIf, false,                                        \
+          "Trace Split-If optimization")                                    \
+                                                                            \
   develop(bool, TraceLoopLimitCheck, false,                                 \
           "Trace generation of loop limits checks")                         \
                                                                             \
@@ -333,6 +347,15 @@
                                                                             \
   product(bool, PartialPeelLoop, true,                                      \
           "Partial peel (rotate) loops")                                    \
+                                                                            \
+  product(uint, LoopPeeling, 1, DIAGNOSTIC,                                 \
+          "Control loop peeling optimization: "                             \
+          "0 = always disable loop peeling, "                               \
+          "1 = enable loop peeling (default), "                             \
+          "2 = disable loop peeling as a standalone optimization but "      \
+          "allow it as a helper to other loop optimizations like removing " \
+          "empty loops")                                                    \
+          range(0, 2)                                                       \
                                                                             \
   product(intx, PartialPeelNewPhiDelta, 0,                                  \
           "Additional phis that can be created by partial peeling")         \
@@ -484,8 +507,12 @@
   /* controls for heat-based inlining */                                    \
                                                                             \
   develop(intx, NodeCountInliningCutoff, 18000,                             \
-          "If parser node generation exceeds limit stop inlining")          \
+          "If node count exceeds limit stop inlining")                      \
           range(0, max_jint)                                                \
+                                                                            \
+  product(bool, DelayAfterInliningCutoff, true, DIAGNOSTIC,                 \
+          "If node count exceeds limit during parsing, attempt inlining "   \
+          "later instead of giving up completely")                          \
                                                                             \
   product(intx, MaxNodeLimit, 80000,                                        \
           "Maximum number of nodes")                                        \
@@ -693,6 +720,10 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
+  develop(bool, UseDeepIGVNRevisit, true,                                   \
+          "Re-process nodes that could benefit from a deep revisit after "  \
+          "the IGVN worklist drains")                                       \
+                                                                            \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
           "  F: verify Node::Ideal does not return nullptr if the node"     \
@@ -895,6 +926,47 @@
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
+                                                                            \
+  develop(bool, StressCountedLoop, false,                                   \
+          "Randomly delay conversion to counted loops")                     \
+                                                                            \
+  product(bool, HotCodeHeap, false, EXPERIMENTAL,                           \
+          "Enable the code heap for hot C2 nmethods")                       \
+                                                                            \
+  product(double, HotCodeSamplePercent, 80, EXPERIMENTAL,                   \
+          "Minimum percentage of profiling samples that must be in "        \
+          "the MethodHot heap before stopping hot code collection")         \
+          range(0, 100)                                                     \
+                                                                            \
+  product(double, HotCodeStablePercent, 5, EXPERIMENTAL,                    \
+          "Maximum percentage of newly compiled to total C2 nmethods "      \
+          "to treat nmethod count as stable. "                              \
+          "Values less than zero disable the stable check")                 \
+          range(-1, DBL_MAX)                                                \
+                                                                            \
+  product(uint, HotCodeIntervalSeconds, 300, EXPERIMENTAL,                  \
+          "Seconds between hot code grouping attempts")                     \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeSampleSeconds, 120, EXPERIMENTAL,                    \
+          "Seconds to sample application threads per grouping attempt")     \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeStartupDelaySeconds, 120, EXPERIMENTAL,              \
+          "Seconds to delay before starting hot code grouping thread")      \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeMinSamplingMs, 5, EXPERIMENTAL,                      \
+          "Minimum sampling interval in milliseconds")                      \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeMaxSamplingMs, 15, EXPERIMENTAL,                     \
+          "Maximum sampling interval in milliseconds")                      \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
+          "Number of levels of callees to relocate per candidate")          \
+          range(0, max_juint)                                               \
 
 // end of C2_FLAGS
 

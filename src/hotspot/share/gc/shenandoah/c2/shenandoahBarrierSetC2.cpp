@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,7 +73,7 @@ void ShenandoahBarrierSetC2State::remove_load_reference_barrier(ShenandoahLoadRe
 
 #define __ kit->
 
-bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseValues* phase, Node* adr,
+bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseGVN* phase, Node* adr,
                                                          BasicType bt, uint adr_idx) const {
   intptr_t offset = 0;
   Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
@@ -519,7 +519,33 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
 #undef __
 
-const TypeFunc* ShenandoahBarrierSetC2::write_barrier_pre_Type() {
+const TypeFunc* ShenandoahBarrierSetC2::_write_barrier_pre_Type              = nullptr;
+const TypeFunc* ShenandoahBarrierSetC2::_clone_barrier_Type                  = nullptr;
+const TypeFunc* ShenandoahBarrierSetC2::_load_reference_barrier_Type         = nullptr;
+
+inline const TypeFunc* ShenandoahBarrierSetC2::write_barrier_pre_Type() {
+  assert(ShenandoahBarrierSetC2::_write_barrier_pre_Type != nullptr, "should be initialized");
+  return ShenandoahBarrierSetC2::_write_barrier_pre_Type;
+}
+
+inline const TypeFunc* ShenandoahBarrierSetC2::clone_barrier_Type() {
+  assert(ShenandoahBarrierSetC2::_clone_barrier_Type != nullptr, "should be initialized");
+  return ShenandoahBarrierSetC2::_clone_barrier_Type;
+}
+
+const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
+  assert(ShenandoahBarrierSetC2::_load_reference_barrier_Type != nullptr, "should be initialized");
+  return ShenandoahBarrierSetC2::_load_reference_barrier_Type;
+}
+
+void ShenandoahBarrierSetC2::init() {
+  ShenandoahBarrierSetC2::make_write_barrier_pre_Type();
+  ShenandoahBarrierSetC2::make_clone_barrier_Type();
+  ShenandoahBarrierSetC2::make_load_reference_barrier_Type();
+}
+
+void ShenandoahBarrierSetC2::make_write_barrier_pre_Type() {
+  assert(ShenandoahBarrierSetC2::_write_barrier_pre_Type == nullptr, "should be");
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
@@ -528,10 +554,11 @@ const TypeFunc* ShenandoahBarrierSetC2::write_barrier_pre_Type() {
   fields = TypeTuple::fields(0);
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
 
-  return TypeFunc::make(domain, range);
+  ShenandoahBarrierSetC2::_write_barrier_pre_Type = TypeFunc::make(domain, range);
 }
 
-const TypeFunc* ShenandoahBarrierSetC2::clone_barrier_Type() {
+void ShenandoahBarrierSetC2::make_clone_barrier_Type() {
+  assert(ShenandoahBarrierSetC2::_clone_barrier_Type == nullptr, "should be");
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeOopPtr::NOTNULL; // src oop
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
@@ -540,10 +567,11 @@ const TypeFunc* ShenandoahBarrierSetC2::clone_barrier_Type() {
   fields = TypeTuple::fields(0);
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
 
-  return TypeFunc::make(domain, range);
+  ShenandoahBarrierSetC2::_clone_barrier_Type = TypeFunc::make(domain, range);
 }
 
-const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
+void ShenandoahBarrierSetC2::make_load_reference_barrier_Type() {
+  assert(ShenandoahBarrierSetC2::_load_reference_barrier_Type == nullptr, "should be");
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM; // original field value
   fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM; // original load address
@@ -555,7 +583,7 @@ const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
   fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM;
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
 
-  return TypeFunc::make(domain, range);
+  ShenandoahBarrierSetC2::_load_reference_barrier_Type = TypeFunc::make(domain, range);
 }
 
 Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
@@ -890,7 +918,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
 
     Node* thread = phase->transform_later(new ThreadLocalNode());
     Node* offset = phase->igvn().MakeConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-    Node* gc_state_addr = phase->transform_later(new AddPNode(phase->C->top(), thread, offset));
+    Node* gc_state_addr = phase->transform_later(AddPNode::make_off_heap(thread, offset));
 
     uint gc_state_idx = Compile::AliasIdxRaw;
     const TypePtr* gc_state_adr_type = nullptr; // debug-mode-only argument

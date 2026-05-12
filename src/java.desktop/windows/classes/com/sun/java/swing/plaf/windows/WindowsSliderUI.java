@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public final class WindowsSliderUI extends BasicSliderUI
+public class WindowsSliderUI extends BasicSliderUI
 {
     private boolean rollover = false;
     private boolean pressed = false;

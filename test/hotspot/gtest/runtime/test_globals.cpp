@@ -42,7 +42,7 @@
   } while (0)
 
 TEST_VM(FlagGuard, bool_flag) {
-  TEST_FLAG(AlwaysActAsServerClassMachine, bool, true);
+  TEST_FLAG(PrintCompilation, bool, true);
 }
 
 TEST_VM(FlagGuard, int_flag) {

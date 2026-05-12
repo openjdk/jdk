@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test CheckCheckCICompilerCount
- * @bug 8130858 8132525 8162881
+ * @bug 8130858 8132525 8162881 8379396
  * @summary Check that correct range of values for CICompilerCount are allowed depending on whether tiered is enabled or not
  * @library /test/lib /
  * @requires vm.flagless
@@ -186,7 +186,25 @@ public class CheckCICompilerCount {
         0
     };
 
-    private static void verifyValidOption(String[] arguments, String expected_output, int exit, boolean tiered) throws Exception {
+    private static final String[][] INVALID_ARGUMENTS = {
+        {
+            "-XX:CICompilerCount=100M",
+            "-version"
+        },
+    };
+
+    private static final String[] INVALID_EXPECTED_OUTPUTS = {
+        // "CICompilerCount is too large" is a common prefix for two different messages:
+        // - product build: flag constraint fires early: "CICompilerCount is too large for current active processor count N"
+        // - debug build: CodeCache overflow guard fires: "CICompilerCount is too large: compiler buffer size exceeds the CodeCache size limit"
+        "CICompilerCount is too large"
+    };
+
+    private static final int[] INVALID_EXIT = {
+        1,
+    };
+
+    private static void verifyOptionBehavior(String[] arguments, String expected_output, int exit, boolean tiered) throws Exception {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
@@ -215,11 +233,15 @@ public class CheckCICompilerCount {
         }
 
         for (int i = 0; i < NON_TIERED_ARGUMENTS.length; i++) {
-            verifyValidOption(NON_TIERED_ARGUMENTS[i], NON_TIERED_EXPECTED_OUTPUTS[i], NON_TIERED_EXIT[i], false);
+            verifyOptionBehavior(NON_TIERED_ARGUMENTS[i], NON_TIERED_EXPECTED_OUTPUTS[i], NON_TIERED_EXIT[i], false);
         }
 
         for (int i = 0; i < TIERED_ARGUMENTS.length; i++) {
-            verifyValidOption(TIERED_ARGUMENTS[i], TIERED_EXPECTED_OUTPUTS[i], TIERED_EXIT[i], true);
+            verifyOptionBehavior(TIERED_ARGUMENTS[i], TIERED_EXPECTED_OUTPUTS[i], TIERED_EXIT[i], true);
+        }
+
+        for (int i = 0; i < INVALID_ARGUMENTS.length; i++) {
+            verifyOptionBehavior(INVALID_ARGUMENTS[i], INVALID_EXPECTED_OUTPUTS[i], INVALID_EXIT[i], true);
         }
     }
 }

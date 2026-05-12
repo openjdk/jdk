@@ -56,7 +56,6 @@ import sun.awt.OSInfo;
 import sun.swing.SwingUtilities2;
 import java.util.HashMap;
 import java.util.Objects;
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 
 import sun.swing.SwingAccessor;
@@ -179,10 +178,7 @@ public class UIManager implements Serializable
     /**
      * This class defines the state managed by the <code>UIManager</code>.  For
      * Swing applications the fields in this class could just as well
-     * be static members of <code>UIManager</code> however we give them
-     * "AppContext"
-     * scope instead so that potentially multiple lightweight
-     * applications running in a single VM have their own state.
+     * be static members of <code>UIManager</code>.
      */
     private static class LAFState
     {
@@ -206,8 +202,8 @@ public class UIManager implements Serializable
         void setSystemDefaults(UIDefaults x) { tables[1] = x; }
 
         /**
-         * Returns the SwingPropertyChangeSupport for the current
-         * AppContext.  If <code>create</code> is a true, a non-null
+         * Returns the SwingPropertyChangeSupport instance.
+         * If <code>create</code> is a true, a non-null
          * <code>SwingPropertyChangeSupport</code> will be returned, if
          * <code>create</code> is false and this has not been invoked
          * with true, null will be returned.
@@ -1366,31 +1362,13 @@ public class UIManager implements Serializable
             return;
         }
 
-        // Try to get default LAF from system property, then from AppContext
-        // (6653395), then use cross-platform one by default.
-        String lafName = null;
-        @SuppressWarnings("unchecked")
-        HashMap<Object, String> lafData =
-                (HashMap) AppContext.getAppContext().remove("swing.lafdata");
-        if (lafData != null) {
-            lafName = lafData.remove("defaultlaf");
-        }
-        if (lafName == null) {
-            lafName = getCrossPlatformLookAndFeelClassName();
-        }
+        String lafName = getCrossPlatformLookAndFeelClassName();
         lafName = swingProps.getProperty(defaultLAFKey, lafName);
 
         try {
             setLookAndFeel(lafName);
         } catch (Exception e) {
             throw new Error("Cannot load " + lafName);
-        }
-
-        // Set any properties passed through AppContext (6653395).
-        if (lafData != null) {
-            for (Object key: lafData.keySet()) {
-                UIManager.put(key, lafData.get(key));
-            }
         }
     }
 
@@ -1451,8 +1429,8 @@ public class UIManager implements Serializable
 
     /*
      * This method is called before any code that depends on the
-     * <code>AppContext</code> specific LAFState object runs.
-     * In some AppContext cases, it's possible for this method
+     * LAFState object runs.
+     * In some cases, it's possible for this method
      * to be re-entered, which is why we grab a lock before calling
      * initialize().
      */

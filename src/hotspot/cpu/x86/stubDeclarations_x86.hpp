@@ -29,14 +29,16 @@
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
                                           do_arch_entry,                \
-                                          do_arch_entry_init)           \
+                                          do_arch_entry_init,           \
+                                          do_arch_entry_array)          \
   do_arch_blob(preuniverse, 500)                                        \
 
 
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
   do_arch_blob(initial, PRODUCT_ONLY(20000) NOT_PRODUCT(21000) WINDOWS_ONLY(+1000))                      \
   do_stub(initial, verify_mxcsr)                                        \
   do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr_entry,         \
@@ -65,14 +67,18 @@
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
                                            do_arch_blob,                \
                                            do_arch_entry,               \
-                                           do_arch_entry_init)          \
+                                           do_arch_entry_init,          \
+                                           do_arch_entry_array)         \
   do_arch_blob(continuation, 3000)                                      \
 
+// count needed for declaration of vector_iota_indices stub
+#define VECTOR_IOTA_COUNT 6
 
 #define STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,                         \
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
-                                       do_arch_entry_init)              \
+                                       do_arch_entry_init,              \
+                                       do_arch_entry_array)             \
   do_arch_blob(compiler, 120000 WINDOWS_ONLY(+2000))                    \
   do_stub(compiler, vector_float_sign_mask)                             \
   do_arch_entry(x86, compiler, vector_float_sign_mask,                  \
@@ -126,8 +132,9 @@
   do_arch_entry(x86, compiler, vector_long_sign_mask,                   \
                 vector_long_sign_mask, vector_long_sign_mask)           \
   do_stub(compiler, vector_iota_indices)                                \
-  do_arch_entry(x86, compiler, vector_iota_indices,                     \
-                vector_iota_indices, vector_iota_indices)               \
+  do_arch_entry_array(x86, compiler, vector_iota_indices,               \
+                      vector_iota_indices, vector_iota_indices,         \
+                      VECTOR_IOTA_COUNT)                                \
   do_stub(compiler, vector_count_leading_zeros_lut)                     \
   do_arch_entry(x86, compiler, vector_count_leading_zeros_lut,          \
                 vector_count_leading_zeros_lut,                         \
@@ -161,16 +168,34 @@
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
                 pshuffle_byte_flip_mask_addr,                           \
                 pshuffle_byte_flip_mask_addr)                           \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
+                pshuffle_byte_flip_mask_00ba_addr,                      \
+                pshuffle_byte_flip_mask_00ba_addr)                      \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
+                pshuffle_byte_flip_mask_dc00_addr,                      \
+                pshuffle_byte_flip_mask_dc00_addr)                      \
   /* x86_64 exposes these 3 stubs via a generic entry array */          \
   /* other arches use arch-specific entries */                          \
   /* this really needs rationalising */                                 \
   do_stub(compiler, string_indexof_linear_ll)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_ll,                \
+                string_indexof_linear_ll,                               \
+                string_indexof_linear_ll)                               \
   do_stub(compiler, string_indexof_linear_uu)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_uu,                \
+                string_indexof_linear_uu,                               \
+                string_indexof_linear_uu)                               \
   do_stub(compiler, string_indexof_linear_ul)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_ul,                \
+                string_indexof_linear_ul,                               \
+                string_indexof_linear_ul)                               \
   do_stub(compiler, pshuffle_byte_flip_mask_sha512)                     \
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
                 pshuffle_byte_flip_mask_addr_sha512,                    \
                 pshuffle_byte_flip_mask_addr_sha512)                    \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
+                pshuffle_byte_flip_mask_ymm_lo_addr_sha512,             \
+                pshuffle_byte_flip_mask_ymm_lo_addr_sha512)             \
   do_stub(compiler, compress_perm_table32)                              \
   do_arch_entry(x86, compiler, compress_perm_table32,                   \
                 compress_perm_table32, compress_perm_table32)           \
@@ -241,7 +266,8 @@
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
-                                    do_arch_entry_init)                 \
+                                    do_arch_entry_init,                 \
+                                    do_arch_entry_array)                \
   do_arch_blob(final, 33000                                             \
                WINDOWS_ONLY(+22000) ZGC_ONLY(+20000))                   \
 

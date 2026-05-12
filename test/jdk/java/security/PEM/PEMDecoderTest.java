@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8298420 8365288
+ * @bug 8298420 8365288 8377975
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
@@ -58,6 +58,8 @@ public class PEMDecoderTest {
     public static void main(String[] args) throws Exception {
         PEMDecoder decr;
 
+        PEMData.entryList.add(PEMData.insertPostHeaderChar(PEMData.ed25519priv, '\s'));
+        PEMData.entryList.add(PEMData.insertPostHeaderChar(PEMData.ed25519priv, '\t'));
         System.out.println("Decoder test:");
         PEMData.entryList.forEach(entry -> test(entry, false));
         System.out.println("Decoder test withFactory:");

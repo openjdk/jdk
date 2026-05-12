@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,6 +436,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  is not explicitly enabled, as long as it is not explicitly suppressed.
          */
         DEFAULT_ENABLED,
+        /** Flag for warnings that are automatically suppressed when they occur inside
+         *  a declaration that is itself annotated as @Deprecated. See JLS 9.6.4.6.
+         */
+        DEPRECATION_SENSITIVE,
         /** Flags mandatory warnings that should pass through a mandatory warning aggregator.
          */
         AGGREGATE,

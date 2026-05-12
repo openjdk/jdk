@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-import impl.DelegatingProviderImpl;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -37,7 +37,7 @@ import static impl.DelegatingProviderImpl.lastReverseLookupThrowable;
  *  InetAddressResolver.
  * @library providers/delegating
  * @build delegating.provider/impl.DelegatingProviderImpl
- * @run testng/othervm ReverseLookupDelegationTest
+ * @run junit/othervm ReverseLookupDelegationTest
  */
 public class ReverseLookupDelegationTest {
 
@@ -53,10 +53,10 @@ public class ReverseLookupDelegationTest {
 
         // Check that originally supplied byte array was used to construct canonical host name after
         // failed reverse lookup.
-        Assert.assertEquals("1.2.3.4", canonicalHostName, "unexpected canonical hostname");
+        assertEquals("1.2.3.4", canonicalHostName, "unexpected canonical hostname");
 
         // Check that on a provider side the IllegalArgumentException has been thrown by the built-in resolver
-        Assert.assertTrue(lastReverseLookupThrowable instanceof IllegalArgumentException,
+        assertTrue(lastReverseLookupThrowable instanceof IllegalArgumentException,
                 "wrong exception type is thrown by the built-in resolver");
     }
 }

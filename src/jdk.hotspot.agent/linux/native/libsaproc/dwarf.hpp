@@ -30,30 +30,21 @@
 
 #include "libproc_impl.h"
 
-/*
- * from System V Application Binary Interface
- *        AMD64 Architecture Processor Supplement
- *          Figure 3.38: DWARF Register Number Mapping
- * https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf
- */
+#ifdef __x86_64__
+#include "dwarf_regs_amd64.h"
+#elif defined(__aarch64__)
+#include "dwarf_regs_aarch64.h"
+#endif
+
 enum DWARF_Register {
-  RAX,
-  RDX,
-  RCX,
-  RBX,
-  RSI,
-  RDI,
-  RBP,
-  RSP,
-  R8,
-  R9,
-  R10,
-  R11,
-  R12,
-  R13,
-  R14,
-  R15,
-  RA,
+// DWARF_REG macro is used by DWARF_REGLIST and DWARF_PSEUDO_REGLIST.
+#define DWARF_REG(reg, no) \
+  reg = no,
+
+  DWARF_REGLIST
+  DWARF_PSEUDO_REGLIST
+
+#undef DWARF_REG
   MAX_VALUE
 };
 
@@ -94,6 +85,7 @@ class DwarfParser {
     bool process_dwarf(const uintptr_t pc);
     enum DWARF_Register get_cfa_register() { return _state.cfa_reg; }
     int get_cfa_offset() { return _state.cfa_offset; }
+    enum DWARF_Register get_ra_register() { return _state.return_address_reg; }
     int get_offset_from_cfa(enum DWARF_Register reg) { return _state.offset_from_cfa[reg]; }
 
     bool is_in(long pc) {

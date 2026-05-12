@@ -25,6 +25,7 @@
 
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
@@ -105,9 +106,12 @@ void VM_Version::initialize() {
 
   if (PowerArchitecturePPC64 >= 9) {
     // Performance is good since Power9.
-    if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVSX) && CompilerConfig::is_c2_enabled()) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
+  } else if (SuperwordUseVSX) {
+    warning("SuperwordUseVSX specified, but needs at least Power9.");
+    FLAG_SET_DEFAULT(SuperwordUseVSX, false);
   }
 
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
@@ -309,11 +313,6 @@ void VM_Version::initialize() {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
-
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {

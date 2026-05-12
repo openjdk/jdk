@@ -131,6 +131,14 @@ size_t ShenandoahYoungGeneration::free_unaffiliated_regions() const {
   return _free_set->young_unaffiliated_regions();
 }
 
+size_t ShenandoahYoungGeneration::available_with_reserve() const {
+  shenandoah_assert_heaplocked();
+  ShenandoahFreeSet* free_set = ShenandoahHeap::heap()->free_set();
+  size_t mutator_available = free_set->available_locked();
+  size_t collector_available = free_set->collector_available_locked();
+  return mutator_available + collector_available;
+}
+
 size_t ShenandoahYoungGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.

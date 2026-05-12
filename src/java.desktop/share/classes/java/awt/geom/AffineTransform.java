@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1137,7 +1137,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * The values are stored in the array as
      * {&nbsp;m00&nbsp;m10&nbsp;m01&nbsp;m11&nbsp;m02&nbsp;m12&nbsp;}.
      * An array of 4 doubles can also be specified, in which case only the
-     * first four elements representing the non-transform
+     * first four elements representing the non-translation
      * parts of the array are retrieved and the values are stored into
      * the array as {&nbsp;m00&nbsp;m10&nbsp;m01&nbsp;m11&nbsp;}
      * @param flatmatrix the double array used to store the returned

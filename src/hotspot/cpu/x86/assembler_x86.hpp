@@ -1694,8 +1694,11 @@ private:
   void movsbl(Register dst, Address src);
   void movsbl(Register dst, Register src);
 
-  void vmovw(XMMRegister dst, Register src);
-  void vmovw(Register dst, XMMRegister src);
+  void evmovw(XMMRegister dst, Register src);
+  void evmovw(Register dst, XMMRegister src);
+  void evmovw(XMMRegister dst, Address src);
+  void evmovw(Address dst, XMMRegister src);
+  void evmovw(XMMRegister dst, XMMRegister src);
 
   void movsbq(Register dst, Address src);
   void movsbq(Register dst, Register src);
@@ -2329,17 +2332,23 @@ private:
   void tzcntq(Register dst, Address src);
   void etzcntq(Register dst, Address src, bool no_flags);
 
+  // Unordered Compare Scalar Half-Precision Floating-Point Values and set EFLAGS
+  void evucomish(XMMRegister dst, Address src);
+  void evucomish(XMMRegister dst, XMMRegister src);
+  void evucomxsh(XMMRegister dst, Address src);
+  void evucomxsh(XMMRegister dst, XMMRegister src);
+
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
   void ucomisd(XMMRegister dst, XMMRegister src);
-  void vucomxsd(XMMRegister dst, Address src);
-  void vucomxsd(XMMRegister dst, XMMRegister src);
+  void evucomxsd(XMMRegister dst, Address src);
+  void evucomxsd(XMMRegister dst, XMMRegister src);
 
   // Unordered Compare Scalar Single-Precision Floating-Point Values and set EFLAGS
   void ucomiss(XMMRegister dst, Address src);
   void ucomiss(XMMRegister dst, XMMRegister src);
-  void vucomxss(XMMRegister dst, Address src);
-  void vucomxss(XMMRegister dst, XMMRegister src);
+  void evucomxss(XMMRegister dst, Address src);
+  void evucomxss(XMMRegister dst, XMMRegister src);
 
   void xabort(int8_t imm8);
 
@@ -2416,11 +2425,6 @@ private:
   void vsubsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsubss(XMMRegister dst, XMMRegister nds, Address src);
   void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-
-  void vmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vminss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vminsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
   void sarxl(Register dst, Register src1, Register src2);
   void sarxl(Register dst, Address src1, Register src2);
@@ -2552,8 +2556,6 @@ private:
   void vsubsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vmulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vdivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vminsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsqrtsh(XMMRegister dst, XMMRegister src);
   void vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
@@ -2790,9 +2792,9 @@ private:
   void vminpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
 
   // AVX10.2 floating point minmax instructions
-  void eminmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
-  void eminmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
-  void eminmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void evminmaxsh(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
+  void evminmaxss(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
+  void evminmaxsd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
   void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
   void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
   void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);

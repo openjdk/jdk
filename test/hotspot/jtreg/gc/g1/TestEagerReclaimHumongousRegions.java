@@ -84,26 +84,19 @@ public class TestEagerReclaimHumongousRegions {
      * @param phase The phase during concurrent mark to reach before triggering a young garbage collection.
      * @return Returns the stdout of the VM.
      */
-    private static String runHelperVM(ObjectType type, ReferencePolicy refPolicy, AllocationTiming timing, String phase) throws Exception {
+    private static String runHelperVM(List<String> args, ObjectType type, ReferencePolicy refPolicy, AllocationTiming timing, String phase) throws Exception {
 
         boolean useTypeArray = (type == ObjectType.TYPE_ARRAY);
         boolean keepReference = (refPolicy == ReferencePolicy.KEEP);
         boolean allocateAfter = (timing == AllocationTiming.AFTER_MARK_START);
 
-        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
-                                                                    "-Xmx20M",
-                                                                    "-Xms20m",
-                                                                    "-XX:+UnlockDiagnosticVMOptions",
-                                                                    "-XX:+VerifyAfterGC",
-                                                                    "-Xbootclasspath/a:.",
-                                                                    "-Xlog:gc=debug,gc+humongous=debug",
-                                                                    "-XX:+UnlockDiagnosticVMOptions",
-                                                                    "-XX:+WhiteBoxAPI",
-                                                                    TestEagerReclaimHumongousRegionsClearMarkBitsRunner.class.getName(),
-                                                                    String.valueOf(useTypeArray),
-                                                                    String.valueOf(keepReference),
-                                                                    String.valueOf(allocateAfter),
-                                                                    phase);
+        args.add(TestEagerReclaimHumongousRegionsClearMarkBitsRunner.class.getName());
+        args.add(String.valueOf(useTypeArray));
+        args.add(String.valueOf(keepReference));
+        args.add(String.valueOf(allocateAfter));
+        args.add(phase);
+
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(args);
 
         String log = output.getStdout();
         System.out.println(log);
@@ -111,19 +104,25 @@ public class TestEagerReclaimHumongousRegions {
         return log;
     }
 
+    private static List<String> testArgs() throws Exception {
+        return List.of("-XX:+UseG1GC",
+                       "-Xmx20M",
+                       "-Xms20m",
+                       "-XX:+UnlockDiagnosticVMOptions",
+                       "-XX:+VerifyAfterGC",
+                       "-Xbootclasspath/a:.",
+                       "-Xlog:gc=debug,gc+humongous=debug",
+                       "-XX:+UnlockDiagnosticVMOptions",
+                       "-XX:+WhiteBoxAPI");
+    }
+
     private static String boolToInt(boolean value) {
         return value ? "1" : "0";
     }
 
-    private static void runTest(ObjectType type,
-                                ReferencePolicy refPolicy,
-                                AllocationTiming timing,
-                                String phase,
-                                ExpectedState expected) throws Exception {
-        String log = runHelperVM(type, refPolicy, timing, phase);
-
+    private static void verifyLog(String log, AllocationTiming timing, ExpectedState expected) {
         // Find the log output indicating that the humongous object has been reclaimed, and marked and verify for the expected results.
-// [0.351s][debug][gc,humongous] GC(3) Humongous region 2 (object size 4194320 @ 0x00000000fee00000) remset 0 code roots 0 marked 1 pinned count 0 reclaim candidate 1 type array 1
+        // [0.351s][debug][gc,humongous] GC(3) Humongous region 2 (object size 4194320 @ 0x00000000fee00000) remset 0 code roots 0 marked 1 pinned count 0 reclaim candidate 1 type array 1
 
         // Now check the result of the reclaim attempt. We are interested in the last such message (as mentioned above, we might get two).
         String patternString = "gc,humongous.* marked (\\d) pin.*candidate (\\d)";
@@ -150,6 +149,23 @@ public class TestEagerReclaimHumongousRegions {
 
         boolean reclaimed = Pattern.compile("Reclaimed humongous region .*").matcher(log).find();
         Asserts.assertTrue(expected.reclaimed == reclaimed, "Wrong log output reclaiming humongous region");
+    }
+
+    private static void runTest(ObjectType type,
+                                ReferencePolicy refPolicy,
+                                AllocationTiming timing,
+                                String phase,
+                                ExpectedState expected) throws Exception {
+        List<String> vmArgs = testArgs();
+
+        ArrayList<String> args = new ArrayList(vmArgs);
+        String log = runHelperVM(args, type, refPolicy, timing, phase);
+        verifyLog(log, timing, expected);
+
+        ArrayList<String> jfrArgs = new ArrayList(vmArgs);
+        jfrArgs.addLast("-XX:StartFlightRecording=settings=profile");
+        String jfrLog = runHelperVM(jfrArgs, type, refPolicy, timing, phase);
+        verifyLog(jfrLog, timing, expected);
     }
 
     public static void main(String[] args) throws Exception {

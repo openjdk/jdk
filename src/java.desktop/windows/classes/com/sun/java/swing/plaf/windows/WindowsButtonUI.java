@@ -56,7 +56,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  *
  * @author Jeff Dinkins
  */
-public final class WindowsButtonUI extends BasicButtonUI
+public class WindowsButtonUI extends BasicButtonUI
 {
     protected int dashedRectGapX;
     protected int dashedRectGapY;

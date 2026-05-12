@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  */
 package org.xml.sax.ptests;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
-import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLFilterImpl;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -36,16 +37,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.testng.annotations.Test;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLFilterImpl;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * Entity resolver should be invoked in XML parse. This test verifies parsing
@@ -54,24 +52,22 @@ import org.xml.sax.helpers.XMLFilterImpl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.xml.sax.ptests.ResolverTest
+ * @run junit/othervm org.xml.sax.ptests.ResolverTest
  */
-@Test
 public class ResolverTest {
     /**
      * Unit test for entityResolver setter.
-     *
-     * @throws Exception If any errors occur.
      */
+    @Test
     public void testResolver() throws Exception {
-        String outputFile = USER_DIR + "EntityResolver.out";
+        String outputFile = "EntityResolver.out";
         String goldFile = GOLDEN_DIR + "EntityResolverGF.out";
         String xmlFile = XML_DIR + "publish.xml";
 
         Files.copy(Paths.get(XML_DIR + "publishers.dtd"),
-                Paths.get(USER_DIR + "publishers.dtd"), REPLACE_EXISTING);
+                Paths.get("publishers.dtd"), REPLACE_EXISTING);
         Files.copy(Paths.get(XML_DIR + "familytree.dtd"),
-                Paths.get(USER_DIR + "familytree.dtd"), REPLACE_EXISTING);
+                Paths.get("familytree.dtd"), REPLACE_EXISTING);
 
         try(FileInputStream instream = new FileInputStream(xmlFile);
                 MyEntityResolver eResolver = new MyEntityResolver(outputFile)) {
@@ -81,7 +77,9 @@ public class ResolverTest {
             InputSource is = new InputSource(instream);
             xmlReader.parse(is);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertLinesMatch(
+                Files.readAllLines(Path.of(goldFile)),
+                Files.readAllLines(Path.of(outputFile)));
     }
 }
 

@@ -31,7 +31,7 @@
  *        ReferenceTracker
  * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
- *       RetryWithCookie
+ *       ${test.main.class}
  */
 
 import jdk.test.lib.net.SimpleSSLContext;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,11 @@ final class BuildEnvBuilder {
                     String.format("Root work directory [%s] should be empty or non existent", root));
         }
 
-        return BuildEnv.create(root, Optional.ofNullable(resourceDir), verbose,
-                ResourceLocator.class, resolvedAppImageLayout());
-    }
-
-    BuildEnvBuilder verbose(boolean v) {
-        verbose = v;
-        return this;
+        return BuildEnv.create(
+                root,
+                Optional.ofNullable(resourceDir),
+                ResourceLocator.class,
+                resolvedAppImageLayout());
     }
 
     BuildEnvBuilder resourceDir(Path v) {
@@ -96,7 +94,6 @@ final class BuildEnvBuilder {
     private Path appImageDir;
     private AppImageLayout appImageLayout;
     private Path resourceDir;
-    private boolean verbose;
 
     private final Path root;
 }

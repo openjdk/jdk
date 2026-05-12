@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,43 @@ cleanup:
 }
 
 
+static ssize_t readFully(const int fd, void* buf, const size_t len) {
+    size_t nRead = 0;
+    ssize_t n;
+
+    while (nRead < len) {
+        n = read(fd, (char*)buf + nRead, len - nRead);
+        if (n == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return -1;
+        }
+        if (n == 0) {
+            break;
+        }
+        nRead += (size_t)n;
+    }
+    return (ssize_t)nRead;
+}
+
+static ssize_t writeFully(const int fd, const void* buf, const size_t len) {
+    size_t nWritten = 0;
+    ssize_t n;
+
+    while (nWritten < len) {
+        n = write(fd, (const char*)buf + nWritten, len - nWritten);
+        if (n == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return -1;
+        }
+        nWritten += (size_t)n;
+    }
+    return (ssize_t)nWritten;
+}
+
 static void closePipeEnd(int* pipefd, int idx) {
     if (pipefd[idx] >= 0) {
         close(pipefd[idx]);
@@ -190,21 +227,24 @@ int main(int argc, char *argv[]) {
         jvmLauncherData = initJvmlLauncherData(&jvmLauncherDataBufferSize);
         if (jvmLauncherData) {
             /* Buffer size */
-            if (write(pipefd[1], &jvmLauncherDataBufferSize,
-                                    sizeof(jvmLauncherDataBufferSize)) == -1) {
+            if (writeFully(pipefd[1], &jvmLauncherDataBufferSize,
+                      sizeof(jvmLauncherDataBufferSize)) !=
+                sizeof(jvmLauncherDataBufferSize)) {
                 JP_LOG_ERRNO;
                 goto cleanup;
             }
             if (jvmLauncherDataBufferSize) {
                 /* Buffer address */
-                if (write(pipefd[1], &jvmLauncherData,
-                                            sizeof(jvmLauncherData)) == -1) {
+                if (writeFully(pipefd[1], &jvmLauncherData,
+                          sizeof(jvmLauncherData)) !=
+                    sizeof(jvmLauncherData)) {
                     JP_LOG_ERRNO;
                     goto cleanup;
                 }
                 /* Buffer data */
-                if (write(pipefd[1], jvmLauncherData,
-                                            jvmLauncherDataBufferSize) == -1) {
+                if (writeFully(pipefd[1], jvmLauncherData,
+                                jvmLauncherDataBufferSize) !=
+                    jvmLauncherDataBufferSize) {
                     JP_LOG_ERRNO;
                     goto cleanup;
                 }
@@ -218,8 +258,9 @@ int main(int argc, char *argv[]) {
         /* Close unused write end */
         closePipeEnd(pipefd, 1);
 
-        if (read(pipefd[0], &jvmLauncherDataBufferSize,
-                                sizeof(jvmLauncherDataBufferSize)) == -1) {
+        if (readFully(pipefd[0], &jvmLauncherDataBufferSize,
+                 sizeof(jvmLauncherDataBufferSize)) !=
+            sizeof(jvmLauncherDataBufferSize)) {
             JP_LOG_ERRNO;
             goto cleanup;
         }
@@ -229,7 +270,8 @@ int main(int argc, char *argv[]) {
             goto cleanup;
         }
 
-        if (read(pipefd[0], &baseAddress, sizeof(baseAddress)) == -1) {
+        if (readFully(pipefd[0], &baseAddress, sizeof(baseAddress)) !=
+            sizeof(baseAddress)) {
             JP_LOG_ERRNO;
             goto cleanup;
         }
@@ -240,8 +282,8 @@ int main(int argc, char *argv[]) {
             goto cleanup;
         }
 
-        if (read(pipefd[0], jvmLauncherData,
-                                        jvmLauncherDataBufferSize) == -1) {
+        if (readFully(pipefd[0], jvmLauncherData, jvmLauncherDataBufferSize) !=
+            jvmLauncherDataBufferSize) {
             JP_LOG_ERRNO;
             goto cleanup;
         }

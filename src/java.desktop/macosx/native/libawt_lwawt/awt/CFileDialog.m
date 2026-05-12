@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
         fNavigateApps = inNavigateApps;
         fChooseDirectories = inChooseDirectories;
         fPanelResult = NSCancelButton;
+        inModalLoop = NO;
     }
 
     return self;
@@ -107,6 +108,11 @@ canChooseDirectories:(BOOL)inChooseDirectories
         thePanel = [NSOpenPanel openPanel];
     }
 
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    DECLARE_CLASS(jc_CFileDialog, "sun/lwawt/macosx/CFileDialog");
+    DECLARE_FIELD(jc_windowID, jc_CFileDialog, "nativeWindowID", "J");
+    (*env)->SetLongField(env, fFileDialog, jc_windowID, ptr_to_jlong(thePanel));
+
     if (thePanel != nil) {
         [thePanel setTitle:fTitle];
 
@@ -123,7 +129,9 @@ canChooseDirectories:(BOOL)inChooseDirectories
         }
 
         [thePanel setDelegate:self];
+        inModalLoop = YES;
         fPanelResult = [thePanel runModalForDirectory:fDirectory file:fFile];
+        inModalLoop = NO;
         [thePanel setDelegate:nil];
 
         if ([self userClickedOK]) {
@@ -137,6 +145,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
         }
     }
 
+    (*env)->SetLongField(env, fFileDialog, jc_windowID, ptr_to_jlong(0L));
     [self disposer];
 }
 
@@ -183,6 +192,36 @@ canChooseDirectories:(BOOL)inChooseDirectories
 }
 @end
 
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CFileDialog_nativeDispose(JNIEnv *env, jobject peer) {
+
+    DECLARE_CLASS(jc_CFileDialog, "sun/lwawt/macosx/CFileDialog");
+
+    DECLARE_FIELD(jc_nativePtr, jc_CFileDialog, "nativeCFileDialogPtr", "J");
+    CFileDialog *dialogDelegate = (CFileDialog*)jlong_to_ptr((*env)->GetLongField(env, peer, jc_nativePtr));
+
+    if (dialogDelegate == nil) {
+        return;
+    }
+
+    DECLARE_FIELD(jc_windowID, jc_CFileDialog, "nativeWindowID", "J");
+    NSWindow *windowID = (NSWindow*)jlong_to_ptr((*env)->GetLongField(env, peer, jc_windowID));
+    if (windowID == nil) {
+        return;
+    }
+
+    [dialogDelegate retain];
+    [ThreadUtilities performOnMainThreadWaiting:[NSThread isMainThread] block:^(){
+        if (dialogDelegate->inModalLoop == YES) {
+            NSApplication *app = [NSApplication sharedApplication];
+            NSWindow *modalWindow = [app modalWindow];
+            if (modalWindow != nil && (modalWindow == windowID)) {
+                [app stopModalWithCode:NSModalResponseCancel];
+            }
+        }
+    }];
+    [dialogDelegate release];
+   }
+
 /*
  * Class:     sun_lwawt_macosx_CFileDialog
  * Method:    nativeRunFileDialog
@@ -214,6 +253,11 @@ JNI_COCOA_ENTER(env);
                                                  canChooseDirectories:chooseDirectories
                                                               withEnv:env];
 
+    DECLARE_CLASS_RETURN(jc_CFileDialog, "sun/lwawt/macosx/CFileDialog", NULL);
+
+    DECLARE_FIELD_RETURN(jc_nativePtr, jc_CFileDialog, "nativeCFileDialogPtr", "J", NULL);
+    (*env)->SetLongField(env, peer, jc_nativePtr, ptr_to_jlong(dialogDelegate));
+
     [ThreadUtilities performOnMainThread:@selector(safeSaveOrLoad)
                                  on:dialogDelegate
                          withObject:nil
@@ -233,6 +277,7 @@ JNI_COCOA_ENTER(env);
         }];
     }
 
+    (*env)->SetLongField(env, peer, jc_nativePtr, ptr_to_jlong(0L));
     [dialogDelegate release];
 JNI_COCOA_EXIT(env);
     return returnValue;

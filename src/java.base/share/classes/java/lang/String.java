@@ -70,9 +70,9 @@ import sun.nio.cs.UTF_8;
  * string literals in Java programs, such as {@code "abc"}, are
  * implemented as instances of this class.
  * <p>
- * Strings are constant; their values cannot be changed after they
- * are created. String buffers support mutable strings.
- * Because String objects are immutable they can be shared. For example:
+ * Strings are immutable; their values cannot be changed after they
+ * are created. Because String objects are immutable they can be shared.
+ * For example:
  * <blockquote><pre>
  *     String str = "abc";
  * </pre></blockquote><p>

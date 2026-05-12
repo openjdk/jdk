@@ -233,24 +233,24 @@ public class JavacTrees extends DocTrees {
     public DocSourcePositions getSourcePositions() {
         return new DocSourcePositions() {
                 @Override @DefinedBy(Api.COMPILER_TREE)
-                public long getStartPosition(CompilationUnitTree file, Tree tree) {
+                public long getStartPosition(Tree tree) {
                     return TreeInfo.getStartPos((JCTree) tree);
                 }
 
                 @Override @DefinedBy(Api.COMPILER_TREE)
-                public long getEndPosition(CompilationUnitTree file, Tree tree) {
+                public long getEndPosition(Tree tree) {
                     return TreeInfo.getEndPos((JCTree) tree);
                 }
 
                 @Override @DefinedBy(Api.COMPILER_TREE)
-                public long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
+                public long getStartPosition(DocCommentTree comment, DocTree tree) {
                     DCDocComment dcComment = (DCDocComment) comment;
                     DCTree dcTree = (DCTree) tree;
                     return dcComment.getSourcePosition(dcTree.getStartPosition());
                 }
 
                 @Override  @DefinedBy(Api.COMPILER_TREE)
-                public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
+                public long getEndPosition(DocCommentTree comment, DocTree tree) {
                     DCDocComment dcComment = (DCDocComment) comment;
                     DCTree dcTree = (DCTree) tree;
                     return dcComment.getSourcePosition(dcTree.getEndPosition());

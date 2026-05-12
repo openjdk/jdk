@@ -74,7 +74,7 @@ private:
 
 protected:
   bool g1_can_remove_pre_barrier(GraphKit* kit,
-                                 PhaseValues* phase,
+                                 PhaseGVN* phase,
                                  Node* adr,
                                  BasicType bt,
                                  uint adr_idx) const;

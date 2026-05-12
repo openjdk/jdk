@@ -24,6 +24,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
@@ -154,7 +155,8 @@ static bool check_compiled_frame(JavaThread* thread) {
 bool OptoRuntime::generate(ciEnv* env) {
 
   C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB)
-
+  // disallow any further c2 stub generation
+  AOTCodeCache::set_c2_stubs_complete();
   return true;
 }
 
@@ -254,11 +256,10 @@ address OptoRuntime::generate_stub(ciEnv* env,
                                    bool return_pc) {
 
   // Matching the default directive, we currently have no method to match.
-  DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
-  CompilationMemoryStatisticMark cmsm(directive);
+  CompilerDirectiveMatcher default_directive(CompileBroker::compiler(CompLevel_full_optimization));
+  CompilationMemoryStatisticMark cmsm(default_directive.directive_set());
   ResourceMark rm;
-  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, directive);
-  DirectivesStack::release(directive);
+  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, default_directive.directive_set());
   return  C.stub_entry_point();
 }
 

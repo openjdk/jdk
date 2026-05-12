@@ -54,22 +54,22 @@ import org.junit.jupiter.api.Test;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
- *              H3SimpleTest
+ *              ${test.main.class}
  * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djava.net.preferIPv6Addresses=true
- *              H3SimpleTest
+ *              ${test.main.class}
  * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djava.net.preferIPv4Stack=true
- *              H3SimpleTest
+ *              ${test.main.class}
  * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djdk.internal.httpclient.quic.congestionController=reno
- *              H3SimpleTest
+ *              ${test.main.class}
  */
 // -Djava.security.debug=all
 public class H3SimpleTest implements HttpServerAdapters {

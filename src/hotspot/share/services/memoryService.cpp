@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,11 @@ void MemoryService::add_metaspace_memory_pools() {
   mgr->add_pool(_metaspace_pool);
   _pools_list->append(_metaspace_pool);
 
-  if (UseCompressedClassPointers) {
-    _compressed_class_pool = new CompressedKlassSpacePool();
-    mgr->add_pool(_compressed_class_pool);
-    _pools_list->append(_compressed_class_pool);
-  }
+#if INCLUDE_CLASS_SPACE
+  _compressed_class_pool = new CompressedKlassSpacePool();
+  mgr->add_pool(_compressed_class_pool);
+  _pools_list->append(_compressed_class_pool);
+#endif
 
   _managers_list->append(mgr);
 }

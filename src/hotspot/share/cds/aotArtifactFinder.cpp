@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
@@ -169,6 +170,7 @@ void AOTArtifactFinder::find_artifacts() {
   end_scanning_for_oops();
 
   TrainingData::cleanup_training_data();
+  check_critical_classes();
 }
 
 void AOTArtifactFinder::start_scanning_for_oops() {
@@ -233,6 +235,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
   bool created;
   _seen_classes->put_if_absent(ik, &created);
   if (created) {
+    check_critical_class(ik);
     append_to_all_cached_classes(ik);
 
     // All super types must be added.
@@ -310,3 +313,25 @@ void AOTArtifactFinder::all_cached_classes_do(MetaspaceClosure* it) {
     it->push(_all_cached_classes->adr_at(i));
   }
 }
+
+void AOTArtifactFinder::check_critical_classes() {
+  if (CDSConfig::is_dumping_static_archive()) {
+    // vmClasses are store in the AOT cache (or AOT config file, or static archive).
+    // If any of the vmClasses is excluded, (usually due to incompatible JVMTI agent),
+    // the resulting cache/config/archive is unusable.
+    for (auto id : EnumRange<vmClassID>{}) {
+      check_critical_class(vmClasses::klass_at(id));
+    }
+  }
+}
+
+void AOTArtifactFinder::check_critical_class(InstanceKlass* ik) {
+  if (SystemDictionaryShared::is_excluded_class(ik)) {
+    ResourceMark rm;
+    const char* msg = err_msg("Critical class %s has been excluded. %s cannot be written.",
+                              ik->external_name(),
+                              CDSConfig::type_of_archive_being_written());
+    AOTMetaspace::unrecoverable_writing_error(msg);
+  }
+}
+

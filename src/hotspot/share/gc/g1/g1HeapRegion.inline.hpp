@@ -187,7 +187,16 @@ inline void G1HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMar
     }
   }
 
-  assert(next_addr == limit, "Should stop the scan at the limit.");
+#ifdef ASSERT
+  if (is_starts_humongous() && bitmap->is_marked(bottom())) {
+    HeapWord* humongous_end = bottom() + cast_to_oop(bottom())->size();
+    assert(next_addr == MAX2(limit, humongous_end),
+           "Should stop the scan at limit or end of humongous object. r %u (%s)",
+           hrm_index(), get_short_type_str());
+  } else {
+    assert(next_addr == limit, "Should stop the scan at the limit. r %u (%s)", hrm_index(), get_short_type_str());
+  }
+#endif
 }
 
 inline HeapWord* G1HeapRegion::par_allocate(size_t min_word_size,

@@ -797,7 +797,7 @@ void AOTStreamedHeapLoader::cleanup() {
     Universe::vm_global()->release(&handles[num_null_handles], num_handles - num_null_handles);
   }
 
-  FREE_C_HEAP_ARRAY(void*, _object_index_to_heap_object_table);
+  FREE_C_HEAP_ARRAY(_object_index_to_heap_object_table);
 
   // Unmap regions
   FileMapInfo::current_info()->unmap_region(AOTMetaspace::hp);

@@ -129,7 +129,7 @@ TEST(QuickSort, random) {
     // Compare sorting to stdlib::qsort()
     qsort(expected_array, length, sizeof(int), test_stdlib_comparator);
     EXPECT_TRUE(sort_and_compare(test_array, expected_array, length, test_comparator));
-    FREE_C_HEAP_ARRAY(int, test_array);
-    FREE_C_HEAP_ARRAY(int, expected_array);
+    FREE_C_HEAP_ARRAY(test_array);
+    FREE_C_HEAP_ARRAY(expected_array);
   }
 }

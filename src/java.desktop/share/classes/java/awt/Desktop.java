@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,6 +272,8 @@ public class Desktop {
         }
     }
 
+    private static Desktop desktop;
+
     /**
      * Returns the {@code Desktop} instance of the current
      * desktop context. On some platforms the Desktop API may not be
@@ -292,12 +294,8 @@ public class Desktop {
                                                     "supported on the current platform");
         }
 
-        sun.awt.AppContext context = sun.awt.AppContext.getAppContext();
-        Desktop desktop = (Desktop)context.get(Desktop.class);
-
         if (desktop == null) {
             desktop = new Desktop();
-            context.put(Desktop.class, desktop);
         }
 
         return desktop;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
  * @author Jeff Dinkins
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public final class WindowsSplitPaneDivider extends BasicSplitPaneDivider
+public class WindowsSplitPaneDivider extends BasicSplitPaneDivider
 {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,32 @@
  * @bug 8198753
  * @summary Test DatagramChannel connect exceptions
  * @library ..
- * @run testng ConnectExceptions
+ * @run junit ConnectExceptions
  */
 
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.channels.AlreadyConnectedException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.UnresolvedAddressException;
+import java.nio.channels.UnsupportedAddressTypeException;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ConnectExceptions {
-    static DatagramChannel sndChannel;
-    static DatagramChannel rcvChannel;
-    static InetSocketAddress sender;
-    static InetSocketAddress receiver;
+    private DatagramChannel sndChannel;
+    private DatagramChannel rcvChannel;
+    private InetSocketAddress sender;
+    private InetSocketAddress receiver;
 
-    @BeforeTest
-    public static void setup() throws Exception {
+    @BeforeEach
+    public void setup() throws Exception {
         sndChannel = DatagramChannel.open();
         sndChannel.bind(null);
         InetAddress address = InetAddress.getLocalHost();
@@ -60,29 +66,40 @@ public class ConnectExceptions {
             rcvChannel.socket().getLocalPort());
     }
 
-    @Test(expectedExceptions = UnsupportedAddressTypeException.class)
-    public static void unsupportedAddressTypeException() throws Exception {
-        rcvChannel.connect(sender);
-        sndChannel.connect(new SocketAddress() {});
-    }
-
-    @Test(expectedExceptions = UnresolvedAddressException.class)
-    public static void unresolvedAddressException() throws Exception {
-        String host = TestUtil.UNRESOLVABLE_HOST;
-        InetSocketAddress unresolvable = new InetSocketAddress (host, 37);
-        sndChannel.connect(unresolvable);
-    }
-
-    @Test(expectedExceptions = AlreadyConnectedException.class)
-    public static void alreadyConnectedException() throws Exception {
-        sndChannel.connect(receiver);
-        InetSocketAddress random = new InetSocketAddress(0);
-        sndChannel.connect(random);
-    }
-
-    @AfterTest
-    public static void cleanup() throws Exception {
+    @AfterEach
+    public void cleanup() throws Exception {
         rcvChannel.close();
         sndChannel.close();
     }
+
+    @Test
+    public void unsupportedAddressTypeException() throws IOException {
+        rcvChannel.connect(sender);
+        assertThrows(UnsupportedAddressTypeException.class, () -> {
+            sndChannel.connect(new SocketAddress() {});
+        });
+    }
+
+    @Test
+    public void unresolvedAddressException() throws IOException {
+        String host = TestUtil.UNRESOLVABLE_HOST;
+        InetSocketAddress unresolvable = new InetSocketAddress (host, 37);
+        assertThrows(UnresolvedAddressException.class, () -> {
+            sndChannel.connect(unresolvable);
+        });
+        sndChannel.connect(receiver);
+        assertThrows(UnresolvedAddressException.class, () -> {
+            sndChannel.connect(unresolvable);
+        });
+    }
+
+    @Test
+    public void alreadyConnectedException() throws IOException {
+        sndChannel.connect(receiver);
+        assertThrows(AlreadyConnectedException.class, () -> {
+            InetSocketAddress random = new InetSocketAddress(0);
+            sndChannel.connect(random);
+        });
+    }
+
 }

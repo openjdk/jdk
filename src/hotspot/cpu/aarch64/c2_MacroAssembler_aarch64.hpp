@@ -177,6 +177,9 @@
                           FloatRegister fsrc, FloatRegister vsrc,
                           unsigned vector_length_in_bytes, FloatRegister vtmp);
 
+  void neon_reduce_add_fp16(FloatRegister dst, FloatRegister fsrc, FloatRegister vsrc,
+                            unsigned vector_length_in_bytes, FloatRegister vtmp);
+
   void neon_reduce_logical(int opc, Register dst, BasicType bt, Register isrc,
                            FloatRegister vsrc, unsigned vector_length_in_bytes);
 
@@ -249,4 +252,5 @@
 
   void sve_cpy(FloatRegister dst, SIMD_RegVariant T, PRegister pg, int imm8,
                bool isMerge);
+  int vector_iota_entry_index(BasicType bt);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

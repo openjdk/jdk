@@ -81,7 +81,7 @@ public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAESIntrinsics flag is set to true, TestAESMain is executed <br/>
+     * UseAES flag is set to true, TestAESMain is executed <br/>
      * Expected result: UseAES flag is set to false <br/>
      * UseAES flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 6270015
- * @library /test/lib
- * @build jdk.test.lib.Asserts
- *        jdk.test.lib.Utils
- *        jdk.test.lib.net.SimpleSSLContext
- *        jdk.test.lib.net.URIBuilder
- * @run main/othervm Test13
- * @run main/othervm -Djava.net.preferIPv6Addresses=true Test13
- * @summary Light weight HTTP server
  */
 
 import com.sun.net.httpserver.*;
@@ -54,6 +41,20 @@ import static jdk.test.lib.Utils.createTempFileOfSize;
  *      - same as Test12, but with 64 threads
  */
 
+/*
+ * @test
+ * @bug 6270015
+ * @summary Light weight HTTP server
+ * @library /test/lib
+ * @build jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.net.URIBuilder
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ */
 public class Test13 extends Test {
 
     private static final String TEMP_FILE_PREFIX =
@@ -61,20 +62,25 @@ public class Test13 extends Test {
 
     private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
 
+    private static final Logger logger = Logger.getLogger ("com.sun.net.httpserver");
+
     final static int NUM = 32; // was 32
 
     static boolean fail = false;
+
+    private static void setupLogging() {
+        final Handler handler = new ConsoleHandler();
+        handler.setLevel(Level.ALL);
+        logger.setLevel(Level.ALL);
+        logger.addHandler(handler);
+    }
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
         Path filePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
-        Logger l = Logger.getLogger ("com.sun.net.httpserver");
-        Handler ha = new ConsoleHandler();
-        ha.setLevel(Level.ALL);
-        l.setLevel(Level.ALL);
-        l.addHandler(ha);
+        setupLogging(); // merely for debugging
         InetAddress loopback = InetAddress.getLoopbackAddress();
         try {
             System.out.print ("Test13: ");

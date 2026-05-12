@@ -1,0 +1,316 @@
+/*
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+package gc;
+
+/*
+ * @test id=parallel
+ * @bug 8370947
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for ParallelGC
+ * @library /test/lib
+ * @requires vm.debug
+ * @requires vm.gc.Parallel
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C2
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C2
+ */
+
+/*
+ * @test id=g1
+ * @bug 8370947
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for G1GC
+ * @library /test/lib
+ * @requires vm.debug
+ * @requires vm.gc.G1
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C2
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C2
+ */
+
+/*
+ * @test id=shenandoah
+ * @bug 8370947
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for ShenandoahGC
+ * @library /test/lib
+ * @requires vm.debug
+ * @requires vm.gc.Shenandoah
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseShenandoahGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseShenandoahGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C2
+ */
+
+/*
+ * @test id=genshen
+ * @bug 8370947
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for generational ShenandoahGC
+ * @library /test/lib
+ * @requires vm.debug
+ * @requires vm.gc.Shenandoah
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=generational -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=generational -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=generational -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C2
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=generational -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C2
+ */
+
+/*
+ * @test id=z
+ * @bug 8370947
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for ZGC
+ * @library /test/lib
+ * @requires vm.debug
+ * @requires vm.gc.Z
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C2
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C2
+ */
+
+/*
+ * Nmethods have GC barriers and OOPs embedded into their code. GCs can patch nmethod's code
+ * which requires icache invalidation. Doing invalidation per instruction can be expensive.
+ * CPU can support hardware dcache and icache coherence. This would allow to defer cache
+ * invalidation.
+ *
+ * There are assertions for deferred cache invalidation. This test checks that all of them
+ * are passed.
+ */
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import jdk.test.whitebox.WhiteBox;
+import jtreg.SkippedException;
+
+public class TestDeferredICacheInvalidation {
+
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
+
+    public static class A {
+        public String s1;
+        public String s2;
+        public String s3;
+        public String s4;
+        public String s5;
+        public String s6;
+        public String s7;
+        public String s8;
+        public String s9;
+    }
+
+    public static A a = new A();
+
+    private static int compLevel;
+
+    public static class B {
+        public static void test0() {
+        }
+
+        public static void test1() {
+            a.s1 = a.s1 + "1";
+        }
+
+        public static void test2() {
+            a.s1 = a.s1 + "1";
+            a.s2 = a.s2 + "2";
+        }
+
+        public static void test3() {
+            a.s1 = a.s1 + "1";
+            a.s2 = a.s2 + "2";
+            a.s3 = a.s3 + "3";
+        }
+
+        public static void test4() {
+            a.s1 = a.s1 + "1";
+            a.s2 = a.s2 + "2";
+            a.s3 = a.s3 + "3";
+            a.s4 = a.s4 + "4";
+        }
+
+        public static void test5() {
+            a.s1 = a.s1 + "1";
+            a.s2 = a.s2 + "2";
+            a.s3 = a.s3 + "3";
+            a.s4 = a.s4 + "4";
+            a.s5 = a.s5 + "5";
+        }
+
+        public static void test6() {
+            a.s1 = a.s1 + "1";
+            a.s2 = a.s2 + "2";
+            a.s3 = a.s3 + "3";
+            a.s4 = a.s4 + "4";
+            a.s5 = a.s5 + "5";
+            a.s6 = a.s6 + "6";
+        }
+
+        public static void test7() {
+            a.s1 = a.s1 + "1";
+            a.s2 = a.s2 + "2";
+            a.s3 = a.s3 + "3";
+            a.s4 = a.s4 + "4";
+            a.s5 = a.s5 + "5";
+            a.s6 = a.s6 + "6";
+            a.s7 = a.s7 + "7";
+        }
+
+        public static void test8() {
+            a.s1 = a.s1 + "1";
+            a.s2 = a.s2 + "2";
+            a.s3 = a.s3 + "3";
+            a.s4 = a.s4 + "4";
+            a.s5 = a.s5 + "5";
+            a.s6 = a.s6 + "6";
+            a.s7 = a.s7 + "7";
+            a.s8 = a.s8 + "8";
+        }
+
+        public static void test9() {
+            a.s1 = a.s1 + "1";
+            a.s2 = a.s2 + "2";
+            a.s3 = a.s3 + "3";
+            a.s4 = a.s4 + "4";
+            a.s5 = a.s5 + "5";
+            a.s6 = a.s6 + "6";
+            a.s7 = a.s7 + "7";
+            a.s8 = a.s8 + "8";
+            a.s9 = a.s9 + "9";
+        }
+    }
+
+    private static void compileMethods() throws Exception {
+        for (var m : B.class.getDeclaredMethods()) {
+            if (!m.getName().startsWith("test")) {
+                continue;
+            }
+            m.invoke(null);
+            WB.markMethodProfiled(m);
+            WB.enqueueMethodForCompilation(m, compLevel);
+            while (WB.isMethodQueuedForCompilation(m)) {
+                Thread.sleep(100);
+            }
+            if (WB.getMethodCompilationLevel(m) != compLevel) {
+                throw new IllegalStateException("Method " + m + " is not compiled at the compilation level: " + compLevel + ". Got: " + WB.getMethodCompilationLevel(m));
+            }
+        }
+    }
+
+    public static void youngGC() throws Exception {
+        a = null;
+        WB.youngGC();
+    }
+
+    public static void fullGC() throws Exception {
+        // Thread synchronization
+        final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+        final ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
+        final ReentrantReadWriteLock.WriteLock writeLock = rwLock.writeLock();
+        final AtomicBoolean running = new AtomicBoolean(true);
+
+        // Thread 1: GC thread that runs for 1 second with 100ms sleep intervals
+        Thread gcThread = new Thread(() -> {
+            final long startTime = System.currentTimeMillis();
+            final long duration = 1000;
+            try {
+                while (System.currentTimeMillis() - startTime < duration) {
+                    writeLock.lock();
+                    try {
+                        a = new A();
+                        WB.fullGC();
+                    } finally {
+                        writeLock.unlock();
+                    }
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException e) {
+                // Thread interrupted, exit
+            }
+            running.set(false);
+        });
+
+        // Threads 2-11: Test threads that execute test0() through test9()
+        Thread[] testThreads = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            final int testIdx = i;
+            testThreads[i] = new Thread(() -> {
+                try {
+                    var method = B.class.getDeclaredMethod("test" + testIdx);
+                    while (running.get()) {
+                        readLock.lock();
+                        try {
+                            method.invoke(null);
+                        } finally {
+                            readLock.unlock();
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(10);
+                }
+            });
+        }
+
+        // Start all threads
+        gcThread.start();
+        for (Thread t : testThreads) {
+            t.start();
+        }
+
+        // Wait for all threads to complete
+        gcThread.join();
+        for (Thread t : testThreads) {
+            t.join();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (!Boolean.TRUE.equals(WB.getBooleanVMFlag("UseSingleICacheInvalidation"))) {
+            throw new SkippedException("Skip. Test requires UseSingleICacheInvalidation enabled.");
+        }
+        compLevel = (args[1].equals("C1")) ? 1 : 4;
+        compileMethods();
+        TestDeferredICacheInvalidation.class.getMethod(args[0]).invoke(null);
+    }
+}

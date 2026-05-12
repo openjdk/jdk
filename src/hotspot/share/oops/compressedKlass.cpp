@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
 
   // We should need a class space if address space is larger than what narrowKlass can address
   const bool should_need_class_space = (BytesPerWord * BitsPerByte) > narrow_klass_pointer_bits();
-  ASSERT_HERE(should_need_class_space == needs_class_space());
+  ASSERT_HERE(should_need_class_space == (INCLUDE_CLASS_SPACE ? true : false));
 
   const size_t klass_align = klass_alignment_in_bytes();
 
@@ -318,24 +318,19 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("UseCompressedClassPointers %d, UseCompactObjectHeaders %d",
-               UseCompressedClassPointers, UseCompactObjectHeaders);
-  if (UseCompressedClassPointers) {
-    st->print_cr("Narrow klass pointer bits %d, Max shift %d",
-                 _narrow_klass_pointer_bits, _max_shift);
-    st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
-                  p2i(base()), shift());
-    st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
-    st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
-    st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
-                 _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
-    if (_protection_zone_size > 0) {
-      st->print_cr("Protection zone: " RANGEFMT, RANGEFMTARGS(_base, _protection_zone_size));
-    } else {
-      st->print_cr("No protection zone.");
-    }
+  st->print_cr("UseCompactObjectHeaders %d", UseCompactObjectHeaders);
+  st->print_cr("Narrow klass pointer bits %d, Max shift %d",
+               _narrow_klass_pointer_bits, _max_shift);
+  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+                p2i(base()), shift());
+  st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
+  st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
+  st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
+               _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
+  if (_protection_zone_size > 0) {
+    st->print_cr("Protection zone: " RANGEFMT, RANGEFMTARGS(_base, _protection_zone_size));
   } else {
-    st->print_cr("UseCompressedClassPointers off");
+    st->print_cr("No protection zone.");
   }
 }
 

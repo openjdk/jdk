@@ -384,7 +384,7 @@ G1FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _length_of_node(
 }
 
 G1FreeRegionList::NodeInfo::~NodeInfo() {
-  FREE_C_HEAP_ARRAY(uint, _length_of_node);
+  FREE_C_HEAP_ARRAY(_length_of_node);
 }
 
 void G1FreeRegionList::NodeInfo::clear() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build DirPermissionDenied jdk.test.lib.process.*
  *        jdk.test.lib.util.FileUtils
- * @run testng DirPermissionDenied
+ * @run junit ${test.main.class}
  */
 
 import java.io.IOException;
@@ -41,9 +41,10 @@ import java.nio.file.Paths;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeTest;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 public class DirPermissionDenied {
     private static final Path TEST_DIR = Paths.get(
             "DirPermissionDeniedDirectory");
@@ -79,8 +80,8 @@ public class DirPermissionDenied {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Throwable {
+    @BeforeAll
+    public static void setup() throws Throwable {
         // mkdir and chmod "333"
         Files.createDirectories(TEST_DIR);
         ProcessTools.executeCommand("chmod", "333", TEST_DIR.toString())
@@ -89,8 +90,8 @@ public class DirPermissionDenied {
                     .shouldHaveExitValue(0);
     }
 
-    @AfterTest
-    public void tearDown() throws Throwable {
+    @AfterAll
+    public static void tearDown() throws Throwable {
         // add read permission to ensure the dir removable
         ProcessTools.executeCommand("chmod", "733", TEST_DIR.toString())
                     .outputTo(System.out)

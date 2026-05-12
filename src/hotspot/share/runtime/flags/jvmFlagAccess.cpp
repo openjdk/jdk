@@ -329,7 +329,7 @@ JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrig
   flag->set_ccstr(new_value);
   if (!flag->is_default() && old_value != nullptr) {
     // Old value is heap allocated so free it.
-    FREE_C_HEAP_ARRAY(char, old_value);
+    FREE_C_HEAP_ARRAY(old_value);
   }
   // Unlike the other APIs, the old value is NOT returned, so the caller won't need to free it.
   // The callers typically don't care what the old value is.

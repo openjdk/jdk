@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,37 @@ static const char* const default_compile_commands[] = {
     "MemLimit,*.*,1G~crash",
 #endif
     nullptr };
+
+// CompLevel               | -XX:CompileCommand bitmask
+// ----------------------------------------------------
+// 0 (interpreter)         |  N/A
+// 1 (C1)                  |    1
+// 2 (C1 + counters)       |   10
+// 3 (C1 + counters + mdo) |  100
+// 4 (C2/JVMCI)            | 1000
+// All C1 levels           |  111
+// All levels              | 1111
+
+static const int comp_level_bitmask[CompLevel_count] = {0, 1, 10, 100, 1000};
+static const int comp_level_bitmask_all_levels = 1111;
+static const intx default_comp_level_argument = comp_level_bitmask_all_levels;
+
+inline bool bitmask_applies_to_comp_level(int bitmask, int comp_level) {
+  assert(comp_level > CompLevel_none && comp_level < CompLevel_count, "CompLevel out of bounds");
+  return (bitmask / comp_level_bitmask[comp_level]) % 10 == 1;
+}
+
+static bool is_valid_comp_level_bitmask(intx bitmask) {
+  if (bitmask < 0 || bitmask > comp_level_bitmask_all_levels) {
+    return false;
+  }
+  for (; bitmask != 0; bitmask /= 10) {
+    if (bitmask % 10 > 1) {
+      return false;
+    }
+  }
+  return true;
+}
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -456,36 +487,56 @@ template bool CompilerOracle::option_matches_type<bool>(CompileCommandEnum optio
 template bool CompilerOracle::option_matches_type<ccstr>(CompileCommandEnum option, ccstr& value);
 template bool CompilerOracle::option_matches_type<double>(CompileCommandEnum option, double& value);
 
+bool CompilerOracle::applies_to_comp_level(const methodHandle& method, CompileCommandEnum command, CompLevel current_level) {
+  if (current_level == CompLevel_none) {
+    return false;
+  }
+
+  intx bitmask = 0;
+  if (!has_option_value(method, command, bitmask)) {
+    return false;
+  }
+
+  // Since we don't have bitmask for interpreter level (0), but still need to call CompilerOracle::should_print()
+  // from collect_profiled_methods() in java.cpp, a special value of CompLevel_any produces a match with any bitmask, even 0
+  return current_level == CompLevel_any
+      || bitmask_applies_to_comp_level(bitmask, current_level);
+}
+
 bool CompilerOracle::has_option(const methodHandle& method, CompileCommandEnum option) {
   bool value = false;
   has_option_value(method, option, value);
   return value;
 }
 
-bool CompilerOracle::should_exclude(const methodHandle& method) {
-  if (check_predicate(CompileCommandEnum::Exclude, method)) {
+bool CompilerOracle::should_exclude(const methodHandle& method, const CompLevel level) {
+  if (has_exclude(method, level)) {
     return true;
   }
   if (has_command(CompileCommandEnum::CompileOnly)) {
-    return !check_predicate(CompileCommandEnum::CompileOnly, method);
+    return !applies_to_comp_level(method, CompileCommandEnum::CompileOnly, level);
   }
   return false;
+}
+
+bool CompilerOracle::has_exclude(const methodHandle& method, const CompLevel level) {
+  return applies_to_comp_level(method, CompileCommandEnum::Exclude, level);
 }
 
 bool CompilerOracle::should_inline(const methodHandle& method) {
   return (check_predicate(CompileCommandEnum::Inline, method));
 }
 
-bool CompilerOracle::should_not_inline(const methodHandle& method) {
-  return check_predicate(CompileCommandEnum::DontInline, method) || check_predicate(CompileCommandEnum::Exclude, method);
+bool CompilerOracle::should_not_inline(const methodHandle& method, const CompLevel level) {
+  return check_predicate(CompileCommandEnum::DontInline, method) || has_exclude(method, level);
 }
 
 bool CompilerOracle::should_delay_inline(const methodHandle& method) {
   return (check_predicate(CompileCommandEnum::DelayInline, method));
 }
 
-bool CompilerOracle::should_print(const methodHandle& method) {
-  return check_predicate(CompileCommandEnum::Print, method);
+bool CompilerOracle::should_print(const methodHandle& method, const CompLevel level) {
+  return applies_to_comp_level(method, CompileCommandEnum::Print, level);
 }
 
 bool CompilerOracle::should_print_methods() {
@@ -505,8 +556,8 @@ bool CompilerOracle::should_log(const methodHandle& method) {
   return (check_predicate(CompileCommandEnum::Log, method));
 }
 
-bool CompilerOracle::should_break_at(const methodHandle& method) {
-  return check_predicate(CompileCommandEnum::Break, method);
+bool CompilerOracle::should_break_at(const methodHandle& method, const CompLevel level) {
+  return applies_to_comp_level(method, CompileCommandEnum::Break, level);
 }
 
 void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
@@ -678,6 +729,19 @@ static void usage() {
   tty->print_cr("from inlining, whereas the 'compileonly' command only excludes methods from");
   tty->print_cr("top-level compilations (i.e. they can still be inlined into other compilation units).");
   tty->cr();
+  tty->print_cr("Compilation levels can be specified in the 'compileonly', 'exclude', 'print',");
+  tty->print_cr("and 'break' commands using a binary bitmask as an optional value:");
+  tty->print_cr("  -XX:CompileCommand=exclude,java/*.*,1011 -XX:CompileCommand=print,java/*.*,100");
+  tty->cr();
+  tty->print_cr("The bitmask is calculated by summing the desired compilation level values:");
+  tty->print_cr("  C1 without profiling = 1");
+  tty->print_cr("  C1 with limited profiling = 10");
+  tty->print_cr("  C1 with full profiling = 100");
+  tty->print_cr("  C2 = 1000");
+  tty->cr();
+  tty->print_cr("Note: Excluding specific compilation levels may disrupt normal state transitions");
+  tty->print_cr("between the levels, as the VM will not automatically work around the excluded ones.");
+  tty->cr();
 };
 
 static int skip_whitespace(char* &line) {
@@ -712,7 +776,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
   size_t s = 0;
   char* end;
   if (!parse_integer<size_t>(line, &end, &s)) {
-    jio_snprintf(errorbuf, buf_size, "MemLimit: invalid value");
+    jio_snprintf(errorbuf, buf_size, ": invalid integer: '%.20s'", line);
     return false;
   }
   bytes_read = (int)(end - line);
@@ -726,7 +790,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
       // ok, this is the default
       bytes_read += 5;
     } else {
-      jio_snprintf(errorbuf, buf_size, "MemLimit: invalid option");
+      jio_snprintf(errorbuf, buf_size, ": invalid suffix: '%.6s'", end);
       return false;
     }
   }
@@ -751,7 +815,7 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   });
 #undef IF_ENUM_STRING
 
-  jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
+  jio_snprintf(errorbuf, buf_size, ": invalid option: '%.8s'", line);
 
   return false;
 }
@@ -763,21 +827,42 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
   const char* type_str = optiontype2name(type);
   int skipped = skip_whitespace(line);
   total_bytes_read += skipped;
+  char parse_error_buf[80] = {};
+
   if (type == OptionType::Intx) {
     intx value;
     bool success = false;
-    if (option == CompileCommandEnum::MemLimit) {
-      // Special parsing for MemLimit
-      success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
-    } else {
-      // Is it a raw number?
-      success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
+    switch (option) {
+      case CompileCommandEnum::MemLimit:
+        // Special parsing for MemLimit
+        success = parseMemLimit(line, value, bytes_read, parse_error_buf, sizeof(parse_error_buf));
+        break;
+      case CompileCommandEnum::Break:
+      case CompileCommandEnum::CompileOnly:
+      case CompileCommandEnum::Exclude:
+      case CompileCommandEnum::Print:
+        // In the commands above the parameter used to be a boolean. Now it is an int (a compilation level mask).
+        // For compatibility with previous versions we keep it optional. If user did not specify the mask, assume default value
+        if (*line == '\0') {
+          value = default_comp_level_argument;
+          success = true;
+        } else {
+          success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
+          if (success && !is_valid_comp_level_bitmask(value)) {
+            jio_snprintf(parse_error_buf, sizeof(parse_error_buf), ": invalid compilation level bitmask '%.*s'", bytes_read, line);
+            success = false;
+          }
+        }
+        break;
+      default:
+        // Is it a raw number?
+        success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
     }
     if (success) {
       total_bytes_read += bytes_read;
       return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
-      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parse_error_buf);
       return false;
     }
   } else if (type == OptionType::Uintx) {
@@ -785,7 +870,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
     bool success = false;
     if (option == CompileCommandEnum::MemStat) {
       // Special parsing for MemStat
-      success = parseMemStat(line, value, bytes_read, errorbuf, buf_size);
+      success = parseMemStat(line, value, bytes_read, parse_error_buf, sizeof(parse_error_buf));
     } else {
       // parse as raw number
       success = sscanf(line, "%zu%n", &value, &bytes_read) == 1;
@@ -794,7 +879,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
       total_bytes_read += bytes_read;
       return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
-      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parse_error_buf);
       return false;
     }
   } else if (type == OptionType::Ccstr) {
@@ -1089,17 +1174,25 @@ bool CompilerOracle::parse_from_line(char* line) {
           return false;
         }
         return true;
-      } else if (option == CompileCommandEnum::MemStat) {
-        // MemStat default action is to collect data but to not print
-        if (!register_command(matcher, option, error_buf, sizeof(error_buf), (uintx)MemStatAction::collect)) {
+      }
+
+      switch (option) {
+        case CompileCommandEnum::Break:
+        case CompileCommandEnum::CompileOnly:
+        case CompileCommandEnum::Exclude:
+        case CompileCommandEnum::Print:
+          break;
+        case CompileCommandEnum::MemStat:
+          // MemStat default action is to collect data but to not print
+          if (!register_command(matcher, option, error_buf, sizeof(error_buf), (uintx)MemStatAction::collect)) {
+            print_parse_error(error_buf, original.get());
+            return false;
+          }
+          return true;
+        default:
+          jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));
           print_parse_error(error_buf, original.get());
           return false;
-        }
-        return true;
-      } else {
-        jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));
-        print_parse_error(error_buf, original.get());
-        return false;
       }
     }
     if (!scan_value(type, line, bytes_read, matcher, option, error_buf, sizeof(error_buf))) {
@@ -1209,7 +1302,7 @@ bool CompilerOracle::parse_compile_only(char* line) {
     if (method_pattern != nullptr) {
       TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(method_pattern, error_buf, sizeof(error_buf));
       if (matcher != nullptr) {
-        if (register_command(matcher, CompileCommandEnum::CompileOnly, error_buf, sizeof(error_buf), true)) {
+        if (register_command(matcher, CompileCommandEnum::CompileOnly, error_buf, sizeof(error_buf), default_comp_level_argument)) {
           continue;
         }
       }

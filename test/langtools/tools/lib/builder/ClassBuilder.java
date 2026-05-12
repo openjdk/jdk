@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Matcher;
@@ -54,6 +55,7 @@ public class ClassBuilder extends AbstractBuilder {
 
     private String extendsType;
     private final List<String> implementsTypes;
+    private final List<String> permitsTypes;
     private final List<MemberBuilder> members;
     private final List<ClassBuilder> inners;
     private final List<ClassBuilder> nested;
@@ -86,6 +88,7 @@ public class ClassBuilder extends AbstractBuilder {
         }
         imports = new ArrayList<>();
         implementsTypes = new ArrayList<>();
+        permitsTypes = new ArrayList<>();
         members = new ArrayList<>();
         nested = new ArrayList<>();
         inners = new ArrayList<>();
@@ -153,7 +156,11 @@ public class ClassBuilder extends AbstractBuilder {
      * @return this builder.
      */
     public ClassBuilder setExtends(String name) {
-        extendsType = name;
+        if (modifiers.isInterface()) {
+            implementsTypes.add(name);
+        } else {
+            extendsType = name;
+        }
         return this;
     }
 
@@ -163,7 +170,17 @@ public class ClassBuilder extends AbstractBuilder {
      * @return this builder.
      */
     public ClassBuilder addImplements(String... names) {
-        implementsTypes.addAll(List.of(names));
+        implementsTypes.addAll(Arrays.asList(names));
+        return this;
+    }
+
+    /**
+     * Adds a permits declaration(s).
+     * @param names the subtypes
+     * @return this builder
+     */
+    public ClassBuilder addPermits(String... names) {
+        permitsTypes.addAll(Arrays.asList(names));
         return this;
     }
 
@@ -225,28 +242,25 @@ public class ClassBuilder extends AbstractBuilder {
                 ow.println("// NO_API_COMMENT");
                 break;
         }
+        assert !modifiers.modifiers.isEmpty();
         ow.print(modifiers.toString());
         ow.print(clsname);
         if (typeParameter != null) {
-            ow.print(typeParameter + " ");
-        } else {
-            ow.print(" ");
+            ow.print(typeParameter);
         }
         if (extendsType != null && !extendsType.isEmpty()) {
-            ow.print("extends " + extendsType + " ");
+            assert !modifiers.isInterface();
+            ow.print(" extends " + extendsType);
         }
         if (!implementsTypes.isEmpty()) {
-            ow.print("implements ");
-
-            ListIterator<String> iter = implementsTypes.listIterator();
-            while (iter.hasNext()) {
-                String s = iter.next() ;
-                ow.print(s);
-                if (iter.hasNext())
-                    ow.print(", ");
-            }
+            ow.print(modifiers.isInterface() ? " extends " : " implements ");
+            ow.print(String.join(", ", implementsTypes));
         }
-        ow.print("{");
+        if (!permitsTypes.isEmpty()) {
+            ow.print(" permits ");
+            ow.print(String.join(", ", permitsTypes));
+        }
+        ow.print(" {");
         if (!nested.isEmpty()) {
             ow.println("");
             nested.forEach(m -> ow.println(m.toString()));

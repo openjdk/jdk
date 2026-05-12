@@ -134,6 +134,16 @@ The following commands are available:
 
     -   `-all`: (Optional) Show help for all commands (BOOLEAN, false) .
 
+`AOT.end_recording`
+:   Ends an in-progress AOT training and records the results to the file(s) specified by `-XX:AOTConfiguration` and/or `-XX:AOTCacheOutput`.
+
+    Impact: Low
+
+    **Note:**
+
+    The JVM must be started in AOT training mode using command-line arguments such as `-XX:AOTMode=record` or `-XX:AOTCacheOutput=<file>`.
+    The results of the AOT training can be an AOT configuration file, an AOT cache file, or both.
+
 `Compiler.CodeHeap_Analytics`  \[*function*\] \[*granularity*\]
 :   Print CodeHeap analytics
 

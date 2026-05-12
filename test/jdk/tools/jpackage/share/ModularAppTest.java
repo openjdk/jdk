@@ -152,10 +152,9 @@ public final class ModularAppTest {
         HelloApp.createBundle(appDesc, moduleOutputDir);
 
         final var workDir = TKit.createTempDirectory("runtime").resolve("data");
-        final Path jlinkOutputDir;
-        switch (runtimeType) {
+        final Path jlinkOutputDir = switch (runtimeType) {
             case IMAGE -> {
-                jlinkOutputDir = workDir;
+                yield workDir;
             }
             case MAC_BUNDLE -> {
                 var macBundle = new MacBundle(workDir);
@@ -164,12 +163,9 @@ public final class ModularAppTest {
                 Files.createDirectories(macBundle.homeDir().getParent());
                 Files.createDirectories(macBundle.macOsDir());
                 Files.createFile(macBundle.infoPlistFile());
-                jlinkOutputDir = macBundle.homeDir();
+                yield macBundle.homeDir();
             }
-            default -> {
-                throw new AssertionError();
-            }
-        }
+        };
 
         // List of modules required for the test app.
         final var modules = new String[] {
@@ -263,9 +259,6 @@ public final class ModularAppTest {
                         }
                         case NON_EXISTING_DIR -> {
                             yield nonExistingDir;
-                        }
-                        default -> {
-                            throw new AssertionError();
                         }
                     }).get();
                 });

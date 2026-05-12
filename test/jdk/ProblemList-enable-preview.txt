@@ -23,10 +23,13 @@
 
 #############################################################################
 #
-# List of quarantined tests for testing with --enable-preview
+# List of quarantined tests for testing with the '--enable-preview' option
+# where the option IS specified in the task definition and NOT in the test.
 #
-# These are failures that ONLY occur with the '--enable-preview' option
-# specified. There are separate sub-sections for each preview project.
+# If the '--enable-preview' option is NOT specified in the task definition,
+# and the option IS specified in the test, then an entry here WILL NOT work.
+#
+# There are separate sub-sections for each preview project.
 #
 #############################################################################
 

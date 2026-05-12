@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,7 @@ public class HBShaper {
     private static final MemorySegment get_h_advance_stub;
     private static final MemorySegment get_v_advance_stub;
     private static final MemorySegment get_contour_pt_stub;
+    private static final MemorySegment get_table_data_fn_stub;
 
     private static final MemorySegment store_layout_results_stub;
 
@@ -172,6 +173,17 @@ public class HBShaper {
         @SuppressWarnings("restricted")
         MethodHandle tmp1 = LINKER.downcallHandle(malloc_symbol, mallocDescriptor);
         malloc_handle = tmp1;
+
+        MemorySegment free_symbol = SYM_LOOKUP.findOrThrow("free");
+        long free_address = free_symbol.address();
+        FunctionDescriptor setFreeFnDescriptor = FunctionDescriptor.ofVoid(JAVA_LONG);
+        MemorySegment set_free = SYM_LOOKUP.findOrThrow("HBSetFreeFn");
+        @SuppressWarnings("restricted")
+        MethodHandle set_free_handle = LINKER.downcallHandle(set_free, setFreeFnDescriptor);
+        try {
+            set_free_handle.invokeExact(free_address);
+        } catch (Throwable t) {
+        }
 
         FunctionDescriptor createFaceDescriptor =
             FunctionDescriptor.of(ADDRESS, ADDRESS);
@@ -209,45 +221,36 @@ public class HBShaper {
         jdk_hb_shape_handle = tmp4;
 
         Arena garena = Arena.global(); // creating stubs that exist until VM exit.
-        FunctionDescriptor get_var_glyph_fd = getFunctionDescriptor(JAVA_INT,  // return type
-              ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS); // arg types
-        MethodHandle get_var_glyph_mh =
-            getMethodHandle("get_variation_glyph", get_var_glyph_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp5 = LINKER.upcallStub(get_var_glyph_mh, get_var_glyph_fd, garena);
-        get_var_glyph_stub = tmp5;
 
-        FunctionDescriptor get_nominal_glyph_fd = getFunctionDescriptor(JAVA_INT, // return type
-                   ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS); // arg types
-        MethodHandle get_nominal_glyph_mh =
-            getMethodHandle("get_nominal_glyph", get_nominal_glyph_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp6 = LINKER.upcallStub(get_nominal_glyph_mh, get_nominal_glyph_fd, garena);
-        get_nominal_glyph_stub = tmp6;
+        get_table_data_fn_stub = getUpcallStub(garena,
+                "getFontTableData", // method name
+                JAVA_INT,           // return type
+                JAVA_INT, ADDRESS); // arg types
 
-        FunctionDescriptor get_h_adv_fd = getFunctionDescriptor(JAVA_INT,  // return type
-                   ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
-        MethodHandle get_h_adv_mh =
-            getMethodHandle("get_glyph_h_advance", get_h_adv_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp7 = LINKER.upcallStub(get_h_adv_mh, get_h_adv_fd, garena);
-        get_h_advance_stub = tmp7;
+        get_var_glyph_stub = getUpcallStub(garena,
+                "get_variation_glyph", // method name
+                JAVA_INT,              // return type
+                ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS); // arg types
 
-        FunctionDescriptor get_v_adv_fd = getFunctionDescriptor(JAVA_INT,  // return type
-                   ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
-        MethodHandle get_v_adv_mh =
-            getMethodHandle("get_glyph_v_advance", get_v_adv_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp8 = LINKER.upcallStub(get_v_adv_mh, get_v_adv_fd, garena);
-        get_v_advance_stub = tmp8;
+        get_nominal_glyph_stub = getUpcallStub(garena,
+                "get_nominal_glyph", // method name
+                JAVA_INT,            // return type
+                ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS); // arg types
 
-        FunctionDescriptor get_contour_pt_fd = getFunctionDescriptor(JAVA_INT,  // return type
-            ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS, ADDRESS); // arg types
-        MethodHandle get_contour_pt_mh =
-            getMethodHandle("get_glyph_contour_point", get_contour_pt_fd);
-        @SuppressWarnings("restricted")
-        MemorySegment tmp9 = LINKER.upcallStub(get_contour_pt_mh, get_contour_pt_fd, garena);
-        get_contour_pt_stub = tmp9;
+        get_h_advance_stub = getUpcallStub(garena,
+                "get_glyph_h_advance", // method name
+                JAVA_INT,              // return type
+                ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
+
+        get_v_advance_stub = getUpcallStub(garena,
+                "get_glyph_v_advance", // method name
+                JAVA_INT,              // return type
+                ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
+
+        get_contour_pt_stub = getUpcallStub(garena,
+                "get_glyph_contour_point", // method name
+                JAVA_INT,                  // return type
+                ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS, ADDRESS); // arg types
 
        /* Having now created the font upcall stubs, we can call down to create
         * the native harfbuzz object holding these.
@@ -303,15 +306,9 @@ public class HBShaper {
         clusterHandle = getVarHandle(GlyphInfoLayout, "cluster");
     }
 
-
-    /*
-     * This is expensive but it is done just once per font.
-     * The unbound stub could be cached but the savings would
-     * be very low in the only case it is used.
-     */
     @SuppressWarnings("restricted")
-    private static MemorySegment getBoundUpcallStub
-         (Arena arena, Class<?> clazz, Object bindArg, String mName,
+    private static MemorySegment getUpcallStub
+         (Arena arena, String mName,
           MemoryLayout retType, MemoryLayout... argTypes) {
 
        try {
@@ -320,10 +317,8 @@ public class HBShaper {
                    FunctionDescriptor.ofVoid(argTypes) :
                    FunctionDescriptor.of(retType, argTypes);
            MethodType mType = nativeDescriptor.toMethodType();
-           mType = mType.insertParameterTypes(0, clazz);
            MethodHandle mh = MH_LOOKUP.findStatic(HBShaper.class, mName, mType);
-           MethodHandle bound_handle = mh.bindTo(bindArg);
-           return LINKER.upcallStub(bound_handle, nativeDescriptor, arena);
+           return LINKER.upcallStub(mh, nativeDescriptor, arena);
        } catch (IllegalAccessException | NoSuchMethodException e) {
           return null;
        }
@@ -480,15 +475,16 @@ public class HBShaper {
         });
     }
 
-    private static int getFontTableData(Font2D font2D,
-                                int tag,
-                                MemorySegment data_ptr_out) {
+    private static int getFontTableData(int tag, MemorySegment data_ptr_out) {
 
         /*
          * On return, the data_out_ptr will point to memory allocated by native malloc,
          * so it will be freed by the caller using native free - when it is
          * done with it.
          */
+
+        Font2D font2D = scopedVars.get().font();
+
         @SuppressWarnings("restricted")
         MemorySegment data_ptr = data_ptr_out.reinterpret(ADDRESS.byteSize());
         if (tag == 0) {
@@ -539,10 +535,6 @@ public class HBShaper {
     private static class FaceRef implements DisposerRecord {
         private Font2D font2D;
         private MemorySegment face;
-        // get_table_data_fn uses an Arena managed by GC,
-        // so we need to keep a reference to it here until
-        // this FaceRef is collected.
-        private MemorySegment get_table_data_fn;
 
         private FaceRef(Font2D font) {
             this.font2D = font;
@@ -561,16 +553,7 @@ public class HBShaper {
 
         private void createFace() {
             try {
-                get_table_data_fn = getBoundUpcallStub(Arena.ofAuto(),
-                        Font2D.class,
-                        font2D,                      // bind arg
-                        "getFontTableData",          // method name
-                        JAVA_INT,                   // return type
-                        JAVA_INT, ADDRESS); // arg types
-                if (get_table_data_fn == null) {
-                    return;
-                }
-                face = (MemorySegment)create_face_handle.invokeExact(get_table_data_fn);
+                face = (MemorySegment)create_face_handle.invokeExact(get_table_data_fn_stub);
             } catch (Throwable t) {
             }
         }

@@ -23,11 +23,26 @@
 
 /*
  * @test
- * @bug 8078262 8177095
- * @summary Tests correct dominator information after loop peeling.
+ * @bug 8078262 8177095 8371685
+ * @summary Tests correct dominator information after loop peeling and
+ *          tests that LoopPeeling flag correctly disables loop peeling.
  *
  * @run main/othervm -Xcomp
  *      -XX:CompileCommand=compileonly,compiler.loopopts.TestLoopPeeling::test*
+ *      compiler.loopopts.TestLoopPeeling
+ * @run main/othervm -Xcomp
+ *      -XX:+UnlockDiagnosticVMOptions -XX:LoopPeeling=0
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.TestLoopPeeling::test*
+ *      compiler.loopopts.TestLoopPeeling
+ * @run main/othervm -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions -XX:LoopPeeling=0
+ *      compiler.loopopts.TestLoopPeeling
+ * @run main/othervm -Xcomp
+ *      -XX:+UnlockDiagnosticVMOptions -XX:LoopPeeling=2
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.TestLoopPeeling::test*
+ *      compiler.loopopts.TestLoopPeeling
+ * @run main/othervm -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions -XX:LoopPeeling=2
  *      compiler.loopopts.TestLoopPeeling
  */
 
@@ -44,6 +59,8 @@ public class TestLoopPeeling {
             test.testArrayAccess2(0);
             test.testArrayAccess3(0, false);
             test.testArrayAllocation(0, 1);
+            test.testEmptyLoop(100);
+            test.testMaxUnrollOddTrip();
         } catch (Exception e) {
             // Ignore exceptions
         }
@@ -142,5 +159,19 @@ public class TestLoopPeeling {
         }
         return null;
     }
-}
 
+    public void testEmptyLoop(int limit) {
+        for (int i = 0; i < limit; i++) {
+            // Empty body - candidate for empty loop removal
+        }
+    }
+
+    public int testMaxUnrollOddTrip() {
+        int sum = 0;
+        // Trip count of 5 (odd) - maximal unroll needs to peel one iteration
+        for (int i = 0; i < 5; i++) {
+            sum += array[i];
+        }
+        return sum;
+    }
+}

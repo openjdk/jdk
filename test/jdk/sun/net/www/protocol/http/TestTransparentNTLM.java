@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,18 @@
  *          and is used only when the relevant property is set.
  * @requires os.family == "windows"
  * @library /test/lib
- * @run testng/othervm
+ * @run junit/othervm
  *      -Dtest.auth.succeed=false
  *      TestTransparentNTLM
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.http.ntlm.transparentAuth=allHosts
  *      -Dtest.auth.succeed=true
  *      TestTransparentNTLM
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.http.ntlm.transparentAuth=blahblah
  *      -Dtest.auth.succeed=false
  *      TestTransparentNTLM
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.http.ntlm.transparentAuth=trustedHosts
  *      -Dtest.auth.succeed=false
  *      TestTransparentNTLM
@@ -57,21 +57,21 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import org.testng.SkipException;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static java.lang.System.out;
 import static java.net.Proxy.NO_PROXY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestTransparentNTLM {
 
-    boolean succeed;  // true if authentication is expected to succeed
-    Server server;
-    URL url;
+    static boolean succeed;  // true if authentication is expected to succeed
+    static Server server;
+    static URL url;
 
     @Test
     public void testNTLM() throws IOException {
@@ -81,11 +81,11 @@ public class TestTransparentNTLM {
         out.println("received: " + respCode);
 
         if (succeed) {
-            assertEquals(respCode, HttpURLConnection.HTTP_OK);
+            assertEquals(HttpURLConnection.HTTP_OK, respCode);
             String body = new String(uc.getInputStream().readAllBytes(), UTF_8);
             out.println("received body: " + body);
         } else {
-            assertEquals(respCode, HttpURLConnection.HTTP_UNAUTHORIZED);
+            assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, respCode);
         }
     }
 
@@ -169,8 +169,8 @@ public class TestTransparentNTLM {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         succeed = System.getProperty("test.auth.succeed").equals("true");
         if (succeed)
             out.println("Expect client to succeed, with 200 Ok");
@@ -187,8 +187,8 @@ public class TestTransparentNTLM {
                 .toURL();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         server.close();
         server.join();
     }

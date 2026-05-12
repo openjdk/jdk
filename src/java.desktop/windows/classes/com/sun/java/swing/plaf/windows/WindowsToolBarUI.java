@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import javax.swing.plaf.basic.BasicToolBarUI;
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 
 
-public final class WindowsToolBarUI extends BasicToolBarUI {
+public class WindowsToolBarUI extends BasicToolBarUI {
 
     public static ComponentUI createUI(JComponent c) {
         return new WindowsToolBarUI();

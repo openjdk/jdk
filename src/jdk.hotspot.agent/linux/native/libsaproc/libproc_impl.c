@@ -182,13 +182,14 @@ static bool fill_addr_info(lib_info* lib) {
     return false;
   }
 
+  long page_size = sysconf(_SC_PAGE_SIZE);
   lib->end = (uintptr_t)-1L;
   lib->exec_start = (uintptr_t)-1L;
   lib->exec_end = (uintptr_t)-1L;
   for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
     if (ph->p_type == PT_LOAD) {
       uintptr_t aligned_start = lib->base + align_down(ph->p_vaddr, ph->p_align);
-      uintptr_t aligned_end = aligned_start + align_up(ph->p_memsz, ph->p_align);
+      uintptr_t aligned_end = aligned_start + align_up(ph->p_memsz, page_size);
       if ((lib->end == (uintptr_t)-1L) || (lib->end < aligned_end)) {
         lib->end = aligned_end;
       }
@@ -476,6 +477,12 @@ struct lib_info *find_lib_by_address(struct ps_prochandle* ph, uintptr_t pc) {
   }
   return NULL;
 }
+
+#ifdef __aarch64__
+bool pac_enabled(struct ps_prochandle* ph) {
+  return ph->pac_enabled;
+}
+#endif
 
 //--------------------------------------------------------------------------
 // proc service functions

@@ -70,7 +70,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @run junit/othervm/timeout=480 -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                     -Djavax.net.debug=all
- *                     H3DataLimitsTest
+ *                     ${test.main.class}
  * @summary Verify handling of MAX_DATA / MAX_STREAM_DATA frames
  */
 public class H3DataLimitsTest implements HttpServerAdapters {

@@ -355,7 +355,7 @@ class Deoptimization : AllStatic {
   }
   static int trap_request_debug_id(int trap_request) {
     if (trap_request < 0) {
-      return ((~(trap_request) >> _debug_id_shift) & right_n_bits(_debug_id_bits));
+      return (~(trap_request) >> _debug_id_shift) & right_n_bits<int>(_debug_id_bits);
     } else {
       // standard action for unloaded CP entry
       return 0;

@@ -28,7 +28,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run junit/othervm ImmutableFlowItems
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.IOException;

@@ -141,8 +141,6 @@ bool G1ConcurrentRefineThread::wait_for_work() {
 void G1ConcurrentRefineThread::do_refinement() {
   G1ConcurrentRefineSweepState& state = _cr->sweep_state();
 
-  state.start_work();
-
   // Swap card tables.
 
   // 1. Global card table
@@ -163,72 +161,23 @@ void G1ConcurrentRefineThread::do_refinement() {
     return;
   }
 
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  jlong epoch_yield_duration = g1h->yield_duration_in_refinement_epoch();
+  jlong epoch_yield_duration = G1CollectedHeap::heap()->yield_duration_in_refinement_epoch();
   jlong next_epoch_start = os::elapsed_counter();
-
-  jlong total_yield_during_sweep_duration = 0;
 
   // 4. Snapshot heap.
   state.snapshot_heap();
 
-  // 5. Sweep refinement table until done
-  bool interrupted_by_gc = false;
+  // 5. Sweep refinement table.
+  log_info(gc, task)("Concurrent Refine Sweep Using %u of %u Workers", cr()->num_threads_wanted(), cr()->max_num_threads());
 
-  log_info(gc, task)("Concurrent Refine Sweep Using %u of %u Workers", _cr->num_threads_wanted(), _cr->max_num_threads());
-
-  state.sweep_refinement_table_start();
-  while (true) {
-    bool completed = state.sweep_refinement_table_step();
-
-    if (completed) {
-      break;
-    }
-
-    if (SuspendibleThreadSet::should_yield()) {
-      jlong yield_during_sweep_start = os::elapsed_counter();
-      SuspendibleThreadSet::yield();
-
-      // The yielding may have completed the task, check.
-      if (!state.is_in_progress()) {
-        log_debug(gc, refine)("GC completed sweeping, aborting concurrent operation");
-        interrupted_by_gc = true;
-        break;
-      } else {
-        jlong yield_during_sweep_duration = os::elapsed_counter() - yield_during_sweep_start;
-        log_debug(gc, refine)("Yielded from card table sweeping for %.2fms, no GC inbetween, continue",
-                              TimeHelper::counter_to_millis(yield_during_sweep_duration));
-        total_yield_during_sweep_duration += yield_during_sweep_duration;
-      }
-    }
+  jlong total_yield_during_sweep_duration = 0;
+  if (!state.sweep_refinement_table(total_yield_during_sweep_duration)) {
+    log_debug(gc, refine)("GC completed sweeping, aborting concurrent operation");
+    return;
   }
 
-  if (!interrupted_by_gc) {
-    GCTraceTime(Info, gc, refine) tm("Concurrent Refine Complete Work");
-
-    state.add_yield_during_sweep_duration(total_yield_during_sweep_duration);
-
-    state.complete_work(true);
-
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    G1Policy* policy = g1h->policy();
-    G1ConcurrentRefineStats* stats = state.stats();
-    policy->record_refinement_stats(stats);
-
-    {
-      // The young gen revising mechanism reads the predictor and the values set
-      // here. Avoid inconsistencies by locking.
-      MutexLocker x(G1ReviseYoungLength_lock, Mutex::_no_safepoint_check_flag);
-      policy->record_dirtying_stats(TimeHelper::counter_to_millis(G1CollectedHeap::heap()->last_refinement_epoch_start()),
-                                    TimeHelper::counter_to_millis(next_epoch_start),
-                                    stats->cards_pending(),
-                                    TimeHelper::counter_to_millis(epoch_yield_duration),
-                                    0 /* pending_cards_from_gc */,
-                                    stats->cards_to_cset());
-      G1CollectedHeap::heap()->set_last_refinement_epoch_start(next_epoch_start, epoch_yield_duration);
-    }
-    stats->reset();
-  }
+  // 6. Complete refinement.
+  state.complete_refinement(total_yield_during_sweep_duration, epoch_yield_duration, next_epoch_start);
 }
 
 void G1ConcurrentRefineThread::update_perf_counter_cpu_time() {

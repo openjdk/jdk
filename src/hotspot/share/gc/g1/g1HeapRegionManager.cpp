@@ -511,7 +511,6 @@ void G1HeapRegionManager::iterate(G1HeapRegionClosure* blk) const {
     guarantee(at(i) != nullptr, "Tried to access region %u that has a null G1HeapRegion*", i);
     bool res = blk->do_heap_region(at(i));
     if (res) {
-      blk->set_incomplete();
       return;
     }
   }
@@ -526,7 +525,6 @@ void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
     }
     bool res = blk->do_heap_region_index(i);
     if (res) {
-      blk->set_incomplete();
       return;
     }
   }
@@ -720,7 +718,7 @@ G1HeapRegionClaimer::G1HeapRegionClaimer(uint n_workers) :
 }
 
 G1HeapRegionClaimer::~G1HeapRegionClaimer() {
-  FREE_C_HEAP_ARRAY(uint, _claims);
+  FREE_C_HEAP_ARRAY(_claims);
 }
 
 uint G1HeapRegionClaimer::offset_for_worker(uint worker_id) const {
@@ -761,7 +759,7 @@ public:
     for (uint worker = 0; worker < _num_workers; worker++) {
       _worker_freelists[worker].~G1FreeRegionList();
     }
-    FREE_C_HEAP_ARRAY(G1FreeRegionList, _worker_freelists);
+    FREE_C_HEAP_ARRAY(_worker_freelists);
   }
 
   G1FreeRegionList* worker_freelist(uint worker) {

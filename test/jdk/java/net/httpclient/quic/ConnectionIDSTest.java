@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 /*
  * @test
- * @run junit/othervm ConnectionIDSTest
+ * @run junit/othervm ${test.main.class}
  */
 public class ConnectionIDSTest {
 

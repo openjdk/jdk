@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests for HttpHeaders.of factory method
- * @run junit HttpHeadersOf
+ * @run junit ${test.main.class}
  */
 
 import java.net.http.HttpHeaders;

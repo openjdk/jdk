@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1340,28 +1340,15 @@ void InterpreterMacroAssembler::profile_final_call(Register scratch1, Register s
 // Count a virtual call in the bytecodes.
 void InterpreterMacroAssembler::profile_virtual_call(Register Rreceiver,
                                                      Register Rscratch1,
-                                                     Register Rscratch2,
-                                                     bool receiver_can_be_null) {
+                                                     Register Rscratch2) {
   if (!ProfileInterpreter) { return; }
   Label profile_continue;
 
   // If no method data exists, go to profile_continue.
   test_method_data_pointer(profile_continue);
 
-  Label skip_receiver_profile;
-  if (receiver_can_be_null) {
-    Label not_null;
-    cmpdi(CR0, Rreceiver, 0);
-    bne(CR0, not_null);
-    // We are making a call. Increment the count for null receiver.
-    increment_mdp_data_at(in_bytes(CounterData::count_offset()), Rscratch1, Rscratch2);
-    b(skip_receiver_profile);
-    bind(not_null);
-  }
-
   // Record the receiver type.
   record_klass_in_profile(Rreceiver, Rscratch1, Rscratch2);
-  bind(skip_receiver_profile);
 
   // The method data pointer needs to be updated to reflect the new target.
   update_mdp_by_constant(in_bytes(VirtualCallData::virtual_call_data_size()));

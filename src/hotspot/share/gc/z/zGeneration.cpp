@@ -58,6 +58,7 @@
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmOperations.hpp"
@@ -1434,12 +1435,15 @@ public:
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
     if (_bs_nm->is_armed(nm)) {
-      // Heal barriers
-      ZNMethod::nmethod_patch_barriers(nm);
+      {
+        ICacheInvalidationContext icic;
+        // Heal barriers
+        ZNMethod::nmethod_patch_barriers(nm, &icic);
 
-      // Heal oops
-      ZUncoloredRootProcessOopClosure cl(ZNMethod::color(nm));
-      ZNMethod::nmethod_oops_do_inner(nm, &cl);
+        // Heal oops
+        ZUncoloredRootProcessOopClosure cl(ZNMethod::color(nm));
+        ZNMethod::nmethod_oops_do_inner(nm, &cl, &icic);
+      }
 
       log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by old remapping", p2i(nm));
 

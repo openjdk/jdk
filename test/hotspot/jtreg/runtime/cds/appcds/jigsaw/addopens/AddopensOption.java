@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ public class AddopensOption {
         final String addOpensTimeFormat = "java.base/java.time.format=ALL-UNNAMED";
         final String loggingOption = "-Xlog:aot=debug,aot+module=debug,aot+heap=info,cds=debug,module=trace";
         final String versionPattern = "java.[0-9][0-9].*";
-        final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         final String warningIncubator = "WARNING: Using incubator modules: jdk.incubator.vector";
         String archiveName = TestCommon.getNewArchiveName("addopens-option");
         TestCommon.setCurrentArchiveName(archiveName);
@@ -76,16 +75,14 @@ public class AddopensOption {
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.addopens")
-          .shouldContain("runtime java.base/java.nio=ALL-UNNAMED dump time java.base/java.time.format=ALL-UNNAMED")
-          .shouldContain(subgraphCannotBeUsed);
+          .shouldContain("runtime java.base/java.nio=ALL-UNNAMED dump time java.base/java.time.format=ALL-UNNAMED");
 
         // no module specified during runtime
         oa = TestCommon.execCommon(
             loggingOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("jdk.httpserver specified during dump time but not during runtime")
-          .shouldContain(subgraphCannotBeUsed);
+          .shouldContain("jdk.httpserver specified during dump time but not during runtime");
 
         // dump an archive without the --add-opens option
         archiveName = TestCommon.getNewArchiveName("no-addopens-option");
@@ -106,8 +103,7 @@ public class AddopensOption {
         oa.shouldHaveExitValue(0)
           .shouldContain("java.base/java.time.format=ALL-UNNAMED specified during runtime but not during dump time")
           // version of the jdk.httpserver module, e.g. java 22-ea
-          .shouldMatch(versionPattern)
-          .shouldContain(subgraphCannotBeUsed);
+          .shouldMatch(versionPattern);
 
         // dump an archive with -add-opens java.base/java.nio=ALL-UNNAMED
         archiveName = TestCommon.getNewArchiveName("addopens-java-nio");

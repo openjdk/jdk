@@ -129,30 +129,9 @@ class LibraryCallKit : public GraphKit {
 
   virtual int reexecute_sp() { return _reexecute_sp; }
 
-  /* When an intrinsic makes changes before bailing out, it's necessary to restore the graph
-   * as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
-   * bailout before making changes because the bailing out decision might depend on new nodes
-   * (their types, for instance).
-   *
-   * So, if an intrinsic might cause this situation, one must start by saving the state in a
-   * SavedState by constructing it, and the state will be restored on destruction. If the
-   * intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
-   */
-  class SavedState {
-    LibraryCallKit* _kit;
-    uint _sp;
-    JVMState* _jvms;
-    SafePointNode* _map;
-    Unique_Node_List _ctrl_succ;
-    bool _discarded;
-
-  public:
-    SavedState(LibraryCallKit*);
-    ~SavedState();
-    void discard();
-  };
-
   // Helper functions to inline natives
+  RegionNode* create_bailout();
+  bool check_bailout(RegionNode* bailout);
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node* test, RegionNode* region);
   Node* generate_fair_guard(Node* test, RegionNode* region);
@@ -166,7 +145,7 @@ class LibraryCallKit : public GraphKit {
                              bool with_opaque = false);
   void  generate_string_range_check(Node* array, Node* offset,
                                     Node* length, bool char_count,
-                                    bool halt_on_oob = false);
+                                    RegionNode* region);
   Node* current_thread_helper(Node* &tls_output, ByteSize handle_offset,
                               bool is_immutable);
   Node* generate_current_thread(Node* &tls_output);
@@ -333,6 +312,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_divmod_methods(vmIntrinsics::ID id);
   bool inline_reference_get0();
   bool inline_reference_refersTo0(bool is_phantom);
+  bool inline_reference_reachabilityFence();
   bool inline_reference_clear0(bool is_phantom);
   bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);

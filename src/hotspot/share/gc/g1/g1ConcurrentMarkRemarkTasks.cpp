@@ -31,28 +31,32 @@
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/growableArray.hpp"
 
 struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public G1HeapRegionClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
-  // The number of regions actually selected for rebuild.
-  uint _num_selected_for_rebuild;
 
   size_t _freed_bytes;
   uint _num_old_regions_removed;
   uint _num_humongous_regions_removed;
-  G1FreeRegionList* _local_cleanup_list;
+
+  GrowableArrayCHeap<G1HeapRegion*, mtGC> _old_selected_for_rebuild;
+  uint _num_humongous_selected_for_rebuild;
+
+  G1FreeRegionList* _cleanup_list;
 
   G1OnRegionClosure(G1CollectedHeap* g1h,
                     G1ConcurrentMark* cm,
                     G1FreeRegionList* local_cleanup_list) :
     _g1h(g1h),
     _cm(cm),
-    _num_selected_for_rebuild(0),
     _freed_bytes(0),
     _num_old_regions_removed(0),
     _num_humongous_regions_removed(0),
-    _local_cleanup_list(local_cleanup_list) {}
+    _old_selected_for_rebuild(16),
+    _num_humongous_selected_for_rebuild(0),
+    _cleanup_list(local_cleanup_list) {}
 
   void reclaim_empty_region_common(G1HeapRegion* hr) {
     assert(!hr->has_pinned_objects(), "precondition");
@@ -74,7 +78,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
 
       _num_humongous_regions_removed++;
       reclaim_empty_region_common(hr);
-      _g1h->free_humongous_region(hr, _local_cleanup_list);
+      _g1h->free_humongous_region(hr, _cleanup_list);
     };
 
     _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
@@ -85,7 +89,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
 
     _num_old_regions_removed++;
     reclaim_empty_region_common(hr);
-    _g1h->free_region(hr, _local_cleanup_list);
+    _g1h->free_region(hr, _cleanup_list);
   }
 
   bool do_heap_region(G1HeapRegion* hr) override {
@@ -98,13 +102,13 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
                         || hr->has_pinned_objects();
       if (is_live) {
         const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
+
         auto on_humongous_region = [&] (G1HeapRegion* hr) {
           if (selected_for_rebuild) {
-            _num_selected_for_rebuild++;
+            _num_humongous_selected_for_rebuild++;
           }
           _cm->update_top_at_rebuild_start(hr);
         };
-
         _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
       } else {
         reclaim_empty_humongous_region(hr);
@@ -118,7 +122,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
       if (is_live) {
         const bool selected_for_rebuild = tracker->update_old_before_rebuild(hr);
         if (selected_for_rebuild) {
-          _num_selected_for_rebuild++;
+          _old_selected_for_rebuild.push(hr);
         }
         _cm->update_top_at_rebuild_start(hr);
       } else {
@@ -137,7 +141,8 @@ G1UpdateRegionLivenessAndSelectForRebuildTask::G1UpdateRegionLivenessAndSelectFo
   _g1h(g1h),
   _cm(cm),
   _hrclaimer(num_workers),
-  _total_selected_for_rebuild(0),
+  _old_selected_for_rebuild(128),
+  _num_humongous_selected_for_rebuild(0),
   _cleanup_list("Empty Regions After Mark List") {}
 
 G1UpdateRegionLivenessAndSelectForRebuildTask::~G1UpdateRegionLivenessAndSelectForRebuildTask() {
@@ -153,8 +158,6 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::work(uint worker_id) {
   G1OnRegionClosure on_region_cl(_g1h, _cm, &local_cleanup_list);
   _g1h->heap_region_par_iterate_from_worker_offset(&on_region_cl, &_hrclaimer, worker_id);
 
-  _total_selected_for_rebuild.add_then_fetch(on_region_cl._num_selected_for_rebuild);
-
   // Update the old/humongous region sets
   _g1h->remove_from_old_gen_sets(on_region_cl._num_old_regions_removed,
                                  on_region_cl._num_humongous_regions_removed);
@@ -162,6 +165,9 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::work(uint worker_id) {
   {
     MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
     _g1h->decrement_summary_bytes(on_region_cl._freed_bytes);
+
+    _old_selected_for_rebuild.appendAll(&on_region_cl._old_selected_for_rebuild);
+    _num_humongous_selected_for_rebuild += on_region_cl._num_humongous_selected_for_rebuild;
 
     _cleanup_list.add_ordered(&local_cleanup_list);
     assert(local_cleanup_list.is_empty(), "post-condition");
@@ -171,4 +177,79 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::work(uint worker_id) {
 uint G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(uint num_regions) {
   const uint num_regions_per_worker = 384;
   return (num_regions + num_regions_per_worker - 1) / num_regions_per_worker;
+}
+
+// Early prune (remove) regions meeting the G1HeapWastePercent criteria. That
+// is, either until only the minimum amount of old collection set regions are
+// available (for forward progress in evacuation) or the waste accumulated by the
+// removed regions is above the maximum allowed waste.
+// Updates number of candidates and reclaimable bytes given.
+void G1UpdateRegionLivenessAndSelectForRebuildTask::prune(GrowableArrayCHeap<G1HeapRegion*, mtGC>* old_regions) {
+  G1Policy* p = G1CollectedHeap::heap()->policy();
+
+  uint num_candidates = (uint)old_regions->length();
+
+  uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
+  uint num_pruned = 0;
+  size_t wasted_bytes = 0;
+
+  if (min_old_cset_length >= num_candidates) {
+    // We take all of the candidate regions to provide some forward progress.
+    return;
+  }
+
+  size_t allowed_waste = p->allowed_waste_in_collection_set();
+  uint max_to_prune = num_candidates - min_old_cset_length;
+
+  while (true) {
+    G1HeapRegion* r = old_regions->at(num_candidates - num_pruned - 1);
+    size_t const reclaimable = r->reclaimable_bytes();
+    if (num_pruned >= max_to_prune ||
+      wasted_bytes + reclaimable > allowed_waste) {
+      break;
+    }
+    r->rem_set()->clear(true /* cardset_only */);
+
+    wasted_bytes += reclaimable;
+    num_pruned++;
+  }
+
+  log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving %zu bytes waste (allowed %zu)",
+                            num_pruned,
+                            num_candidates,
+                            wasted_bytes,
+                            allowed_waste);
+
+  old_regions->trunc_to(num_candidates - num_pruned);
+}
+
+static int compare_region_gc_efficiency(G1HeapRegion** rr1, G1HeapRegion** rr2) {
+  G1HeapRegion* r1 = *rr1;
+  G1HeapRegion* r2 = *rr2;
+
+  assert(r1 != nullptr, "must be");
+  assert(r2 != nullptr, "must be");
+
+  G1Policy* p = G1CollectedHeap::heap()->policy();
+  double gc_efficiency1 = p->predict_gc_efficiency(r1);
+  double gc_efficiency2 = p->predict_gc_efficiency(r2);
+
+  if (gc_efficiency1 > gc_efficiency2) {
+    return -1;
+  } else if (gc_efficiency1 < gc_efficiency2) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+GrowableArrayCHeap<G1HeapRegion*, mtGC>* G1UpdateRegionLivenessAndSelectForRebuildTask::sort_and_prune_old_selected() {
+  // Nothing to do for the humongous candidates here. Old selected need to be pruned.
+
+  if (_old_selected_for_rebuild.length() != 0) {
+    _old_selected_for_rebuild.sort(compare_region_gc_efficiency);
+    prune(&_old_selected_for_rebuild);
+  }
+
+  return &_old_selected_for_rebuild;
 }

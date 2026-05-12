@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8334366
+ * @bug 8334366 8334868
  * @key headful printer
- * @summary Verifies original pageobject is returned unmodified
- *          on cancelling pagedialog
+ * @summary Verifies original PageFormat object is returned unmodified
+ *          if PrinterJob.pageDialog is cancelled
  * @requires (os.family == "windows")
  * @run main PageDialogCancelTest
  */
@@ -55,4 +55,3 @@ public class PageDialogCancelTest {
         }
     }
 }
-

@@ -70,7 +70,7 @@ JVMFlag::Error G1RemSetHowlMaxNumBucketsConstraintFunc(uint value, bool verbose)
   }
   if (!is_power_of_2(G1RemSetHowlMaxNumBuckets)) {
     JVMFlag::printError(verbose,
-                        "G1RemSetMaxHowlNumBuckets (%u) must be a power of two.\n",
+                        "G1RemSetHowlMaxNumBuckets (%u) must be a power of two.\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

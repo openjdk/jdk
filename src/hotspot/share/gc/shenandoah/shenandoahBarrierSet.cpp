@@ -149,11 +149,9 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
     thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
 
-    if (ShenandoahStackWatermarkBarrier) {
-      JavaThread* const jt = JavaThread::cast(thread);
-      StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
-      StackWatermarkSet::add_watermark(jt, watermark);
-    }
+    JavaThread* const jt = JavaThread::cast(thread);
+    StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
+    StackWatermarkSet::add_watermark(jt, watermark);
   }
 }
 
@@ -166,21 +164,18 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       gclab->retire();
     }
 
-    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-    if (plab != nullptr) {
-      // This will assert if plab is not null in non-generational mode
-      ShenandoahGenerationalHeap::heap()->retire_plab(plab);
+    ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    if (shenandoah_plab != nullptr) {
+      shenandoah_plab->retire();
     }
 
     // SATB protocol requires to keep alive reachable oops from roots at the beginning of GC
-    if (ShenandoahStackWatermarkBarrier) {
-      if (_heap->is_concurrent_mark_in_progress()) {
-        ShenandoahKeepAliveClosure oops;
-        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
-      } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
-        ShenandoahContextEvacuateUpdateRootsClosure oops;
-        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
-      }
+    if (_heap->is_concurrent_mark_in_progress()) {
+      ShenandoahKeepAliveClosure oops;
+      StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
+    } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
+      ShenandoahContextEvacuateUpdateRootsClosure oops;
+      StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
     }
   }
 }

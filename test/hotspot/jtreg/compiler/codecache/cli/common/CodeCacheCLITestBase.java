@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,13 @@ public class CodeCacheCLITestBase {
                     CodeCacheOptions.mB(100)),
             new CodeCacheOptions(CodeCacheOptions.mB(60)),
             new CodeCacheOptions(CodeCacheOptions.mB(200)),
-            new CodeCacheOptions(CodeCacheOptions.mB(300))
+            new CodeCacheOptions(CodeCacheOptions.mB(300)),
+            new CodeCacheOptions(CodeCacheOptions.mB(250),
+                    CodeCacheOptions.mB(50), CodeCacheOptions.mB(75),
+                    CodeCacheOptions.mB(75), CodeCacheOptions.mB(50)),
+            new CodeCacheOptions(CodeCacheOptions.mB(200),
+                    CodeCacheOptions.mB(50), CodeCacheOptions.mB(100),
+                    CodeCacheOptions.mB(0),  CodeCacheOptions.mB(50))
     };
 
     private final CodeCacheCLITestCase[] testCases;

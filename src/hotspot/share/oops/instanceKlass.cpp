@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -150,6 +151,7 @@
 #endif //  ndef DTRACE_ENABLED
 
 bool InstanceKlass::_finalization_enabled = true;
+static int call_class_initializer_counter = 0;   // for debugging
 
 static inline bool is_class_loader(const Symbol* class_name,
                                    const ClassFileParser& parser) {
@@ -484,10 +486,8 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     ik = new (loader_data, size, THREAD) InstanceKlass(parser);
   }
 
-  if (ik != nullptr && UseCompressedClassPointers) {
-    assert(CompressedKlassPointers::is_encodable(ik),
-           "Klass " PTR_FORMAT "needs a narrow Klass ID, but is not encodable", p2i(ik));
-  }
+  assert(ik == nullptr || CompressedKlassPointers::is_encodable(ik),
+         "Klass " PTR_FORMAT "needs a narrow Klass ID, but is not encodable", p2i(ik));
 
   // Check for pending exception before adding to the loader data and incrementing
   // class count.  Can get OOM here.
@@ -704,6 +704,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   if (constants() != nullptr) {
     assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
     if (!constants()->in_aot_cache()) {
+      HeapShared::remove_scratch_resolved_references(constants());
       MetadataFactory::free_metadata(loader_data, constants());
     }
     // Delete any cached resolution errors for the constant pool
@@ -884,7 +885,9 @@ void InstanceKlass::assert_no_clinit_will_run_for_aot_initialized_class() const 
 #endif
 
 #if INCLUDE_CDS
-void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
+// early_init -- we are moving this class into the fully_initialized state before the
+// JVM is able to execute any bytecodes. See AOTLinkedClassBulkLoader::is_initializing_classes_early().
+void InstanceKlass::initialize_with_aot_initialized_mirror(bool early_init, TRAPS) {
   assert(has_aot_initialized_mirror(), "must be");
   assert(CDSConfig::is_loading_heap(), "must be");
   assert(CDSConfig::is_using_aot_linked_classes(), "must be");
@@ -894,15 +897,36 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
     return;
   }
 
+  if (log_is_enabled(Info, aot, init)) {
+    ResourceMark rm;
+    log_info(aot, init)("%s (aot-inited%s)", external_name(), early_init ? ", early" : "");
+  }
+
   if (is_runtime_setup_required()) {
+    assert(!early_init, "must not call");
     // Need to take the slow path, which will call the runtimeSetup() function instead
     // of <clinit>
     initialize(CHECK);
     return;
   }
-  if (log_is_enabled(Info, aot, init)) {
-    ResourceMark rm;
-    log_info(aot, init)("%s (aot-inited)", external_name());
+
+  LogTarget(Info, class, init) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm(THREAD);
+    LogStream ls(lt);
+    ls.print("%d Initializing ", call_class_initializer_counter++);
+    name()->print_value_on(&ls);
+    ls.print_cr("(aot-inited) (" PTR_FORMAT ") by thread \"%s\"",
+                p2i(this), THREAD->name());
+  }
+
+  if (early_init) {
+    precond(AOTLinkedClassBulkLoader::is_initializing_classes_early());
+    precond(is_linked());
+    precond(init_thread() == nullptr);
+    set_init_state(fully_initialized);
+    fence_and_clear_init_lock();
+    return;
   }
 
   link_class(CHECK);
@@ -1098,6 +1122,12 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       }
     }
   }
+
+  if (log_is_enabled(Info, class, link))  {
+    ResourceMark rm(THREAD);
+    log_info(class, link)("Linked class %s", external_name());
+  }
+
   return true;
 }
 
@@ -1698,8 +1728,6 @@ ArrayKlass* InstanceKlass::array_klass(TRAPS) {
 ArrayKlass* InstanceKlass::array_klass_or_null() {
   return array_klass_or_null(1);
 }
-
-static int call_class_initializer_counter = 0;   // for debugging
 
 Method* InstanceKlass::class_initializer() const {
   Method* clinit = find_method(
@@ -2514,7 +2542,7 @@ void InstanceKlass::update_methods_jmethod_cache() {
         new_cache[i] = cache[i];
       }
       _methods_jmethod_ids = new_cache;
-      FREE_C_HEAP_ARRAY(jmethodID, cache);
+      FREE_C_HEAP_ARRAY(cache);
     }
   }
 }
@@ -2988,7 +3016,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   }
 #endif
 
-  FREE_C_HEAP_ARRAY(char, _source_debug_extension);
+  FREE_C_HEAP_ARRAY(_source_debug_extension);
 
   if (release_sub_metadata) {
     constants()->release_C_heap_structures();
@@ -3674,13 +3702,27 @@ const char* InstanceKlass::init_state_name() const {
   return state_names[init_state()];
 }
 
+void InstanceKlass::print_class_flags(outputStream* st) const {
+  AccessFlags flags(compute_modifier_flags());
+  if (flags.is_public    ()) st->print("public ");
+  if (flags.is_private   ()) st->print("private ");
+  if (flags.is_protected ()) st->print("protected ");
+  if (flags.is_static    ()) st->print("static ");
+  if (flags.is_final     ()) st->print("final ");
+  if (flags.is_interface ()) st->print("interface ");
+  if (flags.is_abstract  ()) st->print("abstract ");
+  if (flags.is_annotation()) st->print("annotation ");
+  if (flags.is_enum      ()) st->print("enum ");
+  if (flags.is_synthetic ()) st->print("synthetic ");
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
 
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
-  st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
+  st->print(BULLET"access:            "); print_class_flags(st);                  st->cr();
   st->print(BULLET"flags:             "); _misc_flags.print_on(st);               st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
@@ -3820,7 +3862,7 @@ void InstanceKlass::print_on(outputStream* st) const {
 
 void InstanceKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
-  if (Verbose || WizardMode)  access_flags().print_on(st);
+  if (Verbose || WizardMode)  print_class_flags(st);
   name()->print_value_on(st);
 }
 

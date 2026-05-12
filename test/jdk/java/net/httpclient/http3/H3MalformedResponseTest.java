@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,7 +458,7 @@ class H3MalformedResponseTest {
 
     private static BooleanSupplier configureServerResponse(byte[] serverResponseBytes) {
         var connectionTerminated = new AtomicBoolean();
-        SERVER.addHandler((c, s)-> {
+        SERVER.setHandler((c, s)-> {
             try (OutputStream outputStream = s.outputStream()) {
                 outputStream.write(serverResponseBytes);
             }

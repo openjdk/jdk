@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,9 @@
  * @library /test/lib
  * @modules jdk.net
  * @summary Check ExtendedSocketOption NAPI_ID support for DatagramChannel
- * @run testng DatagramChannelNAPITest
- * @run testng/othervm -Djava.net.preferIPv4Stack=true DatagramChannelNAPITest
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
-
-import jdk.test.lib.net.IPSupport;
-import org.testng.SkipException;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -43,26 +38,31 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static jdk.net.ExtendedSocketOptions.SO_INCOMING_NAPI_ID;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DatagramChannelNAPITest {
-    private InetAddress hostAddr;
+    private static InetAddress hostAddr;
     private static final Class<SocketException> SE = SocketException.class;
     private static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     private static final Class<UnsupportedOperationException> UOE = UnsupportedOperationException.class;
 
-    @BeforeTest
-    public void setup() throws IOException {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+    @BeforeAll
+    public static void setup() throws IOException {
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
         try (var dc = DatagramChannel.open()) {
             if (!dc.supportedOptions().contains(SO_INCOMING_NAPI_ID)) {
                 assertThrows(UOE, () -> dc.getOption(SO_INCOMING_NAPI_ID));
                 assertThrows(UOE, () -> dc.setOption(SO_INCOMING_NAPI_ID, 42));
                 assertThrows(UOE, () -> dc.setOption(SO_INCOMING_NAPI_ID, null));
-                throw new SkipException("NAPI ID not supported on this system");
+                Assumptions.abort("NAPI ID not supported on this system");
             }
         }
         hostAddr = InetAddress.getLocalHost();
@@ -71,7 +71,7 @@ public class DatagramChannelNAPITest {
     @Test
     public void testSetGetOptionDatagramChannel() throws IOException {
         try (var dc = DatagramChannel.open()) {
-            assertEquals((int) dc.getOption(SO_INCOMING_NAPI_ID), 0);
+            assertEquals(0, (int) dc.getOption(SO_INCOMING_NAPI_ID));
             assertThrows(SE, () -> dc.setOption(SO_INCOMING_NAPI_ID, 42));
             assertThrows(IAE, () -> dc.setOption(SO_INCOMING_NAPI_ID, null));
         }
@@ -79,7 +79,7 @@ public class DatagramChannelNAPITest {
 
     @Test
     public void testDatagramChannel() throws Exception {
-        int senderID, receiverID, tempID = 0;
+        int senderID, receiverID, originalID = 0;
         boolean initialRun = true;
         try (var r = DatagramChannel.open()) {
             r.bind(new InetSocketAddress(hostAddr, 0));
@@ -91,7 +91,7 @@ public class DatagramChannelNAPITest {
                 for (int i = 0; i < 10; i++) {
                     s.send(ByteBuffer.wrap("test".getBytes()), addr);
                     senderID = s.getOption(SO_INCOMING_NAPI_ID);
-                    assertEquals(senderID, 0, "DatagramChannel: Sender");
+                    assertEquals(0, senderID, "DatagramChannel: Sender");
 
                     r.receive(ByteBuffer.allocate(128));
                     receiverID = r.getOption(SO_INCOMING_NAPI_ID);
@@ -99,11 +99,11 @@ public class DatagramChannelNAPITest {
                     // check ID remains consistent
                     if (initialRun) {
                         assertTrue(receiverID >= 0, "DatagramChannel: Receiver");
-                    } else {
-                        assertEquals(receiverID, tempID);
                         initialRun = false;
+                        originalID = receiverID;
+                    } else {
+                        assertEquals(originalID, receiverID);
                     }
-                    tempID = receiverID;
                 }
             }
         }

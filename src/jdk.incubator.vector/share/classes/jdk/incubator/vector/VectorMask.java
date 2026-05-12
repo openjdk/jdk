@@ -131,7 +131,7 @@ import java.util.Objects;
  *           the element type of a vector
  */
 @SuppressWarnings("exports")
-public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport.VectorMask<E> {
+public abstract sealed class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport.VectorMask<E> permits AbstractMask {
     VectorMask(boolean[] bits) { super(bits); }
 
     /**

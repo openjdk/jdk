@@ -62,7 +62,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @build LightWeightHttpServer
  * @build jdk.test.lib.Platform
  * @build jdk.test.lib.util.FileUtils
- * @run junit/othervm RequestBodyTest
+ * @run junit/othervm ${test.main.class}
  */
 public class RequestBodyTest {
 

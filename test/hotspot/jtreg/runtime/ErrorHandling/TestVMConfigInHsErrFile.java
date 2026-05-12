@@ -56,7 +56,7 @@ public class TestVMConfigInHsErrFile {
   public static void main(String[] args) throws Exception {
     switch (args[0]) {
       case "coh-on" -> testCompactObjectHeaders();
-      case "coh-off" -> testCompressedClassPointers();
+      case "coh-off" -> testNotCompactObjectHeaders();
     }
   }
 
@@ -79,20 +79,16 @@ public class TestVMConfigInHsErrFile {
     Pattern[] expectedPatterns = new Pattern[] {
       Pattern.compile("# Java VM: .*compact obj headers.*")
     };
-    Pattern[] notExpectedPatterns = new Pattern[] {
-      Pattern.compile("# Java VM: .*compressed class ptrs.*")
-    };
 
-    HsErrFileUtils.checkHsErrFileContent(f, expectedPatterns, notExpectedPatterns, true, true);
+    HsErrFileUtils.checkHsErrFileContent(f, expectedPatterns, null, true, true);
 
   }
 
-  private static void testCompressedClassPointers() throws Exception {
+  private static void testNotCompactObjectHeaders() throws Exception {
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:-UseCompactObjectHeaders",
-        "-XX:+UseCompressedClassPointers",
         "-Xmx100M",
         "-XX:-CreateCoredumpOnCrash",
         "-XX:ErrorHandlerTest=14",
@@ -104,14 +100,11 @@ public class TestVMConfigInHsErrFile {
     // extract hs-err file
     File f = HsErrFileUtils.openHsErrFileFromOutput(output);
 
-    Pattern[] expectedPatterns = new Pattern[] {
-      Pattern.compile("# Java VM: .*compressed class ptrs.*")
-    };
     Pattern[] notExpectedPatterns = new Pattern[] {
       Pattern.compile("# Java VM: .*compact obj headers.*")
     };
 
-    HsErrFileUtils.checkHsErrFileContent(f, expectedPatterns, notExpectedPatterns, true, true);
+    HsErrFileUtils.checkHsErrFileContent(f, null, notExpectedPatterns, true, true);
 
   }
 }

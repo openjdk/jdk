@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,7 +324,7 @@ public class CDSTestUtils {
     public static void checkCommonExecExceptions(OutputAnalyzer output, Exception e)
         throws Exception {
         if (output.getStdout().contains("https://bugreport.java.com/bugreport/crash.jsp")) {
-            throw new RuntimeException("Hotspot crashed");
+            throw new RuntimeException(getCrashMessage(output.getStdout()));
         }
         if (output.getStdout().contains("TEST FAILED")) {
             throw new RuntimeException("Test Failed");
@@ -696,11 +696,16 @@ public class CDSTestUtils {
             System.out.println("[STDOUT]\n" + output.getStdout());
 
         if (output.getExitValue() != 0 && output.getStdout().contains("A fatal error has been detected")) {
-          throw new RuntimeException("Hotspot crashed");
+            throw new RuntimeException(getCrashMessage(output.getStdout()));
         }
         return output;
     }
 
+    static String getCrashMessage(String stdOut) {
+        int start = stdOut.indexOf("# A fatal error has been detected by the Java Runtime Environment:");
+        int end = stdOut.indexOf(".log", start) + 4;
+        return stdOut.substring(start, end);
+    }
 
     private static void writeFile(File file, String content) throws Exception {
         FileOutputStream fos = new FileOutputStream(file);

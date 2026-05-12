@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,26 @@
  * @bug 8225499 4464064
  * @library /test/lib
  * @summary InetSocketAddress::toString not friendly to IPv6 literal addresses
- * @run testng/othervm ToString
- * @run testng/othervm -Djava.net.preferIPv4Stack=true ToString
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true ToString
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 
-import java.net.*;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 
-import jdk.test.lib.net.IPSupport;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ToString {
 
@@ -72,19 +81,19 @@ public class ToString {
         }
     }
 
-    @BeforeTest
-    public void setup() {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+    @BeforeAll
+    public static void setup() {
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
     }
 
     @Test
-    // InetSocketAddress.toString() throws NPE with unresolved address
-    public static void NPETest() {
-        System.out.println(new InetSocketAddress("unresolved", 12345));
+    public void NPETest() {
+        // Test that InetSocketAddress.toString() does not throw NPE with unresolved address
+        assertDoesNotThrow(() -> System.out.println(
+                new InetSocketAddress("unresolved", 12345)));
     }
 
-    @DataProvider(name = "hostPortArgs")
-    public Object[][] createArgs1() {
+    public static Object[][] fromHostStringAndPort() {
         return new Object[][]{
                 // hostname, port number, expected string in format
                 // <hostname>/<IP literal>:<port> or
@@ -100,44 +109,34 @@ public class ToString {
         };
     }
 
-    @Test(dataProvider = "hostPortArgs")
-    public static void testConstructor(String host, int port, String string) {
+    @ParameterizedTest
+    @MethodSource("fromHostStringAndPort")
+    public void testConstructor(String host, int port, String string) {
         String received = new InetSocketAddress(host, port).toString();
-
-        if (!string.equals(received)) {
-            throw new RuntimeException("Expected: " + string + " Received: " + received);
-        }
+        assertEquals(string, received);
     }
 
-    @DataProvider(name = "addrPortArgs")
-    public Object[][] createArgs2() {
+    public static Object[][] fromInetAddressAndPort() throws UnknownHostException {
         InetAddress nullAddr = null;
-        try {
-            return new Object[][]{
-                    // InetAddress, port number, expected string
-                    {InetAddress.getLoopbackAddress(), 80, "localhost/" + loopbackAddr + ":80"},
-                    {InetAddress.getLocalHost(), 80, localAddr + ":80"},
-                    {InetAddress.getByAddress(new byte[]{1, 1, 1, 1}), 80, "/1.1.1.1:80"},
-                    {InetAddress.getByAddress(new byte[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}), 80, "/[101:101:101:101:101:101:101:101]:80"},
-                    {InetAddress.getByName("225.225.225.0"), 80, "/225.225.225.0:80"},
-                    {nullAddr, 80, wildcardAddr + ":80"}
-            };
-        } catch (UnknownHostException uhe) {
-            throw new RuntimeException("Data provider creation failed: " + uhe, uhe);
-        }
+        return new Object[][]{
+                // InetAddress, port number, expected string
+                {InetAddress.getLoopbackAddress(), 80, "localhost/" + loopbackAddr + ":80"},
+                {InetAddress.getLocalHost(), 80, localAddr + ":80"},
+                {InetAddress.getByAddress(new byte[]{1, 1, 1, 1}), 80, "/1.1.1.1:80"},
+                {InetAddress.getByAddress(new byte[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}), 80, "/[101:101:101:101:101:101:101:101]:80"},
+                {InetAddress.getByName("225.225.225.0"), 80, "/225.225.225.0:80"},
+                {nullAddr, 80, wildcardAddr + ":80"}
+        };
     }
 
-    @Test(dataProvider = "addrPortArgs")
-    public static void testConstructor(InetAddress addr, int port, String string) {
+    @ParameterizedTest
+    @MethodSource("fromInetAddressAndPort")
+    public void testConstructor(InetAddress addr, int port, String string) {
         String received = new InetSocketAddress(addr, port).toString();
-
-        if (!string.equals(received)) {
-            throw new RuntimeException("Expected: " + string + " Received: " + received);
-        }
+        assertEquals(string, received);
     }
 
-    @DataProvider(name = "unresolved")
-    public Object[][] createArgs3() {
+    public static Object[][] unresolvedFromHostStringAndPort() {
         return new Object[][]{
                 // hostname, port number, expected string
                 {"::1", 80, "::1/<unresolved>:80"},
@@ -152,12 +151,10 @@ public class ToString {
         };
     }
 
-    @Test(dataProvider = "unresolved")
-    public static void testCreateUnresolved(String host, int port, String string) {
+    @ParameterizedTest
+    @MethodSource("unresolvedFromHostStringAndPort")
+    public void testCreateUnresolved(String host, int port, String string) {
         String received = InetSocketAddress.createUnresolved(host, port).toString();
-
-        if (!string.equals(received)) {
-            throw new RuntimeException("Expected: " + string + " Received: " + received);
-        }
+        assertEquals(string, received);
     }
 }

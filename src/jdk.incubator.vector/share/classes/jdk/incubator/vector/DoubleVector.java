@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code double} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class DoubleVector extends AbstractVector<Double> {
+public abstract sealed class DoubleVector extends AbstractVector<Double>
+         permits DoubleVector64, DoubleVector128, DoubleVector256, DoubleVector512, DoubleVectorMax {
 
     DoubleVector(double[] vec) {
         super(vec);
@@ -2222,6 +2223,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         DoubleVector that = (DoubleVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
         LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vspecies().asIntegral(), (long)origin);
         VectorMask<Double> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@ import java.nio.file.Files;
 
 import static java.nio.file.StandardOpenOption.*;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm/timeout=720 TransferTo_2GB_transferFrom
+ * @run junit/othervm/timeout=720 TransferTo_2GB_transferFrom
  * @bug 8278268
  * @summary Tests if ChannelInputStream.transferFrom correctly
  *     transfers 2GB+ using FileChannel.transferFrom(ReadableByteChannel).

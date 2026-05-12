@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import static jdk.internal.vm.vector.Utils.debug;
 /**
  * Enumerates CPU ISA extensions supported by the JVM on the current hardware.
  */
-/*package-private*/ class CPUFeatures {
+/*package-private*/ final class CPUFeatures {
     private static final Set<String> features = getCPUFeatures();
 
     private static Set<String> getCPUFeatures() {
@@ -74,9 +74,6 @@ import static jdk.internal.vm.vector.Utils.debug;
             debug("AVX=%b; AVX2=%b; AVX512F=%b; AVX512DQ=%b",
                   SUPPORTS_AVX, SUPPORTS_AVX2, SUPPORTS_AVX512F, SUPPORTS_AVX512DQ);
 
-            assert SUPPORTS_AVX512F == (VectorShape.getMaxVectorBitSize(int.class)   == 512);
-            assert SUPPORTS_AVX2    == (VectorShape.getMaxVectorBitSize(byte.class)  >= 256);
-            assert SUPPORTS_AVX     == (VectorShape.getMaxVectorBitSize(float.class) >= 256);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -635,7 +635,7 @@ public class Infer {
             //in the functional interface descriptors)
             List<Type> descParameterTypes = types.findDescriptorType(formalInterface).getParameterTypes();
             if (descParameterTypes.size() != paramTypes.size()) {
-                checkContext.report(pos, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
+                checkContext.report(pos, diags.fragment(Fragments.WrongNumberArgsInLambda(funcInterface.tsym)));
                 return types.createErrorType(funcInterface);
             }
             for (Type p : descParameterTypes) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,9 @@ public class Util {
         return b;
     }
 
+    public static byte[] getClassFileFromJar(String jarFile, String className) throws FileNotFoundException, IOException {
+        return getClassFileFromJar(new File(jarFile), className);
+    }
     public static byte[] getClassFileFromJar(File jarFile, String className) throws FileNotFoundException, IOException {
         JarFile jf = new JarFile(jarFile);
         JarEntry ent = jf.getJarEntry(className.replace('.', '/') + ".class");

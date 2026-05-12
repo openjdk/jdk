@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ import java.util.Arrays;
  *
  * Other lane-wise operations, such as the {@code min} operator, are defined as a
  * partially serviced (not a full-service) named operation, where a corresponding
- * method on {@code Vector} and/or a subclass provide some but all possible
+ * method on {@code Vector} and/or a subclass provide some but not all possible
  * overloadings and overrides (commonly the unmasked variant with scalar-broadcast
  * overloadings).
  *
@@ -255,6 +255,8 @@ import java.util.Arrays;
  * the resulting expansions and contractions are handled explicitly
  * with
  * <a href="Vector.html#expansion">special conventions</a>.
+ * These special conventions also apply to <em>shape-changing</em>
+ * methods, which may change {@code VLENGTH} as well as {@code VSHAPE}.
  *
  * <p> Vector operations can be grouped into various categories and
  * their behavior can be generally specified in terms of underlying
@@ -365,7 +367,7 @@ import java.util.Arrays;
  * <p> Unlike other lane-wise operations, conversions can change lane
  * type, from the input (domain) type to the output (range) type.  The
  * lane size may change along with the type.  In order to manage the
- * size changes, lane-wise conversion methods can product <em>partial
+ * size changes, lane-wise conversion methods can produce <em>partial
  * results</em>, under the control of a {@code part} parameter, which
  * is <a href="Vector.html#expansion">explained elsewhere</a>.
  * (Following the example above, the second group of converted lane
@@ -383,15 +385,15 @@ import java.util.Arrays;
  * int part = ...;  // 0 or 1
  * VectorShape VSHAPE = a.shape();
  * double[] arlogical = new double[VLENGTH];
- * for (int i = 0; i < limit; i++) {
+ * for (int i = 0; i < a.length(); i++) {
  *     int e = a.lane(i);
  *     arlogical[i] = (double) e;
  * }
  * VectorSpecies<Double> rs = VSHAPE.withLanes(double.class);
- * int M = Double.BITS / Integer.BITS;  // expansion factor
- * int offset = part * (VLENGTH / M);
+ * int ML = Double.BITS / Integer.BITS;  // 2x logical expansion
+ * assert rs.length() == VLENGTH / ML;   // output has 2x fewer lanes
+ * int offset = part * rs.length();
  * DoubleVector r = DoubleVector.fromArray(rs, arlogical, offset);
- * assert r.length() == VLENGTH / M;
  * }</pre>
  * </li>
  *
@@ -812,193 +814,260 @@ import java.util.Arrays;
  * Shape-invariance means that {@code VSHAPE} is constant for typical
  * computations.  Keeping the same shape throughout a computation
  * helps ensure that scarce vector resources are efficiently used.
+ *
  * (On some hardware platforms shape changes could cause unwanted
  * effects like extra data movement instructions, round trips through
  * memory, or pipeline bubbles.)
  *
- * <p> Tension between these principles arises when an operation
+ * <p> Tension between the above principles arises when an operation
  * produces a <em>logical result</em> that is too large for the
- * required output {@code VSHAPE}.  In other cases, when a logical
+ * required physical output {@code VSHAPE}, so a part of the logical
+ * result must be <em>selected</em> to deliver into the physical output.
+ * In such cases it is an open question of which part to select.
+ * In other cases, when a logical
  * result is smaller than the capacity of the output {@code VSHAPE},
- * the positioning of the logical result is open to question, since
+ * the whole logical result must be <em>inserted</em> into a part
+ * of the physical output.
+ * In this case the insertion position is open to question, since
  * the physical output vector must contain a mix of logical result and
  * padding.
+ * It might seem preferable if the Vector API would work at a higher
+ * level, picking new shapes on the fly as it keeps {@code VLENGTH}
+ * constant, but this would be a less portable design.
  *
- * <p> In the first case, of a too-large logical result being crammed
- * into a too-small output {@code VSHAPE}, we say that data has
- * <em>expanded</em>.  In other words, an <em>expansion operation</em>
- * has caused the output shape to overflow.  Symmetrically, in the
- * second case of a small logical result fitting into a roomy output
- * {@code VSHAPE}, the data has <em>contracted</em>, and the
- * <em>contraction operation</em> has required the output shape to pad
- * itself with extra zero lanes.
+ * <p>(Some platforms do support a rich variety of vector shapes, and
+ * can also natively express logical expansions and contractions of
+ * lanewise data, transparently adjusting vector shapes on the fly.
+ * But not all platforms have enough shapes to pull this off well.
+ * And in extreme cases a shape change is physically impossible,
+ * because the logical result would be just too large or too small to
+ * be matched by any available vector shape.  So the Vector API
+ * only changes shapes in a method documented as shape-changing, and
+ * the user must supply the new shape explicitly.)
  *
- * <p> In both cases we can speak of a parameter {@code M} which
- * measures the <em>expansion ratio</em> or <em>contraction ratio</em>
- * between the logical result size (in bits) and the bit-size of the
- * actual output shape.  When vector shapes are changed, and lane
- * sizes are not, {@code M} is just the integral ratio of the output
- * shape to the logical result.  (With the possible exception of
- * the {@linkplain VectorShape#S_Max_BIT maximum shape}, all vector
- * sizes are powers of two, and so the ratio {@code M} is always
- * an integer.  In the hypothetical case of a non-integral ratio,
- * the value {@code M} would be rounded up to the next integer,
- * and then the same general considerations would apply.)
+ * <p> In a nutshell, we would prefer to keep both {@code VSHAPE} and
+ * {@code VLENGTH} constant in a block of vector code, but size
+ * changes sometimes require compromises.  Here are some
+ * definitions to help navigate the complexity of such compromises:
  *
- * <p> If the logical result is larger than the physical output shape,
- * such a shape change must inevitably drop result lanes (all but
- * {@code 1/M} of the logical result).  If the logical size is smaller
- * than the output, the shape change must introduce zero-filled lanes
- * of padding (all but {@code 1/M} of the physical output).  The first
- * case, with dropped lanes, is an expansion, while the second, with
- * padding lanes added, is a contraction.
+ * <ul><li>The <em>input shape</em> of a vector operation is the
+ * shape of the input vector {@code X} which receives the method call.
+ * Any other vector arguments have the same input shape.
  *
- * <p> Similarly, consider a lane-wise conversion operation which
- * leaves the shape invariant but changes the lane size by a ratio of
- * {@code M}.  If the logical result is larger than the output (or
- * input), this conversion must reduce the {@code VLENGTH} lanes of the
- * output by {@code M}, dropping all but {@code 1/M} of the logical
- * result lanes.  As before, the dropping of lanes is the hallmark of
- * an expansion.  A lane-wise operation which contracts lane size by a
- * ratio of {@code M} must increase the {@code VLENGTH} by the same
- * factor {@code M}, filling the extra lanes with a zero padding
- * value; because padding must be added this is a contraction.
+ * </li><li>The <em>physical output shape</em> of a vector operation
+ * is the shape of the output, the vector {@code Y} produced
+ * by the method call.  It is usually the same as the input shape,
+ * but may differ in the case of a shape-changing method.
+ * (Note:  We are talking about the "physics" of an object-oriented
+ * API here, a computational structure which is easily compiled to
+ * various kinds of hardware, but not itself a hardware specification.
+ * The Vector API does not guarantee that a 128-bit vector shape
+ * will always be represented by a 128-bit hardware register,
+ * although it is a good guess that the compiler will do this.
+ * The truly physical hardware registers are invisible here.)
  *
- * <p> It is also possible (though somewhat confusing) to change both
- * lane size and container size in one operation which performs both
- * lane conversion <em>and</em> reshaping.  If this is done, the same
- * rules apply, but the logical result size is the product of the
- * input size times any expansion or contraction ratio from the lane
- * change size.
+ * </li><li>The <em>logical result</em> {@code f(X)} of a vector
+ * operation is the mathematical result of applying the operation
+ * {@code f} to the input vector {@code X} without regard to output shape.
+ * For a lane-wise
+ * operation, the logical output is simply the logical concatenation
+ * of the lane-wise results, using the result type.  In general this
+ * logical result may overflow or underflow the capacity of any given
+ * output shape.  There might not be an available output shape which
+ * could store the logical result.
  *
- * <p> For completeness, we can also speak of <em>in-place
- * operations</em> for the frequent case when resizing does not occur.
- * With an in-place operation, the data is simply copied from logical
- * output to its physical container with no truncation or padding.
- * The ratio parameter {@code M} in this case is unity.
+ * </li><li>The <em>logical expansion ratio</em> {@code ML} of a
+ * vector operation is the bit-size ratio {@code |f(X)|/|X|} of the
+ * logical result to the input shape.  It may be an integer or the
+ * reciprocal of an integer, respectively depending on whether the logical
+ * operation is expanding or contracting.
  *
- * <p> Note that the classification of contraction vs. expansion
- * depends on the relative sizes of the logical result and the
- * physical output container.  The size of the input container may be
- * larger or smaller than either of the other two values, without
- * changing the classification.  For example, a conversion from a
- * 128-bit shape to a 256-bit shape will be a contraction in many
- * cases, but it would be an expansion if it were combined with a
- * conversion from {@code byte} to {@code long}, since in that case
- * the logical result would be 1024 bits in size.  This example also
- * illustrates that a logical result does not need to correspond to
- * any particular platform-supported vector shape.
+ * </li><li>Given an output vector {@code Y},
+ * the <em>physical expansion ratio</em> {@code MP} of a
+ * vector operation is the bit-size ratio {@code |Y|/|X|} of physical
+ * output shape to the original input shape.  It measures the net
+ * shape change without regard to the logical operation.  In the case
+ * of a bitwise reinterpretation method, it is the only ratio of
+ * interest.
  *
- * <p> Although lane-wise masked operations can be viewed as producing
- * partial operations, they are not classified (in this API) as
- * expansions or contractions.  A masked load from an array surely
- * produces a partial vector, but there is no meaningful "logical
- * output vector" that this partial result was contracted from.
+ * </li><li>The <em>output expansion ratio</em> {@code MO} is the net
+ * bit-size ratio {@code MO=MP/ML=|Y|/|f(X)|}, measuring the size of
+ * the physical output shape relative to the logical result.
  *
- * <p> Some care is required with these terms, because it is the
- * <em>data</em>, not the <em>container size</em>, that is expanding
- * or contracting, relative to the size of its output container.
- * Thus, resizing a 128-bit input into 512-bit vector has the effect
- * of a <em>contraction</em>.  Though the 128 bits of payload hasn't
- * changed in size, we can say it "looks smaller" in its new 512-bit
- * home, and this will capture the practical details of the situation.
+ * </li><li>The <em>output selection ratio</em> {@code MS} is the
+ * reciprocal of the output expansion ratio: {@code MS=1/MO=ML/MP}.
  *
- * <p> If a vector method might expand its data, it accepts an extra
- * {@code int} parameter called {@code part}, or the "part number".
- * The part number must be in the range {@code [0..M-1]}, where
- * {@code M} is the expansion ratio.  The part number selects one
- * of {@code M} contiguous disjoint equally-sized blocks of lanes
- * from the logical result and fills the physical output vector
- * with this block of lanes.
+ * </li><li>An <em>in-place operation</em> ({@code MO=MS=1}) occurs
+ * when the logical result and the physical output shape are the same
+ * size.  When this happens, the logical and output expansion ratios
+ * are also identical ({@code ML=MP}).  The logical result is simply
+ * copied into the physical output with no truncation or padding.
+ * An in-place lanewise operation leaves {@code VLENGTH} unchanged.
+ * An in-place operation does not have to be shape-invariant, as the
+ * input shape may differ from the logical and output shape.
  *
- * <p> Specifically, the lanes selected from the logical result of an
- * expansion are numbered in the range {@code [R..R+L-1]}, where
- * {@code L} is the {@code VLENGTH} of the physical output vector, and
- * the origin of the block, {@code R}, is {@code part*L}.
+ * </li><li><em>Selection</em> ({@code MS>1}, {@code MO<1}) occurs
+ * when the physical output shape, the shape of vector {@code Y}, is smaller than the logical
+ * result {@code f(X)}. One of {@code MS} distinct parts from
+ * {@code f(X)} is selected and copied to {@code Y}.
+ * The rest of {@code f(X)} is lost.
+ * The {@code part} number in the range {@code [0..MS-1]}
+ * selects lanes {@code [R..R+L-1]} of {@code f(X)}, where
+ * {@code L=VLENGTH(f(X))/MS=VLENGTH(Y)} and {@code R=part*L}.
+ * If the user wants all parts of {@code f(X)}, the operation
+ * has to be repeated {@code MS} times, with a different
+ * part each time.
  *
- * <p> A similar convention applies to any vector method that might
- * contract its data.  Such a method also accepts an extra part number
- * parameter (again called {@code part}) which steers the contracted
- * data lanes one of {@code M} contiguous disjoint equally-sized
- * blocks of lanes in the physical output vector.  The remaining lanes
- * are filled with zero, or as specified by the method.
+ * </li><li><em>Insertion</em> ({@code MO>1}, {@code MS<1}) occurs
+ * when the physical output shape, the shape of vector {@code Y}, is larger than the logical
+ * result {@code f(X)}. {@code f(X)} is copied to one of {@code MO}
+ * distinct parts in {@code Y}.
+ * The rest of {@code Y} is padded with zero bits.
+ * The {@code part} number in the range {@code [-MO+1..0]}
+ * chooses lanes {@code [R..R+L-1]} of {@code Y}, where
+ * {@code L=VLENGTH(f(X))=VLENGTH(Y)/MO} and {@code R=|part|*L}.
+ * If the user wants a fully populated output vector, the operation
+ * has to be repeated on {@code MO} input vectors, selecting a
+ * different part of the output for insertion each time, and
+ * using the {@linkplain VectorOperators#XOR bitwise XOR}
+ * (or {@link VectorOperators#FIRST_NONZERO FIRST_NONZERO}
+ * for floating point) to combine the outputs.
+ * </li></ul>
  *
- * <p> Specifically, the data is steered into the lanes numbered in the
- * range {@code [R..R+L-1]}, where {@code L} is the {@code VLENGTH} of
- * the logical result vector, and the origin of the block, {@code R},
- * is again a multiple of {@code L} selected by the part number,
- * specifically {@code |part|*L}.
+ * <p> Examples (more in the table further below):
+ * <ul>
+ * <li> Conversion {@code int[4]:128 -> float[4]:128}:
+ * invariant lane size (lanewise in-place, {@code ML=1}),
+ * shape-invariant ({@code MP=1}).
+ * The conversion is length-invariant, so
+ * no selection or insertion (in-place, {@code MO=MS=1}).
  *
- * <p> In the case of a contraction, the part number must be in the
- * non-positive range {@code [-M+1..0]}.  This convention is adopted
- * because some methods can perform both expansions and contractions,
- * in a data-dependent manner, and the extra sign on the part number
- * serves as an error check.  If vector method takes a part number and
- * is invoked to perform an in-place operation (neither contracting
- * nor expanding), the {@code part} parameter must be exactly zero.
+ * <li> Conversion {@code byte[16]:128 -> long[2]:128}:
+ * expanding lane size ({@code ML=8}),
+ * shape-invariant ({@code MP=1}).
+ * We must select one of {@code MS=ML/MP=8} parts from the
+ * logical result {@code long[16]:1024},
+ * with {@code part} in range {@code [0..7]}.
+ *
+ * <li> Conversion {@code long[2]:128 -> byte[16]:128}:
+ * contracting lane size ({@code ML=1/8}),
+ * shape-invariant ({@code MP=1}).
+ * We must insert the logical result {@code byte[2]:16} into
+ * one of {@code MO=MP/ML=8} parts of the output,
+ * with {@code part} in range {@code [-7..0]}.
+ *
+ * <li> Conversion {@code float[2]:64 -> double[2]:128}:
+ * expanding lane size ({@code ML=2}),
+ * expanding shape ({@code MP=2}).
+ * Since the expansion of lane size and shape is balanced,
+ * we have no selection or insertion (in-place, {@code MO=MS=1}).
+ *
+ * <li> Conversion {@code byte[32]:256 -> long[2]:128}:
+ * expanding lane size ({@code ML=8}),
+ * contracting shape ({@code MP=1/2}).
+ * We must select one of {@code MS=ML/MP=16} parts from the
+ * logical result {@code long[32]:2048},
+ * with {@code part} in range {@code [0..15]}.
+ *
+ * </ul>
+ *
+ * For conversions, one might be tempted to use in-place operations
+ * where the logical and physical expansion ratios are equal {@code ML=MP},
+ * and no selection or insertion is required ({@code part=0}). Such code
+ * tends to be easier to read, since there is no changes to {@code VLENGTH}.
+ * However, some platforms only support one or two shapes
+ * (e.g. aarch64 NEON only supports 64 and 128 bit vectors),
+ * and so the code must be organized so that the physical expansion
+ * ratio does not change much. If the shapes cannot change, but lane
+ * sizes do change, then the code must perform selection or insertion
+ * (e.g. conversion {@code byte[16]:128 -> long[2]:128} and
+ * {@code long[2]:128 -> byte[16]:128}).
+ * To achieve portable code, one has to consider consistently using
+ * shape-invariant conversions, so one never leaves the preferred
+ * shape.
+ *
+ * <p> The convention of positive part numbers for selection
+ * ({@code [0..MS-1]}) and non-positive part numbers for insertion
+ * ({@code [-MO+1..0]}) is adopted because some methods can perform
+ * both expansions and contractions, in a data-dependent manner, and
+ * the extra sign on the part number serves as an error check.  If a
+ * vector method takes a part number and an invocation of it requires
+ * neither insertion (with padding) nor selection, the {@code part}
+ * parameter must be exactly zero.
  * Part numbers outside the allowed ranges will elicit an indexing
- * exception.  Note that in all cases a zero part number is valid, and
- * corresponds to an operation which preserves as many lanes as
- * possible from the beginning of the logical result, and places them
- * into the beginning of the physical output container.  This is
- * often a desirable default, so a part number of zero is safe
- * in all cases and useful in most cases.
+ * exception, with a message reporting which part numbers were legal.
+ * A zero part number is always valid and selects or inserts the leading block.
  *
  * <p> The various resizing operations of this API contract or expand
  * their data as follows:
- * <ul>
  *
+ * <ul>
+ * <li> Lanewise Conversion:
+ * Lanewise convert {@code X} with element type {@code ETYPE} to
+ * {@code f(X)} with element type {@code FTYPE}, according to the
+ * indicated {@linkplain VectorOperators.Conversion conversion}.
+ * The logical expansion ratio of the vector corresponds to the
+ * expansion ratio of the individual elements ({@code ML = |FTYPE| / |ETYPE|}).
+ * A lanewise conversion operator may be classified as (respectively)
+ * in-place, expanding, or contracting, depending on whether the bit-size
+ * of {@code ETYPE} is (respectively) equal to, less than, or greater
+ * than the bit-size of {@code FTYPE}.
+ *
+ * <ul>
  * <li>
  * {@link Vector#convert(VectorOperators.Conversion,int) Vector.convert()}
- * will expand (respectively, contract) its operand by ratio
- * {@code M} if the
- * {@linkplain #elementSize() element size} of its output is
- * larger (respectively, smaller) by a factor of {@code M}.
- * If the element sizes of input and output are the same,
- * then {@code convert()} is an in-place operation.
- *
+ * is shape-invariant, and thus preferred for portable code.
+ * Since there is no shape change {@code MP=1}, {@code MO=1/ML}, and {@code MS=ML}.
+ * Lanewise expansion leads to corresponding selection and
+ * lanewise contraction to corresponsing insertion.
  * <li>
  * {@link Vector#convertShape(VectorOperators.Conversion,VectorSpecies,int) Vector.convertShape()}
- * will expand (respectively, contract) its operand by ratio
- * {@code M} if the bit-size of its logical result is
- * larger (respectively, smaller) than the bit-size of its
- * output shape.
- * The size of the logical result is defined as the
- * {@linkplain #elementSize() element size} of the output,
- * times the {@code VLENGTH} of its input.
- *
- * Depending on the ratio of the changed lane sizes, the logical size
- * may be (in various cases) either larger or smaller than the input
- * vector, independently of whether the operation is an expansion
- * or contraction.
- *
+ * allows for a change in shape. One can freely combine lanewise
+ * expansion or contraction with output insertion or selection.
+ * If the lanewise expansion and shape expansion are balanced,
+ * the operation is always in-place ({@code ML=MP} and {@code MO=1}).
+ * Some platforms may not be able to implement all combinations
+ * efficiently, especially when shape sizes are limited.
  * <li>
- * Since {@link Vector#castShape(VectorSpecies,int) Vector.castShape()}
- * is a convenience method for {@code convertShape()}, its classification
- * as an expansion or contraction is the same as for {@code convertShape()}.
+ * {@link Vector#castShape(VectorSpecies,int) Vector.castShape()}
+ * is a convenience method for {@code convertShape()} and can also
+ * freely combine lanewise expansion or contraction with output
+ * insertion or selection.
+ * </ul>
  *
+ * <li> Bitwise Reinterpretation:
+ * {@code f(X)} is the bitwise image of {@code X} of the same shape,
+ * only the lane boundaries are redrawn from {@code ETYPE}
+ * to {@code FTYPE}.
+ * Therefore the logical expansion ratio is always unity {@code ML=1}.
+ * If the shape changes, the ratio {@code MP} may vary from unity.
+ *
+ * <ul>
+ * <li>
+ * {@link Vector#reinterpretAsBytes() Vector.reinterpretAsBytes()}
+ * and related are shape-invariant ({@code MP=1}). Hence the operation
+ * is always in-place ({@code MO=MS=1}), implicitly {@code part=0}.
  * <li>
  * {@link Vector#reinterpretShape(VectorSpecies,int) Vector.reinterpretShape()}
- * is an expansion (respectively, contraction) by ratio {@code M} if the
- * {@linkplain #bitSize() vector bit-size} of its input is
- * crammed into a smaller (respectively, dropped into a larger)
- * output container by a factor of {@code M}.
- * Otherwise, it is an in-place operation.
- *
- * Since this method is a reinterpretation cast that can erase and
- * redraw lane boundaries as well as modify shape, the input vector's
- * lane size and lane count are irrelevant to its classification as
- * expanding or contracting.
+ * allows for change in shape.
+ * The net output expansion ratio {@code MO=MP} determines whether
+ * the operation is in-place {@code MO=MP=1} or whether insertion (with padding)
+ * or selection are required.
+ * </ul>
  *
  * <li>
  * The {@link #unslice(int,Vector,int) unslice()} methods expand
- * by a ratio of {@code M=2}, because the single input slice is
+ * their logical output
+ * by a ratio of {@code ML=2}, because the single input slice is
  * positioned and inserted somewhere within two consecutive background
  * vectors.  The part number selects the first or second background
  * vector, as updated by the inserted slice.
+ * Since this operation is shape-invariant,
+ * {@code MP=1} and {@code MS=ML/MP=2}.
  * Note that the corresponding
  * {@link #slice(int,Vector) slice()} methods, although inverse
- * to the {@code unslice()} methods, do not contract their data
+ * to the {@code unslice()} methods, do not form a distinct
+ * intermediate logical output, so {@code ML=MP=1}
  * and thus require no part number.  This is because
  * {@code slice()} delivers a slice of exactly {@code VLENGTH}
  * lanes extracted from two input vectors.
@@ -1009,13 +1078,724 @@ import java.util.Arrays;
  * expanding or contracting operation is performed, to query the
  * limiting value on a part parameter for a proposed expansion
  * or contraction.  The value returned from {@code partLimit()} is
- * positive for expansions, negative for contractions, and zero for
+ * positive when {@code MS>1}, negative when {@code MO>1}, and zero for
  * in-place operations.  Its absolute value is the parameter {@code
- * M}, and so it serves as an exclusive limit on valid part number
- * arguments for the relevant methods.  Thus, for expansions, the
- * {@code partLimit()} value {@code M} is the exclusive upper limit
- * for part numbers, while for contractions the {@code partLimit()}
- * value {@code -M} is the exclusive <em>lower</em> limit.
+ * max(MS,MO)}, and so it serves as an exclusive limit on valid part number
+ * arguments for the relevant methods.  Thus, for selections, the
+ * {@code partLimit()} value {@code MS} is the exclusive upper limit
+ * for part numbers, while for insertions the {@code partLimit()}
+ * value {@code -MO} is the exclusive <em>lower</em> limit.
+ *
+ * <p>
+ * Below is a table with some examples of expansions and contractions.
+ * The first few rows represent the <em>identity</em> operations, which
+ * serve as a reference point only. The <em>resulting bytes</em> are
+ * visualized using ASCII characters. Capital letters ({@code ABC}) are
+ * bytes, always leading (low-order) bytes in multi-byte lanes.
+ * Underlines ({@code _}) stand for zero bytes, generated by output padding.
+ * Equals signs ({@code =}) stand for higher-order bytes corresponding to
+ * the capital letter to the left. Minus signs ({@code -}) stand for the
+ * sign extension bytes corresponding to the capital letter or equal sign
+ * to the left. Parentheses show where a regrouping of lane bytes has occurred.
+ * The {@code S/I} column indicates if the operation requires insertion
+ * (I) or selection (S), otherwise it is in-place.
+ *
+ * <table id="expansion-examples" class="striped" style="text-align:right;">
+ * <caption>Expansion and Contraction Examples</caption>
+ * <thead>
+ * <tr>
+ * <th>input<br>species</th>
+ * <th>operation</th>
+ * <th>logical<br>result</th>
+ * <th><code>ML</code></th>
+ * <th><code>MP</code></th>
+ * <th><code>MO</code></th>
+ * <th><code>MS</code></th>
+ * <th>S/I</th>
+ * <th>part</th>
+ * <th>output<br>species</th>
+ * <th>resulting<br>bytes</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr>
+ * <td><code>byte[16]:128</code></td>
+ * <td><em>identity</em></td>
+ * <td><code>byte[16]:128</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[16]:128</code></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code>&#xA0;<code>IJKLMNOP</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[8]:128</code></td>
+ * <td><em>identity</em></td>
+ * <td><code>short[8]:128</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>short[8]:128</code></td>
+ * <td style="text-align: left;"><code>A=B=C=D=</code>&#xA0;<code>E=F=G=H=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>int[4]:128</code></td>
+ * <td><em>identity</em></td>
+ * <td><code>int[4]:128</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>int[4]:128</code></td>
+ * <td style="text-align: left;"><code>A===B===</code>&#xA0;<code>C===D===</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[2]:128</code></td>
+ * <td><em>identity</em></td>
+ * <td><code>long[2]:128</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>A=======</code>&#xA0;<code>B=======</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[8]: 64</code></td>
+ * <td><em>identity</em></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]: 64</code></td>
+ * <td><em>identity</em></td>
+ * <td><code>short[4]: 64</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>A=B=C=D=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>int[2]: 64</code></td>
+ * <td><em>identity</em></td>
+ * <td><code>int[2]: 64</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>int[2]: 64</code></td>
+ * <td style="text-align: left;"><code>A===B===</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]: 64</code></td>
+ * <td><em>identity</em></td>
+ * <td><code>long[1]: 64</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>long[1]: 64</code></td>
+ * <td style="text-align: left;"><code>A=======</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>long[2]:128</code></td>
+ * <td><code>convert(L2S)</code></td>
+ * <td><code>short[2]: 32</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>1/4</td>
+ * <td>I</td>
+ * <td>0&#xA0;</td>
+ * <td><code>short[8]:128</code></td>
+ * <td style="text-align: left;"><code>A=B=____</code>&#xA0;<code>________</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[2]:128</code></td>
+ * <td><code>convert(L2S)</code></td>
+ * <td><code>short[2]: 32</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>1/4</td>
+ * <td>I</td>
+ * <td>-1&#xA0;</td>
+ * <td><code>short[8]:128</code></td>
+ * <td style="text-align: left;"><code>____A=B=</code>&#xA0;<code>________</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[2]:128</code></td>
+ * <td><code>convert(L2S)</code></td>
+ * <td><code>short[2]: 32</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>1/4</td>
+ * <td>I</td>
+ * <td>-2&#xA0;</td>
+ * <td><code>short[8]:128</code></td>
+ * <td style="text-align: left;"><code>________</code>&#xA0;<code>A=B=____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[2]:128</code></td>
+ * <td><code>convert(L2S)</code></td>
+ * <td><code>short[2]: 32</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>1/4</td>
+ * <td>I</td>
+ * <td>-3&#xA0;</td>
+ * <td><code>short[8]:128</code></td>
+ * <td style="text-align: left;"><code>________</code>&#xA0;<code>____A=B=</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>short[8]:128</code></td>
+ * <td><code>convert(Z_E_S2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>A=______</code>&#xA0;<code>B=______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[8]:128</code></td>
+ * <td><code>convert(Z_E_S2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>1&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>C=______</code>&#xA0;<code>D=______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[8]:128</code></td>
+ * <td><code>convert(Z_E_S2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>2&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>E=______</code>&#xA0;<code>F=______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[8]:128</code></td>
+ * <td><code>convert(Z_E_S2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>3&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>G=______</code>&#xA0;<code>H=______</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>short[8]:128</code></td>
+ * <td><code>convert(S2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>A=------</code>&#xA0;<code>B=------</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[8]:128</code></td>
+ * <td><code>convert(S2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>1&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>C=------</code>&#xA0;<code>D=------</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[8]:128</code></td>
+ * <td><code>convert(S2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>2&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>E=------</code>&#xA0;<code>F=------</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[8]:128</code></td>
+ * <td><code>convert(S2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>3&#xA0;</td>
+ * <td><code>long[2]:128</code></td>
+ * <td style="text-align: left;"><code>G=------</code>&#xA0;<code>H=------</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>short[4]: 64</code></td>
+ * <td><code>convert(S2B)</code></td>
+ * <td><code>byte[4]: 32</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>ABCD____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]: 64</code></td>
+ * <td><code>convert(S2B)</code></td>
+ * <td><code>byte[4]: 32</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>-1&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>____ABCD</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>convert(B2S)</code></td>
+ * <td><code>short[8]:128</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>A-B-C-D-</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>convert(B2S)</code></td>
+ * <td><code>short[8]:128</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>1&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>E-F-G-H-</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>convert(Z_E_B2S)</code></td>
+ * <td><code>short[8]:128</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>A_B_C_D_</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>convert(Z_E_B2S)</code></td>
+ * <td><code>short[8]:128</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>1&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>E_F_G_H_</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>convert(Z_E_B2I)</code></td>
+ * <td><code>int[8]:256</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>int[2]: 64</code></td>
+ * <td style="text-align: left;"><code>A___B___</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>convert(Z_E_B2I)</code></td>
+ * <td><code>int[8]:256</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>4</td>
+ * <td>S</td>
+ * <td>3&#xA0;</td>
+ * <td><code>int[2]: 64</code></td>
+ * <td style="text-align: left;"><code>G___H___</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>convert(Z_E_B2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>8</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>long[1]: 64</code></td>
+ * <td style="text-align: left;"><code>A_______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>convert(Z_E_B2L)</code></td>
+ * <td><code>long[8]:512</code></td>
+ * <td>8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>8</td>
+ * <td>S</td>
+ * <td>7&#xA0;</td>
+ * <td><code>long[1]: 64</code></td>
+ * <td style="text-align: left;"><code>H_______</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>long[1]: 64</code></td>
+ * <td><code>convert(L2I)</code></td>
+ * <td><code>int[1]: 32</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>0&#xA0;</td>
+ * <td><code>int[2]: 64</code></td>
+ * <td style="text-align: left;"><code>A===____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]: 64</code></td>
+ * <td><code>convert(L2I)</code></td>
+ * <td><code>int[1]: 32</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>-1&#xA0;</td>
+ * <td><code>int[2]: 64</code></td>
+ * <td style="text-align: left;"><code>____A===</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>int[2]: 64</code></td>
+ * <td><code>convert(I2S)</code></td>
+ * <td><code>short[2]: 32</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>0&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>A=B=____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>int[2]: 64</code></td>
+ * <td><code>convert(I2S)</code></td>
+ * <td><code>short[2]: 32</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>-1&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>____A=B=</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>long[1]: 64</code></td>
+ * <td><code>convert(L2S)</code></td>
+ * <td><code>short[1]: 16</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>1/4</td>
+ * <td>I</td>
+ * <td>0&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>A=______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]: 64</code></td>
+ * <td><code>convert(L2S)</code></td>
+ * <td><code>short[1]: 16</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>1/4</td>
+ * <td>I</td>
+ * <td>-3&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>______A=</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>long[1]: 64</code></td>
+ * <td><code>convert(L2B)</code></td>
+ * <td><code>byte[1]:&nbsp;&nbsp;8</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>8</td>
+ * <td>1/8</td>
+ * <td>I</td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>A_______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]: 64</code></td>
+ * <td><code>convert(L2B)</code></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>8</td>
+ * <td>1/8</td>
+ * <td>I</td>
+ * <td>-1&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>_A______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]: 64</code></td>
+ * <td><code>convert(L2B)</code></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>8</td>
+ * <td>1/8</td>
+ * <td>I</td>
+ * <td>-6&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>______A_</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]: 64</code></td>
+ * <td><code>convert(L2B)</code></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>8</td>
+ * <td>1/8</td>
+ * <td>I</td>
+ * <td>-7&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>_______A</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>short[4]: 64</code></td>
+ * <td><code>convert(S2B)</code></td>
+ * <td><code>byte[4]: 32</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>ABCD____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]: 64</code></td>
+ * <td><code>convert(S2B)</code></td>
+ * <td><code>byte[4]: 32</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>-1&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>____ABCD</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[16]:128</code></td>
+ * <td><code>reinterpretShape()</code></td>
+ * <td><code>byte[16]:128</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[16]:128</code></td>
+ * <td><code>reinterpretShape()</code></td>
+ * <td><code>byte[16]:128</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>1&#xA0;</td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td style="text-align: left;"><code>IJKLMNOP</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>reinterpretShape()</code></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[16]:128</code></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code>&#xA0;<code>________</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>reinterpretShape()</code></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>I</td>
+ * <td>-1&#xA0;</td>
+ * <td><code>byte[16]:128</code></td>
+ * <td style="text-align: left;"><code>________</code>&#xA0;<code>ABCDEFGH</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>reinterpretShape()</code></td>
+ * <td><code>short[4]: 64</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>short[4]: 64</code></td>
+ * <td style="text-align: left;"><code>(AB)(CD)(EF)(GH)</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>reinterpretShape()</code></td>
+ * <td><code>int[2]: 64</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>int[2]: 64</code></td>
+ * <td style="text-align: left;"><code>(ABCD)(EFGH)</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>reinterpretShape()</code></td>
+ * <td><code>long[1]: 64</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td></td>
+ * <td>0&#xA0;</td>
+ * <td><code>long[1]: 64</code></td>
+ * <td style="text-align: left;"><code>(ABCDEFGH)</code></td>
+ * </tr>
+ * <tr style="border-top:1px solid #000;">
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>unslice(5,V0)</code></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[16]: 64</code></td>
+ * <td style="text-align: left;"><code>_____ABC</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>unslice(5,V0)</code></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>1&#xA0;</td>
+ * <td><code>byte[16]: 64</code></td>
+ * <td style="text-align: left;"><code>DEFGH___</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]: 64</code></td>
+ * <td><code>x.unslice(5,x)</code></td>
+ * <td><code>byte[8]: 64</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>S</td>
+ * <td>0&#xA0;</td>
+ * <td><code>byte[16]: 64</code></td>
+ * <td style="text-align: left;"><code>DEFGHABC</code></td>
+ * </tr>
+ * </tbody>
+ * </table>
  *
  * <h2><a id="cross-lane"></a>Moving data across lane boundaries</h2>
  * The cross-lane methods which do not redraw lanes or change species
@@ -1170,9 +1950,10 @@ import java.util.Arrays;
  * @param <E> the boxed version of {@code ETYPE},
  *           the element type of a vector
  *
+ * @sealedGraph
  */
 @SuppressWarnings("exports")
-public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vector<E> {
+public abstract sealed class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vector<E> permits AbstractVector {
 
     // This type is sealed within its package.
     // Users cannot roll their own vector types.
@@ -2925,40 +3706,36 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * element type {@code F}, reinterpreting the bytes of this
      * vector without performing any value conversions.
      *
-     * <p> Depending on the selected species, this operation may
-     * either <a href="Vector.html#expansion">expand or contract</a>
-     * its logical result, in which case a non-zero {@code part}
-     * number can further control the selection and steering of the
-     * logical result into the physical output vector.
-     *
-     * <p>
-     * The underlying bits of this vector are copied to the resulting
-     * vector without modification, but those bits, before copying,
-     * may be truncated if this vector's bit-size is greater than
-     * desired vector's bit size, or filled with zero bits if this
-     * vector's bit-size is less than desired vector's bit-size.
+     * <p> Has a logical result which is simply the bitwise image
+     * of the input, regardless of lane types and lane boundaries.
+     * If the input and output shapes are the same this is an
+     * in-place operation, and the output has the same underlying
+     * bits as the input, and {@code part=0}.
      *
      * <p> If the old and new species have different shape, this is a
      * <em>shape-changing</em> operation, and may have special
-     * implementation costs.
+     * implementation costs. A change in shape leads to
+     * <a href="Vector.html#expansion">selection or insertion</a>,
+     * which can be steered by the {@code part} number.
      *
      * <p> The method behaves as if this vector is stored into a byte
-     * array using little-endian byte ordering and then the desired vector is loaded from the same byte
-     * array using the same ordering.
+     * array using little-endian byte ordering and then the desired
+     * vector is loaded from the same byte array using the same ordering.
      *
      * <p> The following pseudocode illustrates the behavior:
      * <pre>{@code
      * int domSize = this.byteSize();
      * int ranSize = species.vectorByteSize();
-     * int M = (domSize > ranSize ? domSize / ranSize : ranSize / domSize);
-     * assert Math.abs(part) < M;
-     * assert (part == 0) || (part > 0) == (domSize > ranSize);
      * MemorySegment ms = MemorySegment.ofArray(new byte[Math.max(domSize, ranSize)]);
-     * if (domSize > ranSize) {  // expansion
+     * if (domSize > ranSize) {  // selection (output shape smaller)
+     *     int MS = domSize / ranSize;
+     *     assert 0 <= part && part < MS
      *     this.intoMemorySegment(ms, 0, ByteOrder.native());
      *     int origin = part * ranSize;
      *     return species.fromMemorySegment(ms, origin, ByteOrder.native());
-     * } else {  // contraction or size-invariant
+     * } else {  // in-place (shape-invariant) or insertion (output shape larger)
+     *     int MO = ranSize / domSize
+     *     assert (-MO) < part && part <= 0
      *     int origin = (-part) * domSize;
      *     this.intoMemorySegment(ms, origin, ByteOrder.native());
      *     return species.fromMemorySegment(ms, 0, ByteOrder.native());
@@ -2975,9 +3752,15 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @param species the desired vector species
      * @param part the <a href="Vector.html#expansion">part number</a>
-     *        of the result, or zero if neither expanding nor contracting
+     *        of the result (zero if the operation is shape-invariant)
      * @param <F> the boxed element type of the species
      * @return a vector transformed, by shape and element type, from this vector
+     * @throws ArrayIndexOutOfBoundsException unless {@code part} is zero,
+     *         or else there is selection ({@code MS>1}) and {@code part}
+     *         is in range {@code [0..MS-1]}
+     *         or else there is insertion ({@code MO>1}) and {@code part}
+     *         is in range {@code [-MO+1..0]}.
+     *
      * @see Vector#convertShape(VectorOperators.Conversion,VectorSpecies,int)
      * @see Vector#castShape(VectorSpecies,int)
      * @see VectorSpecies#partLimit(VectorSpecies,boolean)
@@ -3132,14 +3915,31 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * to a new lane type (called {@code FTYPE} here) according to the
      * indicated {@linkplain VectorOperators.Conversion conversion}.
      *
-     * This is a lane-wise shape-invariant operation which copies
-     * {@code ETYPE} values from the input vector to corresponding
-     * {@code FTYPE} values in the result.  Depending on the selected
-     * conversion, this operation may either
-     * <a href="Vector.html#expansion">expand or contract</a> its
-     * logical result, in which case a non-zero {@code part} number
-     * can further control the selection and steering of the logical
-     * result into the physical output vector.
+     * This is a lane-wise operation which copies {@code ETYPE} values
+     * from the input vector to corresponding {@code FTYPE} values in
+     * the result.
+     *
+     * <p> This method is a restricted version of the more general
+     * but less frequently used <em>shape-changing</em> method
+     * {@link #convertShape(VectorOperators.Conversion,VectorSpecies,int)
+     * convertShape()}.
+     * The result of this method is the same as the expression
+     * {@code this.convertShape(conv, rsp, part)},
+     * where the output species is
+     * {@code rsp=this.species().withLanes(FTYPE.class)}.
+     *
+     * <p> As a combined effect of shape-invariance and lane size changes,
+     * the input and output species may have different lane counts, causing
+     * <a href="Vector.html#expansion">expansion or contraction</a>, and
+     * require selection or insertion.
+     * Conceptually, the input is lane-wise converted into a logical
+     * result that contains all converted elements, leading to a
+     * logical expansion ratio {@code ML = |FTYPE|/|ETYPE|}.
+     * The result is then copied to the output, which may either be
+     * an exact fit (in-place), too small (requires selection), or
+     * too large (requires insertion).
+     *
+     * <h4>Logical: Lane-wise Conversion</h4>
      *
      * <p> Each specific conversion is described by a conversion
      * constant in the class {@link VectorOperators}.  Each conversion
@@ -3150,12 +3950,12 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * vector, while the range type determines the lane type of the
      * output vectors.
      *
-     * <p> A conversion operator may be classified as (respectively)
+     * <p> A lanewise conversion operator may be classified as (respectively)
      * in-place, expanding, or contracting, depending on whether the
-     * bit-size of its domain type is (respectively) equal, less than,
+     * bit-size of its domain type is (respectively) equal to, less than,
      * or greater than the bit-size of its range type.
      *
-     * <p> Independently, conversion operations can also be classified
+     * <p> Independently, lanewise conversion operations can also be classified
      * as reinterpreting or value-transforming, depending on whether
      * the conversion copies representation bits unchanged, or changes
      * the representation bits in order to retain (part or all of)
@@ -3183,81 +3983,81 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * Converting the bit-pattern of a {@code NaN} may discard bits
      * from the {@code NaN}'s significand.
      *
-     * <p> This classification is important, because, unless otherwise
-     * documented, conversion operations <em>never change vector
-     * shape</em>, regardless of how they may change <em>lane sizes</em>.
+     * <h4>Shape-invariance can lead to Selection or Insertion</h4>
      *
-     * Therefore, an <em>expanding</em> conversion cannot store all of its
-     * results in its output vector, because the output vector has fewer
-     * lanes of larger size, in order to have the same overall bit-size as
-     * its input.
+     * <p> This classification of the lanewise operators as in-place,
+     * expanding and contracting is important, because,  unless otherwise
+     * documented, conversion operations <em>never change vector shape</em>,
+     * regardless of how they may change <em>lane sizes</em>.
+     * <p> To manage the details of these
+     * <a href="Vector.html#expansion">expansions and contractions</a>,
+     * a {@code part} parameter selects partial results from expansions,
+     * or steers insertion of the results of contractions into the output.
+     * For shape-invariant conversions ({@code MP=1}), we have the
+     * following cases:
      *
-     * Likewise, a contracting conversion must store its relatively small
-     * results into a subset of the lanes of the output vector, defaulting
-     * the unused lanes to zero.
+     * <ul>
+     * <li> Lanewise in-place conversion operator ({@code |ETYPE|=|FTYPE|}):
+     * The input, logical result and output have the same number of
+     * lanes and size in bits ({@code ML=MP=1}). The logical result
+     * fits the output exactly, and we always have {@code part=0}.
+     *
+     * <p> All conversions are delivered in one output vector, without
+     * wasting lanes.
+     *
+     * <li> Lanewise expanding conversion operator ({@code |ETYPE|<|FTYPE|}):
+     * The logical expansion {@code ML=|FTYPE|/|ETYPE|>1} means the
+     * logical result is {@code MS=ML} times larger than the output.
+     *
+     * <p> The {@code part} number in range {@code [0..MS-1]} selects
+     * one of the {@code MS} distinct blocks of {@code VLENGTH/MS}
+     * logical result lanes starting at the <em>origin lane</em> at
+     * {@code part*VLENGTH/MS}. This selected block is copied to the
+     * output and fills it exactly.
+     * The rest of the logical result is lost.
+     *
+     * <p> A group of such output vectors, with {@code MS} disjoint
+     * selections of logical results, can (manually) represent the
+     * complete logical result of the conversion.
+     *
+     * <li> Lanewise contracting conversion operator ({@code |ETYPE|>|FTYPE|}):
+     * The logical contraction {@code ML=|FTYPE|/|ETYPE|<1} means the
+     * output is {@code MO=1/ML} times larger than the logical result.
+     *
+     * <p> The {@code part} number in range {@code [-(MO-1)..0]} inserts
+     * all {@code VLENGTH} lanes from the logical result into the output
+     * located at the <em>origin lane</em> {@code -part*VLENGTH}. There
+     * is a total of {@code VLENGTH*MO} output lanes, and those not
+     * holding converted input values are filled with zero padding.
+     *
+     * <p> A group of such output vectors, with logical result parts
+     * steered to {@code MO} disjoint blocks, can be (manually) reassembled
+     * using the {@linkplain VectorOperators#XOR bitwise XOR} or (for floating
+     * point) the {@link VectorOperators#FIRST_NONZERO FIRST_NONZERO}
+     * operator.
+     * </ul>
      *
      * <p> As an example, a conversion from {@code byte} to {@code long}
-     * ({@code M=8}) will discard 87.5% of the input values in order to
+     * (logical expansion ratio {@code ML=8})
+     * will discard 87.5% of the input values in order to
+     * select and
      * convert the remaining 12.5% into the roomy {@code long} lanes of
      * the output vector. The inverse conversion will convert back all
      * the large results, but will waste 87.5% of the lanes in the output
-     * vector.
-     *
-     * <em>In-place</em> conversions ({@code M=1}) deliver all of
-     * their results in one output vector, without wasting lanes.
-     *
-     * <p> To manage the details of these
-     * <a href="Vector.html#expansion">expansions and contractions</a>,
-     * a non-zero {@code part} parameter selects partial results from
-     * expansions, or steers the results of contractions into
-     * corresponding locations, as follows:
-     *
-     * <ul>
-     * <li> expanding by {@code M}: {@code part} must be in the range
-     * {@code [0..M-1]}, and selects the block of {@code VLENGTH/M} input
-     * lanes starting at the <em>origin lane</em> at {@code part*VLENGTH/M}.
-
-     * <p> The {@code VLENGTH/M} output lanes represent a partial
-     * slice of the whole logical result of the conversion, filling
-     * the entire physical output vector.
-     *
-     * <li> contracting by {@code M}: {@code part} must be in the range
-     * {@code [-M+1..0]}, and steers all {@code VLENGTH} input lanes into
-     * the output located at the <em>origin lane</em> {@code -part*VLENGTH}.
-     * There is a total of {@code VLENGTH*M} output lanes, and those not
-     * holding converted input values are filled with zeroes.
-     *
-     * <p> A group of such output vectors, with logical result parts
-     * steered to disjoint blocks, can be reassembled using the
-     * {@linkplain VectorOperators#OR bitwise or} or (for floating
-     * point) the {@link VectorOperators#FIRST_NONZERO FIRST_NONZERO}
-     * operator.
-     *
-     * <li> in-place ({@code M=1}): {@code part} must be zero.
-     * Both vectors have the same {@code VLENGTH}.  The result is
-     * always positioned at the <em>origin lane</em> of zero.
-     *
-     * </ul>
-     *
-     * <p> This method is a restricted version of the more general
-     * but less frequently used <em>shape-changing</em> method
-     * {@link #convertShape(VectorOperators.Conversion,VectorSpecies,int)
-     * convertShape()}.
-     * The result of this method is the same as the expression
-     * {@code this.convertShape(conv, rsp, this.broadcast(part))},
-     * where the output species is
-     * {@code rsp=this.species().withLanes(FTYPE.class)}.
+     * vector, padding excess lanes with zero bits.
      *
      * @param conv the desired scalar conversion to apply lane-wise
      * @param part the <a href="Vector.html#expansion">part number</a>
-     *        of the result, or zero if neither expanding nor contracting
+     *        of the result, or zero if in-place
      * @param <F> the boxed element type of the species
      * @return a vector converted by shape and element type from this vector
      * @throws ArrayIndexOutOfBoundsException unless {@code part} is zero,
-     *         or else the expansion ratio is {@code M} and
-     *         {@code part} is positive and less than {@code M},
-     *         or else the contraction ratio is {@code M} and
-     *         {@code part} is negative and greater {@code -M}
+     *         or else the lanewise conversion is an expansion leading to
+     *         an output selection ratio {@code MS} and {@code part} is in
+     *         range {@code [0..MS-1]}
+     *         or else the lanewise conversion is a contraction leading to
+     *         an output insertion ratio {@code MO} and {@code part} is in
+     *         range {@code [-MO+1..0]}.
      *
      * @see VectorOperators#I2L
      * @see VectorOperators.Conversion#ofCast(Class,Class)
@@ -3289,14 +4089,34 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * <p> As a combined effect of shape changes and lane size changes,
      * the input and output species may have different lane counts, causing
-     * <a href="Vector.html#expansion">expansion or contraction</a>.
-     * In this case a non-zero {@code part} parameter selects
-     * partial results from an expanded logical result, or steers
-     * the results of a contracted logical result into a physical
-     * output vector of the required output species.
+     * <a href="Vector.html#expansion">expansion or contraction</a>, and
+     * require selection or insertion.
+     * Conceptually, the input is lane-wise converted into a logical
+     * result that contains all converted elements, leading to a
+     * logical expansion ratio {@code ML = |FTYPE|/|ETYPE|}.
+     * The result is then copied to the output, which may either be
+     * an exact fit (in-place), too small (requires selection), or
+     * too large (requires insertion).
+     *
+     * <ul>
+     * <li> Exact fit (in-place): the expansion or contraction of the
+     * physical shape matches the expansion or contraction of the
+     * elements ({@code MP=ML}). We must have {@code part=0}.
+     * <li> Logical result is {@code MS>1} times larger than the
+     * output shape (selection): The {@code part} number in range
+     * {@code [0..MS-1]} determines which of the {@code MS}
+     * distinct parts from the logical result is selected for the output.
+     * The rest of the logical result is lost.
+     * <li> Output shape is {@code MO>1} times larger than the
+     * logical result (insertion): The {@code part} number in range
+     * {@code [-(MO-1)..0]} determines to which of the {@code MO}
+     * distinct positions of the output the logical result is inserted.
+     * The rest of the output is padded with zero bits.
+     * </ul>
      *
      * <p >The following pseudocode illustrates the behavior of this
-     * method for in-place, expanding, and contracting conversions.
+     * method for in-place conversions, and those with selection or
+     * insertion.
      * (This pseudocode also applies to the shape-invariant method,
      * but with shape restrictions on the output species.)
      * Note that only one of the three code paths is relevant to any
@@ -3315,17 +4135,17 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *   logical[i] = scalar_conversion_op(a.lane(i));
      * }
      * FTYPE[] physical;
-     * if (domlen == ranlen) { // in-place
+     * if (domlen == ranlen) { // MS=MO=1 => in-place
      *     assert part == 0; //else AIOOBE
      *     physical = logical;
-     * } else if (domlen > ranlen) { // expanding
-     *     int M = domlen / ranlen;
-     *     assert 0 <= part && part < M; //else AIOOBE
+     * } else if (domlen > ranlen) { // MS>1 => selection
+     *     int MS = domlen / ranlen;
+     *     assert 0 <= part && part < MS; //else AIOOBE
      *     int origin = part * ranlen;
      *     physical = Arrays.copyOfRange(logical, origin, origin + ranlen);
-     * } else { // (domlen < ranlen) // contracting
-     *     int M = ranlen / domlen;
-     *     assert 0 >= part && part > -M; //else AIOOBE
+     * } else { // (domlen < ranlen) // MO>1 => insertion, padding
+     *     int MO = ranlen / domlen;
+     *     assert 0 >= part && part > -MO; //else AIOOBE
      *     int origin = -part * domlen;
      *     System.arraycopy(logical, 0, physical, origin, domlen);
      * }
@@ -3335,9 +4155,15 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @param conv the desired scalar conversion to apply lane-wise
      * @param rsp the desired output species
      * @param part the <a href="Vector.html#expansion">part number</a>
-     *        of the result, or zero if neither expanding nor contracting
+     *        of the result, or zero if in-place
      * @param <F> the boxed element type of the output species
      * @return a vector converted by element type from this vector
+     * @throws ArrayIndexOutOfBoundsException unless {@code part} is zero,
+     *         or else there is selection ({@code MS>1}) and {@code part}
+     *         is in range {@code [0..MS-1]}
+     *         or else there is insertion ({@code MO>1}) and {@code part}
+     *         is in range {@code [-MO+1..0]}.
+     *
      * @see #convert(VectorOperators.Conversion,int)
      * @see #castShape(VectorSpecies,int)
      * @see #reinterpretShape(VectorSpecies,int)

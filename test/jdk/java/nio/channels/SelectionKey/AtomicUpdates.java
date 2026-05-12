@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 6350055
- * @run testng AtomicUpdates
+ * @run junit AtomicUpdates
  * @summary Unit test for SelectionKey interestOpsOr and interestOpsAnd
  */
 
@@ -37,15 +37,19 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.Test;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
-import static org.testng.Assert.*;
 
-@Test
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+
 public class AtomicUpdates {
 
     private SelectionKey keyFor(SocketChannel sc) {
@@ -94,74 +98,69 @@ public class AtomicUpdates {
     }
 
     private void test(SelectionKey key) {
-        assertTrue(key.channel() instanceof SocketChannel);
+        assertInstanceOf(SocketChannel.class, key.channel());
         key.interestOps(0);
 
         // 0 -> 0
         int previous = key.interestOpsOr(0);
-        assertTrue(previous == 0);
-        assertTrue(key.interestOps() == 0);
+        assertEquals(0, previous);
+        assertEquals(0, key.interestOps());
 
         // 0 -> OP_CONNECT
         previous = key.interestOpsOr(OP_CONNECT);
-        assertTrue(previous == 0);
-        assertTrue(key.interestOps() == OP_CONNECT);
+        assertEquals(0, previous);
+        assertEquals(OP_CONNECT, key.interestOps());
 
         // OP_CONNECT -> OP_CONNECT
         previous = key.interestOpsOr(0);
-        assertTrue(previous == OP_CONNECT);
-        assertTrue(key.interestOps() == OP_CONNECT);
+        assertEquals(OP_CONNECT, previous);
+        assertEquals(OP_CONNECT, key.interestOps());
 
         // OP_CONNECT -> OP_CONNECT | OP_READ | OP_WRITE
         previous = key.interestOpsOr(OP_READ | OP_WRITE);
-        assertTrue(previous == OP_CONNECT);
-        assertTrue(key.interestOps() == (OP_CONNECT | OP_READ | OP_WRITE));
+        assertEquals(OP_CONNECT, previous);
+        assertEquals(OP_CONNECT | OP_READ | OP_WRITE, key.interestOps());
 
         // OP_CONNECT | OP_READ | OP_WRITE -> OP_CONNECT
         previous = key.interestOpsAnd(~(OP_READ | OP_WRITE));
-        assertTrue(previous == (OP_CONNECT | OP_READ | OP_WRITE));
-        assertTrue(key.interestOps() == OP_CONNECT);
+        assertEquals(OP_CONNECT | OP_READ | OP_WRITE, previous);
+        assertEquals(OP_CONNECT, key.interestOps());
 
         // OP_CONNECT -> 0
         previous = key.interestOpsAnd(~OP_CONNECT);
-        assertTrue(previous == OP_CONNECT);
-        assertTrue(key.interestOps() == 0);
+        assertEquals(OP_CONNECT, previous);
+        assertEquals(0, key.interestOps());
 
         // OP_READ | OP_WRITE -> OP_READ | OP_WRITE
         key.interestOps(OP_READ | OP_WRITE);
         previous = key.interestOpsAnd(~OP_ACCEPT);
-        assertTrue(previous == (OP_READ | OP_WRITE));
-        assertTrue(key.interestOps() == (OP_READ | OP_WRITE));
+        assertEquals(OP_READ | OP_WRITE, previous);
+        assertEquals(OP_READ | OP_WRITE, key.interestOps());
 
         // OP_READ | OP_WRITE -> 0
         previous = key.interestOpsAnd(0);
-        assertTrue(previous == (OP_READ | OP_WRITE));
-        assertTrue(key.interestOps() == 0);
+        assertEquals(OP_READ | OP_WRITE, previous);
+        assertEquals(0, key.interestOps());
 
         // 0 -> 0
         previous = key.interestOpsAnd(0);
-        assertTrue(previous == 0);
-        assertTrue(key.interestOps() == 0);
+        assertEquals(0, previous);
+        assertEquals(0, key.interestOps());
 
-        try {
-            key.interestOpsOr(OP_ACCEPT);
-            fail("IllegalArgumentException expected");
-        } catch (IllegalArgumentException expected) { }
+        assertThrows(IllegalArgumentException.class,
+                     () -> key.interestOpsOr(OP_ACCEPT));
 
         key.cancel();
-        try {
-            key.interestOpsOr(OP_READ);
-            fail("CancelledKeyException expected");
-        } catch (CancelledKeyException expected) { }
-        try {
-            key.interestOpsAnd(~OP_READ);
-            fail("CancelledKeyException expected");
-        } catch (CancelledKeyException expected) { }
+        assertThrows(CancelledKeyException.class,
+                     () -> key.interestOpsOr(OP_READ));
+        assertThrows(CancelledKeyException.class,
+                     () -> key.interestOpsAnd(~OP_READ));
     }
 
     /**
      * Test default implementation of interestOpsOr/interestOpsAnd
      */
+    @Test
     public void testDefaultImplementation() throws Exception {
         try (SocketChannel sc = SocketChannel.open()) {
             SelectionKey key = keyFor(sc);
@@ -172,6 +171,7 @@ public class AtomicUpdates {
     /**
      * Test the default provider implementation of SelectionKey.
      */
+    @Test
     public void testNioImplementation() throws Exception {
         try (SocketChannel sc = SocketChannel.open();
              Selector sel = Selector.open()) {

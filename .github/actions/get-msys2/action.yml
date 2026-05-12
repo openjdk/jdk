@@ -31,7 +31,7 @@ runs:
   steps:
     - name: 'Install MSYS2'
       id: msys2
-      uses: msys2/setup-msys2@v2.28.0
+      uses: msys2/setup-msys2@v2.31.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal

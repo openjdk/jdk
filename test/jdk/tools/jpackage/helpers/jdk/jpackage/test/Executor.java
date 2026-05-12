@@ -63,7 +63,25 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     public Executor() {
-        commandOutputControl.dumpStdout(TKit.state().out()).dumpStderr(TKit.state().err());
+        commandOutputControl = new CommandOutputControl()
+                .dumpStdout(TKit.state().out())
+                .dumpStderr(TKit.state().err());
+        removeEnvVars = new HashSet<>();
+        setEnvVars = new HashMap<>();
+    }
+
+    public Executor(Executor other) {
+        toolProvider = other.toolProvider;
+        executable = other.executable;
+        commandOutputControl = other.commandOutputControl.copy();
+        directory = other.directory;
+        removeEnvVars = new HashSet<>(other.removeEnvVars);
+        setEnvVars = new HashMap<>(other.setEnvVars);
+        winTmpDir = other.winTmpDir;
+    }
+
+    public Executor copy() {
+        return new Executor(this);
     }
 
     public Executor setExecutable(String v) {
@@ -537,9 +555,9 @@ public final class Executor extends CommandArguments<Executor> {
 
     private ToolProvider toolProvider;
     private Path executable;
-    private final CommandOutputControl commandOutputControl = new CommandOutputControl();
+    private final CommandOutputControl commandOutputControl;
     private Path directory;
-    private Set<String> removeEnvVars = new HashSet<>();
-    private Map<String, String> setEnvVars = new HashMap<>();
-    private String winTmpDir = null;
+    private final Set<String> removeEnvVars;
+    private final Map<String, String> setEnvVars;
+    private String winTmpDir;
 }

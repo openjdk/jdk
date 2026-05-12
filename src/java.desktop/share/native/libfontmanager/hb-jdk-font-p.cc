@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,22 @@ static void _do_nothing(void) {
 
 typedef int (*GetTableDataFn) (int tag, char **dataPtr);
 
+typedef void (*ffm_free_t) (void *ptr);
+
+static ffm_free_t ffm_free_fn = NULL;
+
+/* We pass the address of "free" which was obtained by FFM so that it matches
+ * the malloc found by FFM
+ */
+#include <stdio.h>
+static void ffmfree(void *ptr) {
+    if (ffm_free_fn != NULL) {
+        ffm_free_fn(ptr);
+    } else {
+        free(ptr);
+    }
+}
+
 static hb_blob_t *
 reference_table(hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data) {
 
@@ -200,10 +216,14 @@ reference_table(hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data) {
    */
   return hb_blob_create((const char *)tableData, length,
                          HB_MEMORY_MODE_WRITABLE,
-                         tableData, free);
+                         tableData, ffmfree);
 }
 
 extern "C" {
+
+JDKEXPORT void HBSetFreeFn(void *free_fn) {
+    ffm_free_fn = (ffm_free_t)free_fn;
+}
 
 JDKEXPORT hb_face_t* HBCreateFace(GetTableDataFn *get_data_upcall_fn) {
 

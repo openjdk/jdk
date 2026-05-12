@@ -27,10 +27,24 @@
 
 // Included in runtime/prefetch.inline.hpp
 
+#include <intrin.h>
+
+// __prefetch2(addr, prfop) emits a PRFM instruction.
+// The prfop encoding is: <type><target><policy>
+//   type:   PLD = 00, PLI = 01, PST = 10
+//   target: L1  = 00, L2  = 01, L3  = 10
+//   policy: KEEP = 0, STRM = 1
+
 inline void Prefetch::read (const void *loc, intx interval) {
+  if (interval >= 0) {
+    __prefetch2((const char*) loc + interval, /* PLD + L1 + KEEP */ 0);
+  }
 }
 
 inline void Prefetch::write(void *loc, intx interval) {
+  if (interval >= 0) {
+    __prefetch2((char*) loc + interval, /* PST + L1 + KEEP */ 16);
+  }
 }
 
 #endif // OS_CPU_WINDOWS_AARCH64_PREFETCH_WINDOWS_AARCH64_INLINE_HPP

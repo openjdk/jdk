@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -993,9 +993,6 @@ void ADLParser::frame_parse(void) {
       if (strcmp(token,"frame_pointer")==0) {
         frame_pointer_parse(frame, false);
       }
-      if (strcmp(token,"interpreter_frame_pointer")==0) {
-        interpreter_frame_pointer_parse(frame, false);
-      }
       if (strcmp(token,"inline_cache_reg")==0) {
         inline_cache_parse(frame, false);
       }
@@ -1117,11 +1114,6 @@ void ADLParser::frame_pointer_parse(FrameForm *frame, bool native) {
   // Assign value into frame form
   if (native) { frame->_c_frame_pointer = frame_pointer; }
   else        { frame->_frame_pointer   = frame_pointer; }
-}
-
-//------------------------------interpreter_frame_pointer_parse----------------------------
-void ADLParser::interpreter_frame_pointer_parse(FrameForm *frame, bool native) {
-  frame->_interpreter_frame_pointer_reg = parse_one_arg("interpreter frame pointer entry");
 }
 
 //------------------------------inline_cache_parse-----------------------------

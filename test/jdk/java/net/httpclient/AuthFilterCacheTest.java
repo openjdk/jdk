@@ -67,7 +67,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @run junit/othervm -Dtest.requiresHost=true
  * -Djdk.httpclient.HttpClient.log=requests,headers,errors,quic
  * -Djdk.internal.httpclient.debug=false
- * AuthFilterCacheTest
+ * ${test.main.class}
  */
 
 public class AuthFilterCacheTest implements HttpServerAdapters {

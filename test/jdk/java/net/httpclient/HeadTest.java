@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,23 @@
  */
 
 /*
- * @test
- * @bug 8203433 8276559
+ * @test id=withCertificateCompression
+ * @bug 8203433 8276559 8372526
  * @summary Tests Client handles HEAD and 304 responses correctly.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.httpclient.HttpClient.log=trace,headers,requests HeadTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=trace,headers,requests ${test.main.class}
+ */
+
+/*
+ * @test id=withoutCertificateCompression
+ * @bug 8203433 8276559 8372526
+ * @summary Tests Client handles HEAD and 304 responses correctly.
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ * @run junit/othervm -Djdk.tls.client.disableExtensions=compress_certificate
+ *                    -Djdk.tls.server.disableExtensions=compress_certificate
+ *                    -Djdk.httpclient.HttpClient.log=trace,headers,requests HeadTest
  */
 
 import jdk.test.lib.net.SimpleSSLContext;

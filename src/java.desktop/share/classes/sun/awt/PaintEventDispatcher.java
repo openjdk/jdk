@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class PaintEventDispatcher {
      * This method is invoked from the toolkit thread when the surface
      * data of the component needs to be replaced. The method run() of
      * the Runnable argument performs surface data replacing, run()
-     * should be invoked on the EDT of this component's AppContext.
+     * should be invoked on the EDT.
      * Returns true if the Runnable has been enqueued to be invoked
      * on the EDT.
      * (Fix 6255371.)

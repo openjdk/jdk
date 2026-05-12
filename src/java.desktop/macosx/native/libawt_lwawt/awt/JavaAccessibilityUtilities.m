@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,9 +99,10 @@ jobject getAxContextSelection(JNIEnv *env, jobject axContext, jint index, jobjec
     GET_CACCESSIBILITY_CLASS_RETURN(nil);
     DECLARE_STATIC_METHOD_RETURN(jm_ax_getAccessibleSelection, sjc_CAccessibility, "ax_getAccessibleSelection",
                   "(Ljavax/accessibility/AccessibleContext;ILjava/awt/Component;)Ljavax/accessibility/Accessible;", nil);
-    return (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_ax_getAccessibleSelection,
+    jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_ax_getAccessibleSelection,
                     axContext, index, component);
     CHECK_EXCEPTION();
+    return o;
 }
 
 void setAxContextSelection(JNIEnv *env, jobject axContext, jint index, jobject component)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8014854
  * @summary Exercises CharBuffer#chars on each of the CharBuffer types
- * @run testng Chars
+ * @run junit Chars
  * @key randomness
  */
 
@@ -35,11 +35,13 @@ import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Chars {
 
@@ -98,8 +100,7 @@ public class Chars {
         buffers.add(randomizeRange(cb.asReadOnlyBuffer()));
     }
 
-    @DataProvider(name = "charbuffers")
-    public Object[][] createCharBuffers() {
+    private static Stream<Arguments> createCharBuffers() {
         List<CharBuffer> buffers = new ArrayList<>();
 
         // heap
@@ -119,20 +120,21 @@ public class Chars {
         // read-only buffer backed by a CharSequence
         buffers.add(CharBuffer.wrap(randomize(CharBuffer.allocate(SIZE))));
 
-        Object[][] params = new Object[buffers.size()][];
+        List<Arguments> params = new ArrayList<Arguments>();
         for (int i = 0; i < buffers.size(); i++) {
             CharBuffer cb = buffers.get(i);
-            params[i] = new Object[] { cb.getClass().getName(), cb };
+            params.add((Arguments.of(cb.getClass().getName(), cb)));
         }
 
-        return params;
+        return params.stream();
     }
 
-    @Test(dataProvider = "charbuffers")
+    @ParameterizedTest
+    @MethodSource("createCharBuffers")
     public void testChars(String type, CharBuffer cb) {
-        System.out.format("%s position=%d, limit=%d%n", type, cb.position(), cb.limit());
+        System.err.format("%s position=%d, limit=%d%n", type, cb.position(), cb.limit());
         int expected = intSum(cb);
-        assertEquals(cb.chars().sum(), expected);
-        assertEquals(cb.chars().parallel().sum(), expected);
+        assertEquals(expected, cb.chars().sum());
+        assertEquals(expected, cb.chars().parallel().sum());
     }
 }

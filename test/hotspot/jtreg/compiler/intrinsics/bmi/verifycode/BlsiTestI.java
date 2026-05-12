@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8031321
- * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
+ * @requires vm.flavor == "server" & !vm.graal.enabled & vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import jdk.test.lib.process.ProcessTools;
  * @key stress randomness
  * @bug 8252219 8256535 8325478
  * @requires vm.compiler2.enabled
+ * @requires vm.flagless
  * @summary Tests that using a stress option without -XX:StressSeed=N generates
  *          and logs a random seed.
  * @library /test/lib /
