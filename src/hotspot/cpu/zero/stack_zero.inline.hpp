@@ -28,10 +28,11 @@
 
 #include "runtime/javaThread.hpp"
 #include "stack_zero.hpp"
+#include "utilities/integerCast.hpp"
 
 inline void ZeroStack::overflow_check(int required_words, TRAPS) {
   // Check the Zero stack
-  if (available_words() < required_words) {
+  if (available_words() < integer_cast<size_t>(required_words)) {
     handle_overflow(THREAD);
     return;
   }

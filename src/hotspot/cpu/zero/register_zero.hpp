@@ -28,6 +28,7 @@
 
 #include "asm/register.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/integerCast.hpp"
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -58,7 +59,7 @@ class RegisterImpl : public AbstractRegisterImpl {
   // accessors
   int encoding() const {
     assert(is_valid(), "invalid register");
-    return (intptr_t)this;
+    return integer_cast<int>((intptr_t)this);
   }
   bool is_valid() const {
     return 0 <= (intptr_t) this && (intptr_t)this < number_of_registers;
@@ -93,7 +94,7 @@ class FloatRegisterImpl : public AbstractRegisterImpl {
   // accessors
   int encoding() const {
     assert(is_valid(), "invalid register");
-    return (intptr_t)this;
+    return integer_cast<int>((intptr_t)this);
   }
   bool is_valid() const {
     return 0 <= (intptr_t) this && (intptr_t)this < number_of_registers;
