@@ -840,8 +840,6 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int _annotations_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
 
-  static int slot_mask;
-
   static void compute_offsets();
 
  public:
