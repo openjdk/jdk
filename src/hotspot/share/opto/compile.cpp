@@ -2164,6 +2164,14 @@ void Compile::shuffle_late_inlines() {
 void Compile::process_vector_late_inlines() {
   for (int i = 0; i < _vector_late_inlines.length(); i++) {
     CallGenerator* cg = _vector_late_inlines.at(i);
+    ciMethod* callee = cg->method();
+
+    // Skip fallback inlining for callees already compiled into large nmethods.
+    if (callee->has_compiled_code() &&
+        callee->inline_instructions_size() > InlineSmallCode) {
+      continue;
+    }
+
     // When a vector intrinsic fails, set_generator(cg) caches the
     // LateInlineVectorCallGenerator on the call node to allow retries
     // if IGVN optimizes the call node's inputs. If the call node is not

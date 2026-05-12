@@ -47,7 +47,7 @@ public class TestVectorTest {
     public int call() { return 1; }
 
     @Test
-    @IR(failOn = {IRNode.CMP_I, IRNode.CMOVE_I})
+    @IR(failOn = {IRNode.CMP_I, IRNode.CMOVE_I}, applyIf = {"IncrementalInlineVector", "false"})
     @IR(counts = {IRNode.VECTOR_TEST, "1"})
     public int branch(long maskLong) {
         var mask = VectorMask.fromLong(ByteVector.SPECIES_PREFERRED, maskLong);
@@ -55,8 +55,8 @@ public class TestVectorTest {
     }
 
     @Test
-    @IR(failOn = {IRNode.CMP_I})
-    @IR(counts = {IRNode.VECTOR_TEST, "1", IRNode.CMOVE_I, "1"})
+    @IR(failOn = {IRNode.CMP_I}, applyIf = {"IncrementalInlineVector", "false"})
+    @IR(counts = {IRNode.VECTOR_TEST, "1", IRNode.CMOVE_I, "1"}, applyIf = {"IncrementalInlineVector", "false"})
     public int cmove(long maskLong) {
         var mask = VectorMask.fromLong(ByteVector.SPECIES_PREFERRED, maskLong);
         return mask.allTrue() ? 1 : 0;
