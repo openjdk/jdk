@@ -3104,7 +3104,11 @@ public class JShellTool implements MessageHandler {
                 cmdout.println();
                 hasOutput[0] = true;
             }
-            cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
+            if (sn.subKind() == Snippet.SubKind.VAR_BINDING_SUBKIND) {
+                cmdout.printf("%4s : %s\n", sn.id(), messageFormat("jshell.msg.list.binding", ((VarSnippet) sn).name(), sn.source().replace("\n", "\n       ")));
+            } else {
+                cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
+            }
         });
         return true;
     }
@@ -3965,7 +3969,7 @@ public class JShellTool implements MessageHandler {
                     custom(FormatCase.VARDECL, vk.name(), vk.typeName());
                     break;
                 }
-                case VAR_DECLARATION_WITH_INITIALIZER_SUBKIND: {
+                case VAR_DECLARATION_WITH_INITIALIZER_SUBKIND, VAR_BINDING_SUBKIND: {
                     VarSnippet vk = (VarSnippet) sn;
                     custom(FormatCase.VARINIT, vk.name(), vk.typeName());
                     break;

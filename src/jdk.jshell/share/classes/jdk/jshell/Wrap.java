@@ -184,15 +184,17 @@ abstract class Wrap implements GeneralWrap {
         return cnt;
     }
 
-    public static Wrap enhancedLocalVariableDeclWrap(String compileSource, List<BindingInfo> bindings) {
+    public static Wrap primaryEnhancedLocalVariableDeclWrap(String compileSource, List<BindingInfo> bindings) {
         List<Wrap> members = new ArrayList<>();
         List<String> methodsForAssigningBindings = new ArrayList<>(bindings.size());
 
         // public static Type bindingName;
+        String suffix = "";
         for (var b : bindings) {
             members.add(new CompoundWrap(
-                    "     public static\n    ", b.declareTypeName(), " ", b.bindingName(), ";\n"
+                    "     public static\n    ", b.declareTypeName(), " ", b.bindingName() + suffix, ";\n"
             ));
+            suffix = "_";
         }
 
         // public static Type $setBindingMethodName(Type $v) { return bindingName = $v; }
@@ -202,8 +204,8 @@ abstract class Wrap implements GeneralWrap {
             String methodName = setBindingMethodName + "$" + i;
             methodsForAssigningBindings.add(methodName);
             members.add(new CompoundWrap(
-                    "   private static ", bi.declareTypeName(), " ", methodName, "(", bi.declareTypeName(), " $v", ") { \n",
-                         "        return ", bi.bindingName(), " = $v", ";\n",
+                    "   private static ", bi.declareTypeName(), " ", methodName, "(", bi.declareTypeName(), " " + bi.bindingName() + "__", ") { \n",
+                         "        return ", bi.bindingName() + (i == 0 ? "" : "_"), " = " + bi.bindingName() + "__", ";\n",
                          "}\n"));
         }
 
@@ -224,6 +226,19 @@ abstract class Wrap implements GeneralWrap {
                 "  return  ", methodsForAssigningBindings.getFirst(), "(", bindings.getFirst().bindingName(), ");\n"));
 
         members.add(new DoitMethodWrap(new CompoundWrap(setBindingMethodInvocations.toArray())));
+
+        return new CompoundWrap(members.toArray());
+    }
+
+    public static Wrap secondaryEnhancedLocalVariableDeclWrap(String compileSource, BindingInfo binding) {
+        List<Wrap> members = new ArrayList<>();
+
+        // public static Type bindingName;
+        members.add(new CompoundWrap(
+                "     public static\n    ", binding.declareTypeName(), " ", binding.bindingName(), ";\n"
+        ));
+
+        members.add(new DoitMethodWrap(new CompoundWrap(" return " + binding.bindingName() + " = " + binding.bindingName() + "_;")));
 
         return new CompoundWrap(members.toArray());
     }

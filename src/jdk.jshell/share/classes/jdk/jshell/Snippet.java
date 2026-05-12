@@ -280,6 +280,13 @@ public abstract class Snippet {
         VAR_DECLARATION_WITH_INITIALIZER_SUBKIND(Kind.VAR, true, true),
 
         /**
+         * An binding variable.
+         * {@code SubKind} of {@link Kind#VAR}.
+         * @since 27
+         */
+        VAR_BINDING_SUBKIND(Kind.VAR, true, true),
+
+        /**
          * An expression whose value has been stored in a temporary variable. A
          * {@code SubKind} of {@link Kind#VAR}.
          * @jls 15 Expressions
@@ -768,4 +775,9 @@ public abstract class Snippet {
         return subkind.isExecutable();
     }
 
+    List<ExtraImport> getExtraImports() {
+        return List.of();
+    }
+
+    record ExtraImport(Snippet from, String name) {}
 }

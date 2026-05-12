@@ -294,31 +294,49 @@ class Eval {
             bindings = ExpressionToTypeInfo.enhancedLocalVariableDeclInferBindings(userSource, state, false);
         }
 
-        Wrap guts = Wrap.enhancedLocalVariableDeclWrap(compileSource, bindings);
-        DiagList dl = trialCompile(guts);
+        if (bindings.isEmpty()) {
+            Wrap guts = Wrap.simpleWrap(compileSource);
+            return List.of(new StatementSnippet(state.keyMap.keyForStatement(), userSource, guts));
+        }
+
+        List<Snippet> result = new ArrayList<>();
+
+        Wrap primaryGuts = Wrap.primaryEnhancedLocalVariableDeclWrap(compileSource, bindings);
+        DiagList dl = trialCompile(primaryGuts);
         if (dl.hasErrors()){
             return compileFailResult(dl, userSource, kindOfTree(unitTree));
         }
         TreeDependencyScanner tds = new TreeDependencyScanner();
         tds.scan(unitTree);
 
-        BindingInfo primary = bindings.getFirst();
-        Set<String> additionalStaticImportNames =
-                bindings.stream().skip(1).map(BindingInfo::bindingName).collect(Collectors.toSet());
+        BindingInfo primaryBinding = bindings.getFirst();
 
-        Snippet snip = new VarSnippet(
-                state.keyMap.keyForVariable((primary.bindingName())),
+        VarSnippet primarySnippet = new VarSnippet(
+                state.keyMap.keyForVariable((primaryBinding.bindingName())),
                 userSource,
-                guts,
-                primary.bindingName(),
-                primary.bindingName(),
-                SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND,
-                primary.displayTypeName(),
-                primary.hasEnhancedType() ? primary.fullTypeName() : null,
-                additionalStaticImportNames,
-                tds.declareReferences(), null);
+                primaryGuts,
+                primaryBinding.bindingName(),
+                primaryBinding.bindingName(),
+                SubKind.VAR_BINDING_SUBKIND,
+                primaryBinding.displayTypeName(),
+                primaryBinding.hasEnhancedType() ? primaryBinding.fullTypeName() : null,
+                Set.of(),
+                tds.declareReferences(), null, List.of());
+        result.add(primarySnippet);
+        bindings.stream().skip(1).map(bi -> new VarSnippet(
+                state.keyMap.keyForVariable((bi.bindingName())),
+                userSource,
+                Wrap.secondaryEnhancedLocalVariableDeclWrap(compileSource, bi),
+                bi.bindingName(),
+                bi.bindingName(),
+                SubKind.VAR_BINDING_SUBKIND,
+                bi.displayTypeName(),
+                bi.hasEnhancedType() ? bi.fullTypeName() : null,
+                Set.of(),
+                tds.declareReferences(), null, List.of(new Snippet.ExtraImport(primarySnippet, bi.bindingName()))))
+                .forEach(result::add);
 
-        return singletonList(snip);
+        return result;
     }
     // where
         static void gatherBindings(JCTree pattern, Consumer<JCTree.JCBindingPattern> sink) {
@@ -510,7 +528,7 @@ class Eval {
             DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
                     name, fieldName, subkind, displayType, hasEnhancedType ? fullTypeName : null, additionalStaticImportNames,
-                    tds.declareReferences(), modDiag);
+                    tds.declareReferences(), modDiag, List.of());
             snippets.add(snip);
         }
         return snippets;
@@ -771,7 +789,7 @@ class Eval {
                 Collection<String> declareReferences = null; //TODO
                 snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
                         name, name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName,
-                        additionalStaticImportNames, declareReferences, null);
+                        additionalStaticImportNames, declareReferences, null, List.of());
             } else {
                 guts = Wrap.methodReturnWrap(compileSource);
                 snip = new ExpressionSnippet(state.keyMap.keyForExpression(name, typeName), userSource, guts,
