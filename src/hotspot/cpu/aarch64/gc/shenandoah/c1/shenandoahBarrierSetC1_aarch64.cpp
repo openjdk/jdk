@@ -49,11 +49,6 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   }
 
   ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmpval, newval, /*acquire*/ true, /*release*/ true, /*is_cae*/ false, result);
-
-  // The membar here is necessary to prevent reordering between the
-  // release store in the CAS above and a subsequent volatile load.
-  // See also: LIR_Assembler::casw, LIR_Assembler::casl.
-  __ membar(__ AnyAny);
 }
 
 #undef __
