@@ -35,6 +35,7 @@ ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
   _y_values(NEW_C_HEAP_ARRAY(double, _size, mtGC)),
   _weights(NEW_C_HEAP_ARRAY(double, _size, mtGC)),
   _x_origin(0),
+  _y_origin(0),
   _x_sum(0),
   _y_sum(0),
   _weighted_y_sum(0),
@@ -64,7 +65,7 @@ void ShenandoahWeightedSeq::add(double x, double y) {
   }
 }
 
-void ShenandoahWeightedSeq::deduct_oldest_and_rebase(const double x_absolute, const double y, const double weight) {
+void ShenandoahWeightedSeq::deduct_oldest_and_rebase(const double x_absolute, const double y_absolute, const double weight) {
   // Suppose we want to shift _x_origin by delta. Our accumulators for x
   // components are based on the relative value 'x - x_origin', call this 'a'.
   // We want to update our accumulators to hold 'a - delta'.
@@ -78,30 +79,38 @@ void ShenandoahWeightedSeq::deduct_oldest_and_rebase(const double x_absolute, co
   // Finally
   // updated sum(xy) = sum(a - delta) * y
   //                 = sum(xy) - delta * sum(y)
-  const double delta = x_absolute - _x_origin;
+  const double x_delta = x_absolute - _x_origin;
+  const double y_delta = y_absolute - _y_origin;
+
   // order matters here, we must use old _x_sum
-  _xx_sum = _xx_sum - 2.0 * delta * _x_sum + _num_samples * delta * delta;
-  _xy_sum = _xy_sum - delta * _y_sum;
-  _x_sum  = _x_sum  - _num_samples * delta;
+  _xx_sum = _xx_sum - 2.0 * x_delta * _x_sum + _num_samples * x_delta * x_delta;
+  _xy_sum = _xy_sum - x_delta * _y_sum;
+  _x_sum  = _x_sum  - _num_samples * x_delta;
   _x_origin = x_absolute;
 
-  _y_sum -= y;
-  _yy_sum -= y * y;
+  // similarly, rebase y
+  _yy_sum = _yy_sum - 2.0 * y_delta * _y_sum + _num_samples * y_delta * y_delta;
+  _xy_sum = _xy_sum - y_delta * _x_sum;
+  _y_sum = _y_sum - _num_samples * y_delta;
+  _y_origin = y_absolute;
+
+  // and our weighted sums
+  _weighted_yy_sum = _weighted_yy_sum - 2.0 * y_delta * _weighted_y_sum + _weighted_sum * y_delta * y_delta;
+  _weighted_y_sum = _weighted_y_sum - _weighted_sum * y_delta;
   _weighted_sum -= weight;
-  _weighted_y_sum -= y * weight;
-  _weighted_yy_sum -= y * y * weight;
 }
 
-void ShenandoahWeightedSeq::add_latest(double x_absolute, double y, double weight) {
-  const double x = x_absolute - _x_origin;
-  _x_sum += x;
-  _y_sum += y;
-  _xy_sum += x * y;
-  _xx_sum += x * x;
-  _yy_sum += y * y;
+void ShenandoahWeightedSeq::add_latest(double x_absolute, double y_absolute, double weight) {
+  const double x_delta = x_absolute - _x_origin;
+  const double y_delta = y_absolute - _y_origin;
+  _x_sum += x_delta;
+  _y_sum += y_delta;
+  _xy_sum += x_delta * y_delta;
+  _xx_sum += x_delta * x_delta;
+  _yy_sum += y_delta * y_delta;
   _weighted_sum += weight;
-  _weighted_y_sum += y * weight;
-  _weighted_yy_sum += y * y * weight;
+  _weighted_y_sum += y_delta * weight;
+  _weighted_yy_sum += y_delta * y_delta * weight;
 }
 
 void ShenandoahWeightedSeq::add(double x, double y, double weight) {
@@ -111,6 +120,7 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
     deduct_oldest_and_rebase(_x_values[index], _y_values[index], _weights[index]);
   } else if (_num_samples == 0) {
     _x_origin = x;
+    _y_origin = y;
   }
 
   _x_values[index] = x;
@@ -129,7 +139,7 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   if (x_spread <= 0.0 || _num_samples < 2) {
     // All samples are the sample point, can't make a line
     _slope = 0;
-    _y_intercept = y;
+    _y_intercept = y - _y_origin;
     _residual_sd = 0.0;
     return;
   }
@@ -143,11 +153,10 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
 }
 
 double ShenandoahWeightedSeq::predict(double x_absolute, double margin_of_error) const {
-  const double x = x_absolute - _x_origin;
-  const double prediction = _slope * x + _y_intercept + _residual_sd * margin_of_error;
+  const double prediction = predict_y(x_absolute) + _residual_sd * margin_of_error;
   if (prediction <= 0.0) {
     // return average time, rather than negative or zero time
-    return _y_sum / MAX2(_num_samples, 1u);
+    return average();
   }
   return prediction;
 }
@@ -157,7 +166,7 @@ double ShenandoahWeightedSeq::weighted_average() const {
     return 0.0;
   }
 
-  return _weighted_y_sum / _weighted_sum;
+  return _weighted_y_sum / _weighted_sum + _y_origin;
 }
 
 double ShenandoahWeightedSeq::weighted_sd() const {

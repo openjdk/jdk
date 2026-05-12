@@ -42,7 +42,13 @@ class ShenandoahWeightedSeq {
   double* const _y_values;
   double* const _weights;
 
+  // Values stored in the x,y accumulators will be reduced to avoid arithmetic
+  // errors caused by loss of precision when working with large doubles. This
+  // is particularly important for the common use case when x is a monotonically
+  // increasing timestamp
   double _x_origin;
+  double _y_origin;
+
   double _x_sum;
   double _y_sum;
   double _weighted_y_sum;
@@ -88,7 +94,7 @@ public:
   double residual_sd() const { return _residual_sd; }
 
   // An unweighted mean.
-  double average() const { return _y_sum / MAX2(_num_samples, 1u); }
+  double average() const { return _y_sum / MAX2(_num_samples, 1u) + _y_origin; }
 
   // The weighted mean for the sequence.
   double weighted_average() const;
@@ -104,13 +110,13 @@ public:
 
   // Predict the y-value for the given x value based on linear reg
   double predict_y(double x_absolute) const {
-    return _slope * (x_absolute - _x_origin) + _y_intercept;
+    return _slope * (x_absolute - _x_origin) + _y_intercept + _y_origin;
   }
 
   // Provides the slope and y-intercept for the line of best fit through the sequence
   void fit_line(const double x_absolute, double& slope, double& intercept) const {
     slope = _slope;
-    intercept = _slope * (x_absolute - _x_origin) + _y_intercept;
+    intercept = predict_y(x_absolute);
   }
 
 private:
