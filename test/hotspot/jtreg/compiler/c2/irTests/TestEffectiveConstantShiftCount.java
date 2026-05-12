@@ -52,10 +52,12 @@ public class TestEffectiveConstantShiftCount {
         TestFramework.run();
     }
 
+    @ForceInline
     private static int intCount(int x) {
         return (x & ~31) | INT_LOW;
     }
 
+    @ForceInline
     private static int longCount(int x) {
         return (x & ~63) | LONG_LOW;
     }
