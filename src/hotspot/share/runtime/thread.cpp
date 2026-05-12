@@ -585,7 +585,6 @@ struct revival_data {
   uint64_t magic;
   uint64_t version;
   uint64_t size_this;
-  uint64_t status;
 
   const char* runtime_name;
   const char* runtime_version;
@@ -645,7 +644,6 @@ void* Thread::process_revival() {
   vm_revival_data.magic = REVIVAL_MAGIC;
   vm_revival_data.version = REVIVAL_VERSION;
   vm_revival_data.size_this = sizeof(vm_revival_data);
-  vm_revival_data.status = 1;
 
   vm_revival_data.runtime_name = JDK_Version::runtime_name();
   vm_revival_data.runtime_version = JDK_Version::runtime_version();

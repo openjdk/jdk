@@ -115,7 +115,6 @@ struct revival_data {
   uint64_t magic;
   uint64_t version;
   uint64_t size_this;
-  uint64_t status;
 
   const char* runtime_name;
   const char* runtime_version;
