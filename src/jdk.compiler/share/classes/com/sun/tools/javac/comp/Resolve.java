@@ -2358,7 +2358,8 @@ public class Resolve {
                 bestSoFar != sym) {
                 return new AmbiguityError(bestSoFar, sym);
             } else if (env.toplevel.namedImportScope == scope &&
-                    (sym == typeNotFound || (sym.kind == ERR && s.kind == ERR))) {
+                    ((sym == typeNotFound && s.kind.matches(KindSelector.TYP)) ||
+                    (sym.kind == ERR && s.kind == ERR))) {
                 bestSoFar = bestOf(bestSoFar, new UnresolvableGobalSymbolError(s));
             } else
                 bestSoFar = bestOf(bestSoFar, sym);
