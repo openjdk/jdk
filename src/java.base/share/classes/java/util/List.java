@@ -650,6 +650,13 @@ public interface List<E> extends SequencedCollection<E> {
      * @implSpec
      * The default implementation invokes {@link #remove(int) remove(index)}.
      *
+     * @apiNote
+     * The {@linkplain #removeAtIndex(int)} method is a synonym for
+     * {@linkplain remove(int)}. They have exactly the same semantics. Given that
+     * the default implementation of {@linkplain #removeAtIndex(int)} simply calls
+     * {@linkplain #remove(int)}, it is usually unnecessary for subclasses to override
+     * the {@linkplain #removeAtIndex(int)} method.
+     *
      * @param index the index of the element to be removed
      * @return the element previously at the specified position
      * @throws UnsupportedOperationException if the {@code remove} operation
