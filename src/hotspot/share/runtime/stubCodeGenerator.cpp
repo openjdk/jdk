@@ -255,8 +255,19 @@ void StubCodeGenerator::print_statistics_on(outputStream* st) {
 }
 
 #ifdef ASSERT
-void StubCodeGenerator::verify_stub(StubId stub_id) {
-  assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob %s for generation of stub %s", StubRoutines::get_blob_name(blob_id()), StubRoutines::get_stub_name(stub_id));
+void StubCodeGenerator::verify_stub(const char* name, StubId stub_id) {
+  if (_stub_data != nullptr) {
+    // we are collecting stub data for the current blob so the stub
+    // code should have been marked using a stub id
+    assert(stub_id != StubId::NO_STUBID, "StubCodeMark for stub %s must be declared with stub id as argument", name);
+  }
+  if (stub_id != StubId::NO_STUBID) {
+    // we may not always be collecting stub data but any stub id that
+    // is provided needs to belong to the current blob id and its name
+    // ought to have been retrieved via a call to StubInfo::name
+    assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob %s for generation of stub %s", StubRoutines::get_blob_name(blob_id()), StubRoutines::get_stub_name(stub_id));
+    assert(name == StubInfo::name(stub_id), "name %s does not match declared stub name %s", name, StubInfo::name(stub_id));
+  }
 }
 #endif
 
@@ -268,15 +279,15 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const cha
   _cgen->stub_prolog(_cdesc);
   // define the stub's beginning (= entry point) to be after the prolog:
   _cdesc->set_begin(_cgen->assembler()->pc());
+#ifdef ASSERT
+  cgen->verify_stub(name, stub_id);
+#endif
 }
 
 StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name) : StubCodeMark(cgen, group, name, StubId::NO_STUBID) {
 }
 
 StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id), stub_id) {
-#ifdef ASSERT
-  cgen->verify_stub(stub_id);
-#endif
 }
 
 StubCodeMark::~StubCodeMark() {

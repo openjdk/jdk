@@ -256,11 +256,10 @@ address OptoRuntime::generate_stub(ciEnv* env,
                                    bool return_pc) {
 
   // Matching the default directive, we currently have no method to match.
-  DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
-  CompilationMemoryStatisticMark cmsm(directive);
+  CompilerDirectiveMatcher default_directive(CompileBroker::compiler(CompLevel_full_optimization));
+  CompilationMemoryStatisticMark cmsm(default_directive.directive_set());
   ResourceMark rm;
-  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, directive);
-  DirectivesStack::release(directive);
+  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, default_directive.directive_set());
   return  C.stub_entry_point();
 }
 
