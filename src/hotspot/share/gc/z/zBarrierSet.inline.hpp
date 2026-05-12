@@ -416,15 +416,16 @@ inline OopCopyResult ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ar
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(oop src, oop dst, size_t size) {
   check_is_valid_zaddress(src);
+  check_is_valid_zaddress(dst);
+  precond(src->klass() == dst->klass());
 
-  if (dst->is_objArray()) {
-    // Cloning an object array is similar to performing array copy.
-    // If an array is large enough to have its allocation segmented,
-    // this operation might require GC barriers. However, the intrinsics
-    // for cloning arrays transform the clone to an optimized allocation
-    // and arraycopy sequence, so the performance of this runtime call
-    // does not matter for object arrays.
-    clone_obj_array(objArrayOop(src), objArrayOop(dst));
+  if (!dst->is_typeArray() && !initializing_stores_may_elide_store_barriers(dst)) {
+    // The newly allocated object has been or is being tenured and cannot skip
+    // store barriers. This can occur because of segmented large allocations,
+    // or serviceability APIs which run Java code between object allocation and
+    // object initialization.
+
+    clone_obj(src, dst, size);
     return;
   }
 
