@@ -85,11 +85,11 @@ class KeyChecker extends PKIXCertPathChecker {
     @Override
     public Set<String> getSupportedExtensions() {
         if (supportedExts == null) {
-            supportedExts = HashSet.newHashSet(3);
-            supportedExts.add(KeyUsage_Id.toString());
-            supportedExts.add(ExtendedKeyUsage_Id.toString());
-            supportedExts.add(SubjectAlternativeName_Id.toString());
-            supportedExts = Collections.unmodifiableSet(supportedExts);
+            supportedExts = Set.of(
+                    KeyUsage_Id.toString(),
+                    ExtendedKeyUsage_Id.toString(),
+                    SubjectAlternativeName_Id.toString()
+            );
         }
         return supportedExts;
     }

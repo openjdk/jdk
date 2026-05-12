@@ -92,10 +92,9 @@ class ConstraintsChecker extends PKIXCertPathChecker {
     @Override
     public Set<String> getSupportedExtensions() {
         if (supportedExts == null) {
-            supportedExts = HashSet.newHashSet(2);
-            supportedExts.add(BasicConstraints_Id.toString());
-            supportedExts.add(NameConstraints_Id.toString());
-            supportedExts = Collections.unmodifiableSet(supportedExts);
+            supportedExts = Set.of(
+                    BasicConstraints_Id.toString(),
+                    NameConstraints_Id.toString());
         }
         return supportedExts;
     }

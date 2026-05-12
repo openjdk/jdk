@@ -265,13 +265,11 @@ class ServerSocketChannelImpl
                 set.add(StandardSocketOptions.SO_REUSEPORT);
             }
             set.addAll(ExtendedSocketOptions.serverSocketOptions());
-            return Collections.unmodifiableSet(set);
+            return Set.copyOf(set);
         }
 
         private static Set<SocketOption<?>> defaultUnixDomainOptions() {
-            HashSet<SocketOption<?>> set = new HashSet<>();
-            set.add(StandardSocketOptions.SO_RCVBUF);
-            return Collections.unmodifiableSet(set);
+            return Set.of(StandardSocketOptions.SO_RCVBUF);
         }
     }
 

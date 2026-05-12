@@ -27,7 +27,6 @@
 package sun.nio.fs;
 
 import java.nio.file.*;
-import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
 import static sun.nio.fs.AixNativeDispatcher.*;
@@ -50,20 +49,20 @@ class AixFileSystem extends UnixFileSystem {
     }
 
     // lazy initialization of the list of supported attribute views
-    private static class SupportedFileFileAttributeViewsHolder {
-        static final Set<String> supportedFileAttributeViews =
+    private final static class SupportedFileFileAttributeViewsHolder {
+        static final Set<String> SUPPORTED_FILE_ATTRIBUTE_VIEWS =
             supportedFileAttributeViews();
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<String>();
             result.addAll(UnixFileSystem.standardFileAttributeViews());
             result.add("user");
-            return Collections.unmodifiableSet(result);
+            return Set.copyOf(result);
         }
     }
 
     @Override
     public Set<String> supportedFileAttributeViews() {
-        return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
+        return SupportedFileFileAttributeViewsHolder.SUPPORTED_FILE_ATTRIBUTE_VIEWS;
     }
 
     @Override

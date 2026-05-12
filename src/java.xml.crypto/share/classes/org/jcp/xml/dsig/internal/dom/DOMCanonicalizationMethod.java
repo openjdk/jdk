@@ -49,18 +49,14 @@ import org.w3c.dom.Element;
 public class DOMCanonicalizationMethod extends DOMTransform
     implements CanonicalizationMethod {
 
-    private static final Set<String> C14N_ALGORITHMS;
-
-    static {
-        Set<String> algorithms = new HashSet<>();
-        algorithms.add(CanonicalizationMethod.INCLUSIVE);
-        algorithms.add(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS);
-        algorithms.add(CanonicalizationMethod.EXCLUSIVE);
-        algorithms.add(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
-        algorithms.add(DOMCanonicalXMLC14N11Method.C14N_11);
-        algorithms.add(DOMCanonicalXMLC14N11Method.C14N_11_WITH_COMMENTS);
-        C14N_ALGORITHMS = Collections.unmodifiableSet(algorithms);
-    }
+    private static final Set<String> C14N_ALGORITHMS = Set.of(
+            CanonicalizationMethod.INCLUSIVE,
+            CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS,
+            CanonicalizationMethod.EXCLUSIVE,
+            CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS,
+            DOMCanonicalXMLC14N11Method.C14N_11,
+            DOMCanonicalXMLC14N11Method.C14N_11_WITH_COMMENTS
+    );
 
     /**
      * Creates a {@code DOMCanonicalizationMethod}.

@@ -58,20 +58,20 @@ class BsdFileSystem extends UnixFileSystem {
 
     // lazy initialization of the list of supported attribute views
     private static class SupportedFileFileAttributeViewsHolder {
-        static final Set<String> supportedFileAttributeViews =
+        static final Set<String> SUPPORTED_FILE_ATTRIBUTE_VIEWS =
             supportedFileAttributeViews();
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<String>();
             result.addAll(standardFileAttributeViews());
             // additional BSD-specific views
             result.add("user");
-            return Collections.unmodifiableSet(result);
+            return Set.copyOf(result);
         }
     }
 
     @Override
     public Set<String> supportedFileAttributeViews() {
-        return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
+        return SupportedFileFileAttributeViewsHolder.SUPPORTED_FILE_ATTRIBUTE_VIEWS;
     }
 
     /**

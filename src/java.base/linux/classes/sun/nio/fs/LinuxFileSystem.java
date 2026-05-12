@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import static sun.nio.fs.LinuxNativeDispatcher.*;
-import static sun.nio.fs.UnixConstants.*;
 
 /**
  * Linux implementation of FileSystem
@@ -56,7 +55,7 @@ class LinuxFileSystem extends UnixFileSystem {
 
     // lazy initialization of the list of supported attribute views
     private static class SupportedFileFileAttributeViewsHolder {
-        static final Set<String> supportedFileAttributeViews =
+        static final Set<String> SUPPORTED_FILE_ATTRIBUTE_VIEWS =
             supportedFileAttributeViews();
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<>();
@@ -64,13 +63,13 @@ class LinuxFileSystem extends UnixFileSystem {
             // additional Linux-specific views
             result.add("dos");
             result.add("user");
-            return Collections.unmodifiableSet(result);
+            return Set.copyOf(result);
         }
     }
 
     @Override
     public Set<String> supportedFileAttributeViews() {
-        return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
+        return SupportedFileFileAttributeViewsHolder.SUPPORTED_FILE_ATTRIBUTE_VIEWS;
     }
 
     @Override

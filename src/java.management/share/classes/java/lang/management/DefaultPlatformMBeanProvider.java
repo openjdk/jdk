@@ -150,11 +150,9 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          * Garbage Collector in the Java virtual machine.
          */
         initMBeanList.add(new PlatformComponent<MemoryManagerMXBean>() {
-            private final Set<String> garbageCollectorMXBeanInterfaceNames
-                    = Collections.unmodifiableSet(
-                            Stream.of("java.lang.management.MemoryManagerMXBean",
-                                    "java.lang.management.GarbageCollectorMXBean")
-                            .collect(Collectors.toSet()));
+            private final Set<String> garbageCollectorMXBeanInterfaceNames = Set.of(
+                    "java.lang.management.GarbageCollectorMXBean",
+                    "java.lang.management.GarbageCollectorMXBean");
             @Override
             public Set<Class<? extends MemoryManagerMXBean>> mbeanInterfaces() {
                 return Stream.of(MemoryManagerMXBean.class,

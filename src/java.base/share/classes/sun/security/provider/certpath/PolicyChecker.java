@@ -153,12 +153,12 @@ class PolicyChecker extends PKIXCertPathChecker {
     @Override
     public Set<String> getSupportedExtensions() {
         if (supportedExts == null) {
-            supportedExts = HashSet.newHashSet(4);
-            supportedExts.add(CertificatePolicies_Id.toString());
-            supportedExts.add(PolicyMappings_Id.toString());
-            supportedExts.add(PolicyConstraints_Id.toString());
-            supportedExts.add(InhibitAnyPolicy_Id.toString());
-            supportedExts = Collections.unmodifiableSet(supportedExts);
+            supportedExts = Set.of(
+                    CertificatePolicies_Id.toString(),
+                    PolicyMappings_Id.toString(),
+                    PolicyConstraints_Id.toString(),
+                    InhibitAnyPolicy_Id.toString()
+            );
         }
         return supportedExts;
     }
