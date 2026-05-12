@@ -38,6 +38,7 @@
 class Compile;
 class Node;
 class MachNode;
+class MachTypeNode;
 class MachOper;
 
 //---------------------------Matcher-------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -561,11 +561,7 @@ void MachNode::dump_spec(outputStream *st) const {
   if (barrier_data() != 0) {
     st->print(" barrier(");
     BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
-    st->print(")");
-  }
-  if (_bottom_type != nullptr) {
-    st->print(" ");
-    _bottom_type->dump_on(st);
+    st->print(") ");
   }
 }
 
@@ -575,6 +571,19 @@ void MachNode::dump_format(PhaseRegAlloc *ra, outputStream *st) const {
   format(ra, st); // access to virtual
 }
 #endif
+
+//=============================================================================
+#ifndef PRODUCT
+void MachTypeNode::dump_spec(outputStream *st) const {
+  MachNode::dump_spec(st);
+  if (_bottom_type != nullptr) {
+    _bottom_type->dump_on(st);
+  } else {
+    st->print(" null");
+  }
+}
+#endif
+
 
 //=============================================================================
 int MachConstantNode::constant_offset() {
