@@ -296,6 +296,16 @@ static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
     jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(
         tlh.list(), thread, &target, &thread_oop);
     if (err != JVMTI_ERROR_NONE) {
+      // Explicit virtual thread arguments are not supported - vthread
+      // sampling is available via thread=NULL from within the vthread
+      // itself, where the carrier's walker traverses continuation frames.
+      // cv_external_thread_to_JavaThread reports INVALID_THREAD for any
+      // vthread because java_lang_Thread::thread(vthread_oop) is null;
+      // distinguish that case from "garbage jthread" via thread_oop.
+      if (thread_oop != nullptr
+          && java_lang_VirtualThread::is_instance(thread_oop)) {
+        return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+      }
       return err;
     }
   }

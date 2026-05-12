@@ -33,11 +33,12 @@ package jdk.jfr.jvmti;
  */
 public final class RequestStackTraceHelper {
 
-    public static final int JVMTI_ERROR_NONE             = 0;
-    public static final int JVMTI_ERROR_INVALID_THREAD   = 10;
-    public static final int JVMTI_ERROR_THREAD_NOT_ALIVE = 15;
-    public static final int JVMTI_ERROR_NOT_AVAILABLE    = 98;
-    public static final int JVMTI_ERROR_WRONG_PHASE      = 112;
+    public static final int JVMTI_ERROR_NONE                  = 0;
+    public static final int JVMTI_ERROR_INVALID_THREAD        = 10;
+    public static final int JVMTI_ERROR_THREAD_NOT_ALIVE      = 15;
+    public static final int JVMTI_ERROR_UNSUPPORTED_OPERATION = 73;
+    public static final int JVMTI_ERROR_NOT_AVAILABLE         = 98;
+    public static final int JVMTI_ERROR_WRONG_PHASE           = 112;
 
     static {
         System.loadLibrary("RequestStackTraceAgent");

@@ -32,10 +32,10 @@ import jdk.test.lib.Asserts;
 
 /**
  * @test
- * @summary Documents the current limitation that passing a virtual thread
- *          as the thread argument returns INVALID_THREAD. Once virtual
- *          thread support lands, this test should be flipped to a
- *          positive test (event emitted, eventThread = vthread).
+ * @summary Passing a virtual thread as an explicit thread argument is not
+ *          supported and returns UNSUPPORTED_OPERATION. Virtual-thread
+ *          sampling is available by calling with thread=NULL from within
+ *          the vthread itself; see TestRequestStackTraceFromVirtualThread.
  * @requires vm.hasJFR & vm.continuations & os.family != "windows"
  * @library /test/lib
  * @build jdk.jfr.jvmti.RequestStackTraceHelper
@@ -67,8 +67,10 @@ public class TestRequestStackTraceVirtualThread {
 
             try {
                 int rc = RequestStackTraceHelper.requestStackTraceWithThread(vt, 0L);
-                Asserts.assertEquals(RequestStackTraceHelper.JVMTI_ERROR_INVALID_THREAD, rc,
-                        "expected INVALID_THREAD for virtual thread argument, got " + rc);
+                Asserts.assertEquals(
+                        RequestStackTraceHelper.JVMTI_ERROR_UNSUPPORTED_OPERATION, rc,
+                        "expected UNSUPPORTED_OPERATION for virtual thread argument, got "
+                                + rc);
             } finally {
                 finish.countDown();
                 vt.join();
