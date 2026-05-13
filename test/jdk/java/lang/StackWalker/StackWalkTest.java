@@ -131,10 +131,11 @@ public class StackWalkTest {
                 // safe to ignore
                 return;
             }
-            for (var prefix : infrastructurePackages) {
-                if (sf.getClassName().startsWith(prefix))
-                // safe to ignore
-                return;
+            for (String prefix : infrastructurePackages) {
+                if (sf.getClassName().startsWith(prefix)) {
+                    // safe to ignore
+                    return;
+                }
             }
         }
         try {
