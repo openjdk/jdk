@@ -470,6 +470,10 @@ bool JfrRedactedEvents::is_separator(char c) {
   return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
 
+bool JfrRedactedEvents::is_whitespace(char c) {
+  return c == ' ';
+}
+
 StringArray* JfrRedactedEvents::make_filter_array(const char* filter) {
   StringArray* result = new StringArray();
 
@@ -535,14 +539,14 @@ StringArray* JfrRedactedEvents::make_java_args_array() {
   }
   const char* end = p + strlen(p);
   while (p < end) {
-    while (p < end && is_separator(*p)) {
+    while (p < end && is_whitespace(*p)) { // Launcher separates arguments with ' '.
       p++;
     }
     if (p >= end) {
       break;
     }
     const char* start = p;
-    while (p < end && !is_separator(*p)) {
+    while (p < end && !is_whitespace(*p)) { // Launcher separates arguments with ' '.
       p++;
     }
     size_t length = (size_t)(p - start);

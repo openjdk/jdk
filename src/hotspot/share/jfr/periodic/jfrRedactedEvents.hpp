@@ -203,6 +203,7 @@ class JfrRedactedEvents: public AllStatic {
   static bool equals_case_insensitive(char a, char b);
   static bool is_redacted_key(const char* key);
   static bool is_separator(char c);
+  static bool is_whitespace(char c);
   static void ensure_initialized();
   static StringArray* make_java_args_array();
   static StringArray* make_jvm_args_array(char** jvm_args_array, int array_length);
