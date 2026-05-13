@@ -29,6 +29,7 @@
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/partialArraySplitter.inline.hpp"
 #include "gc/shared/partialArrayState.hpp"

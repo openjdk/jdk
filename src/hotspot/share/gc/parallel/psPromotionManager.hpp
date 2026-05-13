@@ -27,7 +27,6 @@
 
 #include "gc/parallel/psPromotionLAB.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/partialArrayState.hpp"
