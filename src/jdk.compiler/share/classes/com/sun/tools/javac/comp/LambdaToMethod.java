@@ -218,7 +218,7 @@ public class LambdaToMethod extends TreeTranslator {
         } catch (NumberFormatException _) {
             //ignore invalid values and continue with the default
         }
-        this.deserializableLambdaCaseCountLimit = deserializableLambdaCaseCountLimit;
+        this.deserializableLambdaCaseCountLimit = Math.max(1, deserializableLambdaCaseCountLimit);
     }
     // </editor-fold>
 
