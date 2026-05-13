@@ -510,7 +510,7 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 
   assert(!Interpreter::contains(_cont.entryPC()), "");
 
-  _bottom_address = _cont.entrySP() - _cont.entry_frame_extension();
+  _bottom_address = StackOrder::towards_younger(_cont.entrySP(), _cont.entry_frame_extension());
 #ifdef _LP64
   if (((intptr_t)_bottom_address & 0xf) != 0) {
     _bottom_address--;
@@ -519,9 +519,9 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 #endif
 
   log_develop_trace(continuations)("bottom_address: " INTPTR_FORMAT " entrySP: " INTPTR_FORMAT " argsize: " PTR_FORMAT,
-                p2i(_bottom_address), p2i(_cont.entrySP()), (_cont.entrySP() - _bottom_address) << LogBytesPerWord);
+                p2i(_bottom_address), p2i(_cont.entrySP()), (long unsigned int)StackOrder::words_between(_cont.entrySP(), _bottom_address) << LogBytesPerWord);
   assert(_bottom_address != nullptr, "");
-  assert(_bottom_address <= _cont.entrySP(), "");
+  assert(StackOrder::is_younger_or_equal(_bottom_address, _cont.entrySP()), "");
   DEBUG_ONLY(_last_write = nullptr;)
 
   assert(_cont.chunk_invariant(), "");
@@ -539,7 +539,7 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
   }
 
   // properties of the continuation on the stack; all sizes are in words
-  _cont_stack_top    = frame_sp + (!preempt ? doYield_stub_frame_size : 0); // we don't freeze the doYield stub frame
+  _cont_stack_top    = StackOrder::towards_older(frame_sp, (!preempt ? doYield_stub_frame_size : 0)); // we don't freeze the doYield stub frame
   _cont_stack_bottom = _cont.entrySP() + (_cont.argsize() == 0 ? frame::metadata_words_at_top : 0)
       - ContinuationHelper::frame_align_words(_cont.argsize()); // see alignment in thaw
 
@@ -788,8 +788,8 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
     adjust = 0;
   }
 #endif
-  intptr_t* from = _cont_stack_top - adjust;
-  intptr_t* to   = chunk_top - adjust;
+  intptr_t* from = StackOrder::towards_younger(_cont_stack_top, adjust);
+  intptr_t* to   = StackOrder::towards_younger(chunk_top, adjust);
   copy_to_chunk(from, to, cont_size() + adjust);
   // Because we're not patched yet, the chunk is now in a bad state
 
@@ -922,7 +922,7 @@ frame FreezeBase::freeze_start_frame_on_preempt() {
 
 // The parameter callee_argsize includes metadata that has to be part of caller/callee overlap.
 NOINLINE freeze_result FreezeBase::recurse_freeze(frame& f, frame& caller, int callee_argsize, bool callee_interpreted, bool top) {
-  assert(f.unextended_sp() < _bottom_address, ""); // see recurse_freeze_java_frame
+  assert(StackOrder::is_younger(f.unextended_sp(), _bottom_address), ""); // see recurse_freeze_java_frame
   assert(f.is_interpreted_frame() || ((top && _preempt) == ContinuationHelper::Frame::is_stub(f.cb()))
          || ((top && _preempt) == f.is_native_frame()), "");
 
@@ -2076,7 +2076,7 @@ protected:
       _fastpath(nullptr) {
     DEBUG_ONLY(_top_unextended_sp_before_thaw = nullptr;)
     assert (cont.tail() != nullptr, "no last chunk");
-    DEBUG_ONLY(_top_stack_address = _cont.entrySP() - thaw_size(cont.tail());)
+    DEBUG_ONLY(_top_stack_address = StackOrder::towards_younger(_cont.entrySP(), thaw_size(cont.tail()));)
   }
 
   void clear_chunk(stackChunkOop chunk);
@@ -2981,10 +2981,10 @@ void ThawBase::recurse_thaw_native_frame(const frame& hf, frame& caller, int num
   intptr_t* const heap_frame_top = hf.unextended_sp();
 
   int fsize = ContinuationHelper::NativeFrame::size(hf);
-  assert(fsize <= (int)(caller.unextended_sp() - f.unextended_sp()), "");
+  assert(fsize <= StackOrder::words_between(caller.unextended_sp(), f.unextended_sp()), "");
 
-  intptr_t* from = heap_frame_top - frame::metadata_words_at_bottom;
-  intptr_t* to   = stack_frame_top - frame::metadata_words_at_bottom;
+  intptr_t* from = StackOrder::towards_younger(heap_frame_top, frame::metadata_words_at_bottom);
+  intptr_t* to   = StackOrder::towards_younger(stack_frame_top, frame::metadata_words_at_bottom);
   int sz = fsize + frame::metadata_words_at_bottom;
 
   copy_from_chunk(from, to, sz); // copying good oops because we invoked barriers above
