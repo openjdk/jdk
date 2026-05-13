@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import static sun.nio.fs.LinuxNativeDispatcher.*;
+import static sun.nio.fs.UnixConstants.*;
 
 /**
  * Linux implementation of FileSystem

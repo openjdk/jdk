@@ -125,7 +125,7 @@ abstract class UnixFileSystem
     }
 
     static List<String> standardFileAttributeViews() {
-        return Arrays.asList("basic", "posix", "unix", "owner");
+        return List.of("basic", "posix", "unix", "owner");
     }
 
     @Override
