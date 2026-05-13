@@ -90,7 +90,7 @@ import jdk.jfr.Recording;
  * this parameter is ignored.</td>
  * <td>{@code "0"} (no limit)</td>
  * <td>{@code "0"} if no limit is imposed, otherwise a string
- * representation of a positive {@code Long} value followed by an empty space
+ * representation of a positive {@code long} value followed by an empty space
  * and one of the following units,<br>
  * <br>
  * {@code "ns"} (nanoseconds)<br>
@@ -112,7 +112,7 @@ import jdk.jfr.Recording;
  * repository. Only works if
  * {@code disk=true}, otherwise this parameter is ignored.</td>
  * <td>{@code "0"} (no limit)</td>
- * <td>String representation of a {@code Long} value, must be positive</td>
+ * <td>String representation of a {@code long} value, must be positive</td>
  * <td>{@code "0"}, <br>
  * {@code "1000000000"}</td>
  * </tr>
@@ -120,7 +120,7 @@ import jdk.jfr.Recording;
  * <th scope="row">{@code dumpOnExit}</th>
  * <td>Dumps recording data to disk on Java Virtual Machine (JVM) exit</td>
  * <td>{@code "false"}</td>
- * <td>String representation of a {@code Boolean} value, {@code "true"} or
+ * <td>String representation of a {@code boolean} value, {@code "true"} or
  * {@code "false"}</td>
  * <td>{@code "true"},<br>
  * {@code "false"}</td>
@@ -140,7 +140,7 @@ import jdk.jfr.Recording;
  * <th scope="row">{@code disk}</th>
  * <td>Stores recorded data as it is recorded</td>
  * <td><code>"false"</code></td>
- * <td>String representation of a {@code Boolean} value, {@code "true"} or
+ * <td>String representation of a {@code boolean} value, {@code "true"} or
  * {@code "false"}</td>
  * <td>{@code "true"},<br>
  * {@code "false"}</td>
@@ -149,7 +149,7 @@ import jdk.jfr.Recording;
  * <td>Specifies the duration of the recording.</td>
  * <td>{@code "0"} (no limit, continuous)</td>
  * <td>{@code "0"} if no limit should be imposed, otherwise a string
- * representation of a positive {@code Long} followed by an empty space and one
+ * representation of a positive {@code long} followed by an empty space and one
  * of the following units:<br>
  * <br>
  * {@code "ns"} (nanoseconds)<br>
