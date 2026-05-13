@@ -2241,7 +2241,9 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     if (loop_count >= K + C->live_nodes()) {
       dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
     }
-    Node::verify_type_replacement(old_bottom_type, i->bottom_type(), n, i);
+    if (is_verify_Ideal()) {
+      Node::verify_type_replacement(old_bottom_type, i->bottom_type(), n, i);
+    }
 #endif
     assert((i->_idx >= k->_idx) || i->is_top(), "Idealize should return new nodes, use Identity to return old nodes");
     // Made a change; put users of original Node on worklist
@@ -2302,7 +2304,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   // Now check for Identities
   i = k->Identity(this);      // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
-    DEBUG_ONLY(Node::verify_type_replacement(k->bottom_type(), i->bottom_type(), k, i));
+#ifdef ASSERT
+    if (is_verify_Identity()) {
+      Node::verify_type_replacement(k->bottom_type(), i->bottom_type(), k, i);
+    }
+#endif // ASSERT
     set_progress();
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
