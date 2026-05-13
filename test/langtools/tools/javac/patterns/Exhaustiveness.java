@@ -62,6 +62,7 @@ public class Exhaustiveness extends TestRunner {
         tb = new ToolBox();
     }
 
+    @Override
     public void runTests() throws Exception {
         runTests(m -> new Object[] { Paths.get(m.getName()) });
     }

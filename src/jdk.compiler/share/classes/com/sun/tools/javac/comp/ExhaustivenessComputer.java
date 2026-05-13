@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import static com.sun.tools.javac.code.Flags.RECORD;
 
 /** A class to compute exhaustiveness of set of switch cases.
@@ -166,7 +167,7 @@ public class ExhaustivenessComputer {
                                 return Stream.of(pd);
                             }
                         })
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
 
             return ExhaustivenessResult.ofDetails(details);
         } catch (CompletionFailure cf) {
@@ -275,7 +276,7 @@ public class ExhaustivenessComputer {
         Set<Symbol> existingBindings = patterns.stream()
                                                .filter(pd -> pd instanceof BindingPattern)
                                                .map(pd -> ((BindingPattern) pd).type.tsym)
-                                               .collect(Collectors.toSet());
+                                               .collect(Collectors.toCollection(LinkedHashSet::new));
 
         for (PatternDescription pdOne : patterns) {
             if (pdOne instanceof BindingPattern bpOne) {
@@ -469,7 +470,7 @@ public class ExhaustivenessComputer {
                 patterns.stream()
                         .filter(pd -> pd instanceof RecordPattern)
                         .map(pd -> (RecordPattern) pd)
-                        .collect(groupingBy(pd -> (ClassSymbol) pd.recordType.tsym));
+                        .collect(groupingBy(pd -> (ClassSymbol) pd.recordType.tsym, LinkedHashMap::new, toList()));
 
         for (var e : groupByRecordClass.entrySet()) {
             int nestedPatternsCount = e.getKey().getRecordComponents().size();
@@ -484,7 +485,7 @@ public class ExhaustivenessComputer {
                          .stream()
                          //error recovery, ignore patterns with incorrect number of nested patterns:
                          .filter(pd -> pd.nested.length == nestedPatternsCount)
-                         .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0));
+                         .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0, LinkedHashMap::new, toList()));
                 for (var candidates : groupEquivalenceCandidates.values()) {
                     var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
@@ -509,7 +510,7 @@ public class ExhaustivenessComputer {
                             }
                         }
 
-                        var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
+                        var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toCollection(LinkedHashSet::new));
                         var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes, patternEquivalence);
 
                         updatedPatterns = reduceRecordPatterns(updatedPatterns);
@@ -689,7 +690,7 @@ public class ExhaustivenessComputer {
         Set<Symbol> existingBindings = patterns.stream()
                                                .filter(pd -> pd instanceof BindingPattern)
                                                .map(pd -> ((BindingPattern) pd).type.tsym)
-                                               .collect(Collectors.toSet());
+                                               .collect(Collectors.toCollection(LinkedHashSet::new));
         Set<PatternDescription> result = new LinkedHashSet<>(patterns);
 
         for (Iterator<PatternDescription> it = result.iterator(); it.hasNext();) {
@@ -1073,7 +1074,7 @@ public class ExhaustivenessComputer {
             Set<PatternDescription> combinedPatterns =
                     Stream.concat(basePatterns.stream(),
                                   replace(inMissingPatterns, toExpand, reducedAdded).stream())
-                          .collect(Collectors.toSet());
+                          .collect(Collectors.toCollection(LinkedHashSet::new));
 
             if (computeCoverage(selectorType, combinedPatterns, PatternEquivalence.LOOSE).covered()) {
                 it.remove();
@@ -1196,7 +1197,7 @@ public class ExhaustivenessComputer {
                                 .map(rp -> (RecordPattern) rp)
                                 .filter(rp -> types.isSameType(rp.recordType(), rootPatternRecord.recordType()))
                                 .map(rp -> rp.nested[indexFin])
-                                .collect(Collectors.toSet());
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
 
             return basePatternsHaveRecordPatternOnThisSpot(filteredBasePatterns, rootPatternRecord.nested[index], added);
         }
