@@ -126,7 +126,6 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->is_concurrent_weak_root_in_progress() ||
       heap->is_concurrent_strong_root_in_progress()) {
-    ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
   } else if (heap->is_concurrent_mark_in_progress()) {
     ShenandoahKeepAliveClosure cl;
