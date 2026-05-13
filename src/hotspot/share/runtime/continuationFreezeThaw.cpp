@@ -2304,7 +2304,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   intptr_t* const chunk_sp = chunk->start_address() + chunk->sp();
 
   bool partial, empty;
-  if (LIKELY(DEBUG_ONLY(!ForceSingleFrameThaw &&) (full_chunk_size < threshold))) {
+  if (LIKELY(!ForceSingleFrameThaw && full_chunk_size < threshold)) {
     prefetch_chunk_pd(chunk->start_address(), full_chunk_size); // prefetch anticipating memcpy starting at highest address
 
     partial = false;
