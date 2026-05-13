@@ -2215,9 +2215,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         return JNI_EINVAL;
       }
     } else if (match_option(option, "-Xmaxjitcodesize", &tail)) {
-      char version[256];
-      JDK_Version::jdk(27).to_string(version, sizeof(version));
-      warning("Ignoring option %s; support was removed in %s", option->optionString, version);
+      warning("Ignoring option %s; support was removed in JDK 27", option->optionString);
     } else if (match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
 
