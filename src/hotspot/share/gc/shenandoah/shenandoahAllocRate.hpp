@@ -148,7 +148,7 @@ public:
   // Note that momentary consumption and accelerated consumption may both be zero, but may
   // not both be non-zero. The `time_delta` parameter is the anticipated duration of the
   // next gc cycle. The `standard_deviations` parameter is the margin of error applied to
-  // the baseline allocation rate expressed as a multiple of the standard deviation. 
+  // the baseline allocation rate expressed as a multiple of the standard deviation.
   ShenandoahAnticipatedConsumption snapshot(double time_delta, double standard_deviations);
 
   // Returns the weighted average of the samples.
