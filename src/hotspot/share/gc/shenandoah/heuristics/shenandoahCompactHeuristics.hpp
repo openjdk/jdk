@@ -46,7 +46,6 @@ protected:
                                              RegionData* data, size_t size,
                                              size_t actual_free) override;
 
-
 private:
   size_t estimate_bytes_allocated_since_gc_start() const;
 };

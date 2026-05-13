@@ -228,6 +228,6 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   }
 
   const size_t threshold = min_free_threshold(capacity);
-  const size_t evac_min_threshold = anticipated_available > threshold ? anticipated_available - threshold: 0;
+  const size_t evac_min_threshold = anticipated_available > threshold ? anticipated_available - threshold : 0;
   return MIN2(evac_slack_avg, evac_min_threshold);
 }

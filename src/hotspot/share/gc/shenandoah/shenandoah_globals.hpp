@@ -63,8 +63,8 @@
                                                                             \
   product(uint, ShenandoahAllocRateSampleWindow, 100, EXPERIMENTAL,         \
           "The size of the moving window over which the average "           \
-           "baseline allocation rate is maintained.")                       \
-           range(1,10000)                                                   \
+          "baseline allocation rate is maintained.")                        \
+          range(1,10000)                                                    \
                                                                             \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \

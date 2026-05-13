@@ -127,4 +127,4 @@ private:
   void add_latest(double x, double y, double weight);
 };
 
-#endif //SHARE_GC_SHENANDOAH_SHENANDOAHWEIGHTEDSEQ_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHWEIGHTEDSEQ_HPP

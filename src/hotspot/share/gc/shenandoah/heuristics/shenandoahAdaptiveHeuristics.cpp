@@ -151,7 +151,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 }
 
 void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
-  // Conservatively add sample into linear model If this time is above the predicted concurrent gc time
+  // Conservatively add sample into linear model, if this time is above the predicted concurrent gc time
   if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
     _cycles.record_duration(time_at_start, gc_time);
   }
