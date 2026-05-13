@@ -40,12 +40,6 @@ compiler/c2/ReachabilityFenceFlagsTest.java                                     
 compiler/jvmci/jdk.vm.ci.runtime.test/src/jdk/vm/ci/runtime/test/TestResolvedJavaField.java      8372605 generic-all
 compiler/jvmci/jdk.vm.ci.runtime.test/src/jdk/vm/ci/runtime/test/TestResolvedJavaType.java       8372605 generic-all
 compiler/stable/TestStableArrayMembars.java                                                      8380921 generic-all
-compiler/valhalla/inlinetypes/TestIntrinsics.java#id0                                            8382504 generic-all
-compiler/valhalla/inlinetypes/TestIntrinsics.java#id1                                            8382504 generic-all
-compiler/valhalla/inlinetypes/TestIntrinsics.java#id3                                            8382504 generic-all
-compiler/valhalla/inlinetypes/TestIntrinsics.java#id4                                            8382504 generic-all
-compiler/valhalla/inlinetypes/TestIntrinsics.java#id5                                            8382504 generic-all
-compiler/valhalla/inlinetypes/TestIntrinsics.java#id6                                            8382504 generic-all
 
 # Runtime:
 runtime/cds/appcds/aotCode/AOTCodeFlags.java#default_gc 8382398 generic-all
