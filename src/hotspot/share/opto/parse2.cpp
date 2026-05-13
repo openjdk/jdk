@@ -1833,17 +1833,21 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
                        &obj, &cast_type)) {
     assert(obj != nullptr && cast_type != nullptr, "missing type check info");
     const Type* obj_type = _gvn.type(obj);
-    const TypeOopPtr* tboth = obj_type->join_speculative(cast_type)->isa_oopptr();
-    if (tboth != nullptr && tboth != obj_type && tboth->higher_equal(obj_type)) {
+    const Type* tboth = obj_type->filter_speculative(cast_type);
+    assert(tboth->higher_equal(obj_type) && tboth->higher_equal(cast_type), "sanity");
+    if (tboth == Type::TOP && KillPathsReachableByDeadTypeNode) {
+      // Let dead type node cleaning logic prune effectively dead path for us.
+      // CheckCastPP::Value() == TOP and it will trigger the cleanup during GVN.
+      // Don't materialize the cast when cleanup is disabled, because
+      // it kills data and control leaving IR in broken state.
+      tboth = cast_type;
+    }
+    if (tboth != Type::TOP && tboth != obj_type) {
       int obj_in_map = map()->find_edge(obj);
-      JVMState* jvms = this->jvms();
       if (obj_in_map >= 0 &&
-          (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
+          (jvms()->is_loc(obj_in_map) || jvms()->is_stk(obj_in_map))) {
         TypeNode* ccast = new CheckCastPPNode(control(), obj, tboth);
-        const Type* tcc = ccast->as_Type()->type();
-        assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
-        // Delay transform() call to allow recovery of pre-cast value
-        // at the control merge.
+        // Delay transform() call to allow recovery of pre-cast value at the control merge.
         _gvn.set_type_bottom(ccast);
         record_for_igvn(ccast);
         // Here's the payoff.

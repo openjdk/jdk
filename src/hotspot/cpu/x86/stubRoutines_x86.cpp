@@ -44,8 +44,12 @@
 #define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
 
-STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+#define DEFINE_ARCH_ENTRY_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name) [count];
 
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT, DEFINE_ARCH_ENTRY_ARRAY)
+
+#undef DEFINE_ARCH_ENTRY_ARRAY
 #undef DEFINE_ARCH_ENTRY_INIT
 #undef DEFINE_ARCH_ENTRY
 
@@ -416,6 +420,12 @@ ATTRIBUTE_ALIGNED(64) const julong StubRoutines::x86::_k512_W[] =
     0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL,
 };
 
+ATTRIBUTE_ALIGNED(64)
+address StubRoutines::x86::small_jump_table[STRING_INDEXOF_TABLE_COUNT * STRING_INDEXOF_NUMBER_OF_CASES] = { nullptr, };
+
+ATTRIBUTE_ALIGNED(64)
+address StubRoutines::x86::big_jump_table[STRING_INDEXOF_TABLE_COUNT * STRING_INDEXOF_NUMBER_OF_CASES] = { nullptr, };
+
 #if INCLUDE_CDS
 
 void StubRoutines::init_AOTAddressTable() {
@@ -435,7 +445,7 @@ void StubRoutines::init_AOTAddressTable() {
 // publish addresses of external data defined in this file which may
 // be referenced from stub or code
 void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
-#define ADD(addr) external_addresses.append((address)addr);
+#define ADD(addr) external_addresses.append((address)(addr));
   ADD(&_mxcsr_std);
   ADD(&_mxcsr_rz);
   ADD(crc_by128_masks_addr());
@@ -455,6 +465,12 @@ void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_ad
   ADD(_k256);
   ADD(_k256_W);
   ADD(_k512_W);
+  for (int i = 0; i < STRING_INDEXOF_TABLE_COUNT; i++) {
+    address a = (address)StubRoutines::x86::small_jump_table_base(i);
+    ADD(a);
+    a = (address)StubRoutines::x86::big_jump_table_base(i);
+    ADD(a);
+  }
 #undef ADD
 }
 #endif // INCLUDE_CDS

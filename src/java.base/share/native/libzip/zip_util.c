@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,7 +568,7 @@ static jlong
 readCEN(jzfile *zip, jint knownTotal)
 {
     /* Following are unsigned 32-bit */
-    jlong endpos, end64pos, cenpos, cenlen, cenoff;
+    jlong endpos, end64pos, cenpos, cenlen, cenoff, total64;
     /* Following are unsigned 16-bit */
     jint total, tablelen, i, j;
     unsigned char *cenbuf = NULL;
@@ -604,7 +604,16 @@ readCEN(jzfile *zip, jint knownTotal)
         if ((end64pos = findEND64(zip, end64buf, endpos)) != -1) {
             cenlen = ZIP64_ENDSIZ(end64buf);
             cenoff = ZIP64_ENDOFF(end64buf);
-            total = (jint)ZIP64_ENDTOT(end64buf);
+            total64 = ZIP64_ENDTOT(end64buf);
+            /* ZIP64 size, offset and total-count fields are unsigned 64-bit
+             * values. Sizes and offsets that do not fit in signed jlong
+             * (i.e., >= 2^63), or total values that do not fit in jint, are
+             * not supported and indicate a corrupt or invalid zip file.
+             */
+            if (cenlen < 0 || cenoff < 0 || total64 < 0 || total64 > INT_MAX) {
+                ZIP_FORMAT_ERROR("Zip64 END values exceed supported size");
+            }
+            total = (jint)total64;
             endpos = end64pos;
 #ifdef USE_MMAP
             endhdrlen = ZIP64_ENDHDR;
@@ -1137,20 +1146,8 @@ ZIP_FreeEntry(jzfile *jz, jzentry *ze)
     }
 }
 
-/*
- * Returns the zip entry corresponding to the specified name, or
- * NULL if not found.
- */
-jzentry *
-ZIP_GetEntry(jzfile *zip, char *name, jint ulen)
-{
-    if (ulen == 0) {
-        return ZIP_GetEntry2(zip, name, (jint)strlen(name), JNI_FALSE);
-    }
-    return ZIP_GetEntry2(zip, name, ulen, JNI_TRUE);
-}
-
-jboolean equals(char* name1, int len1, char* name2, int len2) {
+static jboolean
+equals(const char* name1, int len1, const char* name2, int len2) {
     if (len1 != len2) {
         return JNI_FALSE;
     }
@@ -1162,16 +1159,12 @@ jboolean equals(char* name1, int len1, char* name2, int len2) {
     return JNI_TRUE;
 }
 
-/*
- * Returns the zip entry corresponding to the specified name, or
- * NULL if not found.
- * This method supports embedded null character in "name", use ulen
- * for the length of "name".
- */
 jzentry *
-ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash)
+ZIP_GetEntry(jzfile *zip, const char *name)
 {
-    unsigned int hsh = hashN(name, ulen);
+    // length of the entry name being searched for
+    const jint name_len =  (jint) strlen(name);
+    const unsigned int hsh = hashN(name, name_len);
     jint idx;
     jzentry *ze = 0;
 
@@ -1182,79 +1175,47 @@ ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash)
 
     idx = zip->table[hsh % zip->tablelen];
 
-    /*
-     * This while loop is an optimization where a double lookup
-     * for name and name+/ is being performed. The name char
-     * array has enough room at the end to try again with a
-     * slash appended if the first table lookup does not succeed.
-     */
-    while(1) {
-
-        /* Check the cached entry first */
-        ze = zip->cache;
-        if (ze && equals(ze->name, ze->nlen, name, ulen)) {
-            /* Cache hit!  Remove and return the cached entry. */
-            zip->cache = 0;
-            ZIP_Unlock(zip);
-            return ze;
-        }
-        ze = 0;
-
-        /*
-         * Search down the target hash chain for a cell whose
-         * 32 bit hash matches the hashed name.
-         */
-        while (idx != ZIP_ENDCHAIN) {
-            jzcell *zc = &zip->entries[idx];
-
-            if (zc->hash == hsh) {
-                /*
-                 * OK, we've found a ZIP entry whose 32 bit hashcode
-                 * matches the name we're looking for.  Try to read
-                 * its entry information from the CEN.  If the CEN
-                 * name matches the name we're looking for, we're
-                 * done.
-                 * If the names don't match (which should be very rare)
-                 * we keep searching.
-                 */
-                ze = newEntry(zip, zc, ACCESS_RANDOM);
-                if (ze && equals(ze->name, ze->nlen, name, ulen)) {
-                    break;
-                }
-                if (ze != 0) {
-                    /* We need to release the lock across the free call */
-                    ZIP_Unlock(zip);
-                    ZIP_FreeEntry(zip, ze);
-                    ZIP_Lock(zip);
-                }
-                ze = 0;
-            }
-            idx = zc->next;
-        }
-
-        /* Entry found, return it */
-        if (ze != 0) {
-            break;
-        }
-
-        /* If no need to try appending slash, we are done */
-        if (!addSlash) {
-            break;
-        }
-
-        /* Slash is already there? */
-        if (ulen > 0 && name[ulen - 1] == '/') {
-            break;
-        }
-
-        /* Add slash and try once more */
-        name[ulen++] = '/';
-        name[ulen] = '\0';
-        hsh = hash_append(hsh, '/');
-        idx = zip->table[hsh % zip->tablelen];
-        addSlash = JNI_FALSE;
+    /* Check the cached entry first */
+    ze = zip->cache;
+    if (ze && equals(ze->name, ze->nlen, name, name_len)) {
+        /* Cache hit!  Remove and return the cached entry. */
+        zip->cache = 0;
+        ZIP_Unlock(zip);
+        return ze;
     }
+    ze = 0;
 
+    /*
+     * Search down the target hash chain for a cell whose
+     * 32 bit hash matches the hashed name.
+     */
+    while (idx != ZIP_ENDCHAIN) {
+        jzcell *zc = &zip->entries[idx];
+
+        if (zc->hash == hsh) {
+            /*
+             * OK, we've found a ZIP entry whose 32 bit hashcode
+             * matches the name we're looking for.  Try to read
+             * its entry information from the CEN.  If the CEN
+             * name matches the name we're looking for, we're
+             * done.
+             * If the names don't match (which should be very rare)
+             * we keep searching.
+             */
+            ze = newEntry(zip, zc, ACCESS_RANDOM);
+            if (ze && equals(ze->name, ze->nlen, name, name_len)) {
+                break;
+            }
+            if (ze != 0) {
+                /* We need to release the lock across the free call */
+                ZIP_Unlock(zip);
+                ZIP_FreeEntry(zip, ze);
+                ZIP_Lock(zip);
+            }
+            ze = 0;
+        }
+        idx = zc->next;
+    }
 Finally:
     ZIP_Unlock(zip);
     return ze;
@@ -1466,9 +1427,9 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
  * has the size bigger than 2**32 bytes in ONE invocation.
  */
 JNIEXPORT jzentry *
-ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP)
+ZIP_FindEntry(jzfile *zip, const char *name, jint *sizeP, jint *nameLenP)
 {
-    jzentry *entry = ZIP_GetEntry(zip, name, 0);
+    jzentry *entry = ZIP_GetEntry(zip, name);
     if (entry) {
         *sizeP = (jint)entry->size;
         *nameLenP = (jint)strlen(entry->name);

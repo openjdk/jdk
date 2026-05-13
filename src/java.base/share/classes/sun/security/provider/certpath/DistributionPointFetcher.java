@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,7 @@ import static sun.security.x509.PKIXExtensions.IssuingDistributionPoint_Id;
 
 /**
  * Class to obtain CRLs via the CRLDistributionPoints extension.
- * Note that the functionality of this class must be explicitly enabled
- * via a system property, see the USE_CRLDP variable below.
- *
+ * <p>
  * This class uses the URICertStore class to fetch CRLs. The URICertStore
  * class also implements CRL caching: see the class description for more
  * information.
