@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2025, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,6 +663,33 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ block_comment("} try_resolve_jobject_in_native (shenandoahgc)");
 }
 
+void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler *masm, Register weak_handle,
+                                                                    Register obj, Register tmp, Label &slow_path) {
+  __ block_comment("try_peek_weak_handle_in_nmethod (shenandoahgc) {");
+
+  assert_different_registers(weak_handle, tmp, noreg);
+  assert_different_registers(obj, tmp, noreg);
+
+
+  Label done;
+
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, tmp, slow_path);
+
+  // Check if the reference is null, and if it is, take the fast path.
+  __ cmpdi(CR0, obj, 0);
+  __ beq(CR0, done);
+
+  // Check if the heap is under weak-reference/roots processing, in
+  // which case we need to take the slow path.
+  __ lbz(tmp, in_bytes(ShenandoahThreadLocalData::gc_state_offset()), R16_thread);
+  __ andi_(tmp, tmp, ShenandoahHeap::WEAK_ROOTS);
+  __ bne(CR0, slow_path);
+  __ bind(done);
+
+  __ block_comment("} try_peek_weak_handle_in_nmethod (shenandoahgc)");
+}
+
 // Special shenandoah CAS implementation that handles false negatives due
 // to concurrent evacuation.  That is, the CAS operation is intended to succeed in
 // the following scenarios (success criteria):
@@ -865,13 +893,11 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   Register tmp2 = stub->tmp2()->as_register();
   assert_different_registers(addr, res, tmp1, tmp2);
 
-#ifdef ASSERT
-  // Ensure that 'res' is 'R3_ARG1' and contains the same value as 'obj' to reduce the number of required
-  // copy instructions.
   assert(R3_RET == res, "res must be r3");
-  __ cmpd(CR0, res, obj);
-  __ asm_assert_eq("result register must contain the reference stored in obj");
-#endif
+
+  if (res != obj) {
+    __ mr(res, obj);
+  }
 
   DecoratorSet decorators = stub->decorators();
 
@@ -1006,7 +1032,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   __ save_volatile_gprs(R1_SP, -nbytes_save, true, false);
 
   // Load arguments from stack.
-  // No load required, as assured by assertions in 'ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub'.
+  // No load required, as caller has already loaded obj into R3.
   Register R3_obj = R3_ARG1;
   Register R4_load_addr = R4_ARG2;
   __ ld(R4_load_addr, -8, R1_SP);

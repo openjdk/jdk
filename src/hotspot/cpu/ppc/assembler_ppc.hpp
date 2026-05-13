@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,10 +461,6 @@ class Assembler : public AbstractAssembler {
     FRIN_OPCODE   = (63u << OPCODE_SHIFT | 392u << 1),
     FRIP_OPCODE   = (63u << OPCODE_SHIFT | 456u << 1),
     FRIM_OPCODE   = (63u << OPCODE_SHIFT | 488u << 1),
-    // These are special Power6 opcodes, reused for "lfdepx" and "stfdepx"
-    // on Power7.  Do not use.
-    // MFFGPR_OPCODE  = (31u << OPCODE_SHIFT | 607u << 1),
-    // MFTGPR_OPCODE  = (31u << OPCODE_SHIFT | 735u << 1),
     CMPB_OPCODE    = (31u << OPCODE_SHIFT |  508  << 1),
     POPCNTB_OPCODE = (31u << OPCODE_SHIFT |  122  << 1),
     POPCNTW_OPCODE = (31u << OPCODE_SHIFT |  378  << 1),
@@ -518,7 +514,6 @@ class Assembler : public AbstractAssembler {
     FSQRT_OPCODE   = (63u << OPCODE_SHIFT |   22u << 1),            // A-FORM
     FSQRTS_OPCODE  = (59u << OPCODE_SHIFT |   22u << 1),            // A-FORM
 
-    // Vector instruction support for >= Power6
     // Vector Storage Access
     LVEBX_OPCODE   = (31u << OPCODE_SHIFT |    7u << 1),
     LVEHX_OPCODE   = (31u << OPCODE_SHIFT |   39u << 1),
@@ -598,6 +593,9 @@ class Assembler : public AbstractAssembler {
     XVMINDP_OPCODE = (60u << OPCODE_SHIFT |  232u << 3),
     XVMAXSP_OPCODE = (60u << OPCODE_SHIFT |  192u << 3),
     XVMAXDP_OPCODE = (60u << OPCODE_SHIFT |  224u << 3),
+
+    XSMINJDP_OPCODE = (60u << OPCODE_SHIFT | 152u << 3),
+    XSMAXJDP_OPCODE = (60u << OPCODE_SHIFT | 144u << 3),
 
     // Deliver A Random Number (introduced with POWER9)
     DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
@@ -1233,7 +1231,7 @@ class Assembler : public AbstractAssembler {
   static int u(        int         x)  { return  opp_u_field(x,             19, 16); }
   static int ui(       int         x)  { return  opp_u_field(x,             31, 16); }
 
-  // Support vector instructions for >= Power6.
+  // Support vector instructions.
   static int vra(      int         x)  { return  opp_u_field(x,             15, 11); }
   static int vrb(      int         x)  { return  opp_u_field(x,             20, 16); }
   static int vrc(      int         x)  { return  opp_u_field(x,             25, 21); }
@@ -1577,10 +1575,6 @@ class Assembler : public AbstractAssembler {
   static bool is_nop(int x) {
     return x == 0x60000000;
   }
-  // endgroup opcode for Power6
-  static bool is_endgroup(int x) {
-    return is_ori(x) && inv_ra_field(x) == 1 && inv_rs_field(x) == 1 && inv_d1_field(x) == 0;
-  }
 
 
  private:
@@ -1655,9 +1649,6 @@ class Assembler : public AbstractAssembler {
   inline void mr(      Register d, Register s);
   inline void ori_opt( Register d, int ui16);
   inline void oris_opt(Register d, int ui16);
-
-  // endgroup opcode for Power6
-  inline void endgroup();
 
   // count instructions
   inline void cntlzw(  Register a, Register s);
@@ -2040,7 +2031,7 @@ class Assembler : public AbstractAssembler {
   inline void stqcx_( Register s, Register a, Register b);
 
   // Instructions for adjusting thread priority for simultaneous
-  // multithreading (SMT) on Power5.
+  // multithreading (SMT).
  private:
   inline void smt_prio_very_low();
   inline void smt_prio_medium_high();
@@ -2208,7 +2199,7 @@ class Assembler : public AbstractAssembler {
   inline void fsqrt( FloatRegister d, FloatRegister b);
   inline void fsqrts(FloatRegister d, FloatRegister b);
 
-  // Vector instructions for >= Power6.
+  // Vector instructions.
   inline void lvebx(    VectorRegister d, Register s1, Register s2);
   inline void lvehx(    VectorRegister d, Register s1, Register s2);
   inline void lvewx(    VectorRegister d, Register s1, Register s2);
@@ -2454,6 +2445,9 @@ class Assembler : public AbstractAssembler {
   inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
+
+  inline void xsminjdp( VectorSRegister d, VectorSRegister a, VectorSRegister b); // Requires Power 9
+  inline void xsmaxjdp( VectorSRegister d, VectorSRegister a, VectorSRegister b); // Requires Power 9
 
   // The following functions do not match exactly the Java.math semantics.
   inline void xvminsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);

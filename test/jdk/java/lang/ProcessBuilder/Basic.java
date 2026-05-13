@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,32 @@
  */
 
 /*
- * @test
+ * @test id=POSIX_SPAWN
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
  *      8067796 8224905 8263729 8265173 8272600 8231297 8282219 8285517
- *      8352533 8368192
+ *      8352533 8368192 8377907
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
- * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm/native/timeout=360 Basic
- * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
+ * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
  * @author Martin Buchholz
  */
 
 /*
- * @test
+ * @test id=FORK
+ * @key intermittent
+ * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
- *          java.base/jdk.internal.misc
- * @requires (os.family == "linux" & !vm.musl)
+ * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
+ * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
  */
 
 import java.lang.ProcessBuilder.Redirect;
@@ -65,7 +64,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+
 import static java.lang.System.getenv;
 import static java.lang.System.out;
 import static java.lang.Boolean.TRUE;
@@ -687,21 +686,28 @@ public class Basic {
 
     // On Alpine Linux, /bin/true and /bin/false are just links to /bin/busybox.
     // Some tests copy /bin/true and /bin/false to files with a different filename.
-    // However, copying the busbox executable into a file with a different name
+    // However, copying the busybox executable into a file with a different name
     // won't result in the expected return codes. As workaround, we create
-    // executable files that can be copied and produce the expected return
+    // native executables that can be copied and produce the expected return
     // values.
 
     private static class TrueExe {
         public static String path() { return path; }
+        private static final Path BIN_TRUE_PATH = Paths.get("/bin/true");
+        private static final boolean IS_TRUE_FALSE_SAFE_TO_USE = isTrueFalseSafeToUse();
+
         private static final String path = path0();
-        private static String path0(){
-            if (!Files.isSymbolicLink(Paths.get("/bin/true"))) {
-                return "/bin/true";
+        private static String path0() {
+            if (IS_TRUE_FALSE_SAFE_TO_USE) {
+                return BIN_TRUE_PATH.toString();
             } else {
-                File trueExe = new File("true");
-                setFileContents(trueExe, "#!/bin/true\n");
-                trueExe.setExecutable(true);
+                File trueExe = findReplacementCommand("BasicTrue");
+                if (trueExe == null) {
+                    // Fall back to a script that invokes /bin/true
+                    trueExe = new File("true");
+                    setFileContents(trueExe, "#!/bin/true\n");
+                    trueExe.setExecutable(true);
+                }
                 return trueExe.getAbsolutePath();
             }
         }
@@ -709,16 +715,36 @@ public class Basic {
 
     private static class FalseExe {
         public static String path() { return path; }
+        private static final Path BIN_FALSE_PATH = Paths.get("/bin/false");
         private static final String path = path0();
-        private static String path0(){
-            if (!Files.isSymbolicLink(Paths.get("/bin/false"))) {
-                return "/bin/false";
+        private static String path0() {
+
+            if (TrueExe.IS_TRUE_FALSE_SAFE_TO_USE) {
+                return BIN_FALSE_PATH.toString();
             } else {
-                File falseExe = new File("false");
-                setFileContents(falseExe, "#!/bin/false\n");
-                falseExe.setExecutable(true);
+                File falseExe = findReplacementCommand("BasicFalse");
+                if (falseExe == null) {
+                    // Fall back to a script that invokes /bin/false
+                    falseExe = new File("false");
+                    setFileContents(falseExe, "#!/bin/false\n");
+                    falseExe.setExecutable(true);
+                }
                 return falseExe.getAbsolutePath();
             }
+        }
+    }
+
+    // Check if /bin/true and /bin/false are ok to use as is.
+    // Neither can be a symbolic link or the same binary as the other.
+    private static boolean isTrueFalseSafeToUse() {
+        try {
+            if (Files.isSymbolicLink(TrueExe.BIN_TRUE_PATH) ||
+                    Files.isSymbolicLink(FalseExe.BIN_FALSE_PATH)) {
+                return false;
+            }
+            return Files.isSameFile(TrueExe.BIN_TRUE_PATH, FalseExe.BIN_FALSE_PATH);
+        } catch (IOException ioe) {
+            return false;
         }
     }
 
@@ -1230,6 +1256,20 @@ public class Basic {
             equal(r.out(), "standard output");
             equal(r.err(), "standard error");
         }
+
+        //----------------------------------------------------------------
+        // Default: should go to pipes (use a fresh ProcessBuilder)
+        //----------------------------------------------------------------
+        {
+            ProcessBuilder pb2 = new ProcessBuilder(childArgs);
+            Process p = pb2.start();
+            new PrintStream(p.getOutputStream()).print("standard input");
+            p.getOutputStream().close();
+            ProcessResults r = run(p);
+            equal(r.exitValue(), 0);
+            equal(r.out, "standard output");
+            equal(r.err, "standard error");
+        }
     }
 
     static void checkProcessPid() {
@@ -1267,6 +1307,8 @@ public class Basic {
             System.out.println("This appears to be a Unix system.");
         if (UnicodeOS.is())
             System.out.println("This appears to be a Unicode-based OS.");
+
+        System.out.println("Using:" + System.getProperty("jdk.lang.Process.launchMechanism"));
 
         try { testIORedirection(); }
         catch (Throwable t) { unexpected(t); }
@@ -1968,6 +2010,7 @@ public class Basic {
             // PATH search algorithm on Unix
             //----------------------------------------------------------------
             try {
+                System.out.printf("Paths: True: %s, False: %s\n", TrueExe.path(), FalseExe.path());
                 List<String> childArgs = new ArrayList<String>(javaChildArgs);
                 childArgs.add("PATH search algorithm");
                 ProcessBuilder pb = new ProcessBuilder(childArgs);
@@ -2541,26 +2584,37 @@ public class Basic {
     private static final String TEST_NATIVEPATH = System.getProperty("test.nativepath");
 
     // Path where "sleep" program may be found" or null
-    private static final Path SLEEP_PATH = initSleepPath();
+    private static final File SLEEP_PATH = initSleepPath();
 
     /**
      * Compute the Path to a sleep executable.
-     * @return a Path to sleep or BasicSleep(.exe) or null if none
+     * @return a path to sleep or BasicSleep(.exe) or null if none
      */
-    private static Path initSleepPath() {
-        if (Windows.is() && TEST_NATIVEPATH != null) {
-            // exeBasicSleep is equivalent to sleep on Unix
-            Path exePath = Path.of(TEST_NATIVEPATH).resolve("BasicSleep.exe");
+    private static File initSleepPath() {
+        return Windows.is() ? findReplacementCommand("BasicSleep")
+                : findSystemCommand("sleep");
+    }
+
+    /// Search the NativePath for the command.
+    /// On Windows, include the .exe extension
+    private static File findReplacementCommand(String cmdName) {
+        if (TEST_NATIVEPATH != null) {
+            String fullName = cmdName + (Windows.is() ? ".exe" : "");
+            Path exePath = Path.of(TEST_NATIVEPATH).resolve(fullName);
             if (Files.isExecutable(exePath)) {
-                return exePath;
+                return exePath.toFile();
             }
         }
+        return null;
+    }
 
+    ///  Search the usual system paths for the command and return the full Path.
+    private static File findSystemCommand(String cmdName) {
         List<String> binPaths = List.of("/bin", "/usr/bin");
         for (String dir : binPaths) {
-            Path exePath = Path.of(dir).resolve("sleep");
+            Path exePath = Path.of(dir).resolve(cmdName);
             if (Files.isExecutable(exePath)) {
-                return exePath;
+                return exePath.toFile();
             }
         }
         return null;

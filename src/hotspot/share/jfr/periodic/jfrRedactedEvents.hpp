@@ -80,7 +80,7 @@ class JfrRedactedEvents: public AllStatic {
       memcpy(_text + prefix_length, postfix, postfix_length);
     }
     ~String() {
-      FREE_C_HEAP_ARRAY(char, _text);
+      FREE_C_HEAP_ARRAY(_text);
     }
     const char* text() const {
       return _text;
