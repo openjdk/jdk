@@ -46,6 +46,8 @@ instruct load_P_Normal_shenandoah(iRegPNoSp dst, memory8 mem, iRegPNoSp tmp, rFl
     ShenandoahBarrierSet::assembler()->load_c2(this, masm,
         $dst$$Register,
         addr,
+        rscratch1,
+        rscratch2,
         /* narrow = */ false,
         /* acquire = */ false);
   %}
@@ -65,6 +67,8 @@ instruct load_P_Volatile_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr)
     ShenandoahBarrierSet::assembler()->load_c2(this, masm,
         $dst$$Register,
         Address($mem$$Register),
+        rscratch1,
+        rscratch2,
         /* narrow = */  false,
         /* acquire = */ true);
   %}
@@ -88,6 +92,8 @@ instruct load_N_Normal_shenandoah(iRegNNoSp dst, memory4 mem, iRegPNoSp tmp, rFl
     ShenandoahBarrierSet::assembler()->load_c2(this, masm,
         $dst$$Register,
         addr,
+        rscratch1,
+        rscratch2,
         /* narrow = */  true,
         /* acquire = */ false);
   %}
@@ -107,6 +113,8 @@ instruct load_N_Volatile_shenandoah(iRegNNoSp dst, indirect mem, rFlagsReg cr)
     ShenandoahBarrierSet::assembler()->load_c2(this, masm,
         $dst$$Register,
         Address($mem$$Register),
+        rscratch1,
+        rscratch2,
         /* narrow = */  true,
         /* acquire = */ true);
   %}
@@ -132,7 +140,8 @@ instruct store_P_Normal_shenandoah(memory8 mem, iRegP src, iRegPNoSp tmp1, iRegP
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
       addr,            /* dst_narrow  = */ false,
       $src$$Register,  /* src_narrow  = */ false,
-      $tmp1$$Register, /* is_volatile = */ false);
+      $tmp1$$Register, rscratch1, rscratch2,
+      /* is_volatile = */ false);
   %}
   ins_cost(3*INSN_COST);
   ins_pipe(pipe_class_memory);
@@ -148,7 +157,8 @@ instruct store_P_Volatile_shenandoah(indirect mem, iRegP src, iRegPNoSp tmp, rFl
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
       Address($mem$$Register),    /* dst_narrow  = */ false,
       $src$$Register,             /* src_narrow  = */ false,
-      $tmp$$Register,             /* is_volatile = */ true);
+      $tmp$$Register, rscratch1, rscratch2,
+      /* is_volatile = */ true);
   %}
   ins_cost(VOLATILE_REF_COST);
   ins_pipe(pipe_class_memory);
@@ -168,7 +178,8 @@ instruct store_N_Normal_shenandoah(memory4 mem, iRegN src, iRegPNoSp tmp1, iRegP
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
       addr,            /* dst_narrow  = */ true,
       $src$$Register,  /* src_narrow  = */ true,
-      $tmp1$$Register, /* is_volatile = */ false);
+      $tmp1$$Register, rscratch1, rscratch2,
+      /* is_volatile = */ false);
   %}
   ins_cost(3*INSN_COST);
   ins_pipe(pipe_class_memory);
@@ -184,7 +195,8 @@ instruct store_N_Volatile_shenandoah(indirect mem, iRegN src, iRegPNoSp tmp, rFl
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
       Address($mem$$Register),    /* dst_narrow  = */ true,
       $src$$Register,             /* src_narrow  = */ true,
-      $tmp$$Register,             /* is_volatile = */ true);
+      $tmp$$Register, rscratch1, rscratch2,
+      /* is_volatile = */ true);
   %}
   ins_cost(VOLATILE_REF_COST);
   ins_pipe(pipe_class_memory);
@@ -205,7 +217,8 @@ instruct encodePAndStoreN_Normal_shenandoah(memory4 mem, iRegP src, iRegPNoSp tm
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
       addr,            /* dst_narrow  = */ true,
       $src$$Register,  /* src_narrow  = */ false,
-      $tmp1$$Register, /* is_volatile = */ false);
+      $tmp1$$Register, rscratch1, rscratch2,
+      /* is_volatile = */ false);
   %}
   ins_cost(4*INSN_COST);
   ins_pipe(pipe_class_memory);
@@ -222,7 +235,8 @@ instruct encodePAndStoreN_Volatile_shenandoah(indirect mem, iRegP src, iRegPNoSp
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
       Address($mem$$Register), /* dst_narrow  = */ true,
       $src$$Register,          /* src_narrow  = */ false,
-      $tmp$$Register,          /* is_volatile = */ true);
+      $tmp$$Register, rscratch1, rscratch2,
+      /* is_volatile = */ true);
   %}
   ins_cost(4*INSN_COST);
   ins_pipe(pipe_class_memory);
@@ -249,6 +263,8 @@ instruct compareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldv
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ false,
       /* narrow = */   false,
       /* weak = */     false,
@@ -275,6 +291,8 @@ instruct compareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp ol
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ false,
       /* narrow = */   false,
       /* weak = */     false,
@@ -301,6 +319,8 @@ instruct compareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldv
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ false,
       /* narrow = */   true,
       /* weak = */     false,
@@ -327,6 +347,8 @@ instruct compareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp ol
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ false,
       /* narrow = */   true,
       /* weak = */     false,
@@ -353,6 +375,8 @@ instruct compareAndExchange_N_shenandoah(iRegNNoSp res, indirect mem, iRegN oldv
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ true,
       /* narrow = */   true,
       /* weak = */     false,
@@ -379,6 +403,8 @@ instruct compareAndExchange_N_A_shenandoah(iRegNNoSp res, indirect mem, iRegN ol
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ true,
       /* narrow = */   true,
       /* weak = */     false,
@@ -405,6 +431,8 @@ instruct compareAndExchange_P_shenandoah(iRegPNoSp res, indirect mem, iRegP oldv
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ true,
       /* narrow = */   false,
       /* weak = */     false,
@@ -431,6 +459,8 @@ instruct compareAndExchange_P_A_shenandoah(iRegPNoSp res, indirect mem, iRegP ol
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ true,
       /* narrow = */   false,
       /* weak = */     false,
@@ -458,6 +488,8 @@ instruct weakCompareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp 
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ false,
       /* narrow = */   true,
       /* weak = */     true,
@@ -485,6 +517,8 @@ instruct weakCompareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoS
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ false,
       /* narrow = */   true,
       /* weak = */     true,
@@ -512,6 +546,8 @@ instruct weakCompareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp 
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ false,
       /* narrow = */   false,
       /* weak = */     true,
@@ -539,6 +575,8 @@ instruct weakCompareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoS
       $oldval$$Register,
       $newval$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* exchange = */ false,
       /* narrow = */   false,
       /* weak = */     true,
@@ -560,6 +598,8 @@ instruct getAndSet_P_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iR
       $newval$$Register,
       $mem$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* acquire = */ false);
   %}
   ins_cost(2*VOLATILE_REF_COST);
@@ -578,6 +618,8 @@ instruct getAndSet_P_A_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, 
       $newval$$Register,
       $mem$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* acquire = */ true);
   %}
   ins_cost(2*VOLATILE_REF_COST);
@@ -596,6 +638,8 @@ instruct getAndSet_N_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iR
       $newval$$Register,
       $mem$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* acquire = */ false);
   %}
   ins_cost(2*VOLATILE_REF_COST);
@@ -614,6 +658,8 @@ instruct getAndSet_N_A_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, 
       $newval$$Register,
       $mem$$Register,
       $tmp$$Register,
+      rscratch1,
+      rscratch2,
       /* acquire = */ true);
   %}
   ins_cost(2*VOLATILE_REF_COST);

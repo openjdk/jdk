@@ -842,7 +842,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 #define __ masm->
 
 
-void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src, bool is_narrow, bool is_acquire) {
+void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src, Register tmp1, Register tmp2, bool is_narrow, bool is_acquire) {
   // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
   if (is_narrow) {
     if (is_acquire) {
@@ -858,24 +858,24 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
     }
   }
 
-  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, rscratch1, rscratch2, is_narrow);
+  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, tmp1, tmp2, is_narrow);
 }
 
 void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow,
-    Register src, bool src_narrow, Register tmp, bool is_volatile) {
+    Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3, bool is_volatile) {
 
-  ShenandoahBarrierStubC2::store_pre(masm, node, tmp, dst, rscratch1, rscratch2, dst_narrow);
+  ShenandoahBarrierStubC2::store_pre(masm, node, tmp1, dst, tmp2, tmp3, dst_narrow);
 
   // Do the actual store
   if (dst_narrow) {
     if (!src_narrow) {
       // Need to encode into rscratch, because we cannot clobber src.
       if ((node->barrier_data() & ShenandoahBitNotNull) == 0) {
-        __ encode_heap_oop(rscratch1, src);
+        __ encode_heap_oop(tmp2, src);
       } else {
-        __ encode_heap_oop_not_null(rscratch1, src);
+        __ encode_heap_oop_not_null(tmp2, src);
       }
-      src = rscratch1;
+      src = tmp2;
     }
 
     if (is_volatile) {
@@ -891,14 +891,14 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
     }
   }
 
-  ShenandoahBarrierStubC2::store_post(masm, node, dst, rscratch1, rscratch2);
+  ShenandoahBarrierStubC2::store_post(masm, node, dst, tmp2, tmp3);
 }
 
 void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr,
-    Register oldval, Register newval, Register tmp, bool exchange, bool narrow, bool weak, bool acquire) {
+    Register oldval, Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool weak, bool acquire) {
   Assembler::operand_size op_size = narrow ? Assembler::word : Assembler::xword;
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp, addr, rscratch1, rscratch2, narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, addr, tmp2, tmp3, narrow);
 
   // CAS!
   __ cmpxchg(addr, oldval, newval, op_size, acquire, /* release */ true, weak, exchange ? res : noreg);
@@ -909,14 +909,14 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
     __ cset(res, Assembler::EQ);
   }
 
-  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), rscratch1, rscratch2);
+  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
 }
 
 void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval,
-    Register newval, Register addr, Register tmp, bool is_acquire) {
+    Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3, bool is_acquire) {
   bool is_narrow = node->bottom_type()->isa_narrowoop();
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp, addr, rscratch1, rscratch2, is_narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, addr, tmp2, tmp3, is_narrow);
 
   if (is_narrow) {
     if (is_acquire) {
@@ -932,7 +932,7 @@ void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAs
     }
   }
 
-  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), rscratch1, rscratch2);
+  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
 }
 
 #undef __
