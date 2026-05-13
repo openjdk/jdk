@@ -3054,8 +3054,9 @@ void ThawBase::push_return_frame(const frame& f) { // see generate_cont_thaw
     f.print_value_on(&ls);
   }
 
-  assert(f.sp() - frame::metadata_words_at_bottom >= _top_stack_address, "overwrote past thawing space"
-    " to: " INTPTR_FORMAT " top_address: " INTPTR_FORMAT, p2i(f.sp() - frame::metadata_words), p2i(_top_stack_address));
+  intptr_t* write_begin = StackOrder::towards_younger(f.sp(), frame::metadata_words_at_bottom);
+  assert(StackOrder::is_older_or_equal(write_begin, _top_stack_address), "overwrote past thawing space"
+    " to: " INTPTR_FORMAT " top_address: " INTPTR_FORMAT, p2i(write_begin), p2i(_top_stack_address));
   ContinuationHelper::Frame::patch_pc(f, f.raw_pc()); // in case we want to deopt the frame in a full transition, this is checked.
   ContinuationHelper::push_pd(f);
 
