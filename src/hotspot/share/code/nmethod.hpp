@@ -274,18 +274,20 @@ public:
       bool _has_unsafe_access:1;   // May fault due to unsafe access.
       bool _has_wide_vectors:1;    // Preserve wide vectors at safepoints
       bool _has_monitors:1;        // Fastpath monitor detection for continuations
-      bool _has_scoped_access:1;   // Used by for shared scope closure (scopedMemoryAccess.cpp)
+      bool _has_scoped_access:1;   // Used by shared scope closure (scopedMemoryAccess.cpp)
     };
     Flags() {
       _raw = 0;
     }
-    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scope_access) {
+    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) : Flags() {
       _has_unsafe_access = has_unsafe_access;
       _has_wide_vectors = has_wide_vectors;
       _has_monitors = has_monitors;
-      _has_scoped_access = has_scope_access;
+      _has_scoped_access = has_scoped_access;
     }
   };
+
+  static_assert(sizeof(Flags) == sizeof(uint8_t), "Must fit exactly");
 
 private:
   // Persistent bits, set once during construction.
