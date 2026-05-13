@@ -348,7 +348,7 @@ public:
       ciInlineKlass* vk = element_ptr->inline_klass();
       Node* flat_array = _parse.cast_to_flat_array(array, vk);
 
-      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
       ld = vt;
 
       if (_region != nullptr && 0) {
@@ -439,7 +439,7 @@ public:
              "array can't be flat");
 
       ciArrayLoadData* array_load = profile_data();
-      if (array_load != nullptr && 0) {
+      if (array_load != nullptr) {
         int not_flat_count = profiled_not_flat_count();
         ciCallProfile profile = _parse.method()->call_profile_at_bci(_parse.bci());
         int flat_count = profile.count();
