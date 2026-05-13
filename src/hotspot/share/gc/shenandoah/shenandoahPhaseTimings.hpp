@@ -138,6 +138,7 @@ class outputStream;
                                                                                        \
   f(degen_gc_gross,                                 "Pause Degenerated GC (G)")        \
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
+  f(degen_gc_un_self_forward,                       "  Un-Self-Forward")               \
   f(degen_gc_stw_mark,                              "  Degen STW Mark")                \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_stw_mark_,       "    DSM: ", f)                    \
   f(degen_gc_mark,                                  "  Degen Mark")                    \
@@ -170,6 +171,7 @@ class outputStream;
                                                                                        \
   f(full_gc_gross,                                  "Pause Full GC (G)")               \
   f(full_gc,                                        "Pause Full GC (N)")               \
+  f(full_gc_un_self_forward,                        "  Un-Self-Forward")               \
   f(full_gc_heapdump_pre,                           "  Pre Heap Dump")                 \
   f(full_gc_prepare,                                "  Prepare")                       \
   f(full_gc_update_roots,                           "    Update Roots")                \

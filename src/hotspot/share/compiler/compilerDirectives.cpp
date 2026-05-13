@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -378,7 +379,7 @@ class DirectiveSetPtr {
 // - if some option is changed we need to copy directiveset since it no longer can be shared
 // - Need to free copy after use
 // - Requires a modified bit so we don't overwrite options that is set by directives
-DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle& method) {
+DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle& method, int comp_level) {
   // Early bail out - checking all options is expensive - we rely on them not being used
   // Only set a flag if it has not been modified and value changes.
   // Only copy set if a flag needs to be set
@@ -397,7 +398,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
 
     // All CompileCommands are not equal so this gets a bit verbose
     // When CompileCommands have been refactored less clutter will remain.
-    if (CompilerOracle::should_break_at(method)) {
+    if (CompilerOracle::should_break_at(method, static_cast<CompLevel>(comp_level))) {
       // If the directives didn't have 'BreakAtCompile' or 'BreakAtExecute',
       // the sub-command 'Break' of the 'CompileCommand' would become effective.
       if (!_modified[BreakAtCompileIndex]) {
@@ -414,13 +415,13 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       }
     }
 
-    if (CompilerOracle::should_print(method)) {
+    if (CompilerOracle::should_print(method, static_cast<CompLevel>(comp_level))) {
       if (!_modified[PrintAssemblyIndex]) {
         set.cloned()->PrintAssemblyOption = true;
       }
     }
     // Exclude as in should not compile == Enabled
-    if (CompilerOracle::should_exclude(method)) {
+    if (CompilerOracle::should_exclude(method, static_cast<CompLevel>(comp_level))) {
       if (!_modified[ExcludeIndex]) {
         set.cloned()->ExcludeOption = true;
       }
@@ -547,7 +548,7 @@ bool DirectiveSet::should_inline(ciMethod* inlinee) {
   return false;
 }
 
-bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
+bool DirectiveSet::should_not_inline(ciMethod* inlinee, int comp_level) {
   inlinee->check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, inlinee->get_Method());
@@ -556,7 +557,7 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
     return matches_inline(mh, InlineMatcher::dont_inline);
   }
   if (!CompilerDirectivesIgnoreCompileCommandsOption) {
-    return CompilerOracle::should_not_inline(mh);
+    return CompilerOracle::should_not_inline(mh, static_cast<CompLevel>(comp_level));
   }
   return false;
 }
@@ -755,7 +756,7 @@ void DirectivesStack::release(DirectiveSet* set) {
   assert(set != nullptr, "Never nullptr");
   MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
   if (set->is_exclusive_copy()) {
-    // Old CompilecCmmands forced us to create an exclusive copy
+    // Old CompileCommands forced us to create an exclusive copy
     delete set;
   } else {
     assert(set->directive() != nullptr, "Never nullptr");
@@ -772,8 +773,9 @@ void DirectivesStack::release(CompilerDirectives* dir) {
   }
 }
 
-DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, AbstractCompiler *comp) {
+DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, int comp_level) {
   assert(_depth > 0, "Must never be empty");
+  AbstractCompiler* comp = CompileBroker::compiler(comp_level);
 
   DirectiveSet* match = nullptr;
   {
@@ -798,5 +800,5 @@ DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, 
   guarantee(match != nullptr, "There should always be a default directive that matches");
 
   // Check for legacy compile commands update, without DirectivesStack_lock
-  return match->compilecommand_compatibility_init(method);
+  return match->compilecommand_compatibility_init(method, comp_level);
 }
