@@ -29,11 +29,11 @@ source %{
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 %}
 
-instruct load_P_shenandoah(iRegPNoSp dst, memory mem)
+instruct load_P_shenandoah(iRegPNoSp dst, memory mem, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
   predicate(UseShenandoahGC && n->as_Load()->barrier_data() != 0);
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
   // The main load is a candidate to implement implicit null checks.
   ins_is_late_expanded_null_check_candidate(true);
   format %{ "ld  $dst, $mem\t# ptr, shenandoah late-barrier, #@loadP_shenandoah" %}
@@ -44,11 +44,11 @@ instruct load_P_shenandoah(iRegPNoSp dst, memory mem)
   ins_pipe(iload_reg_mem);
 %}
 
-instruct load_N_shenandoah(iRegNNoSp dst, memory mem)
+instruct load_N_shenandoah(iRegNNoSp dst, memory mem, rFlagsReg cr)
 %{
   match(Set dst (LoadN mem));
   predicate(UseShenandoahGC && n->as_Load()->barrier_data() != 0);
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
   // The main load is a candidate to implement implicit null checks.
   ins_is_late_expanded_null_check_candidate(true);
   format %{ "lwu  $dst, $mem\t# compressed ptr, shenandoah late-barrier, #@loadN_shenandoah" %}
@@ -59,11 +59,11 @@ instruct load_N_shenandoah(iRegNNoSp dst, memory mem)
   ins_pipe(iload_reg_mem);
 %}
 
-instruct storeP_shenandoah(iRegP src, memory mem, iRegPNoSp tmp)
+instruct storeP_shenandoah(iRegP src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set mem (StoreP mem src));
   predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
-  effect(TEMP tmp);
+  effect(TEMP tmp, KILL cr);
   format %{ "sd  $src, $mem\t# ptr, shenandoah late-barrier, #@storeP_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
@@ -75,11 +75,11 @@ instruct storeP_shenandoah(iRegP src, memory mem, iRegPNoSp tmp)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct storeN_shenandoah(iRegN src, memory mem, iRegPNoSp tmp)
+instruct storeN_shenandoah(iRegN src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set mem (StoreN mem src));
   predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
-  effect(TEMP tmp);
+  effect(TEMP tmp, KILL cr);
   format %{ "sw  $src, $mem\t# compressed ptr, shenandoah late-barrier, #@storeN_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
@@ -91,11 +91,11 @@ instruct storeN_shenandoah(iRegN src, memory mem, iRegPNoSp tmp)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct encodePAndStoreN_shenandoah(iRegP src, memory mem, iRegPNoSp tmp)
+instruct encodePAndStoreN_shenandoah(iRegP src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set mem (StoreN mem (EncodeP src)));
   predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
-  effect(TEMP tmp);
+  effect(TEMP tmp, KILL cr);
   format %{
     "encode_heap_oop $tmp, $src\n\t"
     "sw  $tmp, $mem\t# compressed ptr, shenandoah late-barrier, #@encodePAndStoreN_shenandoah"
@@ -110,10 +110,10 @@ instruct encodePAndStoreN_shenandoah(iRegP src, memory mem, iRegPNoSp tmp)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct compareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct compareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   predicate(UseShenandoahGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cmpxchg_P_A_shenandoah $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval, #@compareAndSwap_P_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -130,10 +130,10 @@ instruct compareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp ol
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct compareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   predicate(UseShenandoahGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cmpxchg_P_N_shenandoah $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval, #@compareAndSwap_P_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -150,10 +150,10 @@ instruct compareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldv
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp) %{
+instruct compareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   predicate(UseShenandoahGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cmpxchg_N_shenandoah $mem, $oldval, $newval\t# (narrow ptr) if $mem == $oldval then $mem <-- $newval, #@compareAndSwap_N_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -170,10 +170,10 @@ instruct compareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp ol
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp) %{
+instruct compareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   predicate(UseShenandoahGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cmpxchg_N_shenandoah $mem, $oldval, $newval\t# (narrow ptr) if $mem == $oldval then $mem <-- $newval, #@compareAndSwap_N_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -190,10 +190,10 @@ instruct compareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldv
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchange_N_A_shenandoah(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, iRegPNoSp tmp) %{
+instruct compareAndExchange_N_A_shenandoah(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   predicate(UseShenandoahGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cae_N_shenandoah $res = $mem, $oldval, $newval\t# (narrow oop) if $mem == $oldval then $mem <-- $newval, #@compareAndExchange_N_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -210,10 +210,10 @@ instruct compareAndExchange_N_A_shenandoah(iRegNNoSp res, indirect mem, iRegN ol
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchange_N_shenandoah(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, iRegPNoSp tmp) %{
+instruct compareAndExchange_N_shenandoah(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   predicate(UseShenandoahGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cae_N_shenandoah $res = $mem, $oldval, $newval\t# (narrow oop) if $mem == $oldval then $mem <-- $newval, #@compareAndExchange_N_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -230,10 +230,10 @@ instruct compareAndExchange_N_shenandoah(iRegNNoSp res, indirect mem, iRegN oldv
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchange_P_A_shenandoah(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct compareAndExchange_P_A_shenandoah(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseShenandoahGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cae_P_shenandoah $res = $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval, #@compareAndExchange_P_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -250,10 +250,10 @@ instruct compareAndExchange_P_A_shenandoah(iRegPNoSp res, indirect mem, iRegP ol
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchange_P_shenandoah(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct compareAndExchange_P_shenandoah(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseShenandoahGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cae_P_shenandoah $res = $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval, #@compareAndExchange_P_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -270,10 +270,10 @@ instruct compareAndExchange_P_shenandoah(iRegPNoSp res, indirect mem, iRegP oldv
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp) %{
+instruct weakCompareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   predicate(UseShenandoahGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cae_N_weak_shenandoah $res = $mem, $oldval, $newval\t# (N, weak) if $mem == $oldval then $mem <-- $newval, #@weakCompareAndSwap_N_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -290,10 +290,10 @@ instruct weakCompareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoS
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp) %{
+instruct weakCompareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   predicate(UseShenandoahGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cae_N_weak_shenandoah $res = $mem, $oldval, $newval\t# (N, weak) if $mem == $oldval then $mem <-- $newval, #@weakCompareAndSwap_N_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -310,10 +310,10 @@ instruct weakCompareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp 
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct weakCompareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseShenandoahGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cae_P_weak_shenandoah $res = $mem, $oldval, $newval\t# (P, weak) if $mem == $oldval then $mem <-- $newval, #@weakCompareAndSwap_P_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -330,10 +330,10 @@ instruct weakCompareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoS
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct weakCompareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseShenandoahGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
   format %{ "cae_P_weak_shenandoah $res = $mem, $oldval, $newval\t# (P, weak) if $mem == $oldval then $mem <-- $newval, #@weakCompareAndSwap_P_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
@@ -350,11 +350,11 @@ instruct weakCompareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp 
   ins_pipe(pipe_slow);
 %}
 
-instruct getAndSet_P_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iRegPNoSp tmp)
+instruct getAndSet_P_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set preval (GetAndSetP mem newval));
   predicate(UseShenandoahGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF preval, TEMP tmp);
+  effect(TEMP_DEF preval, TEMP tmp, KILL cr);
   format %{ "get_and_set_P $preval, $newval, [$mem], #@getAndSet_P_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
@@ -368,11 +368,11 @@ instruct getAndSet_P_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iR
   ins_pipe(pipe_slow);
 %}
 
-instruct getAndSet_P_A_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iRegPNoSp tmp)
+instruct getAndSet_P_A_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set preval (GetAndSetP mem newval));
   predicate(UseShenandoahGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF preval, TEMP tmp);
+  effect(TEMP_DEF preval, TEMP tmp, KILL cr);
   format %{ "get_and_set_P $preval, $newval, [$mem], #@getAndSet_P_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
@@ -386,11 +386,11 @@ instruct getAndSet_P_A_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, 
   ins_pipe(pipe_slow);
 %}
 
-instruct getAndSet_N_A_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iRegPNoSp tmp)
+instruct getAndSet_N_A_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set preval (GetAndSetN mem newval));
   predicate(UseShenandoahGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF preval, TEMP tmp);
+  effect(TEMP_DEF preval, TEMP tmp, KILL cr);
   format %{ "get_and_set_N $preval, $newval, [$mem], #@getAndSet_N_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
@@ -404,11 +404,11 @@ instruct getAndSet_N_A_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, 
   ins_pipe(pipe_slow);
 %}
 
-instruct getAndSet_N_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iRegPNoSp tmp)
+instruct getAndSet_N_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set preval (GetAndSetN mem newval));
   predicate(UseShenandoahGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF preval, TEMP tmp);
+  effect(TEMP_DEF preval, TEMP tmp, KILL cr);
   format %{ "get_and_set_N $preval, $newval, [$mem], #@getAndSet_N_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
