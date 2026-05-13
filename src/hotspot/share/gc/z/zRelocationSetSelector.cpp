@@ -124,8 +124,8 @@ void ZRelocationSetSelectorGroup::select_inner() {
   size_t from_forwarding_entries = 0;
 
   // Keep track of totals per page
-  size_t live_bytes_per_page[ZPageAgeCount] = {};
-  int npages_per_page[ZPageAgeCount] = {};
+  size_t live_bytes_per_age[ZPageAgeCount] = {};
+  size_t npages_per_age[ZPageAgeCount] = {};
 
   semi_sort();
 
@@ -137,8 +137,8 @@ void ZRelocationSetSelectorGroup::select_inner() {
     from_forwarding_entries += ZForwarding::nentries(page);
 
     // Update totals per page
-    live_bytes_per_page[untype(page->age())] += page_live_bytes;
-    npages_per_page[untype(page->age())] += 1;
+    live_bytes_per_age[untype(page->age())] += page_live_bytes;
+    npages_per_age[untype(page->age())] += 1;
 
     // Calculate the maximum number of pages needed by the candidate relocation set.
     // By subtracting the object size limit from the pages size we get the maximum
@@ -168,8 +168,8 @@ void ZRelocationSetSelectorGroup::select_inner() {
   }
 
   // Keep track of rejected totals per page
-  size_t rejected_live_bytes_per_page[ZPageAgeCount] = {};
-  int rejected_npages_per_page[ZPageAgeCount] = {};
+  size_t rejected_live_bytes_per_age[ZPageAgeCount] = {};
+  size_t rejected_npages_per_age[ZPageAgeCount] = {};
 
   // Finalize selection
   for (int i = selected_from; i < _live_pages.length(); i++) {
@@ -179,16 +179,16 @@ void ZRelocationSetSelectorGroup::select_inner() {
     }
 
     // Update rejected totals per page
-    rejected_live_bytes_per_page[untype(page->age())] += page->live_bytes();
-    rejected_npages_per_page[untype(page->age())] += 1;
+    rejected_live_bytes_per_age[untype(page->age())] += page->live_bytes();
+    rejected_npages_per_age[untype(page->age())] += 1;
   }
   _live_pages.trunc_to(selected_from);
   _forwarding_entries = selected_forwarding_entries;
 
   // Update statistics
   for (uint i = 0; i < ZPageAgeCount; ++i) {
-    _stats[i]._relocate = live_bytes_per_page[i] - rejected_live_bytes_per_page[i];
-    _stats[i]._npages_selected = npages_per_page[i] - rejected_npages_per_page[i];
+    _stats[i]._relocate = live_bytes_per_age[i] - rejected_live_bytes_per_age[i];
+    _stats[i]._npages_selected = npages_per_age[i] - rejected_npages_per_age[i];
   }
 
   log_debug(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, %zu forwarding entries",
