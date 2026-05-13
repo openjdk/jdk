@@ -562,7 +562,7 @@ private:
 
   void  move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis);
   Node* find_inst_mem(Node* mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist, uint rec_depth = 0);
-  Node* find_inst_mem_assert_no_new_node(Node* mem, int alias_idx, GrowableArray<PhiNode *>& orig_phi_worklist);
+  Node* find_inst_mem_assert_no_new_node(Node* mem, int alias_idx, GrowableArray<PhiNode*>& orig_phi_worklist);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
 
   Node_Array _node_map; // used for bookkeeping during type splitting

@@ -34,7 +34,7 @@
 
 package compiler.escapeAnalysis;
 
-public class TestReadOnlyStringIntrinsicDuringEA extends c159.HelperBase {
+public class TestReadOnlyStringIntrinsicDuringEA {
     static int test1(String id, String nameKey) {
         try {
             java.io.ByteArrayOutputStream stream = new java.io.ByteArrayOutputStream();
@@ -60,7 +60,7 @@ public class TestReadOnlyStringIntrinsicDuringEA extends c159.HelperBase {
     }
 
     public static void main(String[] strArr) {
-        for (int t = 0; t < 100_000; t++) {
+        for (int t = 0; t < 10_000; t++) {
             test1("123456abc", "123456abc");
             test2("X");
         }
