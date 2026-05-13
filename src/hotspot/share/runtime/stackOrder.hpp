@@ -32,7 +32,7 @@
 
 class StackOrder : public AllStatic {
 private:
-    // Defines the direction of stack growth, true on dows-growing, false on up-growing.
+    // Defines the direction of stack growth, true on down-growing, false on up-growing.
     // Now defines the direction globally, can be platform-specific.
     static inline bool older_frame_address_is_greater() {
         return true;
@@ -79,9 +79,10 @@ public:
         return checked_cast<int>(bytes / sizeof(intptr_t));
     }
 
-    static inline bool contains_closed(const intptr_t* p, const intptr_t* younger, const intptr_t* older) {
+    static inline bool contains_closed(const intptr_t* p, const intptr_t* older, const intptr_t* younger) {
         assert(p != nullptr && younger != nullptr && older != nullptr, "");
-        return is_younger_or_equal(younger, p) && is_older_or_equal(p, older);
+        assert(is_older_or_equal(older, younger), "");
+        return is_younger_or_equal(p, older) && is_older_or_equal(p, younger);
     }
 };
 

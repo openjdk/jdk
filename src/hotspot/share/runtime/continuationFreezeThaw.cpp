@@ -964,7 +964,7 @@ inline freeze_result FreezeBase::recurse_freeze_java_frame(const frame& f, frame
 
   // We don't use FKind::frame_bottom(f) == _bottom_address because on x64 there's sometimes an extra word between
   // enterSpecial and an interpreted frame
-  if (StackOrder::contains_closed(FKind::frame_bottom(f), StackOrder::towards_younger(_bottom_address, 1), _bottom_address)) {
+  if (StackOrder::contains_closed(FKind::frame_bottom(f), _bottom_address, StackOrder::towards_younger(_bottom_address, 1))) {
     return finalize_freeze(f, caller, argsize); // recursion end
   } else {
     frame senderf = sender<FKind>(f);
@@ -2858,8 +2858,10 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
 
   // If we're the bottom-most thawed frame, we're writing to within one word from entrySP
   // (we might have one padding word for alignment)
-  assert(!is_bottom_frame || (_cont.entrySP() - 1 <= to + sz && to + sz <= _cont.entrySP()), "");
-  assert(!is_bottom_frame || hf.compiled_frame_stack_argsize() != 0 || (to + sz && to + sz == _cont.entrySP()), "");
+  intptr_t* write_end = StackOrder::towards_older(to, sz);
+  //assert(!is_bottom_frame || (_cont.entrySP() - 1 <= write_end && write_end <= _cont.entrySP()), "");
+  assert(!is_bottom_frame || StackOrder::contains_closed(write_end, _cont.entrySP(), _cont.entrySP() - 1), "");
+  assert(!is_bottom_frame || hf.compiled_frame_stack_argsize() != 0 || (write_end && write_end == _cont.entrySP()), "");
 
   copy_from_chunk(from, to, sz); // copying good oops because we invoked barriers above
 
