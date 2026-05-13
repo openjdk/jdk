@@ -60,14 +60,14 @@ SampledObjectAlloc(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jobject object,
   if (klass == nullptr) {
     fatal(jni, "klass in SampledObjectAlloc callback is not expected to be null");
   }
+  if (!is_test_class(jvmti, jni, klass)) {
+    return; // interested in tested class only
+  }
   if (size == 0L) {
     fatal(jni, "size in SampledObjectAlloc callback is not expected to be 0");
   }
   if (object != nullptr) {
     fatal(jni, "object in SampledObjectAlloc callback is expected to be null for value object allocations");
-  }
-  if (!is_test_class(jvmti, jni, klass)) {
-    return; // interested in tested class only
   }
   events_counter++;
   LOG("SampledObjectAlloc: events_counter: %d\n", events_counter.load());
