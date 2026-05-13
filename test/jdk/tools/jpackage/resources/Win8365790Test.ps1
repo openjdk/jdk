@@ -64,6 +64,9 @@ Add-Type @type
 
 Set-PSDebug -Trace 2
 
+# Ensure system directories are on the PATH for the child process.
+$env:Path = "$env:SystemRoot\System32;$env:SystemRoot;$env:Path"
+
 # Launch the target executable.
 # `-NoNewWindow` parameter will attach the started process to the existing console.
 $childProc = Start-Process -PassThru -NoNewWindow $Executable

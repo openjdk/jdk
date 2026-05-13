@@ -22,7 +22,7 @@
  */
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.os.windows.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import jdk.test.lib.SecurityTools;
 
 import java.util.Arrays;
@@ -58,7 +58,7 @@ public class CngCipher {
         SecurityTools.keytool("-storetype Windows-MY -genkeypair -alias "
                 + PREFIX + "m -keyalg RSA -dname CN=" + PREFIX + "m");
         // This will generate a CNG key
-        ProcessBuilder pb = new ProcessBuilder(FileUtils.powerShellPath(), "-Command",
+        ProcessBuilder pb = new ProcessBuilder(FileUtils.PowerShellPath(), "-Command",
                 "New-SelfSignedCertificate",  "-DnsName", PREFIX + "c",
                 // -KeyAlgorithm not supported on Windows Server 2012
                 //"-KeyAlgorithm", "RSA",

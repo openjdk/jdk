@@ -208,7 +208,7 @@ public final class WinExecutableIconVerifier {
 
         Path extractedIcon = outputDir.resolve(extractedIconFilename + ".bmp");
 
-        Executor.of("powershell", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted",
+        Executor.of(WindowsHelper.PowerShellPath(), "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted",
                 "-File", EXTRACT_ICON_PS1.toString(),
                 "-InputExecutable", executable.toAbsolutePath().normalize().toString(),
                 "-OutputIcon", extractedIcon.toAbsolutePath().normalize().toString()

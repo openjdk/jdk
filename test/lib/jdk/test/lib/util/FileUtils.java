@@ -475,4 +475,11 @@ public final class FileUtils {
             {"/sbin/lsof", "-p"},
             {"/usr/local/bin/lsof", "-p"},
     };
+
+    public static String PowerShellPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        String suffix = "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+        String fullPath = systemRoot == null ? null : systemRoot + suffix;
+        return (fullPath != null && Files.exists(Path.of(fullPath))) ? fullPath : "powershell";
+    }
 }

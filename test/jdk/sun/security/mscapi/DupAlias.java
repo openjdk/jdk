@@ -21,7 +21,7 @@
  * questions.
  */
 import jdk.test.lib.Asserts;
-import jdk.test.lib.os.windows.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.x509.X500Name;
 
@@ -84,7 +84,7 @@ public class DupAlias {
     }
 
     static void ps(String f) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(FileUtils.powerShellPath(), "-Command", f);
+        ProcessBuilder pb = new ProcessBuilder(FileUtils.PowerShellPath(), "-Command", f);
         pb.inheritIO();
         if (pb.start().waitFor() != 0) {
             throw new RuntimeException("Failed");
