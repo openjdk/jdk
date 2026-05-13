@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,7 @@ public:
   CmpPNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
@@ -507,6 +508,9 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 
@@ -516,12 +520,20 @@ class SqrtDNode : public Node {
 public:
   SqrtDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
     init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
+    // Treat node only as expensive if a control input is set because it might
+    // be created from SqrtVDNode in VectorNode::push_through_replicate which
+    // does not have control input.
+    if (c != nullptr) {
+      C->add_expensive_node(this);
+    }
   }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------SqrtFNode--------------------------------------
@@ -541,6 +553,9 @@ public:
   const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------SqrtHFNode-------------------------------------
@@ -555,6 +570,9 @@ public:
   const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 

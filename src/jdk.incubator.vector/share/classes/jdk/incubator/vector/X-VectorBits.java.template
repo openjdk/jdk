@@ -25,22 +25,25 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+#if[longOrDouble]
 import java.lang.foreign.ValueLayout;
+#end[longOrDouble]
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 #warn This file is preprocessed before being compiled
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class $vectortype$ extends $abstractvectortype$ {
     static final $Type$Species VSPECIES =
         ($Type$Species) $Type$Vector.SPECIES_$BITS$;
@@ -53,6 +56,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     static final int VSIZE = VSPECIES.vectorBitSize();
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
+
+    static final Class<$Carriertype$> CTYPE = $carriertype$.class; // carrier type used by the JVM
 
     static final Class<$Boxtype$> ETYPE = $type$.class; // used by the JVM
 
@@ -91,6 +96,9 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     public final Class<$Boxtype$> elementType() { return $type$.class; }
+
+    @ForceInline
+    final Class<$Carriertype$> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -183,8 +191,8 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @ForceInline
     final @Override
-    Byte$bits$Vector asByteVectorRaw() {
-        return (Byte$bits$Vector) super.asByteVectorRawTemplate();  // specialize
+    ByteVector$bits$ asByteVectorRaw() {
+        return (ByteVector$bits$) super.asByteVectorRawTemplate();  // specialize
     }
 
     @ForceInline
@@ -382,7 +390,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @Override
     @ForceInline
     public final $shuffletype$ toShuffle() {
-        return ($shuffletype$) toShuffle(vspecies(), false);
+        return ($shuffletype$) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -850,10 +858,11 @@ final class $vectortype$ extends $abstractvectortype$ {
 #end[FP]
 
     // Mask
-
+    @ValueBased
     static final class $masktype$ extends AbstractMask<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<$Boxtype$> ETYPE = $type$.class; // used by the JVM
+
+        static final Class<$Carriertype$> CTYPE = $carriertype$.class; // used by the JVM
 
         $masktype$(boolean[] bits) {
             this(bits, 0);
@@ -897,7 +906,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 
         @Override
         $masktype$ uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -907,7 +916,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 
         @Override
         $masktype$ bOp(VectorMask<$Boxtype$> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = (($masktype$)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -1057,16 +1066,16 @@ final class $vectortype$ extends $abstractvectortype$ {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, $masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper((($masktype$)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper((($masktype$)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, $masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper((($masktype$)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper((($masktype$)m).getBits()));
         }
 
         @ForceInline
@@ -1074,7 +1083,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         static $masktype$ maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced($masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final $masktype$  TRUE_MASK = new $masktype$(true);
         private static final $masktype$ FALSE_MASK = new $masktype$(false);
@@ -1092,15 +1101,16 @@ final class $vectortype$ extends $abstractvectortype$ {
 
 #end[intAndMax]
 #if[intAndMax]
-        static final IntMaxMask LOWER_HALF_TRUE_MASK = new IntMaxMask(maskLowerHalf());
+        static final IntMaskMax LOWER_HALF_TRUE_MASK = new IntMaskMax(maskLowerHalf());
 #end[intAndMax]
     }
 
     // Shuffle
-
+    @ValueBased
     static final class $shuffletype$ extends AbstractShuffle<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<$Boxbitstype$> ETYPE = $bitstype$.class; // used by the JVM
+
+        static final Class<$Boxbitstype$> CTYPE = $bitstype$.class; // used by the JVM
 
         $shuffletype$($bitstype$[] indices) {
             super(indices);
@@ -1138,7 +1148,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @Override
         @ForceInline
         public $vectortype$ toVector() {
-            return ($vectortype$) toBitsVector().castShape(vspecies(), 0);
+            return ($vectortype$) toBitsVector().castShape(VSPECIES, 0);
         }
 #else[FP]
         @Override
@@ -1156,7 +1166,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 
         @Override
         $bitsvectortype$ toBitsVector0() {
-            return (($bitsvectortype$) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return (($bitsvectortype$) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -1292,7 +1302,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @ForceInline
         public final $masktype$ laneIsValid() {
             return ($masktype$) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -1301,10 +1311,10 @@ final class $vectortype$ extends $abstractvectortype$ {
             $shuffletype$ concreteShuffle = ($shuffletype$) shuffle;
 #if[FP]
             return ($shuffletype$) toBitsVector().rearrange(concreteShuffle.cast($Bitstype$Vector.SPECIES_$BITS$))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
 #else[FP]
             return ($shuffletype$) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
 #end[FP]
         }
 
@@ -1318,7 +1328,7 @@ final class $vectortype$ extends $abstractvectortype$ {
                 v = ($bitsvectortype$) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return ($shuffletype$) v.toShuffle(vspecies(), false);
+            return ($shuffletype$) v.toShuffle(VSPECIES, false);
         }
 
         private static $bitstype$[] prepare(int[] indices, int offset) {

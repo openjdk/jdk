@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,14 +70,6 @@ class MacroAssembler: public Assembler {
   // Move register if destination register and target register are different
   inline void mr_if_needed(Register rd, Register rs, bool allow_invalid = false);
   inline void fmr_if_needed(FloatRegister rd, FloatRegister rs);
-  // This is dedicated for emitting scheduled mach nodes. For better
-  // readability of the ad file I put it here.
-  // Endgroups are not needed if
-  //  - the scheduler is off
-  //  - the scheduler found that there is a natural group end, in that
-  //    case it reduced the size of the instruction used in the test
-  //    yielding 'needed'.
-  inline void endgroup_if_needed(bool needed);
 
   // Memory barriers.
   inline void membar(int bits);
@@ -810,7 +802,7 @@ class MacroAssembler: public Assembler {
                            MacroAssembler::PreservationLevel preservation_level);
   void load_method_holder(Register holder, Register method);
 
-  static int instr_size_for_decode_klass_not_null();
+  static int instr_size_for_load_klass();
   void decode_klass_not_null(Register dst, Register src = noreg);
   Register encode_klass_not_null(Register dst, Register src = noreg);
 

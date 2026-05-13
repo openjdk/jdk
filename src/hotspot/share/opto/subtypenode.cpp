@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,12 +178,12 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
       return true;
     }
     const Type* cached_t = Value(phase); // cache the type to validate consistency
-    switch (C->static_subtype_check(superk, subk)) {
+    switch (C->static_subtype_check(superk, subk, false)) {
       case Compile::SSC_easy_test: {
         return verify_helper(phase, load_klass(phase), cached_t);
       }
       case Compile::SSC_full_test: {
-        Node* p1 = phase->transform(new AddPNode(C->top(), superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
+        Node* p1 = phase->transform(AddPNode::make_off_heap(superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
         Node* chk_off = phase->transform(new LoadINode(nullptr, C->immutable_memory(), p1, phase->type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
         record_for_cleanup(chk_off, phase);
 
@@ -194,7 +195,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
 #ifdef _LP64
           chk_off_X = phase->transform(new ConvI2LNode(chk_off_X));
 #endif
-          Node* p2 = phase->transform(new AddPNode(C->top(), subklass, chk_off_X));
+          Node* p2 = phase->transform(AddPNode::make_off_heap(subklass, chk_off_X));
           Node* nkls = phase->transform(LoadKlassNode::make(*phase, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
 
           return verify_helper(phase, nkls, cached_t);
@@ -217,7 +218,7 @@ Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
   const Type* sub_t = phase->type(obj_or_subklass);
   Node* subklass = nullptr;
   if (sub_t->isa_oopptr()) {
-    Node* adr = phase->transform(new AddPNode(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
+    Node* adr = phase->transform(AddPNode::make_with_base(obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
     subklass  = phase->transform(LoadKlassNode::make(*phase, phase->C->immutable_memory(), adr, TypeInstPtr::KLASS));
     record_for_cleanup(subklass, phase);
   } else {

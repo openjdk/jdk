@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1227,12 +1227,11 @@ public class JEditorPane extends JTextComponent {
      */
     @SuppressWarnings("deprecation")
     public static EditorKit createEditorKitForContentType(String type) {
-        Hashtable<String, EditorKit> kitRegistry = getKitRegistry();
         EditorKit k = kitRegistry.get(type);
         if (k == null) {
             // try to dynamically load the support
-            String classname = getKitTypeRegistry().get(type);
-            ClassLoader loader = getKitLoaderRegistry().get(type);
+            String classname = kitTypeRegistry.get(type);
+            ClassLoader loader = kitLoaderRegistry.get(type);
             try {
                 Class<?> c;
                 if (loader != null) {
@@ -1287,13 +1286,13 @@ public class JEditorPane extends JTextComponent {
      * @param loader the <code>ClassLoader</code> to use to load the name
      */
     public static void registerEditorKitForContentType(String type, String classname, ClassLoader loader) {
-        getKitTypeRegistry().put(type, classname);
+        kitTypeRegistry.put(type, classname);
         if (loader != null) {
-            getKitLoaderRegistry().put(type, loader);
+            kitLoaderRegistry.put(type, loader);
         } else {
-            getKitLoaderRegistry().remove(type);
+            kitLoaderRegistry.remove(type);
         }
-        getKitRegistry().remove(type);
+        kitRegistry.remove(type);
     }
 
     /**
@@ -1306,63 +1305,27 @@ public class JEditorPane extends JTextComponent {
      * @since 1.3
      */
     public static String getEditorKitClassNameForContentType(String type) {
-        return getKitTypeRegistry().get(type);
+        return kitTypeRegistry.get(type);
     }
 
-    private static Hashtable<String, String> getKitTypeRegistry() {
-        loadDefaultKitsIfNecessary();
-        @SuppressWarnings("unchecked")
-        Hashtable<String, String> tmp =
-            (Hashtable)SwingUtilities.appContextGet(kitTypeRegistryKey);
-        return tmp;
-    }
+    private static final Hashtable<String, String> kitTypeRegistry = new Hashtable<>();
+    private static final Hashtable<String, ClassLoader> kitLoaderRegistry = new Hashtable<>();
 
-    private static Hashtable<String, ClassLoader> getKitLoaderRegistry() {
-        loadDefaultKitsIfNecessary();
-        @SuppressWarnings("unchecked")
-        Hashtable<String,  ClassLoader> tmp =
-            (Hashtable)SwingUtilities.appContextGet(kitLoaderRegistryKey);
-        return tmp;
-    }
+    private static final Hashtable<String, EditorKit> kitRegistry = new Hashtable<>(3);
 
-    private static Hashtable<String, EditorKit> getKitRegistry() {
-        @SuppressWarnings("unchecked")
-        Hashtable<String, EditorKit> ht =
-            (Hashtable)SwingUtilities.appContextGet(kitRegistryKey);
-        if (ht == null) {
-            ht = new Hashtable<>(3);
-            SwingUtilities.appContextPut(kitRegistryKey, ht);
-        }
-        return ht;
-    }
+    static final Map<String, String> defaultEditorKitMap = new HashMap<String, String>(0);
 
-    /**
-     * This is invoked every time the registries are accessed. Loading
-     * is done this way instead of via a static as the static is only
-     * called once when running in an AppContext.
-     */
-    private static void loadDefaultKitsIfNecessary() {
-        if (SwingUtilities.appContextGet(kitTypeRegistryKey) == null) {
-            synchronized(defaultEditorKitMap) {
-                if (defaultEditorKitMap.size() == 0) {
-                    defaultEditorKitMap.put("text/plain",
-                                            "javax.swing.JEditorPane$PlainEditorKit");
-                    defaultEditorKitMap.put("text/html",
-                                            "javax.swing.text.html.HTMLEditorKit");
-                    defaultEditorKitMap.put("text/rtf",
-                                            "javax.swing.text.rtf.RTFEditorKit");
-                    defaultEditorKitMap.put("application/rtf",
-                                            "javax.swing.text.rtf.RTFEditorKit");
-                }
-            }
-            Hashtable<Object, Object> ht = new Hashtable<>();
-            SwingUtilities.appContextPut(kitTypeRegistryKey, ht);
-            ht = new Hashtable<>();
-            SwingUtilities.appContextPut(kitLoaderRegistryKey, ht);
-            for (String key : defaultEditorKitMap.keySet()) {
-                registerEditorKitForContentType(key,defaultEditorKitMap.get(key));
-            }
-
+    static {
+        defaultEditorKitMap.put("text/plain",
+                                "javax.swing.JEditorPane$PlainEditorKit");
+        defaultEditorKitMap.put("text/html",
+                                "javax.swing.text.html.HTMLEditorKit");
+        defaultEditorKitMap.put("text/rtf",
+                                "javax.swing.text.rtf.RTFEditorKit");
+        defaultEditorKitMap.put("application/rtf",
+                                "javax.swing.text.rtf.RTFEditorKit");
+        for (String key : defaultEditorKitMap.keySet()) {
+            registerEditorKitForContentType(key,defaultEditorKitMap.get(key));
         }
     }
 
@@ -1587,16 +1550,6 @@ public class JEditorPane extends JTextComponent {
      */
     private Hashtable<String, EditorKit> typeHandlers;
 
-    /*
-     * Private AppContext keys for this class's static variables.
-     */
-    private static final Object kitRegistryKey =
-        new StringBuffer("JEditorPane.kitRegistry");
-    private static final Object kitTypeRegistryKey =
-        new StringBuffer("JEditorPane.kitTypeRegistry");
-    private static final Object kitLoaderRegistryKey =
-        new StringBuffer("JEditorPane.kitLoaderRegistry");
-
     /**
      * @see #getUIClassID
      * @see #readObject
@@ -1632,8 +1585,6 @@ public class JEditorPane extends JTextComponent {
      * @since 1.5
      */
     public static final String HONOR_DISPLAY_PROPERTIES = "JEditorPane.honorDisplayProperties";
-
-    static final Map<String, String> defaultEditorKitMap = new HashMap<String, String>(0);
 
     /**
      * Returns a string representation of this <code>JEditorPane</code>.

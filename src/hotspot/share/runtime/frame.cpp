@@ -1133,22 +1133,6 @@ void frame::oops_upcall_do(OopClosure* f, const RegisterMap* map) const {
   _cb->as_upcall_stub()->oops_do(f, *this);
 }
 
-bool frame::is_deoptimized_frame() const {
-  assert(_deopt_state != unknown, "not answerable");
-  if (_deopt_state == is_deoptimized) {
-    return true;
-  }
-
-  /* This method only checks if the frame is deoptimized
-   * as in return address being patched.
-   * It doesn't care if the OP that we return to is a
-   * deopt instruction */
-  /*if (_cb != nullptr && _cb->is_nmethod()) {
-    return NativeDeoptInstruction::is_deopt_at(_pc);
-  }*/
-  return false;
-}
-
 void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
                              DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                              const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
@@ -1286,7 +1270,7 @@ public:
   }
 
   bool is_good(oop* p) {
-    return *p == nullptr || (dbg_is_safe(*p, -1) && dbg_is_safe((*p)->klass(), -1) && oopDesc::is_oop_or_null(*p));
+    return *p == nullptr || (dbg_is_safe(*p, -1) && dbg_is_safe((*p)->klass_without_asserts(), -1) && oopDesc::is_oop_or_null(*p));
   }
   void describe(FrameValues& values, int frame_no) {
     for (int i = 0; i < _oops->length(); i++) {

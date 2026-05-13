@@ -42,7 +42,7 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
   ciInstanceKlass* ik = vbox_type->instance_klass();
   assert(is_vector(ik), "not a vector");
 
-  ciField* fd1 = ik->get_field_by_name(ciSymbols::ETYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
+  ciField* fd1 = ik->get_field_by_name(ciSymbols::CTYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
   assert(fd1 != nullptr, "element type info is missing");
 
   ciConstant val1 = fd1->constant_value();
@@ -301,9 +301,9 @@ static bool is_primitive_lane_type(VectorSupport::LaneType laneType) {
   return laneType >= VectorSupport::LT_FLOAT && laneType <= VectorSupport::LT_LONG;
 }
 
-static BasicType get_vector_primitive_lane_type(VectorSupport::LaneType lane_type) {
-  assert(is_primitive_lane_type(lane_type), "");
-  switch (lane_type) {
+static BasicType get_vector_primitive_lane_type(VectorSupport::LaneType lanetype) {
+  assert(is_primitive_lane_type(lanetype), "");
+  switch (lanetype) {
     case VectorSupport::LaneType::LT_FLOAT: return T_FLOAT;
     case VectorSupport::LaneType::LT_DOUBLE: return T_DOUBLE;
     case VectorSupport::LaneType::LT_LONG: return T_LONG;
@@ -1645,7 +1645,7 @@ bool LibraryCallKit::inline_vector_test() {
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   Node* opd2;
   if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
-                                                opd1->bottom_type()->isa_vectmask())) {
+                                                opd1->bottom_type()->isa_pvectmask())) {
     opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   } else {
     opd2 = opd1;
@@ -1656,7 +1656,7 @@ bool LibraryCallKit::inline_vector_test() {
 
   Node* cmp = gvn().transform(trace_vector(new VectorTestNode(opd1, opd2, booltest)));
   BoolTest::mask test = Matcher::vectortest_mask(booltest == BoolTest::overflow,
-                                                 opd1->bottom_type()->isa_vectmask(), num_elem);
+                                                 opd1->bottom_type()->isa_pvectmask(), num_elem);
   Node* bol = gvn().transform(new BoolNode(cmp, test));
   Node* res = gvn().transform(new CMoveINode(bol, gvn().intcon(0), gvn().intcon(1), TypeInt::BOOL));
 
@@ -2421,8 +2421,8 @@ bool LibraryCallKit::inline_vector_convert() {
   // where certain masks (depending on the species) are either propagated
   // through a vector or predicate register.
   if (is_mask &&
-      ((src_type->isa_vectmask() == nullptr && dst_type->isa_vectmask()) ||
-       (dst_type->isa_vectmask() == nullptr && src_type->isa_vectmask()))) {
+      ((src_type->isa_pvectmask() == nullptr && dst_type->isa_pvectmask()) ||
+       (dst_type->isa_pvectmask() == nullptr && src_type->isa_pvectmask()))) {
     return false;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,11 +100,16 @@ public final class Recording implements Closeable {
      * @since 11
      */
     public Recording(Map<String, String> settings) {
+        this(null, settings);
+    }
+
+    // package private
+    Recording(Boolean register, Map<String, String> settings) {
         Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
-            this.internal = r.newRecording(sanitized);
+            this.internal = r.newRecording(register, sanitized);
             this.internal.setRecording(this);
             if (internal.getRecording() != this) {
                 throw new InternalError("Internal recording not properly setup");
@@ -497,7 +502,7 @@ public final class Recording implements Closeable {
      */
     public void setName(String name) {
         Objects.requireNonNull(name, "name");
-        internal.setName(name);
+        internal.setName(name, true);
     }
 
     /**

@@ -95,7 +95,7 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
             return Executor.of(sysEnv.rpm().toString(),
                 "-q", "--queryformat", "%{name}\\n",
                 "-q", "--whatprovides", file.toString()
-            ).saveOutput(true).executeExpectSuccess().getOutput().stream();
+            ).saveOutput(true).quiet().executeExpectSuccess().stdout().stream();
         });
     }
 
@@ -112,14 +112,14 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
                         "APPLICATION_VERSION", specFileName),
                 new PackageProperty("Release", pkg.release().orElseThrow(),
                         "APPLICATION_RELEASE", specFileName),
-                new PackageProperty("Arch", pkg.arch(), null, specFileName));
+                new PackageProperty("Arch", pkg.arch(), specFileName));
 
         var actualValues = Executor.of(
                 sysEnv.rpm().toString(),
                 "-qp",
-                "--queryformat", properties.stream().map(e -> String.format("%%{%s}", e.name)).collect(joining("\\n")),
+                "--queryformat", properties.stream().map(e -> String.format("%%{%s}", e.name())).collect(joining("\\n")),
                 outputPackageFile().toString()
-        ).saveOutput(true).executeExpectSuccess().getOutput();
+        ).saveOutput(true).quiet().executeExpectSuccess().stdout();
 
         for (int i = 0; i != properties.size(); i++) {
             Optional.ofNullable(properties.get(i).verifyValue(actualValues.get(i))).ifPresent(errors::add);

@@ -24,11 +24,12 @@
 
 
 #include "compiler/oopMap.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
-#include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
@@ -394,7 +395,7 @@ public:
     {
       ResourceMark rm;
       bool allocated_after_mark_start = r->bottom() == _g1h->concurrent_mark()->top_at_mark_start(r);
-      bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
+      bool mark_in_progress = _g1h->collector_state()->is_in_marking();
       guarantee(obj->is_typeArray() || (allocated_after_mark_start || !mark_in_progress),
                 "Only eagerly reclaiming primitive arrays is supported, other humongous objects only if allocated after mark start, but the object "
                 PTR_FORMAT " (%s) is not (mark %d allocated after mark: %d).",
@@ -497,14 +498,10 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1ConcurrentMark* cm = g1h->concurrent_mark();
 
-      HeapWord* top_at_mark_start = cm->top_at_mark_start(r);
-      assert(top_at_mark_start == r->bottom(), "TAMS must not have been set for region %u", r->hrm_index());
-      assert(cm->live_bytes(r->hrm_index()) == 0, "Marking live bytes must not be set for region %u", r->hrm_index());
-
       // Concurrent mark does not mark through regions that we retain (they are root
       // regions wrt to marking), so we must clear their mark data (tams, bitmap, ...)
       // set eagerly or during evacuation failure.
-      bool clear_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
+      bool clear_mark_data = !g1h->collector_state()->is_in_concurrent_start_gc() ||
                              g1h->policy()->should_retain_evac_failed_region(r);
 
       if (clear_mark_data) {
@@ -805,7 +802,7 @@ public:
     for (uint worker = 0; worker < _active_workers; worker++) {
       _worker_stats[worker].~FreeCSetStats();
     }
-    FREE_C_HEAP_ARRAY(FreeCSetStats, _worker_stats);
+    FREE_C_HEAP_ARRAY(_worker_stats);
 
     _g1h->clear_collection_set();
 
@@ -818,9 +815,7 @@ public:
   void set_max_workers(uint max_workers) override {
     _active_workers = max_workers;
     _worker_stats = NEW_C_HEAP_ARRAY(FreeCSetStats, max_workers, mtGC);
-    for (uint worker = 0; worker < _active_workers; worker++) {
-      ::new (&_worker_stats[worker]) FreeCSetStats();
-    }
+    ::new (_worker_stats) FreeCSetStats[_active_workers]{};
     _claimer.set_n_workers(_active_workers);
   }
 
