@@ -444,7 +444,7 @@ protected:
   // slow path
   virtual stackChunkOop allocate_chunk_slow(size_t stack_size, int argsize_md) = 0;
 
-  int cont_size() { return pointer_delta_as_int(_cont_stack_bottom, _cont_stack_top); }
+  int cont_size() { return StackOrder::words_between(_cont_stack_bottom, _cont_stack_top); }
 
 private:
   // slow path
@@ -682,7 +682,7 @@ void FreezeBase::freeze_fast_existing_chunk() {
     // increase max_size by what we're freezing minus the overlap
     chunk->set_max_thawing_size(chunk->max_thawing_size() + cont_size() - _cont.argsize() - frame::metadata_words_at_top);
 
-    intptr_t* const bottom_sp = _cont_stack_bottom - _cont.argsize() - frame::metadata_words_at_top;
+    intptr_t* const bottom_sp = StackOrder::towards_younger(_cont_stack_bottom, _cont.argsize() + frame::metadata_words_at_top);
     assert(bottom_sp == _bottom_address, "");
     // Because the chunk isn't empty, we know there's a caller in the chunk, therefore the bottom-most frame
     // should have a return barrier (installed back when we thawed it).
@@ -960,11 +960,11 @@ inline freeze_result FreezeBase::recurse_freeze_java_frame(const frame& f, frame
   _freeze_size += fsize;
   NOT_PRODUCT(_frames++;)
 
-  assert(FKind::frame_bottom(f) <= _bottom_address, "");
+  assert(StackOrder::is_younger_or_equal(FKind::frame_bottom(f), _bottom_address), "");
 
   // We don't use FKind::frame_bottom(f) == _bottom_address because on x64 there's sometimes an extra word between
   // enterSpecial and an interpreted frame
-  if (FKind::frame_bottom(f) >= _bottom_address - 1) {
+  if (StackOrder::contains_closed(FKind::frame_bottom(f), StackOrder::towards_younger(_bottom_address, 1), _bottom_address)) {
     return finalize_freeze(f, caller, argsize); // recursion end
   } else {
     frame senderf = sender<FKind>(f);
@@ -1206,7 +1206,7 @@ static void verify_frame_top(const frame& f, intptr_t* top) {
   ResourceMark rm;
   InterpreterOopMap mask;
   f.interpreted_frame_oop_map(&mask);
-  assert(top <= ContinuationHelper::InterpretedFrame::frame_top(f, &mask),
+  assert(StackOrder::is_younger_or_equal(top, ContinuationHelper::InterpretedFrame::frame_top(f, &mask)),
          "frame_top: " INTPTR_FORMAT " Interpreted::frame_top: " INTPTR_FORMAT,
            p2i(top), p2i(ContinuationHelper::InterpretedFrame::frame_top(f, &mask)));
 }
@@ -1222,7 +1222,7 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
   // The frame's top never includes the stack arguments to the callee
   intptr_t* const stack_frame_top = ContinuationHelper::InterpretedFrame::frame_top(f, callee_argsize, callee_interpreted);
   intptr_t* const stack_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(f);
-  const int fsize = pointer_delta_as_int(stack_frame_bottom, stack_frame_top);
+  const int fsize = StackOrder::words_between(stack_frame_bottom, stack_frame_top);
 
   DEBUG_ONLY(verify_frame_top(f, stack_frame_top));
 
@@ -1250,12 +1250,12 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
 
   intptr_t* heap_frame_top = ContinuationHelper::InterpretedFrame::frame_top(hf, callee_argsize, callee_interpreted);
   intptr_t* heap_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(hf);
-  assert(heap_frame_bottom == heap_frame_top + fsize, "");
+  assert(heap_frame_bottom == StackOrder::towards_older(heap_frame_top, fsize), "");
 
   // Some architectures (like AArch64/PPC64/RISC-V) add padding between the locals and the fixed_frame to keep the fp 16-byte-aligned.
   // On those architectures we freeze the padding in order to keep the same fp-relative offsets in the fixed_frame.
   copy_to_chunk(stack_frame_top, heap_frame_top, fsize);
-  assert(!is_bottom_frame || !caller.is_interpreted_frame() || (heap_frame_top + fsize) == (caller.unextended_sp() + argsize), "");
+  assert(!is_bottom_frame || !caller.is_interpreted_frame() || StackOrder::towards_older(heap_frame_top, fsize) == StackOrder::towards_older(caller.unextended_sp(), argsize), "");
 
   relativize_interpreted_frame_metadata(f, hf);
 
@@ -1281,7 +1281,7 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
   intptr_t* const stack_frame_bottom = ContinuationHelper::CompiledFrame::frame_bottom(f);
   // including metadata between f and its stackargs
   const int argsize = ContinuationHelper::CompiledFrame::stack_argsize(f) + frame::metadata_words_at_top;
-  const int fsize = pointer_delta_as_int(stack_frame_bottom + argsize, stack_frame_top);
+  const int fsize = StackOrder::words_between(StackOrder::towards_older(stack_frame_bottom, argsize), stack_frame_top);
 
   log_develop_trace(continuations)("recurse_freeze_compiled_frame %s _size: %d fsize: %d argsize: %d",
                              ContinuationHelper::Frame::frame_method(f) != nullptr ?
@@ -1305,7 +1305,7 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
   intptr_t* heap_frame_top = ContinuationHelper::CompiledFrame::frame_top(hf, callee_argsize, callee_interpreted);
 
   copy_to_chunk(stack_frame_top, heap_frame_top, fsize);
-  assert(!is_bottom_frame || !caller.is_compiled_frame() || (heap_frame_top + fsize) == (caller.unextended_sp() + argsize), "");
+  assert(!is_bottom_frame || !caller.is_compiled_frame() || StackOrder::towards_older(heap_frame_top, fsize) == StackOrder::towards_older(caller.unextended_sp(), argsize), "");
 
   if (caller.is_interpreted_frame()) {
     // When thawing the frame we might need to add alignment (see Thaw::align)
@@ -2662,7 +2662,7 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
     // we copied the fp patched during freeze, which will now have to be fixed.
     assert(top.is_runtime_frame() || top.is_native_frame(), "");
     int fsize = top.cb()->frame_size();
-    patch_pd(top, sp + fsize);
+    patch_pd(top, StackOrder::towards_older(sp, fsize));
   }
 
   if (preempt_kind == Continuation::object_wait) {
@@ -2772,29 +2772,29 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
 
   frame f = new_stack_frame<ContinuationHelper::InterpretedFrame>(hf, caller, is_bottom_frame);
 
-  intptr_t* const stack_frame_top = f.sp() + frame::metadata_words_at_top;
+  intptr_t* const stack_frame_top = StackOrder::towards_older(f.sp(), frame::metadata_words_at_top);
   intptr_t* const stack_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(f);
-  intptr_t* const heap_frame_top = hf.unextended_sp() + frame::metadata_words_at_top;
+  intptr_t* const heap_frame_top = StackOrder::towards_older(hf.unextended_sp(), frame::metadata_words_at_top);
   intptr_t* const heap_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(hf);
 
   assert(hf.is_heap_frame(), "should be");
   assert(!f.is_heap_frame(), "should not be");
 
-  const int fsize = pointer_delta_as_int(heap_frame_bottom, heap_frame_top);
-  assert((stack_frame_bottom == stack_frame_top + fsize), "");
+  const int fsize = StackOrder::words_between(heap_frame_bottom, heap_frame_top);
+  assert((stack_frame_bottom == StackOrder::towards_older(stack_frame_top, fsize)), "");
 
   // Some architectures (like AArch64/PPC64/RISC-V) add padding between the locals and the fixed_frame to keep the fp 16-byte-aligned.
   // On those architectures we freeze the padding in order to keep the same fp-relative offsets in the fixed_frame.
   copy_from_chunk(heap_frame_top, stack_frame_top, fsize);
 
   // Make sure the relativized locals is already set.
-  assert(f.interpreter_frame_local_at(0) == stack_frame_bottom - 1, "invalid frame bottom");
+  assert(f.interpreter_frame_local_at(0) == StackOrder::towards_younger(stack_frame_bottom, 1), "invalid frame bottom");
 
   derelativize_interpreted_frame_metadata(hf, f);
   patch(f, caller, is_bottom_frame);
 
   assert(f.is_interpreted_frame_valid(_cont.thread()), "invalid thawed frame");
-  assert(stack_frame_bottom <= ContinuationHelper::Frame::frame_top(caller), "");
+  assert(StackOrder::is_younger_or_equal(stack_frame_bottom, ContinuationHelper::Frame::frame_top(caller)), "");
 
   CONT_JFR_ONLY(_jfr_info.record_interpreted_frame();)
 
@@ -2809,7 +2809,7 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance_no_args());
   } else if (_cont.tail()->has_bitmap() && locals > 0) {
     assert(hf.is_heap_frame(), "should be");
-    address start = (address)(heap_frame_bottom - locals);
+    address start = (address)(StackOrder::towards_younger(heap_frame_bottom, locals));
     address end = (address)heap_frame_bottom;
     clear_bitmap_bits(start, end);
   }
@@ -2849,10 +2849,10 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
 
   const int added_argsize = (is_bottom_frame || caller.is_interpreted_frame()) ? hf.compiled_frame_stack_argsize() : 0;
   int fsize = ContinuationHelper::CompiledFrame::size(hf) + added_argsize;
-  assert(fsize <= (int)(caller.unextended_sp() - f.unextended_sp()), "");
+  assert(fsize <= StackOrder::words_between(caller.unextended_sp(), f.unextended_sp()), "");
 
-  intptr_t* from = heap_frame_top - frame::metadata_words_at_bottom;
-  intptr_t* to   = stack_frame_top - frame::metadata_words_at_bottom;
+  intptr_t* from = StackOrder::towards_younger(heap_frame_top, frame::metadata_words_at_bottom);
+  intptr_t* to   = StackOrder::towards_younger(stack_frame_top, frame::metadata_words_at_bottom);
   // copy metadata, except the metadata at the top of the (unextended) entry frame
   int sz = fsize + frame::metadata_words_at_bottom + (is_bottom_frame && added_argsize == 0 ? 0 : frame::metadata_words_at_top);
 

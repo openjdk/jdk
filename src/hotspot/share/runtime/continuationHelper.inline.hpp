@@ -110,13 +110,13 @@ inline int ContinuationHelper::InterpretedFrame::expression_stack_size(const fra
 
 #ifdef ASSERT
 inline bool ContinuationHelper::InterpretedFrame::is_owning_locks(const frame& f) {
-  assert(f.interpreter_frame_monitor_end() <= f.interpreter_frame_monitor_begin(), "must be");
+  assert(StackOrder::is_younger_or_equal((intptr_t*)f.interpreter_frame_monitor_end(), (intptr_t*)f.interpreter_frame_monitor_begin()), "must be");
   if (f.interpreter_frame_monitor_end() == f.interpreter_frame_monitor_begin()) {
     return false;
   }
 
   for (BasicObjectLock* current = f.previous_monitor_in_interpreter_frame(f.interpreter_frame_monitor_begin());
-        current >= f.interpreter_frame_monitor_end();
+        StackOrder::is_older_or_equal((intptr_t*)current, (intptr_t*)f.interpreter_frame_monitor_end());
         current = f.previous_monitor_in_interpreter_frame(current)) {
 
       oop obj = current->obj();
