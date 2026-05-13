@@ -311,6 +311,17 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
         assertEval("$binding$1", "2");
     }
 
+    @Test
+    public void testEnhancedType() {
+        assertEval("record R<T>(T t1, T t2) {}");
+        assertEval("<Z extends Runnable & CharSequence> R<Z> get() { return new R<Z>(null, null); }");
+        assertEnhancedVarDeclEval("R(var t1, var t2) = get();", 2);
+        assertEval("Runnable r1 = t1;");
+        assertEval("Runnable r2 = t2;");
+        assertEval("CharSequence c1 = t1;");
+        assertEval("CharSequence c2 = t2;");
+    }
+
     private void assertEnhancedVarDeclEval(String input, int bindingCount) {
         EventChain[] eventChains = new EventChain[bindingCount];
         for (int i = 0; i < bindingCount; i++) {
