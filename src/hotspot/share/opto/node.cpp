@@ -136,7 +136,7 @@ void Node::verify_type_replacement(const Type* old_type, const Type* new_type, c
       }
     } else {
       ciInstanceKlass* new_citype = new_type->is_instptr()->instance_klass();
-      // Can replace a loaded type with an unloaded type, but not otherwise
+      // Can replace a loaded type with an unloaded type, but not vice versa
       if (new_citype->is_loaded() && !new_citype->is_subclass_of(old_citype)) {
         reason = "can only replace a node with another node if the new node is a subtype of the new node";
       }
