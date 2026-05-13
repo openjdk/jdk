@@ -145,14 +145,16 @@ void G1ConcurrentRefineSweepState::enter_state(State state, Ticks timestamp) {
   _state = state;
 }
 
-Tickspan G1ConcurrentRefineSweepState::get_duration(State start, State end) const {
-  assert(end >= start, "precondition");
-  return _state_start[static_cast<uint>(end)] - _state_start[static_cast<uint>(start)];
-}
-
 Tickspan G1ConcurrentRefineSweepState::time_since_start(Ticks completion_time) const {
   assert(_state >= State::SwapGlobalCT, "precondition");
   return completion_time - _state_start[static_cast<uint>(State::SwapGlobalCT)];
+}
+
+Tickspan G1ConcurrentRefineSweepState::time_until_state(State state) const {
+  assert(_state >= State::SwapGlobalCT, "precondition");
+  assert(state >= State::SwapGlobalCT, "precondition");
+  assert(state <= _state, "precondition");
+  return _state_start[static_cast<uint>(state)] - _state_start[static_cast<uint>(State::SwapGlobalCT)];
 }
 
 void G1ConcurrentRefineSweepState::reset_stats() {
@@ -333,7 +335,7 @@ void G1ConcurrentRefineSweepState::handle_ongoing_refinement_at_safepoint() {
   const Ticks completion_time = Ticks::now();
 
   const Tickspan total_duration = time_since_start(completion_time);
-  const Tickspan pre_sweep_duration = get_duration(State::SwapGlobalCT, MIN2(_state, State::SweepRT));
+  const Tickspan pre_sweep_duration = time_until_state(MIN2(_state, State::SweepRT));
 
   print_refinement_stats(total_duration, pre_sweep_duration, &_stats);
 
@@ -370,7 +372,7 @@ void G1ConcurrentRefineSweepState::complete_refinement(jlong total_yield_during_
   const Ticks completion_time = Ticks::now();
 
   const Tickspan total_duration = time_since_start(completion_time);
-  const Tickspan pre_sweep_duration = get_duration(State::SwapGlobalCT, State::SweepRT);
+  const Tickspan pre_sweep_duration = time_until_state(State::SweepRT);
 
   print_refinement_stats(total_duration, pre_sweep_duration, &_stats);
 

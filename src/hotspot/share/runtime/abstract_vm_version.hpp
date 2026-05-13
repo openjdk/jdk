@@ -58,7 +58,7 @@ enum class vmIntrinsicID;
     } \
   } else if (vmflag) { \
     if (!FLAG_IS_DEFAULT(vmflag)) { \
-      warning(#feature_id warning_msg); \
+      warning(warning_msg); \
     } \
     FLAG_SET_DEFAULT(vmflag, false); \
   }
