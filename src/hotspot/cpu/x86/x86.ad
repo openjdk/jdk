@@ -4950,7 +4950,7 @@ operand immN0() %{
 
 operand immP31()
 %{
-  predicate(n->as_Type()->type()->reloc() == relocInfo::none
+  predicate(n->as_Type()->type()->is_ptr()->reloc() == relocInfo::none
             && (n->get_ptr() >> 31) == 0);
   match(ConP);
 
@@ -16337,7 +16337,7 @@ instruct compP_rReg_mem(rFlagsRegU cr, rRegP op1, memory op2)
 // and raw pointers have no anti-dependencies.
 instruct compP_mem_rReg(rFlagsRegU cr, rRegP op1, memory op2)
 %{
-  predicate(n->in(2)->in(2)->bottom_type()->reloc() == relocInfo::none &&
+  predicate(n->in(2)->in(2)->bottom_type()->isa_rawptr() != nullptr &&
             n->in(2)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpP op1 (LoadP op2)));
 

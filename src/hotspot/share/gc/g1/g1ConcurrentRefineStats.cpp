@@ -25,18 +25,15 @@
 #include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "runtime/timer.hpp"
 
-void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
-  _sweep_duration.add_then_fetch(other->_sweep_duration.load_relaxed(), memory_order_relaxed);
-  _yield_during_sweep_duration.add_then_fetch(other->yield_during_sweep_duration(), memory_order_relaxed);
+void G1ConcurrentRefineStats::add_atomic(const G1LocalRefineStats* other) {
+  _cards_scanned.add_then_fetch(other->_cards_scanned, memory_order_relaxed);
+  _cards_clean.add_then_fetch(other->_cards_clean, memory_order_relaxed);
+  _cards_not_parsable.add_then_fetch(other->_cards_not_parsable, memory_order_relaxed);
+  _cards_already_refer_to_cset.add_then_fetch(other->_cards_already_refer_to_cset, memory_order_relaxed);
+  _cards_refer_to_cset.add_then_fetch(other->_cards_refer_to_cset, memory_order_relaxed);
+  _cards_no_cross_region.add_then_fetch(other->_cards_no_cross_region, memory_order_relaxed);
 
-  _cards_scanned.add_then_fetch(other->cards_scanned(), memory_order_relaxed);
-  _cards_clean.add_then_fetch(other->cards_clean(), memory_order_relaxed);
-  _cards_not_parsable.add_then_fetch(other->cards_not_parsable(), memory_order_relaxed);
-  _cards_already_refer_to_cset.add_then_fetch(other->cards_already_refer_to_cset(), memory_order_relaxed);
-  _cards_refer_to_cset.add_then_fetch(other->cards_refer_to_cset(), memory_order_relaxed);
-  _cards_no_cross_region.add_then_fetch(other->cards_no_cross_region(), memory_order_relaxed);
-
-  _refine_duration.add_then_fetch(other->refine_duration(), memory_order_relaxed);
+  _refine_duration.add_then_fetch(other->_refine_duration, memory_order_relaxed);
 }
 
 void G1ConcurrentRefineStats::reset() {
