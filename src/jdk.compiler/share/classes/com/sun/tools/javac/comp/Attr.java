@@ -5273,7 +5273,7 @@ public class Attr extends JCTree.Visitor {
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
         Type underlyingType = attribTree(tree.underlyingType, env, resultInfo);
-        if (underlyingType.getTag() == PACKAGE) {
+        if (underlyingType.getTag() == PACKAGE || underlyingType.getTag() == VOID) {
             result = tree.type = underlyingType;
         } else {
             Type annotatedType = underlyingType.preannotatedType();

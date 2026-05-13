@@ -62,6 +62,8 @@ compiler/vectorization/TestVectorAlgorithms.java#noSuperWord 8376803 aix-ppc64,l
 compiler/vectorization/TestVectorAlgorithms.java#vanilla 8376803 aix-ppc64,linux-s390x
 compiler/vectorization/TestVectorAlgorithms.java#noOptimizeFill 8376803 aix-ppc64,linux-s390x
 
+compiler/vectorapi/TestVectorLongToMaskNodeIdealization.java 8384428 generic-x64
+
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/DataPatchTest.java 8331704 linux-riscv64
 compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/MaxOopMapStackOffsetTest.java 8331704 linux-riscv64
