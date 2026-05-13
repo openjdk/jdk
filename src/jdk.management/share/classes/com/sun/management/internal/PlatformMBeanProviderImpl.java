@@ -64,7 +64,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
     }
 
     private List<PlatformComponent<?>> init() {
-        ArrayList<PlatformComponent<?>> initMBeanList = new ArrayList<>();
+        List<PlatformComponent<?>> initMBeanList = new ArrayList<>(7);
         /**
          * Garbage Collector in the Java virtual machine.
          */
@@ -323,8 +323,6 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
                 }
             });
         }
-
-        initMBeanList.trimToSize();
         return initMBeanList;
     }
 
