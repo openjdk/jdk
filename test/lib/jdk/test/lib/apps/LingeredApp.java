@@ -49,6 +49,7 @@ import jdk.test.lib.process.OutputBuffer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.StreamPumper;
 import jdk.test.lib.util.CoreUtils;
+import jdk.test.lib.thread.TestThreadFactory;
 
 /**
  * This is a framework to launch an app that could be synchronized with caller
@@ -331,6 +332,11 @@ public class LingeredApp {
             String classpath = System.getProperty("test.class.path");
             cmd.add((classpath == null) ? "." : classpath);
         }
+        // Forward test.thread.factory to child process for virtual thread testing
+        String testThreadFactory = System.getProperty("test.thread.factory");
+        if (testThreadFactory != null) {
+            cmd.add("-Dtest.thread.factory=" + testThreadFactory);
+        }
 
         return cmd;
     }
@@ -583,7 +589,6 @@ public class LingeredApp {
         };
         steadyStateThread.setName("SteadyStateThread");
         steadyStateThread.start();
-
         // Wait until the thread has started running.
         while (!steadyStateReached) {
             Thread.onSpinWait();
@@ -609,8 +614,22 @@ public class LingeredApp {
      */
     @SuppressWarnings("restricted")
     public static void main(String args[]) {
-        boolean forceCrash = false;
+        if (TestThreadFactory.isTestThreadFactorySet()) {
+            Thread t = TestThreadFactory.newThread(() -> mainLoop(args));
+            t.start();
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        } else {
+            mainLoop(args);
+        }
+    }
 
+    @SuppressWarnings("restricted")
+    private static void mainLoop(String[] args) {
+        boolean forceCrash = false;
         if (args.length == 0) {
             System.err.println("Lock file name is not specified");
             System.exit(7);
@@ -618,7 +637,6 @@ public class LingeredApp {
             System.err.println("Too many arguments specified: "  + args.length);
             System.exit(7);
         }
-
         if (args.length == 2) {
             if (args[1].equals("forceCrash")) {
                 forceCrash = true;
@@ -627,10 +645,8 @@ public class LingeredApp {
                 System.exit(7);
             }
         }
-
         String theLockFileName = args[0];
         Path path = Paths.get(theLockFileName);
-
         try {
             Object steadyStateObj = new SteadyStateLock();
             synchronized(steadyStateObj) {
@@ -663,7 +679,6 @@ public class LingeredApp {
             // Leave exit_code = 1 to Java launcher
             System.exit(3);
         }
-
         System.exit(0);
     }
 }
