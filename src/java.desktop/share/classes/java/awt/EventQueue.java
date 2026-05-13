@@ -857,10 +857,6 @@ public class EventQueue {
                 SunToolkit.currentEventQueue = newEventQueue;
             }
 
-            if (SunToolkit.currentEventQueue == topQueue) {
-                SunToolkit.currentEventQueue = newEventQueue;
-            }
-
             pushPopCond.signalAll();
         } finally {
             pushPopLock.unlock();
