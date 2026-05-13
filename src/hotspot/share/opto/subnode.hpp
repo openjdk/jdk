@@ -198,6 +198,7 @@ public:
   CmpPNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
@@ -519,7 +520,12 @@ class SqrtDNode : public Node {
 public:
   SqrtDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
     init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
+    // Treat node only as expensive if a control input is set because it might
+    // be created from SqrtVDNode in VectorNode::push_through_replicate which
+    // does not have control input.
+    if (c != nullptr) {
+      C->add_expensive_node(this);
+    }
   }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }

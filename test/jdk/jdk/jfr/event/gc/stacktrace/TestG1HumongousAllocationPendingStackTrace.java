@@ -27,7 +27,7 @@ package jdk.jfr.event.gc.stacktrace;
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseG1GC -Xlog:gc* -Xmx64M -XX:InitiatingHeapOccupancyPercent=100
+ * @run main/othervm -XX:+UseG1GC -Xlog:gc* -Xmx64M -XX:G1IHOP=100
  *                   -XX:FlightRecorderOptions:stackdepth=256
  *                   jdk.jfr.event.gc.stacktrace.TestG1HumongousAllocationPendingStackTrace
  */

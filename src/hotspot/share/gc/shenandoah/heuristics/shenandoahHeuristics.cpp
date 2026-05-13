@@ -73,7 +73,7 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
 }
 
 ShenandoahHeuristics::~ShenandoahHeuristics() {
-  FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
+  FREE_C_HEAP_ARRAY(_region_data);
 }
 
 void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
