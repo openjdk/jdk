@@ -1081,7 +1081,7 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
   if (_needs_load_ref_barrier) {
     assert(L_done == nullptr, "L_done is always null when _needs_load_ref_barrier is true");
     __ cmpb(gc_state_fast, 0);
-    __ jcc(Assembler::zero, L_through);
+    __ jcc(Assembler::equal, L_through);
   }
 
   // Need temp to work, allocate one now.
@@ -1154,7 +1154,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     char state_to_check = ShenandoahHeap::HAS_FORWARDED | (_needs_load_ref_weak_barrier ? ShenandoahHeap::WEAK_ROOTS : 0);
     Address gc_state_fast(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(state_to_check)));
     __ cmpb(gc_state_fast, 0);
-    __ jcc(Assembler::zero, *continuation());
+    __ jcc(Assembler::equal, *continuation());
   }
 
   // If weak references are being processed, weak/phantom loads need to go slow,
@@ -1162,7 +1162,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
   if (_needs_load_ref_weak_barrier) {
     Address gc_state_fast(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(ShenandoahHeap::WEAK_ROOTS)));
     __ cmpb(gc_state_fast, 0);
-    __ jccb(Assembler::notZero, L_slow);
+    __ jccb(Assembler::notEqual, L_slow);
   }
 
   // Need temp to work, allocate one now.
