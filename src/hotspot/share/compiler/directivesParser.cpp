@@ -291,13 +291,21 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
         int ival = v->int_value;
         (set->*test)((void *)&ival);
       } else if (option_key->flag_type == uintFlag) {
-        uint ival = v->uint_value;
+        if (v->int_value < 0) {
+          error(VALUE_ERROR, "Cannot use negative value for an %s flag", flag_type_names[option_key->flag_type]);
+          return false;
+        }
+        uint ival = (uint) v->int_value;
         (set->*test)((void *)&ival);
       } else if (option_key->flag_type == intxFlag) {
-        intx ival = v->int_value;
+        intx ival = (intx) v->int_value;
         (set->*test)((void *)&ival);
       } else if (option_key->flag_type == uintxFlag) {
-        uintx ival = v->uint_value;
+        if (v->int_value < 0) {
+          error(VALUE_ERROR, "Cannot use negative value for an %s flag", flag_type_names[option_key->flag_type]);
+          return false;
+        }
+        uintx ival = (uintx) v->int_value;
         (set->*test)((void *)&ival);
       } else if (option_key->flag_type == doubleFlag) {
         double dval = (double)v->int_value;

@@ -216,7 +216,7 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
                 dirFile.option(DirectiveWriter.Option.INTRINSIC, "\"" + (cmd.argument != null ? cmd.argument : "+_fabs") + "\"");
                 break;
             case MEMSTAT:
-                dirFile.option(DirectiveWriter.Option.MEMSTAT, "-2");
+                dirFile.option(DirectiveWriter.Option.MEMSTAT, "2");
                 break;
             case NONEXISTENT:
                 dirFile.write(JSONFile.Element.PAIR, command.name);

@@ -146,7 +146,9 @@ public class CheckCompileCommandOption {
 
     private static final String[][] TYPE_3_ARGUMENTS = {
         {
-            "-XX:CompileCommand=option,Test::test,bool,TestOptionBool,false,int,TestOptionInt,-1,uint,TestOptionUint,1,intx,TestOptionIntx,-1,uintx,TestOptionUintx,1,TestOptionBool2,double,TestOptionDouble,1.123",
+            "-XX:CompileCommand=option,Test::test,bool,TestOptionBool,false,int,TestOptionInt,-1"
+                    + ",uint,TestOptionUint,1,intx,TestOptionIntx,-1,uintx,TestOptionUintx,1"
+                    + ",TestOptionBool2,double,TestOptionDouble,1.123",
             "-version"
         }
     };

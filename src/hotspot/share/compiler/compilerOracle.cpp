@@ -525,7 +525,9 @@ bool CompilerOracle::option_matches_type(CompileCommandEnum option, T& value) {
 #ifdef _LP64
   return (get_type_for<T>() == option_type);
 #else
-  // On 32 bits both get_type_for<int> and get_type_for<intx> return Int. Same for uint/Uintx.
+  // On 32-bit platforms get_type_for<T>() maps:
+  // int and intx => Int,
+  // uint and uintx => Uint.
   enum OptionType actual_type = get_type_for<T>();
   return option_type == actual_type
      || (option_type == OptionType::Intx && actual_type == OptionType::Int)
@@ -917,7 +919,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
           errno = 0;
           unsigned long ulong_value = strtoul(line, &end, 10);
           bytes_read = end - line;
-          success = end != line && errno == 0 && ulong_value < UINT_MAX;
+          success = end != line && errno == 0 && ulong_value <= UINT_MAX;
           if (success) {
             value = (uint) ulong_value;
           }
