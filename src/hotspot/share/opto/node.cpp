@@ -132,10 +132,12 @@ void Node::verify_type_replacement(const Type* old_type, const Type* new_type, c
     ciInstanceKlass* old_citype = old_type->is_instptr()->instance_klass();
     if (new_type->isa_aryptr() != nullptr) {
       if (old_citype != ciEnv::current()->Object_klass()) {
-        reason = "can only replace an Object with an array";
+        reason = "can only replace a j.l.Object with an array";
       }
     } else {
-      if (!new_type->is_instptr()->instance_klass()->is_subclass_of(old_citype)) {
+      ciInstanceKlass* new_citype = new_type->is_instptr()->instance_klass();
+      // Can replace a loaded type with an unloaded type, but not otherwise
+      if (new_citype->is_loaded() && !new_citype->is_subclass_of(old_citype)) {
         reason = "can only replace a node with another node if the new node is a subtype of the new node";
       }
     }
