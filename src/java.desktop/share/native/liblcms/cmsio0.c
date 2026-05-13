@@ -243,10 +243,12 @@ cmsBool MemoryWrite(struct _cms_io_handler* iohandler, cmsUInt32Number size, con
 
     if (size == 0) return TRUE;     // Write zero bytes is ok, but does nothing
 
-    // Check for available space.
+    // Check for available space.  Truncate the output in case the space
+    // is not enough instead of erroring out.  See
+    // https://github.com/hughsie/colord/issues/147.
 
-    if (size > ResData->Size || ResData->Pointer > (ResData->Size - size))
-        goto WriteError;
+    if (size > ResData->Size - ResData->Pointer)
+        size = ResData->Size - ResData->Pointer;
 
     memmove(ResData ->Block + ResData ->Pointer, Ptr, size);
     ResData ->Pointer += size;
