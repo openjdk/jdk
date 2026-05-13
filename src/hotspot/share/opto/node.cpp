@@ -98,7 +98,7 @@ void Node::verify_construction() {
 // alias class of c's array length field (c + arrayOopDesc::length_offset_in_bytes()).
 //
 // Effectively, it means that after a transformation, the type of the new oop node must be at
-// least as strong as the type of the old node. 
+// least as strong as the type of the old node.
 //
 // This function verifies that a replacing a node of old_type with another node of new_type does
 // not violate the aforementioned property.
