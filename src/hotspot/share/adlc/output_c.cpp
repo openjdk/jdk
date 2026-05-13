@@ -1324,8 +1324,11 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
           fprintf(fp, "        root->add_req(inst%d->in(%d));        // unmatched ideal edge\n",
                                           inst_num, unmatched_edge);
         }
-        // Get bottom type from instruction whose result we are replacing
-        fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
+        // If new instruction captures bottom type
+        if( root_form->captures_bottom_type(globals) ) {
+          // Get bottom type from instruction whose result we are replacing
+          fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
+        }
         // Define result register and result operand
         fprintf(fp, "        ra_->set_oop (root, ra_->is_oop(inst%d));\n", inst_num);
         fprintf(fp, "        ra_->set_pair(root->_idx, ra_->get_reg_second(inst%d), ra_->get_reg_first(inst%d));\n", inst_num, inst_num);
@@ -1584,8 +1587,11 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n", cnt);
       }
 
-      // Fill in the bottom_type
-      fprintf(fp, "  n%d->_bottom_type = bottom_type();\n", cnt);
+      // Fill in the bottom_type where requested
+      if (node->captures_bottom_type(_globalNames) &&
+          new_inst->captures_bottom_type(_globalNames)) {
+        fprintf(fp, "  ((MachTypeNode*)n%d)->_bottom_type = bottom_type();\n", cnt);
+      }
 
       const char *resultOper = new_inst->reduce_result();
       fprintf(fp,"  n%d->set_opnd_array(0, state->MachOperGenerator(%s));\n",
@@ -3959,15 +3965,13 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     }
   }
 
-  // Fill in the bottom_type
-  if (inst->_matrule != nullptr && strcmp(inst->_matrule->_opType, "PrefetchAllocation") == 0) {
-    // Special case, with AllocatePrefetchStyle == 3, this should be Type::MEMORY, but the graph
-    // seems unsound, needs further investigation
-    fprintf(fp_cpp, "%s node->_bottom_type = Type::ABIO;\n", indent);
-  } else {
-    fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
+  // Fill in the bottom_type where requested
+  if (inst->captures_bottom_type(_globalNames)) {
+    if (strncmp("MachCall", inst->mach_base_class(_globalNames), strlen("MachCall")) != 0
+      && strncmp("MachIf", inst->mach_base_class(_globalNames), strlen("MachIf")) != 0) {
+      fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
+    }
   }
-
   if( inst->is_ideal_if() ) {
     fprintf(fp_cpp, "%s node->_prob = _leaf->as_If()->_prob;\n", indent);
     fprintf(fp_cpp, "%s node->_fcnt = _leaf->as_If()->_fcnt;\n", indent);
@@ -4022,8 +4026,10 @@ void InstructForm::define_cisc_version(ArchDesc& AD, FILE* fp_cpp) {
     fprintf(fp_cpp, "MachNode *%sNode::cisc_version(int offset) {\n", this->_ident);
     // Create the MachNode object
     fprintf(fp_cpp, "  %sNode *node = new %sNode();\n", name, name);
-    // Fill in the bottom_type
-    fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
+    // Fill in the bottom_type where requested
+    if ( this->captures_bottom_type(AD.globalNames()) ) {
+      fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
+    }
 
     uint cur_num_opnds = num_opnds();
     if (cur_num_opnds > 1 && cur_num_opnds != num_unique_opnds()) {
@@ -4069,9 +4075,10 @@ void InstructForm::define_short_branch_methods(ArchDesc& AD, FILE* fp_cpp) {
       fprintf(fp_cpp, "  node->_prob = _prob;\n");
       fprintf(fp_cpp, "  node->_fcnt = _fcnt;\n");
     }
-
-    // Fill in the bottom_type
-    fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
+    // Fill in the bottom_type where requested
+    if ( this->captures_bottom_type(AD.globalNames()) ) {
+      fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
+    }
 
     fprintf(fp_cpp, "\n");
     // Short branch version must use same node index for access
