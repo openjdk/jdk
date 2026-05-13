@@ -32,6 +32,7 @@
 #include "runtime/frame.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/stackOrder.hpp"
 #include "utilities/align.hpp"
 #include CPU_HEADER_INLINE(continuationEntry)
 
@@ -42,7 +43,7 @@ inline int ContinuationEntry::entry_frame_extension_words() const {
 inline intptr_t* ContinuationEntry::bottom_sender_sp() const {
   // the entry frame is extended if the bottom frame has stack arguments
   int entry_frame_extension = entry_frame_extension_words();
-  intptr_t* sp = entry_sp() - entry_frame_extension;
+  intptr_t* sp = StackOrder::towards_younger(entry_sp(), entry_frame_extension);
 #ifdef _LP64
   sp = align_down(sp, frame::frame_alignment);
 #endif
@@ -50,12 +51,12 @@ inline intptr_t* ContinuationEntry::bottom_sender_sp() const {
 }
 
 inline bool ContinuationEntry::should_flush_stack_processing(uintptr_t watermark) const {
-  intptr_t* boundary_sp = (intptr_t*)((uintptr_t)entry_sp() + ContinuationEntry::size());
-  return watermark <= (uintptr_t)boundary_sp;
+  intptr_t* boundary_sp = StackOrder::towards_older(entry_sp(), ContinuationEntry::size());
+  return StackOrder::is_younger_or_equal(reinterpret_cast<intptr_t*>(watermark), boundary_sp);
 }
 
 inline bool ContinuationEntry::is_valid_bottom_frame_sp(intptr_t* sp) const {
-  return sp != nullptr && sp <= entry_sp();
+  return sp != nullptr && StackOrder::is_younger_or_equal(sp, entry_sp());
 }
 
 inline bool is_stack_watermark_processing_started(const JavaThread* thread) {

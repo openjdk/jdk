@@ -95,7 +95,7 @@ inline address ContinuationHelper::InterpretedFrame::return_pc(const frame& f) {
 }
 
 inline int ContinuationHelper::InterpretedFrame::size(const frame&f) {
-  return pointer_delta_as_int(InterpretedFrame::frame_bottom(f), InterpretedFrame::frame_top(f));
+  return StackOrder::words_between(InterpretedFrame::frame_bottom(f), InterpretedFrame::frame_top(f));
 }
 
 inline int ContinuationHelper::InterpretedFrame::stack_argsize(const frame& f) {
@@ -133,7 +133,7 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f)
 }
 
 inline intptr_t* ContinuationHelper::NonInterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {
-  return f.unextended_sp() + (callee_interpreted ? 0 : callee_argsize);
+  return StackOrder::towards_older(f.unextended_sp(), callee_interpreted ? 0 : callee_argsize);
 }
 
 inline intptr_t* ContinuationHelper::NonInterpretedFrame::frame_top(const frame& f) { // inclusive; this will be copied with the frame
@@ -141,7 +141,7 @@ inline intptr_t* ContinuationHelper::NonInterpretedFrame::frame_top(const frame&
 }
 
 inline intptr_t* ContinuationHelper::NonInterpretedFrame::frame_bottom(const frame& f) { // exclusive; this will not be copied with the frame
-  return f.unextended_sp() + f.cb()->frame_size();
+  return StackOrder::towards_older(f.unextended_sp(), f.cb()->frame_size());
 }
 
 inline int ContinuationHelper::NonInterpretedFrame::size(const frame& f) {
