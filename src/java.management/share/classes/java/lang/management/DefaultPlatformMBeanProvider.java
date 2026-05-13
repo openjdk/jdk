@@ -42,7 +42,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
     private final List<PlatformComponent<?>> mxbeanList;
 
     DefaultPlatformMBeanProvider() {
-        mxbeanList = Collections.unmodifiableList(init());
+        mxbeanList = List.copyOf(init());
     }
 
     @Override
@@ -57,11 +57,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<ClassLoadingMXBean>() {
             private final Set<String> classLoadingInterfaceNames =
-                    Collections.singleton("java.lang.management.ClassLoadingMXBean");
+                    Set.of("java.lang.management.ClassLoadingMXBean");
 
             @Override
             public Set<Class<? extends ClassLoadingMXBean>> mbeanInterfaces() {
-                return Collections.singleton(ClassLoadingMXBean.class);
+                return Set.of(ClassLoadingMXBean.class);
             }
 
             @Override
@@ -76,7 +76,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
 
             @Override
             public Map<String, ClassLoadingMXBean> nameToMBeanMap() {
-                return Collections.singletonMap(
+                return Map.of(
                         ManagementFactory.CLASS_LOADING_MXBEAN_NAME,
                         ManagementFactoryHelper.getClassLoadingMXBean());
             }
@@ -87,11 +87,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<CompilationMXBean>() {
             private final Set<String> compilationMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.CompilationMXBean");
+                    = Set.of("java.lang.management.CompilationMXBean");
 
             @Override
             public Set<Class<? extends CompilationMXBean>> mbeanInterfaces() {
-                return Collections.singleton(CompilationMXBean.class);
+                return Set.of(CompilationMXBean.class);
             }
 
             @Override
@@ -110,7 +110,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
                 if (m == null) {
                     return Collections.emptyMap();
                 } else {
-                    return Collections.singletonMap(
+                    return Map.of(
                             ManagementFactory.COMPILATION_MXBEAN_NAME,
                             ManagementFactoryHelper.getCompilationMXBean());
                 }
@@ -122,11 +122,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryMXBean>() {
             private final Set<String> memoryMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.MemoryMXBean");
+                    = Set.of("java.lang.management.MemoryMXBean");
 
             @Override
             public Set<Class<? extends MemoryMXBean>> mbeanInterfaces() {
-                return Collections.singleton(MemoryMXBean.class);
+                return Set.of(MemoryMXBean.class);
             }
 
             @Override
@@ -141,7 +141,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
 
             @Override
             public Map<String, MemoryMXBean> nameToMBeanMap() {
-                return Collections.singletonMap(
+                return Map.of(
                         ManagementFactory.MEMORY_MXBEAN_NAME,
                         ManagementFactoryHelper.getMemoryMXBean());
             }
@@ -152,7 +152,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryManagerMXBean>() {
             private final Set<String> garbageCollectorMXBeanInterfaceNames = Set.of(
-                    "java.lang.management.GarbageCollectorMXBean",
+                    "java.lang.management.MemoryManagerMXBean",
                     "java.lang.management.GarbageCollectorMXBean");
             @Override
             public Set<Class<? extends MemoryManagerMXBean>> mbeanInterfaces() {
@@ -199,11 +199,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryManagerMXBean>() {
             private final Set<String> memoryManagerMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.MemoryManagerMXBean");
+                    = Set.of("java.lang.management.MemoryManagerMXBean");
 
             @Override
             public Set<Class<? extends MemoryManagerMXBean>> mbeanInterfaces() {
-                return Collections.singleton(MemoryManagerMXBean.class);
+                return Set.of(MemoryManagerMXBean.class);
             }
 
             @Override
@@ -247,11 +247,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<MemoryPoolMXBean>() {
             private final Set<String> memoryPoolMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.MemoryPoolMXBean");
+                    = Set.of("java.lang.management.MemoryPoolMXBean");
 
             @Override
             public Set<Class<? extends MemoryPoolMXBean>> mbeanInterfaces() {
-                return Collections.singleton(MemoryPoolMXBean.class);
+                return Set.of(MemoryPoolMXBean.class);
             }
 
             @Override
@@ -292,11 +292,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<RuntimeMXBean>() {
             private final Set<String> runtimeMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.RuntimeMXBean");
+                    = Set.of("java.lang.management.RuntimeMXBean");
 
             @Override
             public Set<Class<? extends RuntimeMXBean>> mbeanInterfaces() {
-                return Collections.singleton(RuntimeMXBean.class);
+                return Set.of(RuntimeMXBean.class);
             }
 
             @Override
@@ -311,7 +311,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
 
             @Override
             public Map<String, RuntimeMXBean> nameToMBeanMap() {
-                return Collections.singletonMap(
+                return Map.of(
                         ManagementFactory.RUNTIME_MXBEAN_NAME,
                         ManagementFactoryHelper.getRuntimeMXBean());
             }
@@ -322,11 +322,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<ThreadMXBean>() {
             private final Set<String> threadMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.ThreadMXBean");
+                    = Set.of("java.lang.management.ThreadMXBean");
 
             @Override
             public Set<Class<? extends ThreadMXBean>> mbeanInterfaces() {
-                return Collections.singleton(ThreadMXBean.class);
+                return Set.of(ThreadMXBean.class);
             }
 
             @Override
@@ -341,7 +341,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
 
             @Override
             public Map<String, ThreadMXBean> nameToMBeanMap() {
-                return Collections.singletonMap(
+                return Map.of(
                         ManagementFactory.THREAD_MXBEAN_NAME,
                         ManagementFactoryHelper.getThreadMXBean());
             }
@@ -353,11 +353,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
              */
             initMBeanList.add(new PlatformComponent<PlatformLoggingMXBean>() {
                 private final Set<String> platformLoggingMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.PlatformLoggingMXBean");
+                    = Set.of("java.lang.management.PlatformLoggingMXBean");
 
                 @Override
                 public Set<Class<? extends PlatformLoggingMXBean>> mbeanInterfaces() {
-                    return Collections.singleton(PlatformLoggingMXBean.class);
+                    return Set.of(PlatformLoggingMXBean.class);
                 }
 
                 @Override
@@ -372,7 +372,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
 
                 @Override
                 public Map<String, PlatformLoggingMXBean> nameToMBeanMap() {
-                    return Collections.singletonMap(
+                    return Map.of(
                         "java.util.logging:type=Logging",
                         ManagementFactoryHelper.getPlatformLoggingMXBean());
                 }
@@ -384,11 +384,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<BufferPoolMXBean>() {
             private final Set<String> bufferPoolMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.BufferPoolMXBean");
+                    = Set.of("java.lang.management.BufferPoolMXBean");
 
             @Override
             public Set<Class<? extends BufferPoolMXBean>> mbeanInterfaces() {
-                return Collections.singleton(BufferPoolMXBean.class);
+                return Set.of(BufferPoolMXBean.class);
             }
 
             @Override
@@ -426,11 +426,11 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
          */
         initMBeanList.add(new PlatformComponent<OperatingSystemMXBean>() {
             private final Set<String> operatingSystemMXBeanInterfaceNames
-                    = Collections.singleton("java.lang.management.OperatingSystemMXBean");
+                    = Set.of("java.lang.management.OperatingSystemMXBean");
 
             @Override
             public Set<Class<? extends OperatingSystemMXBean>> mbeanInterfaces() {
-                return Collections.singleton(OperatingSystemMXBean.class);
+                return Set.of(OperatingSystemMXBean.class);
             }
 
             @Override
@@ -445,7 +445,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
 
             @Override
             public Map<String, OperatingSystemMXBean> nameToMBeanMap() {
-                return Collections.singletonMap(
+                return Map.of(
                         ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME,
                         ManagementFactoryHelper.getOperatingSystemMXBean());
             }
