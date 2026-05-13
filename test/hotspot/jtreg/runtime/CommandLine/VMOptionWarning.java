@@ -76,7 +76,7 @@
  * @run driver VMOptionWarning CompactObjectHeaders
  */
 
-/* @test VMOptionWarningCompactObjectHeaders
+/* @test VMOptionWarningUseObjectMonitorTable
  * @bug 8360700
  * @summary Warn if -XX:-UseObjectMonitorTable is used without -XX:-UseCompactObjectHeaders
  * @requires vm.flagless

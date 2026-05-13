@@ -78,8 +78,7 @@ public class CDSPluginTest {
 
         WhiteBox wb = WhiteBox.getWhiteBox();
         boolean NOCOMPACT_HEADERS = Platform.is64bit() &&
-                                  wb.getBooleanVMFlag("UseCompactObjectHeaders") &&
-                                  !wb.isDefaultVMFlag("UseCompactObjectHeaders");
+                                  !wb.getBooleanVMFlag("UseCompactObjectHeaders");
         String suffix = NOCOMPACT_HEADERS ? "_nocoh.jsa" : ".jsa";
 
         if (Platform.isAArch64() || Platform.isX64()) {
