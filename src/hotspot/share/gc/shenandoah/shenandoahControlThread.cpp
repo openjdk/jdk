@@ -68,7 +68,7 @@ void ShenandoahControlThread::run_service() {
 
     // Figure out if we have pending requests.
     const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause);
-    const bool is_gc_requested = _gc_requested.is_set();
+    const bool is_gc_requested = _gc_requested.try_unset();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause;
 
     // Choose which GC mode to run in. The block below should select a single mode.
@@ -96,7 +96,6 @@ void ShenandoahControlThread::run_service() {
         mode = stw_full;
       }
     } else if (is_gc_requested) {
-      _gc_requested.unset();
       cause = requested_gc_cause;
       heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
