@@ -25,7 +25,6 @@
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
-#include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
@@ -97,6 +96,7 @@ void ShenandoahControlThread::run_service() {
         mode = stw_full;
       }
     } else if (is_gc_requested) {
+      _gc_requested.unset();
       cause = requested_gc_cause;
       heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
@@ -177,13 +177,6 @@ void ShenandoahControlThread::run_service() {
       // If this cycle completed without being cancelled, notify waiters about it
       if (!heap->cancelled_gc()) {
         notify_alloc_failure_waiters();
-      }
-
-      // After the gc requested flag is unset, notify the waiting WhiteBox thread that
-      // the requested cycle was completed. This prevents contention for the flag
-      // between the WhiteBox and Control thread if WhiteBox requests a GC.
-      if (cause == GCCause::_wb_breakpoint) {
-        ShenandoahBreakpoint::at_after_gc();
       }
 
       // Report current free set state at the end of cycle, whether
@@ -414,7 +407,6 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::notify_gc_waiters() {
-  _gc_requested.unset();
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
 }

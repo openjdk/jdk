@@ -65,6 +65,12 @@ public:
       ShenandoahBreakpoint::at_before_gc();
     }
   }
+
+  ~ShenandoahBreakpointGCScope() {
+    if (_cause == GCCause::_wb_breakpoint) {
+      ShenandoahBreakpoint::at_after_gc();
+    }
+  }
 };
 
 class ShenandoahBreakpointMarkScope : public StackObj {
