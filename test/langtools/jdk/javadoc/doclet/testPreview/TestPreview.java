@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,15 +160,15 @@ public class TestPreview extends JavadocTester {
         checkOutput("java.base/preview/package-summary.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html" class="current-selection">preview</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview" class="current-selection">preview</a></li>
                     </ol>""");
         checkOutput("java.base/preview/Core.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html">preview</a></li>
-                    <li><a href="Core.html" class="current-selection">Core</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview">preview</a></li>
+                    <li><a href="Core.html" title="Class Core" class="current-selection">Core</a></li>
                     </ol>""",
                 """
                     <div class="block">Preview feature. Links: <a href="CoreRecord.html" title="cla\

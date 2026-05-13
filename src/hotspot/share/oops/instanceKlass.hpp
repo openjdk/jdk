@@ -1164,6 +1164,7 @@ public:
   // Printing
   void print_on(outputStream* st) const override;
   void print_value_on(outputStream* st) const override;
+  void print_class_flags(outputStream* st) const;
 
   void oop_print_value_on(oop obj, outputStream* st) override;
 
