@@ -3619,7 +3619,8 @@ static char* reserve_with_numa_placeholder(char* addr, size_t bytes) {
     const size_t bytes_to_rq = MIN2(remaining_len, chunk_size - ((uintptr_t)cur % chunk_size));
     os::PlaceholderRegion remaining(cur, remaining_len);
     os::PlaceholderRegionPair split = os::split_memory(remaining, bytes_to_rq);
-    DWORD node = node_count > 0 ? numa_node_list_holder.get_node_list_entry(count % node_count) : 0;  // Assign 0 for testing on UMA systems
+    // Assign 0 for testing on systems without NUMA interleaving
+    DWORD node = node_count > 0 ? numa_node_list_holder.get_node_list_entry(count % node_count) : 0;
     convert_placeholder_to_reserved(split.left, (int)node);
     cur = split.right.base();
     remaining_len = split.right.size();

@@ -1976,7 +1976,6 @@ os::PlaceholderRegion os::reserve_placeholder_memory(size_t bytes, MemTag mem_ta
 
 os::PlaceholderRegionPair os::split_memory(const PlaceholderRegion& orig, size_t offset) {
   assert(!orig.is_empty(), "Region cannot be empty");
-  assert(offset > 0, "Offset must be a value greater than 0");
   assert(offset <= orig.size(), "Offset must be less than or equal to region size");
   assert(is_aligned(orig.base(), os::vm_page_size()), "Region base should be page-aligned");
   assert(is_aligned(offset, os::vm_page_size()), "Offset should be page-aligned");

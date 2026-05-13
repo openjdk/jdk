@@ -1295,6 +1295,58 @@ TEST_VM(os, splittable_split_two_way) {
   os::release_memory(addr2, total - split_offset);
 }
 
+TEST_VM(os, split_consumes_full_range) {
+  SKIP_IF_SPLITTABLE_NOT_SUPPORTED;
+
+  const size_t region_size = os::vm_allocation_granularity();
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(region_size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::PlaceholderRegionPair split = os::split_memory(region, region_size);
+
+  // Leading piece
+  ASSERT_EQ(split.left.base(), original_base);
+  ASSERT_EQ(split.left.size(), region_size);
+
+  // Trailing piece
+  ASSERT_TRUE(split.right.is_empty());
+
+  // Commit and touch to confirm it's usable.
+  char* addr = os::convert_to_reserved(split.left);
+  ASSERT_TRUE(os::commit_memory(addr, region_size, false));
+  memset(addr, 0x11, region_size);
+  EXPECT_EQ((unsigned char)addr[0], 0x11);
+
+  os::release_memory(addr, region_size);
+}
+
+TEST_VM(os, split_consumes_nothing) {
+  SKIP_IF_SPLITTABLE_NOT_SUPPORTED;
+
+  const size_t region_size = os::vm_allocation_granularity();
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(region_size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::PlaceholderRegionPair split = os::split_memory(region, 0);
+
+  // Leading piece
+  ASSERT_TRUE(split.left.is_empty());
+
+  // Trailing piece
+  ASSERT_EQ(split.right.base(), original_base);
+  ASSERT_EQ(split.right.size(), region_size);
+
+  // Commit and touch to confirm it's usable.
+  char* addr = os::convert_to_reserved(split.right);
+  ASSERT_TRUE(os::commit_memory(addr, region_size, false));
+  memset(addr, 0x11, region_size);
+  EXPECT_EQ((unsigned char)addr[0], 0x11);
+
+  os::release_memory(addr, region_size);
+}
+
 // --- Aligned allocation tests ---
 
 TEST_VM(os, reserve_memory_aligned_basic) {
