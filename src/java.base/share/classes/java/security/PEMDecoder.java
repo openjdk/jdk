@@ -292,12 +292,15 @@ public final class PEMDecoder {
      */
     public BinaryEncodable decode(String str) {
         Objects.requireNonNull(str);
+        byte[] encoding = null;
         try {
-            return decode(new ByteArrayInputStream(
-                str.getBytes(StandardCharsets.UTF_8)));
+            encoding = str.getBytes(StandardCharsets.UTF_8);
+            return decode(new ByteArrayInputStream(encoding));
         } catch (IOException e) {
             // With all data contained in the String, there are no IO ops.
             throw new IllegalArgumentException(e);
+        } finally {
+            KeyUtil.clear(encoding);
         }
     }
 
@@ -363,12 +366,15 @@ public final class PEMDecoder {
      */
     public <S extends BinaryEncodable> S decode(String str, Class<S> tClass) {
         Objects.requireNonNull(str);
+        byte[] encoding = null;
         try {
-            return decode(new ByteArrayInputStream(
-                str.getBytes(StandardCharsets.UTF_8)), tClass);
+            encoding = str.getBytes(StandardCharsets.UTF_8);
+            return decode(new ByteArrayInputStream(encoding), tClass);
         } catch (IOException e) {
             // With all data contained in the String, there are no IO ops.
             throw new IllegalArgumentException(e);
+        } finally {
+            KeyUtil.clear(encoding);
         }
     }
 
