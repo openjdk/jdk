@@ -842,9 +842,20 @@ static ShenandoahBarrierSetC2State* barrier_set_state() {
 }
 
 int ShenandoahBarrierSetC2::estimate_stub_size() const {
+  Compile* const C = Compile::current();
+  BufferBlob* const blob = C->output()->scratch_buffer_blob();
   GrowableArray<ShenandoahBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
   assert(stubs->is_empty(), "Lifecycle: no stubs were yet created");
-  return 0;
+  int size = 0;
+
+  for (int i = 0; i < stubs->length(); i++) {
+    CodeBuffer cb(blob->content_begin(), checked_cast<CodeBuffer::csize_t>((address)C->output()->scratch_locs_memory() - blob->content_begin()));
+    MacroAssembler masm(&cb);
+    stubs->at(i)->emit_code(masm);
+    size += cb.insts_size();
+  }
+
+  return size;
 }
 
 void ShenandoahBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
