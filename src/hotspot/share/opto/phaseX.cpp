@@ -2661,6 +2661,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
     });
   }
+  // If changed AddI inputs, check Phi for CmpLTMask pattern
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Phi();
+    });
+  }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.
   if (use_op == Op_AddI || use_op == Op_SubI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
