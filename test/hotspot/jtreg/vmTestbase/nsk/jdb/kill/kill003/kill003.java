@@ -97,7 +97,7 @@ public class kill003 extends JdbTest {
         // Continue the debuggee - the async exception will be delivered to the debuggee.
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        // jdb got notified of the NPE for the kill command. continue and jdb will get
+        // jdb got notified of the NPE for the kill command. Continue and jdb will get
         // notified again when it is rethrown from the synchronized block's implicit
         // exception handler, which is where we want to execute the locals command from.
         reply = jdb.receiveReplyFor(JdbCommand.cont);
