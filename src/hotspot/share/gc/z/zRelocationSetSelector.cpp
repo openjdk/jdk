@@ -123,7 +123,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   size_t from_live_bytes = 0;
   size_t from_forwarding_entries = 0;
 
-  // Keep track of totals per page
+  // Keep track of totals per age
   size_t live_bytes_per_age[ZPageAgeCount] = {};
   size_t npages_per_age[ZPageAgeCount] = {};
 
@@ -136,7 +136,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     from_live_bytes += page_live_bytes;
     from_forwarding_entries += ZForwarding::nentries(page);
 
-    // Update totals per page
+    // Update totals per age
     live_bytes_per_age[untype(page->age())] += page_live_bytes;
     npages_per_age[untype(page->age())] += 1;
 
@@ -167,7 +167,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
                          int(page_live_bytes * 100 / page->size()));
   }
 
-  // Keep track of rejected totals per page
+  // Keep track of rejected totals per age
   size_t rejected_live_bytes_per_age[ZPageAgeCount] = {};
   size_t rejected_npages_per_age[ZPageAgeCount] = {};
 
@@ -178,7 +178,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
       _not_selected_pages.append(page);
     }
 
-    // Update rejected totals per page
+    // Update rejected totals per age
     rejected_live_bytes_per_age[untype(page->age())] += page->live_bytes();
     rejected_npages_per_age[untype(page->age())] += 1;
   }
