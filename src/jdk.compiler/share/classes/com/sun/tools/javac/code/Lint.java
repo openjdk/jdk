@@ -25,14 +25,14 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.SequencedMap;
+import java.util.SequencedSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -111,8 +111,6 @@ public class Lint {
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
     private boolean withinDeprecated;
-
-    private static final Map<String, LintCategory> map = new LinkedHashMap<>(40);
 
     @SuppressWarnings("this-escape")
     protected Lint(Context context) {
@@ -196,7 +194,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        CLASSFILE("classfile", false, false),
+        CLASSFILE("classfile", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn about "dangling" documentation comments,
@@ -213,7 +211,7 @@ public class Lint {
          * Warn about items which are documented with an {@code @deprecated} JavaDoc
          * comment, but which do not have {@code @Deprecated} annotation.
          */
-        DEP_ANN("dep-ann", true, true),
+        DEP_ANN("dep-ann", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about division by constant integer 0.
@@ -243,7 +241,7 @@ public class Lint {
         /**
          * Warn about uses of @ValueBased classes where an identity class is expected.
          */
-        IDENTITY("identity", true, true, "synchronization"),
+        IDENTITY(List.of("identity", "synchronization"), Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about use of incubating modules.
@@ -251,7 +249,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        INCUBATING("incubating", false, true),
+        INCUBATING("incubating", Property.NO_ANNOTATION_SUPPRESSION, Property.ENABLED_BY_DEFAULT),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -266,12 +264,12 @@ public class Lint {
         /**
          * Warn about module system related issues.
          */
-        MODULE("module", true, true),
+        MODULE("module", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about issues regarding module opens.
          */
-        OPENS("opens", true, true),
+        OPENS("opens", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about issues relating to use of command line options.
@@ -279,7 +277,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        OPTIONS("options", false, false),
+        OPTIONS("options", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn when any output file is written to more than once.
@@ -287,7 +285,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        OUTPUT_FILE_CLASH("output-file-clash", false, false),
+        OUTPUT_FILE_CLASH("output-file-clash", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn about issues regarding method overloads.
@@ -305,7 +303,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        PATH("path", false, false),
+        PATH("path", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn about issues regarding annotation processing.
@@ -313,7 +311,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        PROCESSING("processing", false, false),
+        PROCESSING("processing", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn about unchecked operations on raw types.
@@ -323,7 +321,7 @@ public class Lint {
         /**
          * Warn about use of deprecated-for-removal items.
          */
-        REMOVAL("removal", true, true),
+        REMOVAL("removal", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about use of automatic modules in the requires clauses.
@@ -333,7 +331,7 @@ public class Lint {
         /**
          * Warn about automatic modules in requires transitive.
          */
-        REQUIRES_TRANSITIVE_AUTOMATIC("requires-transitive-automatic", true, true),
+        REQUIRES_TRANSITIVE_AUTOMATIC("requires-transitive-automatic", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about Serializable classes that do not provide a serial version ID.
@@ -348,7 +346,7 @@ public class Lint {
         /**
          * Warn about unnecessary uses of the strictfp modifier
          */
-        STRICTFP("strictfp", true, true),
+        STRICTFP("strictfp", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about issues relating to use of text blocks
@@ -378,27 +376,37 @@ public class Lint {
         /**
          * Warn about use of preview features.
          */
-        PREVIEW("preview", true, true),
+        PREVIEW("preview", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about use of restricted methods.
          */
         RESTRICTED("restricted");
 
-        LintCategory(String option) {
-            this(option, true, false);
+        enum Property { NO_ANNOTATION_SUPPRESSION, ENABLED_BY_DEFAULT }
+
+        LintCategory(String option, Property... properties) {
+            this(List.of(option), properties);
         }
 
-        LintCategory(String option, boolean annotationSuppression, boolean enabledByDefault, String... aliases) {
-            this.option = option;
-            this.annotationSuppression = annotationSuppression;
-            this.enabledByDefault = enabledByDefault;
-            ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
-            optionList.add(option);
-            Collections.addAll(optionList, aliases);
-            this.optionList = Collections.unmodifiableList(optionList);
-            this.optionList.forEach(ident -> map.put(ident, this));
+        LintCategory(List<String> options, Property... properties) {
+            this.option = options.getFirst();
+            this.optionList = options;
+            Set<Property> propertySet = properties.length == 0 ? Set.of() : EnumSet.copyOf(Arrays.asList(properties));
+            this.annotationSuppression = !propertySet.contains(Property.NO_ANNOTATION_SUPPRESSION);
+            this.enabledByDefault = propertySet.contains(Property.ENABLED_BY_DEFAULT);
         }
+
+        private static final SequencedMap<String, LintCategory> lookup = createLookup();
+
+        private static SequencedMap<String, LintCategory> createLookup() {
+            var map = new LinkedHashMap<String, LintCategory>();
+            for (var category : values()) {
+                category.optionList.forEach(id -> map.put(id, category));
+            }
+            return Collections.unmodifiableSequencedMap(map);
+        }
+
 
         /**
          * Get the {@link LintCategory} having the given command line option.
@@ -407,14 +415,14 @@ public class Lint {
          * @return corresponding {@link LintCategory}, or empty if none exists
          */
         public static Optional<LintCategory> get(String option) {
-            return Optional.ofNullable(map.get(option));
+            return Optional.ofNullable(lookup.get(option));
         }
 
         /**
          * Get all lint category option strings and aliases.
          */
-        public static Set<String> options() {
-            return Collections.unmodifiableSet(map.keySet());
+        public static SequencedSet<String> options() {
+            return lookup.sequencedKeySet();
         }
 
         public static EnumSet<LintCategory> newEmptySet() {
