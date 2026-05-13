@@ -38,7 +38,7 @@ instruct load_P_shenandoah(iRegPNoSp dst, memory mem, rFlagsReg cr)
   ins_is_late_expanded_null_check_candidate(true);
   format %{ "ld  $dst, $mem\t# ptr, shenandoah late-barrier, #@loadP_shenandoah" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp), false);
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp), t0, t1, false);
   %}
   ins_cost(3 * LOAD_COST);
   ins_pipe(iload_reg_mem);
@@ -53,7 +53,7 @@ instruct load_N_shenandoah(iRegNNoSp dst, memory mem, rFlagsReg cr)
   ins_is_late_expanded_null_check_candidate(true);
   format %{ "lwu  $dst, $mem\t# compressed ptr, shenandoah late-barrier, #@loadN_shenandoah" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp), true);
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp), t0, t1, true);
   %}
   ins_cost(3 * LOAD_COST);
   ins_pipe(iload_reg_mem);
@@ -69,7 +69,9 @@ instruct storeP_shenandoah(iRegP src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
       Address(as_Register($mem$$base), $mem$$disp), /* dst_narrow = */ false,
       as_Register($src$$reg),                       /* src_narrow = */ false,
-      as_Register($tmp$$reg));
+      as_Register($tmp$$reg),
+      t0,
+      t1);
   %}
   ins_cost(3 * STORE_COST);
   ins_pipe(istore_reg_mem);
@@ -85,7 +87,9 @@ instruct storeN_shenandoah(iRegN src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
         Address(as_Register($mem$$base), $mem$$disp), /* dst_narrow = */ true,
         as_Register($src$$reg),                       /* src_narrow = */ true,
-        as_Register($tmp$$reg));
+        as_Register($tmp$$reg),
+        t0,
+        t1);
   %}
   ins_cost(3 * STORE_COST);
   ins_pipe(istore_reg_mem);
@@ -104,7 +108,9 @@ instruct encodePAndStoreN_shenandoah(iRegP src, memory mem, iRegPNoSp tmp, rFlag
     ShenandoahBarrierSet::assembler()->store_c2(this, masm,
         Address(as_Register($mem$$base), $mem$$disp), /* dst_narrow = */ true,
         as_Register($src$$reg),                       /* src_narrow = */ false,
-        as_Register($tmp$$reg));
+        as_Register($tmp$$reg),
+        t0,
+        t1);
   %}
   ins_cost(4 * STORE_COST);
   ins_pipe(istore_reg_mem);
@@ -122,6 +128,8 @@ instruct compareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp ol
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ false,
                                                           /* is_narrow */ false,
                                                           /* acquire */ true);
@@ -142,6 +150,8 @@ instruct compareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldv
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ false,
                                                           /* is_narrow */ false,
                                                           /* acquire */ false);
@@ -162,6 +172,8 @@ instruct compareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp ol
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ false,
                                                           /* is_narrow */ true,
                                                           /* acquire */ true);
@@ -182,6 +194,8 @@ instruct compareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp oldv
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ false,
                                                           /* is_narrow */ true,
                                                           /* acquire */ false);
@@ -202,6 +216,8 @@ instruct compareAndExchange_N_A_shenandoah(iRegNNoSp res, indirect mem, iRegN ol
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ true,
                                                           /* is_narrow */ true,
                                                           /* acquire */ true);
@@ -222,6 +238,8 @@ instruct compareAndExchange_N_shenandoah(iRegNNoSp res, indirect mem, iRegN oldv
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ true,
                                                           /* is_narrow */ true,
                                                           /* acquire */ false);
@@ -242,6 +260,8 @@ instruct compareAndExchange_P_A_shenandoah(iRegPNoSp res, indirect mem, iRegP ol
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ true,
                                                           /* is_narrow */ false,
                                                           /* acquire */ true);
@@ -262,6 +282,8 @@ instruct compareAndExchange_P_shenandoah(iRegPNoSp res, indirect mem, iRegP oldv
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ true,
                                                           /* is_narrow */ false,
                                                           /* acquire */ false);
@@ -282,6 +304,8 @@ instruct weakCompareAndSwap_N_A_shenandoah(iRegINoSp res, indirect mem, iRegNNoS
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ false,
                                                           /* is_narrow */ true,
                                                           /* acquire */ true);
@@ -302,6 +326,8 @@ instruct weakCompareAndSwap_N_shenandoah(iRegINoSp res, indirect mem, iRegNNoSp 
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ false,
                                                           /* is_narrow */ true,
                                                           /* acquire */ false);
@@ -322,6 +348,8 @@ instruct weakCompareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoS
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ false,
                                                           /* is_narrow */ false,
                                                           /* acquire */ true);
@@ -342,6 +370,8 @@ instruct weakCompareAndSwap_P_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp 
                                                           as_Register($oldval$$reg),
                                                           as_Register($newval$$reg),
                                                           as_Register($tmp$$reg),
+                                                          t0,
+                                                          t1,
                                                           /* exchange */ false,
                                                           /* is_narrow */ false,
                                                           /* acquire */ false);
@@ -362,6 +392,8 @@ instruct getAndSet_P_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, iR
                                                       as_Register($newval$$reg),
                                                       as_Register($mem$$base),
                                                       as_Register($tmp$$reg),
+                                                      t0,
+                                                      t1,
                                                       /* acquire */ false);
   %}
   ins_cost(10 * DEFAULT_COST);
@@ -380,6 +412,8 @@ instruct getAndSet_P_A_shenandoah(indirect mem, iRegP newval, iRegPNoSp preval, 
                                                       as_Register($newval$$reg),
                                                       as_Register($mem$$base),
                                                       as_Register($tmp$$reg),
+                                                      t0,
+                                                      t1,
                                                       /* acquire */ true);
   %}
   ins_cost(10 * DEFAULT_COST);
@@ -398,6 +432,8 @@ instruct getAndSet_N_A_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, 
                                                       as_Register($newval$$reg),
                                                       as_Register($mem$$base),
                                                       as_Register($tmp$$reg),
+                                                      t0,
+                                                      t1,
                                                       /* acquire */ true);
   %}
   ins_cost(10 * DEFAULT_COST);
@@ -416,6 +452,8 @@ instruct getAndSet_N_shenandoah(indirect mem, iRegN newval, iRegNNoSp preval, iR
                                                       as_Register($newval$$reg),
                                                       as_Register($mem$$base),
                                                       as_Register($tmp$$reg),
+                                                      t0,
+                                                      t1,
                                                       /* acquire */ false);
   %}
   ins_cost(10 * DEFAULT_COST);

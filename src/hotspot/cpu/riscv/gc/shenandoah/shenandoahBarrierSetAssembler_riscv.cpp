@@ -778,7 +778,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 #undef __
 #define __ masm->
 
-void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src, bool is_narrow) {
+void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src, Register tmp1, Register tmp2, bool is_narrow) {
   // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
   if (is_narrow) {
     __ lwu(dst, src);
@@ -786,53 +786,53 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
     __ ld(dst, src);
   }
 
-  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, t0, t1, is_narrow);
+  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, tmp1, tmp2, is_narrow);
 }
 
 void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow,
-    Register src, bool src_narrow, Register tmp) {
+    Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3) {
 
-  ShenandoahBarrierStubC2::store_pre(masm, node, tmp, dst, t0, t1, dst_narrow);
+  ShenandoahBarrierStubC2::store_pre(masm, node, tmp1, dst, tmp2, tmp3, dst_narrow);
 
   // Do the actual store
   if (dst_narrow) {
     if (!src_narrow) {
       // Need to encode into tmp, because we cannot clobber src.
-      assert(tmp != noreg, "need temp register");
+      assert(tmp1 != noreg, "need temp register");
       if ((node->barrier_data() & ShenandoahBitNotNull) == 0) {
-        __ encode_heap_oop(tmp, src);
+        __ encode_heap_oop(tmp1, src);
       } else {
-        __ encode_heap_oop_not_null(tmp, src);
+        __ encode_heap_oop_not_null(tmp1, src);
       }
-      src = tmp;
+      src = tmp1;
     }
     __ sw(src, dst);
   } else {
     __ sd(src, dst);
   }
 
-  ShenandoahBarrierStubC2::store_post(masm, node, dst, t0, t1);
+  ShenandoahBarrierStubC2::store_post(masm, node, dst, tmp2, tmp3);
 }
 
 void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr,
-    Register oldval, Register newval, Register tmp, bool exchange, bool narrow, bool is_acquire) {
+    Register oldval, Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool is_acquire) {
   const Assembler::Aqrl acquire = is_acquire ? Assembler::aq : Assembler::relaxed;
   const Assembler::Aqrl release = Assembler::rl;
   const Assembler::operand_size size = narrow ? Assembler::uint32 : Assembler::int64;
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp, Address(addr), t0, t1, narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, Address(addr), tmp2, tmp3, narrow);
 
   // CAS!
   __ cmpxchg(addr, oldval, newval, size, acquire, release, /* result */ res, !exchange /* result_as_bool */);
 
-  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), t0, t1);
+  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
 }
 
 void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval,
-    Register newval, Register addr, Register tmp, bool is_acquire) {
+    Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3, bool is_acquire) {
   const bool is_narrow = node->bottom_type()->isa_narrowoop();
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp, Address(addr, 0), t0, t1, is_narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, Address(addr, 0), tmp2, tmp3, is_narrow);
 
   if (is_narrow) {
     if (is_acquire) {
@@ -848,7 +848,7 @@ void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAs
     }
   }
 
-  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), t0, t1);
+  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
 }
 
 #undef __
@@ -1047,9 +1047,9 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
       // Set up arguments in reverse, and then flip them
       __ la(c_rarg0, _addr);
       // flip them
-      __ mv(t0, c_rarg0);
+      __ mv(_tmp1, c_rarg0);
       __ mv(c_rarg0, c_rarg1);
-      __ mv(c_rarg1, t0);
+      __ mv(c_rarg1, _tmp1);
     } else {
       assert_different_registers(c_rarg1, _obj);
       __ la(c_rarg1, _addr);

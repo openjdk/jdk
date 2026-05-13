@@ -93,13 +93,13 @@ public:
 
 #ifdef COMPILER2
   // Entry points from Matcher
-  void load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address addr, bool is_narrow);
+  void load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address addr, Register tmp1, Register tmp2, bool is_narrow);
   void store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow, Register src,
-      bool src_narrow, Register tmp);
+      bool src_narrow, Register tmp1, Register tmp2, Register tmp3);
   void compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr, Register oldval,
-      Register newval, Register tmp, bool exchange, bool narrow, bool is_acquire);
+      Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool is_acquire);
   void get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval, Register newval,
-      Register addr, Register tmp, bool is_acquire);
+      Register addr, Register tmp1, Register tmp2, Register tmp3, bool is_acquire);
 #endif
 };
 
