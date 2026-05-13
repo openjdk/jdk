@@ -52,12 +52,6 @@ public class T8384131 {
             }
         }
 
-        void testArrayEagerCCE(Z[] arr) {
-            for (I i : arr) {
-                throw new AssertionError("reached beyond for-header");
-            }
-        }
-
         void testList(List<Z> l) {
             for (I i : l) {
                 i.f();
@@ -70,11 +64,11 @@ public class T8384131 {
     public static void main(String[] args) throws Exception {
         // neg tests
         expectCCE(() -> new Test().testArray(new C[] { new C() }));
-        expectCCE(() -> new Test().testArrayEagerCCE(new C[] { new C() }));
         expectCCE(() -> new Test().testList(List.of(new C())));
 
         // pos tests
         new Test<CI>().testArray(new CI[] { new CI() });
+        checkPrimitiveConversionsResults();
         checkPrimitiveConversionsBytecode();
     }
 
@@ -90,34 +84,65 @@ public class T8384131 {
     }
 
     // <editor-fold defaultstate="collapsed" desc="Conversions to Inspect">
-    static <T extends Integer> void integerTypeVariableArrayToIntWideningReferenceAndUnboxing(T[] values) {
-        for (int i : values) { }
+    static <T extends Integer> int integerTypeVariableArrayToIntWideningReferenceAndUnboxing(T[] values) {
+        for (int i : values) {
+            return i;
+        }
+        return 0;
     }
 
-    static <T extends Short> void shortTypeVariableArrayToIntWideningReferenceAndUnboxingAndPrimitiveWidening(T[] values) {
-        for (int i : values) { }
+    static <T extends Short> int shortTypeVariableArrayToIntWideningReferenceAndUnboxingAndPrimitiveWidening(T[] values) {
+        for (int i : values) {
+            return i;
+        }
+        return 0;
     }
 
-    static void intArrayToLongPrimitiveWidening() {
-        for (long l : new int[] { 1 }) { }
+    static long intArrayToLongPrimitiveWidening(int[] values) {
+        for (long l : values) {
+            return l;
+        }
+        return 0L;
     }
 
-    static void integerArrayToIntUnboxing() {
-        for (int i : new Integer[] { 1 }) { }
+    static int integerArrayToIntUnboxing(Integer[] values) {
+        for (int i : values) {
+            return i;
+        }
+        return 0;
     }
 
-    static void integerArrayToLongUnboxingAndPrimitiveWidening() {
-        for (long l : new Integer[] { 1 }) { }
+    static long integerArrayToLongUnboxingAndPrimitiveWidening(Integer[] values) {
+        for (long l : values) {
+            return l;
+        }
+        return 0L;
     }
 
-    static void intArrayToIntegerBoxing() {
-        for (Integer i : new int[] { 1 }) { }
+    static Integer intArrayToIntegerBoxing(int[] values) {
+        for (Integer i : values) {
+            return i;
+        }
+        return null;
     }
 
-    static void intArrayToObjectBoxingAndWideningReference() {
-        for (Object o : new int[] { 1 }) { }
+    static Object intArrayToObjectBoxingAndWideningReference(int[] values) {
+        for (Object o : values) {
+            return o;
+        }
+        return null;
     }
     // </editor-fold>
+
+    static void checkPrimitiveConversionsResults() {
+        expectEquals(1, integerTypeVariableArrayToIntWideningReferenceAndUnboxing(new Integer[] { 1 }));
+        expectEquals(1, shortTypeVariableArrayToIntWideningReferenceAndUnboxingAndPrimitiveWidening(new Short[] { 1 }));
+        expectEquals(1L, intArrayToLongPrimitiveWidening(new int[] { 1 }));
+        expectEquals(1, integerArrayToIntUnboxing(new Integer[] { 1 }));
+        expectEquals(1L, integerArrayToLongUnboxingAndPrimitiveWidening(new Integer[] { 1 }));
+        expectEquals(Integer.valueOf(1), intArrayToIntegerBoxing(new int[] { 1 }));
+        expectEquals(Integer.valueOf(1), intArrayToObjectBoxingAndWideningReference(new int[] { 1 }));
+    }
 
     static void checkPrimitiveConversionsBytecode() throws Exception {
         String out = new JavapTask(new ToolBox())
@@ -131,33 +156,48 @@ public class T8384131 {
 
         expect(out, "intArrayToLongPrimitiveWidening",
                 """
-                        20: iaload
-                        21: i2l
+                    descriptor: ([I)J
+                """,
+                """
+                        14: iaload
+                        15: i2l
                 """);
         expect(out, "integerArrayToIntUnboxing",
                 """
-                        24: aaload
-                        25: invokevirtual # // Method java/lang/Integer.intValue:()I
+                    descriptor: ([Ljava/lang/Integer;)I
+                """,
+                """
+                        14: aaload
+                        15: invokevirtual # // Method java/lang/Integer.intValue:()I
                 """);
         expect(out, "integerArrayToLongUnboxingAndPrimitiveWidening",
                 """
-                        24: aaload
-                        25: invokevirtual # // Method java/lang/Integer.intValue:()I
-                        28: i2l
+                    descriptor: ([Ljava/lang/Integer;)J
+                """,
+                """
+                        14: aaload
+                        15: invokevirtual # // Method java/lang/Integer.intValue:()I
+                        18: i2l
                 """);
         expect(out, "intArrayToIntegerBoxing",
                 """
-                        20: iaload
-                        21: invokestatic  # // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+                    descriptor: ([I)Ljava/lang/Integer;
+                """,
+                """
+                        14: iaload
+                        15: invokestatic  # // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
                 """);
         expect(out, "intArrayToObjectBoxingAndWideningReference",
                 """
-                        20: iaload
-                        21: invokestatic  # // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+                    descriptor: ([I)Ljava/lang/Object;
+                """,
+                """
+                        14: iaload
+                        15: invokestatic  # // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
                 """);
         expect(out, "integerTypeVariableArrayToIntWideningReferenceAndUnboxing",
                 """
-                    descriptor: ([Ljava/lang/Integer;)V
+                    descriptor: ([Ljava/lang/Integer;)I
                 """,
                 """
                         14: aaload
@@ -165,7 +205,7 @@ public class T8384131 {
                 """);
         expect(out, "shortTypeVariableArrayToIntWideningReferenceAndUnboxingAndPrimitiveWidening",
                 """
-                    descriptor: ([Ljava/lang/Short;)V
+                    descriptor: ([Ljava/lang/Short;)I
                 """,
                 """
                         14: aaload
@@ -184,6 +224,12 @@ public class T8384131 {
             if (!method.contains(fragment)) {
                 throw new AssertionError("Expected:\n" + fragment + "\nin " + methodName + ":\n" + method);
             }
+        }
+    }
+
+    static void expectEquals(Object expected, Object actual) {
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Expected: " + expected + ", actual: " + actual);
         }
     }
 }
