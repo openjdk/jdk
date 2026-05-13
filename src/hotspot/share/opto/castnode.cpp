@@ -115,9 +115,11 @@ Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
-  // Push cast through InlineTypeNode
+  // Push cast through InlineTypeNode but be careful because in dead parts of the graph,
+  // an InlineTypeNode can be casted to some completely unrelated type.
   InlineTypeNode* vt = in(1)->isa_InlineType();
-  if (vt != nullptr && vt->is_allocated(phase)) {
+  if (vt != nullptr && vt->is_allocated(phase) && _type->isa_instptr() != nullptr &&
+      vt->type()->inline_klass()->is_subtype_of(_type->is_instptr()->instance_klass())) {
     Node* cast = clone();
     cast->set_req(1, vt->get_oop());
     vt = vt->clone()->as_InlineType();
