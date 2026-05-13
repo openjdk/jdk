@@ -1080,7 +1080,7 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
   // If another barrier is enabled as well, do a runtime check for a specific barrier.
   if (_needs_load_ref_barrier) {
     assert(L_done == nullptr, "L_done is always null when _needs_load_ref_barrier is true");
-    __ testb(gc_state_fast, ShenandoahHeap::MARKING);
+    __ cmpb(gc_state_fast, 0);
     __ jcc(Assembler::zero, L_through);
   }
 
