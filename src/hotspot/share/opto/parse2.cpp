@@ -348,7 +348,7 @@ public:
       ciInlineKlass* vk = element_ptr->inline_klass();
       Node* flat_array = _parse.cast_to_flat_array(array, vk);
 
-      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
+      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
       ld = vt;
 
       if (_region != nullptr && 0) {
@@ -384,7 +384,7 @@ public:
 
   void create_merge_point() {
     _region = new RegionNode(1);
-    _res_phi = new PhiNode(_region, TypeOopPtr::BOTTOM);
+    _res_phi = new PhiNode(_region, _elemtype->make_oopptr());
     _io_phi = new PhiNode(_region, Type::ABIO);
     _mem = _parse.reset_memory();
     _io = _parse.i_o();
@@ -546,12 +546,12 @@ public:
 
 //---------------------------------array_load----------------------------------
 void Parse::array_load(BasicType bt) {
-  // ArrayLoad array_load(bt, *this);
-  // if (array_load.emit()) {
-  //   return;
-  // }
-  //
-  // ShouldNotReachHere();
+  ArrayLoad array_load(bt, *this);
+  if (array_load.emit()) {
+    return;
+  }
+
+  ShouldNotReachHere();
   const Type* elemtype = Type::TOP;
   Node* prep_array = prepare_array_addressing(bt, 0, elemtype);
   if (stopped())  return;     // guaranteed null or range check
