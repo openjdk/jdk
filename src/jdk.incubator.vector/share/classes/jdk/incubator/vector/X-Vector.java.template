@@ -2792,6 +2792,9 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
         $abstractvectortype$ that = ($abstractvectortype$) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
 #if[FP]
         $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)origin);

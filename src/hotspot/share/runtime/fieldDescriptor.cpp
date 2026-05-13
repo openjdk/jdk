@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,21 @@ void fieldDescriptor::reinitialize(InstanceKlass* ik, const FieldInfo& fieldinfo
   guarantee(_fieldinfo.name_index() != 0 && _fieldinfo.signature_index() != 0, "bad constant pool index for fieldDescriptor");
 }
 
+void fieldDescriptor::print_access_flags(outputStream* st) const {
+  AccessFlags flags = access_flags();
+  if (flags.is_public   ()) st->print("public ");
+  if (flags.is_private  ()) st->print("private ");
+  if (flags.is_protected()) st->print("protected ");
+  if (flags.is_static   ()) st->print("static ");
+  if (flags.is_final    ()) st->print("final ");
+  if (flags.is_volatile ()) st->print("volatile ");
+  if (flags.is_transient()) st->print("transient ");
+  if (flags.is_enum     ()) st->print("enum ");
+  if (flags.is_synthetic()) st->print("synthetic ");
+}
+
 void fieldDescriptor::print_on(outputStream* st) const {
-  access_flags().print_on(st);
+  print_access_flags(st);
   if (field_flags().is_injected()) st->print("injected ");
   name()->print_value_on(st);
   st->print(" ");

@@ -72,6 +72,8 @@ private:
   ShenandoahMmuTask* _mmu_periodic_task;
   TruncatedSeq _mmu_average;
 
+  // Updates and logs the GC and mutator CPU utilization since the last cycle, where "msg"
+  // identifies the GC cycle type.
   void update_utilization(size_t gcid, const char* msg);
   static void fetch_cpu_times(double &gc_time, double &mutator_time);
 
@@ -95,7 +97,8 @@ public:
   void record_old_marking_increment(bool old_marking_done);
   void record_mixed(size_t gcid);
   void record_full(size_t gcid);
-  void record_degenerated(size_t gcid, bool is_old_boostrap);
+  // Records GC utilization for a degenerated cycle, where "msg" describes the degeneration type.
+  void record_degenerated(size_t gcid, const char* msg);
 
   // This is called by the periodic task timer. The interval is defined by
   // GCPauseIntervalMillis and defaults to 5 seconds. This method computes

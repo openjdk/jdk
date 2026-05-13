@@ -134,6 +134,7 @@ public class AOTCodeCompressedOopsTest {
             case RunMode.PRODUCTION: {
                     List<String> args = getVMArgsForHeapConfig(zeroBaseInProdPhase, zeroShiftInProdPhase);
                     args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
+                                        "-XX:-AbortVMOnAOTCodeFailure",
                                         "-Xlog:aot=info", // we need this to parse CompressedOops settings
                                         "-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));

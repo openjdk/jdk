@@ -48,7 +48,7 @@ inline GenericTaskQueueSet<T, MT>::GenericTaskQueueSet(uint n) : _n(n) {
 
 template <class T, MemTag MT>
 inline GenericTaskQueueSet<T, MT>::~GenericTaskQueueSet() {
-  FREE_C_HEAP_ARRAY(T*, _queues);
+  FREE_C_HEAP_ARRAY(_queues);
 }
 
 #if TASKQUEUE_STATS

@@ -346,7 +346,7 @@ final class Renderer {
             case ScopeToken scopeToken -> {
                 renderScopeToken(scopeToken);
             }
-            case NameSampleToken nameScopeToken -> {
+            case NameSampleToken<?> nameScopeToken -> {
                 Name name = currentCodeFrame.sampleName(nameScopeToken.predicate());
                 if (name == null) {
                     throw new RendererException("No Name found for " + nameScopeToken.predicate().toString());
@@ -361,9 +361,9 @@ final class Renderer {
                     }
                 });
             }
-            case NameForEachToken nameForEachToken -> {
+            case NameForEachToken<?> nameForEachToken -> {
                 List<Name> list = currentCodeFrame.listNames(nameForEachToken.predicate());
-                list.stream().forEach(name -> {
+                list.forEach(name -> {
                     ScopeToken scopeToken = nameForEachToken.getScopeToken(name);
                     renderScopeToken(scopeToken, () -> {
                         if (nameForEachToken.name() != null) {
@@ -375,7 +375,7 @@ final class Renderer {
                     });
                 });
             }
-            case NamesToListToken nameToListToken -> {
+            case NamesToListToken<?> nameToListToken -> {
                 List<Name> list = currentCodeFrame.listNames(nameToListToken.predicate());
                 renderScopeToken(nameToListToken.getScopeToken(list));
             }
@@ -390,7 +390,7 @@ final class Renderer {
             case SetFuelCostToken(float fuelCost) -> {
                 currentTemplateFrame.setFuelCost(fuelCost);
             }
-            case LetToken letToken -> {
+            case LetToken<?> letToken -> {
                 ScopeToken scopeToken = letToken.getScopeToken();
                 renderScopeToken(scopeToken, () -> {
                     addHashtagReplacement(letToken.key(), letToken.value());

@@ -395,16 +395,10 @@ MemNode::MemOrd C2Access::mem_node_mo() const {
 
 void C2Access::fixup_decorators() {
   bool default_mo = (_decorators & MO_DECORATOR_MASK) == 0;
-  bool is_unordered = (_decorators & MO_UNORDERED) != 0 || default_mo;
   bool anonymous = (_decorators & C2_UNSAFE_ACCESS) != 0;
 
   bool is_read = (_decorators & C2_READ_ACCESS) != 0;
   bool is_write = (_decorators & C2_WRITE_ACCESS) != 0;
-
-  if (AlwaysAtomicAccesses && is_unordered) {
-    _decorators &= ~MO_DECORATOR_MASK; // clear the MO bits
-    _decorators |= MO_RELAXED; // Force the MO_RELAXED decorator with AlwaysAtomicAccess
-  }
 
   _decorators = AccessInternal::decorator_fixup(_decorators, _type);
 

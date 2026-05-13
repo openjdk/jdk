@@ -133,22 +133,19 @@ public record CommandActionSpecs(List<CommandActionSpec> specs) {
         }
 
         public Builder exit(CommandMockExit exit) {
-            switch (exit) {
+            return switch (exit) {
                 case SUCCEED -> {
-                    return exit();
+                    yield exit();
                 }
                 case EXIT_1 -> {
-                    return exit(1);
+                    yield exit(1);
                 }
                 case THROW_MOCK_IO_EXCEPTION -> {
-                    return action(CommandActionSpec.create("<I/O error>", () -> {
+                    yield action(CommandActionSpec.create("<I/O error>", () -> {
                         throw new MockingToolProvider.RethrowableException(new MockIOException("Kaput!"));
                     }));
                 }
-                default -> {
-                    throw ExceptionBox.reachedUnreachable();
-                }
-            }
+            };
         }
 
         public Builder mutate(Consumer<Builder> mutator) {

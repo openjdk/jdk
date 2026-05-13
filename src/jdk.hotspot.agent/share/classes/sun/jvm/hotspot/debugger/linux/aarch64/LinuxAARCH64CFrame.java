@@ -109,6 +109,17 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
      };
    }
 
+   private JavaThread getJavaThreadFromThreadProxy(ThreadProxy tp) {
+     Threads threads = VM.getVM().getThreads();
+     for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+       var jthread = threads.getJavaThreadAt(i);
+       if (tp.equals(jthread.getThreadProxy())) {
+         return jthread;
+       }
+     }
+     throw new DebuggerException("JavaThread not found");
+   }
+
    @Override
    public CFrame sender(ThreadProxy thread, Address senderSP, Address senderFP, Address senderPC) {
       if (linuxDbg().isSignalTrampoline(pc())) {
@@ -131,15 +142,25 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
         CodeCache cc = VM.getVM().getCodeCache();
         CodeBlob currentBlob = cc.findBlobUnsafe(pc());
 
-        // This case is different from HotSpot. See JDK-8371194 for details.
-        if (currentBlob != null && (currentBlob.isContinuationStub() || currentBlob.isNativeMethod())) {
-          // Use FP since it should always be valid for these cases.
-          // TODO: These should be walked as Frames not CFrames.
-          senderSP = fp().addOffsetTo(2 * VM.getVM().getAddressSize());
-        } else {
-          CodeBlob codeBlob = cc.findBlobUnsafe(senderPC);
-          boolean useCodeBlob = codeBlob != null && codeBlob.getFrameSize() > 0;
-          senderSP = useCodeBlob ? senderFP.addOffsetTo((2 * VM.getVM().getAddressSize()) - codeBlob.getFrameSize()) : getSenderSP(null);
+        // This case is different from HotSpot. See JDK-8371194 and JDK-8382548 for details.
+        if (currentBlob == null) { // current frame is native
+          senderSP = getSenderSP(null);
+        } else { // current frame is Java
+          if (currentBlob.isContinuationStub()) {
+            var jthread = getJavaThreadFromThreadProxy(thread);
+            var contEntry = Continuation.getContinuationEntryForSP(jthread, sp());
+            senderSP = contEntry.getEntrySP();
+            senderFP = contEntry.getEntryFP();
+            senderPC = contEntry.getEntryPC();
+          } else if (currentBlob.getFrameSize() == 0) {
+            senderSP = fp().addOffsetTo(2 * VM.getVM().getAddressSize());
+          } else {
+            // Calculate sender SP and FP without FP
+            // because we cannot believe FP if PreserveFramePointer is disabled.
+            senderSP = sp().addOffsetTo(currentBlob.getFrameSize());
+            senderFP = senderSP.getAddressAt(-2 * VM.getVM().getAddressSize());
+            senderPC = senderSP.getAddressAt(- VM.getVM().getAddressSize());
+          }
         }
       }
       if (senderSP == null) {

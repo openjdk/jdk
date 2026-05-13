@@ -262,10 +262,6 @@
           "and ObjArrayMarkingStride.")                                     \
           constraint(ArrayMarkingMinStrideConstraintFunc,AfterErgo)         \
                                                                             \
-  product(bool, AggressiveHeap, false,                                      \
-          "(Deprecated) Optimize heap options for long-running memory "     \
-          "intensive apps")                                                 \
-                                                                            \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
           "(System RAM) * MaxRAMPercentage / 100")                          \

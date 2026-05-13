@@ -9214,10 +9214,12 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
 
 instruct bytes_reverse_unsigned_short(iRegI dst, iRegI src) %{
   match(Set dst (ReverseBytesUS src));
-  size(4);
-  format %{ "REV16 $dst,$src" %}
+  size(8);
+  format %{ "REV32 $dst,$src\n\t"
+            "LSR   $dst,$dst,#16" %}
   ins_encode %{
-    __ rev16($dst$$Register, $src$$Register);
+    __ rev($dst$$Register, $src$$Register);
+    __ mov($dst$$Register, AsmOperand($dst$$Register, lsr, 16));
   %}
   ins_pipe( iload_mem ); // FIXME
 %}

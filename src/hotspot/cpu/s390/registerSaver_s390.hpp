@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,7 @@ class RegisterSaver {
 
   // During deoptimization only the result register need to be restored
   // all the other values have already been extracted.
-  static void restore_result_registers(MacroAssembler* masm);
+  static void restore_result_registers(MacroAssembler* masm, bool save_vectors);
 
   // Constants and data structures:
 

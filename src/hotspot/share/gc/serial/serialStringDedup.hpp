@@ -27,6 +27,8 @@
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
+class Klass;
+
 class SerialStringDedup : AllStatic {
 public:
 
@@ -37,7 +39,7 @@ public:
   static bool is_candidate_from_mark(oop java_string);
 
   // Candidate selection policy for young during evacuation.
-  static inline bool is_candidate_from_evacuation(oop obj, bool obj_is_tenured);
+  static inline bool is_candidate_from_evacuation(oop obj, const Klass* klass, bool obj_is_tenured);
 
 };
 

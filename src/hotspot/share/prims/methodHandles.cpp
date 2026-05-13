@@ -267,7 +267,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
       ls.print_cr("memberName: invokeinterface method_holder::method: %s, itableindex: %d, access_flags:",
                   Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
                   vmindex);
-       m->access_flags().print_on(&ls);
+       m->print_access_flags(&ls);
        if (!m->is_abstract()) {
          if (!m->is_private()) {
            ls.print("default");
@@ -314,7 +314,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
       ls.print_cr("memberName: invokevirtual method_holder::method: %s, receiver: %s, vtableindex: %d, access_flags:",
                   Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
                   m_klass->internal_name(), vmindex);
-       m->access_flags().print_on(&ls);
+       m->print_access_flags(&ls);
        if (m->is_default_method()) {
          ls.print("default");
        }

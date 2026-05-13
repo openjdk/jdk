@@ -1171,7 +1171,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
     AOTMapLogger::dumptime_log(this, mapinfo, mapped_heap_info, streamed_heap_info, bitmap, bitmap_size_in_bytes);
   }
   CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
-  FREE_C_HEAP_ARRAY(char, bitmap);
+  FREE_C_HEAP_ARRAY(bitmap);
 }
 
 void ArchiveBuilder::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {

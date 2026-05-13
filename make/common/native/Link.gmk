@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ define CreateDynamicLibraryOrExecutable
             # This cannot be run separately since it updates the original target
             # file.
 	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_create_debuginfo, \
-	        $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES))
+	        $$($1_OBJCOPY) $(OBJCOPY_COMPRESS_FLAGS) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES))
 	    $$(CHMOD) -x $$($1_DEBUGINFO_FILES)
           else ifeq ($(call isTargetOs, aix), true)
             # AIX does not provide the equivalent of objcopy to extract debug

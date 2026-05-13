@@ -528,7 +528,7 @@ const char* JfrJavaSupport::c_str(jstring string, Thread* thread, bool c_heap /*
 
 void JfrJavaSupport::free_c_str(const char* str, bool c_heap) {
   if (c_heap) {
-    FREE_C_HEAP_ARRAY(char, str);
+    FREE_C_HEAP_ARRAY(str);
   }
 }
 

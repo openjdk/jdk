@@ -306,9 +306,9 @@ TEST_VM(Arena, random_allocs) {
   }
 
   // Free temp data
-  FREE_C_HEAP_ARRAY(char*, ptrs);
-  FREE_C_HEAP_ARRAY(size_t, sizes);
-  FREE_C_HEAP_ARRAY(size_t, alignments);
+  FREE_C_HEAP_ARRAY(ptrs);
+  FREE_C_HEAP_ARRAY(sizes);
+  FREE_C_HEAP_ARRAY(alignments);
 }
 
 #ifndef LP64

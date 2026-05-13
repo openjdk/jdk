@@ -167,9 +167,9 @@ public:
                                      ZLoadBarrierStubC2* stub) const;
   void generate_c2_store_barrier_stub(MacroAssembler* masm,
                                       ZStoreBarrierStubC2* stub) const;
-
-  virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slow_path);
 #endif // COMPILER2
+
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slow_path);
 
   void store_barrier_fast(MacroAssembler* masm,
                           Address ref_addr,

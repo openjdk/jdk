@@ -105,7 +105,9 @@ public:
   // Return true if given address is in the shared metaspace regions (i.e., excluding the
   // mapped heap region.)
   static bool in_aot_cache(const void* p) {
-    return MetaspaceObj::in_aot_cache((const MetaspaceObj*)p);
+    // This function is called only after the AOT metaspace is initialized, so
+    // we can skip init checks.
+    return MetaspaceObj::is_pointer_in_aot_cache_no_init_check(p);
   }
 
   static void set_aot_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;

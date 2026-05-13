@@ -70,7 +70,7 @@ public class TestPLABEvacuationFailure {
     private static final String[] COMMON_OPTIONS = {
         "-Xlog:gc,gc+plab=debug",
         "-XX:+UseG1GC",
-        "-XX:InitiatingHeapOccupancyPercent=100",
+        "-XX:G1IHOP=100",
         "-XX:-G1UseAdaptiveIHOP",
         "-XX:G1HeapRegionSize=1m"};
 

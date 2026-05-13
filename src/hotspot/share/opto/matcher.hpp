@@ -341,7 +341,7 @@ public:
 
   // Identify if a vector mask operation prefers the input/output mask to be
   // saved with a predicate type or not.
-  // - Return true if it prefers a predicate type (i.e. TypeVectMask).
+  // - Return true if it prefers a predicate type (i.e. TypePVectMask).
   // - Return false if it prefers a general vector type (i.e. TypeVectA to TypeVectZ).
   static bool mask_op_prefers_predicate(int opcode, const TypeVect* vt);
 

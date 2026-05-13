@@ -2487,7 +2487,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   }
 
   // Vector nodes should not truncate.
-  if (type->isa_vect() != nullptr || type->isa_vectmask() != nullptr || in->is_Reduction()) {
+  if (type->isa_vect() != nullptr || type->isa_pvectmask() != nullptr || in->is_Reduction()) {
     return false;
   }
 

@@ -2884,10 +2884,23 @@ void LIR_Assembler::on_spin_wait() {
 }
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
-  assert(patch_code == lir_patch_none, "Patch code not supported");
+  assert(addr_opr->is_address(), "must be an address");
+  assert(dest->is_register(), "must be a register");
+
   LIR_Address* addr = addr_opr->as_address_ptr();
+  Register reg = dest->as_pointer_register();
   assert(addr->scale() == LIR_Address::times_1, "scaling unsupported");
-  __ load_address(dest->as_pointer_register(), as_Address(addr));
+
+  if (addr->index()->is_illegal() && patch_code != lir_patch_none) {
+    PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
+
+    // TODO: Use load_const_32to64 here by extending NativeMovRegMem to support both instruction patterns.
+    __ load_const(Z_R0_scratch, (intptr_t)0);
+    __ z_agrk(reg, addr->base()->as_pointer_register(), Z_R0_scratch);
+    patching_epilog(patch, patch_code, addr->base()->as_register(), info);
+  } else {
+    __ load_address(reg, as_Address(addr));
+  }
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {

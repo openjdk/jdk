@@ -680,32 +680,18 @@ public:
   }
 
   inline size_t get_bytes_allocated_since_previous_sample() {
-    size_t total_bytes = get_total_bytes_allocated();
-    size_t result;
-    if (total_bytes < _mutator_bytes_at_last_sample) {
-      // This rare condition may occur if bytes allocated overflows (wraps around) size_t tally of allocations.
-      // This may also occur in the very rare situation that get_total_bytes_allocated() is queried in the middle of
-      // reset_bytes_allocated_since_gc_start().  Note that there is no lock to assure that the two global variables
-      // it modifies are modified atomically (_total_bytes_previously_allocated and _mutator_byts_allocated_since_gc_start)
-      // This has been observed to occur when an out-of-cycle degenerated cycle is starting (and thus calls
-      // reset_bytes_allocated_since_gc_start()) at the same time that the control (non-generational mode) or
-      // regulator (generational-mode) thread calls should_start_gc() (which invokes get_bytes_allocated_since_previous_sample()).
-      //
-      // Handle this rare situation by responding with the "innocent" value 0 and resetting internal state so that the
-      // the next query can recalibrate.
-      result = 0;
-    } else {
-      // Note: there's always the possibility that the tally of total allocations exceeds the 64-bit capacity of our size_t
-      // counter.  We assume that the difference between relevant samples does not exceed this count.  Example:
-      //   Suppose _mutator_words_at_last_sample is 0xffff_ffff_ffff_fff0 (18,446,744,073,709,551,600 Decimal)
-      //                        and _total_words is 0x0000_0000_0000_0800 (                    32,768 Decimal)
-      // Then, total_words - _mutator_words_at_last_sample can be done adding 1's complement of subtrahend:
-      //   1's complement of _mutator_words_at_last_sample is: 0x0000_0000_0000_0010 (    16 Decimal))
-      //                                     plus total_words: 0x0000_0000_0000_0800 (32,768 Decimal)
-      //                                                  sum: 0x0000_0000_0000_0810 (32,784 Decimal)
-      result = total_bytes - _mutator_bytes_at_last_sample;
-    }
-    _mutator_bytes_at_last_sample = total_bytes;
+    const size_t total_bytes_allocated = get_total_bytes_allocated();
+    // total_bytes_allocated could overflow (wraps around) size_t in rare condition, we are relying on
+    // wrap-around arithmetic of size_t type to produce meaningful result when total_bytes_allocated overflows
+    // its 64-bit counter. The expression below is equivalent to code:
+    // if (total_bytes < _mutator_bytes_at_last_sample) {
+    //   // overflow
+    //   return total_bytes + (SIZE_T_MAX - _mutator_bytes_at_last_sample) + 1;
+    // } else {
+    //   return total_bytes - _mutator_bytes_at_last_sample;
+    // }
+    const size_t result = total_bytes_allocated - _mutator_bytes_at_last_sample;
+    _mutator_bytes_at_last_sample = total_bytes_allocated;
     return result;
   }
 

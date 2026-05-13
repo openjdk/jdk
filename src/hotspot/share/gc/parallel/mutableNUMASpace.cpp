@@ -55,7 +55,7 @@ MutableNUMASpace::MutableNUMASpace(size_t page_size) : MutableSpace(page_size) {
     lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], page_size));
   }
 
-  FREE_C_HEAP_ARRAY(uint, lgrp_ids);
+  FREE_C_HEAP_ARRAY(lgrp_ids);
 }
 
 MutableNUMASpace::~MutableNUMASpace() {

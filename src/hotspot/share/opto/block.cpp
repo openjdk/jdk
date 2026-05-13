@@ -1430,7 +1430,7 @@ void UnionFind::extend( uint from_idx, uint to_idx ) {
   if( from_idx >= _max ) {
     uint size = 16;
     while( size <= from_idx ) size <<=1;
-    _indices = REALLOC_RESOURCE_ARRAY( uint, _indices, _max, size );
+    _indices = REALLOC_RESOURCE_ARRAY( _indices, _max, size );
     _max = size;
   }
   while( _cnt <= from_idx ) _indices[_cnt++] = 0;

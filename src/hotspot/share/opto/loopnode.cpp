@@ -5938,8 +5938,8 @@ void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
   uint idx = d->_idx;
   if (idx >= _idom_size) {
     uint newsize = next_power_of_2(idx);
-    _idom      = REALLOC_ARENA_ARRAY(&_arena, Node*,     _idom,_idom_size,newsize);
-    _dom_depth = REALLOC_ARENA_ARRAY(&_arena,  uint, _dom_depth,_idom_size,newsize);
+    _idom      = REALLOC_ARENA_ARRAY(&_arena, _idom, _idom_size, newsize);
+    _dom_depth = REALLOC_ARENA_ARRAY(&_arena, _dom_depth, _idom_size, newsize);
     memset( _dom_depth + _idom_size, 0, (newsize - _idom_size) * sizeof(uint) );
     _idom_size = newsize;
   }

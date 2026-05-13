@@ -74,9 +74,6 @@ import static jdk.internal.vm.vector.Utils.debug;
             debug("AVX=%b; AVX2=%b; AVX512F=%b; AVX512DQ=%b",
                   SUPPORTS_AVX, SUPPORTS_AVX2, SUPPORTS_AVX512F, SUPPORTS_AVX512DQ);
 
-            assert SUPPORTS_AVX512F == (VectorShape.getMaxVectorBitSize(int.class)   == 512);
-            assert SUPPORTS_AVX2    == (VectorShape.getMaxVectorBitSize(byte.class)  >= 256);
-            assert SUPPORTS_AVX     == (VectorShape.getMaxVectorBitSize(float.class) >= 256);
         }
     }
 

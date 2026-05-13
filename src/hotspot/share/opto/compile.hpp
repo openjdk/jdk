@@ -319,6 +319,7 @@ class Compile : public Phase {
   int                   _fixed_slots;           // count of frame slots not allocated by the register
                                                 // allocator i.e. locks, original deopt pc, etc.
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
+  uint             _node_count_inlining_cutoff; // Number of nodes in the graph above which inlining is denied
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
@@ -654,6 +655,8 @@ public:
   void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
   uint              max_node_limit() const       { return (uint)_max_node_limit; }
   void          set_max_node_limit(uint n)       { _max_node_limit = n; }
+  uint           node_count_inlining_cutoff() const { return _node_count_inlining_cutoff; }
+  void       set_node_count_inlining_cutoff(uint n) { _node_count_inlining_cutoff = n; }
   bool              clinit_barrier_on_entry()       { return _clinit_barrier_on_entry; }
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
   bool              has_monitors() const         { return _has_monitors; }
@@ -1004,6 +1007,7 @@ public:
            should_delay_boxing_inlining(call_method, jvms) ||
            should_delay_vector_inlining(call_method, jvms);
   }
+  bool should_delay_after_inlining_cutoff(ciMethod* callee, ciMethod* caller);
   bool should_delay_string_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms);
@@ -1117,7 +1121,7 @@ public:
       // and avoid thrashing when live node count is close to the limit.
       // Keep in mind that live_nodes() isn't accurate during inlining until
       // dead node elimination step happens (see Compile::inline_incrementally).
-      return live_nodes() > (uint)LiveNodeCountInliningCutoff * 11 / 10;
+      return live_nodes() > node_count_inlining_cutoff() * 11 / 10;
     }
   }
 

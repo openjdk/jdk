@@ -303,10 +303,10 @@ static void free_array_of_char_arrays(char** a, size_t n) {
       while (n > 0) {
           n--;
           if (a[n] != nullptr) {
-            FREE_C_HEAP_ARRAY(char, a[n]);
+            FREE_C_HEAP_ARRAY(a[n]);
           }
       }
-      FREE_C_HEAP_ARRAY(char*, a);
+      FREE_C_HEAP_ARRAY(a);
 }
 
 bool os::dll_locate_lib(char *buffer, size_t buflen,
@@ -353,7 +353,7 @@ bool os::dll_locate_lib(char *buffer, size_t buflen,
     }
   }
 
-  FREE_C_HEAP_ARRAY(char*, fullfname);
+  FREE_C_HEAP_ARRAY(fullfname);
   return retval;
 }
 
@@ -562,7 +562,7 @@ void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib, const char 
   char* agent_function_name = build_agent_function_name(sym, lib_name, agent_lib->is_absolute_path());
   if (agent_function_name != nullptr) {
     entryName = dll_lookup(handle, agent_function_name);
-    FREE_C_HEAP_ARRAY(char, agent_function_name);
+    FREE_C_HEAP_ARRAY(agent_function_name);
   }
   return entryName;
 }
@@ -1510,20 +1510,20 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {
     Arguments::set_boot_class_path(jimage, true);
-    FREE_C_HEAP_ARRAY(char, jimage);
+    FREE_C_HEAP_ARRAY(jimage);
     return true;
   }
-  FREE_C_HEAP_ARRAY(char, jimage);
+  FREE_C_HEAP_ARRAY(jimage);
 
   // check if developer build with exploded modules
   char* base_classes = format_boot_path("%/modules/" JAVA_BASE_NAME, home, home_len, fileSep, pathSep);
   if (base_classes == nullptr) return false;
   if (os::stat(base_classes, &st) == 0) {
     Arguments::set_boot_class_path(base_classes, false);
-    FREE_C_HEAP_ARRAY(char, base_classes);
+    FREE_C_HEAP_ARRAY(base_classes);
     return true;
   }
-  FREE_C_HEAP_ARRAY(char, base_classes);
+  FREE_C_HEAP_ARRAY(base_classes);
 
   return false;
 }
@@ -1653,7 +1653,7 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
     opath[i] = s;
     p += len + 1;
   }
-  FREE_C_HEAP_ARRAY(char, inpath);
+  FREE_C_HEAP_ARRAY(inpath);
   *elements = count;
   return opath;
 }

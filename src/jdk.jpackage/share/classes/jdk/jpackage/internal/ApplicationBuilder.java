@@ -192,7 +192,7 @@ final class ApplicationBuilder {
                 derivedVersion = derivedVersion.map(v -> {
                     var mappedVersion = derivedVersionNormalizer.apply(v);
                     if (!mappedVersion.equals(v)) {
-                        Log.verbose(I18N.format("message.version-normalized", mappedVersion, v));
+                        Log.trace("Normalize derived bundle version from [%s] to [%s]", v, mappedVersion);
                     }
                     return mappedVersion;
                 });
@@ -205,10 +205,10 @@ final class ApplicationBuilder {
         if (appImageLayout instanceof RuntimeLayout && runtimeReleaseFile != null) {
             try {
                 var releaseVersion = new RuntimeReleaseFile(runtimeReleaseFile).getJavaVersion().toString();
-                Log.verbose(I18N.format("message.release-version", releaseVersion));
+                Log.trace("Derive bundle version [%s] from [%s] file", releaseVersion, runtimeReleaseFile);
                 return Optional.of(releaseVersion);
             } catch (Exception ex) {
-                Log.verbose(ex);
+                Log.trace(ex, "Failed to derive bundle version from [%s] file", runtimeReleaseFile);
                 return Optional.empty();
             }
         } else if (launchers != null) {
@@ -218,7 +218,7 @@ final class ApplicationBuilder {
                     .flatMap(modularStartupInfo -> {
                         var moduleVersion = modularStartupInfo.moduleVersion();
                         moduleVersion.ifPresent(v -> {
-                            Log.verbose(I18N.format("message.module-version", v, modularStartupInfo.moduleName()));
+                            Log.trace("Derive bundle version [%s] from [%s] module", v, modularStartupInfo.moduleName());
                         });
                         return moduleVersion;
                     });

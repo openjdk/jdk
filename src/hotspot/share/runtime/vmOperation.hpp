@@ -90,7 +90,7 @@
   template(ShenandoahFinalMarkStartEvac)          \
   template(ShenandoahInitUpdateRefs)              \
   template(ShenandoahFinalUpdateRefs)             \
-  template(ShenandoahFinalRoots)                  \
+  template(ShenandoahFinalVerify)                 \
   template(ShenandoahDegeneratedGC)               \
   template(Exit)                                  \
   template(LinuxDllLoad)                          \

@@ -413,7 +413,7 @@ public:
   }
 
   ~ShenandoahCardCluster() {
-    FREE_C_HEAP_ARRAY(crossing_info, _object_starts);
+    FREE_C_HEAP_ARRAY(_object_starts);
     _object_starts = nullptr;
   }
 
@@ -751,7 +751,7 @@ public:
       for (uint i = 0; i < ParallelGCThreads; i++) {
         delete _card_stats[i];
       }
-      FREE_C_HEAP_ARRAY(HdrSeq*, _card_stats);
+      FREE_C_HEAP_ARRAY(_card_stats);
       _card_stats = nullptr;
     }
     assert(_card_stats == nullptr, "Error");

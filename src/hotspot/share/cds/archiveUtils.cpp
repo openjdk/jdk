@@ -416,13 +416,22 @@ void DumpRegion::report_gaps(DumpAllocStats* stats) {
         stats->record_gap(checked_cast<int>(node->key().gap_bytes()));
         return true;
       });
+
+  double unfilled_percent = 0.0;
   if (_gap_tree.size() > 0) {
-    log_warning(aot)("Unexpected %zu gaps (%zu bytes) for Klass alignment",
-                     _gap_tree.size(), _total_gap_bytes);
+    unfilled_percent = percent_of(_total_gap_bytes, _total_gap_allocs);
+    if (unfilled_percent > 5.0) {
+      // We have a limited number of small objects, so some small gaps may remain
+      // unfilled. If more than 5% of the gaps are unfilled, this likely indicates
+      // a systematic error that should be investigated. Otherwise, do not warn to
+      // avoid noise.
+      log_warning(aot)("Unexpected %zu gaps (%zu bytes) for Klass alignment",
+                       _gap_tree.size(), _total_gap_bytes);
+    }
   }
   if (_total_gap_allocs > 0) {
-    log_info(aot)("Allocated %zu objects of %zu bytes in gaps (remain = %zu bytes)",
-                  _total_gap_allocs, _total_gap_bytes_used, _total_gap_bytes);
+    log_info(aot)("Allocated %zu objects of %zu bytes in gaps (remain = %zu bytes, %.2f%%)",
+                  _total_gap_allocs, _total_gap_bytes_used, _total_gap_bytes, unfilled_percent);
   }
 }
 

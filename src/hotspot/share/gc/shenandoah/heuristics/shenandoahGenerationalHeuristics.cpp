@@ -91,19 +91,6 @@ void ShenandoahGenerationalHeuristics::choose_collection_set_from_regiondata(She
     heap->shenandoah_policy()->record_mixed_cycle();
   }
 
-  if (_generation->is_global()) {
-    // We have just chosen a collection set for a global cycle. The mark bitmap covering old regions is complete, so
-    // the remembered set scan can use that to avoid walking into garbage. When the next old mark begins, we will
-    // use the mark bitmap to make the old regions parsable by coalescing and filling any unmarked objects. Thus,
-    // we prepare for old collections by remembering which regions are old at this time. Note that any objects
-    // promoted into old regions will be above TAMS, and so will be considered marked. However, free regions that
-    // become old after this point will not be covered correctly by the mark bitmap, so we must be careful not to
-    // coalesce those regions. Only the old regions which are not part of the collection set at this point are
-    // eligible for coalescing. As implemented now, this has the side effect of possibly initiating mixed-evacuations
-    // after a global cycle for old regions that were not included in this collection set.
-    heap->old_generation()->transition_old_generation_after_global_gc();
-  }
-
   ShenandoahTracer::report_promotion_info(collection_set,
                                           in_place_promotions.humongous_region_stats().count,
                                           in_place_promotions.humongous_region_stats().garbage,

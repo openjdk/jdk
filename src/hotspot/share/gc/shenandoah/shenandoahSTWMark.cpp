@@ -104,6 +104,12 @@ void ShenandoahSTWMark::mark() {
     heap->workers()->run_task(&task);
 
     assert(task_queues()->is_empty(), "Should be empty");
+
+    if (!generation()->is_old()) {
+      // Lastly, ensure all the invisible roots are marked.
+      ShenandoahInvisibleRootsMarkClosure cl;
+      Threads::java_threads_do(&cl);
+    }
   }
 
   _generation->set_mark_complete();

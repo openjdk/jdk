@@ -128,7 +128,6 @@ import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;

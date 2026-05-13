@@ -520,7 +520,7 @@ static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
     JVMFlag::Error err = JVMFlagAccess::set_ccstr(flag, &new_filename, JVMFlagOrigin::ERGONOMIC);
     assert(err == JVMFlag::SUCCESS, "must never fail");
   }
-  FREE_C_HEAP_ARRAY(char, new_filename);
+  FREE_C_HEAP_ARRAY(new_filename);
 }
 
 void CDSConfig::check_aotmode_record() {

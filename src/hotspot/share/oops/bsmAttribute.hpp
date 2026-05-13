@@ -73,7 +73,7 @@ public:
   }
 
   void set_argument(u2 index, u2 value) {
-    assert(index >= 0 && index < argument_count(), "invariant");
+    assert(index < argument_count(), "invariant");
     argument_indexes()[index] = value;
   }
 

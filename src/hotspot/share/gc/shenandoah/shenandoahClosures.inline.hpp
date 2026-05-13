@@ -30,7 +30,6 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -132,22 +131,12 @@ void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
 
 template <bool CONCURRENT, bool STABLE_THREAD>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(oop* p) {
-  if (CONCURRENT) {
-    ShenandoahEvacOOMScope scope;
-    do_oop_work(p);
-  } else {
-    do_oop_work(p);
-  }
+  do_oop_work(p);
 }
 
 template <bool CONCURRENT, bool STABLE_THREAD>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(narrowOop* p) {
-  if (CONCURRENT) {
-    ShenandoahEvacOOMScope scope;
-    do_oop_work(p);
-  } else {
-    do_oop_work(p);
-  }
+  do_oop_work(p);
 }
 
 template <bool CONCURRENT, bool STABLE_THREAD>

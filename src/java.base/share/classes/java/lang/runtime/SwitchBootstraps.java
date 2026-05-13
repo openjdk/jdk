@@ -131,13 +131,15 @@ public final class SwitchBootstraps {
 
     /**
      * Bootstrap method for linking an {@code invokedynamic} call site that
-     * implements a {@code switch} on a target of a reference type.  The static
-     * arguments are an array of case labels which must be non-null and of type
-     * {@code String} or {@code Integer} or {@code Class} or {@code EnumDesc}.
+     * implements a {@code switch} over a target value. The static arguments
+     * {@code labels} are an array of case labels which must be non-null and of
+     * type {@code String}, {@code Integer}, {@code Class}, or {@code EnumDesc}.
+     * In addition, when preview features are enabled, {@code Long}, {@code Float},
+     * {@code Double}, and {@code Boolean} labels are also permitted.
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
-     * will be an {@code Object} instance ({@code target}) and the second
+     * will be a value of the ({@code target}) type and the second
      * will be {@code int} ({@code restart}).
      * <p>
      * If the {@code target} is {@code null}, then the method of the call site
@@ -148,11 +150,16 @@ public final class SwitchBootstraps {
      * the {@code restart} index matching one of the following conditions:
      * <ul>
      *   <li>the element is of type {@code Class} that is assignable
-     *       from the target's class; or</li>
-     *   <li>the element is of type {@code String} or {@code Integer} and
-     *       equals to the target.</li>
-     *   <li>the element is of type {@code EnumDesc}, that describes a constant that is
-     *       equals to the target.</li>
+     *       from the target's class</li>
+     *   <li>the element is of type {@code String} and {@code equals} to the target</li>
+     *   <li>the element is of type {@code Integer} and {@code ==} to the target after
+     *       unboxing if necessary</li>
+     *   <li>(Preview) the element is of type {@code Long} or {@code Boolean}
+     *       and {@code ==} to the target after unboxing if necessary</li>
+     *   <li>(Preview) the element is of type {@code Float} or {@code Double}
+     *       and {@code equals} to the target after boxing if necessary</li>
+     *   <li>the element is of type {@code EnumDesc}, that describes an enum constant
+     *       that is {@code ==} to the target</li>
      * </ul>
      * <p>
      * If no element in the {@code labels} array matches the target, then
@@ -167,9 +174,8 @@ public final class SwitchBootstraps {
      *               this is stacked automatically by the VM.
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
-     *                       a reference type, an {@code int}, and {@code int} as a return type.
-     * @param labels case labels - {@code String} and {@code Integer} constants
-     *               and {@code Class} and {@code EnumDesc} instances, in any combination
+     *                       a target type, an {@code int}, and {@code int} as a return type.
+     * @param labels case labels as described above
      * @return a {@code CallSite} returning the first matching element as described above
      *
      * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
@@ -179,8 +185,8 @@ public final class SwitchBootstraps {
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
      *                                  {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
      *                                  {@code Class} or {@code EnumDesc}
-     * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code Boolean}
-     *                                  when {@code target} is a {@code Boolean.class}
+     * @throws IllegalArgumentException if preview features are disabled and if {@code labels} contains an element
+     *                                  that is of type {@code Long}, {@code Float}, {@code Double}, or {@code Boolean}
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -221,7 +227,6 @@ public final class SwitchBootstraps {
               labelClass != Long.class &&
               labelClass != Double.class &&
               labelClass != Boolean.class) ||
-              ((selectorType.equals(boolean.class) || selectorType.equals(Boolean.class)) && labelClass != Boolean.class && labelClass != Class.class) ||
              !previewEnabled) &&
 
             labelClass != EnumDesc.class) {

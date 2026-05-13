@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -139,9 +138,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
     private void prepareDMGSetupScript() throws IOException {
         Path dmgSetup = volumeScript();
-        Log.verbose(MessageFormat.format(
-                I18N.getString("message.preparing-dmg-setup"),
-                dmgSetup.toAbsolutePath().toString()));
+        Log.progress(I18N.format("message.preparing-dmg-setup", dmgSetup.toAbsolutePath().toString()));
 
         // Prepare DMG setup script
         Map<String, String> data = new HashMap<>();
@@ -202,10 +199,6 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         }
     }
 
-    private String hdiUtilVerbosityFlag() {
-        return env.verbose() ? "-verbose" : "-quiet";
-    }
-
     private void buildDMG() throws IOException {
         boolean copyAppImage = false;
 
@@ -217,7 +210,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         Files.createDirectories(protoDMG.getParent());
         Files.createDirectories(finalDMG.getParent());
 
-        final String hdiUtilVerbosityFlag = hdiUtilVerbosityFlag();
+        final String hdiUtilVerbosityFlag = "-verbose";
 
         // create temp image
         try {
@@ -229,7 +222,9 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     "-fs", "HFS+",
                     "-format", "UDRW").executeExpectSuccess();
         } catch (IOException ex) {
-            Log.verbose(ex); // Log exception
+            Log.trace(ex, "Failed to create a DMG from the entire app image");
+
+            Log.trace("Will create an empty DMG and fill it manually");
 
             // Creating DMG from entire app image failed, so lets try to create empty
             // DMG and copy files manually. See JDK-8248059.
@@ -285,7 +280,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 .timeout(3, TimeUnit.MINUTES)
                 .executeExpectSuccess();
             } catch (IOException ex) {
-                Log.verbose(ex);
+                Log.trace(ex, "Failed to set background image");
             }
 
             // volume icon
@@ -317,11 +312,10 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                             normalizedAbsolutePathString(mountedVolume)
                     ).executeExpectSuccess();
                 } catch (IOException ex) {
-                    Log.error(ex.getMessage());
-                    Log.verbose("Cannot enable custom icon using SetFile utility");
+                    Log.trace(ex, "Failed to set custom icon");
                 }
             } else {
-                Log.verbose(I18N.getString("message.setfile.dmg"));
+                Log.progress(I18N.format("message.setfile.dmg"));
             }
 
         } finally {
@@ -345,12 +339,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     .execute();
         }
 
-        try {
-            //Delete the temporary image
-            Files.deleteIfExists(protoDMG);
-        } catch (IOException ex) {
-            // Don't care if fails
-        }
+        IOUtils.deleteIfExistsIgnoreError(protoDMG);
     }
 
     private void detachVolume() throws IOException {
@@ -369,7 +358,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
             }
 
             cmdline.addAll(List.of(
-                    hdiUtilVerbosityFlag(),
+                    "-verbose",
                     normalizedAbsolutePathString(mountedVolume)
             ));
 
@@ -392,7 +381,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
             return hdiutil(
                     "convert",
                     normalizedAbsolutePathString(srcDmg),
-                    hdiUtilVerbosityFlag(),
+                    "-verbose",
                     "-format", "UDZO",
                     "-o", normalizedAbsolutePathString(finalDmg()));
         };
@@ -404,14 +393,17 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 .setAttemptTimeout(3, TimeUnit.SECONDS)
                 .execute();
         } catch (IOException ex) {
-            Log.verbose(ex);
+            Log.trace(ex, "Failed to convert an interim DMG into the output DMG");
+
+            Log.trace("Try to convert a copy of an interim DMG into the output DMG");
+
             // Something holds the file, try to convert a copy.
             Path copyDmg = protoCopyDmg();
             Files.copy(protoDmg(), copyDmg);
             try {
                 convert.apply(copyDmg).executeExpectSuccess();
             } finally {
-                Files.deleteIfExists(copyDmg);
+                IOUtils.deleteIfExistsIgnoreError(copyDmg);
             }
         }
     }

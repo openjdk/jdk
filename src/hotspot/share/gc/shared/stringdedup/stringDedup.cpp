@@ -182,7 +182,7 @@ void StringDedup::Requests::flush() {
       assert(_storage_for_requests != nullptr, "invariant");
       _storage_for_requests->storage()->release(_buffer, _index);
     }
-    FREE_C_HEAP_ARRAY(oop*, _buffer);
+    FREE_C_HEAP_ARRAY(_buffer);
     _buffer = nullptr;
   }
   if (_storage_for_requests != nullptr) {

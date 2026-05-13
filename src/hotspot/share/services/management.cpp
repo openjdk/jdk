@@ -1715,7 +1715,7 @@ ThreadTimesClosure::~ThreadTimesClosure() {
   for (int i = 0; i < _count; i++) {
     os::free(_names_chars[i]);
   }
-  FREE_C_HEAP_ARRAY(char *, _names_chars);
+  FREE_C_HEAP_ARRAY(_names_chars);
 }
 
 // Fills names with VM internal thread names and times with the corresponding

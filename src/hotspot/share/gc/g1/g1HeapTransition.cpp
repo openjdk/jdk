@@ -55,8 +55,8 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
 }
 
 G1HeapTransition::Data::~Data() {
-  FREE_C_HEAP_ARRAY(uint, _eden_length_per_node);
-  FREE_C_HEAP_ARRAY(uint, _survivor_length_per_node);
+  FREE_C_HEAP_ARRAY(_eden_length_per_node);
+  FREE_C_HEAP_ARRAY(_survivor_length_per_node);
 }
 
 G1HeapTransition::G1HeapTransition(G1CollectedHeap* g1_heap) : _g1_heap(g1_heap), _before(g1_heap) { }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package compiler.lib.ir_framework.shared;
  * Exception that is thrown if the JTreg test throws an exception during the execution of individual tests of the
  * test class.
  */
+@SuppressWarnings("serial")
 public class TestRunException extends RuntimeException {
     public TestRunException(String message) {
         super(message);

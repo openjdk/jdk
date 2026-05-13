@@ -395,6 +395,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         AccelGlyphCache.c, \
     CFLAGS := $(LIBFONTMANAGER_CFLAGS), \
     CXXFLAGS := $(LIBFONTMANAGER_CFLAGS), \
+    CXXFLAGS_gcc := -fno-rtti -fno-exceptions, \
+    CXXFLAGS_clang := -fno-rtti -fno-exceptions, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS_windows = -DCC_NOEX, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \

@@ -61,9 +61,21 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
                         "at least %d \n",
                         value, min_number_of_compiler_threads);
     return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
   }
+
+  // Limit CICompilerCount to a reasonable value in product builds.
+#ifndef ASSERT
+  int active_processor_count = os::active_processor_count();
+  // On a single-CPU machine we still can run C1 and C2 compiler threads, so allow up to 2x for tiered.
+  int reasonable_threads_num = CompilerConfig::is_tiered() ? active_processor_count * 2 : active_processor_count;
+  if (value > reasonable_threads_num) {
+    JVMFlag::printError(verbose, "CICompilerCount is too large (%" PRIdPTR ") for current active processor count %d \n",
+                        CICompilerCount, active_processor_count);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+#endif
+
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error AllocatePrefetchStepSizeConstraintFunc(int value, bool verbose) {

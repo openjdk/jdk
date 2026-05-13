@@ -99,7 +99,7 @@ public class OptionsValidationFailTest {
 
                 var errorReporter = new Main.ErrorReporter(ex -> {
                     ex.printStackTrace(err);
-                }, err::println, false);
+                }, err::println, false, true);
 
                 return parse(args).peekErrors(errors -> {
                     final var firstErr = errors.stream().findFirst().orElseThrow();

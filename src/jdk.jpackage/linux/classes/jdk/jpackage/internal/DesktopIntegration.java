@@ -430,7 +430,7 @@ final class DesktopIntegration extends ShellCustomAction {
             BufferedImage bi = ImageIO.read(path.toFile());
             return Math.max(bi.getWidth(), bi.getHeight());
         } catch (IOException e) {
-            Log.verbose(e);
+            Log.trace(e, "Failed to get dimensions of an image at [%s]", path);
         }
         return 0;
     }

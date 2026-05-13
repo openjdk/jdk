@@ -246,8 +246,6 @@ G1YoungGCAllocationFailureInjector* G1YoungCollector::allocation_failure_injecto
 
 void G1YoungCollector::complete_root_region_scan() {
   Ticks start = Ticks::now();
-  // We have to complete root region scan as it's the only way to ensure that all the
-  // objects on them have been correctly scanned before we start moving them during the GC.
   if (concurrent_mark()->complete_root_regions_scan_in_safepoint()) {
     phase_times()->record_root_region_scan_time((Ticks::now() - start).seconds() * MILLIUNITS);
   }
@@ -1138,9 +1136,7 @@ void G1YoungCollector::collect() {
   // Individual parallel phases may override this.
   set_young_collection_default_active_worker_threads();
 
-  // Wait for root region scan here to make sure that it is done before any
-  // use of the STW workers to maximize cpu use (i.e. all cores are available
-  // just to do that).
+  // Complete root region scan before moving any objects to preserve the SATB invariant.
   complete_root_region_scan();
 
   G1YoungGCVerifierMark vm(this);

@@ -2363,8 +2363,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
           }
           if (lvt_cnt == max_lvt_cnt) {
             max_lvt_cnt <<= 1;
-            localvariable_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
-            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(const unsafe_u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
+            localvariable_table_length = REALLOC_RESOURCE_ARRAY(localvariable_table_length, lvt_cnt, max_lvt_cnt);
+            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(localvariable_table_start, lvt_cnt, max_lvt_cnt);
           }
           localvariable_table_start[lvt_cnt] =
             parse_localvariable_table(cfs,
@@ -2393,8 +2393,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
           // Parse local variable type table
           if (lvtt_cnt == max_lvtt_cnt) {
             max_lvtt_cnt <<= 1;
-            localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
-            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(const unsafe_u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
           }
           localvariable_type_table_start[lvtt_cnt] =
             parse_localvariable_table(cfs,

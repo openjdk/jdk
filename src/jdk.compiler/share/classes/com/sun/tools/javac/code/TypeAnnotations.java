@@ -705,7 +705,7 @@ public class TypeAnnotations {
 
                 @Override
                 public Type visitType(Type t, List<TypeCompound> s) {
-                    return t.annotatedType(s);
+                    return t.hasTag(TypeTag.VOID) ? t : t.annotatedType(s);
                 }
             };
 

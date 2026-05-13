@@ -28,6 +28,7 @@ package sun.security.provider;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.security.DigestException;
 import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
@@ -479,6 +480,11 @@ public abstract class SHA3 extends DigestBase {
 
         public byte[] digest() {
             return engineDigest();
+        }
+
+        public int digest(byte[] out, int offs, int len)
+                throws DigestException {
+            return engineDigest(out, offs, len);
         }
 
         public void squeeze(byte[] output, int offset, int numBytes) {

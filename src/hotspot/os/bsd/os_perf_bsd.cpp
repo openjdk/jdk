@@ -301,7 +301,7 @@ int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** sy
     pids_bytes = proc_listpids(PROC_ALL_PIDS, 0, pids, pids_bytes);
     if (pids_bytes <= 0) {
        // couldn't fit buffer, retry.
-      FREE_RESOURCE_ARRAY(pid_t, pids, pid_count);
+      FREE_RESOURCE_ARRAY(pids, pid_count);
       pids = nullptr;
       try_count++;
       if (try_count > 3) {
@@ -381,12 +381,12 @@ CPUInformationInterface::~CPUInformationInterface() {
   if (_cpu_info != nullptr) {
     if (_cpu_info->cpu_name() != nullptr) {
       const char* cpu_name = _cpu_info->cpu_name();
-      FREE_C_HEAP_ARRAY(char, cpu_name);
+      FREE_C_HEAP_ARRAY(cpu_name);
       _cpu_info->set_cpu_name(nullptr);
     }
     if (_cpu_info->cpu_description() != nullptr) {
       const char* cpu_desc = _cpu_info->cpu_description();
-      FREE_C_HEAP_ARRAY(char, cpu_desc);
+      FREE_C_HEAP_ARRAY(cpu_desc);
       _cpu_info->set_cpu_description(nullptr);
     }
     delete _cpu_info;

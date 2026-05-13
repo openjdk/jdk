@@ -267,6 +267,13 @@ public class TestOptionsWithRanges {
          */
         excludeTestMaxRange("CompileThresholdScaling");
 
+        /*
+         * Do not test InitiatingHeapOccupancyPercent as it is an
+         * alias that will answer with the string G1IHOP. Remove this
+         * when the alias is removed.
+         */
+        excludeTestRange("InitiatingHeapOccupancyPercent");
+
         List<JVMOption> testSubset = getTestSubset(args);
 
         Asserts.assertGT(testSubset.size(), 0, "Options with ranges not found!");

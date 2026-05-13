@@ -25,6 +25,7 @@
 
 
 #include "classfile/javaClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -928,12 +929,31 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   PhaseIterGVN& igvn = phase->igvn();
 
   Node* raw_val        = new CastP2XNode(old_ctrl, val);
-  Node* cset_idx       = new URShiftXNode(raw_val, igvn.intcon(ShenandoahHeapRegion::region_size_bytes_shift_jint()));
+  Node* region_size_shift = nullptr;
+  if (AOTCodeCache::is_on_for_dump()) {
+    Node* aot_addr = igvn.makecon(TypeRawPtr::make(AOTRuntimeConstants::grain_shift_address()));
+    region_size_shift = new LoadINode(old_ctrl, raw_mem, aot_addr,
+                                      DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(nullptr),
+                                      TypeInt::INT, MemNode::unordered);
+    phase->register_new_node(region_size_shift, old_ctrl);
+  } else {
+    region_size_shift = igvn.intcon(ShenandoahHeapRegion::region_size_bytes_shift_jint());
+  }
+  Node* cset_idx       = new URShiftXNode(raw_val, region_size_shift);
 
   // Figure out the target cset address with raw pointer math.
   // This avoids matching AddP+LoadB that would emit inefficient code.
   // See JDK-8245465.
-  Node* cset_addr_ptr  = igvn.makecon(TypeRawPtr::make(ShenandoahHeap::in_cset_fast_test_addr()));
+  Node* cset_addr_ptr = nullptr;
+  if (AOTCodeCache::is_on_for_dump()) {
+    Node* aot_addr = igvn.makecon(TypeRawPtr::make(AOTRuntimeConstants::cset_base_address()));
+    cset_addr_ptr = new LoadPNode(old_ctrl, raw_mem, aot_addr,
+                                  DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(nullptr),
+                                  TypeRawPtr::NOTNULL, MemNode::unordered);
+    phase->register_new_node(cset_addr_ptr, old_ctrl);
+  } else {
+    cset_addr_ptr  = igvn.makecon(TypeRawPtr::make(ShenandoahHeap::in_cset_fast_test_addr()));
+  }
   Node* cset_addr      = new CastP2XNode(old_ctrl, cset_addr_ptr);
   Node* cset_load_addr = new AddXNode(cset_addr, cset_idx);
   Node* cset_load_ptr  = new CastX2PNode(cset_load_addr);

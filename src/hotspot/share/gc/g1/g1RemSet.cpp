@@ -124,8 +124,8 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     }
 
     ~G1DirtyRegions() {
-      FREE_C_HEAP_ARRAY(uint, _buffer);
-      FREE_C_HEAP_ARRAY(Atomic<bool>, _contains);
+      FREE_C_HEAP_ARRAY(_buffer);
+      FREE_C_HEAP_ARRAY(_contains);
     }
 
     void reset() {
@@ -245,7 +245,7 @@ public:
     _scan_top(nullptr) { }
 
   ~G1RemSetScanState() {
-    FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
+    FREE_C_HEAP_ARRAY(_scan_top);
   }
 
   void initialize(uint max_reserved_regions) {

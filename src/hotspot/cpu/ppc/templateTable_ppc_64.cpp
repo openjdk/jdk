@@ -3852,13 +3852,6 @@ void TemplateTable::_new() {
       __ store_klass(RallocatedObject, RinstanceKlass, Rscratch);
     }
 
-    // Check and trigger dtrace event.
-    if (DTraceAllocProbes) {
-      __ push(atos);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
-      __ pop(atos);
-    }
-
     __ b(Ldone);
   }
 

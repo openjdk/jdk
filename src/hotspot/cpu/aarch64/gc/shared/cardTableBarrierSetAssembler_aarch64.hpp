@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ protected:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
-  void store_check(MacroAssembler* masm, Register obj, Address dst, Register tmp1, Register tmp2);
+  void store_check(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2);
 };
 
 #endif // CPU_AARCH64_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_AARCH64_HPP

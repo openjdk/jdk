@@ -115,7 +115,7 @@ public class TestHumongousCodeCacheRoots {
     final String[] baseArguments = new String[] {
       "-XX:+UseG1GC", "-XX:G1HeapRegionSize=1M", "-Xmx100M", // make sure we get a humongous region
       "-XX:+UnlockDiagnosticVMOptions",
-      "-XX:InitiatingHeapOccupancyPercent=1", // strong code root marking
+      "-XX:G1IHOP=1", // strong code root marking
       "-XX:+G1VerifyHeapRegionCodeRoots", "-XX:+VerifyAfterGC", // make sure that verification is run
     };
 

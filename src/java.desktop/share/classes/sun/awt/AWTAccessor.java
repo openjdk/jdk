@@ -545,6 +545,11 @@ public final class AWTAccessor {
          * Returns whether the file dialog allows the multiple file selection.
          */
         boolean isMultipleMode(FileDialog fileDialog);
+
+        /*
+         * Returns whether dispose is being run
+         */
+        boolean isBeingDisposed(FileDialog fileDialog);
     }
 
     /*

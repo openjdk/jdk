@@ -263,23 +263,6 @@ void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   HandleMark hm(Thread::current());
   ResourceMark rm;
 
-  // We have to ensure that we finish scanning the root regions
-  // before the next GC takes place. To ensure this we have to
-  // make sure that we do not join the STS until the root regions
-  // have been scanned. If we did then it's possible that a
-  // subsequent GC could block us from joining the STS and proceed
-  // without the root regions have been scanned which would be a
-  // correctness issue.
-  //
-  // So do not return before the scan root regions phase as a GC waits for a
-  // notification from it.
-  //
-  // For the same reason ConcurrentGCBreakpoints (in the phase methods) before
-  // here risk deadlock, because a young GC must wait for root region scanning.
-  //
-  // We can not easily abort before root region scan either because of the
-  // reasons mentioned in G1CollectedHeap::abort_concurrent_cycle().
-
   // Phase 1: Scan root regions.
   if (phase_scan_root_regions()) return;
 

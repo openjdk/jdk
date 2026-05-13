@@ -1160,7 +1160,7 @@ class JvmtiCompiledMethodLoadEventMark : public JvmtiMethodEventMark {
     JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nm, &_map, &_map_length);
   }
   ~JvmtiCompiledMethodLoadEventMark() {
-     FREE_C_HEAP_ARRAY(jvmtiAddrLocationMap, _map);
+     FREE_C_HEAP_ARRAY(_map);
   }
 
   jint code_size() { return _code_size; }

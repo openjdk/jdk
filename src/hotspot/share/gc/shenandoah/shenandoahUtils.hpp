@@ -70,7 +70,8 @@ private:
 
   static const char* cycle_end_message(ShenandoahGenerationType type);
 public:
-  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation);
+  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
+                      bool is_degenerated = false, bool is_out_of_cycle = false);
   ~ShenandoahGCSession();
 };
 
@@ -187,7 +188,7 @@ public:
            type == VM_Operation::VMOp_ShenandoahFinalMarkStartEvac ||
            type == VM_Operation::VMOp_ShenandoahInitUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFinalUpdateRefs ||
-           type == VM_Operation::VMOp_ShenandoahFinalRoots ||
+           type == VM_Operation::VMOp_ShenandoahFinalVerify ||
            type == VM_Operation::VMOp_ShenandoahFullGC ||
            type == VM_Operation::VMOp_ShenandoahDegeneratedGC;
   }
@@ -218,30 +219,6 @@ private:
 public:
   ShenandoahParallelWorkerSession(uint worker_id) : ShenandoahWorkerSession(worker_id) { }
   ~ShenandoahParallelWorkerSession();
-};
-
-class ShenandoahSuspendibleThreadSetJoiner {
-private:
-  SuspendibleThreadSetJoiner _joiner;
-public:
-  ShenandoahSuspendibleThreadSetJoiner(bool active = true) : _joiner(active) {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
-  }
-  ~ShenandoahSuspendibleThreadSetJoiner() {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be left after evac scope");
-  }
-};
-
-class ShenandoahSuspendibleThreadSetLeaver {
-private:
-  SuspendibleThreadSetLeaver _leaver;
-public:
-  ShenandoahSuspendibleThreadSetLeaver(bool active = true) : _leaver(active) {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be left after evac scope");
-  }
-  ~ShenandoahSuspendibleThreadSetLeaver() {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
-  }
 };
 
 // Regions cannot be uncommitted when concurrent reset is zeroing out the bitmaps.

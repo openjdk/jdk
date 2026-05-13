@@ -27,6 +27,7 @@ package compiler.lib.ir_framework.shared;
  * Exception that is thrown by the Test VM if no tests are run as a result of specifying {@code -DTest} and/or
  * {@code -DExclude} defining an empty set with the used Test VM flags.
  */
+@SuppressWarnings("serial")
 public class NoTestsRunException extends RuntimeException {
     /**
      * Default constructor used by Test VM

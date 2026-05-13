@@ -24,7 +24,7 @@
  /*
  * @test
  * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269 8346948
- *      8354548 8381379 8382020
+ *      8354548 8381379 8382020 8384043
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at
  * either build or runtime
@@ -274,6 +274,27 @@ public class TimeZoneNamesTest {
                 "EDT",
                 "Восточная Америка",
                 "ET"},
+
+            // Hawaii/Aleutian
+            //
+            // Note that CLDR v48 only contains the standard names in "Hawaii"
+            // metazone. Other long names are synthesized, and short names are
+            // from TZDB. "America/Adak" reflects the "Hawaii_Aleutian" metazone
+            // names.
+            {"Pacific/Honolulu", Locale.US,
+                "Hawaii-Aleutian Standard Time",
+                "HST",
+                "Honolulu Daylight Time",
+                "HST",
+                "Honolulu Time",
+                "HST"},
+            {"America/Adak", Locale.US,
+                "Hawaii-Aleutian Standard Time",
+                "HAST",
+                "Hawaii-Aleutian Daylight Time",
+                "HADT",
+                "Hawaii-Aleutian Time",
+                "HAT"},
         };
     }
 

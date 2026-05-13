@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static java.lang.classfile.ClassFile.*;
@@ -434,8 +435,7 @@ public class ClassWriter extends BasicWriter {
             return;
 
         var flags = f.flags();
-        writeModifiers(flagsReportUnknown(flags, cffv()).stream().filter(fl -> fl.sourceModifier())
-                .map(fl -> Modifier.toString(fl.mask())).toList());
+        writeModifiers(getModifiers(flagsReportUnknown(flags, cffv())));
         print(() -> sigPrinter.print(
                 f.findAttribute(Attributes.signature())
                         .map(SignatureAttribute::asTypeSignature)
@@ -494,9 +494,7 @@ public class ClassWriter extends BasicWriter {
 
         int flags = m.flags().flagsMask();
 
-        var modifiers = new ArrayList<String>();
-        for (var f : flagsReportUnknown(m.flags(), cffv()))
-            if (f.sourceModifier()) modifiers.add(Modifier.toString(f.mask()));
+        var modifiers = getModifiers(flagsReportUnknown(m.flags(), cffv()));
 
         String name = "???";
         try {
@@ -815,7 +813,7 @@ public class ClassWriter extends BasicWriter {
     private static Set<String> getModifiers(Set<AccessFlag> flags) {
         Set<String> s = new LinkedHashSet<>();
         for (var f : flags)
-            if (f.sourceModifier()) s.add(Modifier.toString(f.mask()));
+            if (f.sourceModifier()) s.add(f == AccessFlag.STRICT ? "strictfp" : f.name().toLowerCase(Locale.ROOT));
         return s;
     }
 

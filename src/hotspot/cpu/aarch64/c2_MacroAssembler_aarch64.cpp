@@ -265,7 +265,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
       // Check if object matches.
       ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, t3, t2, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
       cmp(t3, obj);
       br(Assembler::NE, slow_path);
 

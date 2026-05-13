@@ -545,7 +545,7 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
 
 CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
   if (_counters.cpus != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _counters.cpus);
+    FREE_C_HEAP_ARRAY(_counters.cpus);
   }
 }
 
@@ -811,7 +811,7 @@ int SystemProcessInterface::SystemProcesses::ProcessIterator::current(SystemProc
   cmdline = get_cmdline();
   if (cmdline != nullptr) {
     process_info->set_command_line(allocate_string(cmdline));
-    FREE_C_HEAP_ARRAY(char, cmdline);
+    FREE_C_HEAP_ARRAY(cmdline);
   }
 
   return OS_OK;
@@ -937,12 +937,12 @@ CPUInformationInterface::~CPUInformationInterface() {
   if (_cpu_info != nullptr) {
     if (_cpu_info->cpu_name() != nullptr) {
       const char* cpu_name = _cpu_info->cpu_name();
-      FREE_C_HEAP_ARRAY(char, cpu_name);
+      FREE_C_HEAP_ARRAY(cpu_name);
       _cpu_info->set_cpu_name(nullptr);
     }
     if (_cpu_info->cpu_description() != nullptr) {
        const char* cpu_desc = _cpu_info->cpu_description();
-       FREE_C_HEAP_ARRAY(char, cpu_desc);
+       FREE_C_HEAP_ARRAY(cpu_desc);
       _cpu_info->set_cpu_description(nullptr);
     }
     delete _cpu_info;
