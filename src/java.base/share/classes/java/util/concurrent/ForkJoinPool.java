@@ -1288,7 +1288,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                if (((room == 0 | room == m) ||
+                if ((room == 0 ||
                      U.getReferenceVolatile(a, slotOffset(m & (s - 1))) == null) &&
                     pool != null)
                     pool.signalWork();   // may have appeared empty
@@ -2013,9 +2013,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 int prevSrc = src;
                                 w.source = src = qid; // volatile
                                 if (nt != null &&
-                                    (qid != prevSrc ||
-                                     ((qid & 1) == 0 &&
-                                      (fifo != 0 || t.noUserHelp() != 0))))
+                                    (qid != prevSrc || (qid & 1) == 0))
                                     signalWork();     // propagate
                                 w.topLevelExec(t, fifo);
                                 rescan = true;
