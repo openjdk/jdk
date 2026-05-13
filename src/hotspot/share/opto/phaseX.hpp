@@ -489,6 +489,9 @@ private:
   // changes happen far away.
   bool needs_deep_revisit(const Node* n) const;
 
+  void split_memory_phis();
+  MergeMemNode* try_push_mergemems_down_through_phi(PhiNode* phi, const VectorSet* excluded_idx, VectorSet& tmp);
+
   // Subsume users of node 'old' into node 'nn'
   void subsume_node( Node *old, Node *nn );
 

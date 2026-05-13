@@ -396,8 +396,8 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     base = address->in(AddPNode::Base);
   }
   if (base != nullptr && phase->type(base)->higher_equal(TypePtr::NULL_PTR) &&
-      !t_adr->isa_rawptr()) {
-    // Note: raw address has TOP base and top->higher_equal(TypePtr::NULL_PTR) is true.
+      !t_adr->isa_rawptr() && !t_adr->isa_klassptr()) {
+    // Note: non-oop address has TOP base and top->higher_equal(TypePtr::NULL_PTR) is true.
     // Skip this node optimization if its address has TOP base.
     return NodeSentinel; // caller will return null
   }
@@ -5971,6 +5971,36 @@ void MergeMemNode::set_base_memory(Node *new_base) {
       if (in(i) == new_base)  set_req(i, empty_mem);
     }
   }
+}
+
+// The base_memory of this is a MergeMemNode, collapse it into this, effectively looking through
+// the MergeMem base input of this node
+void MergeMemNode::collapse_mergemem_base(PhaseGVN* phase) {
+  MergeMemNode* base = base_memory()->isa_MergeMem();
+  assert(base != nullptr, "unexpected base_memory %s", base_memory()->Name());
+
+  grow_to_match(base);
+  Node* empty_mem = empty_memory();
+  assert(base->is_empty_memory(empty_mem), "must be compatible");
+
+  Node* base_base = base->base_memory();
+  assert(!is_empty_memory(base_base), "must not be an empty memory");
+  assert(base_base != this, "invalid cycle");
+  assert(!base_base->is_MergeMem(), "should not chain");
+  set_req_X(Compile::AliasIdxBot, base_base, phase);
+
+  for (uint i = Compile::AliasIdxRaw; i < req(); i++) {
+    Node* current_mem = in(i);
+    if (current_mem == base_base) {
+      set_req_X(i, empty_mem, phase);
+    } else if (is_empty_memory(current_mem)) {
+      Node* new_mem = i < base->req() ? base->in(i) : empty_mem;
+      assert(new_mem != this, "invalid cycle");
+      set_req_X(i, new_mem, phase);
+    }
+  }
+
+  assert(verify_sparse(), "MergeMem invariant");
 }
 
 //------------------------------out_RegMask------------------------------------

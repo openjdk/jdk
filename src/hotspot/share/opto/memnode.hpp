@@ -1542,6 +1542,9 @@ public:
   void iteration_setup(const MergeMemNode* other = nullptr);
   // push sentinels until I am at least as long as the other (semantic no-op)
   void grow_to_match(const MergeMemNode* other);
+
+  void collapse_mergemem_base(PhaseGVN* phase);
+
   bool verify_sparse() const PRODUCT_RETURN0;
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

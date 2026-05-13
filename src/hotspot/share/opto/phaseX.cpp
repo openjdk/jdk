@@ -24,6 +24,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
@@ -35,11 +36,15 @@
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
+#include "opto/memnode.hpp"
+#include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //=============================================================================
@@ -1201,6 +1206,11 @@ void PhaseIterGVN::optimize(bool deep) {
     return;
   }
 
+  split_memory_phis();
+  if (drain_worklist()) {
+    return;
+  }
+
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit_converged = deep_revisit();
     if (C->failing()) {
@@ -1210,6 +1220,291 @@ void PhaseIterGVN::optimize(bool deep) {
 
   NOT_PRODUCT(verify_PhaseIterGVN(deep_revisit_converged);)
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
+}
+
+// Bottom memory Phis are peculiar. Consider a bottom memory Phi bot_phi and an arbitrary alias
+// class mem.
+//
+// 1. Sometimes, bot_phi does not contain the memory state corresponding to mem, and there is
+// another memory Phi mem_phi at the same region representing the memory state corresponding to
+// mem.
+//
+// if (b) {
+//   Call1();
+//   MemProj1(Call1);
+// } else {
+//   Call2();
+//   MemProj2(Call2);
+//   Store1(_, MemProj2, p, v): mem;
+// }
+// bot_phi = Phi(MemProj1, MemProj2);
+// mem_phi = Phi(MemProj1, Store1);
+//
+// In this example, bot_phi cannot contain the memory state corresponding to mem, because MemProj2
+// does not capture the store into that memory.
+//
+// 2. Sometimes, bot_phi contains the memory state corresponding to mem, even if there is another
+// memory Phi at the same region representing the memory state corresponding to mem.
+//
+// Call1();
+// MemProj1(Call1);
+// Store1(_, MemProj1, p1, v): mem;
+// MergeMem1(MemProj1, Top, Store1);
+// Load1(_, Store1, p2): mem;
+// Load2(_, MergeMem, p3): mem;
+//
+// We somehow want to multiversion some statements:
+//
+// Call1();
+// MemProj1(Call1);
+// if (b) {
+//   Store11(_, MemProj1, p1, v): mem;
+//   MergeMem11(MemProj1, Top, Store11);
+// } else {
+//   Store12(_, MemProj1, p1, v): mem;
+//   MergeMem12(MemProj1, Top, Store12);
+// }
+// bot_phi = Phi(MergeMem11, MergeMem12);
+// mem_phi = Phi(Store11, Store12);
+// Load1(_, mem_phi, p2): mem;
+// Load2(_, bot_phi, p3): mem;
+//
+// In this example, bot_phi must contain the memory state corresponding to mem, because there is a
+// load corresponding to mem from it. This pattern can be eventually simplified after IGVN, but
+// until then, the existence of mem_phi does not mean that bot_phi does not contain the memory
+// state corresponding to mem.
+//
+// 3. Sometimes, bot_phi does not contain the memory state corresponding to mem, even if there is
+// not any memory Phi at the same region representing the memory state corresponding to mem.
+//
+// Call1();
+// MemProj1(Call1);
+// Store1(_, MemProj1, p, v);
+// if (b) {
+//   MergeMem1(MemProj1, Top, Store1);
+// }
+// bot_phi = Phi(MergeMem1, MemProj1);
+//
+// In this case, bot_phi does not contain the memory state corresponding to mem, because in one
+// branch, its input is MemProj1, which does not capture the latest store Store1 of the alias class
+// mem. This situation can be removed if we push the MergeMem down through the Phi, but this
+// transformation is not universally applicable during IGVN because it can lead to infinite loop.
+//
+// This funtion solves the issue above by pushing all MergeMem inputs of bottom memory Phis down
+// through the Phi in a controlled manner. The notable property of the transformation is that,
+// the push effectively splits the bottom memory Phi, so we know for certain the new bottom memory
+// Phi does not contain the memory states corresponding to the other Phis.
+// For example:
+//
+//   Proj1       Store
+//      \       /
+//       MergeMem        Proj2
+//             \       /
+//                Phi
+//                 |
+//                ...
+//
+// Into:
+//
+//   Proj1     Proj2    Store     Proj2(this is the same node as the other Proj2)
+//       \     /            \     /
+//         Phi1              Phi2
+//             \            /
+//                MergeMem
+//                   |
+//                  ...
+//
+// While it is uncertain which memory state the original Phi contains, it is certain that Phi1 (the
+// new bottom memory Phi) does not contain the memory state corresponding to Phi2, because all uses
+// of Phi1 are uses of the new MergeMem, and that MergeMem does not read the memory state
+// corresponding to Phi2 from Phi1.
+//
+// As a result, if we record which alias classes have been split from each bottom memory Phi, it is
+// certain that the transformation will terminate, because if a MergeMem input of a bottom memory
+// Phi has all its non-top inputs being known to be excluded from that Phi, then the Phi does not
+// have to be split anymore (i.e. it can simply skip the MergeMem and is rewired to the MergeMem's
+// base input instead of having the MergeMem pushed through it).
+void PhaseIterGVN::split_memory_phis() {
+  ResourceMark rm;
+  Unique_Node_List control_graph;
+  Unique_Node_List bottom_mem_phis;
+
+  // Visit the graph in BFS order, this is an optimization that makes it so that a control is
+  // often processed after its inputs, which may help the algorithm converge faster
+  control_graph.push(C->root());
+  for (uint i = 0; i < control_graph.size(); i++) {
+    Node* n = control_graph.at(i);
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* out = n->fast_out(i);
+      if (out->is_CFG()) {
+        control_graph.push(out);
+      } else if (out->is_memory_phi() && out->adr_type() == TypePtr::BOTTOM) {
+        bottom_mem_phis.push(out);
+      }
+    }
+  }
+
+  // Map the Phi idx to the VectorSet representing the alias indices that have been split from that
+  // Phi
+  GrowableArray<VectorSet*> excluded_idx_map;
+  VectorSet tmp;
+  bool progress = true;;
+  for (int iter = 0; progress; iter++) {
+    constexpr int iter_limit = 100;
+    assert(iter < iter_limit, "infinite loop");
+
+    progress = false;
+    for (uint phi_idx = 0; phi_idx < bottom_mem_phis.size(); phi_idx++) {
+      PhiNode* phi = bottom_mem_phis.at(phi_idx)->as_Phi();
+      int phi_key = phi->_idx;
+      VectorSet* excluded_idx = phi_key < excluded_idx_map.length() ? excluded_idx_map.at(phi_key) : nullptr;
+      MergeMemNode* transformed_phi = try_push_mergemems_down_through_phi(phi, excluded_idx, tmp);
+      if (transformed_phi == nullptr) {
+        continue;
+      }
+
+      // Record progress
+      C->print_method(PHASE_AFTER_SPLIT_MEMORY_PHI, 5, phi);
+      progress = true;
+      if (excluded_idx == nullptr) {
+        excluded_idx = new VectorSet();
+        excluded_idx_map.at_put_grow(phi_key, excluded_idx);
+      }
+
+      for (MergeMemStream mms(transformed_phi); mms.next_non_empty();) {
+        if (!mms.at_base_memory()) {
+          excluded_idx->set(mms.alias_idx());
+        }
+      }
+    }
+  }
+}
+
+// Try to push MergeMem inputs of a bottom memory Phi through that Phi. This function is somewhat
+// similar to what PhiNode::Ideal does, but it is used exclusively for this transformation in that
+// it reuses the old Phi as the new Phi, it rewires all uses of phi to the new MergeMemNode, and it
+// eagerly collapses chained MergeMem if the push results in a MergeMem being the base of another
+// MergeMem.
+// If phi has no MergeMem input, or for each of them, all non-top input of the MergeMem has been
+// split from phi before (recorded in excluded_idx), then this function rewires the input of phi as
+// necessary without pushing the MergeMem inputs down.
+MergeMemNode* PhaseIterGVN::try_push_mergemems_down_through_phi(PhiNode* phi, const VectorSet* excluded_idx, VectorSet& tmp) {
+  assert(phi->is_memory_phi(), "must be a memory Phi");
+  assert(phi->adr_type() == TypePtr::BOTTOM, "must be a bottom memory Phi");
+
+  // Record existing Phis to avoid creating multiple Phis of the same memory at the same Region
+  VectorSet& existing_phis = tmp;
+  existing_phis.clear();
+  MergeMemNode* result = nullptr;
+  bool progress = false;
+  for (uint phi_in_idx = 1; phi_in_idx < phi->req(); phi_in_idx++) {
+    MergeMemNode* phi_in = phi->in(phi_in_idx)->isa_MergeMem();
+    if (phi_in == nullptr) {
+      continue;
+    }
+
+    if (result == nullptr) {
+      result = MergeMemNode::make(phi);
+      register_new_node_with_optimizer(result);
+
+      RegionNode* region = phi->region();
+      for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+        Node* mem_phi = region->fast_out(i);
+        if (mem_phi->is_memory_phi() && mem_phi->adr_type() != TypePtr::BOTTOM) {
+          int alias_idx = C->get_alias_index(mem_phi->adr_type());
+          existing_phis.set(alias_idx);
+          result->set_memory_at(alias_idx, mem_phi);
+        }
+      }
+    }
+
+    result->grow_to_match(phi_in);
+    for (MergeMemStream mms(phi_in); mms.next_non_empty();) {
+      if (mms.at_base_memory()) {
+        continue;
+      }
+
+      int alias_idx = mms.alias_idx();
+      if (excluded_idx != nullptr && excluded_idx->test(alias_idx)) {
+        continue;
+      }
+
+      progress = true;
+      if (existing_phis.test(alias_idx)) {
+        continue;
+      }
+
+      Node* current_mem = result->in(alias_idx);
+      if (result->is_empty_memory(current_mem)) {
+        current_mem = phi->slice_memory(C->get_adr_type(alias_idx));
+        register_new_node_with_optimizer(current_mem);
+        result->set_req(alias_idx, current_mem);
+      }
+      current_mem->set_req(phi_in_idx, mms.memory());
+    }
+
+    Node* phi_in_base = phi_in->base_memory();
+    assert(!phi_in_base->is_MergeMem(), "should not chain");
+    replace_input_of(phi, phi_in_idx, phi_in_base);
+  }
+
+  if (!progress) {
+    if (result != nullptr) {
+      remove_dead_node(result, PhaseIterGVN::NodeOrigin::Speculative);
+    }
+
+    return nullptr;
+  }
+
+  // Self-edges of the original Phi also become self-edges of the split Phis
+  assert(result != nullptr, "must have created new node");
+  for (MergeMemStream mms(result); mms.next_non_empty(); ) {
+    Node* current_mem = mms.memory();
+    assert(current_mem->is_Phi(), "unexpected result input %s", current_mem->Name());
+    assert(current_mem->req() == phi->req(), "unexpected number of input %d - %d", phi->req(), current_mem->req());
+    if (mms.at_base_memory()) {
+      assert(current_mem == phi, "unexpected modification of base memory");
+      continue;
+    }
+
+    for (uint i = 1; i < current_mem->req(); i++) {
+      if (current_mem->in(i) == phi) {
+        current_mem->set_req(i, current_mem);
+      }
+    }
+  }
+
+  // Replace the old Phi with result in the graph
+  for (DUIterator_Fast phi_out_max, phi_out_idx = phi->fast_outs(phi_out_max); phi_out_idx < phi_out_max; phi_out_idx++) {
+    Node* phi_out = phi->fast_out(phi_out_idx);
+    if (phi_out == phi || phi_out == result) {
+      continue;
+    }
+
+    uint del_cnt = 0;
+    for (uint i = 0; i < phi_out->len(); i++) {
+      Node* phi_out_in = phi_out->in(i);
+      if (phi_out_in == phi) {
+        replace_input_of(phi_out, i, result);
+        del_cnt++;
+      }
+    }
+
+    --phi_out_idx;
+    phi_out_max -= del_cnt;
+  }
+
+  // Eagerly collapse MergeMem chains at base_memory
+  for (DUIterator_Fast imax, i = result->fast_outs(imax); i < imax; i++) {
+    Node* out = result->fast_out(i);
+    if (MergeMemNode* mm = out->isa_MergeMem(); mm != nullptr && mm->base_memory() == result) {
+      mm->collapse_mergemem_base(this);
+      --i;
+      --imax;
+    }
+  }
+
+  return result;
 }
 
 #ifdef ASSERT
@@ -2163,6 +2458,35 @@ void PhaseIterGVN::verify_node_invariants_for(const Node* n) {
       tty->print_cr("%s", ss.as_string());
 
       assert(false, "Broken node invariant for %s", n->Name());
+    }
+  } else if (n->is_Region()) {
+    ResourceMark rm;
+    VectorSet visited_idx;
+    for (DUIterator_Fast n_out_max, n_out_idx = n->fast_outs(n_out_max); n_out_idx < n_out_max; n_out_idx++) {
+      Node* out = n->fast_out(n_out_idx);
+      if (out->is_memory_phi()) {
+        if (out->adr_type() == TypePtr::BOTTOM) {
+          for (uint i = 1; i < out->req(); i++) {
+            if (out->in(i)->is_MergeMem()) {
+              stringStream ss;
+              ss.cr();
+              ss.print_cr("Bottom memory Phi with a MergeMem input");
+              out->dump_bfs(2, nullptr, "", &ss);
+              tty->print_cr("%s", ss.as_string());
+              assert(false, "Broken node invariant for %s", n->Name());
+            }
+          }
+        } else {
+          if (visited_idx.test_set(C->get_alias_index(out->adr_type()))) {
+            stringStream ss;
+            ss.cr();
+            ss.print_cr("Ambiguous memory Phi at %s", n->Name());
+            n->dump_bfs(2, nullptr, "-m", &ss);
+            tty->print_cr("%s", ss.as_string());
+            assert(false, "Broken node invariant for %s", n->Name());
+          }
+        }
+      }
     }
   }
 }

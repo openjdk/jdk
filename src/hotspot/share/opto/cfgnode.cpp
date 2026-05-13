@@ -24,6 +24,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -34,9 +35,11 @@
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
+#include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -1105,23 +1108,30 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
   const TypeOopPtr *t_oop = at->isa_oopptr();
   assert(t_oop != nullptr && t_oop->is_known_instance(), "expecting instance oopptr");
 
-  // Check if an appropriate node already exists.
-  Node *region = in(0);
-  for (DUIterator_Fast kmax, k = region->fast_outs(kmax); k < kmax; k++) {
-    Node* use = region->fast_out(k);
-    if( use->is_Phi()) {
-      PhiNode *phi2 = use->as_Phi();
-      if (phi2->type() == Type::MEMORY && phi2->adr_type() == at) {
-        return phi2;
+  auto find_existing = [&](const PhiNode* bot_phi) -> PhiNode* {
+    Node* region = bot_phi->in(0);
+    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+      Node* use = region->fast_out(i);
+      if (use->is_Phi() && use->bottom_type() == Type::MEMORY && use->adr_type() == at) {
+        return use->as_Phi();
       }
     }
+
+    return nullptr;
+  };
+
+  PhiNode* nphi = find_existing(this);
+  if (nphi != nullptr) {
+    return nphi;
   }
+
   Compile *C = igvn->C;
   ResourceMark rm;
   Node_Array node_map;
   Node_Stack stack(C->live_nodes() >> 4);
-  PhiNode *nphi = slice_memory(at);
-  igvn->register_new_node_with_optimizer( nphi );
+
+  nphi = slice_memory(at);
+  igvn->register_new_node_with_optimizer(nphi);
   node_map.map(_idx, nphi);
   stack.push((Node *)this, 1);
   while(!stack.is_empty()) {
@@ -1138,6 +1148,14 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
       PhiNode *optphi = opt->is_Phi() ? opt->as_Phi() : nullptr;
       if (optphi != nullptr && optphi->adr_type() == TypePtr::BOTTOM) {
         opt = node_map[optphi->_idx];
+        if (opt == nullptr) {
+          // Phis that are created previously can be elided during IGVN. As a result, even if there
+          // is no corresponding Phi at the same Region as this, there can still be one here, and
+          // we must look for it to avoid generating multiple memory Phis of the same adr_type.
+          opt = find_existing(optphi);
+          node_map.map(optphi->_idx, opt);
+        }
+
         if (opt == nullptr) {
           stack.push(ophi, i);
           nphi = optphi->slice_memory(at);
@@ -2151,6 +2169,68 @@ bool PhiNode::is_split_through_mergemem_terminating() const {
   return true;
 }
 
+// Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
+//     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
+MergeMemNode* PhiNode::push_mergemems_down_through_phi(PhaseIterGVN* igvn) {
+  assert(igvn != nullptr, "only during IGVN");
+  PhiNode* new_base = (PhiNode*) clone();
+  // Must eagerly register phis, since they participate in loops.
+  igvn->register_new_node_with_optimizer(new_base);
+  MergeMemNode* result = MergeMemNode::make(new_base);
+
+  // Record the existing memory Phis to avoid creating multiple Phis of the same memory at the same
+  // RegionNode
+  ResourceMark rm;
+  VectorSet existing_phis;
+  RegionNode* region = this->region();
+  for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+    Node* mem_phi = region->fast_out(i);
+    if (mem_phi->is_memory_phi() && mem_phi->adr_type() != TypePtr::BOTTOM) {
+      int alias_idx = igvn->C->get_alias_index(mem_phi->adr_type());
+      existing_phis.set(alias_idx);
+      result->set_memory_at(alias_idx, mem_phi);
+    }
+  }
+
+  for (uint phi_in_idx = 1; phi_in_idx < req(); phi_in_idx++) {
+    MergeMemNode* phi_in = in(phi_in_idx)->isa_MergeMem();
+    if (phi_in == nullptr) {
+      continue;
+    }
+
+    for (MergeMemStream mms(result, phi_in); mms.next_non_empty2(); ) {
+      if (existing_phis.test(mms.alias_idx())) {
+        continue;
+      }
+
+      // If we have not seen this slice yet, make a phi for it.
+      bool made_new_phi = false;
+      if (mms.is_empty()) {
+        Node* new_phi = new_base->slice_memory(mms.adr_type(igvn->C));
+        made_new_phi = true;
+        igvn->register_new_node_with_optimizer(new_phi);
+        mms.set_memory(new_phi);
+      }
+
+      Node* phi = mms.memory();
+      assert(made_new_phi || phi->in(phi_in_idx) == phi_in, "replace the i-th merge by a slice");
+      phi->set_req_X(phi_in_idx, mms.memory2(), igvn);
+    }
+  }
+
+  // Distribute all self-loops
+  for (MergeMemStream mms(result); mms.next_non_empty(); ) {
+    Node* phi = mms.memory();
+    for (uint i = 1; i < req(); ++i) {
+      if (phi->in(i) == this) {
+        phi->set_req_X(i, phi, igvn);
+      }
+    }
+  }
+
+  return result;
+}
+
 // Is one of the inputs a Cast that has not been processed by igvn yet?
 bool PhiNode::wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const {
   for (uint i = 1, cnt = req(); i < cnt; ++i) {
@@ -2619,53 +2699,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           return top;
         }
 
-        // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
-        //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
-        PhaseIterGVN* igvn = phase->is_IterGVN();
-        assert(igvn != nullptr, "sanity check");
-        PhiNode* new_base = (PhiNode*) clone();
-        // Must eagerly register phis, since they participate in loops.
-        igvn->register_new_node_with_optimizer(new_base);
-
-        MergeMemNode* result = MergeMemNode::make(new_base);
-        for (uint i = 1; i < req(); ++i) {
-          Node *ii = in(i);
-          if (ii->is_MergeMem()) {
-            MergeMemNode* n = ii->as_MergeMem();
-            for (MergeMemStream mms(result, n); mms.next_non_empty2(); ) {
-              // If we have not seen this slice yet, make a phi for it.
-              bool made_new_phi = false;
-              if (mms.is_empty()) {
-                Node* new_phi = new_base->slice_memory(mms.adr_type(phase->C));
-                made_new_phi = true;
-                igvn->register_new_node_with_optimizer(new_phi);
-                mms.set_memory(new_phi);
-              }
-              Node* phi = mms.memory();
-              assert(made_new_phi || phi->in(i) == n, "replace the i-th merge by a slice");
-              phi->set_req_X(i, mms.memory2(), phase);
-            }
-          }
-        }
-        // Distribute all self-loops.
-        { // (Extra braces to hide mms.)
-          for (MergeMemStream mms(result); mms.next_non_empty(); ) {
-            Node* phi = mms.memory();
-            for (uint i = 1; i < req(); ++i) {
-              if (phi->in(i) == this) {
-                phi->set_req_X(i, phi, phase);
-              }
-            }
-          }
-        }
-
         // We could immediately transform the new Phi nodes here, but that can
         // result in creating an excessive number of new nodes within a single
         // IGVN iteration. We have put the Phi nodes on the IGVN worklist, so
         // they are transformed later on in any case.
-
-        // Replace self with the result.
-        return result;
+        return push_mergemems_down_through_phi(phase->is_IterGVN());
       }
     }
     //
