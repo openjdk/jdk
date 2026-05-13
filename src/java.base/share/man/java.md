@@ -4110,7 +4110,7 @@ The AOT cache can be used with the following command-line options:
 :   Specifies the AOT Mode for this run.
     *mode* must be one of the following: `auto`, `off`, `record`, `create`, `on`, or `required`.
 
-    Note that `on` is an alias to `required`. All discussion below about `required`
+    Note that `on` is an alias for `required`. All discussion below about `required`
     also applies to `on`. The use of `on` is discouraged. The support of `on` may be deprecated and
     removed in future releases.
 
