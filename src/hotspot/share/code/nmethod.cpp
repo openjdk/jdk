@@ -1130,7 +1130,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  CompLevel comp_level
+  CompLevel comp_level,
+  Flags flags
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -1175,7 +1176,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     nmethod(method(), compiler->type(), nmethod_size, immutable_data_size, mutable_data_size,
             compile_id, entry_bci, immutable_data, offsets, orig_pc_offset,
             debug_info, dependencies, code_buffer, frame_size, oop_maps,
-            handler_table, nul_chk_table, compiler, comp_level
+            handler_table, nul_chk_table, compiler, comp_level,
+            flags
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -1229,10 +1231,7 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _is_unloading_state         = 0;
   _state                      = not_installed;
 
-  _has_unsafe_access          = 0;
-  _has_wide_vectors           = 0;
-  _has_monitors               = 0;
-  _has_scoped_access          = 0;
+  _flags                      = Flags();
   _has_flushed_dependencies   = false;
   _is_unlinked                = false;
   _load_reported              = false; // jvmti state
@@ -1483,10 +1482,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _is_unloading_state           = nm._is_unloading_state;
   _state                        = not_installed;
 
-  _has_unsafe_access            = nm._has_unsafe_access;
-  _has_wide_vectors             = nm._has_wide_vectors;
-  _has_monitors                 = nm._has_monitors;
-  _has_scoped_access            = nm._has_scoped_access;
+  _flags                        = nm._flags;
   _has_flushed_dependencies     = nm._has_flushed_dependencies;
   _is_unlinked                  = nm._is_unlinked;
   _load_reported                = nm._load_reported;
@@ -1684,7 +1680,8 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  CompLevel comp_level
+  CompLevel comp_level,
+  Flags flags
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -1711,6 +1708,7 @@ nmethod::nmethod(
     _comp_level      = comp_level;
     _compiler_type   = type;
     _orig_pc_offset  = orig_pc_offset;
+    _flags           = flags;
 
     _num_stack_arg_slots = entry_bci != InvocationEntryBci ? 0 : _method->constMethod()->num_stack_arg_slots();
 
