@@ -120,7 +120,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 bool ShenandoahYoungHeuristics::old_collection_needs_more_time(ShenandoahOldGeneration* old_generation, ShenandoahOldHeuristics* old_heuristics) {
   if (ShenandoahMinimumOldTimeMs > 0) {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
-      const auto old_time_elapsed = static_cast<size_t>(old_heuristics->elapsed_cycle_time() * 1000);
+      const auto old_time_elapsed = shenandoah_safe_size_cast(old_heuristics->elapsed_cycle_time() * 1000);
       return old_time_elapsed < ShenandoahMinimumOldTimeMs;
     }
   }
