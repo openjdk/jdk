@@ -2266,9 +2266,10 @@ void ThawBase::thaw_lockstack(stackChunkOop chunk) {
 }
 
 void ThawBase::copy_from_chunk(intptr_t* from, intptr_t* to, int size) {
-  assert(to >= _top_stack_address, "overwrote past thawing space"
+  intptr_t* write_end = StackOrder::towards_older(to, size);
+  assert(StackOrder::is_older_or_equal(to, _top_stack_address), "overwrote past thawing space"
     " to: " INTPTR_FORMAT " top_address: " INTPTR_FORMAT, p2i(to), p2i(_top_stack_address));
-  assert(to + size <= _cont.entrySP(), "overwrote past thawing space");
+  assert(StackOrder::is_younger_or_equal(write_end, _cont.entrySP()), "overwrote past thawing space");
   _cont.tail()->copy_from_chunk_to_stack(from, to, size);
   CONT_JFR_ONLY(_jfr_info.record_size_copied(size);)
 }
@@ -2859,8 +2860,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   // If we're the bottom-most thawed frame, we're writing to within one word from entrySP
   // (we might have one padding word for alignment)
   intptr_t* write_end = StackOrder::towards_older(to, sz);
-  //assert(!is_bottom_frame || (_cont.entrySP() - 1 <= write_end && write_end <= _cont.entrySP()), "");
-  assert(!is_bottom_frame || StackOrder::contains_closed(write_end, _cont.entrySP(), _cont.entrySP() - 1), "");
+  assert(!is_bottom_frame || StackOrder::contains_closed(write_end, _cont.entrySP(), StackOrder::towards_younger(_cont.entrySP(), 1)), "");
   assert(!is_bottom_frame || hf.compiled_frame_stack_argsize() != 0 || (write_end && write_end == _cont.entrySP()), "");
 
   copy_from_chunk(from, to, sz); // copying good oops because we invoked barriers above
