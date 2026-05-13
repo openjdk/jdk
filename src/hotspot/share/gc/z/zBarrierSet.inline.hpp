@@ -30,6 +30,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zNMethod.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "utilities/debug.hpp"
 
@@ -419,24 +420,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
   check_is_valid_zaddress(dst);
   precond(src->klass() == dst->klass());
 
-  if (!dst->is_typeArray() && !initializing_stores_may_elide_store_barriers(dst)) {
-    // The newly allocated object has been or is being tenured and cannot skip
-    // store barriers. This can occur because of segmented large allocations,
-    // or serviceability APIs which run Java code between object allocation and
-    // object initialization.
-
-    clone_obj(src, dst, size);
-    return;
-  }
-
-  // Fix the oops
-  ZBarrierSet::load_barrier_all(src, size);
-
-  // Clone the object
-  Raw::clone_in_heap(src, dst, size);
-
-  // Color store good before handing out
-  ZBarrierSet::color_store_good_all(dst, size);
+  clone_obj(to_zaddress(src), to_zaddress(dst), ZUtils::words_to_bytes(size));
 }
 
 //

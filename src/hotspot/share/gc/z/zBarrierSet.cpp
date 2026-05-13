@@ -131,6 +131,7 @@ class ZBarrierSet::ZClonerOopClosure : public BasicOopIterateClosure {
   const zaddress _src;
   const zaddress _dst;
   const size_t _size;
+  const bool _may_elide_store_barrier;
 
   size_t _copied_bytes;
 
@@ -153,13 +154,16 @@ class ZBarrierSet::ZClonerOopClosure : public BasicOopIterateClosure {
   }
 
 public:
-  ZClonerOopClosure(oop src, oop dst, size_t size)
-    : _src(to_zaddress(src)),
-      _dst(to_zaddress(dst)),
+  ZClonerOopClosure(zaddress src, zaddress dst, size_t size)
+    : _src(src),
+      _dst(dst),
       _size(size),
+      _may_elide_store_barrier(initializing_stores_may_elide_store_barriers(dst)),
       _copied_bytes(0) {}
 
   ~ZClonerOopClosure() {
+    precond(!to_oop(_src)->is_typeArray() || _copied_bytes == 0);
+
     // Copy any potential tail
     copy_to(_size);
 
@@ -171,15 +175,28 @@ public:
 
   virtual void do_oop(oop* p) {
     volatile zpointer* const src_p = (volatile zpointer*)p;
+    const size_t element_or_field_offset = (uintptr_t)src_p - untype(_src);
+    volatile zpointer* const dst_p = (volatile zpointer*)(untype(_dst) + element_or_field_offset);
 
-    const size_t field_offset = (uintptr_t)src_p - untype(_src);
+    // Copy payload up to element or field
+    copy_to(element_or_field_offset);
 
-    // Copy payload up to field
-    copy_to(field_offset);
+    // Clone the oop element or field
+    const zaddress element_or_field = ZBarrier::load_barrier_on_oop_field(src_p);
 
-    // Clone the field
-    volatile zpointer* const dst_p = (volatile zpointer*)(untype(_dst) + field_offset);
-    clone_field_or_element(src_p, dst_p);
+    if (!_may_elide_store_barrier) {
+      // The newly allocated object has been or is being tenured and cannot skip
+      // store barriers. This can occur because of segmented large allocations,
+      // or serviceability APIs which run Java code between object allocation and
+      // object initialization.
+
+      // We avoid healing here because the store below colors the pointer store good,
+      // hence avoiding the cost of a CAS.
+      ZBarrier::store_barrier_on_heap_oop_field(dst_p, false /* heal */);
+    }
+
+    AtomicAccess::store(dst_p, ZAddress::store_good(element_or_field));
+
     _copied_bytes += oopSize;
   }
 
@@ -188,47 +205,14 @@ public:
   }
 };
 
-void ZBarrierSet::clone_field_or_element(volatile zpointer* src_p, volatile zpointer* dst_p) {
-    const zaddress elem = ZBarrier::load_barrier_on_oop_field(src_p);
-    // We avoid healing here because the store below colors the pointer store good,
-    // hence avoiding the cost of a CAS.
-    ZBarrier::store_barrier_on_heap_oop_field(dst_p, false /* heal */);
-    AtomicAccess::store(dst_p, ZAddress::store_good(elem));
-}
-
-void ZBarrierSet::clone_obj_array(objArrayOop src, objArrayOop dst) {
-  // Cloning an object array is similar to performing array copy.
-  // If an array is large enough to have its allocation segmented,
-  // this operation might require GC barriers. However, the intrinsics
-  // for cloning arrays transform the clone to an optimized allocation
-  // and arraycopy sequence, so the performance of this runtime call
-  // does not matter for object arrays.
-
-  volatile zpointer* src_p = (volatile zpointer*)src->base();
-  volatile zpointer* dst_p = (volatile zpointer*)dst->base();
-  const int length = src->length();
-
-  for (const volatile zpointer* const end = src_p + length; src_p < end; src_p++, dst_p++) {
-    clone_field_or_element(src_p, dst_p);
-  }
-}
-
-void ZBarrierSet::clone_obj(oop src, oop dst, size_t size) {
-  if (dst->is_objArray()) {
-    clone_obj_array(objArrayOop(src), objArrayOop(dst));
-    return;
-  }
-
-  // Fix the oops
-  load_barrier_all(src, size);
-
+void ZBarrierSet::clone_obj(zaddress src, zaddress dst, size_t size) {
   // Clone the object
-  ZClonerOopClosure cl(src, dst, ZUtils::words_to_bytes(size));
-  ZIterator::oop_iterate(src, &cl);
+  ZClonerOopClosure cl(src, dst, size);
+  ZIterator::oop_iterate(to_oop(src), &cl);
 }
 
-bool ZBarrierSet::initializing_stores_may_elide_store_barriers(oop new_obj) {
-  return ZHeap::heap()->page(to_zaddress(new_obj))->allows_raw_null();
+bool ZBarrierSet::initializing_stores_may_elide_store_barriers(zaddress new_obj) {
+  return ZHeap::heap()->page(new_obj)->allows_raw_null();
 }
 
 ZBarrierSet::ZBarrierSet()
@@ -308,7 +292,7 @@ static void deoptimize_allocation(JavaThread* thread) {
 }
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
-  if (!initializing_stores_may_elide_store_barriers(new_obj)) {
+  if (!initializing_stores_may_elide_store_barriers(to_zaddress(new_obj))) {
     // We promised C2 that its allocations would end up in young gen. This object
     // is too old to guarantee that. Take a few steps in the interpreter instead,
     // which does not elide barriers based on the age of an object.
