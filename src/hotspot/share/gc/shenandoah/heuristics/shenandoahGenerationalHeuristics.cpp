@@ -481,6 +481,17 @@ void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahHeap*
 
   if (add_regions_to_young > 0) {
     assert(excess_old >= add_regions_to_young * region_size_bytes, "Cannot xfer more than excess old");
+    const ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    if (gen_heap->age_census()->is_always_tenure()) {
+      // Cap excess_old at one min-PLAB per worker so this much stays in old's promotion reserve
+      // instead of being transferred to young.
+      const size_t min_plab_total = gen_heap->plab_min_size() * HeapWordSize * heap->workers()->max_workers();
+      if (excess_old > min_plab_total) {
+        excess_old = min_plab_total;
+        // Avoid underflowing excess_old when we subtract below.
+        add_regions_to_young = 0;
+      }
+    }
     excess_old -= add_regions_to_young * region_size_bytes;
     log_debug(gc, ergo)("Before start of evacuation, total_promotion reserve is young_advance_promoted_reserve: %zu "
                         "plus excess: old: %zu", young_advance_promoted_reserve_used, excess_old);
