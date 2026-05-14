@@ -30,20 +30,38 @@ import jdk.test.lib.Asserts;
  * @library /test/lib
  * @summary Test that aastore generates a type safe graph
  * @run main ${test.main.class}
- * @run main/othervm -Xcomp -XX:CompileOnly=${test.main.class}::test
- *                   -XX:+AlwaysIncrementalInline ${test.main.class}
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=${test.main.class}::test*
+ *                   -XX:-MonomorphicArrayCheck -XX:+AlwaysIncrementalInline ${test.main.class}
  */
 public class TestAastoreTypeSafe {
-    private static class A {
+    private static final class A {
+        int v;
+    }
+
+    private static class B {
+    }
+
+    private static final class C extends B {
         int v;
     }
 
     public static void main(String[] args) {
-        A[] array = new A[1];
-        A element = new A();
-        for (int i = 0; i < 3; i++) {
-            test(true, array, element, element);
-            Asserts.assertEQ(0, element.v);
+        {
+            A[] array = new A[1];
+            A element = new A();
+            for (int i = 0; i < 10; i++) {
+                test1(true, array, element, element);
+                Asserts.assertEQ(0, element.v);
+            }
+        }
+
+        {
+            C[] array = new C[1];
+            C element = new C();
+            for (int i = 0; i < 10; i++) {
+                test2(true, array, element, element);
+                Asserts.assertEQ(0, element.v);
+            }
         }
     }
 
@@ -51,22 +69,41 @@ public class TestAastoreTypeSafe {
     // scheduler missing the dependency between the load from the return value of aaload and the
     // store into alias.v. The load will then be put late just before the second store to alias.v,
     // which is an invalid schedule.
-    private static void test(boolean b, A[] array, Object element, A alias) {
-        aastore(array, element);
-        int v = aaload(array).v;
+    private static void test1(boolean b, A[] array, Object element, A alias) {
+        aastoreA(array, element);
+        int v = aaloadA(array).v;
         alias.v = 1;
         if (b) {
             alias.v = v;
         }
     }
 
-    private static void aastore(A[] array, Object element) {
+    private static void aastoreA(A[] array, Object element) {
         // This forces the compiler to try storing an Object into an A[]. Otherwise, doing
         // array[0] = (A)element will make it so that the stored value being an A already.
         ((Object[]) array)[0] = element;
     }
 
-    private static A aaload(A[] array) {
+    private static A aaloadA(A[] array) {
         return array[0];
+    }
+
+    // Similar to above, but the store cannot be truly type safe because the exact array type is
+    // unknown
+    private static void test2(boolean b, B[] array, Object element, C alias) {
+        aastoreB(array, element);
+        int v = aaloadC(array).v;
+        alias.v = 1;
+        if (b) {
+            alias.v = v;
+        }
+    }
+
+    private static void aastoreB(B[] array, Object element) {
+        ((Object[]) array)[0] = element;
+    }
+
+    private static C aaloadC(B[] array) {
+        return ((C[]) array)[0];
     }
 }

@@ -1217,7 +1217,19 @@ Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phas
     }
   }
 
-  return can_see_stored_value(st, phase);
+  Node* res = can_see_stored_value(st, phase);
+  if (res == nullptr) {
+    return nullptr;
+  }
+
+  // Even if we can see the store, we cannot fold the load if the store is not type safe (e.g.
+  // store a j.l.Object into an array of j.l.String) because folding makes the compiler lose the
+  // type information that the uses of this node may need
+  if (res->bottom_type()->higher_equal(bottom_type())) {
+    return res;
+  }
+
+  return nullptr;
 }
 
 // If st is a store to the same location as this, return the stored value
