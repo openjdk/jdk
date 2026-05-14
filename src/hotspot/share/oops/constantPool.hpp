@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/bsmAttribute.inline.hpp"
+#include "oops/bsmAttribute.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopHandle.hpp"

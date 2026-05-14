@@ -477,6 +477,7 @@ public:
 #endif
 
   bool same_condition(const Node* dom, PhaseIterGVN* igvn) const;
+  void mark_projections_unsafe_for_fold_compare() const;
 };
 
 class RangeCheckNode : public IfNode {

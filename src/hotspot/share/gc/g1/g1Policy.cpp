@@ -728,7 +728,7 @@ bool G1Policy::about_to_start_mixed_phase() const {
   return collector_state()->is_in_concurrent_cycle() || collector_state()->is_in_prepare_mixed_gc();
 }
 
-bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
+bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) const {
   if (about_to_start_mixed_phase()) {
     return false;
   }
@@ -1006,7 +1006,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                                              const G1Predictions* predictor) {
-  return new G1IHOPControl(InitiatingHeapOccupancyPercent,
+  return new G1IHOPControl(G1IHOP,
                            old_gen_alloc_tracker,
                            G1UseAdaptiveIHOP,
                            predictor,
