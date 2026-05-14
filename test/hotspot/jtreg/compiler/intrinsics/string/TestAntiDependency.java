@@ -49,15 +49,18 @@ public class TestAntiDependency {
     static final MethodHandle ENCODE_ISO_HANDLE;
     static {
         try {
-            var lookup = MethodHandles.privateLookupIn(String.class, MethodHandles.lookup());
-            Class<?> stringUtf16Class = lookup.findClass("java.lang.StringUTF16");
-            COMPRESS_HANDLE = lookup.findStatic(stringUtf16Class, "compress",
+            var currentLookup = MethodHandles.lookup();
+            var stringLookup = MethodHandles.privateLookupIn(String.class, currentLookup);
+            Class<?> stringUtf16Class = stringLookup.findClass("java.lang.StringUTF16");
+            var stringUtf16Lookup = MethodHandles.privateLookupIn(stringUtf16Class, currentLookup);
+            COMPRESS_HANDLE = stringUtf16Lookup.findStatic(stringUtf16Class, "compress0",
                     MethodType.methodType(int.class, char[].class, int.class, byte[].class, int.class, int.class));
-            Class<?> stringLatin1Class = lookup.findClass("java.lang.StringLatin1");
-            INFLATE_HANDLE = lookup.findStatic(stringLatin1Class, "inflate",
+            Class<?> stringLatin1Class = stringLookup.findClass("java.lang.StringLatin1");
+            var stringLatin1Lookup = MethodHandles.privateLookupIn(stringLatin1Class, currentLookup);
+            INFLATE_HANDLE = stringLatin1Lookup.findStatic(stringLatin1Class, "inflate0",
                     MethodType.methodType(void.class, byte[].class, int.class, char[].class, int.class, int.class));
-            Class<?> stringCodingClass = lookup.findClass("java.lang.StringCoding");
-            ENCODE_ISO_HANDLE = lookup.findStatic(stringCodingClass, "implEncodeAsciiArray",
+            Class<?> stringCodingClass = stringLookup.findClass("java.lang.StringCoding");
+            ENCODE_ISO_HANDLE = stringLookup.findStatic(stringCodingClass, "encodeAsciiArray0",
                     MethodType.methodType(int.class, char[].class, int.class, byte[].class, int.class, int.class));
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -65,7 +68,10 @@ public class TestAntiDependency {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-opens=java.base/java.lang=ALL-UNNAMED");
+        var testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(1);
+        testFramework.addFlags("--add-opens=java.base/java.lang=ALL-UNNAMED");
+        testFramework.start();
     }
 
     @DontInline
