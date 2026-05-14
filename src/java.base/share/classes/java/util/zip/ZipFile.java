@@ -1719,8 +1719,10 @@ public class ZipFile implements ZipConstants, Closeable {
                     this.cen = null;
                     return;         // only END header present
                 }
-                if (end.cenlen > end.endpos)
+                // Validate END header
+                if (end.cenlen > end.endpos) {
                     zerror("invalid END header (bad central directory size)");
+                }
                 long cenpos = end.endpos - end.cenlen;     // position of CEN table
                 // Get position of first local file (LOC) header, taking into
                 // account that there may be a stub prefixed to the ZIP file.
@@ -1728,18 +1730,22 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (locpos < 0) {
                     zerror("invalid END header (bad central directory offset)");
                 }
-                // read in the CEN
                 if (end.cenlen > MAX_CEN_SIZE) {
                     zerror("invalid END header (central directory size too large)");
                 }
                 if (end.centot < 0 || end.centot > end.cenlen / CENHDR) {
                     zerror("invalid END header (total entries count too large)");
                 }
-                cen = this.cen = new byte[(int)end.cenlen];
-                if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen) {
+                // Validation ensures these are <= Integer.MAX_VALUE
+                int cenlen = Math.toIntExact(end.cenlen);
+                int centot = Math.toIntExact(end.centot);
+
+                // read in the CEN
+                cen = this.cen = new byte[cenlen];
+                if (readFullyAt(cen, 0, cen.length, cenpos) != cenlen) {
                     zerror("read CEN tables failed");
                 }
-                this.total = Math.toIntExact(end.centot);
+                this.total = centot;
             } else {
                 cen = this.cen;
                 this.total = knownTotal;

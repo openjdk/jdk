@@ -29,7 +29,7 @@ import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177 8362171 8369881 8342095
+ * @bug 8350177 8362171 8369881 8342095 8380988
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -74,7 +74,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortLeadingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -100,7 +100,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortTrailingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -126,7 +126,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortReverse(short[] in) {
         short[] res = new short[SIZE];
@@ -152,7 +152,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortBitCount(short[] in) {
         short[] res = new short[SIZE];
@@ -282,7 +282,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteLeadingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -308,7 +308,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteTrailingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -334,7 +334,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteReverse(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -411,7 +411,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteBitCount(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -445,6 +445,50 @@ public class TestSubwordTruncation {
             for (int j = 1; j < 204; j++) {
                 shortField %= intField | 1;
             }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.UMOD_I, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testUMod(final byte[] in) {
+        int n = G.next().intValue();
+        for (int i = 1; i < SIZE; i++) {
+            in[i] = (byte) Integer.remainderUnsigned(n, i);
+        }
+
+        return new Object[] { Integer.valueOf(n), in };
+    }
+
+    @Check(test = "testUMod")
+    public void checkTestUMod(Object[] vals) {
+        int n = (Integer) vals[0];
+        byte[] res = (byte[]) vals[1];
+        for (int i = 1; i < SIZE; i++) {
+            byte val = (byte) Integer.remainderUnsigned(n, i);
+            Asserts.assertEQ(res[i], val);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.UDIV_I, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testUDiv(final byte[] in) {
+        int n = G.next().intValue();
+        for (int i = 1; i < SIZE; i++) {
+            in[i] = (byte) Integer.divideUnsigned(n, i);
+        }
+
+        return new Object[] { Integer.valueOf(n), in };
+    }
+
+    @Check(test = "testUDiv")
+    public void checkTestUDiv(Object[] vals) {
+        int n = (Integer) vals[0];
+        byte[] res = (byte[]) vals[1];
+        for (int i = 1; i < SIZE; i++) {
+            byte val = (byte) Integer.divideUnsigned(n, i);
+            Asserts.assertEQ(res[i], val);
         }
     }
 

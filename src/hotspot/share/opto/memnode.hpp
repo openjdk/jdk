@@ -26,6 +26,7 @@
 #ifndef SHARE_OPTO_MEMNODE_HPP
 #define SHARE_OPTO_MEMNODE_HPP
 
+#include "memory/allocation.hpp"
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
@@ -45,6 +46,8 @@ private:
   bool _mismatched_access; // Mismatched access from unsafe: byte read in integer array for instance
   bool _unsafe_access;     // Access of unsafe origin.
   uint8_t _barrier_data;   // Bit field with barrier information
+
+  friend class AccessAnalyzer;
 
 protected:
 #ifdef ASSERT
@@ -100,15 +103,15 @@ public:
   // Helpers for the optimizer.  Documented in memnode.cpp.
   static bool detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
-                                      PhaseTransform* phase);
+                                      PhaseGVN* phase);
   static bool adr_phi_is_loop_invariant(Node* adr_phi, Node* cast);
 
   static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
   // The following two should probably be phase-specific functions:
-  static DomResult maybe_all_controls_dominate(Node* dom, Node* sub);
-  static bool all_controls_dominate(Node* dom, Node* sub) {
-    DomResult dom_result = maybe_all_controls_dominate(dom, sub);
+  static DomResult maybe_all_controls_dominate(Node* dom, Node* sub, PhaseGVN* phase);
+  static bool all_controls_dominate(Node* dom, Node* sub, PhaseGVN* phase) {
+    DomResult dom_result = maybe_all_controls_dominate(dom, sub, phase);
     return dom_result == DomResult::Dominate;
   }
 
@@ -153,7 +156,7 @@ public:
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
   // aliased stores.
-  Node* find_previous_store(PhaseValues* phase);
+  Node* find_previous_store(PhaseGVN* phase);
 
   // Can this node (load or store) accurately see a stored value in
   // the given memory state?  (The state may or may not be in(Memory).)
@@ -170,6 +173,53 @@ public:
   static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  MemNode* clone_with_adr_type(const TypePtr* adr_type) const {
+    MemNode* new_node = clone()->as_Mem();
+#ifdef ASSERT
+    new_node->_adr_type = adr_type;
+#endif
+    return new_node;
+  }
+};
+
+// Analyze a MemNode to try to prove that it is independent from other memory accesses
+class AccessAnalyzer : StackObj {
+private:
+  PhaseGVN* const _phase;
+  MemNode* const _n;
+  Node* _base;
+  intptr_t _offset;
+  const int _memory_size;
+  bool _maybe_raw;
+  AllocateNode* _alloc;
+  const TypePtr* _adr_type;
+  int _alias_idx;
+
+public:
+  AccessAnalyzer(PhaseGVN* phase, MemNode* n);
+
+  // The result of deciding whether a memory node 'other' writes into the memory which '_n'
+  // observes.
+  class AccessIndependence {
+  public:
+    // Whether 'other' writes into the memory which '_n' observes. This value is conservative, that
+    // is, it is only true when it is provable that the memory accessed by the nodes is
+    // non-overlapping.
+    bool independent;
+
+    // If 'independent' is true, this is the memory input of 'other' that corresponds to the memory
+    // location that '_n' observes. For example, if 'other' is a StoreNode, then 'mem' is its
+    // memory input, if 'other' is a MergeMemNode, then 'mem' is the memory input corresponding to
+    // the alias class of '_n'.
+    // If 'independent' is false,
+    // - 'mem' is non-nullptr if it seems that 'other' writes to the exact memory location '_n'
+    // observes.
+    // - 'mem' is nullptr otherwise.
+    Node* mem;
+  };
+
+  AccessIndependence detect_access_independence(Node* other) const;
 };
 
 //------------------------------LoadNode---------------------------------------
@@ -216,6 +266,7 @@ protected:
   const Type* const _type;      // What kind of value is loaded?
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
+  Node* can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const;
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
@@ -1271,11 +1322,26 @@ public:
   virtual int Opcode() const;
 };
 
+class MemBarStoreLoadNode : public MemBarNode {
+public:
+  MemBarStoreLoadNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Ordering between a volatile store and a following volatile load.
 // Requires multi-CPU visibility?
 class MemBarVolatileNode: public MemBarNode {
 public:
   MemBarVolatileNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// A full barrier blocks all loads and stores from moving across it
+class MemBarFullNode : public MemBarNode {
+public:
+  MemBarFullNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };

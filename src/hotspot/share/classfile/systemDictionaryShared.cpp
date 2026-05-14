@@ -89,11 +89,9 @@ DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 
 #ifdef ASSERT
 static void check_klass_after_loading(const Klass* k) {
-#ifdef _LP64
-  if (k != nullptr && UseCompressedClassPointers) {
+  if (k != nullptr) {
     CompressedKlassPointers::check_encodable(k);
   }
-#endif
 }
 #endif
 
@@ -202,6 +200,20 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   DumpTimeClassInfo* info = _dumptime_table->get_info(k);
   assert(info != nullptr, "must be");
   return info;
+}
+
+void SystemDictionaryShared::check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) {
+  if (CDSConfig::is_dumping_preimage_static_archive() && !is_builtin_loader(ik->class_loader_data())) {
+    if (cfs == nullptr || cfs->source() == nullptr || strncmp(cfs->source(), "file:", 5) != 0) {
+      // AOT cache filtering:
+      // For non-built-in loaders, cache only the classes that have a file: code source, so
+      // we can avoid caching dynamically generated classes that are likely to change from
+      // run to run. This is similar to the filtering in ClassListWriter::write_to_stream()
+      // for the classic CDS static archive.
+      SystemDictionaryShared::log_exclusion(ik, "Not loaded from \"file:\" code source");
+      SystemDictionaryShared::set_excluded(ik);
+    }
+  }
 }
 
 bool SystemDictionaryShared::should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info) {
@@ -371,11 +383,6 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
     k = k->super();
   }
   return false;
-}
-
-bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = _dumptime_table->get(ik);
-  return (info != nullptr) ? info->is_early_klass() : false;
 }
 
 bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
@@ -1270,7 +1277,7 @@ unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({
-        if (MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr)) {
+        if (AOTMetaspace::in_aot_cache(ptr)) {
           assert(hash == SystemDictionaryShared::hash_for_shared_dictionary_quick(ptr), "must be");
         }
       });
