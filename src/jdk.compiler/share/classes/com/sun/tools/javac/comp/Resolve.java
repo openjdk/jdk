@@ -2360,7 +2360,7 @@ public class Resolve {
             } else if (env.toplevel.namedImportScope == scope &&
                     ((sym == typeNotFound && s.kind.matches(KindSelector.TYP)) ||
                     (sym.kind == ERR && s.kind == ERR))) {
-                bestSoFar = bestOf(bestSoFar, new UnresolvableGobalSymbolError(s));
+                bestSoFar = bestOf(bestSoFar, new UnresolvableGlobalSymbolError(s));
             } else
                 bestSoFar = bestOf(bestSoFar, sym);
         }
@@ -4158,9 +4158,9 @@ public class Resolve {
                 List<Type> typeargtypes);
     }
 
-    class UnresolvableGobalSymbolError extends InvalidSymbolError {
+    class UnresolvableGlobalSymbolError extends InvalidSymbolError {
 
-        UnresolvableGobalSymbolError(Symbol sym) {
+        UnresolvableGlobalSymbolError(Symbol sym) {
             super(HIDDEN, sym, "unresolvable class error");
             this.name = sym.name;
         }
