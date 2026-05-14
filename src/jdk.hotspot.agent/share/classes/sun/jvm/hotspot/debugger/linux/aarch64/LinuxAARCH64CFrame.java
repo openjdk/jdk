@@ -171,7 +171,7 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
       boolean fallback = false;
       try {
         senderDwarf = createDwarfParser(linuxDbg(), senderPC);
-      } catch (DebuggerException e) {
+      } catch (DebuggerException _) {
         // Try again with PC-1 in case PC is just outside function bounds,
         // due to function ending with a `call` instruction.
         try {
@@ -183,8 +183,9 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
             // DWARF processing might fail because vdso.so .eh_frame is not required on aarch64.
             return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf);
           }
-          // Rethrow the original exception if the frame is not a signal trampoline.
-          throw e;
+
+          // We cannot unwind anymore without appropriate DWARF.
+          return null;
         }
       }
 

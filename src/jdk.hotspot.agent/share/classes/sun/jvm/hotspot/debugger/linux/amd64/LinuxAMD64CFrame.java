@@ -100,15 +100,15 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
      boolean fallback = false;
      try {
        senderDwarf = createDwarfParser(linuxDbg(), senderPC);
-     } catch (DebuggerException e) {
+     } catch (DebuggerException _) {
        // Try again with PC-1 in case PC is just outside function bounds,
        // due to function ending with a `call` instruction.
        try {
          senderDwarf = createDwarfParser(linuxDbg(), senderPC.addOffsetTo(-1));
          fallback = true;
        } catch (DebuggerException _) {
-         // Rethrow the original exception if DWARF processing failed.
-         throw e;
+         // We cannot unwind anymore without appropriate DWARF.
+         return null;
        }
      }
 
