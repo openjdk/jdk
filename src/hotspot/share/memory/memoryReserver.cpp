@@ -488,7 +488,8 @@ static ReservedSpace establish_noaccess_prefix(const ReservedSpace& reserved, si
   assert(reserved.alignment() >= os::vm_page_size(), "must be at least page size big");
   assert(reserved.is_reserved(), "should only be called on a reserved memory area");
 
-  if (reserved.end() > (char *)OopEncodingHeapMax) {
+  if (reserved.end() > (char *)OopEncodingHeapMax || UseCompatibleCompressedOops) {
+    assert((reserved.base() != nullptr), "sanity");
     if (true
         WIN64_ONLY(&& !UseLargePages)
         AIX_ONLY(&& (os::Aix::supports_64K_mmap_pages() || os::vm_page_size() == 4*K))) {
@@ -534,13 +535,20 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
   const size_t attach_point_alignment = lcm(alignment, os_attach_point_alignment);
 
   uintptr_t aligned_heap_base_min_address = align_up(MAX2(HeapBaseMinAddress, alignment), alignment);
-  size_t noaccess_prefix = ((aligned_heap_base_min_address + size) > OopEncodingHeapMax) ?
-    noaccess_prefix_size : 0;
+  uintptr_t heap_end_address = aligned_heap_base_min_address + size;
+
+  bool unscaled  = false;
+  bool zerobased = false;
+  if (!UseCompatibleCompressedOops) { // heap base is not enforced
+    unscaled  = (heap_end_address <= UnscaledOopHeapMax);
+    zerobased = (heap_end_address <= OopEncodingHeapMax);
+  }
+  size_t noaccess_prefix = !zerobased ? noaccess_prefix_size : 0;
 
   ReservedSpace reserved{};
 
   // Attempt to alloc at user-given address.
-  if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
+  if (!FLAG_IS_DEFAULT(HeapBaseMinAddress) || UseCompatibleCompressedOops) {
     reserved = try_reserve_memory(size + noaccess_prefix, alignment, page_size, (char*)aligned_heap_base_min_address);
     if (reserved.base() != (char*)aligned_heap_base_min_address) { // Enforce this exact address.
       release(reserved);
@@ -562,7 +570,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
 
     // Attempt to allocate so that we can run without base and scale (32-Bit unscaled compressed oops).
     // Give it several tries from top of range to bottom.
-    if (aligned_heap_base_min_address + size <= UnscaledOopHeapMax) {
+    if (unscaled) {
 
       // Calc address range within we try to attach (range of possible start addresses).
       uintptr_t const highest_start = align_down(UnscaledOopHeapMax - size, attach_point_alignment);
@@ -577,7 +585,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
     const uintptr_t zerobased_max = OopEncodingHeapMax;
 
     // Give it several tries from top of range to bottom.
-    if (aligned_heap_base_min_address + size <= zerobased_max && // Zerobased theoretical possible.
+    if (zerobased &&                                             // Zerobased theoretical possible.
         ((!reserved.is_reserved()) ||                            // No previous try succeeded.
          (reserved.end() > (char*)zerobased_max))) {             // Unscaled delivered an arbitrary address.
 
@@ -646,6 +654,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
     }
 
     // We reserved heap memory without a noaccess prefix.
+    assert(!UseCompatibleCompressedOops, "noaccess prefix is missing");
     return ReservedHeapSpace(reserved, 0 /* noaccess_prefix */);
   }
 
