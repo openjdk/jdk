@@ -49,15 +49,15 @@ import jdk.test.whitebox.WhiteBox;
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -ea -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0 ${test.main.class}
+ * @run main/othervm -ea -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation ${test.main.class}
  */
 public class TestCheckIndexIntrinsics {
     private static final Random RNG = Utils.getRandomInstance();
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
-       TestFramework.run();
-       testCorrectness();
+        TestFramework.runWithFlags("-XX:LoopMaxUnroll=0");
+        testCorrectness();
     }
 
     // Calling intrinsified functions and having them inlined.
