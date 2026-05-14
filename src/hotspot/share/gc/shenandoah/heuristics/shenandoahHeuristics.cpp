@@ -29,6 +29,8 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -150,6 +152,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
+  } else if (heap->mode()->is_generational()) {
+    // We are not going to evacuate.  Reset the reserves.
+    heap->young_generation()->set_evacuation_reserve(0UL);
+    heap->old_generation()->set_evacuation_reserve(0UL);
+    heap->old_generation()->set_promoted_reserve(0UL);
   }
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
   ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
