@@ -39,10 +39,8 @@
 extern "C" char _SafeFetch32_continuation[];
 extern "C" char _SafeFetch32_fault[];
 
-#ifdef _LP64
 extern "C" char _SafeFetchN_continuation[];
 extern "C" char _SafeFetchN_fault[];
-#endif // _LP64
 
 bool handle_safefetch(int exception_code, address pc, void* context) {
   CONTEXT* ctx = (CONTEXT*)context;
@@ -51,12 +49,11 @@ bool handle_safefetch(int exception_code, address pc, void* context) {
       os::win32::context_set_pc(ctx, (address)_SafeFetch32_continuation);
       return true;
     }
-#ifdef _LP64
+
     if (pc == (address)_SafeFetchN_fault) {
       os::win32::context_set_pc(ctx, (address)_SafeFetchN_continuation);
       return true;
     }
-#endif
   }
   return false;
 }
