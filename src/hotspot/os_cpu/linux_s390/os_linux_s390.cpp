@@ -76,15 +76,14 @@
 # include <poll.h>
 # include <ucontext.h>
 
-address os::current_stack_pointer() {
-  intptr_t* csp;
-
-  // Inline assembly for `z_lgr regno(csp), Z_SP' (Z_SP = Z_R15):
-  __asm__ __volatile__ ("lgr %0, 15":"=r"(csp):);
-
-  assert(((uint64_t)csp & (frame::alignment_in_bytes-1)) == 0, "SP must be aligned");
-  return (address) csp;
-}
+asm (R"(
+    .globl  _ZN2os21current_stack_pointerEv
+    .hidden _ZN2os21current_stack_pointerEv
+    .type   _ZN2os21current_stack_pointerEv, @function
+_ZN2os21current_stack_pointerEv:
+    lgr     %r2, %r15
+    br      %r14
+)");
 
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,

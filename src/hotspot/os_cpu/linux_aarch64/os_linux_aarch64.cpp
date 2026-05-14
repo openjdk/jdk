@@ -77,6 +77,14 @@
 #define REG_LR 30
 #define REG_BCP 22
 
+asm (R"(
+    .globl  _ZN2os21current_stack_pointerEv
+    .hidden _ZN2os21current_stack_pointerEv
+    .type   _ZN2os21current_stack_pointerEv, @function
+_ZN2os21current_stack_pointerEv:
+    mov     x0, sp
+    ret
+)");
 // IC IVAU trap probe.
 // Defined in ic_ivau_probe_linux_aarch64.S.
 extern "C" char _ic_ivau_probe_fault[] __attribute__ ((visibility ("hidden")));

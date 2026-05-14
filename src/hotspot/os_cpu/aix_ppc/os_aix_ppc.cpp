@@ -62,8 +62,8 @@
 // put OS-includes here
 # include <ucontext.h>
 
-address os::current_stack_pointer() {
-  return (address)__builtin_frame_address(0);
+NOINLINE address os::current_stack_pointer() {
+  return static_cast<address>(__builtin_dwarf_cfa());
 }
 
 char* os::non_memory_address_word() {

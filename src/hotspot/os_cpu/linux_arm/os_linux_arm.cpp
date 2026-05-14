@@ -87,10 +87,14 @@ enum {
 #define SPELL_REG_FP "fp"
 #endif
 
-address os::current_stack_pointer() {
-  register address sp __asm__ (SPELL_REG_SP);
-  return sp;
-}
+asm (R"(
+    .globl  _ZN2os21current_stack_pointerEv
+    .hidden _ZN2os21current_stack_pointerEv
+    .type   _ZN2os21current_stack_pointerEv, @function
+_ZN2os21current_stack_pointerEv:
+    mov     r0, sp
+    bx      lr
+)");
 
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory
