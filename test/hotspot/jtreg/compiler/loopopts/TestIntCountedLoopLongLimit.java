@@ -306,6 +306,10 @@ public class TestIntCountedLoopLongLimit {
         // observe de-optimization with trapping value
         m.invoke(null, trappingArg); // trapped, COMP_LEVEL_FULL_PROFILE, C1
         assertIsNotCompiled(m); // should deoptimize
+
+        // compile again to make sure trap was properly recorded
+        m.invoke(null, trappingArg);
+        compile(m); // COMP_LEVEL_FULL_OPTIMIZATION, C2
     }
 
     private static void testDeoptimizations() throws Exception {
