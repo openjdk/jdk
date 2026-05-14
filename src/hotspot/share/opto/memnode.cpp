@@ -53,6 +53,7 @@
 #include "opto/vectornode.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
@@ -1224,8 +1225,10 @@ Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phas
 
   // Even if we can see the store, we cannot fold the load if the store is not type safe (e.g.
   // store a j.l.Object into an array of j.l.String) because folding makes the compiler lose the
-  // type information that the uses of this node may need
-  if (res->bottom_type()->higher_equal(bottom_type())) {
+  // type information that the uses of this node may need. This is only necessary for pointers, we
+  // can see the stored value of a LoadS even if it is an int because LoadSNode::Ideal will do the
+  // necessary truncation.
+  if (is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(bottom_type())) {
     return res;
   }
 
