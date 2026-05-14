@@ -97,6 +97,7 @@ class PlatformMutex : public CHeapObj<mtSynchronizer> {
   bool try_lock();
 
   void clear_for_revive() {
+    memset(mutex(), 0, sizeof(pthread_mutex_t));
     pthread_mutex_init(mutex(), nullptr);
   }
 };

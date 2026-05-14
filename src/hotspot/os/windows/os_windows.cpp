@@ -5767,6 +5767,7 @@ PlatformMonitor::~PlatformMonitor() {
 
 void PlatformMutex::clear_for_revive() {
   guarantee(Thread::is_revived(), "Must be in revived VM to revive PlatformMutex");
+  memset(&_mutex, 0, sizeof(CRITICAL_SECTION));
   InitializeCriticalSection(&_mutex);
 }
 
