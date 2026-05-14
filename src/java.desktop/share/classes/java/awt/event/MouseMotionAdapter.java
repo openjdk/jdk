@@ -63,10 +63,12 @@ public abstract class MouseMotionAdapter implements MouseMotionListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void mouseDragged(MouseEvent e) {}
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void mouseMoved(MouseEvent e) {}
 }
