@@ -50,7 +50,7 @@ public class HotCodeCollectorMoveFunction {
     private static final int C2_LEVEL = 4;
     private static final int FUNC_RUN_MILLIS = 60_000;
 
-    private static long blackhole = 0;
+    private static volatile int blackhole_count = 0;
 
     static {
         try {
@@ -83,16 +83,14 @@ public class HotCodeCollectorMoveFunction {
     }
 
     public static void func() {
-        long num = 0;
-
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < FUNC_RUN_MILLIS) {
-            for (int i = 0; i < Integer.MAX_VALUE; i++) {
-                num += i;
-            }
+            int num = 1;
+            do {
+                blackhole_count++;
+                num *= 69069;
+            } while (num != 1);
         }
-
-        blackhole = num;
     }
 
 }
