@@ -32,7 +32,7 @@
 DwarfParser::DwarfParser(lib_info *lib) : _lib(lib),
                                           _buf(NULL),
                                           _has_augmentation(false),
-                                          _encoding(0),
+                                          _fde_ptr_encoding(0),
                                           _code_factor(0),
                                           _data_factor(0),
                                           _current_pc(0L) {
@@ -113,7 +113,7 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
     augmentation_string++; // Skip first char ('z')
     while (*augmentation_string != '\0') {
       if (*augmentation_string == 'R') {
-        _encoding = *_buf++;
+        _fde_ptr_encoding = *_buf++;
       } else if (*augmentation_string == 'P') {
         print_debug("DWARF Warning: Ignore augmentation: P\n");
         unsigned char enc = *_buf++; // first argument (encoding)
@@ -154,7 +154,7 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
       case 0x0:  // DW_CFA_nop
         return;
       case 0x01: // DW_CFA_set_loc
-        operand1 = get_decoded_value(_encoding);
+        operand1 = get_decoded_value(_fde_ptr_encoding);
         if (_current_pc != 0L) {
           _current_pc = operand1;
         }
@@ -294,7 +294,7 @@ unsigned int DwarfParser::get_pc_range() {
   int size;
   uintptr_t result;
 
-  switch (_encoding & 0x7) {
+  switch (_fde_ptr_encoding & 0x7) {
     case 0:  // DW_EH_PE_absptr
       size = sizeof(void *);
       result = *(reinterpret_cast<uintptr_t *>(_buf));
@@ -341,7 +341,7 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
     uint32_t id = *(reinterpret_cast<uint32_t *>(_buf));
     _buf += 4;
     if (id != 0) { // FDE
-      uintptr_t pc_begin = get_decoded_value(_encoding) + _lib->eh_frame.library_base_addr;
+      uintptr_t pc_begin = get_decoded_value(_fde_ptr_encoding) + _lib->eh_frame.library_base_addr;
       uintptr_t pc_end = pc_begin + get_pc_range();
 
       if ((pc >= pc_begin) && (pc < pc_end)) {

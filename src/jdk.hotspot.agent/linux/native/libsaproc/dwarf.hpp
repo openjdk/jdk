@@ -64,7 +64,7 @@ class DwarfParser {
     const lib_info *_lib;
     unsigned char *_buf;
     bool _has_augmentation;
-    unsigned char _encoding;
+    unsigned char _fde_ptr_encoding;
     unsigned int _code_factor;
     int _data_factor;
 
