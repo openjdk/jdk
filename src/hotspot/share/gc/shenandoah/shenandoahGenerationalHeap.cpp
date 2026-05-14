@@ -199,13 +199,6 @@ void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* 
 
 oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
-  if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
-    // This thread went through the OOM during evac protocol and it is safe to return
-    // the forward pointer. It must not attempt to evacuate anymore.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
-  }
-
-  assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
   ShenandoahHeapRegion* from_region = heap_region_containing(p);
   assert(!from_region->is_humongous(), "never evacuate humongous objects");
@@ -329,8 +322,23 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     }
 
     control_thread()->handle_alloc_failure_evac(size);
-    oom_evac_handler()->handle_out_of_memory_during_evacuation();
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+
+    // Install the self-forwarded bit so other evacuators/LRBs see the
+    // object as "already handled, do not try to evacuate". The CAS may
+    // fail if another thread concurrently installed a real forwardee or
+    // self-forwarded first.
+    markWord old_mark = p->mark();
+    if (old_mark.is_forwarded()) {
+      return ShenandoahForwarding::get_forwardee(p);
+    }
+    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
+    if (winner == nullptr) {
+      // We own the self-forwarding. Flag the from-region so the degen/full
+      // GC entry drain knows to scan it for self_fwd bits to clear.
+      heap_region_containing(p)->set_has_self_forwards();
+      return p;
+    }
+    return winner;
   }
 
   if (ShenandoahEvacTracking) {
@@ -362,10 +370,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     if (ShenandoahEvacTracking) {
       // Record that the evacuation succeeded
       evac_tracker()->end_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
-    }
-
-    if (TO_GENERATION == OLD_GENERATION) {
-      old_generation()->handle_evacuation(copy, size);
     }
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
@@ -410,11 +414,14 @@ template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, Y
 template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 
+// Call this function at the end of a GC cycle in order to establish proper sizes of young and old reserves,
+// setting the old-generation balance so that GC can perform the anticipated evacuations.
+//
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
 // mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is
-// the maximum we're able to transfer from young to old.  This is called at the end of GC, as we prepare
-// for the idle span that precedes the next GC.
+// the maximum we're able to transfer from young to old. The mutator_xfer_limit constrains the transfer
+// of memory from young to old.  It does not limit young reserves.
 void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
                                                                 size_t old_trashed_regions, size_t young_trashed_regions) {
   shenandoah_assert_heaplocked();
@@ -466,11 +473,17 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
                                   bound_on_old_reserve));
   assert(mutator_xfer_limit <= young_available,
          "Cannot transfer (%zu) memory that is not available (%zu)", mutator_xfer_limit, young_available);
-  // Young reserves are to be taken out of the mutator_xfer_limit.
-  if (young_reserve > mutator_xfer_limit) {
-    young_reserve = mutator_xfer_limit;
+
+  if (young_reserve > young_available) {
+    young_reserve = young_available;
   }
-  mutator_xfer_limit -= young_reserve;
+  // We allow young_reserve to exceed mutator_xfer_limit. Essentially, this means the GC is already behind the pace
+  // of mutator allocations, and we'll need to trigger the next GC as soon as possible.
+  if (mutator_xfer_limit > young_reserve) {
+    mutator_xfer_limit -= young_reserve;
+  } else {
+    mutator_xfer_limit = 0;
+  }
 
   // Decide how much old space we should reserve for a mixed collection
   size_t proposed_reserve_for_mixed = 0;
@@ -712,7 +725,7 @@ public:
   void work(uint worker_id) override {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj;
+      SuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);

@@ -35,7 +35,7 @@
  * @run junit/othervm
  *       -Djdk.internal.httpclient.debug=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
- *       ShutdownNow
+ *       ${test.main.class}
  */
 // -Djdk.internal.httpclient.debug=true
 

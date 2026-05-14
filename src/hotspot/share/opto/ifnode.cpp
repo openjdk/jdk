@@ -879,6 +879,10 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
         return false;
       }
 
+      if (!dom_unc->safe_for_fold_compare()) {
+        return false;
+      }
+
       // See merge_uncommon_traps: the reason of the uncommon trap
       // will be changed and the state of the dominating If will be
       // used. Checked that we didn't apply this transformation in a
@@ -1671,6 +1675,57 @@ bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
   return true;
 }
 
+void IfNode::mark_projections_unsafe_for_fold_compare() const {
+  // With the following code pattern
+  //
+  // if (some_condition) {
+  //     v = 0;
+  // } else {
+  //     v = 1;
+  // } // v is Phi(0, 1)
+  // if (v == 0) {
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" above, captures v as stack argument to ifeq bytecode
+  // }
+  // if (some_other_condition) {
+  //     uncommon_trap(); // reexecutes the "if (some_other_condition) {"
+  // }
+  //
+  // if the second if is split thru Phi, the result is:
+  //
+  // if (some_condition) {
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" that was removed above, captures v = 0 as stack argument to ifeq bytecode
+  // }
+  // if (some_other_condition) {
+  //     uncommon_trap(); // reexecutes the "if (some_other_condition) {"
+  // }
+  //
+  // some_condition and some_other_condition could be folded into
+  // a single new condition that is narrower than some_condition
+  // (done by IfNode::fold_compares(), for instance):
+  //
+  // if (combined_narrower_condition) {
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" that was removed, captures v = 0 as stack argument to ifeq bytecode
+  // }
+  //
+  // Then combined_narrower_condition is true for some input value for
+  // which some_condition is false. When such an input value is used
+  // at runtime, the trap is taken which causes "if (v == 0) {" to be
+  // reexecuted with v = 0 even though some_condition is wrong, causing
+  // the wrong branch to be executed.
+  //
+  // Mark the uncommon trap nodes to prevent such a transformation
+  // from happening.
+  IfProjNode* true_projection = true_proj();
+  IfProjNode* false_projection = false_proj();
+  CallStaticJavaNode* unc = true_projection->is_uncommon_trap_proj();
+  if (unc != nullptr) {
+    unc->clear_safe_for_fold_compare();
+  }
+  unc = false_projection->is_uncommon_trap_proj();
+  if (unc != nullptr) {
+    unc->clear_safe_for_fold_compare();
+  }
+}
 
 static int subsuming_bool_test_encode(Node*);
 
