@@ -386,6 +386,14 @@ class WindowsNativeDispatcher {
         int infoClass, long infoAddress, int infoSize) throws WindowsException;
 
     /**
+     * Indicates whether GetFileInformationByName is supported on this OS version.
+     */
+    static boolean supportsGetFileInformationByName() {
+        return supportsGetFileInformationByName0();
+    }
+    private static native boolean supportsGetFileInformationByName0();
+
+    /**
      * SetFileTime(
      *   HANDLE hFile,
      *   CONST FILETIME *lpCreationTime,

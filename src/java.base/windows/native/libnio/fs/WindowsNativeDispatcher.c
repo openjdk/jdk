@@ -544,16 +544,20 @@ typedef enum _FILE_INFO_BY_NAME_CLASS {
 typedef BOOL (WINAPI *PGetFileInformationByName)(
     PCWSTR, FILE_INFO_BY_NAME_CLASS, PVOID, ULONG);
 
-static INIT_ONCE fileInfoByNameInitOnce = INIT_ONCE_STATIC_INIT;
 static PGetFileInformationByName pGetFileInformationByName = NULL;
 
-static BOOL CALLBACK initFileInfoByName(PINIT_ONCE initOnce, PVOID param, PVOID *context) {
-    HMODULE hMod = GetModuleHandleW(L"kernel32.dll");
-    if (hMod != NULL) {
-        pGetFileInformationByName =
-            (PGetFileInformationByName)GetProcAddress(hMod, "GetFileInformationByName");
+static void initGetFileInformationByName(void) {
+    // Use a static initializer so that we don't probe kernel32.dll every time
+    // this function is called.
+    static int initialized = 0;
+    if (!initialized) {
+        HMODULE hMod = GetModuleHandleW(L"kernel32.dll");
+        if (hMod != NULL) {
+            pGetFileInformationByName =
+                (PGetFileInformationByName)GetProcAddress(hMod, "GetFileInformationByName");
+        }
+        initialized = 1;
     }
-    return TRUE;
 }
 
 JNIEXPORT void JNICALL
@@ -563,7 +567,12 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFileInformationByName0(JNIEnv* env,
     LPCWSTR lpFileName = jlong_to_ptr(pathAddress);
     PVOID pInfo = jlong_to_ptr(infoAddress);
 
-    InitOnceExecuteOnce(&fileInfoByNameInitOnce, initFileInfoByName, NULL, NULL);
+    // In case the caller didn't invoke `supportsGetFileInformationByName()`
+    // prior to calling `GetFileInformationByName()`, we call the init function
+    // to set the pointer to the Win32 API function.  The init function is
+    // cheap because it uses a static initializer, so we pay the cost of probing
+    // kernel32.dll only once instead of once per function call.
+    initGetFileInformationByName();
 
     if (pGetFileInformationByName == NULL) {
         throwWindowsException(env, ERROR_NOT_SUPPORTED);
@@ -574,6 +583,14 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFileInformationByName0(JNIEnv* env,
                                    pInfo, (ULONG)infoSize)) {
         throwWindowsException(env, GetLastError());
     }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_supportsGetFileInformationByName0(JNIEnv* env,
+    jclass this)
+{
+    initGetFileInformationByName();
+    return pGetFileInformationByName != NULL;
 }
 
 JNIEXPORT void JNICALL
