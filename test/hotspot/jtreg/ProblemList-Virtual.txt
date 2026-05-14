@@ -24,6 +24,7 @@
 ####
 # Bugs
 
+runtime/jni/critical/SuspendInCritical.java 8384369 generic-all
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
@@ -92,4 +93,3 @@ vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.ja
 # implementation or test code.
 
 #############################################################################
-

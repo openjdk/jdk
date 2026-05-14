@@ -33,6 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -79,20 +80,6 @@ static get_cpu_info_stub_t get_cpu_info_stub = nullptr;
 static detect_virt_stub_t detect_virt_stub = nullptr;
 static clear_apx_test_state_t clear_apx_test_state_stub = nullptr;
 static getCPUIDBrandString_stub_t getCPUIDBrandString_stub = nullptr;
-
-bool VM_Version::supports_clflush() {
-  // clflush should always be available on x86_64
-  // if not we are in real trouble because we rely on it
-  // to flush the code cache.
-  // Unfortunately, Assembler::clflush is currently called as part
-  // of generation of the code cache flush routine. This happens
-  // under Universe::init before the processor features are set
-  // up. Assembler::flush calls this routine to check that clflush
-  // is allowed. So, we give the caller a free pass if Universe init
-  // is still in progress.
-  assert ((!Universe::is_fully_initialized() || _features.supports_feature(CPU_FLUSH)), "clflush should be available");
-  return true;
-}
 
 #define CPUID_STANDARD_FN   0x0
 #define CPUID_STANDARD_FN_1 0x1
@@ -511,7 +498,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // and check upper YMM/ZMM bits after it.
     //
     int saved_useavx = UseAVX;
-    int saved_usesse = UseSSE;
 
     // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
@@ -542,7 +528,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // EVEX setup: run in lowest evex mode
       VM_Version::set_evex_cpuFeatures(); // Enable temporary to pass asserts
       UseAVX = 3;
-      UseSSE = 2;
 #ifdef _WINDOWS
       // xmm5-xmm15 are not preserved by caller on windows
       // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
@@ -569,7 +554,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // AVX setup
     VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
     UseAVX = 1;
-    UseSSE = 2;
 #ifdef _WINDOWS
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm7);
@@ -623,7 +607,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // EVEX check: run in lowest evex mode
       VM_Version::set_evex_cpuFeatures(); // Enable temporary to pass asserts
       UseAVX = 3;
-      UseSSE = 2;
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm_save_offset())));
       __ evmovdqul(Address(rsi, 0), xmm0, Assembler::AVX_512bit);
       __ evmovdqul(Address(rsi, 64), xmm7, Assembler::AVX_512bit);
@@ -641,7 +624,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       generate_vzeroupper(wrapup);
       VM_Version::clean_cpuFeatures();
       UseAVX = saved_useavx;
-      UseSSE = saved_usesse;
       __ jmp(wrapup);
    }
 
@@ -649,7 +631,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // AVX check
     VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
     UseAVX = 1;
-    UseSSE = 2;
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::ymm_save_offset())));
     __ vmovdqu(Address(rsi, 0), xmm0);
     __ vmovdqu(Address(rsi, 32), xmm7);
@@ -668,7 +649,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     generate_vzeroupper(wrapup);
     VM_Version::clean_cpuFeatures();
     UseAVX = saved_useavx;
-    UseSSE = saved_usesse;
 
     __ bind(wrapup);
     __ popf();
@@ -905,25 +885,6 @@ void VM_Version::get_processor_features() {
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
 
-  // OS should support SSE for x64 and hardware should support at least SSE2.
-  if (!VM_Version::supports_sse2()) {
-    vm_exit_during_initialization("Unknown x64 processor: SSE2 not supported");
-  }
-  // in 64 bit the use of SSE2 is the minimum
-  if (UseSSE < 2) UseSSE = 2;
-
-  // flush_icache_stub have to be generated first.
-  // That is why Icache line size is hard coded in ICache class,
-  // see icache_x86.hpp. It is also the reason why we can't use
-  // clflush instruction in 32-bit VM since it could be running
-  // on CPU which does not support it.
-  //
-  // The only thing we can do is to verify that flushed
-  // ICache::line_size has correct value.
-  guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
-  // clflush_size is size in quadwords (8 bytes).
-  guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == 8, "such clflush size is not supported");
-
   // assigning this field effectively enables Unsafe.writebackMemory()
   // by initing UnsafeConstant.DATA_CACHE_LINE_FLUSH_SIZE to non-zero
   // that is only implemented on x86_64 and only if the OS plays ball
@@ -952,12 +913,6 @@ void VM_Version::get_processor_features() {
     clear_feature(CPU_SSE4A);
   }
 
-  if (UseSSE < 2)
-    clear_feature(CPU_SSE2);
-
-  if (UseSSE < 1)
-    clear_feature(CPU_SSE);
-
   // ZX cpus specific settings
   if (is_zx() && FLAG_IS_DEFAULT(UseAVX)) {
     if (cpu_family() == 7) {
@@ -972,21 +927,13 @@ void VM_Version::get_processor_features() {
   }
 
   // UseSSE is set to the smaller of what hardware supports and what
-  // the command line requires.  I.e., you cannot set UseSSE to 2 on
-  // older Pentiums which do not support it.
-  int use_sse_limit = 0;
-  if (UseSSE > 0) {
-    if (UseSSE > 3 && supports_sse4_1()) {
-      use_sse_limit = 4;
-    } else if (UseSSE > 2 && supports_sse3()) {
-      use_sse_limit = 3;
-    } else if (UseSSE > 1 && supports_sse2()) {
-      use_sse_limit = 2;
-    } else if (UseSSE > 0 && supports_sse()) {
-      use_sse_limit = 1;
-    } else {
-      use_sse_limit = 0;
-    }
+  // the command line requires. i.e., you cannot set UseSSE to 4 on
+  // older systems which do not support it.
+  int use_sse_limit = 2;
+  if (UseSSE > 3 && supports_sse4_1()) {
+    use_sse_limit = 4;
+  } else if (UseSSE > 2 && supports_sse3()) {
+    use_sse_limit = 3;
   }
   if (FLAG_IS_DEFAULT(UseSSE)) {
     FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
@@ -1150,7 +1097,6 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
-  assert(supports_clflush(), "Always present");
   if (X86ICacheSync == -1) {
     // Auto-detect, choosing the best performant one that still flushes
     // the cache. We could switch to CPUID/SERIALIZE ("4"/"5") going forward.
@@ -1535,7 +1481,7 @@ void VM_Version::get_processor_features() {
   }
 
   if (is_amd_family()) { // AMD cpus specific settings
-    if (supports_sse2() && FLAG_IS_DEFAULT(UseAddressNop)) {
+    if (FLAG_IS_DEFAULT(UseAddressNop)) {
       // Use it on new AMD cpus starting from Opteron.
       UseAddressNop = true;
     }
@@ -1578,7 +1524,7 @@ void VM_Version::get_processor_features() {
       if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
         FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
       }
-      if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+      if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
     }
@@ -1594,7 +1540,7 @@ void VM_Version::get_processor_features() {
     if (cpu_family() >= 0x17) {
       // On family >=17h processors use XMM and UnalignedLoadStores
       // for Array Copy
-      if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+      if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
 #ifdef COMPILER2
@@ -1796,8 +1742,6 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
     if (AllocatePrefetchInstr == 3 && !supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
-    } else if (!supports_sse() && supports_3dnow_prefetch()) {
-      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
   }
 
@@ -2889,29 +2833,23 @@ int64_t VM_Version::maximum_qualified_cpu_frequency(void) {
 
 VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   VM_Features vm_features;
+
+  // check the features that must be present
+  guarantee(std_cpuid1_edx.bits.sse2 != 0, "sse2 is not supported");
+  guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
+  // clflush_size is size in quadwords (8 bytes).
+  guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == ICache::line_size/8, "clflush size is not supported");
+
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
     vm_features.set_feature(CPU_CX8);
   if (std_cpuid1_edx.bits.cmov != 0)
     vm_features.set_feature(CPU_CMOV);
-  if (std_cpuid1_edx.bits.clflush != 0)
-    vm_features.set_feature(CPU_FLUSH);
-  // clflush should always be available on x86_64
-  // if not we are in real trouble because we rely on it
-  // to flush the code cache.
-  assert (vm_features.supports_feature(CPU_FLUSH), "clflush should be available");
   if (std_cpuid1_edx.bits.fxsr != 0 || (is_amd_family() &&
       ext_cpuid1_edx.bits.fxsr != 0))
     vm_features.set_feature(CPU_FXSR);
   // HT flag is set for multi-core processors also.
   if (threads_per_core() > 1)
     vm_features.set_feature(CPU_HT);
-  if (std_cpuid1_edx.bits.mmx != 0 || (is_amd_family() &&
-      ext_cpuid1_edx.bits.mmx != 0))
-    vm_features.set_feature(CPU_MMX);
-  if (std_cpuid1_edx.bits.sse != 0)
-    vm_features.set_feature(CPU_SSE);
-  if (std_cpuid1_edx.bits.sse2 != 0)
-    vm_features.set_feature(CPU_SSE2);
   if (std_cpuid1_ecx.bits.sse3 != 0)
     vm_features.set_feature(CPU_SSE3);
   if (std_cpuid1_ecx.bits.ssse3 != 0)
@@ -3243,17 +3181,9 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
   // It will be used only when AllocatePrefetchStyle > 0
 
   if (is_amd_family()) { // AMD | Hygon
-    if (supports_sse2()) {
-      return 256; // Opteron
-    } else {
-      return 128; // Athlon
-    }
+    return 256; // Opteron
   } else if (is_zx()) {
-    if (supports_sse2()) {
-      return 256;
-    } else {
-      return 128;
-    }
+    return 256;
   } else { // Intel
     if (supports_sse3() && is_intel_server_family()) {
       if (is_intel_modern_cpu()) { // Nehalem based cpus
@@ -3262,14 +3192,10 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
         return 384;
       }
     }
-    if (supports_sse2()) {
-      if (is_intel_server_family()) {
-        return 256; // Pentium M, Core, Core2
-      } else {
-        return 512; // Pentium 4
-      }
+    if (is_intel_server_family()) {
+      return 256; // Pentium M, Core, Core2
     } else {
-      return 128; // Pentium 3 (and all other old CPUs)
+      return 512; // Pentium 4
     }
   }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1464,7 +1464,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hmv">v a h.mm</dateFormatItem>
 						<dateFormatItem id="Hmv">v HH.mm</dateFormatItem>
 						<dateFormatItem id="hv">v a h</dateFormatItem>
-						<dateFormatItem id="Hv">v HH'h'</dateFormatItem>
+						<dateFormatItem id="Hv">v HH</dateFormatItem>
 						<dateFormatItem id="Md">M-d</dateFormatItem>
 						<dateFormatItem id="MEd">M-d, E</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d E</dateFormatItem>

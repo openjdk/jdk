@@ -107,7 +107,7 @@ public class ClhsdbLongConstant {
             // Expected value obtained from the CPU_SHA definition in vm_version_x86.hpp
             checkLongValue("VM_Version::CPU_SHA ",
                            longConstantOutput,
-                           34L);
+                           31L);
         }
     }
 

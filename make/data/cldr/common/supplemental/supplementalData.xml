@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2025 Unicode, Inc.
+Copyright © 1991-2026 Unicode, Inc.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 For terms of use, see https://www.unicode.org/copyright.html
 -->
@@ -57,7 +57,7 @@ For terms of use, see https://www.unicode.org/copyright.html
             <info iso4217="OMR" digits="3" rounding="0"/>
             <info iso4217="PKR" digits="0" rounding="0"/>
             <info iso4217="PYG" digits="0" rounding="0"/>
-            <info iso4217="RSD" digits="0" rounding="0"/>
+            <info iso4217="RSD" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="RWF" digits="0" rounding="0"/>
             <info iso4217="SEK" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
             <info iso4217="SLE" digits="2" rounding="0"/>
@@ -3147,7 +3147,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="unx" populationPercent="0.048"/>	<!--Munda-->
 			<languagePopulation type="bfy" populationPercent="0.037"/>	<!--Bagheli-->
 			<languagePopulation type="srx" populationPercent="0.035" references="R1196"/>	<!--Sirmauri-->
-			<languagePopulation type="saz" populationPercent="0.029"/>	<!--Saurashtra-->
+			<languagePopulation type="saz" populationPercent="0.029"/>	<!--Sourashtra-->
 			<languagePopulation type="ccp" populationPercent="0.028"/>	<!--Chakma-->
 			<languagePopulation type="bfq" populationPercent="0.023"/>	<!--Badaga-->
 			<languagePopulation type="njo" populationPercent="0.023"/>	<!--Ao Naga-->

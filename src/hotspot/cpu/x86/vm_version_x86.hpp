@@ -381,58 +381,43 @@ protected:
     decl(CMOV,              cmov              )  \
     decl(FXSR,              fxsr              )  \
     decl(HT,                ht                )  \
-                                                 \
-    decl(MMX,               mmx               )  \
     decl(3DNOW_PREFETCH,    3dnowpref         )  /* Processor supports 3dnow prefetch and prefetchw instructions */ \
                                                  /* may not necessarily support other 3dnow instructions */ \
-    decl(SSE,               sse               )  \
-    decl(SSE2,              sse2              )  \
-                                                 \
     decl(SSE3,              sse3              ) /* SSE3 comes from cpuid 1 (ECX) */ \
     decl(SSSE3,             ssse3             ) \
     decl(SSE4A,             sse4a             ) \
     decl(SSE4_1,            sse4.1            ) \
-                                                \
     decl(SSE4_2,            sse4.2            ) \
     decl(POPCNT,            popcnt            ) \
     decl(LZCNT,             lzcnt             ) \
     decl(TSC,               tsc               ) \
-                                                \
     decl(TSCINV_BIT,        tscinvbit         ) \
     decl(TSCINV,            tscinv            ) \
     decl(AVX,               avx               ) \
     decl(AVX2,              avx2              ) \
-                                                \
     decl(AES,               aes               ) \
     decl(ERMS,              erms              ) /* enhanced 'rep movsb/stosb' instructions */ \
     decl(CLMUL,             clmul             ) /* carryless multiply for CRC */ \
     decl(BMI1,              bmi1              ) \
-                                                 \
     decl(BMI2,              bmi2              ) \
     decl(RTM,               rtm               ) /* Restricted Transactional Memory instructions */ \
     decl(ADX,               adx               ) \
     decl(AVX512F,           avx512f           ) /* AVX 512bit foundation instructions */ \
-                                                 \
     decl(AVX512DQ,          avx512dq          ) \
     decl(AVX512PF,          avx512pf          ) \
     decl(AVX512ER,          avx512er          ) \
     decl(AVX512CD,          avx512cd          ) \
-                                                \
     decl(AVX512BW,          avx512bw          ) /* Byte and word vector instructions */ \
     decl(AVX512VL,          avx512vl          ) /* EVEX instructions with smaller vector length */ \
     decl(SHA,               sha               ) /* SHA instructions */ \
     decl(FMA,               fma               ) /* FMA instructions */ \
-                                                \
     decl(VZEROUPPER,        vzeroupper        ) /* Vzeroupper instruction */ \
     decl(AVX512_VPOPCNTDQ,  avx512_vpopcntdq  ) /* Vector popcount */ \
     decl(AVX512_VPCLMULQDQ, avx512_vpclmulqdq ) /* Vector carryless multiplication */ \
     decl(AVX512_VAES,       avx512_vaes       ) /* Vector AES instruction */ \
-                                                \
     decl(AVX512_VNNI,       avx512_vnni       ) /* Vector Neural Network Instructions */ \
-    decl(FLUSH,             clflush           ) /* flush instruction */ \
     decl(FLUSHOPT,          clflushopt        ) /* flusopth instruction */ \
     decl(CLWB,              clwb              ) /* clwb instruction */ \
-                                                \
     decl(AVX512_VBMI2,      avx512_vbmi2      ) /* VBMI2 shift left double instructions */ \
     decl(AVX512_VBMI,       avx512_vbmi       ) /* Vector BMI instructions */ \
     decl(HV,                hv                ) /* Hypervisor instructions */ \
@@ -790,16 +775,12 @@ public:
     VM_Version::clear_cpu_features();
   }
   static void set_avx_cpuFeatures() {
-    _features.set_feature(CPU_SSE);
-    _features.set_feature(CPU_SSE2);
     _features.set_feature(CPU_AVX);
     _features.set_feature(CPU_VZEROUPPER);
   }
   static void set_evex_cpuFeatures() {
     _features.set_feature(CPU_AVX10_1);
     _features.set_feature(CPU_AVX512F);
-    _features.set_feature(CPU_SSE);
-    _features.set_feature(CPU_SSE2);
     _features.set_feature(CPU_VZEROUPPER);
   }
   static void set_apx_cpuFeatures() {
@@ -869,9 +850,6 @@ public:
   static bool supports_cmov()         { return _features.supports_feature(CPU_CMOV); }
   static bool supports_fxsr()         { return _features.supports_feature(CPU_FXSR); }
   static bool supports_ht()           { return _features.supports_feature(CPU_HT); }
-  static bool supports_mmx()          { return _features.supports_feature(CPU_MMX); }
-  static bool supports_sse()          { return _features.supports_feature(CPU_SSE); }
-  static bool supports_sse2()         { return _features.supports_feature(CPU_SSE2); }
   static bool supports_sse3()         { return _features.supports_feature(CPU_SSE3); }
   static bool supports_ssse3()        { return _features.supports_feature(CPU_SSSE3); }
   static bool supports_sse4_1()       { return _features.supports_feature(CPU_SSE4_1); }
@@ -1010,10 +988,10 @@ public:
 
   static int allocate_prefetch_distance(bool use_watermark_prefetch);
 
-  // SSE2 and later processors implement a 'pause' instruction
-  // that can be used for efficient implementation of
-  // the intrinsic for java.lang.Thread.onSpinWait()
-  static bool supports_on_spin_wait() { return supports_sse2(); }
+  // All currently supported processors support PAUSE instruction
+  // that can be used for efficient implementation of intrinsic for
+  // java.lang.Thread.onSpinWait().
+  static bool supports_on_spin_wait() { return true; }
 
   // x86_64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() {
@@ -1046,7 +1024,6 @@ public:
   // pending in-cache changes.
   //
   // 64 bit cpus always support clflush which writes back and evicts
-  // on 32 bit cpus support is recorded via a feature flag
   //
   // clflushopt is optional and acts like clflush except it does
   // not synchronize with other memory ops. it needs a preceding
@@ -1056,8 +1033,6 @@ public:
   // writes back without evicting the line. it also does not
   // synchronize with other memory ops. so, it needs preceding
   // and trailing StoreStore fences.
-
-  static bool supports_clflush(); // Can't inline due to header file conflict
 
   // Note: CPU_FLUSHOPT and CPU_CLWB bits should always be zero for 32-bit
   static bool supports_clflushopt() { return (_features.supports_feature(CPU_FLUSHOPT)); }
