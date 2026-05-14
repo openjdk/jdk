@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.cli.StandardOption.RESOURCE_DIR;
 import static jdk.jpackage.internal.cli.StandardOption.TEMP_ROOT;
-import static jdk.jpackage.internal.cli.StandardOption.VERBOSE;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -82,7 +81,6 @@ final class BuildEnvFromOptions {
         final var builder = new BuildEnvBuilder(TEMP_ROOT.getFrom(options));
 
         RESOURCE_DIR.ifPresentIn(options, builder::resourceDir);
-        VERBOSE.ifPresentIn(options, builder::verbose);
 
         if (app.isRuntime()) {
             var path = PREDEFINED_RUNTIME_IMAGE.getFrom(options);
