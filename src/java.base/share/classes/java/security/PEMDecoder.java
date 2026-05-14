@@ -46,7 +46,7 @@ import java.util.Objects;
  * PEM is a textual encoding used to store and transfer cryptographic
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRLs). It is defined in RFC 1421 and RFC 7468. PEM consists of
- * Base64-encoded binary data enclosed by a type-identifying header
+ * Base64-encoded content enclosed by a type-identifying header
  * and footer.
  *
  * <p>The {@link #decode(String)} and {@link #decode(InputStream)} methods
@@ -107,7 +107,7 @@ import java.util.Objects;
  * for decryption, an {@link EncryptedPrivateKeyInfo} is returned.
  * A {@code PEMDecoder} configured for decryption can also decode unencrypted PEM.
  *
- * The {@code BinaryEncodable} interface may evolve. When using a decode method
+ * <p> The {@code BinaryEncodable} interface may evolve. When using a decode method
  * with {@code switch}, always include a {@code default} case rather than
  * relying on the classes specified in the permits clause to remain fixed.
  * An exhaustive {@code switch} may result in a {@link MatchException}.
@@ -324,16 +324,23 @@ public final class PEMDecoder {
      * @param is {@code InputStream} containing PEM data
      * @return a {@code BinaryEncodable}
      * @throws IOException if an I/O error occurs or PEM syntax is invalid
-     *         before decoding completes
      * @throws EOFException if no PEM data is found or the stream ends unexpectedly
      * @throws IllegalArgumentException if decoding fails
-     * @throws NullPointerException when {@code is} is {@code null}
+     * @throws NullPointerException when {@code InputStream} is {@code null}
      * @throws CryptoException if an error occurs during decryption
      */
     public BinaryEncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
         PEM pem = Pem.readPEM(is);
-        return decode(pem);
+        BinaryEncodable be = null;
+        try {
+            be = decode(pem);
+            return be;
+        } finally {
+            if (be != pem) {
+                pem.clear();
+            }
+        }
     }
 
     /**
@@ -379,22 +386,20 @@ public final class PEMDecoder {
     }
 
     /**
-     * Decodes and returns a {@code BinaryEncodable} of the specified class for
+     * Decodes and returns a {@code BinaryEncodable} of the specified class from
      * the given {@code InputStream}.
      *
-     * {@code tClass} must be an appropriate class for the PEM type.
+     * <p>{@code tClass} must be an appropriate class for the PEM type.
      *
      * <p> This method reads from the {@code InputStream} until the end of
      * a PEM footer or the end of the stream. If an I/O error occurs,
-     * the read position in the stream may become inconsistent.
-     * It is recommended to perform no further decoding operations
-     * on the {@code InputStream}.
+     * the stream position may become inconsistent. Further decoding
+     * operations on the same {@code InputStream} are not recommended.
      *
-     * <p> If the class parameter is {@code PEM.class}, a {@code PEM} object is
-     * returned containing the type identifier, Base64-encoded data, and any
-     * leading data preceding the PEM header. For {@code BinaryEncodable} types
-     * other than {@code PEM}, leading data is ignored and not returned as part
-     * of the {@code BinaryEncodable} object.
+     * <p> If {@code tClass} is {@code PEM.class}, a {@code PEM} object is returned
+     * containing the type identifier, Base64-encoded data, and any leading data
+     * preceding the PEM header. For {@code BinaryEncodable} types other than
+     * {@code PEM}, leading data is ignored.
      *
      * <p> If no PEM data is found, an {@code EOFException} is thrown.
      *
@@ -403,8 +408,7 @@ public final class PEMDecoder {
      * @param tClass the returned object class that extends or implements
      *        {@code BinaryEncodable}
      * @return a {@code BinaryEncodable} of type {@code tClass}
-     * @throws IOException on I/O or PEM syntax error where the
-     *         {@code InputStream} did not complete decoding
+     * @throws IOException if an I/O error occurs or PEM syntax is invalid
      * @throws EOFException if no PEM data is found or the stream ends unexpectedly
      * @throws IllegalArgumentException if decoding fails
      * @throws ClassCastException if {@code tClass} does not represent the PEM type
@@ -423,7 +427,13 @@ public final class PEMDecoder {
         if (tClass == PEM.class) {
             return tClass.cast(pem);
         }
-        BinaryEncodable so = decode(pem);
+
+        BinaryEncodable so;
+        try {
+            so = decode(pem);
+        } finally {
+            pem.clear();
+        }
 
         /*
          * If the object is a KeyPair, check if the tClass is set to class

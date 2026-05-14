@@ -37,7 +37,7 @@ import java.util.Objects;
 /**
  * A {@link BinaryEncodable} representing a Privacy-Enhanced Mail (PEM) structure
  * composed of a type identifier, Base64-encoded content, and optional
- * leading data that precedes the PEM header during decoding.
+ * leading data that precedes the PEM header.
  *
  * <p>The {@code type} is the label in the PEM header, following the
  * {@code BEGIN} keyword and excluding the encapsulation boundaries.
@@ -80,13 +80,13 @@ public final class PEM implements BinaryEncodable {
 
     /**
      * Creates a {@code PEM} instance with the specified type, Base64-encoded
-     * string content, and leading data.
+     * content string, and leading data byte array.
      *
      * @param type the PEM type identifier; must not contain PEM encapsulation
      *        syntax
      * @param base64Content the Base64-encoded content, excluding the PEM header
      *        and footer
-     * @param leadingData data that preceded the PEM header during decoding.
+     * @param leadingData data that precedes the PEM header.
      *        This array is defensively copied.
      *
      * @throws IllegalArgumentException if {@code type} contains PEM
@@ -101,7 +101,7 @@ public final class PEM implements BinaryEncodable {
 
     /**
      * Creates a {@code PEM} instance with the specified type and Base64-encoded
-     * string content.
+     * content string.
      *
      * @param type the PEM type identifier; must not contain PEM encapsulation
      *        syntax
@@ -118,13 +118,13 @@ public final class PEM implements BinaryEncodable {
 
     /**
      * Creates a {@code PEM} instance with the specified type and Base64-encoded
-     * byte array content.
+     * content and leading data as byte arrays.
      *
      * @param type the PEM type identifier; must not contain PEM encapsulation
      *        syntax
      * @param base64Content the Base64-encoded content, excluding the PEM header
      *        and footer. This array is defensively copied.
-     * @param leadingData data that preceded the PEM header during decoding.
+     * @param leadingData data that precedes the PEM header.
      *        This array is defensively copied.
      *
      * @throws IllegalArgumentException if {@code type} contains PEM
@@ -135,13 +135,11 @@ public final class PEM implements BinaryEncodable {
         this(type, base64Content);
         this.leadingData = Objects.requireNonNull(
             leadingData, "leadingData cannot be null").clone();
-        final var l = this.leadingData;
-        CleanerFactory.cleaner().register(this, () -> KeyUtil.clear(l));
     }
 
     /**
      * Creates a {@code PEM} instance with the specified type and Base64-encoded
-     * byte array content.
+     * content byte array.
      *
      * @param type the PEM type identifier; must not contain PEM encapsulation
      *        syntax
@@ -166,7 +164,7 @@ public final class PEM implements BinaryEncodable {
         content = base64Content.clone();
         this.type = type;
         final var c = content;
-        CleanerFactory.cleaner().register(this, () -> KeyUtil.clear(c));
+        CleanerFactory.cleaner().register(this, this::clear);
     }
 
     /**
@@ -191,7 +189,7 @@ public final class PEM implements BinaryEncodable {
     /**
      * Returns the Base64-encoded content.
      *
-     * @return a copy of the Base64-encoded content byte array
+     * @return a byte array copy of the Base64-encoded content
      */
     public byte[] content() {
         return content.clone();
@@ -201,7 +199,7 @@ public final class PEM implements BinaryEncodable {
      * Returns the Base64-decoded content as a byte array, using
      * {@link Base64#getMimeDecoder()}.
      *
-     * @return a Base64-decoded byte array
+     * @return the Base64-decoded content
      * @throws IllegalArgumentException if decoding fails
      */
     public byte[] decode() {
@@ -217,5 +215,10 @@ public final class PEM implements BinaryEncodable {
     @Override
     public String toString() {
         return Pem.pemEncodedToString(this);
+    }
+
+    // Clear internal content
+    void clear() {
+        KeyUtil.clear(content);
     }
 }

@@ -516,7 +516,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @throws InvalidKeyException if an error occurs during parsing,
      *         decryption, or key generation
      *
-     * @since 25
+     * @since 27
      */
     public PrivateKey getKey(char[] password)
         throws NoSuchAlgorithmException, InvalidKeyException {
@@ -567,7 +567,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @throws InvalidKeyException if the encoded data lacks a public key, or if
      *         an error occurs during parsing, decryption, or key generation
      *
-     * @since 26
+     * @since 27
      */
     public KeyPair getKeyPair(char[] password)
         throws NoSuchAlgorithmException, InvalidKeyException {

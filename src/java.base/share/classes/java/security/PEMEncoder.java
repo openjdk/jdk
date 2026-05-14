@@ -45,7 +45,7 @@ import java.util.Objects;
  * data.  PEM is a textual encoding used to store and transfer cryptographic
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRLs). It is defined in RFC 1421 and RFC 7468.  PEM consists of a
- * Base64-encoded binary encoding enclosed by a type-identifying header
+ * Base64-encoded content enclosed by a type-identifying header
  * and footer.
  *
  * <p> Encoding can be performed on cryptographic objects that
