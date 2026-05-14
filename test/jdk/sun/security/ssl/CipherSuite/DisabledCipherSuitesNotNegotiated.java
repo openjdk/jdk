@@ -30,20 +30,17 @@
  */
 
 import java.net.InetAddress;
-import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Files;
-import java.util.List;
-import java.util.concurrent.Callable;
+import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import jdk.test.lib.security.SecurityUtils;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.security.SecurityUtils;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -58,7 +55,8 @@ public class DisabledCipherSuitesNotNegotiated {
     private static volatile Exception serverException = null;
 
     private static final CountDownLatch waitForServer = new CountDownLatch(1);
-    private static final int WAIT_FOR_SERVER_SECS = 5;
+    private static final int WAIT_FOR_SERVER_SECS = 5 *
+            Integer.getInteger("test.timeout.factor", 1);
 
     private static final String DISABLED_CIPHERSUITE = "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384";
     private static final String DISABLED_CIPHER_WILDCARD = "TLS_ECDH*WITH_AES_256_GCM_*";
@@ -77,19 +75,10 @@ public class DisabledCipherSuitesNotNegotiated {
             }
 
             serverPort = serverSocket.getLocalPort();
-            serverSocket.setSoTimeout(1000);
-            SSLSocket clientSocket = null;
-            waitForServer.countDown();while (clientSocket == null) {
-                try {
-                    clientSocket = (SSLSocket)serverSocket.accept();
-                } catch (SocketTimeoutException exc) {
-                    if (Files.exists(Path.of("client-failed"))) {
-                        throw new Exception("Client failed to connect.");
-                    }
-                }
-            }
+            serverSocket.setSoTimeout(WAIT_FOR_SERVER_SECS * 3000);
+            waitForServer.countDown();
 
-            try {
+            try(SSLSocket clientSocket = (SSLSocket)serverSocket.accept()) {
                 try {
                     clientSocket.getInputStream().readAllBytes();
                     throw new Exception("SERVER: The expected handshake exception was not thrown.");
@@ -97,8 +86,6 @@ public class DisabledCipherSuitesNotNegotiated {
                     System.out.println("Server caught expected SSLHandshakeException");
                     exc.printStackTrace(System.out);
                 }
-            } finally {
-                clientSocket.close();
             }
         }
     }
@@ -148,47 +135,33 @@ public class DisabledCipherSuitesNotNegotiated {
 
     private static void runTest(final boolean disabledInClient) throws Exception {
         try(ExecutorService executorService = Executors.newFixedThreadPool(2)) {
-            Callable<Boolean> serverThread = () -> {
+            executorService.submit(() -> {
                 try {
                     if (!disabledInClient) {
                         SecurityUtils.addToDisabledTlsAlgs(DISABLED_CIPHER_WILDCARD);
                     }
                     runServer(disabledInClient);
-                    return Boolean.TRUE;
                 } catch (Exception exc) {
                     System.out.println("Server Exception:");
                     exc.printStackTrace(System.out);
                     serverException = exc;
-                    return Boolean.FALSE;
                 }
-            };
+            });
 
-            Callable<Boolean> clientThread = () -> {
-                if (!waitForServer.await(WAIT_FOR_SERVER_SECS, TimeUnit.SECONDS)) {
-                    throw new Exception("Server did not start within " +
-                            WAIT_FOR_SERVER_SECS + " seconds.");
-                }
 
-                System.out.printf("Server listening on port %d.%nStarting client process...",
-                        serverPort);
-
-                OutputAnalyzer oa = ProcessTools.executeProcess(
-                        ProcessTools.createTestJavaProcessBuilder(
-                                "DisabledCipherSuitesNotNegotiated",
-                                "" + disabledInClient, "" + serverPort));
-                oa.waitFor();
-                System.out.println("client process exited with status code: "
-                        + oa.getExitValue());
-                System.out.println("Client output:");
-                System.out.println(oa.getOutput());
-                return oa.getExitValue() == 0;
-            };
-
-            Boolean result = executorService.invokeAny(List.of(serverThread,
-                    clientThread));
-            if (result == Boolean.FALSE) {
-                throw new Exception("Test failed, check logs for details");
+            if (!waitForServer.await(WAIT_FOR_SERVER_SECS, TimeUnit.SECONDS)) {
+                throw new Exception("Server did not start within " +
+                        WAIT_FOR_SERVER_SECS + " seconds.");
             }
+
+            System.out.printf("Server listening on port %d.%nStarting client process...",
+                    serverPort);
+
+            OutputAnalyzer oa = ProcessTools.executeProcess(
+                    ProcessTools.createTestJavaProcessBuilder(
+                            "DisabledCipherSuitesNotNegotiated",
+                            "" + disabledInClient, "" + serverPort));
+            oa.shouldHaveExitValue(0);
         }
     }
 
