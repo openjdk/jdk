@@ -1029,6 +1029,7 @@ void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char
 
 void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
+  assert(_needs_keep_alive_barrier || _needs_load_ref_barrier, "Why are you here?");
 
   __ align(InteriorEntryAlignment);
   __ bind(*entry());
@@ -1043,22 +1044,18 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   }
 
   // If the object is null, there is no point in applying barriers.
-  if (_narrow) {
-    __ testl(_obj, _obj);
-  } else {
-    __ testq(_obj, _obj);
-  }
-  __ jcc(Assembler::zero, *continuation());
+  maybe_far_jump_if_zero(masm, _obj);
 
   // We need to make sure that loads done by callers survive across slow-path calls.
   // For self-loads, we need to care about the case when both KA and LRB are enabled (rare).
-  if (!_do_load || (_needs_keep_alive_barrier && _needs_load_ref_barrier)) {
+  bool needs_both_barriers = _needs_keep_alive_barrier && _needs_load_ref_barrier;
+  if (!_do_load || needs_both_barriers) {
     preserve(_obj);
   }
 
   // Go for barriers. Barriers can return straight to continuation, as long
   // as another barrier is not needed.
-  if (_needs_keep_alive_barrier && _needs_load_ref_barrier) {
+  if (needs_both_barriers) {
     keepalive(masm, nullptr);
     lrb(masm);
   } else if (_needs_keep_alive_barrier) {
@@ -1275,7 +1272,12 @@ void ShenandoahBarrierStubC2::post_init() {
 }
 
 void ShenandoahBarrierStubC2::maybe_far_jump_if_zero(MacroAssembler& masm, Register reg) {
-  Unimplemented(); // Not used.
+  if (_narrow) {
+    __ testl(reg, reg);
+  } else {
+    __ testq(reg, reg);
+  }
+  __ jcc(Assembler::zero, *continuation());
 }
 
 #endif // COMPILER2

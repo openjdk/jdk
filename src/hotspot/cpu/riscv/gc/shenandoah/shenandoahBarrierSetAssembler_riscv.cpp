@@ -897,6 +897,7 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   assert(_needs_keep_alive_barrier || _needs_load_ref_barrier, "Why are you here?");
 
+  __ align(InteriorEntryAlignment);
   __ bind(*entry());
 
   // If we need to load ourselves, do it here.
@@ -911,9 +912,16 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   // If the object is null, there is no point in applying barriers.
   maybe_far_jump_if_zero(masm, _obj);
 
+  // We need to make sure that loads done by callers survive across slow-path calls.
+  // For self-loads, we need to care about the case when both KA and LRB are enabled (rare).
+  bool needs_both_barriers = _needs_keep_alive_barrier && _needs_load_ref_barrier;
+  if (!_do_load || needs_both_barriers) {
+    preserve(_obj);
+  }
+
   // Go for barriers. Barriers can return straight to continuation, as long
   // as another barrier is not needed and we can reach the fastpath.
-  if (_needs_keep_alive_barrier && _needs_load_ref_barrier) {
+  if (needs_both_barriers) {
     keepalive(masm, nullptr);
     lrb(masm);
   } else if (_needs_keep_alive_barrier) {
@@ -973,13 +981,6 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
   // Slow-path: call runtime to handle.
   __ bind(L_slowpath);
 
-  // If this stub also supports LRB then we need to preserve _obj to use it there.
-  if (_needs_load_ref_barrier) {
-    preserve(_obj);
-  } else {
-    dont_preserve(_obj);
-  }
-
   {
     SaveLiveRegisters slr(&masm, this);
 
@@ -987,7 +988,6 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
     __ mv(c_rarg0, _obj);
     __ rt_call(keepalive_runtime_entry_addr());
   }
-
   if (L_done != nullptr) {
     __ j(*L_done);
   } else {

@@ -1221,6 +1221,7 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   assert(_needs_keep_alive_barrier || _needs_load_ref_barrier, "Why are you here?");
 
+  __ align(InteriorEntryAlignment);
   __ bind(*entry());
 
   // If we need to load ourselves, do it here.
@@ -1237,13 +1238,14 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
 
   // We need to make sure that loads done by callers survive across slow-path calls.
   // For self-loads, we need to care about the case when both KA and LRB are enabled (rare).
-  if (!_do_load || (_needs_keep_alive_barrier && _needs_load_ref_barrier)) {
+  bool needs_both_barriers = _needs_keep_alive_barrier && _needs_load_ref_barrier;
+  if (!_do_load || needs_both_barriers) {
     preserve(_obj);
   }
 
   // Go for barriers. Barriers can return straight to continuation, as long
   // as another barrier is not needed and we can reach the fastpath.
-  if (_needs_keep_alive_barrier && _needs_load_ref_barrier) {
+  if (needs_both_barriers) {
     keepalive(masm, nullptr);
     lrb(masm);
   } else if (_needs_keep_alive_barrier) {
@@ -1305,18 +1307,6 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
 
   // Slow-path: call runtime to handle.
   __ bind(L_slowpath);
-
-  // The Load match rule in the .ad file may have legitimized the load address
-  // using a TEMP register and in that case we need to explicitly preserve them
-  // here because the RA does not consider TEMP as live-in, of course.
-  if (_needs_load_ref_barrier) {
-    if (_addr.base() != noreg) {
-      preserve(_addr.base());
-    }
-    if (_addr.index() != noreg) {
-      preserve(_addr.index());
-    }
-  }
 
   {
     SaveLiveRegisters slr(&masm, this);
