@@ -308,8 +308,8 @@ public final class SNIHostName extends SNIServerName {
      * Returns an {@code SNIHostName} from the specified hostname encoded in
      * UTF-8.
      * <p>
-     * The specified byte array gets decoded into a hostname string that is
-     * required to be a valid a DNS hostname (see <a
+     * This constructor decodes the specified bytes into a hostname string. The
+     * hostname is a DNS hostname (see <a
      * href="http://www.ietf.org/rfc1123.txt">RFC&nbsp;1123</a> and <a
      * href="http://www.ietf.org/rfc5280.txt">RFC&nbsp;5280</a>) that is either
      * ASCII-encoded or an {@linkplain IDN Internationalized Domain Name (IDN)}.
