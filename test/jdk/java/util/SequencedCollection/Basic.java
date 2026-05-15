@@ -281,10 +281,8 @@ public class Basic {
 
     @DataProvider(name="unmodifiable")
     public Iterator<Object[]> unmodifiable() {
-        return Arrays.asList(
-            new Object[][] {
-                new Object[] { "SingleList", Collections.singletonList("a"), List.of("a") }
-            }
+        return Arrays.<Object[]>asList(
+            new Object[] { "SingleList", Collections.singletonList("a"), List.of("a") }
         ).iterator();
     }
 
