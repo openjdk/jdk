@@ -116,7 +116,7 @@ public abstract class SHA3 extends DigestBase {
     private void blockSizeCheck() {
         switch(blockSize) {
             case 72, 104, 136, 144, 168: break;
-            default: 
+            default:
                 throw new ProviderException("Invalid SHA3 blocksize:" + blockSize);
         }
     }
