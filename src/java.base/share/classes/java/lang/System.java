@@ -364,7 +364,8 @@ public final class System {
      * the difference between two such values, obtained within the same
      * instance of a Java virtual machine, is computed.
      *
-     * <p>For example, to measure how long some code takes to execute:
+     * @note [header=Examples:]
+     * To measure how long some code takes to execute:
      * <pre> {@code
      * long startTime = System.nanoTime();
      * // ... the code being measured ...
