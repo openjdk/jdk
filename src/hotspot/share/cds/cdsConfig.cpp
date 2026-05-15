@@ -120,14 +120,14 @@ void CDSConfig::ergo_initialize() {
   // between training and production runs (e.g., if you specify -Xmx128m for
   // both training and production runs, and you know the OS will always reserve
   // the heap under 4GB), you can explicitly disable this with:
-  //     java -XX:+UnlockDiagnosticVMOptions -XX:-UseCompatibleCompressedOops ...
+  //     java -XX:+UnlockDiagnosticVMOptions -XX:-AOTCompatibleOopCompression ...
   // However, this is risky and there's a chance that the production run will be slower
   // than expected because it is unable to load the AOT code cache.
   //
   if (UseCompressedOops && AOTCodeCache::is_caching_enabled()) {
-    FLAG_SET_ERGO_IF_DEFAULT(UseCompatibleCompressedOops, true);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTCompatibleOopCompression, true);
   } else {
-    FLAG_SET_ERGO(UseCompatibleCompressedOops, false);
+    FLAG_SET_ERGO(AOTCompatibleOopCompression, false);
   }
 #endif // _LP64
 }

@@ -124,7 +124,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Use 32-bit object references in 64-bit VM. "                     \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseCompatibleCompressedOops, false,                         \
+  product(bool, AOTCompatibleOopCompression, false, DIAGNOSTIC,             \
           "Always use HeapBasedNarrowOop mode, so that AOT code can be "    \
           "always work regardless of runtime heap range")                   \
                                                                             \
