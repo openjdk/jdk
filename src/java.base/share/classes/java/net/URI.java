@@ -1030,7 +1030,7 @@ public final class URI
      *   scheme of {@code "a"} and a scheme-specific part of {@code "b/c/d"}.
      *   <b><i>(Deviation from RFC&nbsp;2396)</i></b> </p></li>
      *
-     *   <li><p> All {@code "//"} empty path segments are removed.
+     *   <li><p> All {@code "//"} empty segments are removed.
      *   <b><i>(Deviation from RFC&nbsp;2396)</i></b> </p></li>
      *
      * </ol>
