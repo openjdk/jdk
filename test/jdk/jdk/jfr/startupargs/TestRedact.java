@@ -165,7 +165,6 @@ public class TestRedact {
         testDefaults();
         testRedactFile();
         testAppendable();
-        testComplex();
         testBinary();
     }
 
@@ -215,10 +214,12 @@ public class TestRedact {
         e.assertRedactedArgument("12345");
         e.assertRedactedArgument("abcdef");
         e.assertUnredacted("4711");
-    }
-
-    private static void testComplex() throws Exception {
-        // ignore
+        // Tests that only fully matched filters are redacted
+        Execution f = run(
+            "-XX:FlightRecorderOptions:redact-argument=-*tiger* *",
+            "--tiger"
+         );
+        f.assertUnredacted("--tiger");
     }
 
     private static void testBinary() throws Exception {
@@ -307,9 +308,11 @@ public class TestRedact {
            Map.of("apiKey","thing"),
            Map.of("apiKey", "stuff"),
            "-DapiKey=stuff",
-           "secret"
+           "secret",
+           "-password=foo"
         );
         e.assertRedactedArgument("secret");
+        e.assertRedactedArgument("-password=foo");
         e.assertRedactedKey("apiKey");
     }
 

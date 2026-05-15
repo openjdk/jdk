@@ -405,10 +405,6 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   print_help(output(), false);
 }
 
-static const char* option_name(bool startup, const char* command_line_name, const char* dcmd_name) {
-  return startup ? command_line_name : dcmd_name;
-}
-
 static void print_filters(outputStream* out, JfrRedactedEvents::StringArray* filters) {
   for (int i = 0; i < filters->length(); i++) {
     out->print_cr("                        %s", filters->at(i)->text());
@@ -424,7 +420,7 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
   out->print_cr("Options:");
   out->print_cr("");
   out->print_cr(              "  %-19s (Optional) Number of global buffers. This option is a legacy",
-                                       option_name(startup, "numglobalbuffers", "globalbuffercount"));
+                                       startup ? "numglobalbuffers": "globalbuffercount");
   out->print_cr("                      option: change the memorysize parameter to alter the number of");
   out->print_cr("                      global buffers. This value cannot be changed once JFR has been");
   out->print_cr("                      initialized. (STRING, default determined by the value for");
@@ -447,7 +443,7 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
   out->print_cr("                      initialized. (STRING, 10M)");
   out->print_cr("");
   out->print_cr(              "  %-19s (Optional) Path to the location where recordings are stored until",
-                                       option_name(startup, "repository", "repositorypath"));
+                                       startup ? "repository" : "repositorypath");
   out->print_cr("                      they are written to a permanent file. (STRING, The default");
   out->print_cr("                      location is the temporary directory for the operating system. On");
   out->print_cr("                      Linux operating systems, the temporary directory is /tmp. On");
@@ -464,7 +460,7 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
   out->print_cr("                      initialized. (LONG, 64)");
   out->print_cr("");
   out->print_cr(              "  %-19s (Optional) Local buffer size for each thread in bytes if one of",
-                                       option_name(startup, "threadbuffersize", "thread_buffer_size"));
+                                       startup ? "threadbuffersize" : "thread_buffer_size");
   out->print_cr("                      the following suffixes is not used: 'k' or 'K' for kilobytes or");
   out->print_cr("                      'm' or 'M' for megabytes. Overriding this parameter could reduce");
   out->print_cr("                      performance and is not recommended. This value cannot be changed");
