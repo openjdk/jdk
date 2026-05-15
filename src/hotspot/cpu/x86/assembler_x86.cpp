@@ -15091,7 +15091,6 @@ void Assembler::cdqe() {
 }
 
 void Assembler::clflush(Address adr) {
-  assert(VM_Version::supports_clflush(), "should do");
   prefix(adr, true /* is_map1 */);
   emit_int8((unsigned char)0xAE);
   emit_operand(rdi, adr, 0);
