@@ -76,8 +76,9 @@ public class TestCustomNoteTag extends JavadocTester {
                      abc <a href="C.html" title="class in p"><em>emphasized</em></a> def</div>""",
                 """
                      <dl class="notes">
-                     <dt id="example">Example:</dt>
-                     <dd id="example1" class="note-tag-example"><p><strong>xyz</strong></p>""",
+                     <div id="example" class="note-tag-example">
+                     <dt>Example:</dt>
+                     <dd><p><strong>xyz</strong></p>""",
                 """
                      <pre class="snippet" id="snippet-p.C1"><code class="language-java">   code ...
                      </code></pre>
@@ -260,8 +261,10 @@ public class TestCustomNoteTag extends JavadocTester {
                             inline warning</div>""".replace("$LOCATION$", loc2.toString()),
                         """
                             <dl class="notes">
-                            <dt id="block-$LOCATION$-warning">Warning:</dt>
-                            <dd id="block-$LOCATION$-warning1" class="note-tag-warning">block warning</dd>
+                            <div id="block-$LOCATION$-warning" class="note-tag-warning">
+                            <dt>Warning:</dt>
+                            <dd>block warning</dd>
+                            </div>
                             </dl>""".replace("$LOCATION$", loc2.toString()));
             }
         }
@@ -295,8 +298,10 @@ public class TestCustomNoteTag extends JavadocTester {
                         inline note</div>
                         </div>
                         <dl class="notes">
-                        <dt id="p.C-custom">Custom Note:</dt>
-                        <dd id="p.C-custom2" class="note-tag-custom">block note</dd>
+                        <div id="p.C-custom" class="note-tag-custom">
+                        <dt>Custom Note:</dt>
+                        <dd>block note</dd>
+                        </div>
                         </dl>
                         </div>""");
 
@@ -315,8 +320,10 @@ public class TestCustomNoteTag extends JavadocTester {
                 """
                         <div class="block">First sentence. </div>
                         <dl class="notes">
-                        <dt id="p.C-custom">Custom Note:</dt>
-                        <dd id="p.C-custom1" class="note-tag-custom">block note</dd>
+                        <div id="p.C-custom" class="note-tag-custom">
+                        <dt>Custom Note:</dt>
+                        <dd>block note</dd>
+                        </div>
                         </dl>
                         </div>""");
 

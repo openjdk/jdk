@@ -80,11 +80,6 @@ public class HtmlTree extends Content {
     private List<Content> content = List.of();
 
     /**
-     * Data attributes for the HTML element.
-     */
-    private Map<String, String> dataAttrs;
-
-    /**
      * Creates an {@code HTMLTree} object representing an HTML element
      * with the given name.
      *
@@ -115,22 +110,6 @@ public class HtmlTree extends Content {
         if (attrs.isEmpty())
             attrs = new LinkedHashMap<>(3);
         attrs.put(Objects.requireNonNull(attrName), Entity.escapeHtmlChars(attrValue));
-        return this;
-    }
-
-    /**
-     * Adds a data attribute.
-     *
-     * @param dataAttrName the name of the attribute, without the "data-" prefix
-     * @param dataAttrValue the value of the attribute
-     * @return this object
-     * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Use_data_attributes">Use data attributes</a>
-     */
-    public HtmlTree putDataAttr(String dataAttrName, String dataAttrValue) {
-        if (dataAttrs == null) {
-            dataAttrs = new LinkedHashMap<>(3);
-        }
-        dataAttrs.put("data-" + Objects.requireNonNull(dataAttrName), Entity.escapeHtmlChars(dataAttrValue));
         return this;
     }
 
@@ -1298,15 +1277,6 @@ public class HtmlTree extends Content {
             if (!value.isEmpty()) {
                 out.write("=\"");
                 out.write(value.replace("\"", "&quot;"));
-                out.write("\"");
-            }
-        }
-        if (dataAttrs != null) {
-            for (var dataAttr : dataAttrs.entrySet()) {
-                out.write(" ");
-                out.write(dataAttr.getKey());
-                out.write("=\"");
-                out.write(dataAttr.getValue().replace("\"", "&quot;"));
                 out.write("\"");
             }
         }

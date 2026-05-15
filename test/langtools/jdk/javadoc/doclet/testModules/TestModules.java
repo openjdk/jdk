@@ -641,11 +641,11 @@ public class TestModules extends JavadocTester {
                     </ul>
                     </dd>""",
                 """
-                    <dt id="moduletags-regular">Regular Tag:</dt>
-                    <dd id="moduletags-regular1" class="note-tag-regular">Just a regular simple tag.</dd>""",
+                    <dt>Regular Tag:</dt>
+                    <dd>Just a regular simple tag.</dd>""",
                 """
-                    <dt id="moduletags-moduletag">Module Tag:</dt>
-                    <dd id="moduletags-moduletag1" class="note-tag-moduletag">Just a simple module tag.</dd>""",
+                    <dt>Module Tag:</dt>
+                    <dd>Just a simple module tag.</dd>""",
                 """
                     <dt>Version:</dt>
                     <dd>1.0</dd>""",

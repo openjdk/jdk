@@ -244,11 +244,11 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
         return null;
     }
 
-    private String getNoteTagAttribute(NoteTree noteTree, String name ) {
+    private String getNoteTagAttribute(NoteTree noteTree, String name) {
         var attr = noteTree.getAttributes().stream()
                 .filter(dt -> dt.getKind() == DocTree.Kind.ATTRIBUTE)
                 .map(t -> (AttributeTree) t)
-                .filter(at -> name.equalsIgnoreCase(at.getName().toString()))
+                .filter(at -> name.equalsIgnoreCase(at.getName().toString()) && at.getValue() != null)
                 .findFirst();
         return attr.map(attributeTree -> attributeTree.getValue().toString()).orElse(null);
     }

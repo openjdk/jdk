@@ -31,7 +31,8 @@ public class OtherApi {
    /**
     * This is a preview method.
     *
-    * @previewFeature [title="First preview feature" url="https://example.org/first-preview-feature"]
+    * @previewFeature [title="First preview feature" url="https://example.org/first-preview-feature"
+    *   status]
     * Alternative preview note. {@link PreviewApi} is a preview API.
     */
     public void previewMethod() {}
