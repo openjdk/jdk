@@ -25,9 +25,9 @@
 #ifndef SHARE_RUNTIME_THREADLOCALSTORAGE_HPP
 #define SHARE_RUNTIME_THREADLOCALSTORAGE_HPP
 
-#include <cstdint>
-
 #include "memory/allStatic.hpp"
+
+#include <cstdint>
 
 // forward-decl as we can't have an include cycle
 class Thread;
