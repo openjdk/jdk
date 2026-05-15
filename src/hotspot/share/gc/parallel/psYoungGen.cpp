@@ -364,12 +364,16 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
                        SpaceAlignment);
   survivor_size = align_up(survivor_size, SpaceAlignment);
 
-  log_debug(gc, ergo)("Desired size eden: %zu K, survivor: %zu K", eden_size/K, survivor_size/K);
+  log_debug(gc, ergo)("Desired size eden: %zu K, survivor: %zu K",
+                      eden_size / K,
+                      survivor_size / K);
 
   _sizing_state = SizingState::balanced;
 
   if (max_gen_size() < eden_size + 2 * survivor_size) {
-    log_info(gc, ergo)("Requested sizes exceed MaxNewSize (K): %zu vs %zu", (eden_size + 2 * survivor_size)/K, max_gen_size()/K);
+    log_info(gc, ergo)("Requested sizes exceed MaxNewSize (K): %zu vs %zu",
+                       (eden_size + 2 * survivor_size) / K,
+                       max_gen_size() / K);
     // Must reduce eden/survivor to satisfy the max_gen_size constraint. Prioritize survivor_space to reduce promotion.
     // Check if survivor is actually using its requested size.
     if (!is_survivor_overflowing && survivor_used < survivor_sparse_threshold * survivor_size) {
@@ -380,7 +384,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
 
       if (target_survivor_size < survivor_size) {
         // Decrease survivor gradually to avoid abrupt sizing swings.
-        // Simplified: survivor_size' = survivor_size/2 + 3*survivor_used/8
+        // Simplified: new_survivor_size = survivor_size / 2 + 3 * survivor_used / 8.
         const size_t survivor_delta = survivor_size - target_survivor_size;
         const size_t survivor_decrement = align_up(survivor_delta / 2, SpaceAlignment);
         survivor_size = MAX2(target_survivor_size, survivor_size - survivor_decrement);
@@ -413,6 +417,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
   }
 
   const size_t final_gen_size = eden_size + 2 * survivor_size;
+  // A balanced result fills max_gen_size; otherwise there is surplus young-gen headroom.
   if (_sizing_state == SizingState::balanced) {
     if (final_gen_size < max_gen_size()) {
       _sizing_state = SizingState::surplus;

@@ -91,7 +91,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   size_t compute_desired_survivor_size(size_t current_survivor_size, size_t max_gen_size);
 
   uint compute_tenuring_threshold(PSYoungGen::SizingState sizing_state,
-                                   uint tenuring_threshold);
+                                  uint tenuring_threshold);
 
   size_t compute_old_gen_shrink_bytes(size_t old_gen_free_bytes, size_t max_shrink_bytes);
 
