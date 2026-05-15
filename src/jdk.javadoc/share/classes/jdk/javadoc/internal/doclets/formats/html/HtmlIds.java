@@ -623,16 +623,17 @@ public class HtmlIds {
      *
      * @param e the element in whose documentation the note appears
      * @param kind the kind of note, or null
-     * @param isHeader true if the id is for the header of a block note
+     * @param inline true if the id is for an inline note
      * @param existingIds the set of ids already generated
      * @return a unique id for the note
      */
-    public HtmlId forNote(Element e, String kind, boolean isHeader, Set<String> existingIds) {
-        var id = getElementId(e) + "-" + (kind == null ? "note" : kind);
-        // Try to use the id as-is if this is for a block-note header.
-        // Always append an ordinal number if it's for an individual note.
-        return isHeader ? makeUnique(id, existingIds)
-                        : withUniqueOrdinal(id, existingIds);
+    public HtmlId forNote(Element e, String kind, boolean inline, Set<String> existingIds) {
+        var base = kind == null ? "note" : kind.replaceAll("[^\\w_-]+", "-");
+        var id = getElementId(e) + "-" + base;
+        // Multiple block notes are merged into a single description list item,
+        // so ordinal suffixes are usually not needed for block tag ids.
+        return inline ? withUniqueOrdinal(id, existingIds)
+                      : makeUnique(id, existingIds);
     }
 
     /**
