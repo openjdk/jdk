@@ -1161,6 +1161,16 @@ static bool is_commutative_vector_operation(int opcode) {
   }
 }
 
+bool VectorNode::is_associative_vector_operation() {
+  if (!is_commutative_vector_operation(Opcode())) {
+    return false;
+  }
+  if (is_SaturatingVector() && !as_SaturatingVector()->is_unsigned()) {
+    return false;
+  }
+  return true;
+}
+
 bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
   // Predicated vector operations are sensitive to ordering of inputs.
   // When the mask corresponding to a vector lane is false then
@@ -1292,7 +1302,7 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
   return cloned_parent;
 }
 
-// Try to reassociate commutative vector operations using the following ideal transformation,
+// Try to reassociate associative vector operations using the following ideal transformation,
 // this will facilitate strength reducing a vector operation with all replicated inputs to
 // a scalar operation.
 //
@@ -1305,8 +1315,8 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
     return nullptr;
   }
 
-  // Enable re-association for commutative vector operations.
-  if (!is_commutative_vector_operation(Opcode())) {
+  // Enable re-association only for associative vector operations.
+  if (!is_associative_vector_operation()) {
     return nullptr;
   }
 
