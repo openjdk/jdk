@@ -12685,20 +12685,30 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(j_farg3, j_farg2, Address(__ post(sp, 2 * wordSize)));
     __ ldpd(j_farg1, j_farg0, Address(__ post(sp, 2 * wordSize)));
 
-    __ leave();
-
     // check for pending exceptions
     Label pending;
     __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
     __ cbnz(rscratch1, pending);
 
     if (has_res) {
+      // We just called SharedRuntime::store_inline_type_fields_to_buf. Check if we still
+      // need to initialize the buffer and if so, call the inline class specific pack handler.
+      Label skip_pack;
       __ get_vm_result_oop(r0, rthread);
+      __ get_vm_result_metadata(rscratch1, rthread);
+      __ cbz(rscratch1, skip_pack);
+      __ ldr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
+      __ ldr(rscratch1, Address(rscratch1, InlineKlass::pack_handler_offset()));
+      __ blr(rscratch1);
+      __ membar(Assembler::StoreStore);
+      __ bind(skip_pack);
     }
 
+    __ leave();
     __ ret(lr);
 
     __ bind(pending);
+    __ leave();
     __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
     // -------------

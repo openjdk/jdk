@@ -4291,31 +4291,42 @@ JRT_END
 // from field's values in registers.
 JRT_BLOCK_ENTRY(void, SharedRuntime::store_inline_type_fields_to_buf(JavaThread* current, intptr_t res))
 {
+  if (!is_set_nth_bit(res, 0)) {
+    // We're not returning with inline type fields in registers (the
+    // calling convention didn't allow it for this inline klass)
+    assert(!Metaspace::contains((void*)res), "should be oop or pointer in buffer area");
+    current->set_vm_result_oop((oopDesc*)res);
+    current->set_vm_result_metadata(nullptr);
+    return;
+  }
+
+  clear_nth_bit(res, 0);
+  InlineKlass* vk = (InlineKlass*)res;
+  assert(Metaspace::contains((void*)res), "should be klass");
+
+  if (!vk->contains_oops()) {
+    // No oop fields. Initialize the fields by calling the pack handler from
+    // the stub which is much faster (see 'generate_return_value_stub').
+    // Signal this by setting the metadata result to the value klass.
+    JRT_BLOCK;
+    {
+      oop vt = vk->allocate_instance(CHECK);
+      current->set_vm_result_oop(vt);
+      current->set_vm_result_metadata(vk);
+    }
+    JRT_BLOCK_END;
+    return;
+  }
+
   ResourceMark rm;
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame stubFrame = current->last_frame();
-  frame callerFrame = stubFrame.sender(&reg_map);
+  stubFrame.sender(&reg_map);
 
-#ifdef ASSERT
-  InlineKlass* verif_vk = InlineKlass::returned_inline_klass(reg_map);
-#endif
-
-  if (!is_set_nth_bit(res, 0)) {
-    // We're not returning with inline type fields in registers (the
-    // calling convention didn't allow it for this inline klass)
-    assert(!Metaspace::contains((void*)res), "should be oop or pointer in buffer area");
-    current->set_vm_result_oop((oopDesc*)res);
-    assert(verif_vk == nullptr, "broken calling convention");
-    return;
-  }
-
-  clear_nth_bit(res, 0);
-  InlineKlass* vk = (InlineKlass*)res;
-  assert(verif_vk == vk, "broken calling convention");
-  assert(Metaspace::contains((void*)res), "should be klass");
+  assert(vk == InlineKlass::returned_inline_klass(reg_map), "broken calling convention");
 
   // Allocate handles for every oop field so they are safe in case of
   // a safepoint when allocating
@@ -4325,9 +4336,9 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::store_inline_type_fields_to_buf(JavaThread*
   // It's unsafe to safepoint until we are here
   JRT_BLOCK;
   {
-    JavaThread* THREAD = current;
     oop vt = vk->realloc_result(reg_map, handles, CHECK);
     current->set_vm_result_oop(vt);
+    current->set_vm_result_metadata(nullptr);
   }
   JRT_BLOCK_END;
 }

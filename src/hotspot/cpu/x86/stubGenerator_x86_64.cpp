@@ -32,6 +32,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
+#include "oops/inlineKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
@@ -5002,7 +5003,18 @@ address StubGenerator::generate_return_value_stub(address destination, const cha
   __ jcc(Assembler::notEqual, pending);
 
   if (has_res) {
+    // We just called SharedRuntime::store_inline_type_fields_to_buf. Check if we still
+    // need to initialize the buffer and if so, call the inline class specific pack handler.
+    Label skip_pack;
     __ get_vm_result_oop(rax);
+    __ get_vm_result_metadata(rscratch1);
+    __ testptr(rscratch1, rscratch1);
+    __ jcc(Assembler::zero, skip_pack);
+    __ movptr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
+    __ movptr(rscratch1, Address(rscratch1, InlineKlass::pack_handler_offset()));
+    __ call(rscratch1);
+    __ membar(Assembler::StoreStore);
+    __ bind(skip_pack);
   }
 
   __ ret(0);
