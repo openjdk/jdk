@@ -7730,7 +7730,7 @@ class StubGenerator: public StubCodeGenerator {
   // generate_intpoly_montgomeryMult_P256().
   // This function computes partial results of eight 52 x 52 bit multiplications,
   // where the multiplicands are stored as 64-bit values, specifically
-  // (b_0, b_1, b_2, b_3) * (a_3, a_4).
+  // (b_0, b_1, b_2, b_3) * (a_0, a_1).
   // In a call to this function, either the high or low 32 bits of the b_i
   // values are multiplied by either the high or low 32 bits of the a_j values,
   // so four calls with the appropriate parameters will produce the 64-bit
@@ -7899,12 +7899,12 @@ class StubGenerator: public StubCodeGenerator {
     __ str(c_i, Address(c_ptr, 8));
     __ mov(c_i, high);
 
-    vs_shl(D, __ T2D, D, 12);
+    vs_shl(D, __ T2D, D, montMulP256Shift1);
 
     // Limb 3
     gpr_partial_mult_52(a_i, b_3, high, low, tmp, limb_mask);
 
-    vs_ushr(C, __ T2D, B, 20); // Use C for ((B+C) >>> 20)
+    vs_ushr(C, __ T2D, B, 32 - montMulP256Shift1); // Use C for ((B+C) >>> 20)
 
     gpr_partial_mult_52(n, mod_3, mod_high, mod_low, tmp, limb_mask);
     __ add(low, low, mod_low);
