@@ -484,7 +484,9 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
     out->print_cr("                      use a literal space (' ') as a separator. For example, to match");
     out->print_cr("                      the two arguments --auth username:token, use the filter");
     out->print_cr("                      --auth *:*. Filters containing spaces must be quoted as a single");
-    out->print_cr("                      command-line argument, for example, redact-argument=--auth *:*.");
+    out->print_cr("                      command-line argument, for example,");
+    out->print_cr("                      -XX:FlightRecorderOptions:'redact-argument=--auth *:*'.");
+    out->print_cr("                      Arguments containing spaces might not be matched as expected.");
     out->print_cr("");
     out->print_cr("                      If the redact-argument option is not specified, the following");
     out->print_cr("                      filters are used by default:");

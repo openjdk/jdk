@@ -1200,28 +1200,29 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     `redact-argument=`argument-filter
     :   Replace command-line arguments that match a semicolon-separated list
-        of glob patterns, for example, *secret*;password*. Matching is
+        of glob patterns, for example, `*secret*;password*`. Matching is
         case-insensitive, and the supported wildcards are `*` and `?`. To redact
         multiple arguments, use a literal space (`' '`) as a separator.
-        For example, to match the two arguments --auth username:token, use the
-        filter --auth *:*. Filters containing spaces must be quoted as a single
+        For example, to match the two arguments `--auth username:token`, use the
+        filter `--auth *:*`. Filters containing spaces must be quoted as a single
         command-line argument, for example,
-        '-XX:FlightRecorder=redact-argument=--auth *:*'. To load patterns from a
-        file (one per line) use `@<filename>`. To add to the default patterns
-        instead of replacing them, prefix the whole list with `+`, for example,
-        +*foo*;@redact.txt. Use `none` (lowercase) to disable all redaction
-        filters for command-line arguments. Redacted arguments will be
-        replaced with `[REDACTED]`. Use `-XX:FlightRecorderOptions:help` to
+        `-XX:FlightRecorderOptions='redact-argument=--auth *:*'`.
+        Arguments containing spaces might not be matched as expected. To load
+        patterns from a file (one per line) use `@<filename>`. To add to the
+        default patterns instead of replacing them, prefix the whole list with
+        `+`, for example, `+*foo*;@redact.txt`. Use `none` (lowercase) to disable
+        all redaction filters for command-line arguments. Redacted arguments will
+        be replaced with `[REDACTED]`. Use `-XX:FlightRecorderOptions:help` to
         see the default filters used by the `redact-argument` option.
 
     `redact-key=`key-filter
     :   Replace the value of environment variables and system properties
         whose key matches a semicolon-separated list of glob patterns,
-        for example, *password*;*token*. Matching is case-insensitive, and
+        for example, `*password*;*token*`. Matching is case-insensitive, and
         the supported wildcards are `*` and `?`. To load patterns from a file
         (one per line), use `@<filename>`. To add to the default patterns
         instead of replacing them, prefix the whole list with `+`,
-        for example, +*cred*;@keys.txt. Use `none` (lowercase) to
+        for example, `+*cred*;@keys.txt`. Use `none` (lowercase) to
         disable all redaction filters for key matching. Redacted values
         will be replaced with `[REDACTED]`. Use `-XX:FlightRecorderOptions:help`
         to see the default filters used by the `redact-key` option.
