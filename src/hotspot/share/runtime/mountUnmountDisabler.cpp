@@ -206,7 +206,8 @@ MountUnmountDisabler::MountUnmountDisabler(jthread thread)
 // disable transitions for all threads if thread is nullptr or a platform thread
 MountUnmountDisabler::MountUnmountDisabler(oop thread_oop)
   : _is_exclusive(false),
-    _is_self(false)
+    _is_self(false),
+    _did_reenable(false)
 {
   if (!Continuations::enabled()) {
     return; // MountUnmountDisabler is no-op without virtual threads
@@ -230,6 +231,10 @@ MountUnmountDisabler::MountUnmountDisabler(oop thread_oop)
   // It is by several reasons:
   // - carrier threads can mount virtual threads which may cause incorrect behavior
   // - there is no mechanism to disable transitions for a specific carrier thread yet
+  MonitorLocker ml(VThreadTransition_lock);
+  while (exclusive_operation_ongoing()) {
+    ml.wait(10);
+  }
   if (is_virtual) {
     _vthread = Handle(current, thread_oop);
     disable_transition_for_one(); // disable transitions for one virtual thread
@@ -241,7 +246,8 @@ MountUnmountDisabler::MountUnmountDisabler(oop thread_oop)
 // disable transitions for all virtual threads
 MountUnmountDisabler::MountUnmountDisabler(bool exclusive)
   : _is_exclusive(exclusive),
-    _is_self(false)
+    _is_self(false),
+    _did_reenable(false)
 {
   if (!Continuations::enabled()) {
     return; // MountUnmountDisabler is no-op without virtual threads
@@ -250,10 +256,19 @@ MountUnmountDisabler::MountUnmountDisabler(bool exclusive)
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
   assert(!JavaThread::current()->is_in_vthread_transition(), "");
+  MonitorLocker ml(VThreadTransition_lock);
+  while (exclusive_operation_ongoing()) {
+    ml.wait(10);
+  }
   disable_transition_for_all();
 }
 
 MountUnmountDisabler::~MountUnmountDisabler() {
+  do_reenable();
+}
+
+void
+MountUnmountDisabler::do_reenable() {
   if (!Continuations::enabled()) {
     return; // MountUnmountDisabler is a no-op without virtual threads
   }
@@ -265,19 +280,38 @@ MountUnmountDisabler::~MountUnmountDisabler() {
   }
   if (_vthread() != nullptr) {
     enable_transition_for_one(); // enable transitions for one virtual thread
-  } else {
+  } else if (!_did_reenable) {
     enable_transition_for_all(); // enable transitions for all virtual threads
   }
+}
+
+// Special destructor partial replacement for when we need to reduce a disabling
+// of all threads, to potentially just one, earlier than when the destructor would
+// run. This is not for use with single-thread mode.
+void
+MountUnmountDisabler::reenable_all_except(JavaThread* current, oop target) {
+  assert(_vthread() == nullptr, "not for use in single-thread mode!");
+  precond(current != nullptr);
+
+  if (target != nullptr) {
+    // Perform a single extra disable on the target before we reenable
+    // all threads. The target will be enabled again when the destructor runs.
+    _vthread = Handle(current, target);
+    MonitorLocker ml(VThreadTransition_lock);
+    // Note we don't wait for no exclusive use, because we are
+    // the exclusive use.
+    disable_transition_for_one();
+    _vthread = Handle(); // clear again for the global enable
+  }
+  do_reenable();
+  _vthread = Handle(current, target); // now the destructor will reenable the target
+  _did_reenable = true;
 }
 
 // disable transitions for one virtual thread
 void
 MountUnmountDisabler::disable_transition_for_one() {
-  MonitorLocker ml(VThreadTransition_lock);
-  while (exclusive_operation_ongoing()) {
-    ml.wait(10);
-  }
-
+  precond(VThreadTransition_lock->owned_by_self());
   inc_active_disablers();
   java_lang_Thread::inc_vthread_transition_disable_count(_vthread());
 
@@ -285,7 +319,7 @@ MountUnmountDisabler::disable_transition_for_one() {
   OrderAccess::storeload();
 
   while (java_lang_Thread::is_in_vthread_transition(_vthread())) {
-    ml.wait(10); // wait while the virtual thread is in transition
+    VThreadTransition_lock->wait(10); // wait while the virtual thread is in transition
   }
 
   // Start of the critical section. If the target is unmounted, we need an acquire
@@ -303,15 +337,12 @@ void
 MountUnmountDisabler::disable_transition_for_all() {
   DEBUG_ONLY(JavaThread* thread = JavaThread::current();)
   DEBUG_ONLY(thread->set_is_disabler_at_start(true);)
+  precond(VThreadTransition_lock->owned_by_self());
 
-  MonitorLocker ml(VThreadTransition_lock);
-  while (exclusive_operation_ongoing()) {
-    ml.wait(10);
-  }
   if (_is_exclusive) {
     set_exclusive_operation_ongoing(true);
     while (active_disablers() > 0) {
-      ml.wait(10);
+      VThreadTransition_lock->wait(10);
     }
   }
   inc_active_disablers();
@@ -325,7 +356,7 @@ MountUnmountDisabler::disable_transition_for_all() {
   // Debug version fails and prints diagnostic information.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     while (jt->is_in_vthread_transition()) {
-      ml.wait(10);
+      VThreadTransition_lock->wait(10);
     }
   }
 
