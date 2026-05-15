@@ -229,7 +229,13 @@ Node* InlineTypeNode::field_value_by_offset(int offset, bool recursive) const {
   ciField* field = this->field(index);
   assert(!field->is_flat() || field->type()->is_inlinetype(), "must be an inline type");
 
-  if (!recursive || !field->is_flat() || value->is_top()) {
+  if (value->is_top()) {
+    // The graph is dying but a load may still ask for a nested field
+    // inside a flattened field before the dead load itself is folded away.
+    assert(offset == field->offset_in_bytes() || field->is_flat(), "offset mismatch");
+    return value;
+  }
+  if (!recursive || !field->is_flat()) {
     assert(offset == field->offset_in_bytes(), "offset mismatch");
     return value;
   }
