@@ -2006,14 +2006,14 @@ public class ForkJoinPool extends AbstractExecutorService
                                 }
                             }
                             else {
-                                Object nt = U.getReferenceVolatile(
-                                    a, slotOffset((nb = b + 1) & m));
+                                long np = slotOffset((nb = b + 1) & m);
+                                Object nt = U.getReferenceVolatile(a, np);
                                 q.base = nb;
                                 w.nsteals = ++nsteals;
                                 int prevSrc = src;
                                 w.source = src = qid; // volatile
-                                if (nt != null &&
-                                    (qid != prevSrc || (qid & 1) == 0))
+                                if ((qid != prevSrc || (qid & 1) == 0) &&
+                                    nt != null && U.getReferenceAcquire(a, np) == nt)
                                     signalWork();     // propagate
                                 w.topLevelExec(t, fifo);
                                 rescan = true;
@@ -2023,8 +2023,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     }
                 }
                 i = r;                                // move unless deactivated
-                if (!rescan && runState == e &&
-                    phase != (phase = deactivate(w, phase, src))) {
+                if (!rescan && phase != (phase = deactivate(w, phase, src))) {
                     if ((phase & IDLE) != 0)
                         break;                        // terminated
                     if (src >= 0) {
@@ -2096,8 +2095,11 @@ public class ForkJoinPool extends AbstractExecutorService
                                 long np = slotOffset((b + 1) & m);
                                 if (U.getReference(a, bp) != null ||
                                     U.getReference(a, np) != null ||
-                                    (src >= 0 && q.top != b))
+                                    (src >= 0 && q.top != b)) {
+                                    if ((runState & STOP) != 0L)
+                                        break;
                                     k = n;      // ensure re-encounter
+                                }
                             }
                         }
                     }
