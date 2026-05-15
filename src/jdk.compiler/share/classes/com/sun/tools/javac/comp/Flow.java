@@ -2649,6 +2649,15 @@ public class Flow {
             scanExprs(tree.elems);
         }
 
+        public void visitDerivedRecord(JCDerivedRecord tree) {
+            scanExpr(tree.base);
+            for (JCTree s : tree.block.stats) {
+                if (s instanceof JCExpressionStatement es && es.expr instanceof JCAssign assign) {
+                    scanExpr(assign.rhs);
+                }
+            }
+        }
+
         public void visitAssert(JCAssert tree) {
             final Bits initsExit = new Bits(inits);
             final Bits uninitsExit = new Bits(uninits);

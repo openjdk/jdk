@@ -471,6 +471,12 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitDerivedRecord(JCDerivedRecord tree) {
+        tree.base = translate(tree.base);
+        tree.block = translate(tree.block);
+        result = tree;
+    }
+
     public void visitModifiers(JCModifiers tree) {
         tree.annotations = translateAnnotations(tree.annotations);
         result = tree;
