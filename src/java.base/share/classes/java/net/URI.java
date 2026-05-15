@@ -177,9 +177,9 @@ import static jdk.internal.util.Exceptions.formatMsg;
  *
  * <p> <i>Normalization</i> is the process of removing unnecessary {@code "."},
  * {@code ".."}, and {@code "//"} (empty) segments from the path component of a
- * hierarchical URI. Each {@code "."} and {@code "//"} segment is simply
- * removed. A {@code ".."} segment is removed only if it is preceded by a
- * non-{@code ".."} segment. Normalization has no effect upon opaque URIs.
+ * hierarchical URI. Each {@code "."} and empty segment is simply removed. A
+ * {@code ".."} segment is removed only if it is preceded by a non-{@code ".."}
+ * segment. Normalization has no effect upon opaque URIs.
  *
  * <p> <i>Resolution</i> is the process of resolving one URI against another,
  * <i>base</i> URI.  The resulting URI is constructed from components of both
