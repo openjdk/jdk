@@ -221,6 +221,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         NEWARRAY,
 
+        /** Derived record creation expressions, of type DerivedRecord.
+         */
+        DERIVEDRECORD,
+
         /** Lambda expression, of type Lambda.
          */
         LAMBDA,
@@ -2028,6 +2032,37 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
+     * A derived record creation expression: {@code expr with { ... }}
+     */
+    public static class JCDerivedRecord extends JCPolyExpression {
+        /** The base record expression. */
+        public JCExpression base;
+        /** The block of field overrides. */
+        public JCBlock block;
+
+        protected JCDerivedRecord(JCExpression base, JCBlock block) {
+            this.base = base;
+            this.block = block;
+        }
+
+        @Override
+        public void accept(Visitor v) { v.visitDerivedRecord(this); }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            throw new AssertionError("JCDerivedRecord is not part of a public API");
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            throw new AssertionError("JCDerivedRecord is not part of a public API");
+        }
+
+        @Override
+        public Tag getTag() { return DERIVEDRECORD; }
+    }
+
+    /**
      * A lambda expression.
      */
     public static class JCLambda extends JCFunctionalExpression implements LambdaExpressionTree {
@@ -3642,6 +3677,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitRequires(JCRequires that)           { visitTree(that); }
         public void visitUses(JCUses that)                   { visitTree(that); }
         public void visitLetExpr(LetExpr that)               { visitTree(that); }
+        public void visitDerivedRecord(JCDerivedRecord that) { visitTree(that); }
 
         public void visitTree(JCTree that)                   { Assert.error(); }
     }

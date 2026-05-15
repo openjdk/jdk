@@ -1883,6 +1883,13 @@ public class JavacParser implements Parser {
                 if (typeArgs != null) return illegal();
                 accept(COLCOL);
                 t = memberReferenceSuffix(pos1, t);
+            } else if (isMode(EXPR) && token.kind == IDENTIFIER && token.name() == names.with
+                       && peekToken(tk -> tk == LBRACE)) {
+                checkSourceLevel(token.pos, Feature.DERIVED_RECORD_CREATION);
+                selectExprMode();
+                nextToken();
+                JCBlock blk = block();
+                t = toP(F.at(pos1).DerivedRecord(t, blk));
             } else {
                 if (!annos.isEmpty()) {
                     if (permitTypeAnnotationsPushBack)
