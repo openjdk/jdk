@@ -49,42 +49,6 @@ class MacroAssembler: public Assembler {
  public:
   using Assembler::mov;
   using Assembler::movi;
-  using Assembler::sve_add;
-  using Assembler::sve_and;
-  using Assembler::sve_asr;
-  using Assembler::sve_bic;
-  using Assembler::sve_eor;
-  using Assembler::sve_eor3;
-  using Assembler::sve_fabd;
-  using Assembler::sve_fadd;
-  using Assembler::sve_fdiv;
-  using Assembler::sve_fmad;
-  using Assembler::sve_fmax;
-  using Assembler::sve_fmin;
-  using Assembler::sve_fmla;
-  using Assembler::sve_fmls;
-  using Assembler::sve_fmsb;
-  using Assembler::sve_fmul;
-  using Assembler::sve_fnmad;
-  using Assembler::sve_fnmla;
-  using Assembler::sve_fnmls;
-  using Assembler::sve_fnmsb;
-  using Assembler::sve_fsub;
-  using Assembler::sve_lsl;
-  using Assembler::sve_lsr;
-  using Assembler::sve_mla;
-  using Assembler::sve_mls;
-  using Assembler::sve_mul;
-  using Assembler::sve_orr;
-  using Assembler::sve_sqadd;
-  using Assembler::sve_sqsub;
-  using Assembler::sve_smax;
-  using Assembler::sve_smin;
-  using Assembler::sve_sub;
-  using Assembler::sve_uqadd;
-  using Assembler::sve_uqsub;
-  using Assembler::sve_umax;
-  using Assembler::sve_umin;
 
  protected:
 
@@ -1777,78 +1741,48 @@ public:
 // Wrappers for SVE explicit destructive instructions, overriding the
 // same-signature Assembler entry points to enable movprfx fusion optimization.
 #define SVE_DESTRUCTIVE_BINARY_INS(NAME)                                       \
-  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
-            FloatRegister Zm) {                                                \
-    if (Zd != Zm) {                                                            \
+  using Assembler::NAME;                                                       \
+                                                                               \
+  template<typename OpType>                                                    \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, OpType op2) {   \
+    if (!std::is_same<FloatRegister, OpType>::value || Zd != op2) {            \
       try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
     }                                                                          \
-    Assembler::NAME(Zd, T, Pg, Zm);                                            \
+    Assembler::NAME(Zd, T, Pg, op2);                                           \
   }
 
-  SVE_DESTRUCTIVE_BINARY_INS(sve_add);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_and);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_asr);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_bic);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_eor);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_fabd);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_fadd);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_fdiv);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_fmax);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_fmin);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_fmul);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_fsub);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_lsl);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_lsr);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_mul);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_orr);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_smax);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_smin);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_sqadd);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_sqsub);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_sub);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_uqadd);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_uqsub);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_umax);
-  SVE_DESTRUCTIVE_BINARY_INS(sve_umin);
+#define SVE_DESTRUCTIVE_BINARY_5(I1, I2, I3, I4, I5)                           \
+  SVE_DESTRUCTIVE_BINARY_INS(I1); SVE_DESTRUCTIVE_BINARY_INS(I2);              \
+  SVE_DESTRUCTIVE_BINARY_INS(I3); SVE_DESTRUCTIVE_BINARY_INS(I4);              \
+  SVE_DESTRUCTIVE_BINARY_INS(I5);
+
+  SVE_DESTRUCTIVE_BINARY_5(sve_add,  sve_and,   sve_asr,   sve_bic,   sve_eor)
+  SVE_DESTRUCTIVE_BINARY_5(sve_fabd, sve_fadd,  sve_fdiv,  sve_fmax,  sve_fmin)
+  SVE_DESTRUCTIVE_BINARY_5(sve_fmul, sve_fsub,  sve_lsl,   sve_lsr,   sve_mul)
+  SVE_DESTRUCTIVE_BINARY_5(sve_orr,  sve_smax,  sve_smin,  sve_sqadd, sve_sqsub)
+  SVE_DESTRUCTIVE_BINARY_5(sve_sub,  sve_uqadd, sve_uqsub, sve_umax,  sve_umin)
 
 #undef SVE_DESTRUCTIVE_BINARY_INS
+#undef SVE_DESTRUCTIVE_BINARY_5
 
-#define SVE_DESTRUCTIVE_SHIFT_IMM_INS(NAME)                                    \
-  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int shift) {    \
+#define SVE_DESTRUCTIVE_UNPRED_IMM_INS(NAME)                                   \
+  template<typename OpType>                                                    \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, OpType op) {                  \
     try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
-    Assembler::NAME(Zd, T, Pg, shift);                                         \
+    Assembler::NAME(Zd, T, op);                                                \
   }
 
-  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_asr);
-  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsl);
-  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsr);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_add);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_sub);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_and);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_eor);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_orr);
 
-#undef SVE_DESTRUCTIVE_SHIFT_IMM_INS
-
-#define SVE_DESTRUCTIVE_ADD_SUB_IMM_INS(NAME)                                  \
-  void NAME(FloatRegister Zd, SIMD_RegVariant T, unsigned imm8) {              \
-    try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
-    Assembler::NAME(Zd, T, imm8);                                              \
-  }
-
-  SVE_DESTRUCTIVE_ADD_SUB_IMM_INS(sve_add);
-  SVE_DESTRUCTIVE_ADD_SUB_IMM_INS(sve_sub);
-
-#undef SVE_DESTRUCTIVE_ADD_SUB_IMM_INS
-
-#define SVE_DESTRUCTIVE_LOGICAL_IMM_INS(NAME)                                  \
-  void NAME(FloatRegister Zd, SIMD_RegVariant T, uint64_t imm) {               \
-    try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
-    Assembler::NAME(Zd, T, imm);                                               \
-  }
-
-  SVE_DESTRUCTIVE_LOGICAL_IMM_INS(sve_and);
-  SVE_DESTRUCTIVE_LOGICAL_IMM_INS(sve_eor);
-  SVE_DESTRUCTIVE_LOGICAL_IMM_INS(sve_orr);
-
-#undef SVE_DESTRUCTIVE_LOGICAL_IMM_INS
+#undef SVE_DESTRUCTIVE_UNPRED_IMM_INS
 
 #define SVE_DESTRUCTIVE_TERNARY_INS(NAME)                                      \
+  using Assembler::NAME;                                                       \
+                                                                               \
   void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
             FloatRegister Zn, FloatRegister Zm) {                              \
     if (Zd != Zn && Zd != Zm) {                                                \
