@@ -96,7 +96,7 @@ public abstract class SHA3 extends DigestBase {
     private SHA3(String name, int digestLength, byte suffix, int c) {
         super(name, digestLength, (WIDTH - c));
         this.suffix = suffix;
-        checkBlockSize();
+        blockSizeCheck();
     }
 
     @Override
@@ -113,10 +113,11 @@ public abstract class SHA3 extends DigestBase {
         Preconditions.checkIndex(ofs + blockSize - 1, b.length, Preconditions.AIOOBE_FORMATTER);
     }
 
-    private void checkBlockSize() {
+    private void blockSizeCheck() {
         switch(blockSize) {
             case 72, 104, 136, 144, 168: break;
-            default: throw new RuntimeException("Invalid SHA3 blocksize");
+            default: 
+                throw new ProviderException("Invalid SHA3 blocksize:" + blockSize);
         }
     }
 

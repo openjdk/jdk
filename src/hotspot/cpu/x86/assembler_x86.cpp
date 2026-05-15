@@ -3874,7 +3874,7 @@ void Assembler::evmovdqaq(Address dst, KRegister mask, XMMRegister src, bool mer
     attributes.reset_is_clear_context();
   }
   vex_prefix(dst, 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
-  emit_int8(0x6F);
+  emit_int8(0x7F);
   emit_operand(src, dst, 0);
 }
 

@@ -600,7 +600,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_digestBase_implCompress(intrinsic_id());
   case vmIntrinsics::_double_keccak:
   case vmIntrinsics::_quad_keccak:
-    return inline_double_keccak(intrinsic_id());
+    return inline_keccak(intrinsic_id());
 
   case vmIntrinsics::_digestBase_implCompressMB:
     return inline_digestBase_implCompressMB(predicate);
@@ -8352,8 +8352,8 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_double_keccak
-bool LibraryCallKit::inline_double_keccak(vmIntrinsics::ID id) {
+//------------------------------inline_keccak
+bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
   address stubAddr;
   const char *stubName;
   assert(UseSHA3Intrinsics, "need SHA3 intrinsics support");
@@ -8376,47 +8376,47 @@ bool LibraryCallKit::inline_double_keccak(vmIntrinsics::ID id) {
 
   if (!stubAddr) return false;
 
-  Node* state0, *state1, *state2, *state3;
+  Node* state[4];
   switch (id) { // INTENTIONALLY missing break statements
     case vmIntrinsics::_quad_keccak:
-      state2 = must_be_not_null(argument(2), true);
-      state2 = array_element_address(state2, intcon(0), T_LONG);
-      assert(state2, "state2 is null");
-      state3 = must_be_not_null(argument(3), true);
-      state3 = array_element_address(state3, intcon(0), T_LONG);
-      assert(state3, "state3 is null");
+      state[2] = must_be_not_null(argument(2), true);
+      state[2] = array_element_address(state[2], intcon(0), T_LONG);
+      assert(state[2], "state[2] is null");
+      state[3] = must_be_not_null(argument(3), true);
+      state[3] = array_element_address(state[3], intcon(0), T_LONG);
+      assert(state[3], "state[3] is null");
     case vmIntrinsics::_double_keccak:
-      state0 = must_be_not_null(argument(0), true);
-      state0 = array_element_address(state0, intcon(0), T_LONG);
-      assert(state0, "state0 is null");
-      state1 = must_be_not_null(argument(1), true);
-      state1 = array_element_address(state1, intcon(0), T_LONG);
-      assert(state1, "state1 is null");
+      state[0] = must_be_not_null(argument(0), true);
+      state[0] = array_element_address(state[0], intcon(0), T_LONG);
+      assert(state[0], "state[0] is null");
+      state[1] = must_be_not_null(argument(1), true);
+      state[1] = array_element_address(state[1], intcon(0), T_LONG);
+      assert(state[1], "state[1] is null");
       break;
     default:
       assert(false, "dont call");
   }
 
-  Node* double_keccak;
+  Node* keccak;
   switch (id) {
     case vmIntrinsics::_double_keccak:
-      double_keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+      keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
                                   OptoRuntime::double_keccak_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
-                                  state0, state1);
+                                  state[0], state[1]);
       break;
     case vmIntrinsics::_quad_keccak:
-      double_keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+      keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
                                   OptoRuntime::quad_keccak_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
-                                  state0, state1, state2, state3);
+                                  state[0], state[1], state[2], state[3]);
       break;
     default:
       assert(false, "dont call");
   }
 
   // return an int
-  Node* retvalue = _gvn.transform(new ProjNode(double_keccak, TypeFunc::Parms));
+  Node* retvalue = _gvn.transform(new ProjNode(keccak, TypeFunc::Parms));
   set_result(retvalue);
   return true;
 }
