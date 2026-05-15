@@ -110,26 +110,6 @@ void CDSConfig::ergo_initialize() {
   AOTMapLogger::ergo_initialize();
 
   setup_compiler_args();
-
-#ifdef _LP64
-  //
-  // By default, when using AOTClassLinking, use the CompressedOops::HeapBasedNarrowOop
-  // mode so that AOT code can always work regardless of runtime heap range.
-  //
-  // If you are *absolutely sure* that the CompressedOops::mode() will be the same
-  // between training and production runs (e.g., if you specify -Xmx128m for
-  // both training and production runs, and you know the OS will always reserve
-  // the heap under 4GB), you can explicitly disable this with:
-  //     java -XX:+UnlockDiagnosticVMOptions -XX:-AOTCompatibleOopCompression ...
-  // However, this is risky and there's a chance that the production run will be slower
-  // than expected because it is unable to load the AOT code cache.
-  //
-  if (UseCompressedOops && AOTCodeCache::is_caching_enabled()) {
-    FLAG_SET_ERGO_IF_DEFAULT(AOTCompatibleOopCompression, true);
-  } else {
-    FLAG_SET_ERGO(AOTCompatibleOopCompression, false);
-  }
-#endif // _LP64
 }
 
 const char* CDSConfig::default_archive_path() {
