@@ -1146,7 +1146,6 @@ template<typename PrimitiveType, typename CacheType, typename BoxType> class Box
 protected:
   static BoxCache<PrimitiveType, CacheType, BoxType> *_singleton;
   BoxCache(Thread* thread) {
-    assert(!Arguments::is_valhalla_enabled(), "Should not use box caches with enable preview");
     InstanceKlass* ik = BoxCacheBase<CacheType>::find_cache_klass(thread, CacheType::symbol());
     if (ik->is_in_error_state()) {
       _low = 1;
@@ -1154,6 +1153,7 @@ protected:
       _cache = nullptr;
     } else {
       refArrayOop cache = CacheType::cache(ik);
+      assert(!cache->is_flatArray(), "box caches must be reference arrays");
       assert(cache->length() > 0, "Empty cache");
       _low = BoxType::value(cache->obj_at(0));
       _high = checked_cast<PrimitiveType>(_low + cache->length() - 1);
@@ -1218,8 +1218,11 @@ protected:
       _true_cache = nullptr;
       _false_cache = nullptr;
     } else {
-      _true_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_TRUE(ik)));
-      _false_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_FALSE(ik)));
+      oop true_cache = java_lang_Boolean::get_TRUE(ik);
+      oop false_cache = java_lang_Boolean::get_FALSE(ik);
+      assert(true_cache != nullptr && false_cache != nullptr, "Boolean cache fields must be initialized");
+      _true_cache = JNIHandles::make_global(Handle(thread, true_cache));
+      _false_cache = JNIHandles::make_global(Handle(thread, false_cache));
     }
   }
   ~BooleanBoxCache() {
@@ -1256,10 +1259,6 @@ public:
 BooleanBoxCache* BooleanBoxCache::_singleton = nullptr;
 
 oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS) {
-  if (Arguments::enable_preview()) {
-    // Box caches are not used with enable preview.
-    return nullptr;
-  }
    Klass* k = java_lang_Class::as_Klass(bv->klass()->as_ConstantOopReadValue()->value()());
    BasicType box_type = vmClasses::box_klass_type(k);
    if (box_type != T_OBJECT) {

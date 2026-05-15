@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -571,18 +571,28 @@ public final class Float extends Number
     /**
      * Returns a {@code Float} instance representing the specified
      * {@code float} value.
-     * If a new {@code Float} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Float(float)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Float} is an identity class.
+     *              If a new {@code Float} instance is not required, this
+     *              method should generally be used in preference to the
+     *              constructor {@link #Float(float)}, as this method is
+     *              likely to yield significantly better space and time
+     *              performance by caching frequently requested values.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Float} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  f a float value.
      * @return a {@code Float} instance representing {@code f}.
      * @since  1.5
      */
     @IntrinsicCandidate
-    @DeserializeConstructor
     public static Float valueOf(float f) {
         return new Float(f);
     }
@@ -678,6 +688,7 @@ public final class Float extends Number
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
+    @DeserializeConstructor
     public Float(float value) {
         this.value = value;
     }

@@ -28,6 +28,7 @@ package java.lang;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.value.DeserializeConstructor;
+import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -9422,6 +9423,7 @@ public final class Character implements java.io.Serializable, Comparable<Charact
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
+    @DeserializeConstructor
     public Character(char value) {
         this.value = value;
     }
@@ -9435,24 +9437,27 @@ public final class Character implements java.io.Serializable, Comparable<Charact
         static Character[] archivedCache;
 
         static {
-            if (!PreviewFeatures.isEnabled()) {
-                int size = 127 + 1;
+            int size = 127 + 1;
 
-                // Load and use the archived cache if it exists
-                CDS.initializeFromArchive(CharacterCache.class);
-                if (archivedCache == null) {
-                    Character[] c = new Character[size];
-                    for (int i = 0; i < size; i++) {
-                        c[i] = new Character((char) i);
-                    }
-                    archivedCache = c;
+            // Load and use the archived cache if it exists
+            CDS.initializeFromArchive(CharacterCache.class);
+            if (archivedCache == null) {
+                Character[] c = newCacheArray(size);
+                for (int i = 0; i < size; i++) {
+                    c[i] = new Character((char) i);
                 }
-                cache = archivedCache;
-                assert cache.length == size;
-            } else {
-                cache = null;
-                assert archivedCache == null;
+                archivedCache = c;
             }
+            cache = archivedCache;
+            assert cache.length == size;
+        }
+
+        private static Character[] newCacheArray(int size) {
+            // ValueClass.newReferenceArray requires a value class component.
+            if (PreviewFeatures.isEnabled()) {
+                return (Character[]) ValueClass.newReferenceArray(Character.class, size);
+            }
+            return new Character[size];
         }
     }
 
@@ -9485,12 +9490,9 @@ public final class Character implements java.io.Serializable, Comparable<Charact
      * @since  1.5
      */
     @IntrinsicCandidate
-    @DeserializeConstructor
     public static Character valueOf(char c) {
-        if (!PreviewFeatures.isEnabled()) {
-            if (c <= 127) { // must cache
-                return CharacterCache.cache[(int) c];
-            }
+        if (c <= 127) { // must cache
+            return CharacterCache.cache[(int) c];
         }
         return new Character(c);
     }

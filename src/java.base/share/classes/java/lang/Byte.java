@@ -28,6 +28,7 @@ package java.lang;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.value.DeserializeConstructor;
+import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -123,25 +124,28 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
         static Byte[] archivedCache;
 
         static {
-            if (!PreviewFeatures.isEnabled()) {
-                final int size = -(-128) + 127 + 1;
+            final int size = -(-128) + 127 + 1;
 
-                // Load and use the archived cache if it exists
-                CDS.initializeFromArchive(ByteCache.class);
-                if (archivedCache == null) {
-                    Byte[] c = new Byte[size];
-                    byte value = (byte)-128;
-                    for(int i = 0; i < size; i++) {
-                        c[i] = new Byte(value++);
-                    }
-                    archivedCache = c;
+            // Load and use the archived cache if it exists
+            CDS.initializeFromArchive(ByteCache.class);
+            if (archivedCache == null) {
+                Byte[] c = newCacheArray(size);
+                byte value = (byte)-128;
+                for(int i = 0; i < size; i++) {
+                    c[i] = new Byte(value++);
                 }
-                cache = archivedCache;
-                assert cache.length == size;
-            } else {
-                cache = null;
-                assert archivedCache == null;
+                archivedCache = c;
             }
+            cache = archivedCache;
+            assert cache.length == size;
+        }
+
+        private static Byte[] newCacheArray(int size) {
+            // ValueClass.newReferenceArray requires a value class component.
+            if (PreviewFeatures.isEnabled()) {
+                return (Byte[]) ValueClass.newReferenceArray(Byte.class, size);
+            }
+            return new Byte[size];
         }
     }
 
@@ -171,13 +175,9 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @since  1.5
      */
     @IntrinsicCandidate
-    @DeserializeConstructor
     public static Byte valueOf(byte b) {
-        if (!PreviewFeatures.isEnabled()) {
-            final int offset = 128;
-            return ByteCache.cache[(int) b + offset];
-        }
-        return new Byte(b);
+        final int offset = 128;
+        return ByteCache.cache[(int) b + offset];
     }
 
     /**
@@ -378,6 +378,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
+    @DeserializeConstructor
     public Byte(byte value) {
         this.value = value;
     }

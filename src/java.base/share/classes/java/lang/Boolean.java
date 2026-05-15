@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.value.DeserializeConstructor;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -112,6 +111,7 @@ public final class Boolean implements java.io.Serializable,
      * if possible.
      */
     @Deprecated(since="9")
+    @DeserializeConstructor
     public Boolean(boolean value) {
         this.value = value;
     }
@@ -168,25 +168,34 @@ public final class Boolean implements java.io.Serializable,
 
     /**
      * Returns a {@code Boolean} instance representing the specified
-     * {@code boolean} value.  If the specified {@code boolean} value
-     * is {@code true}, this method returns {@code Boolean.TRUE};
-     * if it is {@code false}, this method returns {@code Boolean.FALSE}.
-     * If a new {@code Boolean} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Boolean(boolean)}, as this method is likely to yield
-     * significantly better space and time performance.
+     * {@code boolean} value.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Boolean} is an identity class.
+     *              If the specified {@code boolean} value is {@code true},
+     *              this method returns {@code Boolean.TRUE}; if it is
+     *              {@code false}, this method returns {@code Boolean.FALSE}.
+     *              If a new {@code Boolean} instance is not required, this
+     *              method should generally be used in preference to the
+     *              constructor {@link #Boolean(boolean)}, as this method is
+     *              likely to yield significantly better space and time
+     *              performance.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Boolean} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  b a boolean value.
      * @return a {@code Boolean} instance representing {@code b}.
      * @since  1.4
      */
     @IntrinsicCandidate
-    @DeserializeConstructor
     public static Boolean valueOf(boolean b) {
-        if (!PreviewFeatures.isEnabled()) {
-            return (b ? TRUE : FALSE);
-        }
-        return new Boolean(b);
+        return (b ? TRUE : FALSE);
     }
 
     /**

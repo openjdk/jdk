@@ -499,9 +499,7 @@ bool ciField::is_call_site_target() {
 
 bool ciField::is_autobox_cache() {
   ciSymbol* klass_name = holder()->name();
-  // The box cache is disabled when boxes are value classes.
-  return (!Arguments::is_valhalla_enabled() &&
-          name() == ciSymbols::cache_field_name() &&
+  return (name() == ciSymbols::cache_field_name() &&
           holder()->uses_default_loader() &&
           (klass_name == ciSymbols::java_lang_Character_CharacterCache() ||
             klass_name == ciSymbols::java_lang_Byte_ByteCache() ||
