@@ -175,11 +175,11 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * The key operations supported by this class are those of
  * <i>normalization</i>, <i>resolution</i>, and <i>relativization</i>.
  *
- * <p> <i>Normalization</i> is the process of removing unnecessary {@code "."},
- * {@code ".."}, and {@code "//"} (empty) segments from the path component of a
- * hierarchical URI. Each {@code "."} and empty segment is simply removed. A
- * {@code ".."} segment is removed only if it is preceded by a non-{@code ".."}
- * segment. Normalization has no effect upon opaque URIs.
+ * <p> <i>Normalization</i> is the process of removing unnecessary {@code "."}
+ * and {@code ".."} segments, and redundant {@code "/"} (empty segments) from
+ * the path component of a hierarchical URI. Each {@code "."} and empty segment
+ * is simply removed. A {@code ".."} segment is removed only if it is preceded
+ * by a non-{@code ".."} segment. Normalization has no effect upon opaque URIs.
  *
  * <p> <i>Resolution</i> is the process of resolving one URI against another,
  * <i>base</i> URI.  The resulting URI is constructed from components of both
@@ -1030,7 +1030,7 @@ public final class URI
      *   scheme of {@code "a"} and a scheme-specific part of {@code "b/c/d"}.
      *   <b><i>(Deviation from RFC&nbsp;2396)</i></b> </p></li>
      *
-     *   <li><p> All {@code "//"} empty segments are removed.
+     *   <li><p> All redundant {@code "/"} (empty segments) are removed.
      *   <b><i>(Deviation from RFC&nbsp;2396)</i></b> </p></li>
      *
      * </ol>
