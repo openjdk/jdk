@@ -386,14 +386,6 @@ class WindowsNativeDispatcher {
         int infoClass, long infoAddress, int infoSize) throws WindowsException;
 
     /**
-     * Indicates whether GetFileInformationByName is supported on this OS version.
-     */
-    static boolean supportsGetFileInformationByName() {
-        return supportsGetFileInformationByName0();
-    }
-    private static native boolean supportsGetFileInformationByName0();
-
-    /**
      * SetFileTime(
      *   HANDLE hFile,
      *   CONST FILETIME *lpCreationTime,
@@ -1116,15 +1108,23 @@ class WindowsNativeDispatcher {
         return buffer;
     }
 
+    // -- capabilities --
+    private static final int SUPPORTS_GETFILEINFORMATIONBYNAME = 1 << 1;
+    private static final int capabilities;
+
+    static boolean supportsGetFileInformationByName() {
+        return (capabilities & SUPPORTS_GETFILEINFORMATIONBYNAME) != 0;
+    }
+
     // -- native library initialization --
 
-    private static native void initIDs();
+    private static native int init();
 
     static {
         // nio.dll has dependency on net.dll
         jdk.internal.loader.BootLoader.loadLibrary("net");
         jdk.internal.loader.BootLoader.loadLibrary("nio");
-        initIDs();
+        capabilities = init();
     }
 
 }
