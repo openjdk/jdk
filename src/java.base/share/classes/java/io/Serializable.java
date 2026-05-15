@@ -144,7 +144,7 @@ package java.io;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a>. Any declarations of the special
  * handling methods discussed above, except {@code writeReplace},
- * are ignored for record types.<p>
+ * are ignored for record types.
  *
  * <div class="preview-block">
  *      <div class="preview-comment">
