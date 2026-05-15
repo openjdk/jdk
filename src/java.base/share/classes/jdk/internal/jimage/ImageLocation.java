@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ public class ImageLocation {
      * has preview resources in one of the modules in which it exists.
      */
     private static final int FLAGS_HAS_PREVIEW_VERSION = 0x1;
+
     /**
      * Set on all locations in the {@code /modules/xxx/META-INF/preview/...}
      * namespace.
@@ -83,6 +84,7 @@ public class ImageLocation {
      * <p>This flag is mutually exclusive with {@link #FLAGS_HAS_PREVIEW_VERSION}.
      */
     private static final int FLAGS_IS_PREVIEW_VERSION = 0x2;
+
     /**
      * Indicates that a location only exists due to preview resources.
      *
@@ -118,7 +120,8 @@ public class ImageLocation {
      *     <li>{@code "[/modules]/<module>/META-INF/preview/<path>"} preview
      *     resource or directory:<br>
      *     {@code FLAGS_IS_PREVIEW_VERSION}, and additionally {@code
-     *     FLAGS_IS_PREVIEW_ONLY} if no normal version of the resource exists.
+     *     FLAGS_IS_PREVIEW_ONLY} if no normal version of the resource or
+     *     directory exists.
      *     <li>In all other cases, returned flags are zero (note that {@code
      *     "/packages/xxx"} entries may have flags, but these are calculated
      *     elsewhere).
@@ -129,7 +132,7 @@ public class ImageLocation {
      *     is present.
      * @return flags for the ATTRIBUTE_PREVIEW_FLAGS attribute.
      */
-    public static int getFlags(String name, Predicate<String> hasEntry) {
+    public static int getPreviewFlags(String name, Predicate<String> hasEntry) {
         if (name.startsWith(PACKAGES_PREFIX + "/")) {
             throw new IllegalArgumentException(
                     "Package sub-directory flags handled separately: " + name);
@@ -164,7 +167,7 @@ public class ImageLocation {
      * Helper function to calculate package flags for {@code "/packages/xxx"}
      * directory entries.
      *
-     * <p>Based on the module references, the flags are:
+     * <p>Based on the module links, the flags are:
      * <ul>
      *     <li>{@code FLAGS_HAS_PREVIEW_VERSION} if <em>any</em> referenced
      *     package has a preview version.
@@ -174,11 +177,11 @@ public class ImageLocation {
      *
      * @return package flags for {@code "/packages/xxx"} directory entries.
      */
-    public static int getPackageFlags(List<ModuleReference> moduleReferences) {
+    public static int getPackageFlags(List<ModuleLink> moduleLinks) {
         boolean hasPreviewVersion =
-                moduleReferences.stream().anyMatch(ModuleReference::hasPreviewVersion);
+                moduleLinks.stream().anyMatch(ModuleLink::hasPreviewVersion);
         boolean isPreviewOnly =
-                moduleReferences.stream().allMatch(ModuleReference::isPreviewOnly);
+                moduleLinks.stream().allMatch(ModuleLink::isPreviewOnly);
         return (hasPreviewVersion ? ImageLocation.FLAGS_HAS_PREVIEW_VERSION : 0)
                 | (isPreviewOnly ? ImageLocation.FLAGS_IS_PREVIEW_ONLY : 0);
     }

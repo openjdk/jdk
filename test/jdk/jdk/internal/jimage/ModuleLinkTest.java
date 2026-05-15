@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.jimage.ModuleReference;
+import jdk.internal.jimage.ModuleLink;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -34,8 +34,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-import static jdk.internal.jimage.ModuleReference.forEmptyPackage;
-import static jdk.internal.jimage.ModuleReference.forPackage;
+import static jdk.internal.jimage.ModuleLink.forEmptyPackage;
+import static jdk.internal.jimage.ModuleLink.forPackage;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,11 +44,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @summary Tests for ModuleReference.
+ * @summary Tests for ModuleLink.
  * @modules java.base/jdk.internal.jimage
- * @run junit/othervm -esa ModuleReferenceTest
+ * @run junit/othervm -esa ModuleLinkTest
  */
-public final class ModuleReferenceTest {
+public final class ModuleLinkTest {
     // Copied (not referenced) for testing.
     private static final int FLAGS_HAS_PREVIEW_VERSION = 0x1;
     private static final int FLAGS_HAS_NORMAL_VERSION = 0x2;
@@ -56,32 +56,32 @@ public final class ModuleReferenceTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    public void emptyRefs(boolean isPreview) {
-        ModuleReference ref = forEmptyPackage("module", isPreview);
+    public void emptyLinks(boolean isPreview) {
+        ModuleLink link = forEmptyPackage("module", isPreview);
 
-        assertEquals("module", ref.name());
-        assertFalse(ref.hasResources());
-        assertEquals(isPreview, ref.hasPreviewVersion());
-        assertEquals(isPreview, ref.isPreviewOnly());
+        assertEquals("module", link.name());
+        assertFalse(link.hasResources());
+        assertEquals(isPreview, link.hasPreviewVersion());
+        assertEquals(isPreview, link.isPreviewOnly());
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    public void resourceRefs(boolean isPreview) {
-        ModuleReference ref = forPackage("module", isPreview);
+    public void resourceLinks(boolean isPreview) {
+        ModuleLink link = forPackage("module", isPreview);
 
-        assertEquals("module", ref.name());
-        assertTrue(ref.hasResources());
-        assertEquals(isPreview, ref.hasPreviewVersion());
-        assertEquals(isPreview, ref.isPreviewOnly());
+        assertEquals("module", link.name());
+        assertTrue(link.hasResources());
+        assertEquals(isPreview, link.hasPreviewVersion());
+        assertEquals(isPreview, link.isPreviewOnly());
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    public void mergedRefs(boolean isPreview) {
-        ModuleReference emptyRef = forEmptyPackage("module", true);
-        ModuleReference resourceRef = forPackage("module", isPreview);
-        ModuleReference merged = emptyRef.merge(resourceRef);
+    public void mergedLinks(boolean isPreview) {
+        ModuleLink emptyLink = forEmptyPackage("module", true);
+        ModuleLink resourceLink = forPackage("module", isPreview);
+        ModuleLink merged = emptyLink.merge(resourceLink);
 
         // Merging preserves whether there's content.
         assertTrue(merged.hasResources());
@@ -91,13 +91,13 @@ public final class ModuleReferenceTest {
 
     @Test
     public void writeBuffer() {
-        List<ModuleReference> refs = Arrays.asList(
+        List<ModuleLink> links = Arrays.asList(
                 forEmptyPackage("alpha", true),
                 forEmptyPackage("beta", false).merge(forEmptyPackage("beta", true)),
                 forPackage("gamma", false),
                 forEmptyPackage("zeta", false));
-        IntBuffer buffer = IntBuffer.allocate(2 * refs.size());
-        ModuleReference.write(refs, buffer, fakeEncoder());
+        IntBuffer buffer = IntBuffer.allocate(2 * links.size());
+        ModuleLink.write(links, buffer, fakeEncoder());
         assertArrayEquals(
                 new int[]{
                         FLAGS_HAS_PREVIEW_VERSION, 100,
@@ -112,58 +112,58 @@ public final class ModuleReferenceTest {
         IntBuffer buffer = IntBuffer.allocate(0);
         var err = assertThrows(
                 IllegalArgumentException.class,
-                () -> ModuleReference.write(List.of(), buffer, null));
+                () -> ModuleLink.write(List.of(), buffer, null));
         assertTrue(err.getMessage().contains("non-empty"));
     }
 
     @Test
     public void writeBuffer_badCapacity() {
-        List<ModuleReference> refs = Arrays.asList(
+        List<ModuleLink> links = Arrays.asList(
                 forPackage("first", false),
                 forEmptyPackage("alpha", false));
         IntBuffer buffer = IntBuffer.allocate(10);
         var err = assertThrows(
                 IllegalArgumentException.class,
-                () -> ModuleReference.write(refs, buffer, null));
+                () -> ModuleLink.write(links, buffer, null));
         assertTrue(err.getMessage().contains("buffer capacity"));
     }
 
     @Test
     public void writeBuffer_multiplePackagesWithResources() {
-        // Only one module reference (at most) can have resources.
-        List<ModuleReference> refs = Arrays.asList(
+        // Only one module link (at most) can have resources.
+        List<ModuleLink> links = Arrays.asList(
                 forPackage("alpha", false),
                 forPackage("beta", false));
-        IntBuffer buffer = IntBuffer.allocate(2 * refs.size());
+        IntBuffer buffer = IntBuffer.allocate(2 * links.size());
         var err = assertThrows(
                 IllegalArgumentException.class,
-                () -> ModuleReference.write(refs, buffer, null));
+                () -> ModuleLink.write(links, buffer, null));
         assertTrue(err.getMessage().contains("resources"));
     }
 
     @Test
     public void writeBuffer_badOrdering() {
         // Badly ordered because preview references should come first.
-        List<ModuleReference> refs = Arrays.asList(
+        List<ModuleLink> links = Arrays.asList(
                 forEmptyPackage("alpha", false),
                 forEmptyPackage("beta", true));
-        IntBuffer buffer = IntBuffer.allocate(2 * refs.size());
+        IntBuffer buffer = IntBuffer.allocate(2 * links.size());
         var err = assertThrows(
                 IllegalArgumentException.class,
-                () -> ModuleReference.write(refs, buffer, null));
+                () -> ModuleLink.write(links, buffer, null));
         assertTrue(err.getMessage().contains("strictly ordered"));
     }
 
     @Test
-    public void writeBuffer_duplicateRef() {
+    public void writeBuffer_duplicateLink() {
         // Technically distinct, and correctly sorted, but with duplicate names.
-        List<ModuleReference> refs = Arrays.asList(
+        List<ModuleLink> links = Arrays.asList(
                 forEmptyPackage("duplicate", true),
                 forEmptyPackage("duplicate", false));
-        IntBuffer buffer = IntBuffer.allocate(2 * refs.size());
+        IntBuffer buffer = IntBuffer.allocate(2 * links.size());
         var err = assertThrows(
                 IllegalArgumentException.class,
-                () -> ModuleReference.write(refs, buffer, null));
+                () -> ModuleLink.write(links, buffer, null));
         assertTrue(err.getMessage().contains("unique"));
     }
 
@@ -176,9 +176,9 @@ public final class ModuleReferenceTest {
                 FLAGS_HAS_NORMAL_VERSION | FLAGS_HAS_CONTENT, 102,
                 FLAGS_HAS_NORMAL_VERSION, 103});
 
-        List<Integer> normalOffsets = asList(ModuleReference.readNameOffsets(buffer, true, false));
-        List<Integer> previewOffsets = asList(ModuleReference.readNameOffsets(buffer, false, true));
-        List<Integer> allOffsets = asList(ModuleReference.readNameOffsets(buffer, true, true));
+        List<Integer> normalOffsets = asList(ModuleLink.readNameOffsets(buffer, true, false));
+        List<Integer> previewOffsets = asList(ModuleLink.readNameOffsets(buffer, false, true));
+        List<Integer> allOffsets = asList(ModuleLink.readNameOffsets(buffer, true, true));
 
         assertEquals(List.of(100, 102, 103), normalOffsets);
         assertEquals(List.of(100, 101), previewOffsets);
@@ -189,7 +189,7 @@ public final class ModuleReferenceTest {
     public void readNameOffsets_badBufferSize() {
         var err = assertThrows(
                 IllegalArgumentException.class,
-                () -> ModuleReference.readNameOffsets(IntBuffer.allocate(3), true, false));
+                () -> ModuleLink.readNameOffsets(IntBuffer.allocate(3), true, false));
         assertTrue(err.getMessage().contains("buffer size"));
     }
 
@@ -198,22 +198,22 @@ public final class ModuleReferenceTest {
         IntBuffer buffer = IntBuffer.wrap(new int[]{FLAGS_HAS_CONTENT, 100});
         var err = assertThrows(
                 IllegalArgumentException.class,
-                () -> ModuleReference.readNameOffsets(buffer, false, false));
+                () -> ModuleLink.readNameOffsets(buffer, false, false));
         assertTrue(err.getMessage().contains("flags"));
     }
 
     @Test
     public void sortOrder_previewFirst() {
-        List<ModuleReference> refs = Arrays.asList(
+        List<ModuleLink> links = Arrays.asList(
                 forEmptyPackage("normal.beta", false),
                 forPackage("preview.beta", true),
                 forEmptyPackage("preview.alpha", true),
                 forEmptyPackage("normal.alpha", false));
-        refs.sort(Comparator.naturalOrder());
+        links.sort(Comparator.naturalOrder());
         // Non-empty first with remaining sorted by name.
         assertEquals(
                 List.of("preview.alpha", "preview.beta", "normal.alpha", "normal.beta"),
-                refs.stream().map(ModuleReference::name).toList());
+                links.stream().map(ModuleLink::name).toList());
     }
 
     private static <T> List<T> asList(Iterator<T> src) {

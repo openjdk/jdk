@@ -102,7 +102,7 @@ define_pd_global(bool, InlineTypeReturnedAsFields, LP64_ONLY(true) NOT_LP64(fals
                                                                             \
   product(int, UseSSE, 4,                                                   \
           "Highest supported SSE instructions set on x86/x64")              \
-          range(0, 4)                                                       \
+          range(2, 4)                                                       \
                                                                             \
   product(int, UseAVX, 3,                                                   \
           "Highest supported AVX instructions set on x86/x64")              \

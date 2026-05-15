@@ -181,7 +181,6 @@ private:
     const char*          msg;
     bool                 isa_oop;
     uint                 ideal_reg;
-    relocInfo::relocType reloc;
   } TypeInfo;
 
   // Dictionary of types shared among compilations.
@@ -486,7 +485,6 @@ public:
   uint ideal_reg() const             { return _type_info[_base].ideal_reg; }
   const char* msg() const            { return _type_info[_base].msg; }
   bool isa_oop_ptr() const           { return _type_info[_base].isa_oop; }
-  relocInfo::relocType reloc() const { return _type_info[_base].reloc; }
 
   // Mapping from CI type system to compiler type:
   static const Type* get_typeflow_type(ciType* type);
@@ -1231,10 +1229,11 @@ public:
   };
 protected:
   TypePtr(TYPES t, PTR ptr, Offset offset,
+          relocInfo::relocType reloc,
           const TypePtr* speculative = nullptr,
           int inline_depth = InlineDepthBottom) :
     Type(t), _speculative(speculative), _inline_depth(inline_depth), _offset(offset),
-    _ptr(ptr) {}
+    _ptr(ptr), _reloc(reloc) {}
   static const PTR ptr_meet[lastPTR][lastPTR];
   static const PTR ptr_dual[lastPTR];
   static const char * const ptr_msg[lastPTR];
@@ -1307,13 +1306,16 @@ protected:
 public:
   const Offset _offset;         // Offset into oop, with TOP & BOT
   const PTR _ptr;               // Pointer equivalence class
+  const relocInfo::relocType _reloc;
 
   int offset() const { return _offset.get(); }
   PTR ptr()    const { return _ptr; }
+  relocInfo::relocType reloc() const { return _reloc; }
 
   static const TypePtr* make(TYPES t, PTR ptr, Offset offset,
                              const TypePtr* speculative = nullptr,
-                             int inline_depth = InlineDepthBottom);
+                             int inline_depth = InlineDepthBottom,
+                             relocInfo::relocType reloc = relocInfo::none);
 
   // Return a 'ptr' version of this type
   virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
@@ -1394,15 +1396,15 @@ public:
 // include the stack pointer, top of heap, card-marking area, handles, etc.
 class TypeRawPtr : public TypePtr {
 protected:
-  TypeRawPtr(PTR ptr, address bits) : TypePtr(RawPtr,ptr,Offset(0)), _bits(bits){}
+  TypeRawPtr(PTR ptr, address bits, relocInfo::relocType reloc) : TypePtr(RawPtr, ptr, Offset(0), reloc), _bits(bits){}
 public:
   virtual bool eq( const Type *t ) const;
   virtual uint hash() const;    // Type specific hashing
 
   const address _bits;          // Constant value, if applicable
 
-  static const TypeRawPtr *make( PTR ptr );
-  static const TypeRawPtr *make( address bits );
+  static const TypeRawPtr* make(PTR ptr);
+  static const TypeRawPtr* make(address bits, relocInfo::relocType reloc = relocInfo::external_word_type);
 
   // Return a 'ptr' version of this type
   virtual const TypeRawPtr* cast_to_ptr_type(PTR ptr) const;

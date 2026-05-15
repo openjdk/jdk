@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ public final class ImageFileCreator {
                     offset[0] += onFileSize;
                     return;
                 }
-                int locFlags = ImageLocation.getFlags(
+                int locFlags = ImageLocation.getPreviewFlags(
                         res.path(), p -> resultResources.findEntry(p).isPresent());
                 duplicates.add(path);
                 writer.addLocation(path, offset[0], compressedSize, uncompressedSize, locFlags);

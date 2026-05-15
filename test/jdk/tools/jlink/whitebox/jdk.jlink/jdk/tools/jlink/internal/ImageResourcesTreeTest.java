@@ -23,7 +23,7 @@
 
 package jdk.tools.jlink.internal;
 
-import jdk.internal.jimage.ModuleReference;
+import jdk.internal.jimage.ModuleLink;
 import jdk.tools.jlink.internal.ImageResourcesTree.Node;
 import jdk.tools.jlink.internal.ImageResourcesTree.PackageNode;
 import jdk.tools.jlink.internal.ImageResourcesTree.ResourceNode;
@@ -138,15 +138,15 @@ public class ImageResourcesTreeTest {
         Tree tree = new Tree(paths);
         Map<String, Node> nodes = tree.getMap();
         PackageNode pkgUtil = getPackageNode(nodes, "java.util");
-        List<ModuleReference> modRefs = pkgUtil.getModuleReferences();
-        assertEquals(2, modRefs.size());
+        List<ModuleLink> modLinks = pkgUtil.getModuleLinks();
+        assertEquals(2, modLinks.size());
 
-        List<String> modNames = modRefs.stream().map(ModuleReference::name).toList();
+        List<String> modNames = modLinks.stream().map(ModuleLink::name).toList();
         assertEquals(List.of("java.base", "java.logging"), modNames);
 
         // Ordered by name.
-        assertNonEmptyRef(modRefs.get(0), "java.base");
-        assertEmptyRef(modRefs.get(1), "java.logging");
+        assertNonEmptyLink(modLinks.get(0), "java.base");
+        assertEmptyLink(modLinks.get(1), "java.logging");
     }
 
     @Test
@@ -160,11 +160,11 @@ public class ImageResourcesTreeTest {
         Tree tree = new Tree(paths);
         Map<String, Node> nodes = tree.getMap();
         PackageNode pkgUtil = getPackageNode(nodes, "java.util");
-        List<ModuleReference> modRefs = pkgUtil.getModuleReferences();
+        List<ModuleLink> modLinks = pkgUtil.getModuleLinks();
 
-        ModuleReference baseRef = modRefs.get(0);
-        assertNonEmptyRef(baseRef, "java.base");
-        assertTrue(baseRef.hasPreviewVersion());
+        ModuleLink baseLink = modLinks.get(0);
+        assertNonEmptyLink(baseLink, "java.base");
+        assertTrue(baseLink.hasPreviewVersion());
     }
 
     @Test
@@ -178,13 +178,13 @@ public class ImageResourcesTreeTest {
 
         // Preview only package (with content).
         PackageNode nonEmptyPkg = getPackageNode(nodes, "java.util.preview.only");
-        ModuleReference nonEmptyRef = nonEmptyPkg.getModuleReferences().getFirst();
-        assertNonEmptyPreviewOnlyRef(nonEmptyRef, "java.base");
+        ModuleLink nonEmptyLink = nonEmptyPkg.getModuleLinks().getFirst();
+        assertNonEmptyPreviewOnlyLink(nonEmptyLink, "java.base");
 
         // Preview only packages can be empty.
         PackageNode emptyPkg = getPackageNode(nodes, "java.util.preview");
-        ModuleReference emptyRef = emptyPkg.getModuleReferences().getFirst();
-        assertEmptyPreviewOnlyRef(emptyRef, "java.base");
+        ModuleLink emptyLink = emptyPkg.getModuleLinks().getFirst();
+        assertEmptyPreviewOnlyLink(emptyLink, "java.base");
     }
 
     @Test
@@ -211,19 +211,19 @@ public class ImageResourcesTreeTest {
         Map<String, Node> nodes = tree.getMap();
 
         PackageNode sharedPkg = getPackageNode(nodes, "java.shared");
-        List<ModuleReference> refs = sharedPkg.getModuleReferences();
+        List<ModuleLink> links = sharedPkg.getModuleLinks();
 
         // Preview packages first, by name.
         int n = 1;
-        for (ModuleReference ref : refs.subList(0, 3)) {
-            assertEmptyPreviewOnlyRef(ref, "java.preview" + (n++));
+        for (ModuleLink link : links.subList(0, 3)) {
+            assertEmptyPreviewOnlyLink(link, "java.preview" + (n++));
         }
         // The content package (simply due to its name).
-        assertNonEmptyRef(refs.get(3), "java.content");
+        assertNonEmptyLink(links.get(3), "java.content");
         // And the non-preview empty packages after.
         n = 1;
-        for (ModuleReference ref : refs.subList(4, 7)) {
-            assertEmptyRef(ref, "java.module" + (n++));
+        for (ModuleLink link : links.subList(4, 7)) {
+            assertEmptyLink(link, "java.module" + (n++));
         }
     }
 
@@ -239,27 +239,27 @@ public class ImageResourcesTreeTest {
         }
     }
 
-    static void assertNonEmptyRef(ModuleReference ref, String modName) {
-        assertEquals(modName, ref.name(), "Unexpected module name: " + ref);
-        assertTrue(ref.hasResources(), "Expected non-empty reference: " + ref);
-        assertFalse(ref.isPreviewOnly(), "Expected not preview-only: " + ref);
+    static void assertNonEmptyLink(ModuleLink link, String modName) {
+        assertEquals(modName, link.name(), "Unexpected module name: " + link);
+        assertTrue(link.hasResources(), "Expected non-empty linkerence: " + link);
+        assertFalse(link.isPreviewOnly(), "Expected not preview-only: " + link);
     }
 
-    static void assertEmptyRef(ModuleReference ref, String modName) {
-        assertEquals(modName, ref.name(), "Unexpected module name: " + ref);
-        assertFalse(ref.hasResources(), "Expected empty reference: " + ref);
-        assertFalse(ref.isPreviewOnly(), "Expected not preview-only: " + ref);
+    static void assertEmptyLink(ModuleLink link, String modName) {
+        assertEquals(modName, link.name(), "Unexpected module name: " + link);
+        assertFalse(link.hasResources(), "Expected empty linkerence: " + link);
+        assertFalse(link.isPreviewOnly(), "Expected not preview-only: " + link);
     }
 
-    static void assertNonEmptyPreviewOnlyRef(ModuleReference ref, String modName) {
-        assertEquals(modName, ref.name(), "Unexpected module name: " + ref);
-        assertTrue(ref.hasResources(), "Expected empty reference: " + ref);
-        assertTrue(ref.isPreviewOnly(), "Expected preview-only: " + ref);
+    static void assertNonEmptyPreviewOnlyLink(ModuleLink link, String modName) {
+        assertEquals(modName, link.name(), "Unexpected module name: " + link);
+        assertTrue(link.hasResources(), "Expected empty linkerence: " + link);
+        assertTrue(link.isPreviewOnly(), "Expected preview-only: " + link);
     }
 
-    static void assertEmptyPreviewOnlyRef(ModuleReference ref, String modName) {
-        assertEquals(modName, ref.name(), "Unexpected module name: " + ref);
-        assertFalse(ref.hasResources(), "Expected empty reference: " + ref);
-        assertTrue(ref.isPreviewOnly(), "Expected preview-only: " + ref);
+    static void assertEmptyPreviewOnlyLink(ModuleLink link, String modName) {
+        assertEquals(modName, link.name(), "Unexpected module name: " + link);
+        assertFalse(link.hasResources(), "Expected empty linkerence: " + link);
+        assertTrue(link.isPreviewOnly(), "Expected preview-only: " + link);
     }
 }
