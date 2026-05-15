@@ -14148,7 +14148,7 @@ myInit() {
       must not use <jvmti/> functions except those which
       specifically allow such use (see the raw monitor, memory management,
       and environment local storage functions).
-      When preview features are enabled, this event does not supports value object allocations.
+      When preview features are enabled, this event does not support value object allocations.
     </description>
     <origin>new</origin>
     <capabilities>
