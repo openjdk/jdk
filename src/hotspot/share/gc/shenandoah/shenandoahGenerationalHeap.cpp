@@ -198,6 +198,11 @@ void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* 
 }
 
 oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
+  return evacuate_or_promote_object(p, thread);
+}
+
+oop ShenandoahGenerationalHeap::evacuate_or_promote_object(oop p, Thread* thread) {
+  assert(mode()->is_generational(), "This method is only for the generational mode");
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
 
   ShenandoahHeapRegion* from_region = heap_region_containing(p);

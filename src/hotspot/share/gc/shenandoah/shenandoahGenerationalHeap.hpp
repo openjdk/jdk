@@ -89,7 +89,13 @@ public:
   // Resets ages for regions that have been used for allocations.
   void update_region_ages(ShenandoahMarkingContext* ctx);
 
+  // Evacuates or promotes object src. Returns the evacuated object, either evacuated
+  // by this thread, or by some other thread. On allocation failure, installs the
+  // self-forwarded bit on src, flags src's region, and returns src.
   oop evacuate_object(oop p, Thread* thread) override;
+
+  // A non-virtual implementation for callers that know what kind of heap they have
+  oop evacuate_or_promote_object(oop src, Thread* thread);
 
   template<ShenandoahAffiliation FROM_REGION, ShenandoahAffiliation TO_REGION>
   oop try_evacuate_object(oop p, Thread* thread, uint from_region_age);

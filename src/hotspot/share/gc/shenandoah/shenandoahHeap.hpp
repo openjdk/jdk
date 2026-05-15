@@ -808,10 +808,13 @@ public:
   // Checks if location is in the collection set. Can be interior pointer, not the oop itself.
   inline bool in_collection_set_loc(void* loc) const;
 
-  // Evacuates or promotes object src. Returns the evacuated object, either evacuated
+  // Evacuates object src. Returns the evacuated object, either evacuated
   // by this thread, or by some other thread. On allocation failure, installs the
   // self-forwarded bit on src, flags src's region, and returns src.
   virtual oop evacuate_object(oop src, Thread* thread);
+
+  // A non-virtual implementation for callers that no what kind of heap they have
+  oop evacuate_object_nongen(oop src, Thread* thread);
 
   // Parallel scan of flagged cset regions to clear self-forwarded bits on live
   // objects. Must be called at a safepoint; intended for the degenerated and

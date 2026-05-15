@@ -41,7 +41,7 @@ public:
   void do_object(oop p) override {
     shenandoah_assert_marked(nullptr, p);
     if (!p->is_forwarded()) {
-      _heap->evacuate_object(p, _thread);
+      _heap->evacuate_or_promote_object(p, _thread);
     }
   }
 };

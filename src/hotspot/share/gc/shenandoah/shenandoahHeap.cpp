@@ -1126,7 +1126,7 @@ public:
   void do_object(oop p) {
     shenandoah_assert_marked(nullptr, p);
     if (!p->is_forwarded()) {
-      _heap->evacuate_object(p, _thread);
+      _heap->evacuate_object_nongen(p, _thread);
     }
   }
 };
@@ -1299,6 +1299,11 @@ void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure)
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
+  return evacuate_object_nongen(p, thread);
+}
+
+oop ShenandoahHeap::evacuate_object_nongen(oop p, Thread* thread) {
+  assert(!mode()->is_generational(), "This method should not be used in generational mode");
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
 
   ShenandoahHeapRegion* r = heap_region_containing(p);
