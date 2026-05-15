@@ -146,6 +146,7 @@ const size_t minimumSymbolTableSize = 1024;
                            range,                                           \
                            constraint)
 const bool UseCompressedOops = false;
+const bool AOTCompatibleOopCompression = false;
 const bool UseCompactObjectHeaders = false;
 const int ObjectAlignmentInBytes = 8;
 
