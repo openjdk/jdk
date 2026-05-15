@@ -176,14 +176,6 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
         var kind = attr.getOrDefault("kind", defaultKind);
         result.addStyle(getCSSClass(kind));
-
-        for (var entry : attr.entrySet()) {
-            var name = entry.getKey();
-            if (!"header".equalsIgnoreCase(name) && !"kind".equalsIgnoreCase(name) && !"id".equalsIgnoreCase(name)) {
-                result.putDataAttr(name, entry.getValue());
-            }
-        }
-
         return result;
     }
 
