@@ -53,21 +53,21 @@ public class DirPermissionDenied {
     private static URL url;
 
     @Test
-    public void connectTest() {
-        assertThrows(IOException.class, ()-> {URLConnection uc = url.openConnection();
-        uc.connect();});
+    public void connectTest() throws IOException {
+        URLConnection uc = url.openConnection();
+        assertThrows(IOException.class, ()-> uc.connect());
     }
 
     @Test
-    public void getInputStreamTest() {
-        assertThrows(IOException.class, ()-> {URLConnection uc = url.openConnection();
-            uc.getInputStream();});
+    public void getInputStreamTest() throws IOException {
+        URLConnection uc = url.openConnection();
+        assertThrows(IOException.class, ()-> uc.getInputStream());
     }
 
     @Test
-    public void getContentLengthLongTest() {
-        assertDoesNotThrow(() -> {URLConnection uc = url.openConnection();
-        uc.getContentLengthLong();});
+    public void getContentLengthLongTest() throws IOException {
+        URLConnection uc = url.openConnection();
+        assertDoesNotThrow(() -> uc.getContentLengthLong());
     }
 
     @BeforeAll
