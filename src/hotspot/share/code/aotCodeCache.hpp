@@ -301,7 +301,6 @@ public:
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
-  do_fun(int,   CompressedOops_shift,                   CompressedOops::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
   do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
   do_fun(CollectedHeap::Name, Universe_heap_kind,       Universe::heap()->kind()) \
@@ -377,6 +376,7 @@ protected:
 
     // Special configs that cannot be checked with macros
     address _compressedOopBase;
+    int _compressedOopShift;
 
 #if defined(X86) && !defined(ZERO)
     bool _useUnalignedLoadStores;
