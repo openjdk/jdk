@@ -105,5 +105,5 @@ public record EventConfiguration(
         return platformEventType.isRegistered();
     }
 
-    public static boolean updateEpoch(Field root) { return JVM.updateEpoch(root); }
+    public static boolean tryUpdateEpoch(Field root) { return JVM.tryUpdateEpoch(root); }
 }

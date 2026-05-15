@@ -496,7 +496,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
   case vmIntrinsics::_getEventWriter:           return inline_native_getEventWriter();
   case vmIntrinsics::_jvm_commit:               return inline_native_jvm_commit();
-  case vmIntrinsics::_update_epoch_Field:       return inline_native_update_epoch();
+  case vmIntrinsics::_tryUpdateEpochField:      return inline_native_try_update_epoch();
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
@@ -3704,11 +3704,11 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   set_all_memory(_gvn.transform(thread_compare_mem));
 }
 
-//------------------------inline_native_update_epoch------------------
+//------------------------inline_native_try_update_epoch------------------
 //
 // The generated code is a function of the argument type.
 //
-bool LibraryCallKit::inline_native_update_epoch() {
+bool LibraryCallKit::inline_native_try_update_epoch() {
   enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
 
   // Save input memory.

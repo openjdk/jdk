@@ -777,12 +777,12 @@ public final class JVM {
     public static native long[] drainStaleMethodTracerIds();
 
     /**
-     * The updateEpoch() method(s) takes a state object as an argument
+     * The tryUpdateEpoch() method(s) takes a state object as an argument
      * and returns true if the epoch was exclusively updated by the current thread.
      *
      * @param root A {@link java.lang.reflect.Field} instance root, not {@code null}
      * @return {@code true} if the epoch was updated by the current thread.
      */
     @IntrinsicCandidate
-    public static native boolean updateEpoch(Field root);
+    public static native boolean tryUpdateEpoch(Field root);
 }

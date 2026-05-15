@@ -64,8 +64,8 @@ class JfrIntrinsicSupport : AllStatic {
   do_intrinsic(_getEventWriter,   jdk_jfr_internal_JVM, getEventWriter_name, getEventWriter_signature, F_SN)         \
     do_name(     getEventWriter_name,                          "getEventWriter")                                     \
   do_intrinsic(_jvm_commit,   jdk_jfr_internal_JVM, commit_name, long_long_signature, F_SN)                          \
-    do_name(    updateEpoch_name,                              "updateEpoch")                                        \
-  do_intrinsic(_update_epoch_Field, jdk_jfr_internal_JVM, updateEpoch_name, update_Field_signature, F_SN)
+    do_name(    tryUpdateEpoch_name,                           "tryUpdateEpoch")                                     \
+  do_intrinsic(_tryUpdateEpochField, jdk_jfr_internal_JVM, tryUpdateEpoch_name, update_Field_signature, F_SN)
 
 #else // !INCLUDE_JFR
 

@@ -94,7 +94,7 @@ public final class EventInstrumentation {
     private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
     private static final MethodDesc METHOD_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
     private static final MethodDesc METHOD_TIME_STAMP = MethodDesc.of("timestamp", "()J");
-    private static final MethodDesc METHOD_UPDATE_EPOCH_FIELD = MethodDesc.of("updateEpoch", "(Ljava/lang/reflect/Field;)Z");
+    private static final MethodDesc METHOD_TRY_UPDATE_EPOCH_FIELD = MethodDesc.of("tryUpdateEpoch", "(Ljava/lang/reflect/Field;)Z");
 
     private final ClassInspector inspector;
     private final long eventTypeId;
@@ -172,8 +172,8 @@ public final class EventInstrumentation {
             if (isMethod(method, METHOD_TIME_STAMP)) {
                 return this::methodTimestamp;
             }
-            if (isMethod(method, METHOD_UPDATE_EPOCH_FIELD)) {
-                return this::methodUpdateEpochField;
+            if (isMethod(method, METHOD_TRY_UPDATE_EPOCH_FIELD)) {
+                return this::methodTryUpdateEpochField;
             }
             if (staticCommitMethod != null && isMethod(method, staticCommitMethod)) {
                 return this::methodCommit;
@@ -352,9 +352,9 @@ public final class EventInstrumentation {
         methodShouldCommitStatic(codeBuilder, METHOD_EVENT_CONFIGURATION_SHOULD_THROTTLE_COMMIT_LONG);
     }
 
-    private void methodUpdateEpochField(CodeBuilder codeBuilder) {
+    private void methodTryUpdateEpochField(CodeBuilder codeBuilder) {
         codeBuilder.aload(0);
-        invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_UPDATE_EPOCH_FIELD);
+        invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TRY_UPDATE_EPOCH_FIELD);
         codeBuilder.ireturn();
     }
 

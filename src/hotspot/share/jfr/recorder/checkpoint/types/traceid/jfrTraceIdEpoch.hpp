@@ -136,7 +136,7 @@ class JfrTraceIdEpoch : AllStatic {
   static void reset_method_tracer_tag_state();
   static bool has_method_tracer_changed_tag_state();
 
-  static bool update(oop obj);
+  static bool try_update(oop obj);
 
 };
 

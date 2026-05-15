@@ -79,7 +79,7 @@ static void assert_epoch_supported_type(oop obj) {
 }
 #endif
 
-bool JfrTraceIdEpoch::update(oop obj) {
+bool JfrTraceIdEpoch::try_update(oop obj) {
   DEBUG_ONLY(assert_epoch_supported_type(obj);)
   return JfrOopTraceId<java_lang_reflect_Field>::cas_epoch(obj);
 }
