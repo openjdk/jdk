@@ -522,10 +522,13 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(password, "a password must be specified");
         PBEKeySpec keySpec = new PBEKeySpec(password);
+        byte[] encoding = null;
         try {
-            return PKCS8Key.parseKey(Pem.decryptEncoding(this, keySpec), null);
+            encoding = Pem.decryptEncoding(this, keySpec);
+            return PKCS8Key.parseKey(encoding, null);
         } finally {
             keySpec.clearPassword();
+            KeyUtil.clear(encoding);
         }
     }
 
@@ -575,10 +578,13 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
 
         PBEKeySpec keySpec = new PBEKeySpec(password);
         BinaryEncodable d;
+        byte[] encoding = null;
         try {
-            d = Pem.toPKCS8Encodable(Pem.decryptEncoding(this, keySpec), null);
+            encoding = Pem.decryptEncoding(this, keySpec);
+            d = Pem.toPKCS8Encodable(encoding, null);
         } finally {
             keySpec.clearPassword();
+            KeyUtil.clear(encoding);
         }
         return switch (d) {
             case KeyPair kp -> kp;
@@ -608,12 +614,12 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
         Objects.requireNonNull(decryptKey,"a decryptKey must be specified");
 
         BinaryEncodable d;
-        byte[] data = null;
+        byte[] encoding = null;
         try {
-            data = decryptData(decryptKey, null);
-            d = Pem.toPKCS8Encodable(data, null);
+            encoding = decryptData(decryptKey, null);
+            d = Pem.toPKCS8Encodable(encoding, null);
         } finally {
-            KeyUtil.clear(data);
+            KeyUtil.clear(encoding);
         }
         return switch (d) {
             case KeyPair kp -> kp;

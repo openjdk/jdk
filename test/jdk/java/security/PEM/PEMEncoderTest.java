@@ -176,6 +176,9 @@ public class PEMEncoderTest {
         System.out.println("Testing consistency between pemEncodedFromArray()" +
             "and pemEncoded():");
         testPemEncodedFromArray();
+
+        // Encode an empty PEM content
+        encoder.encode(new PEM("X", ""));
     }
 
     static Map generateObjKeyMap(List<PEMData.Entry> list) {
@@ -249,11 +252,15 @@ public class PEMEncoderTest {
         String type = Pem.CERTIFICATE;
         String base64 = Base64.getMimeEncoder(64, "\r\n".getBytes(
             StandardCharsets.ISO_8859_1)).encodeToString(data);
-        String expected = "-----BEGIN " + type + "-----\r\n" +
+        var expected = ("-----BEGIN " + type + "-----\r\n" +
             base64 + (!base64.endsWith("\n") ? "\r\n" : "") +
-            "-----END " + type + "-----\r\n";
-
-        assertEquals(Pem.pemEncoded(type, base64), expected);
+            "-----END " + type + "-----\r\n");
+        var result = Pem.pemEncoded(type, base64.getBytes(StandardCharsets.ISO_8859_1));
+        if (!Arrays.equals(result, expected.getBytes(StandardCharsets.ISO_8859_1))) {
+            throw new AssertionError(
+                "result =\n" + new String(result, StandardCharsets.ISO_8859_1) +
+                "expected =\n " + expected);
+        }
 
         // Empty data should still include a CRLF before footer.
         byte[] empty = new byte[0];

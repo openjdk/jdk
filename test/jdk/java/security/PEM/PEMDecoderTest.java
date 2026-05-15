@@ -210,6 +210,10 @@ public class PEMDecoderTest {
         d.decode(bis, PEM.class);
 
         d.decode(PEMData.encpkcs1, PEM.class);
+        try {
+            d.decode(PEMData.ecCSR.pem(), BinaryEncodable.class);
+            throw new AssertionError("decode(s, BinaryEncodable.class passed");
+        } catch (ClassCastException _) {}
     }
 
     static void testInputStream() throws IOException {

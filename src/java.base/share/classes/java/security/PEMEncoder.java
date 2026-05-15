@@ -175,7 +175,7 @@ public final class PEMEncoder {
                 throw new IllegalArgumentException("PEM cannot be " +
                     "encrypted");
             }
-            return Pem.pemEncodedToString(pem);
+            return pem.toString();
         }
         return KeyUtil.clear(encode(be),
             e -> new String(e, StandardCharsets.ISO_8859_1));
@@ -261,7 +261,7 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException("PEM cannot be " +
                         "encrypted");
                 }
-                yield Pem.pemEncoded(rec);
+                yield rec.toTextualByteArray();
             }
 
             default -> throw new IllegalArgumentException("PEM does not " +
@@ -278,13 +278,13 @@ public final class PEMEncoder {
      * configured instance. Attempting to encode other {@code BinaryEncodable}
      * objects will throw an {@code IllegalArgumentException}.
      *
+     * <p> To use non-default encryption parameters or a different provider, use
+     * an {@code encrypt} method in {@link EncryptedPrivateKeyInfo}, then pass
+     * the resulting object to {@link #encode(BinaryEncodable)}.
+     *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
      * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}
-     * defaults are determined by the provider. To use non-default encryption
-     * parameters, or to encrypt with a different encryption provider, use
-     * {@link EncryptedPrivateKeyInfo#encrypt(BinaryEncodable, Key,
-     * String, AlgorithmParameterSpec, Provider, SecureRandom)} and use the
-     * returned object with {@link #encode(BinaryEncodable)}.
+     * defaults are determined by the provider.
      *
      * @param password the encryption password.  The array is cloned and
      *                 stored in the new instance.

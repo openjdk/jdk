@@ -317,9 +317,9 @@ public class Pem {
                 }
             } while (hyphen < 5);
 
-            while ((c = is.read()) != eol && c != -1 && c != '\s' && c != '\t') {
+            while ((c = is.read()) != eol && c != -1) {
                 // skip when eol is '\n', the line separator is likely "\r\n".
-                if (c == '\r') {
+                if (c == '\r' || c == '\s' || c == '\t') {
                     continue;
                 }
                 throw new IOException("Invalid PEM format:  " +
@@ -374,16 +374,6 @@ public class Pem {
     }
 
     /**
-     * Return a PEM encoding with the given type and base64 data in a String.
-     */
-    public static String pemEncoded(String type, String base64) {
-        return
-            "-----BEGIN " + type + "-----\r\n" +
-            base64 + (!base64.endsWith("\n") ? "\r\n" : "") +
-            "-----END " + type + "-----\r\n";
-    }
-
-    /**
      * Return a PEM encoding with the given type and base64 byte array.
      */
     public static byte[] pemEncoded(String type, byte[] base64) {
@@ -408,32 +398,10 @@ public class Pem {
     }
 
     public static byte[] pemEncodedFromDER(String type, byte[] der) {
-        return KeyUtil.clear(base64Encode(der), e ->pemEncoded(type, e));
-    }
-
-    /**
-     * Construct a PEM encoding from the PEM object given.
-     * leadingData is not used with this method.
-     */
-    public static byte[] pemEncoded(PEM pem) {
-        return pemEncoded(pem.type(), pem.content());
-    }
-
-    /**
-     * Construct a String-based PEM encoding from the PEM object given.
-     * leadingData is not used with this method.
-     */
-    public static String pemEncodedToString(PEM pem) {
-        return new String(pemEncoded(pem.type(), pem.content()),
-            StandardCharsets.ISO_8859_1);
-    }
-
-    // Return base64 encoding in a byte array.
-    public static byte[] base64Encode(byte[] der) {
         if (b64Encoder == null) {
             b64Encoder = Base64.getMimeEncoder(64, CRLF);
         }
-        return b64Encoder.encode(der);
+        return KeyUtil.clear(b64Encoder.encode(der), e -> pemEncoded(type, e));
     }
 
     /**
@@ -472,16 +440,10 @@ public class Pem {
 
         PrivateKey privKey;
         PublicKey pubKey = null;
+        KeyFactory kf;
         PKCS8EncodedKeySpec p8KeySpec;
         PKCS8Key p8key = new PKCS8Key(encoded);
-        KeyFactory kf;
-
-        try {
-            p8KeySpec = new PKCS8EncodedKeySpec(encoded);
-        } catch (NullPointerException e) {
-            p8key.clear();
-            throw new InvalidKeyException("No encoding found", e);
-        }
+        p8KeySpec = new PKCS8EncodedKeySpec(encoded);
 
         try {
             if (provider == null) {
@@ -523,9 +485,6 @@ public class Pem {
     }
 
     private static boolean matchesAt(byte[] source, int offset, byte[] match) {
-        if (offset < 0) {
-            return false;
-        }
         for (int i = 0; i < match.length; i++) {
             if (source[offset + i] != match[i]) {
                 return false;

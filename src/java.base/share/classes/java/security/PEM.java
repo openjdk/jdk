@@ -164,7 +164,7 @@ public final class PEM implements BinaryEncodable {
         content = base64Content.clone();
         this.type = type;
         final var c = content;
-        CleanerFactory.cleaner().register(this, this::clear);
+        CleanerFactory.cleaner().register(this, () -> KeyUtil.clear(c));
     }
 
     /**
@@ -177,10 +177,11 @@ public final class PEM implements BinaryEncodable {
     }
 
     /**
-     * Returns the leading data that preceded the PEM header during decoding.
+     * Returns the leading data that preceded the PEM header in the decoded
+     * input.
      *
-     * @return a copy of the leading data, or {@code null} if no leading data
-     *         is present
+     * @return a newly-allocated byte array containing leading data, or
+     *        {@code null} if no leading data is present
      */
     public byte[] leadingData() {
         return (leadingData != null) ? leadingData.clone() : null;
@@ -189,7 +190,7 @@ public final class PEM implements BinaryEncodable {
     /**
      * Returns the Base64-encoded content.
      *
-     * @return a byte array copy of the Base64-encoded content
+     * @return a newly-allocated byte array containing the Base64 content
      */
     public byte[] content() {
         return content.clone();
@@ -199,7 +200,7 @@ public final class PEM implements BinaryEncodable {
      * Returns the Base64-decoded content as a byte array, using
      * {@link Base64#getMimeDecoder()}.
      *
-     * @return the Base64-decoded content
+     * @return a newly-allocated byte array containing the decoded content
      * @throws IllegalArgumentException if decoding fails
      */
     public byte[] decode() {
@@ -214,7 +215,15 @@ public final class PEM implements BinaryEncodable {
      */
     @Override
     public String toString() {
-        return Pem.pemEncodedToString(this);
+        return new String(Pem.pemEncoded(type, content),
+            StandardCharsets.ISO_8859_1);
+    }
+
+    /*
+     * Returns the PEM string representation as a byte array.
+     */
+    byte[] toTextualByteArray() {
+        return Pem.pemEncoded(type, content);
     }
 
     // Clear internal content
