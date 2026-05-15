@@ -322,13 +322,7 @@ public abstract class SunToolkit extends Toolkit
      */
     private static boolean setAppContext(Object target,
                                          AppContext context) {
-        if (target instanceof Component) {
-            AWTAccessor.getComponentAccessor().
-                setAppContext((Component)target, context);
-        } else {
-            return false;
-        }
-        return true;
+        return (target instanceof Component);
     }
 
     /**
@@ -336,10 +330,8 @@ public abstract class SunToolkit extends Toolkit
      * Component or MenuComponent this returns null.
      */
     private static AppContext getAppContext(Object target) {
-        if (target instanceof Component) {
-            return AWTAccessor.getComponentAccessor().
-                       getAppContext((Component)target);
-        } else if (target instanceof MenuComponent) {
+        if ((target instanceof Component) ||
+            (target instanceof MenuComponent)) {
             return AppContext.getAppContext();
         } else {
             return null;
