@@ -135,9 +135,9 @@ public final class SNIHostName extends SNIServerName {
      * <p>
      * A valid SNI hostname is a DNS hostname (see <a
      * href="http://www.ietf.org/rfc1123.txt">RFC&nbsp;1123</a> and <a
-     * href="http://www.ietf.org/rfc5280.txt">RFC&nbsp;5280</a>), which is
-     * either an ASCII-encoded hostname or an {@linkplain IDN Internationalized
-     * Domain Name (IDN)}. The {@code hostname} argument is considered illegal
+     * href="http://www.ietf.org/rfc5280.txt">RFC&nbsp;5280</a>) that is either
+     * ASCII-encoded or an {@linkplain IDN Internationalized Domain Name (IDN)}.
+     * The {@code hostname} argument is considered illegal
      * if it:
      * <ul>
      * <li>is empty,
@@ -311,10 +311,9 @@ public final class SNIHostName extends SNIServerName {
      * The specified byte array gets decoded into a hostname string that is
      * required to be a valid a DNS hostname (see <a
      * href="http://www.ietf.org/rfc1123.txt">RFC&nbsp;1123</a> and <a
-     * href="http://www.ietf.org/rfc5280.txt">RFC&nbsp;5280</a>), which is
-     * either an ASCII-encoded hostname or an {@linkplain
-     * IDN Internationalized Domain Name (IDN)}. A decoded hostname string is
-     * considered illegal if it:
+     * href="http://www.ietf.org/rfc5280.txt">RFC&nbsp;5280</a>) that is either
+     * ASCII-encoded or an {@linkplain IDN Internationalized Domain Name (IDN)}.
+     * A decoded hostname string is considered illegal if it:
      * <ul>
      * <li>is empty,
      * <li>ends with a trailing dot,
