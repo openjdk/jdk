@@ -141,8 +141,11 @@ public class MultiPixelPackedSampleModel extends SampleModel
      *         {@code DataBuffer.TYPE_INT}
      * @throws IllegalArgumentException if either {@code w} or {@code h}
      *         is less than or equal to 0
+     * @throws IllegalArgumentException if {@code scanlineStride}
+     *         is less than or equal to 0
      * @throws RasterFormatException if
-     *         {@code (numberOfBits * w) / DataBuffer.getDataTypeSize(dataType)}
+     *         {@code ((numberOfBits * w) + DataBuffer.getDataTypeSize(dataType) - 1)
+     *         / DataBuffer.getDataTypeSize(dataType)}
      *         is greater than {@code scanlineStride}
      * @throws RasterFormatException if the number of bits per pixel
      *                  is not a power of 2 or if a power of 2 number of
@@ -161,7 +164,6 @@ public class MultiPixelPackedSampleModel extends SampleModel
             throw new IllegalArgumentException("Unsupported data type "+
                                                dataType);
         }
-        this.dataType = dataType;
         if ((numberOfBits <= 0) || ((numberOfBits & (numberOfBits - 1)) != 0)) {
             throw new RasterFormatException("numberOfBits per pixel must be a power of 2");
         }
@@ -178,6 +180,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
         if ((dataBitOffset % numberOfBits) != 0) {
             throw new IllegalArgumentException("dataBitOffset must be a multiple of bits per pixel");
         }
+        this.dataType = dataType;
         this.pixelBitStride = numberOfBits;
         this.scanlineStride = scanlineStride;
         this.dataBitOffset = dataBitOffset;
@@ -348,7 +351,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * {@code MultiPixelPackedSampleModel} only has one band, the
      * bands argument is ignored.
      * @param bands the specified bands (ignored)
-     * @return a new {@code SampleModel} with a subset of bands of
+     * @return a new {@code SampleModel} with the same bands of
      * this {@code MultiPixelPackedSampleModel}.
      */
     public SampleModel createSubsetSampleModel(int[] bands) {

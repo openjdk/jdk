@@ -21,7 +21,11 @@
  * questions.
  */
 
-import static java.awt.image.DataBuffer.*;
+import static java.awt.image.DataBuffer.TYPE_BYTE;
+import static java.awt.image.DataBuffer.TYPE_INT;
+import static java.awt.image.DataBuffer.TYPE_SHORT;
+import static java.awt.image.DataBuffer.TYPE_USHORT;
+
 import java.awt.image.MultiPixelPackedSampleModel;
 import java.awt.image.RasterFormatException;
 
@@ -77,6 +81,7 @@ public class MultiPixelPackedSampleModelConstructor {
         new Args6(TYPE_BYTE, 4, 1, 4, 1, 0, RasterFormatException.class),
         new Args6(TYPE_BYTE, 1, 1, 2, 1, 1, IllegalArgumentException.class),
         new Args6(TYPE_BYTE, 1, 1, 2, 1, -1, IllegalArgumentException.class),
+        new Args6(TYPE_BYTE, 1, 1, 1, -1, 1, IllegalArgumentException.class),
         new Args6(TYPE_BYTE, 1, 1, 1, 1, 1, null),
         new Args6(TYPE_INT, 77777777, 2, 32, 1, 0, RasterFormatException.class),
     };
