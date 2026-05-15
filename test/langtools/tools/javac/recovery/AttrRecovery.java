@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main AttrRecovery
+ * @run junit AttrRecovery
  */
 
 import com.sun.source.tree.IdentifierTree;
@@ -42,41 +42,39 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+
 import toolbox.JavacTask;
 import toolbox.Task.Expect;
 import toolbox.Task.OutputKind;
-import toolbox.TestRunner;
 import toolbox.ToolBox;
 
-public class AttrRecovery extends TestRunner {
+public class AttrRecovery {
 
-    ToolBox tb;
-
-    public AttrRecovery() {
-        super(System.err);
-        tb = new ToolBox();
-    }
-
-    public static void main(String[] args) throws Exception {
-        AttrRecovery t = new AttrRecovery();
-        t.runTests();
-    }
+    private Path base;
+    private final ToolBox tb = new ToolBox();
 
     @Test
     public void testFlowExits() throws Exception {
@@ -88,11 +86,10 @@ public class AttrRecovery extends TestRunner {
                           }
                       }
                       """;
-        Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-XDdev", "-XDshould-stop.at=FLOW")
                 .sources(code)
-                .outdir(curPath)
+                .outdir(base)
                 .run(Expect.FAIL)
                 .getOutputLines(OutputKind.DIRECT);
 
@@ -102,9 +99,7 @@ public class AttrRecovery extends TestRunner {
                 "2 errors"
         );
 
-        if (!Objects.equals(actual, expected)) {
-            error("Expected: " + expected + ", but got: " + actual);
-        }
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -120,12 +115,11 @@ public class AttrRecovery extends TestRunner {
                           public void overridable(C c) {}
                       }
                       """;
-        Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-XDdev",
                          "-XDshould-stop.at=WARN", "-Xlint:this-escape")
                 .sources(code)
-                .outdir(curPath)
+                .outdir(base)
                 .run(Expect.FAIL)
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
@@ -139,9 +133,7 @@ public class AttrRecovery extends TestRunner {
                 "1 warning"
         );
 
-        if (!Objects.equals(actual, expected)) {
-            error("Expected: " + expected + ", but got: " + actual);
-        }
+        assertEquals(expected, actual);
     }
 
     @Test //JDK-8332230
@@ -158,11 +150,10 @@ public class AttrRecovery extends TestRunner {
                           @interface Ann {}
                       }
                       """;
-        Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-XDdev", "-XDshould-stop.at=FLOW")
                 .sources(code)
-                .outdir(curPath)
+                .outdir(base)
                 .run(Expect.FAIL)
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
@@ -172,9 +163,7 @@ public class AttrRecovery extends TestRunner {
                 "1 error"
         );
 
-        if (!Objects.equals(actual, expected)) {
-            error("Expected: " + expected + ", but got: " + actual);
-        }
+        assertEquals(expected, actual);
     }
 
     @Test //JDK-8333107
@@ -203,12 +192,11 @@ public class AttrRecovery extends TestRunner {
                           }
                       }
                       """;
-        Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-XDdev",
                          "-XDshould-stop.at=FLOW")
                 .sources(code)
-                .outdir(curPath)
+                .outdir(base)
                 .run(Expect.FAIL)
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
@@ -218,9 +206,7 @@ public class AttrRecovery extends TestRunner {
                 "1 error"
         );
 
-        if (!Objects.equals(actual, expected)) {
-            error("Expected: " + expected + ", but got: " + actual);
-        }
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -234,11 +220,10 @@ public class AttrRecovery extends TestRunner {
                           }
                       }
                       """;
-        Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .sources(code)
-                .outdir(curPath)
+                .outdir(base)
                 .run(Expect.FAIL, 1)
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
@@ -249,9 +234,7 @@ public class AttrRecovery extends TestRunner {
                 "2 errors"
         );
 
-        if (!Objects.equals(actual, expected)) {
-            error("Expected: " + expected + ", but got: " + actual);
-        }
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -261,11 +244,10 @@ public class AttrRecovery extends TestRunner {
                           Undefined1<Undefined2, Undefined3> variable1;
                       }
                       """;
-        Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .sources(code)
-                .outdir(curPath)
+                .outdir(base)
                 .callback(task -> {
                     task.addTaskListener(new TaskListener() {
                         @Override
@@ -325,9 +307,7 @@ public class AttrRecovery extends TestRunner {
                 "3 errors"
         );
 
-        if (!Objects.equals(actual, expected)) {
-            error("Expected: " + expected + ", but got: " + actual);
-        }
+        assertEquals(expected, actual);
     }
 
     @Test //JDK-8351260
@@ -338,13 +318,12 @@ public class AttrRecovery extends TestRunner {
                           }
                       }
                       """;
-        Path curPath = Path.of(".");
         //should not fail with an exception:
         new JavacTask(tb)
             .options("-XDrawDiagnostics",
                      "-XDshould-stop.at=FLOW")
             .sources(code)
-            .outdir(curPath)
+            .outdir(base)
             .run(Expect.FAIL)
             .writeAll();
     }
@@ -384,11 +363,10 @@ public class AttrRecovery extends TestRunner {
                             return null;
                           }
                       }""";
-        Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-XDshould-stop.at=FLOW")
                 .sources(code)
-                .outdir(curPath)
+                .outdir(base)
                 .run(Expect.FAIL)
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
@@ -398,15 +376,12 @@ public class AttrRecovery extends TestRunner {
                 "1 error"
         );
 
-        if (!Objects.equals(actual, expected)) {
-            error("Expected: " + expected + ", but got: " + actual);
-        }
+        assertEquals(expected, actual);
     }
 
     @Test //JDK-8372336
     public void testCompletionFailureNoBreakInvocation() throws Exception {
-        Path curPath = Path.of(".");
-        Path lib = curPath.resolve("lib");
+        Path lib = base.resolve("lib");
         Path classes = lib.resolve("classes");
         Files.createDirectories(classes);
         new JavacTask(tb)
@@ -457,7 +432,7 @@ public class AttrRecovery extends TestRunner {
                     .options("-XDrawDiagnostics", "-XDdev")
                     .classpath(classes)
                     .sources(tc.code())
-                    .outdir(curPath)
+                    .outdir(base)
                     .callback(task -> {
                         task.addTaskListener(new TaskListener() {
                             @Override
@@ -482,7 +457,7 @@ public class AttrRecovery extends TestRunner {
                                     private void verifyElement() {
                                         Element el = trees.getElement(getCurrentPath());
                                         if (!el.getSimpleName().contentEquals("get")) {
-                                            error("Expected good Element, but got: " + el);
+                                            fail("Expected good Element, but got: " + el);
                                         }
                                     }
                                 }.scan(e.getCompilationUnit(), null);
@@ -495,16 +470,13 @@ public class AttrRecovery extends TestRunner {
 
             List<String> expected = List.of(tc.expectedErrors);
 
-            if (!Objects.equals(actual, expected)) {
-                error("Expected: " + expected + ", but got: " + actual);
-            }
+            assertEquals(expected, actual);
         }
     }
 
     @Test //JDK-8373094
     public void testSensibleAttribution() throws Exception {
-        Path curPath = Path.of(".");
-        Path lib = curPath.resolve("lib");
+        Path lib = base.resolve("lib");
         Path classes = lib.resolve("classes");
         Files.createDirectories(classes);
         new JavacTask(tb)
@@ -570,7 +542,7 @@ public class AttrRecovery extends TestRunner {
                                            tc.options.stream()).toList())
                     .classpath(classes)
                     .sources(tc.code())
-                    .outdir(curPath)
+                    .outdir(base)
                     .callback(task -> {
                         task.addTaskListener(new TaskListener() {
                             @Override
@@ -623,7 +595,7 @@ public class AttrRecovery extends TestRunner {
 
                                         Element el = trees.getElement(getCurrentPath());
                                         if (el == null) {
-                                            error("Unattributed tree: " + getCurrentPath().getLeaf());
+                                            fail("Unattributed tree: " + getCurrentPath().getLeaf());
                                         } else {
                                             attributes.add(el.toString());
                                         }
@@ -638,17 +610,199 @@ public class AttrRecovery extends TestRunner {
 
             List<String> expectedErrors = List.of(tc.expectedErrors);
 
-            if (!Objects.equals(actual, expectedErrors)) {
-                error("Expected: " + expectedErrors + ", but got: " + actual);
-            }
+            assertEquals(expectedErrors, actual);
 
             List<String> expectedAttributes =
                     List.of("println(int)", "println(int)", "err", "java.lang.System", "i");
 
-            if (!Objects.equals(attributes, expectedAttributes)) {
-                error("Expected: " + expectedAttributes + ", but got: " + attributes);
-            }
+            assertEquals(expectedAttributes, attributes);
         }
     }
 
+    @Test
+    public void testImportedUnknownFQN() throws Exception {
+        Path libOut = base.resolve("lib");
+
+        Files.createDirectories(libOut);
+
+        new JavacTask(tb)
+            .sources("""
+                     package lib;
+                     public class Lib {
+                         public static class Unknown4 {}
+                     }
+                     """)
+                .outdir(libOut)
+                .run()
+                .writeAll();
+
+        Files.delete(libOut.resolve("lib").resolve("Lib$Unknown4.class"));
+
+        String code = """
+                      import unknown.Unknown1;
+                      import java.lang.Unknown2;
+                      import java.lang.String.Unknown3;
+                      import lib.Lib.Unknown4;
+                      public class C {
+                          Unknown1 u1;
+                          Unknown2 u2;
+                          Unknown3 u3;
+                          Unknown4 u4;
+                          unknown.Unknown5 u5;
+                          java.lang.Unknown6 u6;
+                      }
+                      """;
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        List<String> foundTypes = new ArrayList<>();
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev",
+                         "-classpath", libOut.toString())
+                .sources(code)
+                .outdir(out)
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            Trees trees = Trees.instance(task);
+
+                            if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+                                new TreePathScanner<Void, Void>() {
+                                    @Override
+                                    public Void visitVariable(VariableTree tree, Void p) {
+                                        VariableElement var = (VariableElement) trees.getElement(getCurrentPath());
+
+                                        assertEquals(TypeKind.ERROR, var.asType().getKind());
+
+                                        Element el = ((ErrorType) var.asType()).asElement();
+
+                                        assertNotNull(el);
+                                        assertEquals(ElementKind.CLASS, el.getKind());
+
+                                        foundTypes.add(((QualifiedNameable) el).getQualifiedName().toString());
+
+                                        return super.visitVariable(tree, p);
+                                    }
+                                }.scan(e.getCompilationUnit(), null);
+                            }
+                        }
+                    });
+                })
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expectedTypes = List.of(
+            "unknown.Unknown1",
+            "java.lang.Unknown2",
+            "java.lang.String.Unknown3",
+            "lib.Lib.Unknown4",
+            "unknown.Unknown5",
+            "java.lang.Unknown6"
+        );
+
+        assertEquals(expectedTypes, foundTypes);
+
+        List<String> expected = List.of(
+            "C.java:1:15: compiler.err.doesnt.exist: unknown",
+            "C.java:2:17: compiler.err.cant.resolve.location: kindname.class, Unknown2, , , (compiler.misc.location: kindname.package, java.lang, null)",
+            "C.java:3:24: compiler.err.cant.resolve.location: kindname.class, Unknown3, , , (compiler.misc.location: kindname.class, java.lang.String, null)",
+            "C.java:4:15: compiler.err.cant.access: lib.Lib.Unknown4, (compiler.misc.class.file.not.found: lib.Lib$Unknown4)",
+            "C.java:10:12: compiler.err.doesnt.exist: unknown",
+            "C.java:11:14: compiler.err.cant.resolve.location: kindname.class, Unknown6, , , (compiler.misc.location: kindname.package, java.lang, null)",
+            "6 errors"
+        );
+
+        assertEquals(expected, actual);
+    }
+
+
+    @Test
+    public void testUnresolvableNamedResolvableOnDemandImport() throws Exception {
+        Path libOut = base.resolve("lib");
+
+        Files.createDirectories(libOut);
+
+        new JavacTask(tb)
+            .sources("""
+                     package lib;
+                     public class Unknown {
+                     }
+                     """)
+                .outdir(libOut)
+                .run()
+                .writeAll();
+
+        String code = """
+                      import unknown.Unknown;
+                      import lib.*;
+                      public class C {
+                          Unknown u;
+                      }
+                      """;
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        List<String> foundTypes = new ArrayList<>();
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev",
+                         "-classpath", libOut.toString())
+                .sources(code)
+                .outdir(out)
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            Trees trees = Trees.instance(task);
+
+                            if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+                                new TreePathScanner<Void, Void>() {
+                                    @Override
+                                    public Void visitVariable(VariableTree tree, Void p) {
+                                        VariableElement var = (VariableElement) trees.getElement(getCurrentPath());
+
+                                        assertEquals(TypeKind.ERROR, var.asType().getKind());
+
+                                        Element el = ((ErrorType) var.asType()).asElement();
+
+                                        assertNotNull(el);
+                                        assertEquals(ElementKind.CLASS, el.getKind());
+
+                                        foundTypes.add(((QualifiedNameable) el).getQualifiedName().toString());
+
+                                        return super.visitVariable(tree, p);
+                                    }
+                                }.scan(e.getCompilationUnit(), null);
+                            }
+                        }
+                    });
+                })
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expectedTypes = List.of(
+            "unknown.Unknown"
+        );
+
+        assertEquals(expectedTypes, foundTypes);
+
+        List<String> expected = List.of(
+            "C.java:1:15: compiler.err.doesnt.exist: unknown",
+            "1 error"
+        );
+
+        assertEquals(expected, actual);
+    }
+
+    @BeforeEach
+    public void setUp(TestInfo info) throws IOException {
+        base = Path.of(info.getTestMethod().orElseThrow().getName());
+        Files.createDirectories(base);
+    }
 }

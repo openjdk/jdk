@@ -1852,9 +1852,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(bool, AlwaysAtomicAccesses, false, EXPERIMENTAL,                  \
-          "Accesses to all variables should always be atomic")              \
-                                                                            \
   product(bool, UseUnalignedAccesses, false, DIAGNOSTIC,                    \
           "Use unaligned memory accesses in Unsafe")                        \
                                                                             \
@@ -1906,6 +1903,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseContinuationFastPath, true,                              \
           "Use fast-path frame walking in continuations")                   \
                                                                             \
+  develop(bool, ForceSingleFrameThaw, false,                                \
+          "Force thawing one frame at a time")                              \
+                                                                            \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \
                "1 - always, >1 every nth interval)")                        \
@@ -1943,7 +1943,7 @@ const int ObjectAlignmentInBytes = 8;
           "Use a table to record inflated monitors rather than the first "  \
           "word of the object.")                                            \
                                                                             \
-  product(int, FastLockingSpins, 13, DIAGNOSTIC,                            \
+  product(int, FastLockingSpins, 8, DIAGNOSTIC,                             \
           "Specifies the number of times fast locking will attempt to "     \
           "CAS the markWord before inflating. Between each CAS it will "    \
           "spin for exponentially more time, resulting in a total number "  \

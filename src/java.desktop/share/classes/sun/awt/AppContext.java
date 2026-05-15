@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,6 @@ import java.beans.PropertyChangeListener;
 import java.lang.ref.SoftReference;
 
 import sun.util.logging.PlatformLogger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -120,17 +117,6 @@ public final class AppContext {
 
     /* Since the contents of an AppContext are unique to each Java
      * session, this class should never be serialized. */
-
-    /*
-     * The key to put()/get() the Java EventQueue into/from the AppContext.
-     */
-    public static final Object EVENT_QUEUE_KEY = new StringBuffer("EventQueue");
-
-    /*
-     * The keys to store EventQueue push/pop lock and condition.
-     */
-    public static final Object EVENT_QUEUE_LOCK_KEY = new StringBuilder("EventQueue.Lock");
-    public static final Object EVENT_QUEUE_COND_KEY = new StringBuilder("EventQueue.Condition");
 
     /* A map of AppContexts, referenced by ThreadGroup.
      */
@@ -225,12 +211,6 @@ public final class AppContext {
         threadGroup2appContext.put(threadGroup, this);
 
         this.contextClassLoader = Thread.currentThread().getContextClassLoader();
-        // Initialize push/pop lock and its condition to be used by all the
-        // EventQueues within this AppContext
-        Lock eventQueuePushPopLock = new ReentrantLock();
-        put(EVENT_QUEUE_LOCK_KEY, eventQueuePushPopLock);
-        Condition eventQueuePushPopCond = eventQueuePushPopLock.newCondition();
-        put(EVENT_QUEUE_COND_KEY, eventQueuePushPopCond);
     }
 
     private static final ThreadLocal<AppContext> threadAppContext =
@@ -478,44 +458,6 @@ public final class AppContext {
         numAppContexts.decrementAndGet();
 
         mostRecentKeyValue = null;
-    }
-
-    static final class PostShutdownEventRunnable implements Runnable {
-        private final AppContext appContext;
-
-        PostShutdownEventRunnable(AppContext ac) {
-            appContext = ac;
-        }
-
-        public void run() {
-            final EventQueue eq = (EventQueue)appContext.get(EVENT_QUEUE_KEY);
-            if (eq != null) {
-                eq.postEvent(AWTAutoShutdown.getShutdownEvent());
-            }
-        }
-    }
-
-    static void stopEventDispatchThreads() {
-        for (AppContext appContext: getAppContexts()) {
-            if (appContext.isDisposed()) {
-                continue;
-            }
-            Runnable r = new PostShutdownEventRunnable(appContext);
-            // For security reasons EventQueue.postEvent should only be called
-            // on a thread that belongs to the corresponding thread group.
-            if (appContext != AppContext.getAppContext()) {
-                // Create a thread that belongs to the thread group associated
-                // with the AppContext and invokes EventQueue.postEvent.
-                Thread thread = new Thread(appContext.getThreadGroup(),
-                                           r, "AppContext Disposer", 0, false);
-                thread.setContextClassLoader(appContext.getContextClassLoader());
-                thread.setPriority(Thread.NORM_PRIORITY + 1);
-                thread.setDaemon(true);
-                thread.start();
-            } else {
-                r.run();
-            }
-        }
     }
 
     private MostRecentKeyValue mostRecentKeyValue = null;
