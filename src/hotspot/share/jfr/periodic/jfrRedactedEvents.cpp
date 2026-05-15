@@ -124,6 +124,16 @@ void JfrRedactedEvents::log_redaction() {
   emit_string_flags(true);
 }
 
+StringArray* JfrRedactedEvents::key_filters() {
+  ensure_initialized();
+  return _key_filters;
+}
+
+StringArray* JfrRedactedEvents::argument_filters() {
+  ensure_initialized();
+  return _argument_filters;
+}
+
 void JfrRedactedEvents::add_default_filters(StringArray* target, bool argument) {
   if (argument) {
     target->add("-*api*key *");

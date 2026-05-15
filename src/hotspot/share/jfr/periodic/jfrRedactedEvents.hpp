@@ -36,16 +36,20 @@ class JVMFlag;
 
 class JfrRedactedEvents: public AllStatic {
  public:
+  class StringArray;
   // Called at startup
+  static void log_redaction();
   static char* new_redacted_text();
   static bool set_argument_filter(const char* filters);
   static bool set_key_filter(const char* filters);
+  static StringArray* argument_filters();
+  static StringArray* key_filters();
+
   // Synchronized in Java
   static bool emit_initial_environment_variables(bool log = false);
   static void emit_initial_system_properties(bool log = false);
   static void emit_jvm_information(bool log = false);
   static void emit_string_flags(bool log = false);
-  static void log_redaction();
   // Called at shutdown
   static void destroy();
 

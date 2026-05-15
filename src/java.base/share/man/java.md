@@ -1148,8 +1148,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     option is disabled.
 
 [`-XX:FlightRecorderOptions=`]{#-XX_FlightRecorderOptions}*parameter*`=`*value* (or) `-XX:FlightRecorderOptions:`*parameter*`=`*value*
-:   Sets the parameters that control the behavior of JFR. Multiple parameters can be specified
-    by separating them with a comma.
+:   Sets the parameters that control the behavior of JFR.
+    `-XX:FlightRecorderOptions:help` prints the available options, default
+    redaction filters, and example command lines. Multiple parameters can be
+    specified by separating them with a comma.
 
     The following list contains the available JFR *parameter*`=`*value*
     entries:
@@ -1209,7 +1211,8 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         instead of replacing them, prefix the whole list with `+`, for example,
         +*foo*;@redact.txt. Use `none` (lowercase) to disable all redaction
         filters for command-line arguments. Redacted arguments will be
-        replaced with `[REDACTED]`.
+        replaced with `[REDACTED]`. Use `-XX:FlightRecorderOptions:help` to
+        see the default filters used by the `redact-argument` option.
 
     `redact-key=`key-filter
     :   Replace the value of environment variables and system properties
@@ -1220,7 +1223,8 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         instead of replacing them, prefix the whole list with `+`,
         for example, +*cred*;@keys.txt. Use `none` (lowercase) to
         disable all redaction filters for key matching. Redacted values
-        will be replaced with `[REDACTED]`.
+        will be replaced with `[REDACTED]`. Use `-XX:FlightRecorderOptions:help`
+        to see the default filters used by the `redact-key` option.
 
     `stackdepth=`*depth*
     :   Stack depth for stack traces. By default, the depth is set to 64 method

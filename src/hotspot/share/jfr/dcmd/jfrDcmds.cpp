@@ -27,6 +27,7 @@
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/periodic/jfrRedactedEvents.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
@@ -401,11 +402,29 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
 };
 
 void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
-  outputStream* out = output();
+  print_help(output(), false);
+}
+
+static const char* option_name(bool startup, const char* command_line_name, const char* dcmd_name) {
+  return startup ? command_line_name : dcmd_name;
+}
+
+static void print_filters(outputStream* out, JfrRedactedEvents::StringArray* filters) {
+  for (int i = 0; i < filters->length(); i++) {
+    out->print_cr("                        %s", filters->at(i)->text());
+  }
+}
+
+void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup) {
               // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+  if (startup) {
+    out->print_cr("Syntax : -XX:FlightRecorderOptions:[options]");
+    out->print_cr("");
+  }
   out->print_cr("Options:");
   out->print_cr("");
-  out->print_cr("  globalbuffercount   (Optional) Number of global buffers. This option is a legacy");
+  out->print_cr(              "  %-19s (Optional) Number of global buffers. This option is a legacy",
+                                       option_name(startup, "numglobalbuffers", "globalbuffercount"));
   out->print_cr("                      option: change the memorysize parameter to alter the number of");
   out->print_cr("                      global buffers. This value cannot be changed once JFR has been");
   out->print_cr("                      initialized. (STRING, default determined by the value for");
@@ -427,7 +446,8 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                      gigabytes. This value cannot be changed once JFR has been");
   out->print_cr("                      initialized. (STRING, 10M)");
   out->print_cr("");
-  out->print_cr("  repositorypath      (Optional) Path to the location where recordings are stored until");
+  out->print_cr(              "  %-19s (Optional) Path to the location where recordings are stored until",
+                                       option_name(startup, "repository", "repositorypath"));
   out->print_cr("                      they are written to a permanent file. (STRING, The default");
   out->print_cr("                      location is the temporary directory for the operating system. On");
   out->print_cr("                      Linux operating systems, the temporary directory is /tmp. On");
@@ -443,7 +463,8 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                      degradation. This value cannot be changed once JFR has been");
   out->print_cr("                      initialized. (LONG, 64)");
   out->print_cr("");
-  out->print_cr("  thread_buffer_size  (Optional) Local buffer size for each thread in bytes if one of");
+  out->print_cr(              "  %-19s (Optional) Local buffer size for each thread in bytes if one of",
+                                       option_name(startup, "threadbuffersize", "thread_buffer_size"));
   out->print_cr("                      the following suffixes is not used: 'k' or 'K' for kilobytes or");
   out->print_cr("                      'm' or 'M' for megabytes. Overriding this parameter could reduce");
   out->print_cr("                      performance and is not recommended. This value cannot be changed");
@@ -452,14 +473,66 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("  preserve-repository (Optional) Preserve files stored in the disk repository after the");
   out->print_cr("                      Java Virtual Machine has exited. (BOOLEAN, false)");
   out->print_cr("");
-  out->print_cr("Options must be specified using the <key> or <key>=<value> syntax.");
-  out->print_cr("");
-  out->print_cr("Example usage:");
-  out->print_cr("");
-  out->print_cr(" $ jcmd <pid> JFR.configure");
-  out->print_cr(" $ jcmd <pid> JFR.configure repositorypath=/temporary");
-  out->print_cr(" $ jcmd <pid> JFR.configure stackdepth=256");
-  out->print_cr(" $ jcmd <pid> JFR.configure memorysize=100M");
+  if (startup) {
+    out->print_cr("  old-object-queue-size (Optional) Maximum number of old objects to track. By default,");
+    out->print_cr("                        the number of objects is set to 256. (LONG, 256)");
+    out->print_cr("");
+    out->print_cr("  redact-argument     (Optional) Replace command-line arguments that match a");
+    out->print_cr("                      semicolon-separated list of glob patterns, for example,");
+    out->print_cr("                      *secret*;password*. Matching is case-insensitive, and the");
+    out->print_cr("                      supported wildcards are '*' and '?'. To redact multiple arguments,");
+    out->print_cr("                      use a literal space (' ') as a separator. For example, to match");
+    out->print_cr("                      the two arguments --auth username:token, use the filter");
+    out->print_cr("                      --auth *:*. Filters containing spaces must be quoted as a single");
+    out->print_cr("                      command-line argument, for example, redact-argument=--auth *:*.");
+    out->print_cr("");
+    out->print_cr("                      If the redact-argument option is not specified, the following");
+    out->print_cr("                      filters are used by default:");
+    out->print_cr("");
+    print_filters(out, JfrRedactedEvents::argument_filters());
+    out->print_cr("");
+    out->print_cr("                      To load patterns from a file (one per line), use @<filename>.");
+    out->print_cr("                      To add to the default patterns instead of replacing them, prefix");
+    out->print_cr("                      the whole list with '+', for example, +*foo*;@redact.txt.");
+    out->print_cr("                      Use 'none' (lowercase) to disable all redaction filters for");
+    out->print_cr("                      command-line arguments. Redacted arguments will be replaced");
+    out->print_cr("                      with '[REDACTED]'. (STRING, default filters)");
+    out->print_cr("");
+    out->print_cr("  redact-key          (Optional) Replace the value of environment variables and system");
+    out->print_cr("                      properties whose key matches a semicolon-separated list of glob");
+    out->print_cr("                      patterns, for example, *password*;*token*. Matching is");
+    out->print_cr("                      case-insensitive, and the supported wildcards are '*' and '?'.");
+    out->print_cr("");
+    out->print_cr("                      If the redact-key option is not specified, the following filters");
+    out->print_cr("                      are used by default:");
+    out->print_cr("");
+    print_filters(out, JfrRedactedEvents::key_filters());
+    out->print_cr("");
+    out->print_cr("                      To load patterns from a file (one per line), use @<filename>.");
+    out->print_cr("                      To add to the default patterns instead of replacing them, prefix");
+    out->print_cr("                      the whole list with '+', for example, +*cred*;@keys.txt.");
+    out->print_cr("                      Use 'none' (lowercase) to disable all redaction filters for key");
+    out->print_cr("                      matching. Redacted values will be replaced with '[REDACTED]'.");
+    out->print_cr("                      (STRING, default filters)");
+    out->print_cr("");
+    out->print_cr("Options must be specified using the <key>=<value> syntax. Multiple options are separated");
+    out->print_cr("with a comma.");
+    out->print_cr("");
+    out->print_cr("Example usage:");
+    out->print_cr("");
+    out->print_cr(" -XX:FlightRecorderOptions:repository=/temporary,stackdepth=256");
+    out->print_cr(" -XX:FlightRecorderOptions:'redact-key=+*confidential*;*private*,redact-argument=+https://*:*@*'");
+    out->print_cr(" -XX:FlightRecorderOptions:'redact-argument=+-*private *'");
+  } else {
+    out->print_cr("Options must be specified using the <key> or <key>=<value> syntax.");
+    out->print_cr("");
+    out->print_cr("Example usage:");
+    out->print_cr("");
+    out->print_cr(" $ jcmd <pid> JFR.configure");
+    out->print_cr(" $ jcmd <pid> JFR.configure repositorypath=/temporary");
+    out->print_cr(" $ jcmd <pid> JFR.configure stackdepth=256");
+    out->print_cr(" $ jcmd <pid> JFR.configure memorysize=100M");
+  }
   out->print_cr("");
 }
 

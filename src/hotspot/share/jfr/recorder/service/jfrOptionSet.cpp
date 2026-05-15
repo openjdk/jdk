@@ -302,6 +302,11 @@ static bool parse_flight_recorder_options_internal(TRAPS) {
     return true;
   }
   const size_t length = strlen((const char*)FlightRecorderOptions);
+  if (strcmp(FlightRecorderOptions, "help") == 0) {
+    JfrConfigureFlightRecorderDCmd::print_help(tty, true);
+    vm_exit(0);
+  }
+
   CmdLine cmdline((const char*)FlightRecorderOptions, length, true);
   _parser.parse(&cmdline, ',', THREAD);
   if (HAS_PENDING_EXCEPTION) {

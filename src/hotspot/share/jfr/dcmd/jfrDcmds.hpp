@@ -202,6 +202,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
     return "Low";
   }
   static int num_arguments() { return 10; }
+  static void print_help(outputStream* out, bool startup);
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;
 };
