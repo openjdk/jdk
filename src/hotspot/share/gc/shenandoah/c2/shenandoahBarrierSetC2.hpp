@@ -48,6 +48,7 @@ class ShenandoahBarrierSetC2State : public BarrierSetC2State {
   GrowableArray<ShenandoahBarrierStubC2*>* _stubs;
   int _trampoline_stubs_count;
   int _stubs_start_offset;
+  int _stubs_current_total_size;
 
 public:
   explicit ShenandoahBarrierSetC2State(Arena* comp_arena);
@@ -74,6 +75,15 @@ public:
 
   int stubs_start_offset() {
     return _stubs_start_offset;
+  }
+
+  int inc_stubs_current_total_size(int size) {
+    _stubs_current_total_size += size;
+    return _stubs_current_total_size;
+  }
+
+  int stubs_current_total_size() {
+    return _stubs_current_total_size;
   }
 };
 

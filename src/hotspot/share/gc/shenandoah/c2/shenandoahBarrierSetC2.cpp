@@ -49,7 +49,8 @@ ShenandoahBarrierSetC2State::ShenandoahBarrierSetC2State(Arena* comp_arena) :
     BarrierSetC2State(comp_arena),
     _stubs(new (comp_arena) GrowableArray<ShenandoahBarrierStubC2*>(comp_arena, 8,  0, nullptr)),
     _trampoline_stubs_count(0),
-    _stubs_start_offset(0) {
+    _stubs_start_offset(0),
+    _stubs_current_total_size(0) {
 }
 
 static void set_barrier_data(C2Access& access, bool load, bool store) {
@@ -842,20 +843,9 @@ static ShenandoahBarrierSetC2State* barrier_set_state() {
 }
 
 int ShenandoahBarrierSetC2::estimate_stub_size() const {
-  Compile* const C = Compile::current();
-  BufferBlob* const blob = C->output()->scratch_buffer_blob();
   GrowableArray<ShenandoahBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
   assert(stubs->is_empty(), "Lifecycle: no stubs were yet created");
-  int size = 0;
-
-  for (int i = 0; i < stubs->length(); i++) {
-    CodeBuffer cb(blob->content_begin(), checked_cast<CodeBuffer::csize_t>((address)C->output()->scratch_locs_memory() - blob->content_begin()));
-    MacroAssembler masm(&cb);
-    stubs->at(i)->emit_code(masm);
-    size += cb.insts_size();
-  }
-
-  return size;
+  return 0;
 }
 
 void ShenandoahBarrierSetC2::emit_stubs(CodeBuffer& cb) const {

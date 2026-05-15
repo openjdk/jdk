@@ -965,15 +965,21 @@ void ShenandoahBarrierStubC2::cardtable(MacroAssembler& masm, Address address, R
 
 void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
-
+  PhaseOutput* const output = Compile::current()->output();
   Address gc_state_fast(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(test_state)));
+
+  // We piggyback on scratch_emit_size mode to compute the slowpath stub size.
+  // We'll use that information to decide whether we need a far jump to the
+  // stub entry point or not. In scratch_emit_size mode we don't bind entry()
+  // because otherwise it will be rebound when we later emit the instructions
+  // for real.
   if (_needs_far_jump) {
     __ ldrb(tmp, gc_state_fast);
     __ cbz(tmp, *continuation());
-    __ b(*entry());
+    __ b(output->in_scratch_emit_size() ? *continuation() : *entry());
   } else {
     __ ldrb(tmp, gc_state_fast);
-    __ cbnz(tmp, *entry());
+    __ cbnz(tmp, output->in_scratch_emit_size() ? *continuation() : *entry());
   }
 
   // This is were the slowpath stub will return to or the code above will
@@ -984,9 +990,17 @@ void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char
 void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   assert(_needs_keep_alive_barrier || _needs_load_ref_barrier, "Why are you here?");
+  PhaseOutput* const output = Compile::current()->output();
 
-  __ align(InteriorEntryAlignment);
-  __ bind(*entry());
+  // We piggyback on scratch_emit_size mode to compute the slowpath stub size.
+  // We'll use that information to decide whether we need a far jump to the
+  // stub entry point or not. In scratch_emit_size mode we don't bind entry()
+  // because otherwise it will be rebound when we later emit the instructions
+  // for real.
+  if (!output->in_scratch_emit_size()) {
+    __ align(InteriorEntryAlignment);
+    __ bind(*entry());
+  }
 
   // If we need to load ourselves, do it here.
   if (_do_load) {
@@ -1188,28 +1202,42 @@ bool ShenandoahBarrierStubC2::is_special_register(Register r) {
   return true;
 }
 
+static ShenandoahBarrierSetC2State* barrier_set_state() {
+  return reinterpret_cast<ShenandoahBarrierSetC2State*>(Compile::current()->barrier_set_state());
+}
+
+static int get_stub_size(ShenandoahBarrierStubC2* stub) {
+  PhaseOutput* const output = Compile::current()->output();
+  assert(output->in_scratch_emit_size(), "only used when in scratch_emit_size.");
+  BufferBlob* const blob = output->scratch_buffer_blob();
+  CodeBuffer cb(blob->content_begin(), (address)output->scratch_locs_memory() - blob->content_begin());
+  MacroAssembler masm(&cb);
+  stub->emit_code(masm);
+  return cb.insts_size();
+}
+
 void ShenandoahBarrierStubC2::post_init() {
   // If we are in scratch emit mode we assume worst case, and force the use of
   // far branches.
   PhaseOutput* const output = Compile::current()->output();
+  ShenandoahBarrierSetC2State* state = barrier_set_state();
   if (output->in_scratch_emit_size()) {
+    state->inc_stubs_current_total_size(get_stub_size(this));
     _needs_far_jump = true;
     return;
   }
 
-  // The formula below is based on how c2 estimates initial buffer size for a
-  // compilation. See C2Compiler::initial_code_buffer_size. The logic
-  // implemented in this stub only uses short jumps (cbz, cbnz) if the
-  // aggregation of all relevant code sections of a method fit in 1MB. We could
-  // be more aggressive and try and compute the distance between the fastpath
-  // branch and the stub entry but in practice not many methods reach the 1MB
-  // size.
+  // The logic implemented in this stub only uses short jumps (cbz, cbnz) if
+  // the aggregation of all relevant code sections of a method is less than 1MB
+  // - 2KB. We could be more aggressive and try and compute the distance
+  // between the fastpath branch and the stub entry but in practice not many
+  // methods reach the 1MB size.
   const BufferSizingData* sizing = output->buffer_sizing_data();
-  const int code_size = sizing->_code + sizing->_stub +
-    PhaseOutput::MAX_inst_size + PhaseOutput::MAX_stubs_size + NativeCall::byte_size();
+  const int code_size = sizing->_code + state->stubs_current_total_size();
 
   // Maximum backward range is 1M. Maximum forward reach is 1M - 4bytes.
-  const int cond_branch_max_reach = (int)(1*M - 4);
+  // Subtract 2K to be ultra conservative.
+  const int cond_branch_max_reach = (int)(1*M - 2*K);
   _needs_far_jump = code_size >= cond_branch_max_reach;
 }
 
