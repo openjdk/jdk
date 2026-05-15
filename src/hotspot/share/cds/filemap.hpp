@@ -120,7 +120,7 @@ private:
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _object_streaming_mode;                 // dump was created for object streaming
   bool    _compressed_oops;                       // save the flag UseCompressedOops
-  bool    _compatible_oop_compression;            // Value of AOTCompatibleOopCompression at dump time
+  bool    _compatible_oop_compression;            // value of AOTCompatibleOopCompression at dump time
   int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
   int     _narrow_klass_shift;                    // save shift width used to pre-compute narrowKlass IDs in archived heap objects
   narrowPtr _cloned_vtables;                      // The address of the first cloned vtable

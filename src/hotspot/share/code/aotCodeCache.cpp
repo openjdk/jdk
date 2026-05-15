@@ -581,6 +581,7 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
     load_failure_log().print_cr("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
                                 _compressedOopBase, CompressedOops::base());
+    load_failure_log().print_cr("Consider adding -XX:+AOTCompatibleOopCompression when creating the AOT cache");
     return false;
   }
 
