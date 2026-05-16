@@ -26,6 +26,7 @@
 package com.sun.source.util;
 
 import com.sun.source.tree.*;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A TreeVisitor that visits all the child tree nodes.
@@ -333,8 +334,27 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     public R visitEnhancedForLoop(EnhancedForLoopTree node, P p) {
         R r = scan(node.getVariable(), p);
+        r = scanAndReduce(node.getRecordPattern(), p, r);
         r = scanAndReduce(node.getExpression(), p, r);
         r = scanAndReduce(node.getStatement(), p, r);
+        return r;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 27
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.ENHANCED_LOCAL_VARIABLE_DECLARATIONS, reflective=true)
+    public R visitEnhancedVariableDeclaration(EnhancedVariableDeclarationTree node, P p) {
+        R r = scan(node.getPattern(), p);
+        r = scanAndReduce(node.getExpression(), p, r);
         return r;
     }
 

@@ -27,6 +27,8 @@ package com.sun.tools.javac.code;
 
 import java.lang.ref.SoftReference;
 import java.lang.runtime.ExactConversionsSupport;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Locale;
@@ -50,6 +52,7 @@ import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.ClassFile;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.BoundKind.*;
@@ -101,6 +104,8 @@ public class Types {
 
     public final Warner noWarnings;
     public final boolean dumpStacktraceOnError;
+    private final Preview preview;
+    private final boolean allowEnhancedVariableDecls;
 
     // <editor-fold defaultstate="collapsed" desc="Instantiating">
     public static Types instance(Context context) {
@@ -116,6 +121,7 @@ public class Types {
         syms = Symtab.instance(context);
         names = Names.instance(context);
         Source source = Source.instance(context);
+        preview = Preview.instance(context);
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
@@ -124,6 +130,8 @@ public class Types {
         noWarnings = new Warner(null);
         Options options = Options.instance(context);
         dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
+        allowEnhancedVariableDecls = Feature.ENHANCED_VARIABLE_DECLS.allowedInSource(source) &&
+                                     (preview.isEnabled() || !preview.isPreview(Feature.ENHANCED_VARIABLE_DECLS));
     }
     // </editor-fold>
 
@@ -2408,8 +2416,68 @@ public class Types {
                 break;
             }
         }
-        return isConvertible(t, s, warn);
+
+        if (isConvertible(t, s, warn)) {
+            return true;
+        } else if (allowEnhancedVariableDecls && isSafeDirectSubType(t, s)){
+            if (warn.pos() != null) {
+                preview.warnPreview(JCDiagnostic.DiagnosticFlag.SYNTAX, warn.pos(), Feature.ENHANCED_VARIABLE_DECLS);
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
+
+    /**
+     * This method returns true if the checked narrowing reference conversion from
+     * {@code t} to {@code s} is unambiguously safe due to {@code s} being a unique
+     * subtype of {@code t}.
+     *
+     * The source type {@code t} must denote a sealed interface or an abstract
+     * sealed class. The assignment to the target type {@code s} is checked
+     * bottom-up: each upward edge must be the inverse of a safe direct subtype
+     * edge, i.e. the supertype names a sealed type and the current subtype names
+     * its unique permitted subtype.
+     */
+    public boolean isSafeDirectSubType(Type t, Type s) {
+        if (!(t.tsym instanceof ClassSymbol sourceSym)
+                || !sourceSym.isSealed()
+                || (!sourceSym.isInterface() && !sourceSym.isAbstract())
+                || s.isPrimitive()) {
+            return false;
+        }
+        sourceSym.complete();
+
+        Deque<Type> pending = new ArrayDeque<>();
+        pending.add(s);
+
+        while (!pending.isEmpty()) {
+            Type current = pending.removeFirst();
+
+            if (isSameType(t, current)) {
+                Warner castWarner = new Warner();
+                return isCastable(t, s, castWarner) &&
+                        !castWarner.hasLint(LintCategory.UNCHECKED);
+            }
+
+            for (Type supertype : directSupertypes(current)) {
+                if (supertype.tsym instanceof ClassSymbol superSym) {
+                    superSym.complete();
+
+                    List<Type> permitted = superSym.getPermittedSubclasses();
+                    if (superSym.isSealed()
+                            && permitted.size() == 1
+                            && permitted.getFirst().tsym == current.tsym) {
+                        pending.add(supertype);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="erasure">
@@ -4361,7 +4429,7 @@ public class Types {
             isSameType(t, s) ||
             !t.isPrimitive() &&
             !s.isPrimitive() &&
-            isAssignable(t, s, warner);
+            isSubtypeUnchecked(t, s, warner);
     }
     // </editor-fold>
 

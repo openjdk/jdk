@@ -209,6 +209,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         ASSERT,
 
+        /** Enhanced local variable declaration statements, of type ENHANCED_VAR_DECL.
+         */
+        ENHANCED_VAR_DECL,
+
         /** Method invocation expressions, of type Apply.
          */
         APPLY,
@@ -1291,11 +1295,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * The enhanced for loop.
      */
     public static class JCEnhancedForLoop extends JCStatement implements EnhancedForLoopTree {
-        public JCVariableDecl var;
+        public JCTree varOrRecordPattern;
         public JCExpression expr;
         public JCStatement body;
-        protected JCEnhancedForLoop(JCVariableDecl var, JCExpression expr, JCStatement body) {
-            this.var = var;
+        public Type elementType;
+        protected JCEnhancedForLoop(JCTree varOrRecordPattern, JCExpression expr, JCStatement body) {
+            this.varOrRecordPattern = varOrRecordPattern;
             this.expr = expr;
             this.body = body;
         }
@@ -1305,7 +1310,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.ENHANCED_FOR_LOOP; }
         @DefinedBy(Api.COMPILER_TREE)
-        public JCVariableDecl getVariable() { return var; }
+        public JCVariableDecl getVariable() {
+            return varOrRecordPattern instanceof JCVariableDecl var ? var : null;
+        }
+        @DefinedBy(Api.COMPILER_TREE)
+        public JCPattern getRecordPattern() {
+            return varOrRecordPattern instanceof JCPattern pattern ? pattern : null;
+        }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return expr; }
         @DefinedBy(Api.COMPILER_TREE)
@@ -1317,6 +1328,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return FOREACHLOOP;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public EnhancedForLoopTree.DeclarationKind getDeclarationKind() {
+            return varOrRecordPattern.hasTag(VARDEF) ? DeclarationKind.VARIABLE : DeclarationKind.PATTERN;
         }
     }
 
@@ -1861,6 +1877,37 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return ASSERT;
+        }
+    }
+
+
+    /**
+     * The enhanced local variable declaration statement
+     */
+    public static class JCEnhancedVariableDeclaration extends JCStatement implements EnhancedVariableDeclarationTree {
+        public JCPattern pattern;
+        public JCExpression expr;
+
+        protected JCEnhancedVariableDeclaration(JCPattern recordPattern, JCExpression expr) {
+            this.pattern = recordPattern;
+            this.expr = expr;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitEnhancedVariableDeclaration(this); }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() { return Kind.ENHANCED_VARIABLE_DECLARATION; }
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public PatternTree getPattern() { return pattern; }
+        @DefinedBy(Api.COMPILER_TREE)
+        public JCExpression getExpression() { return expr; }
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitEnhancedVariableDeclaration(this, d);
+        }
+        @Override
+        public Tag getTag() {
+            return ENHANCED_VAR_DECL;
         }
     }
 
@@ -3503,7 +3550,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                         JCExpression cond,
                         List<JCExpressionStatement> step,
                         JCStatement body);
-        JCEnhancedForLoop ForeachLoop(JCVariableDecl var, JCExpression expr, JCStatement body);
+        JCEnhancedForLoop ForeachLoop(JCTree var, JCExpression expr, JCStatement body);
         JCLabeledStatement Labelled(Name label, JCStatement body);
         JCSwitch Switch(JCExpression selector, List<JCCase> cases);
         JCSwitchExpression SwitchExpression(JCExpression selector, List<JCCase> cases);
@@ -3527,6 +3574,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCReturn Return(JCExpression expr);
         JCThrow Throw(JCExpression expr);
         JCAssert Assert(JCExpression cond, JCExpression detail);
+        JCEnhancedVariableDeclaration EnhancedVarDef(JCPattern recordPattern, JCExpression expr);
         JCMethodInvocation Apply(List<JCExpression> typeargs,
                     JCExpression fn,
                     List<JCExpression> args);
@@ -3600,6 +3648,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitReturn(JCReturn that)               { visitTree(that); }
         public void visitThrow(JCThrow that)                 { visitTree(that); }
         public void visitAssert(JCAssert that)               { visitTree(that); }
+        public void visitEnhancedVariableDeclaration(JCEnhancedVariableDeclaration that)                 { visitTree(that); }
         public void visitApply(JCMethodInvocation that)      { visitTree(that); }
         public void visitNewClass(JCNewClass that)           { visitTree(that); }
         public void visitNewArray(JCNewArray that)           { visitTree(that); }
