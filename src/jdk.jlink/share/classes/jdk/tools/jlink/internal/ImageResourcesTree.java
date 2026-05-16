@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 package jdk.tools.jlink.internal;
 
 import jdk.internal.jimage.ImageLocation;
-import jdk.internal.jimage.ModuleReference;
+import jdk.internal.jimage.ModuleLink;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -124,29 +124,29 @@ public final class ImageResourcesTree {
      * {@code "/packages/java.util/java.logging"} will exist, but only
      * {@code "java.base"} entry will be marked as having content.
      *
-     * <p>When processing module references in non-preview mode, entries marked
-     * as {@link ModuleReference#isPreviewOnly() preview-only} must be ignored.
+     * <p>When processing module links in non-preview mode, entries marked
+     * as {@link ModuleLink#isPreviewOnly() preview-only} must be ignored.
      *
-     * <p>If all references in a package are preview-only, then the entire
-     * package is marked as preview-only, and must be ignored.
+     * <p>If all links in a package are preview-only, then the entire package is
+     * marked as preview-only, and must be ignored.
      */
     // Visible for testing only.
     static final class PackageNode extends Node {
-        private final List<ModuleReference> moduleReferences;
+        private final List<ModuleLink> moduleLinks;
 
-        PackageNode(String name, List<ModuleReference> moduleReferences, Node parent) {
+        PackageNode(String name, List<ModuleLink> moduleLinks, Node parent) {
             super(name, parent);
-            if (moduleReferences.isEmpty()) {
+            if (moduleLinks.isEmpty()) {
                 throw new IllegalStateException("Package must be associated with modules: " + name);
             }
-            if (moduleReferences.stream().filter(ModuleReference::hasResources).count() > 1) {
+            if (moduleLinks.stream().filter(ModuleLink::hasResources).count() > 1) {
                 throw new IllegalStateException("Multiple modules contain non-empty package: " + name);
             }
-            this.moduleReferences = Collections.unmodifiableList(moduleReferences);
+            this.moduleLinks = Collections.unmodifiableList(moduleLinks);
         }
 
-        List<ModuleReference> getModuleReferences() {
-            return moduleReferences;
+        List<ModuleLink> getModuleLinks() {
+            return moduleLinks;
         }
     }
 
@@ -187,12 +187,12 @@ public final class ImageResourcesTree {
             packagesRoot = new Node("packages", root);
             directAccess.put(packagesRoot.getPath(), packagesRoot);
 
-            // Map of dot-separated package names to module references (those
-            // in which the package appear). References are merged after to
-            // ensure each module name appears only once, but temporarily a
-            // module may have several entries per package (e.g. with-content,
+            // Map of dot-separated package names to module links (those in
+            // which the package appear). Links are merged after to ensure each
+            // module name appears only once, but temporarily a module may have
+            // several link entries per package (e.g. with-content,
             // without-content, normal, preview-only etc..).
-            Map<String, Set<ModuleReference>> packageToModules = new TreeMap<>();
+            Map<String, Set<ModuleLink>> packageToModules = new TreeMap<>();
             for (String fullPath : paths) {
                 try {
                     processPath(fullPath, modulesRoot, packageToModules);
@@ -207,12 +207,12 @@ public final class ImageResourcesTree {
             // (empty) package and anything under "META-INF". However, these should
             // not have entries in the "/packages" directory.
             packageToModules.keySet().removeIf(p -> p.isEmpty() || p.equals("META-INF") || p.startsWith("META-INF."));
-            packageToModules.forEach((pkgName, modRefs) -> {
-                // Merge multiple refs for the same module.
-                List<ModuleReference> pkgModules = modRefs.stream()
-                        .collect(Collectors.groupingBy(ModuleReference::name))
+            packageToModules.forEach((pkgName, modLinks) -> {
+                // Merge multiple links for the same module.
+                List<ModuleLink> pkgModules = modLinks.stream()
+                        .collect(Collectors.groupingBy(ModuleLink::name))
                         .values().stream()
-                        .map(refs -> refs.stream().reduce(ModuleReference::merge).orElseThrow())
+                        .map(links -> links.stream().reduce(ModuleLink::merge).orElseThrow())
                         .sorted()
                         .toList();
                 PackageNode pkgNode = new PackageNode(pkgName, pkgModules, packagesRoot);
@@ -223,7 +223,7 @@ public final class ImageResourcesTree {
         private void processPath(
                 String fullPath,
                 Node modulesRoot,
-                Map<String, Set<ModuleReference>> packageToModules)
+                Map<String, Set<ModuleLink>> packageToModules)
                 throws InvalidTreeException {
             // Paths are untrusted, so be careful about checking expected format.
             if (!fullPath.startsWith("/") || fullPath.endsWith("/") || fullPath.contains("//")) {
@@ -252,22 +252,22 @@ public final class ImageResourcesTree {
             String fullPkgName = (pathEnd == -1) ? "" : pkgPath.substring(0, pathEnd).replace('/', '.');
             String resourceName = pkgPath.substring(pathEnd + 1);
             // Intermediate packages are marked "empty" (no resources). This might
-            // later be merged with a non-empty reference for the same package.
-            ModuleReference emptyRef = ModuleReference.forEmptyPackage(modName, isPreviewPath);
+            // later be merged with a non-empty link for the same package.
+            ModuleLink emptyLink = ModuleLink.forEmptyPackage(modName, isPreviewPath);
 
             // Work down through empty packages to final resource.
             for (int i = pkgEndIndex(fullPkgName, 0); i != -1; i = pkgEndIndex(fullPkgName, i)) {
                 // Due to invariants already checked, pkgName is non-empty.
                 String pkgName = fullPkgName.substring(0, i);
-                packageToModules.computeIfAbsent(pkgName, p -> new HashSet<>()).add(emptyRef);
+                packageToModules.computeIfAbsent(pkgName, p -> new HashSet<>()).add(emptyLink);
                 String childNodeName = pkgName.substring(pkgName.lastIndexOf('.') + 1);
                 parentNode = getDirectoryNode(childNodeName, parentNode);
             }
             // Reached non-empty (leaf) package (could still be a duplicate).
             Node resourceNode = parentNode.getChildren(resourceName);
             if (resourceNode == null) {
-                ModuleReference resourceRef = ModuleReference.forPackage(modName, isPreviewPath);
-                packageToModules.computeIfAbsent(fullPkgName, p -> new HashSet<>()).add(resourceRef);
+                ModuleLink resourceLink = ModuleLink.forPackage(modName, isPreviewPath);
+                packageToModules.computeIfAbsent(fullPkgName, p -> new HashSet<>()).add(resourceLink);
                 // Init adds new node to parent (don't add resources to directAccess).
                 new ResourceNode(resourceName, parentNode);
             } else if (!(resourceNode instanceof ResourceNode)) {
@@ -339,10 +339,10 @@ public final class ImageResourcesTree {
 
         private int addLocations(Node current) {
             if (current instanceof PackageNode) {
-                List<ModuleReference> refs = ((PackageNode) current).getModuleReferences();
+                List<ModuleLink> links = ((PackageNode) current).getModuleLinks();
                 // "/packages/<pkg name>" entries have 8-byte entries (flags+offset).
-                int size = refs.size() * 8;
-                writer.addLocation(current.getPath(), offset, 0, size, ImageLocation.getPackageFlags(refs));
+                int size = links.size() * 8;
+                writer.addLocation(current.getPath(), offset, 0, size, ImageLocation.getPackageFlags(links));
                 offset += size;
             } else {
                 int[] ret = new int[current.children.size()];
@@ -352,7 +352,7 @@ public final class ImageResourcesTree {
                     i += 1;
                 }
                 if (current != tree.getRoot() && !(current instanceof ResourceNode)) {
-                    int locFlags = ImageLocation.getFlags(current.getPath(), tree.directAccess::containsKey);
+                    int locFlags = ImageLocation.getPreviewFlags(current.getPath(), tree.directAccess::containsKey);
                     // Normal directory entries have 4-byte entries (offset only).
                     int size = ret.length * 4;
                     writer.addLocation(current.getPath(), offset, 0, size, locFlags);
@@ -382,10 +382,10 @@ public final class ImageResourcesTree {
         private int computeContent(Node current, Map<String, ImageLocationWriter> outLocations) {
             if (current instanceof PackageNode) {
                 // "/packages/<pkg name>" entries have 8-byte entries (flags+offset).
-                List<ModuleReference> refs = ((PackageNode) current).getModuleReferences();
-                ByteBuffer byteBuffer = ByteBuffer.allocate(8 * refs.size());
+                List<ModuleLink> links = ((PackageNode) current).getModuleLinks();
+                ByteBuffer byteBuffer = ByteBuffer.allocate(8 * links.size());
                 byteBuffer.order(writer.getByteOrder());
-                ModuleReference.write(refs, byteBuffer.asIntBuffer(), writer::addString);
+                ModuleLink.write(links, byteBuffer.asIntBuffer(), writer::addString);
                 content.add(byteBuffer.array());
                 current.setLocation(outLocations.get(current.getPath()));
             } else {

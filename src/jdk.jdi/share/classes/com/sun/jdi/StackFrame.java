@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,19 @@ public interface StackFrame extends Mirror, Locatable {
      * The {@link ObjectReference} for 'this' is only available for
      * non-native instance methods.
      *
+     * @apiNote
+     * <div class="preview-block">
+     *     <div class="preview-comment">
+     *         When preview features are enabled,
+     *         if 'this' represents a value object under construction, the
+     *         {@link ObjectReference} returned will be for a snapshot of the
+     *         value object, not a reference to the actual value object under
+     *         construction. Therefore the ObjectReference returned will not reflect
+     *         changes to the value object that happen later on during
+     *         construction.
+     *     </div>
+     * </div>
+     *
      * @return an {@link ObjectReference}, or null if the frame represents
      * a native or static method.
      * @throws InvalidStackFrameException if this stack frame has become
@@ -168,6 +181,20 @@ public interface StackFrame extends Mirror, Locatable {
      * The variable must be valid for this frame's method and visible
      * according to the rules described in {@link #visibleVariables}.
      *
+     * @apiNote
+     * <div class="preview-block">
+     *     <div class="preview-comment">
+     *         When preview features are enabled,
+     *         if the variable represents `this` of a value object that
+     *         is under construction, the
+     *         {@link ObjectReference} returned will be for a snapshot of the
+     *         value object, not a reference to the actual value object under
+     *         construction. Therefore the {@link ObjectReference} returned will not reflect
+     *         changes to the value object that happen later on during
+     *         construction.
+     *     </div>
+     * </div>
+     *
      * @param variable the {@link LocalVariable} to be accessed
      * @return the {@link Value} of the instance field.
      * @throws java.lang.IllegalArgumentException if the variable is
@@ -182,6 +209,20 @@ public interface StackFrame extends Mirror, Locatable {
      * Returns the values of multiple local variables in this frame.
      * Each variable must be valid for this frame's method and visible
      * according to the rules described in {@link #visibleVariables}.
+     *
+     * @apiNote
+     * <div class="preview-block">
+     *     <div class="preview-comment">
+     *         When preview features are enabled,
+     *         if a variable represents `this` of a value object that
+     *         is under construction, the
+     *         {@link ObjectReference} returned will be for a snapshot of the
+     *         value object, not a reference to the actual value object under
+     *         construction. Therefore the {@link ObjectReference} returned will not reflect
+     *         changes to the value object that happen later on during
+               construction.
+     *      </div>
+     * </div>
      *
      * @param variables a list of {@link LocalVariable} objects to be accessed
      * @return a map associating each {@link LocalVariable} with

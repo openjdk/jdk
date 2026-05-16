@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -968,18 +968,28 @@ public final class Double extends Number
     /**
      * Returns a {@code Double} instance representing the specified
      * {@code double} value.
-     * If a new {@code Double} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Double(double)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Double} is an identity class.
+     *              If a new {@code Double} instance is not required, this
+     *              method should generally be used in preference to the
+     *              constructor {@link #Double(double)}, as this method is
+     *              likely to yield significantly better space and time
+     *              performance by caching frequently requested values.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Double} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  d a double value.
      * @return a {@code Double} instance representing {@code d}.
      * @since  1.5
      */
     @IntrinsicCandidate
-    @DeserializeConstructor
     public static Double valueOf(double d) {
         return new Double(d);
     }
@@ -1075,6 +1085,7 @@ public final class Double extends Number
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
+    @DeserializeConstructor
     public Double(double value) {
         this.value = value;
     }

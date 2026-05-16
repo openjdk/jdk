@@ -330,12 +330,21 @@ class UnswitchCandidate : public StackObj {
 
   // Combine all checks into a single one that fails if one array is flat.
   void set_flat_array_check_inputs(FlatArrayCheckNode* cloned_flat_array_check) const {
-    assert(cloned_flat_array_check->req() == 3, "unexpected number of inputs for FlatArrayCheck");
-    cloned_flat_array_check->add_req_batch(_phase->C->top(), _flat_array_check_candidates.size() - 1);
+    uint total = FlatArrayCheckNode::ArrayOrKlass;
     for (uint i = 0; i < _flat_array_check_candidates.size(); i++) {
-      Node* array = _flat_array_check_candidates.at(i)->in(1)->in(1)->in(FlatArrayCheckNode::ArrayOrKlass);
-      cloned_flat_array_check->set_req(FlatArrayCheckNode::ArrayOrKlass + i, array);
+      Node* flat_array_check = _flat_array_check_candidates.at(i)->in(1)->in(1);
+      total += flat_array_check->req() - FlatArrayCheckNode::ArrayOrKlass;
     }
+    cloned_flat_array_check->add_req_batch(_phase->C->top(), total - cloned_flat_array_check->req());
+    uint k = FlatArrayCheckNode::ArrayOrKlass;
+    for (uint i = 0; i < _flat_array_check_candidates.size(); i++) {
+      Node* flat_array_check = _flat_array_check_candidates.at(i)->in(1)->in(1);
+      for (uint j = FlatArrayCheckNode::ArrayOrKlass; j < flat_array_check->req(); j++) {
+        cloned_flat_array_check->set_req(k, flat_array_check->in(j));
+        k++;
+      }
+    }
+    assert(k == total, "missed some checks?");
   }
 
  public:

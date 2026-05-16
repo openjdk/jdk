@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 import jdk.internal.jimage.ImageLocation;
-import jdk.internal.jimage.ModuleReference;
+import jdk.internal.jimage.ModuleLink;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -52,17 +52,17 @@ public class ImageLocationTest {
         String previewName = previewName(name);
 
         int noPreviewFlags =
-                ImageLocation.getFlags(name, Set.of(name)::contains);
+                ImageLocation.getPreviewFlags(name, Set.of(name)::contains);
         assertEquals(0, noPreviewFlags);
         assertFalse(ImageLocation.hasPreviewVersion(noPreviewFlags));
         assertFalse(ImageLocation.isPreviewOnly(noPreviewFlags));
 
         int withPreviewFlags =
-                ImageLocation.getFlags(name, Set.of(name, previewName)::contains);
+                ImageLocation.getPreviewFlags(name, Set.of(name, previewName)::contains);
         assertTrue(ImageLocation.hasPreviewVersion(withPreviewFlags));
         assertFalse(ImageLocation.isPreviewOnly(withPreviewFlags));
 
-        int previewOnlyFlags = ImageLocation.getFlags(previewName, Set.of(previewName)::contains);
+        int previewOnlyFlags = ImageLocation.getPreviewFlags(previewName, Set.of(previewName)::contains);
         assertFalse(ImageLocation.hasPreviewVersion(previewOnlyFlags));
         assertTrue(ImageLocation.isPreviewOnly(previewOnlyFlags));
     }
@@ -75,23 +75,23 @@ public class ImageLocationTest {
             "/modules/modfoo/META-INF",
             "/modules/modfoo/META-INF/module-info.class"})
     public void getFlags_zero(String name) {
-        assertEquals(0, ImageLocation.getFlags(name, Set.of(name)::contains));
+        assertEquals(0, ImageLocation.getPreviewFlags(name, Set.of(name)::contains));
     }
 
     @Test
     public void getFlags_packageFlags() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> ImageLocation.getFlags("/packages/pkgname", p -> true));
+                () -> ImageLocation.getPreviewFlags("/packages/pkgname", p -> true));
     }
 
     @Test
     public void getPackageFlags_noPreview() {
-        List<ModuleReference> refs = List.of(
-                ModuleReference.forPackage("modfoo", false),
-                ModuleReference.forEmptyPackage("modbar", false),
-                ModuleReference.forEmptyPackage("modbaz", false));
-        int noPreviewFlags = ImageLocation.getPackageFlags(refs);
+        List<ModuleLink> links = List.of(
+                ModuleLink.forPackage("modfoo", false),
+                ModuleLink.forEmptyPackage("modbar", false),
+                ModuleLink.forEmptyPackage("modbaz", false));
+        int noPreviewFlags = ImageLocation.getPackageFlags(links);
         assertEquals(0, noPreviewFlags);
         assertFalse(ImageLocation.hasPreviewVersion(noPreviewFlags));
         assertFalse(ImageLocation.isPreviewOnly(noPreviewFlags));
@@ -99,22 +99,22 @@ public class ImageLocationTest {
 
     @Test
     public void getPackageFlags_withPreview() {
-        List<ModuleReference> refs = List.of(
-                ModuleReference.forPackage("modfoo", true),
-                ModuleReference.forEmptyPackage("modbar", false),
-                ModuleReference.forEmptyPackage("modbaz", true));
-        int withPreviewFlags = ImageLocation.getPackageFlags(refs);
+        List<ModuleLink> links = List.of(
+                ModuleLink.forPackage("modfoo", true),
+                ModuleLink.forEmptyPackage("modbar", false),
+                ModuleLink.forEmptyPackage("modbaz", true));
+        int withPreviewFlags = ImageLocation.getPackageFlags(links);
         assertTrue(ImageLocation.hasPreviewVersion(withPreviewFlags));
         assertFalse(ImageLocation.isPreviewOnly(withPreviewFlags));
     }
 
     @Test
     public void getPackageFlags_previewOnly() {
-        List<ModuleReference> refs = List.of(
-                ModuleReference.forPackage("modfoo", true),
-                ModuleReference.forEmptyPackage("modbar", true),
-                ModuleReference.forEmptyPackage("modbaz", true));
-        int previewOnlyFlags = ImageLocation.getPackageFlags(refs);
+        List<ModuleLink> links = List.of(
+                ModuleLink.forPackage("modfoo", true),
+                ModuleLink.forEmptyPackage("modbar", true),
+                ModuleLink.forEmptyPackage("modbaz", true));
+        int previewOnlyFlags = ImageLocation.getPackageFlags(links);
         // Note the asymmetry between this and the getFlags() case. Unlike
         // module resources, there is no concept of a separate package directory
         // existing in the preview namespace, so a single entry serves both

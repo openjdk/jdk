@@ -30,6 +30,7 @@
  * @enablePreview
  * @requires vm.opt.UseFieldFlattening != "false"
  * @requires vm.opt.UseNullableAtomicValueFlattening != "false"
+ * @requires vm.compMode != "Xcomp"
  * @run main runtime.valhalla.inlinetypes.TestFlatteningBudget
  */
 

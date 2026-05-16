@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.lang;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.value.DeserializeConstructor;
+import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -250,25 +251,28 @@ public final class Short extends Number implements Comparable<Short>, Constable 
         static Short[] archivedCache;
 
         static {
-            if (!PreviewFeatures.isEnabled()) {
-                int size = -(-128) + 127 + 1;
+            int size = -(-128) + 127 + 1;
 
-                // Load and use the archived cache if it exists
-                CDS.initializeFromArchive(ShortCache.class);
-                if (archivedCache == null) {
-                    Short[] c = new Short[size];
-                    short value = -128;
-                    for(int i = 0; i < size; i++) {
-                        c[i] = new Short(value++);
-                    }
-                    archivedCache = c;
+            // Load and use the archived cache if it exists
+            CDS.initializeFromArchive(ShortCache.class);
+            if (archivedCache == null) {
+                Short[] c = newCacheArray(size);
+                short value = -128;
+                for(int i = 0; i < size; i++) {
+                    c[i] = new Short(value++);
                 }
-                cache = archivedCache;
-                assert cache.length == size;
-            } else {
-                cache = null;
-                assert archivedCache == null;
+                archivedCache = c;
             }
+            cache = archivedCache;
+            assert cache.length == size;
+        }
+
+        private static Short[] newCacheArray(int size) {
+            // ValueClass.newReferenceArray requires a value class component.
+            if (PreviewFeatures.isEnabled()) {
+                return (Short[]) ValueClass.newReferenceArray(Short.class, size);
+            }
+            return new Short[size];
         }
     }
 
@@ -300,14 +304,11 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @since  1.5
      */
     @IntrinsicCandidate
-    @DeserializeConstructor
     public static Short valueOf(short s) {
-        if (!PreviewFeatures.isEnabled()) {
-            final int offset = 128;
-            int sAsInt = s;
-            if (sAsInt >= -128 && sAsInt <= 127) { // must cache
-                return ShortCache.cache[sAsInt + offset];
-            }
+        final int offset = 128;
+        int sAsInt = s;
+        if (sAsInt >= -128 && sAsInt <= 127) { // must cache
+            return ShortCache.cache[sAsInt + offset];
         }
         return new Short(s);
     }
@@ -382,6 +383,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
+    @DeserializeConstructor
     public Short(short value) {
         this.value = value;
     }

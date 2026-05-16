@@ -36,10 +36,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <div class="preview-block">
  *      <div class="preview-comment">
  *          When preview features are enabled, subclasses of {@code java.lang.Object} can be either
- *          an {@linkplain Class#isIdentity identity class} or a {@linkplain Class#isValue value class}.
+ *          identity classes or {@linkplain Class#isValue value classes}.
  *          See The Java Language Specification {@jls value-objects-8.1.1.5 Value Classes}.
  *          Use of value class instances for synchronization, mutexes, or with
- *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@linkplain java.lang.ref.Reference object references} results in
  *          {@link IdentityException}.
  *      </div>
  * </div>
@@ -310,14 +310,14 @@ public class Object {
      * Only one thread at a time can own an object's monitor.
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          If this object is a {@linkplain Class#isValue() value object},
+     *          If this object is a {@linkplain java.util.Objects#hasIdentity value object},
      *          it does does not have a monitor, an {@code IllegalMonitorStateException} is thrown.
      *      </div>
      * </div>
      *
      * @throws  IllegalMonitorStateException  if the current thread is not
      *               the owner of this object's monitor or
-     *               if this object is a {@linkplain Class#isValue() value object}.
+     *               if this object is a {@linkplain java.util.Objects#hasIdentity value object}.
      * @see        java.lang.Object#notifyAll()
      * @see        java.lang.Object#wait()
      */
@@ -343,14 +343,14 @@ public class Object {
      *
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          If this object is a {@linkplain Class#isValue() value object},
+     *          If this object is a {@linkplain java.util.Objects#hasIdentity value object},
      *          it does does not have a monitor, an {@code IllegalMonitorStateException} is thrown.
      *      </div>
      * </div>
      *
      * @throws  IllegalMonitorStateException  if the current thread is not
      *               the owner of this object's monitor or
-     *               if this object is a {@linkplain Class#isValue() value object}.
+     *               if this object is a {@linkplain java.util.Objects#hasIdentity value object}.
      * @see        java.lang.Object#notify()
      * @see        java.lang.Object#wait()
      */
@@ -367,14 +367,14 @@ public class Object {
      *
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          If this object is a {@linkplain Class#isValue() value object},
+     *          If this object is a {@linkplain java.util.Objects#hasIdentity value object},
      *          it does does not have a monitor, an {@code IllegalMonitorStateException} is thrown.
      *      </div>
      * </div>
      *
      * @throws IllegalMonitorStateException if the current thread is not
      *         the owner of the object's monitor or
-     *         if this object is a {@linkplain Class#isValue() value object}.
+     *         if this object is a {@linkplain java.util.Objects#hasIdentity value object}.
      * @throws InterruptedException if any thread interrupted the current thread before or
      *         while the current thread was waiting. The <em>interrupted status</em> of the
      *         current thread is cleared when this exception is thrown.
@@ -398,7 +398,7 @@ public class Object {
      *
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          If this object is a {@linkplain Class#isValue() value object},
+     *          If this object is a {@linkplain java.util.Objects#hasIdentity value object},
      *          it does does not have a monitor, an {@code IllegalMonitorStateException} is thrown.
      *      </div>
      * </div>
@@ -407,7 +407,7 @@ public class Object {
      * @throws IllegalArgumentException if {@code timeoutMillis} is negative
      * @throws IllegalMonitorStateException if the current thread is not
      *         the owner of the object's monitor or
-     *         if this object is a {@linkplain Class#isValue() value object}.
+     *         if this object is a {@linkplain java.util.Objects#hasIdentity value object}.
      * @throws InterruptedException if any thread interrupted the current thread before or
      *         while the current thread was waiting. The <em>interrupted status</em> of the
      *         current thread is cleared when this exception is thrown.
@@ -519,7 +519,7 @@ public class Object {
      *
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          If this object is a {@linkplain Class#isValue() value object},
+     *          If this object is a {@linkplain java.util.Objects#hasIdentity value object},
      *          it does does not have a monitor, an {@code IllegalMonitorStateException} is thrown.
      *      </div>
      * </div>
@@ -529,7 +529,7 @@ public class Object {
      *         or if the value of {@code nanos} is out of range
      * @throws IllegalMonitorStateException if the current thread is not
      *         the owner of the object's monitor or
-     *         if this object is a {@linkplain Class#isValue() value object}.
+     *         if this object is a {@linkplain java.util.Objects#hasIdentity value object}.
      * @throws InterruptedException if any thread interrupted the current thread before or
      *         while the current thread was waiting. The <em>interrupted status</em> of the
      *         current thread is cleared when this exception is thrown.
@@ -608,7 +608,7 @@ public class Object {
      *
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          If this object is a {@linkplain Class#isValue() value object},
+     *          If this object is a {@linkplain java.util.Objects#hasIdentity value object},
      *          this method will never be invoked by the garbage collector.
      *      </div>
      * </div>

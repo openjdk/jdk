@@ -214,8 +214,6 @@ import jdk.internal.util.ByteArray;
  * implemented by a class they can write and read their own state using all of
  * the methods of ObjectOutput and ObjectInput.  It is the responsibility of
  * the objects to handle any versioning that occurs.
- * Value objects cannot be `java.io.Externalizable` because value objects are
- * immutable and `Externalizable.readExternal` is unable to modify the fields of the value.
  *
  * <p>Enum constants are deserialized differently than ordinary serializable or
  * externalizable objects.  The serialized form of an enum constant consists
@@ -241,9 +239,16 @@ import jdk.internal.util.ByteArray;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
- * <p>Value classes are {@linkplain Serializable} through the use of the serialization proxy pattern.
- * See {@linkplain ObjectOutputStream##valueclass-serialization value class serialization} for details.
- * When the proxy is deserialized it re-constructs and returns the value object.
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          <p>{@linkplain Class#isValue Value classes} that are not records cannot be
+ *          deserialized directly. To serialize an instance of a value class, a proxy
+ *          object should be used instead. That object can then implement
+ *          <a href="{@docRoot}/../specs/serialization/input.html#the-readresolve-method">
+ *          {@code readResolve}</a> to construct and return the expected value class
+ *          instance.
+ *      </div>
+ * </div>
  *
  * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
@@ -435,18 +440,19 @@ public class ObjectInputStream
      * each object (regular or class) read to reconstruct the root object.
      * See {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter} for details.
      *
-     * <p>Serialization and deserialization of value classes is described in
-     * {@linkplain ObjectOutputStream##valueclass-serialization value class serialization}.
-     *
-     * @implSpec
-     * When enabled with {@code --enable-preview}, serialization and deserialization of
-     * Core Library value classes migrated from pre-JEP 401 identity classes is
-     * implementation specific.
-     *
      * <p>Exceptions are thrown for problems with the InputStream and for
      * classes that should not be deserialized.  All exceptions are fatal to
      * the InputStream and leave it in an indeterminate state; it is up to the
      * caller to ignore or recover the stream state.
+     *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>An object in the stream that instantiates or extends a Serializable
+     *          {@linkplain Class#isValue value class} can only be deserialized if
+     *          it is a record or a boxed primitive value.  Otherwise,
+     *          {@code readObject} throws an {@code InvalidClassException}.
+     *      </div>
+     * </div>
      *
      * @throws  ClassNotFoundException Class of a serialized object cannot be
      *          found.

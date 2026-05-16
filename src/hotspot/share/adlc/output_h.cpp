@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1839,6 +1839,112 @@ void ArchDesc::declareClasses(FILE *fp) {
     if (instr->_ins_pipe) {
       fprintf(fp,"  static  const Pipeline *pipeline_class();\n");
       fprintf(fp,"  virtual const Pipeline *pipeline() const;\n");
+    }
+
+    // Generate virtual function for MachNodeX::bottom_type when necessary
+    //
+    // Note on accuracy:  Pointer-types of machine nodes need to be accurate,
+    // or else alias analysis on the matched graph may produce bad code.
+    // Moreover, the aliasing decisions made on machine-node graph must be
+    // no less accurate than those made on the ideal graph, or else the graph
+    // may fail to schedule.  (Reason:  Memory ops which are reordered in
+    // the ideal graph might look interdependent in the machine graph,
+    // thereby removing degrees of scheduling freedom that the optimizer
+    // assumed would be available.)
+    //
+    // %%% We should handle many of these cases with an explicit ADL clause:
+    // instruct foo() %{ ... bottom_type(TypeRawPtr::BOTTOM); ... %}
+    if( data_type != Form::none ) {
+      // A constant's bottom_type returns a Type containing its constant value
+
+      // !!!!!
+      // Convert all ints, floats, ... to machine-independent TypeXs
+      // as is done for pointers
+      //
+      // Construct appropriate constant type containing the constant value.
+      fprintf(fp,"  virtual const class Type *bottom_type() const {\n");
+      switch( data_type ) {
+      case Form::idealI:
+        fprintf(fp,"    return  TypeInt::make(opnd_array(1)->constant());\n");
+        break;
+      case Form::idealP:
+      case Form::idealN:
+      case Form::idealNKlass:
+        fprintf(fp,"    return  opnd_array(1)->type();\n");
+        break;
+      case Form::idealD:
+        fprintf(fp,"    return  TypeD::make(opnd_array(1)->constantD());\n");
+        break;
+      case Form::idealH:
+        fprintf(fp,"    return  TypeH::make(opnd_array(1)->constantH());\n");
+        break;
+      case Form::idealF:
+        fprintf(fp,"    return  TypeF::make(opnd_array(1)->constantF());\n");
+        break;
+      case Form::idealL:
+        fprintf(fp,"    return  TypeLong::make(opnd_array(1)->constantL());\n");
+        break;
+      default:
+        assert( false, "Unimplemented()" );
+        break;
+      }
+      fprintf(fp,"  };\n");
+    }
+/*    else if ( instr->_matrule && instr->_matrule->_rChild &&
+        (  strcmp("ConvF2I",instr->_matrule->_rChild->_opType)==0
+        || strcmp("ConvD2I",instr->_matrule->_rChild->_opType)==0 ) ) {
+      // !!!!! !!!!!
+      // Provide explicit bottom type for conversions to int
+      // On Intel the result operand is a stackSlot, untyped.
+      fprintf(fp,"  virtual const class Type *bottom_type() const {");
+      fprintf(fp,   " return  TypeInt::INT;");
+      fprintf(fp, " };\n");
+    }*/
+    else if( instr->is_ideal_copy() &&
+              !strcmp(instr->_matrule->_lChild->_opType,"stackSlotP") ) {
+      // !!!!!
+      // Special hack for ideal Copy of pointer.  Bottom type is oop or not depending on input.
+      fprintf(fp,"  const Type            *bottom_type() const { return in(1)->bottom_type(); } // Copy?\n");
+    }
+    else if( instr->is_ideal_loadPC() ) {
+      // LoadPCNode provides the return address of a call to native code.
+      // Define its bottom type to be TypeRawPtr::BOTTOM instead of TypePtr::BOTTOM
+      // since it is a pointer to an internal VM location and must have a zero offset.
+      // Allocation detects derived pointers, in part, by their non-zero offsets.
+      fprintf(fp,"  const Type            *bottom_type() const { return TypeRawPtr::BOTTOM; } // LoadPC?\n");
+    }
+    else if( instr->is_ideal_box() ) {
+      // BoxNode provides the address of a stack slot.
+      // Define its bottom type to be TypeRawPtr::BOTTOM instead of TypePtr::BOTTOM
+      // This prevents raise_above_anti_dependences from complaining. It will
+      // complain if it sees that the pointer base is TypePtr::BOTTOM since
+      // it doesn't understand what that might alias.
+      fprintf(fp,"  const Type            *bottom_type() const { return TypeRawPtr::BOTTOM; } // Box?\n");
+    }
+    else if (instr->_matrule && instr->_matrule->_rChild &&
+              (!strcmp(instr->_matrule->_rChild->_opType,"CMoveP") || !strcmp(instr->_matrule->_rChild->_opType,"CMoveN")) ) {
+      int offset = 1;
+      // Special special hack to see if the Cmp? has been incorporated in the conditional move
+      MatchNode *rl = instr->_matrule->_rChild->_lChild;
+      if (rl && !strcmp(rl->_opType, "Binary") && rl->_rChild && strncmp(rl->_rChild->_opType, "Cmp", 3) == 0) {
+        offset = 2;
+        fprintf(fp,"  const Type            *bottom_type() const { if (req() == 3) return in(2)->bottom_type();\n\tconst Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // %s\n",
+        offset, offset+1, offset+1, instr->_matrule->_rChild->_opType);
+      } else {
+        // Special hack for ideal CMove; ideal type depends on inputs
+        fprintf(fp,"  const Type            *bottom_type() const { const Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // %s\n",
+        offset, offset+1, offset+1, instr->_matrule->_rChild->_opType);
+      }
+    }
+    else if (instr->is_tls_instruction()) {
+      // Special hack for tlsLoadP
+      fprintf(fp,"  const Type            *bottom_type() const { return TypeRawPtr::BOTTOM; } // tlsLoadP\n");
+    }
+    else if ( instr->is_ideal_if() ) {
+      fprintf(fp,"  const Type            *bottom_type() const { return TypeTuple::IFBOTH; } // matched IfNode\n");
+    }
+    else if ( instr->is_ideal_membar() ) {
+      fprintf(fp,"  const Type            *bottom_type() const { return TypeTuple::MEMBAR; } // matched MemBar\n");
     }
 
     // Check where 'ideal_type' must be customized

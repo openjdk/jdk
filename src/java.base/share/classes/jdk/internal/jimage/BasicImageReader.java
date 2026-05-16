@@ -325,8 +325,8 @@ public class BasicImageReader implements AutoCloseable {
      * <p>This is only meaningful for use by code dealing directly with jimage
      * files, and cannot be used to reliably lookup resources used at runtime.
      *
-     * <p>This API remains valid until the image reader from which it was
-     * obtained is closed.
+     * <p>The returned {@code ResourceEntries} remains valid until the image
+     * reader from which it was obtained is closed.
      */
     // Package visible for use by ImageReader.
     ResourceEntries getResourceEntries() {

@@ -235,13 +235,6 @@ void C1_MacroAssembler::initialize_object(
     initialize_body(obj, t1, t2, con_size_in_bytes, hdr_size_in_bytes);
   }
 
-  if (CURRENT_ENV->dtrace_alloc_probes()) {
-    Unimplemented();
-//    assert(obj == O0, "must be");
-//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)),
-//         relocInfo::runtime_call_type);
-  }
-
   verify_oop(obj, FILE_AND_LINE);
 }
 
@@ -309,13 +302,6 @@ void C1_MacroAssembler::allocate_array(
     }
 
     initialize_body(base, index);
-  }
-
-  if (CURRENT_ENV->dtrace_alloc_probes()) {
-    Unimplemented();
-    //assert(obj == O0, "must be");
-    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)),
-    //     relocInfo::runtime_call_type);
   }
 
   verify_oop(obj, FILE_AND_LINE);

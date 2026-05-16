@@ -2745,6 +2745,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     if (layout == LayoutKind::REFERENCE) {
       if (!base_type->is_aryptr()->is_not_flat()) {
         const TypeAryPtr* array_type = base_type->is_aryptr()->cast_to_not_flat();
+        // TODO 8350865 This should be a CheckCastPP, can we add a test?
         Node* new_base = _gvn.transform(new CastPPNode(control(), base, array_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
         replace_in_map(base, new_base);
         base = new_base;
@@ -2761,6 +2762,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
         ptr = basic_plus_adr(base, ConvL2X(offset));
         const TypeAryPtr* ptr_type = _gvn.type(ptr)->is_aryptr();
         if (ptr_type->field_offset().get() != 0) {
+          // TODO 8350865 This should be a CheckCastPP, can we add a test?
           ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
         }
       } else {
@@ -2779,7 +2781,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     const Type* value_type = _gvn.type(value);
     if (!value_type->is_inlinetypeptr()) {
       value_type = Type::get_const_type(value_klass)->filter_speculative(value_type);
-      Node* new_value = _gvn.transform(new CastPPNode(control(), value, value_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+      Node* new_value = _gvn.transform(new CheckCastPPNode(control(), value, value_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
       new_value = InlineTypeNode::make_from_oop(this, new_value, value_klass);
       replace_in_map(value, new_value);
       value = new_value;
@@ -4767,10 +4769,19 @@ bool LibraryCallKit::inline_newArray(bool null_free, bool atomic) {
                 init_val = init_val->as_InlineType()->buffer(this);
               }
             }
-            // TODO 8350865 Should we add a check of the init_val type (maybe in debug only + halt)?
-            // If we insert a checkcast here, we can be sure that init_val is an InlineTypeNode, so
-            // when we folded a field load from an allocation (e.g. during escape analysis), we can
-            // remove the check init_val->is_InlineType().
+            if (init_val != nullptr) {
+#ifdef ASSERT
+              init_val = null_check(init_val);
+              Node* wrong_type_ctl = gen_subtype_check(init_val, makecon(TypeKlassPtr::make(array_klass->element_klass())));
+              {
+                PreserveJVMState pjvms(this);
+                set_control(wrong_type_ctl);
+                halt(control(), frameptr(), "incompatible type for initVal in newArray");
+                stop_and_kill_map();
+              }
+#endif
+              init_val = _gvn.transform(new CheckCastPPNode(control(), init_val, TypeOopPtr::make_from_klass(array_klass->element_klass()), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+            }
           }
           Node* obj = new_array(makecon(array_klass_type), length, 0, nullptr, false, init_val);
           const TypeAryPtr* arytype = gvn().type(obj)->is_aryptr();

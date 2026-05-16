@@ -71,8 +71,8 @@ package java.lang;
  *      <div class="preview-comment">
  *          When preview features are enabled, {@code Record} is
  *          an abstract {@linkplain Class#isValue value class}.
- *          Subclasses of {@code Record} can be either an {@linkplain Class#isIdentity identity class}
- *          or a {@linkplain Class#isValue value class}.
+ *          Subclasses of {@code Record} can be either identity classes
+ *          or {@linkplain Class#isValue value classes}.
  *          See The Java Language Specification {@jls value-objects-8.1.1.5 Value Classes}.
  *      </div>
  * </div>

@@ -2310,7 +2310,6 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   CallProjections* callprojs = call->extract_projections(true, do_asserts);
 
   Unique_Node_List wl;
-  Node* init_mem = call->in(TypeFunc::Memory);
   Node* final_mem = final_state->in(TypeFunc::Memory);
   Node* final_ctl = final_state->in(TypeFunc::Control);
   Node* final_io = final_state->in(TypeFunc::I_O);
@@ -2341,9 +2340,14 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
     // If we are doing strength reduction and the return type is not loaded we
     // need to rewire all projections since store_inline_type_fields_to_buf is already present
     if (C->strength_reduction() && InlineTypeReturnedAsFields && !call->as_CallJava()->method()->return_type()->is_loaded()) {
-      const TypeTuple* domain = OptoRuntime::store_inline_type_fields_Type()->domain_cc();
-      for (uint i = TypeFunc::Parms; i < domain->cnt(); i++) {
-        C->gvn_replace_by(callprojs->resproj[0], final_state->in(i));
+      CallNode* new_call = result->in(0)->as_Call();
+      assert(new_call->proj_out_or_null(TypeFunc::Parms) == result, "the first data projection should be result");
+      for (uint i = 0; i < callprojs->nb_resproj; i++) {
+        if (callprojs->resproj[i] != nullptr) {
+          Node* new_proj = new_call->proj_out_or_null(TypeFunc::Parms + i);
+          assert(new_proj != nullptr, "projection should be available");
+          C->gvn_replace_by(callprojs->resproj[i], new_proj);
+        }
       }
     } else {
       C->gvn_replace_by(callprojs->resproj[0], result);
