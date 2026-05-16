@@ -426,13 +426,14 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
     }
     case ShenandoahOldGeneration::IDLE:
       old_generation->transition_to(ShenandoahOldGeneration::MARKING);
+      set_gc_mode(bootstrapping_old);
+
       // Configure the young generation's concurrent mark to put objects in
       // old regions into the concurrent mark queues associated with the old
       // generation. The young cycle will run as normal except that rather than
       // ignore old references it will mark and enqueue them in the old concurrent
-      // task queues but it will not traverse them.
-      set_gc_mode(bootstrapping_old);
-      young_generation->set_old_gen_task_queues(old_generation->task_queues());
+      // task queues, but it will not traverse them.
+      young_generation->prepare_for_bootstrap(old_generation);
       service_concurrent_cycle(young_generation, request.cause, true);
       _heap->process_gc_stats();
       if (_heap->cancelled_gc()) {
