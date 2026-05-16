@@ -2254,7 +2254,8 @@ bool AOTCodeCache::load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, Abs
   bool success = reader.compile_nmethod(env, target, compiler);
   if (success) {
     task->set_num_inlined_bytecodes(entry->num_inlined_bytecodes());
-  } else {
+  } else if (!env->failing() || !env->codecache_full()) {
+    // Invalidate AOT entry if there were issues in restoring AOT code or in dependencies
     entry->set_load_fail();
     entry->set_not_entrant();
   }

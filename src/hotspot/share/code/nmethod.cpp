@@ -1690,6 +1690,10 @@ bool nmethod::is_relocatable() {
     return false;
   }
 
+  if (is_aot()) {
+    return false;
+  }
+
   if (is_marked_for_deoptimization()) {
     return false;
   }

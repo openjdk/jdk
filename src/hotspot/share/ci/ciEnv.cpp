@@ -122,6 +122,7 @@ ciEnv::ciEnv(CompileTask* task)
   _debug_info = nullptr;
   _dependencies = nullptr;
   _inc_decompile_count_on_failure = true;
+  _codecache_full = false;
   _compilable = MethodCompilable;
   _break_at_compile = false;
   _compiler_data = nullptr;
@@ -256,6 +257,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   _debug_info = nullptr;
   _dependencies = nullptr;
   _inc_decompile_count_on_failure = true;
+  _codecache_full = false;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
   _compiler_data = nullptr;
@@ -1062,9 +1064,8 @@ void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool preload,
     // Allow the code to be executed
     MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
     if (nm->make_in_use()) {
-      if (!preload || method->method_holder()->is_linked()) {
-        method->set_code(method, nm);
-      }
+      assert(!preload || method->method_holder()->is_linked(), "AOT code preloaded only for linked method holder");
+      method->set_code(method, nm);
 #if INCLUDE_CDS
       if (preload) {
         MethodCounters* mc = method->get_method_counters(thread);
@@ -1161,7 +1162,7 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
     task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
   } else {
     // The CodeCache is full.
-    record_failure("code cache is full");
+    record_codecache_full();
   }
   return nm;
   // safepoints are allowed again
@@ -1299,7 +1300,7 @@ void ciEnv::register_method(ciMethod* target,
     task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
   } else if (install_code) {
     // The CodeCache is full.
-    record_failure("code cache is full");
+    record_codecache_full();
   } else {
     task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
   }
@@ -1401,6 +1402,11 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
 void ciEnv::record_out_of_memory_failure() {
   // If memory is low, we stop compiling methods.
   record_method_not_compilable("out of memory");
+}
+
+void ciEnv::record_codecache_full() {
+  _codecache_full = true;
+  record_failure("code cache is full");
 }
 
 ciInstance* ciEnv::unloaded_ciinstance() {

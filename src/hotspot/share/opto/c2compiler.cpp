@@ -131,17 +131,15 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
       assert(task->is_success(), "sanity");
       return;
     }
-    AOTCodeCache::invalidate(task->aot_code_entry()); // mark aot_code_entry as not entrant
-    if (AOTCodeCache::is_code_load_thread_on()) {
-      // Bail out if AOT code load failed in AOT Code loading thread
-      // when UseAOTCodeLoadThread flag is on.
-      // We want this thread go quickly through AOT code load requests
-      // instead of spending time on normal compilation.
-      env->record_failure("Failed to load AOT code");
-      return;
-    } else {
-      task->clear_aot();
+    if (env->failing()) {
+      return; // Failure to register AOT code
     }
+    // Failure happens during AOT code restoration
+    assert(task->aot_code_entry()->not_entrant(),"should be invalidated");
+    // We want to go quickly through AOT code load requests
+    // instead of spending time on normal compilation.
+    env->record_failure("Failed to load AOT code");
+    return;
   }
 
   bool subsume_loads = SubsumeLoads;

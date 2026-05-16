@@ -2030,6 +2030,14 @@ void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerTh
       _c2_compile_queue->delete_all();
     }
 
+    if (_ac1_compile_queue != nullptr) {
+      _ac1_compile_queue->delete_all();
+    }
+
+    if (_ac2_compile_queue != nullptr) {
+      _ac2_compile_queue->delete_all();
+    }
+
     // Set flags so that we continue execution with using interpreter only.
     UseCompiler    = false;
     UseInterpreter = true;

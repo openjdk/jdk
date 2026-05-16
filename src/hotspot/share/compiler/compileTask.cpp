@@ -118,9 +118,6 @@ AbstractCompiler* CompileTask::compiler() const {
 
 // Replace weak handles by strong handles to avoid unloading during compilation.
 CompileTask* CompileTask::select_for_compilation() {
-  if (preload()) {
-    return this; // AOT code preload
-  }
   if (is_unloaded()) {
     // Guard against concurrent class unloading
     return nullptr;
@@ -142,9 +139,6 @@ void CompileTask::mark_on_stack() {
 }
 
 bool CompileTask::is_unloaded() const {
-  if (preload()) {
-    return false; // AOT code preload
-  }
   return _method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_weak_global_cleared(_method_holder);
 }
 

@@ -151,7 +151,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_blocking() const                  { return _is_blocking; }
   bool         is_success() const                   { return _is_success; }
   bool         is_aot_load() const                  { return _aot_code_entry != nullptr; }
-  void         clear_aot()                          { _aot_code_entry = nullptr; }
   AOTCodeEntry* aot_code_entry()                    { return _aot_code_entry; }
   bool         requires_online_compilation() const  { return _requires_online_compilation; }
   DirectiveSet* directive() const                   { return _comp_directive_matcher.directive_set(); }

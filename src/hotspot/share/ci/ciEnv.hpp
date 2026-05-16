@@ -62,9 +62,10 @@ private:
   DebugInformationRecorder* _debug_info;
   Dependencies*    _dependencies;
   CHeapStringHolder _failure_reason;
+  bool             _codecache_full;
   bool             _inc_decompile_count_on_failure;
-  int              _compilable;
   bool             _break_at_compile;
+  int              _compilable;
   int              _num_inlined_bytecodes;
   CompileTask*     _task;           // faster access to CompilerThread::task
   CompileLog*      _log;            // faster access to CompilerThread::log
@@ -336,6 +337,8 @@ public:
   // Reason this compilation is failing, such as "too many basic blocks".
   const char* failure_reason() const { return _failure_reason.get(); }
 
+  bool codecache_full() const { return _codecache_full; }
+
   // Return state of appropriate compatibility
   int compilable() { return _compilable; }
 
@@ -492,6 +495,7 @@ public:
   void report_failure(const char* reason);      // Report failure immediately
   void record_method_not_compilable(const char* reason, bool all_tiers = false);
   void record_out_of_memory_failure();
+  void record_codecache_full();
 
   // RedefineClasses support
   void metadata_do(MetadataClosure* f) { _factory->metadata_do(f); }
