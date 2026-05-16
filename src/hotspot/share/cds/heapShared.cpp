@@ -980,9 +980,7 @@ void HeapShared::end_scanning_for_oops() {
 void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) {
   {
     NoSafepointVerifier nsv;
-    if (!SkipArchiveHeapVerification) {
-      CDSHeapVerifier::verify();
-    }
+    CDSHeapVerifier::verify();
     check_special_subgraph_classes();
   }
 

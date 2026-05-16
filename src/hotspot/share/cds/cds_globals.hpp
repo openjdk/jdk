@@ -174,11 +174,6 @@
                                                                             \
   develop(bool, TestAOTAdapterLinkFailure, false,                           \
           "Test failure of adapter linking when loading from AOT cache.")   \
-                                                                            \
-  /*========== New options added by Leyden =============================*/  \
-                                                                            \
-  product(bool, SkipArchiveHeapVerification, false, DIAGNOSTIC,             \
-          "Skip verification of CDS archive heap")                          \
 
 // end of CDS_FLAGS
 
