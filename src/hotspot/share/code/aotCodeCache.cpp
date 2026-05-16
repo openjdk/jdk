@@ -2037,13 +2037,15 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compile
   assert(comp_level == CompLevel_simple || comp_level == CompLevel_limited_profile || comp_level == CompLevel_full_optimization, "must be");
 
   TraceTime t1("Total time to store AOT code", &_t_totalStore, enable_timers(), false);
-  AOTCodeEntry* entry = nullptr;
-  entry = cache->write_nmethod(nm, for_preload);
-  if (entry == nullptr) {
+  AOTCodeEntry* entry = cache->write_nmethod(nm, for_preload);
+  {
     ResourceMark rm;
-    Method* method = nm->method();
-    log_info(aot, codecache, nmethod)("%d (L%d) '%s' AOT%s is skipped: store to AOT Code Cache failed",
-             nm->compile_id(), comp_level, method->name_and_sig_as_C_string(), (for_preload ? " preload" : ""));
+    const char* name = nm->method()->name_and_sig_as_C_string();
+    const char* msg = (entry != nullptr) ? ": wrote to AOT Code Cache" :
+                                           "is skipped: store to AOT Code Cache failed";
+    log_info(aot, codecache, nmethod)("%d (L%d) '%s' AOT%s%s %s",
+             nm->compile_id(), comp_level, name, (for_preload ? " preload" : ""),
+             (nm->has_clinit_barriers() ? ", has clinit barriers" : ""), msg);
   }
   // Clean up fields which could be set here
   cache->_for_preload = false;
@@ -2210,16 +2212,6 @@ AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
                                                 blob_offset, has_oop_maps,
                                                 comp_level(), compile_id(),
                                                 nm->has_clinit_barriers(), for_preload);
-  {
-    ResourceMark rm;
-    const char* name = nm->method()->name_and_sig_as_C_string();
-    log_info(aot, codecache, nmethod)("%d (L%d) '%s' AOT%s%s: wrote to AOT Code Cache",
-             compile_id(), comp_level(), name, (for_preload ? " preload" : ""),
-             (nm->has_clinit_barriers() ? ", has clinit barriers" : ""));
-  }
-  if (VerifyAOTCode) {
-    return nullptr;
-  }
   return entry;
 }
 
@@ -2317,16 +2309,19 @@ bool AOTCodeReader::compile_nmethod(ciEnv* env, ciMethod* target, AbstractCompil
 
   const char* name = addr(entry_position + aot_code_entry->name_offset());
 
-  if (VerifyAOTCode) {
-    return false;
-  }
-
   TraceTime t1("Total time to register AOT nmethod", &_t_totalRegister, enable_timers(), false);
-  nm = env->register_aot_method(THREAD,
-                                target,
-                                compiler,
-                                archived_nm,
-                                this);
+  bool install_code = !VerifyAOTCode;
+  nm = env->register_aot_method(THREAD, target, compiler, archived_nm, this, install_code);
+
+  if (VerifyAOTCode && !env->failing()) {
+    // Emulate success
+    task->mark_success();
+    task->set_nm_content_size(archived_nm->content_size());
+    task->set_nm_insts_size(archived_nm->insts_size());
+    task->set_nm_total_size(archived_nm->total_size());
+    log_info(aot, codecache, nmethod)("%d (L%d) '%s': Verified nmethod from AOT Code Cache", compile_id(), comp_level(), name);
+    return true;
+  }
   bool success = task->is_success();
   if (success) {
     log_info(aot, codecache, nmethod)("%d (L%d) '%s': Loaded nmethod from AOT Code Cache", compile_id(), comp_level(), name);

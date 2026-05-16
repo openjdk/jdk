@@ -389,7 +389,8 @@ public:
                                ciMethod* target,
                                AbstractCompiler* compiler,
                                nmethod* archived_nm,
-                               AOTCodeReader* aot_code_reader);
+                               AOTCodeReader* aot_code_reader,
+                               bool install_code);
 #endif
   // Register the result of a compilation.
   void register_method(ciMethod*                 target,

@@ -1097,7 +1097,8 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
                                 ciMethod* target,
                                 AbstractCompiler* compiler,
                                 nmethod* archived_nm,
-                                AOTCodeReader* aot_code_reader)
+                                AOTCodeReader* aot_code_reader,
+                                bool install_code)
 {
   AOTCodeEntry* aot_code_entry = task()->aot_code_entry();
   assert(aot_code_entry != nullptr, "must be");
@@ -1129,12 +1130,13 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
       return nullptr;
     }
 
-    if (!is_compilation_valid(thread, target, true /*install_code*/, true, preload)) {
+    if (!is_compilation_valid(thread, target, install_code, /*is_loading_aot_code*/ true, preload)) {
       return nullptr;
     }
 
-    nm = nmethod::new_nmethod(archived_nm, method, compiler, aot_code_reader);
-
+    if (install_code) {
+      nm = nmethod::new_nmethod(archived_nm, method, compiler, aot_code_reader);
+    }
     if (nm != nullptr) {
 #ifdef ASSERT
       LogStreamHandle(Trace, aot, codecache, nmethod) log;
@@ -1159,8 +1161,7 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
   if (nm != nullptr) {
     // Compilation succeeded, post what we know about it
     nm->post_compiled_method(task());
-    task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
-  } else {
+  } else if (install_code) {
     // The CodeCache is full.
     record_codecache_full();
   }
@@ -1216,7 +1217,7 @@ void ciEnv::register_method(ciMethod* target,
     MutexLocker ml(Compile_lock);
     NoSafepointVerifier nsv;
 
-    if (!is_compilation_valid(THREAD, target, install_code, /*aot_code_entry*/ false, /*preload*/ false)) {
+    if (!is_compilation_valid(THREAD, target, install_code, /*is_loading_aot_code*/ false, /*preload*/ false)) {
       code_buffer->free_blob();
       return;
     }
