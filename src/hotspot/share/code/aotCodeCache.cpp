@@ -281,7 +281,7 @@ uint AOTCodeCache::max_aot_code_size() {
 }
 
 bool AOTCodeCache::is_code_load_thread_on() {
-  return UseAOTCodeLoadThread && AOTCodeCaching;
+  return AOTCodeCaching && !CDSConfig::is_dumping_final_static_archive();
 }
 
 // It is called from AOTMetaspace::initialize_shared_spaces()

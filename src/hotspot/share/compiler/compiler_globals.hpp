@@ -402,9 +402,6 @@
           "(0: no barriers; 1: uncommon trap)")                             \
           range(0, 1)                                                       \
                                                                             \
-  product(bool, UseAOTCodeLoadThread, false, DIAGNOSTIC,                    \
-          "Use separate thread for AOT code load")                          \
-                                                                            \
   product(uint, AOTCodePreloadStart, 0, DIAGNOSTIC,                         \
           "The id of the first AOT code to preload")                        \
                                                                             \
