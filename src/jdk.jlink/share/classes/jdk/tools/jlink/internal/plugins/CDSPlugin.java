@@ -106,8 +106,7 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         if (Files.exists(classListPath)) {
             generateCDSArchive(image, false, false);
 
-            // The targetPlatform is the same as the runtimePlatform.
-            // For a 64-bit platform, generate the non-compressed oop CDS archive
+            // Generate all of the CDS archive combinations: nocoops, nocoh, nocoops_nocoh.
             if (Architecture.is64bit()) {
                 generateCDSArchive(image, true, false);
                 generateCDSArchive(image, false, true);
