@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   assert((&buckets[0][0] + nr_blocks) == offset, "should be");
 
   // Free the now unused memory
-  FREE_RESOURCE_ARRAY(Block*, buckets[1], (NUMBUCKS-1)*nr_blocks);
+  FREE_RESOURCE_ARRAY(buckets[1], (NUMBUCKS-1)*nr_blocks);
   // Finally, point the _blks to our memory
   _blks = buckets[0];
 
@@ -2633,7 +2633,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
 #ifdef _LP64
                       (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_CastPP) ||
                       (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN) ||
-                      (UseCompressedClassPointers && check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass) ||
+                      (check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass) ||
 #endif // _LP64
                       check->as_Mach()->ideal_Opcode() == Op_LoadP ||
                       check->as_Mach()->ideal_Opcode() == Op_LoadKlass))) {

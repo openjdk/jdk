@@ -55,7 +55,7 @@ import org.junit.jupiter.api.Test;
  *        jdk.httpclient.test.lib.quic.ClientConnection
  *        jdk.httpclient.test.lib.common.TestUtil
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.internal.httpclient.debug=true QuicRequestResponseTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 public class QuicRequestResponseTest {
 

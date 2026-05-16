@@ -36,6 +36,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "interpreter/templateTable.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -55,7 +56,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -75,6 +75,7 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/exceptions.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
@@ -243,9 +244,9 @@ JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current, jint* fi
   // We may want to pass in more arguments - could make this slightly faster
   LastFrameAccessor last_frame(current);
   ConstantPool* constants = last_frame.method()->constants();
-  int          i = last_frame.get_index_u2(Bytecodes::_multianewarray);
-  Klass* klass   = constants->klass_at(i, CHECK);
-  int   nof_dims = last_frame.number_of_dimensions();
+  int i = last_frame.get_index_u2(Bytecodes::_multianewarray);
+  Klass* klass = constants->klass_at(i, CHECK);
+  int nof_dims = last_frame.number_of_dimensions();
   assert(klass->is_klass(), "not a class");
   assert(nof_dims >= 1, "multianewarray rank must be nonzero");
 
@@ -352,7 +353,7 @@ JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* current
                                  vmClasses::StackOverflowError_klass(),
                                  CHECK);
   // Increment counter for hs_err file reporting
-  AtomicAccess::inc(&Exceptions::_stack_overflow_errors);
+  Exceptions::increment_stack_overflow_errors();
   // Remove the ScopedValue bindings in case we got a StackOverflowError
   // while we were trying to manipulate ScopedValue bindings.
   current->clear_scopedValueBindings();
@@ -366,7 +367,7 @@ JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread*
   java_lang_Throwable::set_message(exception(),
           Universe::delayed_stack_overflow_error_message());
   // Increment counter for hs_err file reporting
-  AtomicAccess::inc(&Exceptions::_stack_overflow_errors);
+  Exceptions::increment_stack_overflow_errors();
   // Remove the ScopedValue bindings in case we got a StackOverflowError
   // while we were trying to manipulate ScopedValue bindings.
   current->clear_scopedValueBindings();
@@ -756,11 +757,9 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   elem->set_obj(nullptr);
 JRT_END
 
-
 JRT_ENTRY(void, InterpreterRuntime::throw_illegal_monitor_state_exception(JavaThread* current))
   THROW(vmSymbols::java_lang_IllegalMonitorStateException());
 JRT_END
-
 
 JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThread* current))
   // Returns an illegal exception to install into the current thread. The
@@ -1488,23 +1487,32 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
                                                             Method* method, address bcp))
   Bytecodes::Code code = Bytecodes::code_at(method, bcp);
   if (code != Bytecodes::_invokestatic) {
+    current->set_vm_result_oop(nullptr);
     return;
   }
+
   ConstantPool* cpool = method->constants();
   int cp_index = Bytes::get_native_u2(bcp + 1);
   Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index, code));
   Symbol* mname = cpool->name_ref_at(cp_index, code);
 
-  if (MethodHandles::has_member_arg(cname, mname)) {
-    oop member_name_oop = cast_to_oop(member_name);
-    if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
-      // FIXME: remove after j.l.i.InvokerBytecodeGenerator code shape is updated.
-      member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
-    }
-    current->set_vm_result_oop(member_name_oop);
-  } else {
+  if (!MethodHandles::has_member_arg(cname, mname)) {
     current->set_vm_result_oop(nullptr);
+    return;
   }
+
+  oop member_name_oop = cast_to_oop(member_name);
+
+  guarantee(member_name_oop != nullptr, "member_name_oop should not be nullptr");
+  guarantee(oopDesc::is_oop(member_name_oop), "member_name_oop should be an oop");
+  guarantee(java_lang_invoke_MemberName::is_instance(member_name_oop) ||
+    java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop),
+    "member_name_oop is not MemberName or DMH");
+
+  if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
+    member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
+  }
+  current->set_vm_result_oop(member_name_oop);
 JRT_END
 #endif // INCLUDE_JVMTI
 
@@ -1518,7 +1526,9 @@ JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intpt
   LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must be an interpreted frame");
   methodHandle mh(current, last_frame.method());
-  BytecodeTracer::trace_interpreter(mh, last_frame.bcp(), tos, tos2, tty);
+  stringStream st;
+  BytecodeTracer::trace_interpreter(mh, last_frame.get_frame().real_fp(), last_frame.bcp(), tos, tos2, &st);
+  tty->print("%s", st.freeze());
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT
@@ -1528,5 +1538,18 @@ bool InterpreterRuntime::is_preemptable_call(address entry_point) {
   return entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter) ||
          entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache) ||
          entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::_new);
+}
+
+void InterpreterRuntime::generate_oop_map_alot() {
+  JavaThread* current = JavaThread::current();
+  LastFrameAccessor last_frame(current);
+  if (last_frame.is_interpreted_frame()) {
+    ResourceMark rm(current);
+    InterpreterOopMap mask;
+    methodHandle mh(current, last_frame.method());
+    int bci = last_frame.bci();
+    log_info(generateoopmap)("Generating oopmap for method %s at bci %d", mh->name_and_sig_as_C_string(), bci);
+    OopMapCache::compute_one_oop_map(mh, bci, &mask);
+  }
 }
 #endif // ASSERT
