@@ -39,15 +39,17 @@ class PSYoungGen : public CHeapObj<mtGC> {
 
  public:
   // Young generation sizing state from the latest sizing pass. It records how
-  // the final desired eden/survivor sizes relate to the young-gen size bounds.
+  // the desired eden/survivor sizes relate to the young-gen size bounds.
   // Consumers such as the tenuring-threshold heuristic can use this as sizing
   // feedback.
   enum class SizingState : int {
-    // Final eden + 2 * survivor exactly equals max_gen_size.
+    // Desired young-gen size means "eden + 2 * survivor".
+    // Its relation to max_gen_size is:
+    // exactly equal.
     balanced = 0,
-    // Desired eden + 2 * survivor exceeded max_gen_size; eden and/or survivor were reduced.
+    // greater than.
     constrained,
-    // Final eden + 2 * survivor is below max_gen_size.
+    // less than.
     surplus
   };
 
