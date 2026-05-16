@@ -351,7 +351,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * {@code MultiPixelPackedSampleModel} only has one band, the
      * bands argument is ignored.
      * @param bands the specified bands (ignored)
-     * @return a new {@code SampleModel} with the same bands of
+     * @return a new {@code SampleModel} with the same bands as
      * this {@code MultiPixelPackedSampleModel}.
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
