@@ -163,9 +163,11 @@ public class OpensslArtifactFetcher {
         try {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess("which","openssl");
             absolutePath = outputAnalyzer.getOutput();
-            System.out.println("absolutePath: "+absolutePath);
         } catch(Throwable t) {
             t.printStackTrace();
+        } finally {
+            System.out.println("absolutePath: "+absolutePath);
+            System.err.println("absolutePath: "+absolutePath);
         }
         return absolutePath;
     }
