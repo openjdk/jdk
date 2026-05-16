@@ -37,11 +37,10 @@
 #define FALSE 0
 #endif
 
-#ifndef WINDOWS
 #include <dlfcn.h>
 #include <pthread.h>
 #ifndef RTLD_NEXT
-# define RTLD_NEXT      ((void *) -1l)
+#define RTLD_NEXT      ((void *) -1l)
 #endif
 
 int clock_enabled = FALSE;
@@ -83,6 +82,4 @@ JNIEXPORT
 int pthread_getcpuclockid(pthread_t thread, clockid_t* clockid) {
     return ENOENT;
 }
-
-#endif // !WINDOWS
 
