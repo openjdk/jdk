@@ -497,6 +497,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_intpoly_assign();
 
   address generate_intpoly_mult_25519();
+  address generate_intpoly_square_25519();
 
   // SHA3 stubs
   void generate_sha3_stubs();

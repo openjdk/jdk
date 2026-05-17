@@ -4911,6 +4911,7 @@ void StubGenerator::generate_compiler_stubs() {
 
   if (UseIntPoly25519Intrinsics) {
     StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
+    StubRoutines::_intpoly_square_25519 = generate_intpoly_square_25519();
   }
 
   if (UseMD5Intrinsics) {

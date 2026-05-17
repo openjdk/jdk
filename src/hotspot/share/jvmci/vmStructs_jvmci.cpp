@@ -396,6 +396,7 @@
   static_field(StubRoutines,                _intpoly_montgomeryMult_P256,                     address)                               \
   static_field(StubRoutines,                _intpoly_assign,                                  address)                               \
   static_field(StubRoutines,                _intpoly_mult_25519,                              address)                               \
+  static_field(StubRoutines,                _intpoly_square_25519,                            address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompress,                             address)                               \

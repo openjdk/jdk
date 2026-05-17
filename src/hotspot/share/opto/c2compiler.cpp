@@ -818,6 +818,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_intpoly_montgomeryMult_P256:
   case vmIntrinsics::_intpoly_assign:
   case vmIntrinsics::_intpoly_mult_25519:
+  case vmIntrinsics::_intpoly_square_25519:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:

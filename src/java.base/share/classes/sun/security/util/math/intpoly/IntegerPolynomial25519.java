@@ -416,6 +416,7 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
      * @param a [in] the limb operand to square.
      * @param r [out] the resulting square of the limb which is fully reduced.
      */
+    @IntrinsicCandidate
     protected void square(long[] a, long[] r) {
         long aa0 = a[0];
         long aa1 = a[1];

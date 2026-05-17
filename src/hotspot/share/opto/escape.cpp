@@ -2260,6 +2260,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "intpoly_montgomeryMult_P256") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "intpoly_assign") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "intpoly_mult_25519") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "intpoly_square_25519") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "ghash_processBlocks") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "chacha20Block") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "kyberNtt") == 0 ||
