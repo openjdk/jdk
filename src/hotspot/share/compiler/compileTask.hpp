@@ -67,7 +67,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
       Reason_Bootstrap,        // JVMCI bootstrap
-      Reason_Preload,          // pre-load AOT code
+      Reason_AOTLoad,          // load AOT code
+      Reason_AOTPreload,       // pre-load AOT code
       Reason_AOTCompile,
       Reason_AOTCompileForPreload,
       Reason_Count
@@ -83,7 +84,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "whitebox",
       "must_be_compiled",
       "bootstrap",
-      "preload",
+      "aot_load",
+      "aot_preload",
       "aot_compile",
       "aot_compile_for_preload",
     };
@@ -163,7 +165,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_nm_insts_size(CodeSection::csize_t size) { _nm_insts_size = size; }
   CodeSection::csize_t nm_total_size() { return _nm_total_size; }
   void         set_nm_total_size(CodeSection::csize_t size) { _nm_total_size = size; }
-  bool         preload() const                   { return (_compile_reason == Reason_Preload); }
+  bool         preload() const                   { return (_compile_reason == Reason_AOTPreload); }
   bool         can_become_stale() const          {
     switch (_compile_reason) {
       case Reason_BackedgeCount:

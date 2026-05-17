@@ -1259,34 +1259,35 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                         Thread* thread) {
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
   precond(method->method_holder()->is_instance_klass());
-  precond(compile_reason != CompileTask::Reason_Preload || aot_code_entry != nullptr);
+  precond(compile_reason != CompileTask::Reason_AOTPreload || aot_code_entry != nullptr);
   assert(!method->method_holder()->is_not_initialized()   ||
-         compile_reason == CompileTask::Reason_Preload    ||
+         compile_reason == CompileTask::Reason_AOTPreload    ||
          CompileTask::reason_is_aot_compile(compile_reason), "method holder must be initialized");
   assert(!method->is_method_handle_intrinsic(), "do not enqueue these guys");
 
   if (CIPrintRequests) {
-    tty->print("request: ");
-    method->print_short_name(tty);
+    ResourceMark rm;
+    stringStream ss;
+    const char* aotn = (compile_reason == CompileTask::Reason_AOTPreload) ? "AP" :
+                       (!requires_online_compilation ? " A" : "  ");
+    ss.print("request %16s: %s%d", CompileTask::reason_name(compile_reason), aotn, comp_level);
     if (osr_bci != InvocationEntryBci) {
-      tty->print(" osr_bci: %d", osr_bci);
+      ss.print(" osr_bci: %d", osr_bci);
     }
-    tty->print(" level: %d comment: %s count: %d", comp_level, CompileTask::reason_name(compile_reason), hot_count);
-    if (hot_count > 0) {
-      tty->print(" hot: yes");
-    }
-    tty->cr();
+    ss.print(" hot_count: %d", hot_count);
+    method->print_short_name(&ss);
+    tty->print_cr("%s", ss.freeze());
   }
   LogStreamHandle(Debug, aot, codecache, compilation) log;
   if (log.is_enabled() && AOTCodeCache::is_using_code()) {
     ResourceMark rm;
     MethodTrainingData* mtd = MethodTrainingData::have_data() ? MethodTrainingData::find_fast(method) : nullptr;
     MethodCounters* mc = method->method_counters();
-    const char* name = method->name_and_sig_as_C_string();
-    const char* aotn = (compile_reason == CompileTask::Reason_Preload) ? "AP" :
+    const char* name = method->name_and_sig_as_C_string(true /* use_double_colon */);
+    const char* aotn = (compile_reason == CompileTask::Reason_AOTPreload) ? "AP" :
                        (!requires_online_compilation ? " A" : "  ");
     const char* osrn = (osr_bci != InvocationEntryBci) ? "% " : "";
-    log.print("request: %s%d %16s %s%s", aotn, comp_level, CompileTask::reason_name(compile_reason), osrn, name);
+    log.print("request %16s: %s%d %s%s", CompileTask::reason_name(compile_reason), aotn, comp_level, osrn, name);
     if (mtd != nullptr) {
       log.print(" (MTD invoke: %d, backedge: %d)", mtd->invocation_count(), mtd->backedge_count());
     }
@@ -1462,7 +1463,7 @@ AOTCodeEntry* CompileBroker::find_aot_code_entry(const methodHandle& method, int
   }
   AOTCodeEntry* aot_code_entry = nullptr;
   if (osr_bci == InvocationEntryBci && AOTCodeCache::is_using_code()) {
-    assert(compile_reason != CompileTask::Reason_Preload, "should not call it for AOT code preload");
+    assert(compile_reason != CompileTask::Reason_AOTPreload, "should not call it for AOT code preload");
     aot_code_entry = AOTCodeCache::find_code_entry(method, comp_level);
   }
   return aot_code_entry;
@@ -1478,7 +1479,7 @@ void CompileBroker::preload_aot_method(const methodHandle& method, AOTCodeEntry*
     int osr_bci = InvocationEntryBci;
     int comp_level = CompLevel_full_optimization;
     int hot_count  = 0;
-    CompileTask::CompileReason compile_reason = CompileTask::Reason_Preload;
+    CompileTask::CompileReason compile_reason = CompileTask::Reason_AOTPreload;
     bool requires_online_compilation = false;
 
     AbstractCompiler *comp = CompileBroker::compiler(comp_level);
@@ -1503,7 +1504,7 @@ void CompileBroker::preload_aot_method(const methodHandle& method, AOTCodeEntry*
     CompilerDirectiveMatcher matcher(method, comp_level);
     bool is_blocking = ReplayCompiles                                             ||
                        !matcher.directive_set()->BackgroundCompilationOption      ||
-                       (PreloadBlocking && (compile_reason == CompileTask::Reason_Preload));
+                       (AOTPreloadBlocking && (compile_reason == CompileTask::Reason_AOTPreload));
     // CompileBroker::compile_method can trap and can have pending async exception.
     compile_method_base(method, aot_code_entry, osr_bci, comp_level, hot_count, compile_reason,
                         requires_online_compilation, is_blocking, THREAD);
@@ -1550,7 +1551,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
   assert(!method->method_holder()->is_not_initialized()   ||
-         compile_reason == CompileTask::Reason_Preload    ||
+         compile_reason == CompileTask::Reason_AOTPreload    ||
          CompileTask::reason_is_aot_compile(compile_reason), "method holder must be initialized");
   // return quickly if possible
   bool aot_compilation = CDSConfig::is_dumping_aot_code();
@@ -1587,7 +1588,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
-  if (compile_reason != CompileTask::Reason_Preload &&
+  if (compile_reason != CompileTask::Reason_AOTPreload &&
       !CompileTask::reason_is_aot_compile(compile_reason) &&
      (comp->is_c2() || comp->is_jvmci())) {
     InternalOOMEMark iom(THREAD);
@@ -1646,7 +1647,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     }
     bool is_blocking = ReplayCompiles                                             ||
                        !directive->BackgroundCompilationOption                    ||
-                       (PreloadBlocking && (compile_reason == CompileTask::Reason_Preload));
+                       (AOTPreloadBlocking && (compile_reason == CompileTask::Reason_AOTPreload));
     compile_method_base(method, nullptr, osr_bci, comp_level, hot_count, compile_reason,
                         requires_online_compilation, is_blocking, THREAD);
   }
@@ -2562,8 +2563,15 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (!ci_env.failing() && !task->is_success() && !task->is_aot_compile()) {
       const char* reason = task->failure_reason();
       assert(reason != nullptr, "compiler should always document failure");
-      // Do not attempt further compilations of this method.
-      ci_env.record_method_not_compilable(reason != nullptr ? reason : "compile failed: reason unknown");
+      if (reason == nullptr) {
+        reason = "compile failed: reason unknown";
+      }
+      if (task->is_aot_load()) {
+        ci_env.record_failure(reason);
+      } else {
+        // Do not attempt further compilations of this method.
+        ci_env.record_method_not_compilable(reason);
+      }
     }
 
     // Copy this bit to the enclosing block:

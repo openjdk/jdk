@@ -117,7 +117,7 @@ void CompilationPolicy::maybe_compile_early(const methodHandle& m, MethodTrainin
     if (PrintTieredEvents) {
       print_event(FORCE_COMPILE, m(), m(), InvocationEntryBci, next_level);
     }
-    CompileBroker::compile_method(m, InvocationEntryBci, next_level, 0, requires_online_compilation, CompileTask::Reason_MustBeCompiled, THREAD);
+    CompileBroker::compile_method(m, InvocationEntryBci, next_level, 0, requires_online_compilation, CompileTask::Reason_AOTLoad, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
     }

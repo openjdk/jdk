@@ -422,7 +422,7 @@
   product(bool, VerifyAOTCode, false, DIAGNOSTIC,                           \
           "Load AOT code but not publish")                                  \
                                                                             \
-  product(bool, PreloadBlocking, false, DIAGNOSTIC,                         \
+  product(bool, AOTPreloadBlocking, false, DIAGNOSTIC,                      \
           "Preload code is processed with blocking. Startup would not "     \
           "proceed until all preloaded code is done loading.")              \
                                                                             \

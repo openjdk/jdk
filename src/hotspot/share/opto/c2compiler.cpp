@@ -135,10 +135,9 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
       return; // Failure to register AOT code
     }
     // Failure happens during AOT code restoration
-    assert(task->aot_code_entry()->not_entrant(),"should be invalidated");
+    assert(task->failure_reason() != nullptr, "failure should be recorded");
     // We want to go quickly through AOT code load requests
     // instead of spending time on normal compilation.
-    env->record_failure("Failed to load AOT code");
     return;
   }
 

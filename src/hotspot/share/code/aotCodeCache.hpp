@@ -811,10 +811,6 @@ private:
   uint comp_level() const { return _comp_level; }
 
   bool _preload;             // Preloading code before method execution
-  bool _lookup_failed;       // Failed to lookup for info (skip only this code load)
-  void set_lookup_failed()     { _lookup_failed = true; }
-  void clear_lookup_failed()   { _lookup_failed = false; }
-  bool lookup_failed()   const { return _lookup_failed; }
 
   // Values used by restore(code_blob).
   // They should be set before calling it.
@@ -831,6 +827,11 @@ private:
   GrowableArray<Metadata*>* _metadata_list;
   GrowableArray<Handle>*    _reloc_imm_oop_list;
   GrowableArray<Metadata*>* _reloc_imm_metadata_list;
+
+  const char* _failure;  // Failed to lookup for info (skip only this code load)
+  void set_lookup_failed(const char* failure) { _failure = failure; }
+  bool lookup_failed() const { return _failure != nullptr; }
+  const char* lookup_failure() const { return _failure; }
 
   Klass* read_klass();
   Method* read_method();
