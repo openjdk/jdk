@@ -175,10 +175,8 @@ size_t ParCompactionManager::pop_shadow_region_mt_safe(PSParallelCompact::Region
     if (!_shadow_region_array->is_empty()) {
       return _shadow_region_array->pop();
     }
-    // Check if the corresponding heap region is available now.
-    // If so, we don't need to get a shadow region anymore, and
-    // we return InvalidShadow to indicate such a case.
-    if (region_ptr->claimed()) {
+    // If the heap region has no remaining destination dependencies, use it directly.
+    if (region_ptr->available()) {
       return InvalidShadow;
     }
     ml.wait(1);
