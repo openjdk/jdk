@@ -568,6 +568,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_Reference_get0:           return inline_reference_get0();
   case vmIntrinsics::_Reference_refersTo0:      return inline_reference_refersTo0(false);
+  case vmIntrinsics::_Reference_reachabilityFence: return inline_reference_reachabilityFence();
   case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
   case vmIntrinsics::_PhantomReference_clear0:  return inline_reference_clear0(true);
@@ -4312,7 +4313,7 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
-    *obj = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
+    *obj = _gvn.transform(new CheckCastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
   }
   return ctrl;
 }
@@ -6933,7 +6934,8 @@ bool LibraryCallKit::inline_reference_get0() {
 
   DecoratorSet decorators = IN_HEAP | ON_WEAK_OOP_REF;
   Node* result = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
-                                        decorators, /*is_static*/ false, nullptr);
+                                        decorators, /*is_static*/ false,
+                                        env()->Reference_klass());
   if (result == nullptr) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -6956,7 +6958,8 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
   DecoratorSet decorators = IN_HEAP | AS_NO_KEEPALIVE;
   decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
   Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
-                                          decorators, /*is_static*/ false, nullptr);
+                                          decorators, /*is_static*/ false,
+                                          env()->Reference_klass());
   if (referent == nullptr) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -7027,6 +7030,14 @@ bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
   return true;
 }
 
+//-----------------------inline_reference_reachabilityFence-----------------
+// bool java.lang.ref.Reference.reachabilityFence();
+bool LibraryCallKit::inline_reference_reachabilityFence() {
+  Node* referent = argument(0);
+  insert_reachability_fence(referent);
+  return true;
+}
+
 Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString,
                                              DecoratorSet decorators, bool is_static,
                                              ciInstanceKlass* fromKls) {
@@ -7035,8 +7046,6 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
     assert(tinst != nullptr, "obj is null");
     assert(tinst->is_loaded(), "obj is not loaded");
     fromKls = tinst->instance_klass();
-  } else {
-    assert(is_static, "only for static field access");
   }
   ciField* field = fromKls->get_field_by_name(ciSymbol::make(fieldName),
                                               ciSymbol::make(fieldTypeString),

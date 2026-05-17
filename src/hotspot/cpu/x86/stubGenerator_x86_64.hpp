@@ -84,7 +84,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_count_leading_zeros_lut();
   address generate_popcount_avx_lut();
-  address generate_iota_indices();
+  void    generate_iota_indices();
   address generate_vector_reverse_bit_lut();
 
   address generate_vector_reverse_byte_perm_mask_long();

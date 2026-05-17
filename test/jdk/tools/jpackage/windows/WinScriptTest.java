@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageUserScript;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -55,6 +56,8 @@ public class WinScriptTest {
         .configureHelloApp()
         .addInitializer(cmd -> {
             cmd.setFakeRuntime().saveConsoleOutput(true);
+            // Stdout produced by custom scripts is available in jpackage's output only when tracing is enabled.
+            cmd.setEnabledMessageCategories(MessageCategory.TRACE).setDisabledMessageCategories();
         });
     }
 
