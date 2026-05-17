@@ -76,8 +76,12 @@ public class FpMinMaxIntrinsics {
                 // Ascending
                 floats[i] = (float) i;
                 doubles[i] = (double) i;
+            } else if (mapped_index >= 90 && mapped_index < 100) {
+                // Random (negative)
+                floats[i] = -r.nextFloat();
+                doubles[i] = -r.nextDouble();
             } else {
-                // Random
+                // Random (positive)
                 floats[i] = r.nextFloat();
                 doubles[i] = r.nextDouble();
             }

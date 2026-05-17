@@ -1759,9 +1759,16 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
   __ jccb(Assembler::below, below); // CF=1
 
   // equal
+  // Using bitwise operations is a low cost way to compute the correct result
+  // for zero and non-zero inputs in this scenario except for NaN, which is
+  // handled separately. The mantissa and exponent are valid with either
+  // bitwise operation. For zero inputs, the sign bit is chosen according to
+  // whether a minimum or maximum value is required.
   if (min) {
+    // Negative sign preserved when available (e.g., min(+0, -0) -> -0)
     __ vpor(dst, a, b, Assembler::AVX_128bit);
   } else {
+    // Positive sign preserved when available (e.g., min(+0, -0) -> +0)
     __ vpand(dst, a, b, Assembler::AVX_128bit);
   }
   __ jmp(done);
