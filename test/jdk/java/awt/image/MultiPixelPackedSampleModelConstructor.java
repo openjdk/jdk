@@ -44,6 +44,12 @@ public class MultiPixelPackedSampleModelConstructor {
         for (Args6 a : args6) {
             test6(a);
         }
+
+       // Also verify createSubsetSampleModel ignores bands.
+       MultiPixelPackedSampleModel m =
+            new MultiPixelPackedSampleModel(TYPE_BYTE, 1, 1, 1);
+       int[] bands = new int[5];
+       m.createSubsetSampleModel(bands);
     }
 
     static record Args4(int dType, int w, int h, int bits, Class eType) { }
