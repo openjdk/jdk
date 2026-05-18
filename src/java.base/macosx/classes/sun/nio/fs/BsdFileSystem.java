@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class BsdFileSystem extends UnixFileSystem {
     // lazy initialization of the list of supported attribute views
     private static class SupportedFileFileAttributeViewsHolder {
         static final Set<String> supportedFileAttributeViews =
-                supportedFileAttributeViews();
+            supportedFileAttributeViews();
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<String>();
             result.addAll(standardFileAttributeViews());

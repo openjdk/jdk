@@ -57,7 +57,7 @@ class LinuxFileSystem extends UnixFileSystem {
     // lazy initialization of the list of supported attribute views
     private static class SupportedFileFileAttributeViewsHolder {
         static final Set<String> supportedFileAttributeViews =
-                supportedFileAttributeViews();
+            supportedFileAttributeViews();
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<>();
             result.addAll(standardFileAttributeViews());
@@ -66,6 +66,11 @@ class LinuxFileSystem extends UnixFileSystem {
             result.add("user");
             return Collections.unmodifiableSet(result);
         }
+    }
+
+    @Override
+    public Set<String> supportedFileAttributeViews() {
+        return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
     }
 
     @Override

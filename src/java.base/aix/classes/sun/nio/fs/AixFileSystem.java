@@ -52,7 +52,7 @@ class AixFileSystem extends UnixFileSystem {
     // lazy initialization of the list of supported attribute views
     private static class SupportedFileFileAttributeViewsHolder {
         static final Set<String> supportedFileAttributeViews =
-                supportedFileAttributeViews();
+            supportedFileAttributeViews();
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<String>();
             result.addAll(UnixFileSystem.standardFileAttributeViews());
