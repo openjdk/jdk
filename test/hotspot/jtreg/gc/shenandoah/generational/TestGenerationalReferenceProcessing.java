@@ -22,16 +22,6 @@
  *
  */
 
-package gc.shenandoah.generational;
-
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-import java.lang.ref.ReferenceQueue;
-import java.util.*;
-import java.util.function.Supplier;
-
-import jdk.test.whitebox.WhiteBox;
-
 /*
  * @test id=young
  * @requires vm.gc.Shenandoah
@@ -67,6 +57,17 @@ import jdk.test.whitebox.WhiteBox;
  *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing old
  */
+
+package gc.shenandoah.generational;
+
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.lang.ref.ReferenceQueue;
+import java.util.*;
+import java.util.function.Supplier;
+
+import jdk.test.whitebox.WhiteBox;
+
 public class TestGenerationalReferenceProcessing {
     static final int OLD = 0;
     static final int YOUNG = 1;
