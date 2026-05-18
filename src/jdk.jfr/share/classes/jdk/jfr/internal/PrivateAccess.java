@@ -33,7 +33,6 @@ import jdk.jfr.Configuration;
 import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
-import jdk.jfr.RecordingState;
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.management.EventSettingsModifier;
@@ -97,7 +96,7 @@ public abstract class PrivateAccess {
 
     public abstract PlatformRecorder getPlatformRecorder();
 
-    public abstract Recording newRecording(RecordingState state);
+    public abstract Recording newRecording(Boolean register);
 
     public abstract EventSettings newEventSettings(EventSettingsModifier esm);
 

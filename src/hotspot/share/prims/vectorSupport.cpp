@@ -228,7 +228,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16:  return Op_AddHF;
         case LT_FLOAT:  return Op_AddF;
         case LT_DOUBLE: return Op_AddD;
-        default: fatal("ADD: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -241,7 +241,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: return Op_SubHF;
         case LT_FLOAT:  return Op_SubF;
         case LT_DOUBLE: return Op_SubD;
-        default: fatal("SUB: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -254,7 +254,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: return Op_MulHF;
         case LT_FLOAT:  return Op_MulF;
         case LT_DOUBLE: return Op_MulD;
-        default: fatal("MUL: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -267,7 +267,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: return Op_DivHF;
         case LT_FLOAT:  return Op_DivF;
         case LT_DOUBLE: return Op_DivD;
-        default: fatal("DIV: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -280,7 +280,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: return Op_MinHF;
         case LT_FLOAT:  return Op_MinF;
         case LT_DOUBLE: return Op_MinD;
-        default: fatal("MIN: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -293,7 +293,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: return Op_MaxHF;
         case LT_FLOAT:  return Op_MaxF;
         case LT_DOUBLE: return Op_MaxD;
-        default: fatal("MAX: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -303,7 +303,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:
         case LT_INT:
         case LT_LONG:   return Op_UMinV;
-        default: fatal("MIN: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -313,7 +313,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:
         case LT_INT:
         case LT_LONG:   return Op_UMaxV;
-        default: fatal("MAX: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -326,7 +326,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: return 0;
         case LT_FLOAT:  return Op_AbsF;
         case LT_DOUBLE: return Op_AbsD;
-        default: fatal("ABS: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -339,7 +339,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: return 0;
         case LT_FLOAT:  return Op_NegF;
         case LT_DOUBLE: return Op_NegD;
-        default: fatal("NEG: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -349,7 +349,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_AndI;
         case LT_LONG:   return Op_AndL;
-        default: fatal("AND: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -359,7 +359,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_OrI;
         case LT_LONG:   return Op_OrL;
-        default: fatal("OR: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -369,7 +369,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_XorI;
         case LT_LONG:   return Op_XorL;
-        default: fatal("XOR: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -378,7 +378,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16:  return Op_SqrtHF;
         case LT_FLOAT:  return Op_SqrtF;
         case LT_DOUBLE: return Op_SqrtD;
-        default: fatal("SQRT: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -387,7 +387,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16:  return Op_FmaHF;
         case LT_FLOAT:  return Op_FmaF;
         case LT_DOUBLE: return Op_FmaD;
-        default: fatal("FMA: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -397,7 +397,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_LShiftI;
         case LT_LONG:   return Op_LShiftL;
-        default: fatal("LSHIFT: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -407,7 +407,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_RShiftI;
         case LT_LONG:   return Op_RShiftL;
-        default: fatal("RSHIFT: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -417,7 +417,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT: return Op_URShiftS;
         case LT_INT:   return Op_URShiftI;
         case LT_LONG:  return Op_URShiftL;
-        default: fatal("URSHIFT: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -427,7 +427,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   return Op_RotateLeft;
-        default: fatal("LROTATE: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -437,7 +437,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   return Op_RotateRight;
-        default: fatal("RROTATE: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -450,7 +450,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_VectorMaskLastTrue;
-        default: fatal("MASK_LASTTRUE: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -463,7 +463,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_VectorMaskFirstTrue;
-        default: fatal("MASK_FIRSTTRUE: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -476,7 +476,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_VectorMaskTrueCount;
-        default: fatal("MASK_TRUECOUNT: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -489,7 +489,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_VectorMaskToLong;
-        default: fatal("MASK_TOLONG: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -502,7 +502,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_ExpandV;
-        default: fatal("EXPAND: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -515,7 +515,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_CompressV;
-        default: fatal("COMPRESS: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -528,7 +528,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_CompressM;
-        default: fatal("MASK_COMPRESS: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -538,7 +538,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT: // for byte and short types temporarily
         case LT_INT:   return Op_PopCountI;
         case LT_LONG:  return Op_PopCountL;
-        default: fatal("BILT_COUNT: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -548,7 +548,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:
         case LT_INT:   return Op_CountTrailingZerosI;
         case LT_LONG:  return Op_CountTrailingZerosL;
-        default: fatal("TZ_COUNT: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -558,7 +558,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:
         case LT_INT:   return Op_CountLeadingZerosI;
         case LT_LONG:  return Op_CountLeadingZerosL;
-        default: fatal("LZ_COUNT: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -568,7 +568,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT: // Op_ReverseI for byte and short
         case LT_INT:   return Op_ReverseI;
         case LT_LONG:  return Op_ReverseL;
-        default: fatal("REVERSE: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -583,7 +583,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_BYTE:  // Intentionally fall-through
         case LT_INT:   return Op_ReverseBytesI;
         case LT_LONG:  return Op_ReverseBytesL;
-        default: fatal("REVERSE_BYTES: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -594,7 +594,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   return Op_SaturatingAddV;
-        default: fatal("S[U]ADD: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -605,7 +605,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   return Op_SaturatingSubV;
-        default: fatal("S[U}SUB: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -613,7 +613,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
       switch (lt) {
         case LT_INT:
         case LT_LONG: return Op_CompressBits;
-        default: fatal("COMPRESS_BITS: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -621,7 +621,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
       switch (lt) {
         case LT_INT:
         case LT_LONG: return Op_ExpandBits;
-        default: fatal("EXPAND_BITS: %s", lanetype2name(lt));
+        default: return 0;
       }
       break;
     }
@@ -645,7 +645,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
     case VECTOR_OP_EXPM1: // fall-through
     case VECTOR_OP_HYPOT: return 0; // not supported; should be handled in Java code
 
-    default: fatal("unknown op: %d", vop);
+    default: return 0;
   }
   return 0; // Unimplemented
 }

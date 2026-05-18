@@ -31,7 +31,7 @@
  *        DependentActionsTest
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
- *                      DependentActionsTest
+ *                      ${test.main.class}
   */
 
 import java.io.BufferedReader;

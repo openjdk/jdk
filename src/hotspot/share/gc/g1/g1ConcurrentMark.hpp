@@ -280,9 +280,9 @@ private:
 // Typically they contain the areas from TAMS to top of the regions.
 // We could scan and mark through these objects during the concurrent start pause,
 // but for pause time reasons we move this work to the concurrent phase.
-// We need to complete this procedure before we can evacuate a particular region
-// because evacuation might determine that some of these "root objects" are dead,
-// potentially dropping some required references.
+// Garbage collections that evacuate must either complete or abort this procedure
+// before they can move objects because evacuation might determine that some of these
+// "root objects" are dead, potentially dropping some references.
 // Root MemRegions comprise of the contents of survivor regions at the end
 // of the GC, and any objects copied into the old gen during GC.
 class G1CMRootMemRegions {
@@ -844,12 +844,10 @@ private:
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
   bool is_below_finger(oop obj, HeapWord* global_finger) const;
 
-  template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry, bool stolen);
-
   static bool should_be_sliced(oop obj);
   // Start processing the given objArrayOop by first pushing its continuations and
   // then scanning the first chunk including the header.
-  size_t start_partial_array_processing(oop obj);
+  size_t start_partial_array_processing(objArrayOop obj);
   // Process the given continuation. Returns the number of words scanned.
   size_t process_partial_array(const G1TaskQueueEntry& task, bool stolen);
   // Apply the closure to the given range of elements in the objArray.
@@ -917,6 +915,9 @@ public:
   // Returns true if the reference caused a mark to be set in the marking bitmap.
   template <class T>
   inline bool deal_with_reference(T* p);
+
+  // Scan the klass and visit its children.
+  inline void process_klass(Klass* klass);
 
   // Scans an object and visits its children.
   inline void process_entry(G1TaskQueueEntry task_entry, bool stolen);

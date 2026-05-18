@@ -2542,7 +2542,7 @@ void InstanceKlass::update_methods_jmethod_cache() {
         new_cache[i] = cache[i];
       }
       _methods_jmethod_ids = new_cache;
-      FREE_C_HEAP_ARRAY(jmethodID, cache);
+      FREE_C_HEAP_ARRAY(cache);
     }
   }
 }
@@ -3016,7 +3016,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   }
 #endif
 
-  FREE_C_HEAP_ARRAY(char, _source_debug_extension);
+  FREE_C_HEAP_ARRAY(_source_debug_extension);
 
   if (release_sub_metadata) {
     constants()->release_C_heap_structures();
@@ -3702,13 +3702,27 @@ const char* InstanceKlass::init_state_name() const {
   return state_names[init_state()];
 }
 
+void InstanceKlass::print_class_flags(outputStream* st) const {
+  AccessFlags flags(compute_modifier_flags());
+  if (flags.is_public    ()) st->print("public ");
+  if (flags.is_private   ()) st->print("private ");
+  if (flags.is_protected ()) st->print("protected ");
+  if (flags.is_static    ()) st->print("static ");
+  if (flags.is_final     ()) st->print("final ");
+  if (flags.is_interface ()) st->print("interface ");
+  if (flags.is_abstract  ()) st->print("abstract ");
+  if (flags.is_annotation()) st->print("annotation ");
+  if (flags.is_enum      ()) st->print("enum ");
+  if (flags.is_synthetic ()) st->print("synthetic ");
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
 
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
-  st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
+  st->print(BULLET"access:            "); print_class_flags(st);                  st->cr();
   st->print(BULLET"flags:             "); _misc_flags.print_on(st);               st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
@@ -3848,7 +3862,7 @@ void InstanceKlass::print_on(outputStream* st) const {
 
 void InstanceKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
-  if (Verbose || WizardMode)  access_flags().print_on(st);
+  if (Verbose || WizardMode)  print_class_flags(st);
   name()->print_value_on(st);
 }
 
