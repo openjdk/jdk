@@ -42,12 +42,13 @@ import jdk.internal.access.SharedSecrets;
  * {@code HashMap}) two keys {@code k1} and {@code k2} are considered equal
  * if and only if {@code (k1==null ? k2==null : k1.equals(k2))}.)
  *
- * <p><b>This class is <i>not</i> a general-purpose {@code Map}
- * implementation!  While this class implements the {@code Map} interface, it
+ * {@note [kind=important header="This class is <i>not</i> a general-purpose
+ * <code>Map</code> implementation!"]
+ * While this class implements the {@code Map} interface, it
  * intentionally violates {@code Map's} general contract, which mandates the
  * use of the {@code equals} method when comparing objects.  This class is
  * designed for use only in the rare cases wherein reference-equality
- * semantics are required.</b>
+ * semantics are required.}
  *
  * <p>The view collections of this map also have reference-equality semantics
  * for their elements. See the {@link keySet() keySet}, {@link values() values},
@@ -88,7 +89,7 @@ import jdk.internal.access.SharedSecrets;
  * pays not to set the expected maximum size too high if you are especially
  * concerned with iteration performance or memory usage.
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
+ * {@note [header="Note that this implementation is not synchronized."]
  * If multiple threads access an identity hash map concurrently, and at
  * least one of the threads modifies the map structurally, it <i>must</i>
  * be synchronized externally.  (A structural modification is any operation
@@ -100,8 +101,9 @@ import jdk.internal.access.SharedSecrets;
  * If no such object exists, the map should be "wrapped" using the
  * {@link Collections#synchronizedMap Collections.synchronizedMap}
  * method.  This is best done at creation time, to prevent accidental
- * unsynchronized access to the map:<pre>
- *   Map m = Collections.synchronizedMap(new IdentityHashMap(...));</pre>
+ * unsynchronized access to the map:
+ * <pre>Map m = Collections.synchronizedMap(new IdentityHashMap(...));</pre>
+ * }
  *
  * <p>The iterators returned by the {@code iterator} method of the
  * collections returned by all of this class's "collection view

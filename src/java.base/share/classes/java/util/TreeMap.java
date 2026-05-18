@@ -55,7 +55,7 @@ import java.util.function.Function;
  * inconsistent with {@code equals}; it just fails to obey the general contract
  * of the {@code Map} interface.
  *
- * {@note [kind=indented header="Note that this implementation is not synchronized."]
+ * {@note [header="Note that this implementation is not synchronized."]
  * If multiple threads access a map concurrently, and at least one of the
  * threads modifies the map structurally, it <em>must</em> be synchronized
  * externally.  (A structural modification is any operation that adds or
@@ -66,8 +66,10 @@ import java.util.function.Function;
  * If no such object exists, the map should be "wrapped" using the
  * {@link Collections#synchronizedSortedMap Collections.synchronizedSortedMap}
  * method.  This is best done at creation time, to prevent accidental
- * unsynchronized access to the map: <pre>
- *   SortedMap m = Collections.synchronizedSortedMap(new TreeMap(...));</pre>
+ * unsynchronized access to the map:
+ * <pre>
+ * SortedMap m = Collections.synchronizedSortedMap(new TreeMap(...));
+ * </pre>
  * }
  *
  * <p>The iterators returned by the {@code iterator} method of the collections
