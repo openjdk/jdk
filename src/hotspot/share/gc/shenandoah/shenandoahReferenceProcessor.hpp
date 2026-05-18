@@ -161,8 +161,6 @@ private:
   Atomic<oop> _pending_list;
   void* _pending_list_tail; // T*
 
-  volatile uint _iterate_discovered_list_id;
-
   ReferenceProcessorStats _stats;
 
   ShenandoahGeneration* _generation;

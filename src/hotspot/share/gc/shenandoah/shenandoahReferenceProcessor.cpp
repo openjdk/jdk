@@ -175,7 +175,7 @@ private:
   ShenandoahPhaseTimings::Phase const _phase;
   ShenandoahRefProcThreadLocal* const _ref_proc_thread_locals;
   CallbackT _callback;
-  volatile uint _iterate_discovered_list_id;
+  Atomic<uint> _iterate_discovered_list_id;
 
 public:
   ShenandoahReferenceProcessorTask(ShenandoahPhaseTimings::Phase phase, bool concurrent,
@@ -202,11 +202,11 @@ public:
 
   void do_work() {
     const uint max_workers = ShenandoahHeap::heap()->max_workers();
-    uint worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
+    uint worker_id = _iterate_discovered_list_id.fetch_then_add(1U, memory_order_relaxed);
     while (worker_id < max_workers) {
       ShenandoahRefProcThreadLocal& ref_proc_data = _ref_proc_thread_locals[worker_id];
       _callback(ref_proc_data, worker_id);
-      worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
+      worker_id = _iterate_discovered_list_id.fetch_then_add(1U, memory_order_relaxed);
     }
   }
 };
