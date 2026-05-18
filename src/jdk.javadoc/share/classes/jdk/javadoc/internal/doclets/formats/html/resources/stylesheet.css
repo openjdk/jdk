@@ -76,10 +76,9 @@
     --pre-text-color: var(--snippet-text-color);
     /* Note colors */
     --note-background-color: var(--body-background-color);
-    --note-border-color: #909090;
+    --note-border-color: #8c8c8c;
     --note-header-color: var(--block-text-color);
     --note-text-color: var(--block-text-color);
-    --note-hairline-color: #888888;
     --note-important-background-color: #f1f7ff;
     --note-important-border-color: #7b95a5;
     --note-important-header-color: #ffffff;
@@ -91,6 +90,8 @@
     /* Border colors for structural elements and user defined tables */
     --border-color: #e6e6e6;
     --table-border-color: #434343;
+    --hairline-border-width: 1px;
+    --hairline-border-color: #c3c3c3;
     /* Styles for table tabs */
     --tab-border-radius: 2px 2px 0 0;
     /* Search input colors */
@@ -153,7 +154,6 @@
     --note-border-color: #adadad;
     --note-header-color: var(--block-text-color);
     --note-text-color: var(--block-text-color);
-    --note-hairline-color: #808080;
     --note-important-background-color: #353f4e;
     --note-important-border-color: #446c86;
     --note-important-header-color: #ffffff;
@@ -165,6 +165,8 @@
     --border-color: #444444;
     --table-border-color: #747474;
     --tab-border-radius: 2px 2px 0 0;
+    --hairline-border-width: 1px;
+    --hairline-border-color: #6c6c6c;
     --search-input-background-color: #303030;
     --search-input-text-color: #d0d0d0;
     --search-input-placeholder-color: #979797;
@@ -200,6 +202,15 @@
         text-decoration: underline;
         text-decoration-thickness: 0.02em;
         text-underline-offset: 0.12em;
+    }
+}
+@media (min-resolution: 2x) {
+    :root {
+        --hairline-border-width: 0.8px;
+        --hairline-border-color: #888888;
+    }
+    :root[data-theme="theme-dark"] {
+        --hairline-border-color: #808080;
     }
 }
 /*
@@ -564,26 +575,25 @@ div.inline-note {
     }
 }
 div.inline-note > span.note-header {
-    display: block;
-    margin: 0 0 6px 0;
     font-family: var(--body-font-family);
-    font-size:12.16px;
+    font-size: 0.93em;
     font-weight:bold;
     color:var(--note-header-color);
+}
+div.inline-note.long-note > span.note-header,
+div.inline-note:has(p, h2, h3, h4, h5, div, pre) > span.note-header {
+    display: block;
+    font-size: 0.9em;
+    margin-bottom: 6px;
+}
+span.note-header + p {
+    margin-top: 6px;
 }
 p + div.inline-note {
     margin-top: -4px;
 }
 div.inline-note + p {
     margin-top: 8px;
-}
-div.inline-note.note-tag-indented {
-    border: none;
-    padding: 0;
-    margin: 12px 14px;
-    span.note-header {
-        margin-left: -14px
-    }
 }
 div.inline-note.note-tag-previewNote {
     border: 1px solid var(--block-text-color);
@@ -593,8 +603,18 @@ div.inline-note.note-tag-previewNote {
         font-style: normal;
     }
 }
+div.inline-note.long-note,
+div.inline-note:has(h2, h3, h4, h5, pre),
 div.inline-note.note-tag-hairline {
-    border: 0.8px solid var(--note-hairline-color);
+    border: var(--hairline-border-width) solid var(--hairline-border-color);
+}
+div.inline-note.note-tag-indented {
+    border: none;
+    padding: 0;
+    margin: 12px 14px;
+}
+div.inline-note.note-tag-bordered {
+    border: 1px solid var(--note-border-color);
 }
 div.inline-note.note-tag-important {
     border: 1px solid var(--note-important-border-color);
@@ -628,7 +648,8 @@ dl.notes > div > dd {
     font-family:var(--block-font-family);
     line-height:var(--block-line-height);
 }
-dl.notes > div.auto-border,
+dl.notes > div.long-note:not(.note-tag-indented),
+dl.notes > div.medium-length-note:not(.note-tag-indented):has(pre, h2, h3, h4, h5, p:nth-of-type(3)),
 dl.notes > div.note-tag-hairline,
 dl.notes > div.note-tag-bordered,
 dl.notes > div.note-tag-important,
@@ -641,12 +662,12 @@ dl.notes > div.note-tag-previewNote {
     dt, dd {
         margin: 8px 0;
         padding: 0 1px;
-        display: block;
     }
 }
 dl.notes > div.note-tag-hairline,
-dl.notes > div.auto-border {
-    border: 0.8px solid var(--note-hairline-color);
+dl.notes > div.long-note,
+dl.notes > div.medium-length-note:has(:where(pre, h2, h3, h4, h5, p:nth-of-type(3))) {
+    border: var(--hairline-border-width) solid var(--hairline-border-color);
 }
 dl.notes > div.note-tag-indented {
     border: none;

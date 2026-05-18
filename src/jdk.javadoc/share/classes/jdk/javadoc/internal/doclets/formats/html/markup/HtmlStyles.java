@@ -632,9 +632,19 @@ public enum HtmlStyles implements HtmlStyle {
     noteHeader,
 
     /**
-     * The class of an element containing an inline note tag.
+     * The class of a {@code div} element containing an inline note tag.
      */
     inlineNote,
+
+    /**
+     * The class for a note with medium length content.
+     */
+    mediumLengthNote,
+
+    /**
+     * The class for a note with longer content.
+     */
+    longNote,
 
     //</editor-fold>
 

@@ -611,11 +611,15 @@ public class HtmlIds {
      * @return a unique id value for the heading
      */
     public HtmlId forHeading(CharSequence headingText, Set<String> existingIds) {
-        String idValue = headingText.toString()
+        // TODO use sanitizeWhitespace here to allow unicode letters in heading ids
+        String base = headingText.toString()
                 .toLowerCase(Locale.ROOT)
                 .trim()
                 .replaceAll("[^\\w_-]+", "-");
-        return makeUnique(idValue + "-heading", existingIds);
+        var id = base + "-heading";
+        return existingIds.add(id)
+                ? HtmlId.of(id)
+                : withUniqueOrdinal(id, existingIds);
     }
 
     /**
@@ -628,12 +632,13 @@ public class HtmlIds {
      * @return a unique id for the note
      */
     public HtmlId forNote(Element e, String kind, boolean inline, Set<String> existingIds) {
-        var base = kind == null ? "note" : kind.replaceAll("[^\\w_-]+", "-");
+        var base = kind == null ? "note" : sanitizeWhitespace(kind);
         var id = getElementId(e) + "-" + base;
         // Multiple block notes are merged into a single description list item,
         // so ordinal suffixes are usually not needed for block tag ids.
-        return inline ? withUniqueOrdinal(id, existingIds)
-                      : makeUnique(id, existingIds);
+        return !inline && existingIds.add(id)
+                ? HtmlId.of(id)
+                : withUniqueOrdinal(id, existingIds);
     }
 
     /**
@@ -677,10 +682,11 @@ public class HtmlIds {
      * @param existingIds the set of ids already generated
      * @return a unique id
      */
-    public HtmlId makeUnique(String id, Set<String> existingIds) {
-        return existingIds.add(id)
-                ? HtmlId.of(id)
-                : withUniqueOrdinal(id, existingIds);
+    public HtmlId getUniqueId(String id, Set<String> existingIds) {
+        var base = sanitizeWhitespace(id);
+        return existingIds.add(base)
+                ? HtmlId.of(base)
+                : withUniqueOrdinal(base, existingIds);
     }
 
     /*
@@ -693,5 +699,13 @@ public class HtmlIds {
             counter++;
         }
         return HtmlId.of(base + counter);
+    }
+
+    /*
+     * Replace whitespace and other characters that are not safe for use in ids.
+     */
+    private String sanitizeWhitespace(String string) {
+        return string.trim()
+                .replaceAll("[^\\p{L}\\p{N}_-]+", "-");
     }
 }

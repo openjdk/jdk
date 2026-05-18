@@ -449,9 +449,8 @@ public class TestNoteTag extends JavadocTester {
                 );
     }
 
-    // Generate auto border on block notes with mixed or very long content
     @Test
-    public void testAutoBorder(Path base) throws IOException {
+    public void testLongNotes(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
                     package p;
@@ -520,10 +519,7 @@ public class TestNoteTag extends JavadocTester {
                         /**
                          * @note
                          * Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
-                         * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-                         * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
-                         * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
-                         * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         * ut labore et dolore magna aliqua.
                          */
                          public void shortNote() {}
                     }
@@ -535,15 +531,15 @@ public class TestNoteTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("p/C.html", """
-                        <div id="p.C-note" class="note-tag auto-border">
+                        <div id="p.C-note" class="note-tag medium-length-note">
                         <dt>Note:</dt>
                         <dd>Lorem ipsum dolor sit amet""",
                 """
-                        <div id="snippetNote()-note" class="note-tag auto-border">
+                        <div id="snippetNote()-note" class="note-tag medium-length-note">
                         <dt>Note:</dt>
                         <dd>Lorem ipsum dolor sit amet""",
                 """
-                        <div id="longNote()-note" class="note-tag auto-border">
+                        <div id="longNote()-note" class="note-tag long-note">
                         <dt>Note:</dt>
                         <dd>Lorem ipsum dolor sit amet""",
                 """
@@ -552,4 +548,53 @@ public class TestNoteTag extends JavadocTester {
                         <dd>Lorem ipsum dolor sit amet""");
     }
 
+    @Test
+    public void testAttributeEncoding(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * @note [id='id "$ value'
+                 *   header='Multi-line header containing <em>
+                 *           both <sup>supported</sup></EM> and
+                 *           <a href="javascript:alert(0)">unsupported</a> markup'
+                 *   kind='myNote " otherStyle'
+                 *   otherAttribute="ignored"]
+                 * Block note body.
+                 */
+                public class C {
+                    /**
+                     * {@note [id='id "$ value'
+                     *   header='Multi-line header containing <em>
+                     *           both <sup>supported</sup></EM> and
+                     *           <a href="javascript:alert(0)">unsupported</a> markup'
+                     *   kind='myNote " otherStyle'
+                     *   otherAttribute="ignored"]
+                     * Inline note body.
+                     * }
+                     */
+                    public void m() {}
+                }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOrder("p/C.html", """
+                    <dl class="notes">
+                    <div id="id-value" class="note-tag-myNote &quot; otherStyle">
+                    <dt>Multi-line header containing <em>
+                              both <sup>supported</sup></em> and
+                              &lt;a href="javascript:alert(0)"&gt;unsupported&lt;/a&gt; markup</dt>
+                    <dd>Block note body.</dd>
+                    </div>""",
+                """
+                    <div class="inline-note note-tag-myNote &quot; otherStyle" id="id-value1"><span clas\
+                    s="note-header">Multi-line header containing <em>
+                              both <sup>supported</sup></em> and
+                              &lt;a href="javascript:alert(0)"&gt;unsupported&lt;/a&gt; markup</span>
+                    Inline note body.</div>""");
+    }
 }

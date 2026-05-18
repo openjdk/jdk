@@ -28,14 +28,13 @@ package jdk.javadoc.internal.doclets.formats.html.taglets;
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.NoteTree;
-import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
-import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.RawHtml;
@@ -48,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -63,9 +63,8 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
     private static final String CSS_CLASS_PREFIX = "note-tag";
 
-    private static final String AUTO_BORDER = "auto-border";
-    private static final int TEXT_BORDER_THRESHOLD = 1500;
-    private static final int MIXED_CONTENT_BORDER_THRESHOLD = 200;
+    private static final int LONG_TEXT_THRESHOLD = 1500;
+    private static final int MEDIUM_TEXT_THRESHOLD = 200;
 
     NoteTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE,
@@ -134,10 +133,10 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 // The first note in a group therefore determines the style of the group.
                 var content = map.get(header);
                 if (content == null) {
-                    content = HtmlTree.DIV(HtmlTree.DT(getHeader(header)))
-                                .setId(getId(id, holder, false))
-                                .addStyle(getCSSClass(kind))
-                                .add(body);
+                    content = HtmlTree.DIV(HtmlTree.DT(sanitizeHeader(header)))
+                            .setId(getId(id, holder, false))
+                            .addStyle(getCSSClass(kind))
+                            .add(body);
                     map.put(header, content);
                 } else {
                     if (id != null) {
@@ -148,16 +147,12 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                     }
                     content.add(body);
                 }
-
-                if (Objects.equals(kind, defaultKind)) {
-                    setAutoBorder(content, note);
-                }
             }
         }
 
         Content content = new ContentBuilder();
         for (var cnt : map.values()) {
-            content.add(cnt);
+            content.add(setContentLengthStyle(cnt));
         }
         return content;
     }
@@ -174,12 +169,14 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var id = attr.getOrDefault("id", null);
         var kind = attr.getOrDefault("kind", defaultKind);
 
-        return HtmlTree.DIV(HtmlStyles.inlineNote)
+        var div = HtmlTree.DIV(HtmlStyles.inlineNote)
                 .addStyle(getCSSClass(kind))
                 .setId(getId(id, element, true))
-                .add(HtmlTree.SPAN(HtmlStyles.noteHeader, getHeader(header)))
+                .add(HtmlTree.SPAN(HtmlStyles.noteHeader, sanitizeHeader(header)))
                 .add(Text.NL)
                 .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
+
+        return setContentLengthStyle(div);
     }
 
     private Map<String, String> getAttributes(NoteTree note) {
@@ -195,34 +192,18 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     private HtmlId getId(String id, Element e, boolean inline) {
         var existingIds = tagletWriter.htmlWriter.getExistingIds();
         return id != null
-            ? config.htmlIds.makeUnique(id, existingIds)
+            ? config.htmlIds.getUniqueId(id, existingIds)
             : config.htmlIds.forNote(e, defaultKind, inline, existingIds);
     }
 
-    private void setAutoBorder(HtmlTree html, NoteTree note) {
-        var styles = html.getAttrs().get(HtmlAttr.CLASS);
-        if (styles == null || !styles.contains(" " + AUTO_BORDER)) {
-            var contentLength = html.charCount();
-            if (contentLength > TEXT_BORDER_THRESHOLD
-                    || (contentLength > MIXED_CONTENT_BORDER_THRESHOLD
-                    && hasMixedContent(note.getBody()))) {
-                html.addStyle(AUTO_BORDER);
-            }
+    private HtmlTree setContentLengthStyle(HtmlTree html) {
+        var contentLength = html.charCount();
+        if (contentLength > LONG_TEXT_THRESHOLD) {
+            html.addStyle(HtmlStyles.longNote);
+        } else if (contentLength > MEDIUM_TEXT_THRESHOLD) {
+            html.addStyle(HtmlStyles.mediumLengthNote);
         }
-    }
-
-    // Check note content for mixed content to decide whether to apply a border.
-    // The mixed content recognized by this method is intentionally narrow.
-    private boolean hasMixedContent(List<? extends DocTree> body) {
-        return body.stream().anyMatch(dt ->
-            switch (dt.getKind()) {
-                case START_ELEMENT -> {
-                    var tagName = ((StartElementTree) dt).getName().toString();
-                    yield  tagName.equalsIgnoreCase("pre") || tagName.matches("(?i)h[1-6]");
-                }
-                case SNIPPET -> true;
-                default -> false;
-        });
+        return html;
     }
 
     private static String stringValueOf(AttributeTree at) {
@@ -240,11 +221,28 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 : CSS_CLASS_PREFIX + "-" + kind.trim();
     }
 
-    // Only allow raw HTML content for trusted default header.
-    private Content getHeader(String header) {
-        return defaultHeader.equals(header)
-                ? RawHtml.of(defaultHeader)
-                : Text.of(header);
+    // Regex to enable HTML tags allowed in note headers
+    private static final Pattern allowedHeaderTags = Pattern.compile(
+            "&lt;(?<tag>b|strong|i|em|code|sub|sup)&gt;" +
+                    "(?<body>.*?)" +
+                    "&lt;/\\k<tag>&gt;",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+    // Only allow a few select safe HTML elements in header, and only
+    // when they are closed properly and don't contain any attributes.
+    private Content sanitizeHeader(String header) {
+        var escaped = Entity.escapeHtmlChars(header);
+
+        if (!escaped.equals(header)) {
+            var matcher = allowedHeaderTags.matcher(escaped);
+            while (matcher.find()) {
+                var tag = matcher.group("tag");
+                var body = matcher.group("body");
+                escaped = matcher.replaceFirst("<" + tag + ">" + body + "</" + tag + ">");
+                matcher = allowedHeaderTags.matcher(escaped);
+            }
+        }
+        return RawHtml.of(escaped);
     }
 
     private static Set<Taglet.Location> getLocations(String locations) {
