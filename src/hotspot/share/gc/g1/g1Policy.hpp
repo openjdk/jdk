@@ -293,6 +293,7 @@ public:
   void record_young_gc_pause_end(bool evacuation_failed);
 
   bool need_to_start_conc_mark(const char* source, size_t allocation_word_size) const;
+  bool need_to_start_conc_mark(const char* source, const G1CollectorState& state, size_t allocation_word_size) const;
 
   bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
 
@@ -301,9 +302,10 @@ public:
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_pause_start_time();
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark,
-                                   bool allocation_failure,
-                                   size_t allocation_word_size);
+  // Returns the next CollectorState based on current state without modifying the latter.
+  G1CollectorState record_young_collection_end(bool concurrent_operation_is_full_mark,
+                                               bool allocation_failure,
+                                               size_t allocation_word_size);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();

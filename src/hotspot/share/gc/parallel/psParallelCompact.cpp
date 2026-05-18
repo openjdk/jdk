@@ -1378,11 +1378,9 @@ public:
     _weak_proc_task(nworkers),
     _oop_storage_iter(),
     _nworkers(nworkers),
-    _code_cache_claimed(false) {
+    _code_cache_claimed(false),
+    _claim_counters{} {
 
-    for (unsigned int i = PSParallelCompact::old_space_id; i < PSParallelCompact::last_space_id; ++i) {
-      ::new (&_claim_counters[i]) Atomic<uint>{};
-    }
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
   }
 
