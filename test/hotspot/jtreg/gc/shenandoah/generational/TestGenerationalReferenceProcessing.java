@@ -35,7 +35,8 @@ import jdk.test.whitebox.WhiteBox;
 /*
  * @test id=young
  * @requires vm.gc.Shenandoah
- * @summary Confirm that young non-strong references are collected.
+ * @summary Confirm that young referents are cleared.
+ * @bug 8373203
  * @library /testlibrary /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -45,7 +46,6 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
- *      -XX:ShenandoahLearningSteps=0 -XX:ShenandoahIgnoreOldGrowthBelowPercentage=100
  *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing young
  */
@@ -53,7 +53,8 @@ import jdk.test.whitebox.WhiteBox;
 /*
  * @test id=old
  * @requires vm.gc.Shenandoah
- * @summary Confirm that young non-strong references are collected.
+ * @summary Confirm that old referents are cleared.
+ * @bug 8373203
  * @library /testlibrary /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -63,7 +64,6 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
- *      -XX:ShenandoahLearningSteps=0 -XX:ShenandoahIgnoreOldGrowthBelowPercentage=100
  *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing old
  */
