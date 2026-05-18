@@ -158,6 +158,9 @@ public abstract class AttachProvider {
      *
      * @implSpec The default implementation of this method always throws {@link UnsupportedOperationException}
      *
+     * @implNote The default implementation of this method is equivalent to {@link attachVirtualMachine(String id)}
+     * if the id parses as a positive integer, and the Map env is empty.
+     *
      * @param  id
      *         The abstract identifier that identifies the Java virtual machine.
      *
