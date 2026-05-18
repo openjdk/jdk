@@ -44,9 +44,6 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
 
 public class PreferredKey {
 
@@ -57,7 +54,9 @@ public class PreferredKey {
         testPreferredKey(km, "DSA", new String[] {"DSA", "RSA"});
     }
 
-    private static void testPreferredKey(X509KeyManager km, String keyType, String[] multiKeyTypes) {
+    private static void testPreferredKey(X509KeyManager km,
+                                         String keyType,
+                                         String[] multiKeyTypes) {
         String[] aliases = km.getClientAliases(keyType, null);
         String alias = km.chooseClientAlias(multiKeyTypes, null, null);
 
@@ -66,27 +65,30 @@ public class PreferredKey {
 
         String algorithm = km.getPrivateKey(alias).getAlgorithm();
         Asserts.assertTrue(algorithm.equals(keyType) && algorithm.equals(
-                km.getPrivateKey(aliases[0]).getAlgorithm()), "Failed to get the preferable key aliases");
+                km.getPrivateKey(aliases[0]).getAlgorithm()),
+                "Failed to get the preferable key aliases");
     }
 
     private static X509KeyManager getKeyManager() throws Exception {
         char[] passphrase = "passphrase".toCharArray();
 
-        KeyPair rsaKeys = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        KeyPair dsaKeys = KeyPairGenerator.getInstance("DSA").generateKeyPair();
+        KeyPair rsaKey = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        KeyPair dsaKey = KeyPairGenerator.getInstance("DSA").generateKeyPair();
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, passphrase);
 
         ks.setKeyEntry("dummyrsa",
-                rsaKeys.getPrivate(),
+                rsaKey.getPrivate(),
                 passphrase,
-                new Certificate[]{createSelfSignedCert(rsaKeys, "SHA256withRSA")});
+                new Certificate[]{createSelfSignedCert(rsaKey,
+                        "SHA256withRSA")});
         ks.setKeyEntry("dummydsa",
-                dsaKeys.getPrivate(),
+                dsaKey.getPrivate(),
                 passphrase,
-                new Certificate[]{createSelfSignedCert(dsaKeys, "SHA256withDSA")});
+                new Certificate[]{createSelfSignedCert(dsaKey,
+                        "SHA256withDSA")});
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
         kmf.init(ks, passphrase);
@@ -94,14 +96,16 @@ public class PreferredKey {
         return (X509KeyManager) kmf.getKeyManagers()[0];
     }
 
-    private static X509Certificate createSelfSignedCert(KeyPair caKeys, String keyAlg)
+    private static X509Certificate createSelfSignedCert(KeyPair caKeys,
+                                                        String keyAlg)
             throws CertificateException, IOException {
         return (new CertificateBuilder()
-                .setSubjectName("CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US")
+                .setSubjectName("CN=dummy.example.com, OU=Dummy, " +
+                        "O=Dummy, L=Cupertino, ST=CA, C=US")
                 .setPublicKey(caKeys.getPublic())
-                .setNotBefore(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
-                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
-                .setSerialNumber(BigInteger.valueOf(new SecureRandom().nextLong(1000000) + 1))
+                .setOneHourValidity()
+                .setSerialNumber(BigInteger.valueOf(
+                        new SecureRandom().nextLong(1000000) + 1))
         ).build(null, caKeys.getPrivate(), keyAlg);
     }
 }

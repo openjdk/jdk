@@ -44,10 +44,7 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Date;
 
 public class SelectOneKeyOutOfMany {
     private static final String NOTHING = "nothing";
@@ -61,50 +58,64 @@ public class SelectOneKeyOutOfMany {
 
         // String[] getClientAliases(String keyType, Principal[] issuers)
         Asserts.assertNull(km.getClientAliases(NOTHING, null),
-                "getClientAliases shouldn't return alias for unsupported type");
+                "getClientAliases shouldn't return alias for unknown type");
 
-        Asserts.assertTrue(Arrays.stream(km.getClientAliases(RSA, null)).toList().contains(RSA_ALIAS),
-                "getClientAliases should return RSA alias: " + Arrays.toString(km.getClientAliases(RSA, null)));
+        Asserts.assertTrue(Arrays.stream(km.getClientAliases(RSA,
+                                null)).toList().contains(RSA_ALIAS),
+                "getClientAliases should return RSA alias: " +
+                        Arrays.toString(km.getClientAliases(RSA, null)));
 
-        Asserts.assertTrue(Arrays.stream(km.getClientAliases(DSA, null)).toList().contains(DSA_ALIAS),
-                "getClientAliases should return DSA alias: " + Arrays.toString(km.getClientAliases(DSA, null)));
+        Asserts.assertTrue(Arrays.stream(km.getClientAliases(DSA,
+                                null)).toList().contains(DSA_ALIAS),
+                "getClientAliases should return DSA alias: " +
+                        Arrays.toString(km.getClientAliases(DSA, null)));
 
 
         // String[] getServerAliases(String keyType, Principal[] issuers)
         Asserts.assertNull(km.getServerAliases(NOTHING, null),
-                "getServerAliases shouldn't return alias for unsupported type");
+                "getServerAliases shouldn't return alias for unknown type");
 
-        Asserts.assertTrue(Arrays.stream(km.getServerAliases(RSA, null)).toList().contains(RSA_ALIAS),
-                "getServerAliases should return RSA alias: " + Arrays.toString(km.getServerAliases(RSA, null)));
+        Asserts.assertTrue(Arrays.stream(km.getServerAliases(RSA,
+                                null)).toList().contains(RSA_ALIAS),
+                "getServerAliases should return RSA alias: " +
+                        Arrays.toString(km.getServerAliases(RSA, null)));
 
-        Asserts.assertTrue(Arrays.stream(km.getServerAliases(DSA, null)).toList().contains(DSA_ALIAS),
-                "getServerAliases should return DSA alias: " + Arrays.toString(km.getServerAliases(DSA, null)));
+        Asserts.assertTrue(Arrays.stream(km.getServerAliases(DSA,
+                                null)).toList().contains(DSA_ALIAS),
+                "getServerAliases should return DSA alias: " +
+                        Arrays.toString(km.getServerAliases(DSA, null)));
 
 
         //  String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket)
-        Asserts.assertNull(km.chooseClientAlias(new String[]{NOTHING}, null, null),
-                "chooseClientAlias shouldn't return alias for unsupported type");
+        Asserts.assertNull(km.chooseClientAlias(new String[]{NOTHING},
+                        null,
+                        null),
+                "chooseClientAlias shouldn't return alias for unknown type");
 
-        Asserts.assertEQ(km.chooseClientAlias(new String[]{RSA}, null, null),
+        Asserts.assertEQ(
+                km.chooseClientAlias(new String[]{RSA}, null, null),
                 RSA_ALIAS,
                 "chooseClientAlias should return RSA alias");
 
-        Asserts.assertEQ(km.chooseClientAlias(new String[]{DSA}, null, null),
+        Asserts.assertEQ(
+                km.chooseClientAlias(new String[]{DSA}, null, null),
                 DSA_ALIAS,
                 "chooseClientAlias should return DSA alias");
 
-        Asserts.assertEQ(km.chooseClientAlias(new String[]{RSA, DSA}, null, null),
+        Asserts.assertEQ(
+                km.chooseClientAlias(new String[]{RSA, DSA}, null, null),
                 RSA_ALIAS,
                 "chooseClientAlias should return RSA alias");
 
-        Asserts.assertEQ(km.chooseClientAlias(new String[]{DSA, RSA}, null, null),
+        Asserts.assertEQ(
+                km.chooseClientAlias(new String[]{DSA, RSA}, null, null),
                 DSA_ALIAS,
                 "chooseClientAlias should return DSA alias");
 
 
         //  String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
         Asserts.assertNull(km.chooseServerAlias(NOTHING, null, null),
-                "chooseServerAlias shouldn't return alias for unsupported type");
+                "chooseServerAlias shouldn't return alias for unknown type");
 
         Asserts.assertEQ(km.chooseServerAlias(RSA, null, null),
                 RSA_ALIAS,
@@ -118,21 +129,23 @@ public class SelectOneKeyOutOfMany {
     private static X509KeyManager getKeyManager() throws Exception {
         char[] passphrase = "passphrase".toCharArray();
 
-        KeyPair rsaKeys = KeyPairGenerator.getInstance(RSA).generateKeyPair();
-        KeyPair dsaKeys = KeyPairGenerator.getInstance(DSA).generateKeyPair();
+        KeyPair rsaKey = KeyPairGenerator.getInstance(RSA).generateKeyPair();
+        KeyPair dsaKey = KeyPairGenerator.getInstance(DSA).generateKeyPair();
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, passphrase);
 
         ks.setKeyEntry(RSA_ALIAS,
-                rsaKeys.getPrivate(),
+                rsaKey.getPrivate(),
                 passphrase,
-                new Certificate[]{createSelfSignedCert(rsaKeys, "SHA256withRSA")});
+                new Certificate[]{createSelfSignedCert(rsaKey,
+                        "SHA256withRSA")});
         ks.setKeyEntry(DSA_ALIAS,
-                dsaKeys.getPrivate(),
+                dsaKey.getPrivate(),
                 passphrase,
-                new Certificate[]{createSelfSignedCert(dsaKeys, "SHA256withDSA")});
+                new Certificate[]{createSelfSignedCert(dsaKey,
+                        "SHA256withDSA")});
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
@@ -140,14 +153,16 @@ public class SelectOneKeyOutOfMany {
         return (X509KeyManager) kmf.getKeyManagers()[0];
     }
 
-    private static X509Certificate createSelfSignedCert(KeyPair caKeys, String keyAlg)
+    private static X509Certificate createSelfSignedCert(KeyPair caKeys,
+                                                        String keyAlg)
             throws CertificateException, IOException {
         return (new CertificateBuilder()
-                .setSubjectName("CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US")
+                .setSubjectName("CN=dummy.example.com, OU=Dummy, " +
+                        "O=Dummy, L=Cupertino, ST=CA, C=US")
                 .setPublicKey(caKeys.getPublic())
-                .setNotBefore(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
-                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
-                .setSerialNumber(BigInteger.valueOf(new SecureRandom().nextLong(1000000) + 1))
+                .setOneHourValidity()
+                .setSerialNumber(BigInteger.valueOf(
+                        new SecureRandom().nextLong(1000000) + 1))
         ).build(null, caKeys.getPrivate(), keyAlg);
     }
 }
