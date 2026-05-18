@@ -111,12 +111,12 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   }
 
 ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {
-  FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_samples);
-  FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_timestamps);
-  FREE_C_HEAP_ARRAY(double, _gc_time_timestamps);
-  FREE_C_HEAP_ARRAY(double, _gc_time_samples);
-  FREE_C_HEAP_ARRAY(double, _gc_time_xy);
-  FREE_C_HEAP_ARRAY(double, _gc_time_xx);
+  FREE_C_HEAP_ARRAY(_spike_acceleration_rate_samples);
+  FREE_C_HEAP_ARRAY(_spike_acceleration_rate_timestamps);
+  FREE_C_HEAP_ARRAY(_gc_time_timestamps);
+  FREE_C_HEAP_ARRAY(_gc_time_samples);
+  FREE_C_HEAP_ARRAY(_gc_time_xy);
+  FREE_C_HEAP_ARRAY(_gc_time_xx);
 }
 
 void ShenandoahAdaptiveHeuristics::initialize() {
@@ -428,9 +428,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   double predicted_future_gc_time = 0;
   double future_planned_gc_time = 0;
   bool future_planned_gc_time_is_average = false;
-  double avg_time_to_deplete_available = 0.0;
   bool is_spiking = false;
-  double spike_time_to_deplete_available = 0.0;
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
                 "allocated_since_gc_start: "  PROPERFMT,
@@ -650,9 +648,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                 _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time * 1000,
                 byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
   size_t allocatable_bytes = allocatable_words * HeapWordSize;
-  avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
 
-  if (future_planned_gc_time > avg_time_to_deplete_available) {
+  if (future_planned_gc_time * avg_alloc_rate > allocatable_bytes) {
     log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (%zu%s) (margin of error = %.2f)",
                 future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
@@ -675,8 +672,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
-  spike_time_to_deplete_available = (rate == 0)? 0: allocatable_bytes / rate;
-  if (is_spiking && (rate != 0) && (future_planned_gc_time > spike_time_to_deplete_available)) {
+  if (is_spiking && (future_planned_gc_time * rate > allocatable_bytes)) {
     log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (%zu%s) (spike threshold = %.2f)",
                 future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
@@ -837,19 +833,29 @@ double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccoun
   const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
   double now = os::elapsedTime();
   double time_since_last_update = now - _last_sample_time;
+  double rate = 0.0;
   if (time_since_last_update < MinSampleTime) {
+    // If we choose not to sample right now, the unaccounted_bytes_allocated will be added
+    // into the next sample taken. These unaccounted_bytes_allocated will be added to
+    // any additional bytes that are allocated during this GC cycle at the time the rate is
+    // next sampled. We do not overwrite _last_sample_time on this path, because the
+    // unaccounted_bytes_allocated were allocated following _last_sample_time.
     unaccounted_bytes_allocated = allocated - _last_sample_value;
-    _last_sample_value = 0;
-    return 0.0;
   } else {
-    double rate = instantaneous_rate(now, allocated);
+    rate = instantaneous_rate(now, allocated);
     _rate.add(rate);
     _rate_avg.add(_rate.avg());
     _last_sample_time = now;
-    _last_sample_value = allocated;
     unaccounted_bytes_allocated = 0;
-    return rate;
   }
+  // force_sample() is called when resetting bytes allocated since gc start. All subsequent
+  // requests to sample allocated bytes during this GC cycle are measured as a delta from
+  // _last_sample_value. In the case that we choose not to sample now, we will count the
+  // unaccounted_bytes_allocated as if they were allocated following the start of this GC
+  // cycle (but the time span over which these bytes were allocated begins at
+  // _last_sample_time, which we do not overwrite).
+  _last_sample_value = 0;
+  return rate;
 }
 
 double ShenandoahAllocationRate::sample(size_t allocated) {
@@ -898,9 +904,7 @@ bool ShenandoahAllocationRate::is_spiking(double rate, double threshold) const {
 }
 
 double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {
-  size_t last_value = _last_sample_value;
-  double last_time = _last_sample_time;
-  size_t allocation_delta = (allocated > last_value) ? (allocated - last_value) : 0;
-  double time_delta_sec = time - last_time;
-  return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
+  assert(allocated >= _last_sample_value, "Must be");
+  assert(time > _last_sample_time, "Must be");
+  return (allocated - _last_sample_value) / (time - _last_sample_time);
 }

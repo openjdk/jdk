@@ -60,6 +60,10 @@ abstract public class CDSAppTester {
     private boolean generateBaseArchive = false;
     private String[] baseArchiveOptions = new String[0];
 
+    public String aotCacheFile() {
+        return this.aotCacheFile;
+    }
+
     /**
      * All files created in the CDS/AOT workflow will be name + extension. E.g.
      * - name.aot
