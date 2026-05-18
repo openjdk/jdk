@@ -568,7 +568,6 @@ CompilerCounters::CompilerCounters() {
 // This function is called during vm initialization.
 static void register_jfr_phasetype_serializer() {
   ResourceMark rm;
-  static bool first_registration = true;
   for (int i = 0; i < PHASE_NUM_TYPES; i++) {
     const char* phase_name = CompilerPhaseTypeHelper::to_description((CompilerPhaseType) i);
     CompilerEvent::PhaseEvent::get_phase_id(phase_name, false, false, false);
