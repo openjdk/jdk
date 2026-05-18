@@ -33,11 +33,11 @@
  *
  * A <i>pathname string</i> passed as a {@code String} argument to a
  * constructor or method in any class or interface in this package will be
- * interpreted as described in the class specification of {@link File}.
+ * interpreted as described in the class specification of {@link java.io.File}.
  *
  * <h2>Object Serialization</h2>
- * {@note [header="Warning:" kind=critical] Deserialization of untrusted data is inherently dangerous
- * and should be avoided. Untrusted data should be carefully validated according to the
+ * {@note [kind=critical header="Warning: Deserialization of untrusted data is inherently dangerous
+ * and should be avoided."] Untrusted data should be carefully validated according to the
  * "Serialization and Deserialization" section of the
  * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.}
  *
