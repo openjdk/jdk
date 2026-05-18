@@ -266,20 +266,11 @@ public class FieldSetAccessibleTest {
         }
 
         static Set<String> systemModules() {
-            // Build module graph and inverse dependences
-            Set<String> modules = new HashSet<>();
-            Map<String, Set<String>> moduleToDeps = new HashMap<>();
-            Map<String, Set<String>> inverseDeps = new HashMap<>();
-            for (ModuleReference mref : ModuleFinder.ofSystem().findAll()) {
-                var md = mref.descriptor();
-                modules.add(md.name());
-                Set<String> deps = md.requires().stream().map(ModuleDescriptor.Requires::name)
-                                                .collect(Collectors.toSet());
-                moduleToDeps.put(md.name(), deps);
-                inverseDeps.put(md.name(), new HashSet<>());
-            }
-
-            return modules;
+            return ModuleFinder.ofSystem()
+                .findAll()
+                .stream()
+                .map(mref -> mref.descriptor().name())
+                .collect(Collectors.toSet());
         }
     }
 }
