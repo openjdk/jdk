@@ -150,8 +150,8 @@ public final class SNIHostName extends SNIServerName {
      * Examples of valid SNI hostnames:
      * <ul>
      * <li>{@code example.com}
-     * <li>{@code \u00ebxample.com} &mdash; User-friendly IDN containing
-     * non-ASCII Unicode code points
+     * <li>{@code ëxample.com} &mdash; User-friendly IDN containing non-ASCII
+     * Unicode code points
      * <li>{@code xn--xample-ova.com} &mdash; IDN in ASCII-Compatible Encoding
      * (ACE)
      * </ul>
@@ -269,10 +269,9 @@ public final class SNIHostName extends SNIServerName {
         // value. This is different from `new(String)`, which *first* converts
         // non-ASCII to ACE, and then uses ACE-formatted string to obtain
         // `encoded`. As a result, `getEncoded()` will return different for
-        // `new("\u00ebxample.com")` and
-        // new("\u00ebxample.com".getBytes(UTF_8))`. This behavior is
-        // implemented to tolerate the switch from UTF-8 (RFC 4366) to ASCII
-        // (RFC 6066).
+        // `new("ëxample.com")` and new("ëxample.com".getBytes(UTF_8))`. This
+        // behavior is implemented to tolerate the switch from UTF-8 (RFC 4366)
+        // to ASCII (RFC 6066).
         super(StandardConstants.SNI_HOST_NAME, encodedCopy);
         var decoded = decodeHostName(encodedCopy);
         this.hostname = asciifyHostName(decoded, strict);
@@ -301,7 +300,7 @@ public final class SNIHostName extends SNIServerName {
      * Returns an {@code SNIHostName} from the specified hostname encoded in
      * UTF-8.
      * <p>
-     * This constructor decodes the specified bytes into a hostname string. The
+     * This method decodes the specified bytes into a hostname string. The
      * hostname is a DNS hostname (see <a
      * href="http://www.ietf.org/rfc1123.txt">RFC&nbsp;1123</a> and <a
      * href="http://www.ietf.org/rfc5280.txt">RFC&nbsp;5280</a>) that is either
@@ -318,7 +317,7 @@ public final class SNIHostName extends SNIServerName {
      * Examples of valid SNI hostnames:
      * <ul>
      * <li>{@code "example.com".getBytes(US_ASCII)}
-     * <li>{@code "\u00ebxample.com".getBytes(UTF_8)} &mdash; User-friendly IDN
+     * <li>{@code "ëxample.com".getBytes(UTF_8)} &mdash; User-friendly IDN
      * containing non-ASCII Unicode code points
      * <li>{@code "xn--xample-ova.com".getBytes(US_ASCII)} &mdash; IDN in
      * ASCII-Compatible Encoding (ACE)
