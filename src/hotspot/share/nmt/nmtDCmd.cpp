@@ -144,7 +144,7 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   } else if (_statistics.value()) {
     if (MemTracker::enabled()) {
       if (_output_format.has_value() && strcmp(_output_format.value(), "xml") == 0) {
-        MemTracker::tuning_statistics_xml(output());
+        output()->print_cr("Statistics cannot be reported in XML format.");
       } else {
         MemTracker::tuning_statistics(output());
       }

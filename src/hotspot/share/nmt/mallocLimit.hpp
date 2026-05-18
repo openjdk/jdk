@@ -61,7 +61,6 @@ public:
   const malloclimit* mem_tag_limit(MemTag mem_tag) const { return &_mtag[(int)mem_tag]; }
 
   void print_on(outputStream* st) const;
-  void print_xml_on(xmlStream* st) const;
 };
 
 class MallocLimitHandler : public AllStatic {
@@ -75,7 +74,6 @@ public:
 
   static void initialize(const char* options);
   static void print_on(outputStream* st);
-  static void print_xml_on(xmlStream* st);
 
   // True if there is any limit established
   static bool have_limit() { return _have_limit; }

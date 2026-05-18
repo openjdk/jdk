@@ -279,7 +279,6 @@ class MemTracker : AllStatic {
   }
 
   static void tuning_statistics(outputStream* out);
-  static void tuning_statistics_xml(outputStream* out);
 
   // MallocLimt: Given an allocation size s, check if mallocing this much
   // for MemTag would hit either the global limit or the limit for MemTag.

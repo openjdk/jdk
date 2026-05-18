@@ -277,7 +277,7 @@ class XmlMemSummaryReporter : public StackObj {
 
  protected:
   xmlStream*              _xml_output;
-
+  template<typename T> void xml_element(const char* node, T value) const;
  public:
   static const size_t default_scale = K;
   // This constructor is for normal reporting from a recent baseline.
@@ -291,15 +291,19 @@ class XmlMemSummaryReporter : public StackObj {
   inline const char* current_scale() const {
     return NMTUtil::scale_name(_scale);
   }
+  struct ScaledAmount { ScaledAmount(size_t s) : value(s) {} size_t value; };
+  struct ScaledDiff   { ScaledDiff(int64_t s) : value(s) {} int64_t value; };
+  struct CounterDiff  { CounterDiff(ssize_t v) : value(v) {} ssize_t value; };
+  struct AddressType  { AddressType(u_char* v) : value(v) {} u_char* value; };
   // Convert memory amount in bytes to current reporting scale
-  inline size_t amount_in_current_scale(size_t amount) const {
-    return NMTUtil::amount_in_scale(amount, _scale);
+  inline ScaledAmount amount_in_current_scale(size_t amount) const {
+    return ScaledAmount(NMTUtil::amount_in_scale(amount, _scale));
   }
 
   // Convert diff amount in bytes to current reporting scale
   // We use int64_t instead of ssize_t because on 32-bit it allows us to express deltas larger than 2 gb.
   // On 64-bit we never expect memory sizes larger than INT64_MAX.
-  int64_t diff_in_current_scale(size_t s1, size_t s2) const {
+  ScaledDiff diff_in_current_scale(size_t s1, size_t s2) const {
     assert(_scale != 0, "wrong scale");
 
 #ifdef _LP64
@@ -329,7 +333,7 @@ class XmlMemSummaryReporter : public StackObj {
     }
 
     int64_t result = static_cast<int64_t>(scaled);
-    return is_negative ? -result : result;
+    return ScaledDiff(is_negative ? -result : result);
   }
 
   void report(bool summary_only = true) const;

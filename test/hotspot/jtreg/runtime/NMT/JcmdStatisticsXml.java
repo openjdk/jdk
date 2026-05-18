@@ -22,49 +22,47 @@
  */
 
 /*
+ * @test id=off
+ * @summary Test the NMT statistics with xml format, which is not supported
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run main/othervm -XX:NativeMemoryTracking=off JcmdStatisticsXml off
+*/
+
+/*
  * @test id=summary
- * @summary Test the NMT scale parameter
+ * @summary Test the NMT statistics with xml format, which is not supported
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:NativeMemoryTracking=summary JcmdStatisticsXml summary
- */
+*/
 
- /*
+/*
  * @test id=detail
- * @summary Test the NMT scale parameter
+ * @summary Test the NMT statistics with xml format, which is not supported
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:NativeMemoryTracking=detail JcmdStatisticsXml detail
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-
-import java.io.File;
-
 import jdk.test.lib.JDKToolFinder;
 
 public class JcmdStatisticsXml {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = new ProcessBuilder();
-        File xmlFile = File.createTempFile("nmt_statistics_", ".xml");
-        String pid = Long.toString(ProcessTools.getProcessId());
-        pb.redirectOutput(xmlFile)
-          .command(new String[] { JDKToolFinder.getJDKTool("jcmd"),
-                                  pid,
-                                  "VM.native_memory",
-                                  "statistics=true",
-                                  "format=xml"})
-          .start()
-          .waitFor();
-
-        NMTXmlUtils xmlAnalyzer = new NMTXmlUtils(xmlFile);
-        xmlAnalyzer.shouldBeReportType("statistics")
-                   .shouldExistGeneralStatistics();
-        if (args.length == 1 && args[0].equals("detail")) {
-          xmlAnalyzer.shouldExistDetailStatistics();
+        String pid = Long.toString(jdk.test.lib.process.ProcessTools.getProcessId());
+        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics=true", "format=xml"});
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        if (args.length == 1 && args[0].equals("off")) {
+          output.shouldContain("Native memory tracking is not enabled");
+        } else {
+          output.shouldContain("Statistics cannot be reported in XML format.");
         }
     }
 }

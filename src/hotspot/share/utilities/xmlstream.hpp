@@ -28,6 +28,7 @@
 #include "runtime/handles.hpp"
 #include "utilities/ostream.hpp"
 
+
 class xmlStream;
 class defaultStream;
 
@@ -187,10 +188,15 @@ class XmlElemHelper : public StackObj {
 
  public:
   XmlElemHelper(xmlStream* st, const char* node): _node(node), xs(st) {
-    xs->head("%s", _node);
+    // We don't want \n after head of node, so we cannot use xs->head()
+    xs->write("<", 1);
+    xs->text()->print("%s", _node);
+    xs->write(">", 1);
   }
   ~XmlElemHelper() {
-    xs->tail(_node);
+    xs->write("</", 2);
+    xs->text()->print("%s", _node);
+    xs->write(">\n", 2);
   }
 };
 
@@ -203,19 +209,11 @@ class XmlCData : public XmlElemHelper {
     xs->print_raw("]]>");
   }
 };
-// Put all the <elem>text</elem> in one line
-#define XmlElementWithTextXS(xs, ename, txt, ...)   \
-    xs->write("<", 1);                              \
-    xs->text()->print("%s", ename);                 \
-    xs->write(">", 1);                              \
-    xs->text()->print(txt, ##__VA_ARGS__);          \
-    xs->write("</", 2);                             \
-    xs->text()->print("%s", ename);                 \
-    xs->write(">\n", 2);
 
-#define XmlParent(txt) XmlElemHelper xml_parent_ ## __LINE__ (xs, txt);
+#define XmlParentElement(txt) XmlElemHelper xml_parent ## __LINE__ (xml_output(), txt)
+#define XmlStackElement XmlCData xml_stack ## __LINE__ (xml_output(), "stack")
+#define XmlElementWithText(ename, format, ...) { XmlElemHelper xeh_ ## __LINE__ (xml_output(), ename); xml_output()->text()->print(format, ##__VA_ARGS__); }
 
-#define XmlElem(txt, ...) XmlElementWithTextXS(xs, txt, ##__VA_ARGS__)
 
 
 // Standard log file, null if no logging is happening.
