@@ -242,6 +242,11 @@ void ShenandoahRefProcThreadLocal::heal_discovered_list() {
     // Discovered list terminates with a self-loop
     const oop discovered = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(reference_discovered<T>(reference));
     if (reference == discovered) {
+      // Heal the self-loop if it contains a stale (pre-forwarding) pointer
+      T* discovered_addr = reference_discovered_addr<T>(reference);
+      if (CompressedOops::decode(*discovered_addr) != reference) {
+        set_oop_field(discovered_addr, reference);
+      }
       break;
     }
     list = reference_discovered_addr<T>(reference);
