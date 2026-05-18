@@ -173,13 +173,3 @@ ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
 ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
   _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
 }
-
-size_t shenandoah_safe_size_cast(const double d) {
-  static constexpr double size_max_as_double = static_cast<double>(std::numeric_limits<size_t>::max());
-  if (std::isnan(d) || d < 0 || d >= size_max_as_double) {
-    // NaN is unordered, all comparisons will be false.
-    // +Inf is always greater than, -Inf is always less than
-    return 0;
-  }
-  return static_cast<size_t>(d);
-}
