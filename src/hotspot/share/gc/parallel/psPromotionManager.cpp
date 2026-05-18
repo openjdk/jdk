@@ -199,7 +199,7 @@ void PSPromotionManager::restore_preserved_marks() {
   _preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 }
 
-void PSPromotionManager::process_stacks_to_threshold(uint threshold) {
+void PSPromotionManager::trim_stacks_to_threshold(uint threshold) {
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
     ScannerTask task;
@@ -227,12 +227,12 @@ void PSPromotionManager::trim_stacks() {
 
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   if (!tq->overflow_empty() || tq->size() > max_stack_size) {
-    process_stacks_to_threshold(target_stack_size);
+    trim_stacks_to_threshold(target_stack_size);
   }
 }
 
 void PSPromotionManager::drain_stacks() {
-  process_stacks_to_threshold(0);
+  trim_stacks_to_threshold(0);
 }
 
 void PSPromotionManager::flush_labs() {

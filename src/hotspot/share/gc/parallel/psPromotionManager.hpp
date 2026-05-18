@@ -95,7 +95,7 @@ class PSPromotionManager {
 
   inline static PSPromotionManager* manager_array(uint index);
 
-  void process_stacks_to_threshold(uint threshold);
+  void trim_stacks_to_threshold(uint threshold);
 
   void process_array_chunk(PartialArrayState* state, bool stolen);
   void process_array_chunk(objArrayOop obj, size_t start, size_t end);
