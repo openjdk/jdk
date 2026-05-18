@@ -998,7 +998,6 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   // because otherwise it will be rebound when we later emit the instructions
   // for real.
   if (!output->in_scratch_emit_size()) {
-    __ align(InteriorEntryAlignment);
     __ bind(*entry());
   }
 

@@ -1221,7 +1221,6 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   assert(_needs_keep_alive_barrier || _needs_load_ref_barrier, "Why are you here?");
 
-  __ align(InteriorEntryAlignment);
   __ bind(*entry());
 
   // If we need to load ourselves, do it here.

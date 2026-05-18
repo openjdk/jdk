@@ -1031,7 +1031,10 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   assert(_needs_keep_alive_barrier || _needs_load_ref_barrier, "Why are you here?");
 
-  __ align(InteriorEntryAlignment);
+  // On x86, there is a significant penalty with unaligned branch target, for example
+  // when the target instruction straggles the fetch line. It makes (performance) sense
+  // to spend some code size to align the target better.
+  __ align(16);
   __ bind(*entry());
 
   // If we need to load ourselves, do it here.
