@@ -199,6 +199,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::scalable_vector_reg_size(T_BYTE));
 #else
+  assert(!_save_vectors, "vectors are generated only by C2");
   __ pop_CPU_state(_save_vectors);
 #endif // COMPILER2
   __ leave();

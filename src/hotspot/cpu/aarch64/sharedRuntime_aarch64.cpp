@@ -235,6 +235,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
   __ pop_CPU_state(_save_vectors, Matcher::supports_scalable_vector(),
                    Matcher::scalable_vector_reg_size(T_BYTE), total_sve_predicate_in_bytes());
 #else
+  assert(!_save_vectors, "vectors are generated only by C2");
   __ pop_CPU_state(_save_vectors);
 #endif
   __ ldp(rfp, lr, Address(__ post(sp, 2 * wordSize)));

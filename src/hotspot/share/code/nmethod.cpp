@@ -924,7 +924,7 @@ address nmethod::continuation_for_implicit_exception(address pc) {
     // Let the normal error handling report the exception
     return nullptr;
   }
-  assert(cont_offset != exception_offset, "continuation offset and exception offset must be different");
+  guarantee(cont_offset != exception_offset, "continuation offset and exception offset must be different");
   return code_begin() + cont_offset;
 }
 
