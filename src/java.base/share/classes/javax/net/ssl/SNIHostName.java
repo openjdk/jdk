@@ -165,13 +165,6 @@ public final class SNIHostName extends SNIServerName {
      * method is used to translate non-ASCII Unicode code points into their
      * corresponding ASCII-Compatible Encoding (ACE).
      *
-     * @apiNote
-     *
-     * Code using this method is expected to handle thrown exceptions and make
-     * a decision depending on its context; e.g., propagate the failure, or
-     * report the issue and skip {@linkplain SSLParameters#setServerNames(List)
-     * the SNI server name configuration}.
-     *
      * @param hostname the hostname of this server name
      *
      * @return an {@code SNIHostName} from the specified hostname
