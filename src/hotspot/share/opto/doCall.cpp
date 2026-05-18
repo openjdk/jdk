@@ -166,7 +166,12 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
-        return CallGenerator::for_vector_late_inline(callee, cg);
+        CallGenerator* fallback_cg = nullptr;
+        if (IncrementalInlineVector) {
+          fallback_cg = this->call_generator(callee,
+              vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);
+        }
+        return CallGenerator::for_vector_late_inline(callee, cg, fallback_cg);
       } else {
         return cg;
       }
