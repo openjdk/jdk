@@ -280,7 +280,6 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   assert(beg_region <= _region_count, "beg_region out of range");
   assert(end_region <= _region_count, "end_region out of range");
 
-  const size_t region_cnt = end_region - beg_region;
   for (size_t i = beg_region; i < end_region; i++) {
     ::new (&_region_data[i]) RegionData{};
   }
