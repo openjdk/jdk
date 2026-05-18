@@ -708,10 +708,7 @@ void ShenandoahReferenceProcessor::mark_discovered_reference_with_old_referent(o
   assert(_generation->is_young(), "Expected young generation, but got: %s", _generation->name());
   const uint worker_id = WorkerThread::worker_id();
   ShenandoahMarkRefsSuperClosure* cl = _ref_proc_thread_locals[worker_id].mark_closure();
-  const auto mode = cl->reference_iteration_mode();
-  cl->set_reference_iteration_mode(OopIterateClosure::DO_FIELDS_EXCEPT_REFERENT);
   cl->do_oop(&reference);
-  cl->set_reference_iteration_mode(mode);
 }
 
 void ShenandoahReferenceProcessor::collect_statistics() {
