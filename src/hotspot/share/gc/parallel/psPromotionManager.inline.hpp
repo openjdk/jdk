@@ -292,7 +292,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       assert(young_space()->contains(new_obj), "Attempt to push non-promoted obj");
     }
 
-    ContinuationGCSupport::transform_stack_chunk(new_obj);
+    ContinuationGCSupport::transform_stack_chunk(new_obj, klass);
 
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than

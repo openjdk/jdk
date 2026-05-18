@@ -2400,10 +2400,6 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (addr == (address)-1) { // Static call stub has jump to itself
     return id;
   }
-  // Check card_table_base address first since it can point to any address
-  BarrierSet* bs = BarrierSet::barrier_set();
-  bool is_const_card_table_base = !UseG1GC && !UseShenandoahGC && bs->is_a(BarrierSet::CardTableBarrierSet);
-  guarantee(!is_const_card_table_base || addr != ci_card_table_address_const(), "sanity");
   // fast path for stubs and external addresses
   if (_hash_table != nullptr) {
     int *result = _hash_table->get(addr);
@@ -2615,10 +2611,6 @@ address AOTStubData::load_archive_data(StubId stub_id, address& end, GrowableArr
   StubAddrRange &range = _ranges[idx];
   int base = range.start_index();
   if (base < 0) {
-#ifdef DEBUG
-    // reset index so we can idenitfy which ones we failed to find
-    range.init_entry(-2, 0);
-#endif
     return nullptr;
   }
   int count = range.count();
@@ -2695,3 +2687,23 @@ void AOTStubData::store_archive_data(StubId stub_id, address start, address end,
   }
   range.init_entry(base, _address_array.length() - base);
 }
+
+void AOTStubData::stub_epilog(StubId stub_id) {
+  DEBUG_ONLY(check_stored(stub_id));
+}
+
+#ifdef ASSERT
+void AOTStubData::check_stored(StubId stub_id) {
+  // Only need to check if we are dumping
+  //
+  // This excludes cases where the cache got closed because of error
+  // plus the pre-universe stubs we can never store because they are
+  // generated prior to cache opening.
+  if (is_dumping()) {
+    int idx = StubInfo::stubgen_offset_in_blob(_blob_id, stub_id);
+    assert(idx >= 0 && idx < _stub_cnt, "invalid index %d for stub count %d", idx, _stub_cnt);
+    StubAddrRange& range = _ranges[idx];
+    assert(range.start_index() != -1, "missing store_archive_data for generated stub %s", StubInfo::name(stub_id));
+  }
+}
+#endif
