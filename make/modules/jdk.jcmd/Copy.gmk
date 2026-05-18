@@ -27,7 +27,7 @@
 
 include CopyCommon.gmk
 
-# all platforms where a Bash is part of the native environment.
+# the autocompletion script is Bash-only
 ifneq ($(call isTargetOsType, windows), true)
   JCMD_CONF_DIR := $(TOPDIR)/src/jdk.jcmd/share/conf
   $(eval $(call SetupCopyFiles, COPY_JCMD_BASH_COMPLETION, \
