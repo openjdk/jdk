@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class IhopUtils {
      */
     private final static String CYCLE_INITIATION_MESSAGE = "Request concurrent cycle initiation (occupancy higher than threshold)";
     private final static String CYCLE_INITIATION_MESSAGE_FALSE = "Do not request concurrent cycle initiation (still doing mixed collections)";
-    private final static String ADAPTIVE_IHOP_PREDICTION_ACTIVE_MESSAGE = "prediction active: true";
+    private final static String ADAPTIVE_IHOP_PREDICTION_ACTIVE_MESSAGE = "Adaptive IHOP information";
 
     /**
      * Finds strings which contains patterns for finding.

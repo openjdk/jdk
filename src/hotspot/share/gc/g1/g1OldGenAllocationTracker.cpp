@@ -33,7 +33,7 @@ G1OldGenAllocationTracker::G1OldGenAllocationTracker() :
   _allocated_humongous_bytes_since_last_gc(0) {
 }
 
-void G1OldGenAllocationTracker::reset_after_gc(size_t humongous_bytes_after_gc) {
+G1MutatorPeriodStatsBytes G1OldGenAllocationTracker::end_mutator_period(size_t humongous_bytes_after_gc) {
   // Calculate actual increase in old, taking eager reclaim into consideration.
   size_t last_period_humongous_increase = 0;
   if (humongous_bytes_after_gc > _humongous_bytes_after_last_gc) {
@@ -46,6 +46,14 @@ void G1OldGenAllocationTracker::reset_after_gc(size_t humongous_bytes_after_gc) 
 
   // Calculate and record needed values.
   _last_period_old_gen_bytes = _allocated_bytes_since_last_gc + _allocated_humongous_bytes_since_last_gc;
+
+  G1MutatorPeriodStatsBytes period_stats{
+    _allocated_bytes_since_last_gc,
+    _allocated_humongous_bytes_since_last_gc,
+    _humongous_bytes_after_last_gc,
+    humongous_bytes_after_gc
+  };
+
   _humongous_bytes_after_last_gc = humongous_bytes_after_gc;
 
   log_debug(gc, alloc, stats)("Old generation allocation in the last mutator period, "
@@ -58,4 +66,6 @@ void G1OldGenAllocationTracker::reset_after_gc(size_t humongous_bytes_after_gc) 
   // Reset for next mutator period.
   _allocated_bytes_since_last_gc = 0;
   _allocated_humongous_bytes_since_last_gc = 0;
+
+  return period_stats;
 }

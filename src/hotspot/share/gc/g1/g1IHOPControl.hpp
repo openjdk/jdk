@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1IHOPCONTROL_HPP
 #define SHARE_GC_G1_G1IHOPCONTROL_HPP
 
-#include "gc/g1/g1OldGenAllocationTracker.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -55,7 +54,6 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 
   // Most recent complete mutator allocation period in seconds.
   double _last_allocation_time_s;
-  const G1OldGenAllocationTracker* _old_gen_alloc_tracker;
 
   const G1Predictions* _predictor;
   // Wall-clock time in seconds from marking start to the first mixed GC,
@@ -63,6 +61,8 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   TruncatedSeq _marking_start_to_mixed_time_s;
   // Old generation allocation rate in bytes per second.
   TruncatedSeq _old_gen_alloc_rate;
+  TruncatedSeq _old_non_humongous_alloc_rate;
+  TruncatedSeq _peak_humongous_allocated_in_mark_cycle;
 
   // The most recent unrestrained size of the young gen. This is used as an additional
   // factor in the calculation of the threshold, as the threshold is based on
@@ -84,12 +84,11 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // algorithm needs to consider restrictions by the environment.
   size_t effective_target_occupancy() const;
 
- void print_log(size_t non_young_occupancy);
- void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
+  void print_log(size_t non_young_occupancy, size_t last_period_old_gen_bytes);
+  void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy, size_t last_period_old_gen_bytes);
 
  public:
   G1IHOPControl(double ihop_percent,
-                const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                 bool adaptive,
                 const G1Predictions* predictor,
                 size_t heap_reserve_percent,
@@ -108,16 +107,21 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Contents include young gen at that point, and the memory required for evacuating
   // the collection set in that first mixed gc (including waste caused by PLAB
   // allocation etc.).
-  void update_allocation_info(double allocation_time_s, size_t expected_young_gen_size);
+  void record_mutator_period(double mutator_time_s,
+                             size_t old_gen_growth_bytes,
+                             size_t expected_young_gen_size);
 
   // Update the time spent in the mutator beginning from the end of concurrent start to
   // the first mixed gc.
-  void add_marking_start_to_mixed_length(double length_s);
+
+  void record_concurrent_cycle(double marking_start_to_mixed_time_s,
+                               size_t non_humongous_bytes,
+                               size_t peak_extra_humongous_reserve_bytes);
 
   // Get the current non-young occupancy at which concurrent marking should start.
   size_t old_gen_threshold_for_conc_mark_start() const;
 
-  void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy);
+  void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy, size_t last_period_old_gen_bytes);
 };
 
 #endif // SHARE_GC_G1_G1IHOPCONTROL_HPP

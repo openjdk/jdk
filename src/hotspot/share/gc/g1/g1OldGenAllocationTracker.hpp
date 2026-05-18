@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1OLDGENALLOCATIONTRACKER_HPP
 #define SHARE_VM_GC_G1_G1OLDGENALLOCATIONTRACKER_HPP
 
+#include "gc/g1/g1ConcurrentCycleTracker.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 
@@ -48,8 +49,12 @@ class G1OldGenAllocationTracker : public CHeapObj<mtGC> {
 public:
   G1OldGenAllocationTracker();
 
-  void add_allocated_bytes_since_last_gc(size_t bytes) { _allocated_bytes_since_last_gc += bytes; }
-  void add_allocated_humongous_bytes_since_last_gc(size_t bytes) { _allocated_humongous_bytes_since_last_gc += bytes; }
+  void add_allocated_bytes_since_last_gc(size_t bytes) {
+    _allocated_bytes_since_last_gc += bytes;
+  }
+  void add_allocated_humongous_bytes_since_last_gc(size_t bytes) {
+    _allocated_humongous_bytes_since_last_gc += bytes;
+  }
 
   // Record a humongous allocation in a collection pause. This allocation
   // is accounted to the previous mutator period.
@@ -58,10 +63,10 @@ public:
   }
 
   size_t last_period_old_gen_bytes() const { return _last_period_old_gen_bytes; }
-  size_t last_period_old_gen_growth() const { return _last_period_old_gen_growth; };
+  size_t last_period_old_gen_growth() const { return _last_period_old_gen_growth; }
 
   // Calculates and resets stats after a collection.
-  void reset_after_gc(size_t humongous_bytes_after_gc);
+  G1MutatorPeriodStatsBytes end_mutator_period(size_t humongous_bytes_after_gc);
 };
 
 #endif // SHARE_VM_GC_G1_G1OLDGENALLOCATIONTRACKER_HPP
