@@ -63,7 +63,9 @@ package gc.shenandoah.generational;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.ref.ReferenceQueue;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashSet;
 import java.util.function.Supplier;
 
 import jdk.test.whitebox.WhiteBox;
@@ -87,7 +89,7 @@ public class TestGenerationalReferenceProcessing {
 
     private static final List<WeakReference<?>> WEAK_REFS = new ArrayList<>(OBJECT_COUNT);
     private static final List<LeakedObject> REFERENTS = new ArrayList<>(OBJECT_COUNT);
-    private static final ReferenceQueue<LeakedObject> refQueue = new ReferenceQueue<>();
+    private static final ReferenceQueue<LeakedObject> REF_QUEUE = new ReferenceQueue<>();
 
     private static final int MINIMUM_CROSS_GENERATIONAL_REFERENCE_COUNT = 50;
 
@@ -123,8 +125,8 @@ public class TestGenerationalReferenceProcessing {
         }
 
         HashSet<WeakReference<?>> getReferences(int reference, int referent) {
-            assert(reference == OLD || reference == YOUNG);
-            assert(referent == OLD || referent == YOUNG);
+            assert reference == OLD || reference == YOUNG;
+            assert referent == OLD || referent == YOUNG;
             return (HashSet<WeakReference<?>>)references[reference][referent];
         }
 
@@ -139,7 +141,7 @@ public class TestGenerationalReferenceProcessing {
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             System.out.println("Call with generation to test: young|old");
-            return;
+            throw new IllegalArgumentException("Missing required argument: young|old");
         }
 
         if ("young".equals(args[0])) {
@@ -198,7 +200,7 @@ public class TestGenerationalReferenceProcessing {
         final int max_references = 10;
         int references_shown = 0;
         for (var reference : references) {
-            if (references_shown > max_references) {
+            if (references_shown >= max_references) {
                 break;
             }
 
@@ -212,7 +214,7 @@ public class TestGenerationalReferenceProcessing {
     private static int removeClearedWeakReferences() {
         int cleared = 0;
         Reference<?> weak;
-        while ((weak = refQueue.poll()) != null) {
+        while ((weak = REF_QUEUE.poll()) != null) {
             WEAK_REFS.remove(weak);
             ++cleared;
         }
@@ -221,7 +223,7 @@ public class TestGenerationalReferenceProcessing {
 
     private static void drainReferenceQueueAndClearReferents() {
         // Drain the reference queue of any incidental weak references from outside the test
-        while (refQueue.poll() != null);
+        while (REF_QUEUE.poll() != null);
 
         // Make all our referents unreachable now
         REFERENTS.clear();
@@ -263,7 +265,7 @@ public class TestGenerationalReferenceProcessing {
         for (int j = 0; j < regions; j++) {
             for (int i = 0; i < OBJECTS_PER_REGION; ++i) {
                 var leakedObject = REFERENTS.get(referentCount - i);
-                var ref = new WeakReference<>(leakedObject, refQueue);
+                var ref = new WeakReference<>(leakedObject, REF_QUEUE);
                 WEAK_REFS.add(ref);
                 byte[] garbage = new byte[OBJECT_SIZE];
                 garbage[i % garbage.length] = (byte) i;
