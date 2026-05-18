@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @enablePreview
  * @summary Implement Subject.current and Subject.callAs using scoped values.
  *      Need enablePreview to use StructuredTaskScope.
- * @run main/othervm CallAsWithScopedValue true
+ * @run main/othervm ${test.main.class} true
  */
 import com.sun.security.auth.UserPrincipal;
 
@@ -65,8 +65,7 @@ public class CallAsWithScopedValue {
 
         // Observable in structured concurrency in SV mode, but not in ACC mode
         Subject.callAs(subject, () -> {
-            var joiner = StructuredTaskScope.Joiner.awaitAll();
-            try (var scope = StructuredTaskScope.open(joiner)) {
+            try (var scope = StructuredTaskScope.open()) {
                 scope.fork(() -> check(3, Subject.current(), usv ? "Duke" : null));
                 scope.join();
             }
