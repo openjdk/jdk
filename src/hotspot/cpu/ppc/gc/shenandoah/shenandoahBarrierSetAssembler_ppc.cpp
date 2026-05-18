@@ -1209,11 +1209,9 @@ void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char
 
   __ lbz(tmp, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(test_state)), R16_thread);
   __ cmpdi(CR0, tmp, 0);
-  __ beq(CR0, *continuation());
-  __ b(*entry());
-
-  // This is were the slowpath stub will return to or the code above will jump
-  // to if the checks are false
+  // Branch to entry if not equal
+  __ bc_far_optimized(Assembler::bcondCRbiIs0, __ bi0(CR0, Assembler::equal), *entry());
+  // This is were the slowpath stub will return to
   __ bind(*continuation());
 }
 
@@ -1257,11 +1255,9 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
 }
 
 void ShenandoahBarrierStubC2::maybe_far_jump_if_zero(MacroAssembler& masm, Register reg) {
-  Label L_short_jump;
   __ cmpdi(CR0, reg, 0);
-  __ bne(CR0, L_short_jump);
-  __ b(*continuation());
-  __ bind(L_short_jump);
+  // Branch to continuation if equal
+  __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal), *continuation());
 }
 
 void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
