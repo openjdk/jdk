@@ -717,7 +717,7 @@ WB_ENTRY(jint, WB_ShenandoahRegionCount(JNIEnv* env, jobject o))
   if (UseShenandoahGC) {
     return static_cast<jint>(ShenandoahHeap::heap()->num_regions());
   }
-THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionCount: Shenandoah GC is not enabled");
 WB_END
 
 WB_ENTRY(jint, WB_ShenandoahRegionIndex(JNIEnv* env, jobject o, jobject obj))
@@ -729,7 +729,7 @@ WB_ENTRY(jint, WB_ShenandoahRegionIndex(JNIEnv* env, jobject o, jobject obj))
     }
     return -1;
   }
-THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionIndex: Shenandoah GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
@@ -739,7 +739,7 @@ WB_ENTRY(jboolean, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
     }
     return false;
   }
-THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahOldGC: Shenandoah GC is not enabled");
 WB_END
 
 #endif // INCLUDE_SHENANDOAHGC
