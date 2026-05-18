@@ -2498,14 +2498,16 @@ public final class MethodHandles {
          * <p>
          * If the returned method handle is invoked, the method's class will
          * be initialized, if it has not already been initialized.
-         * <p><b>Example:</b>
+         *
+         * @note [header=Example:]
+         *
          * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle MH_asList = publicLookup().findStatic(Arrays.class,
-  "asList", methodType(List.class, Object[].class));
-assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
+         * import static java.lang.invoke.MethodHandles.*;
+         * import static java.lang.invoke.MethodType.*;
+         * ...
+         * MethodHandle MH_asList = publicLookup().findStatic(Arrays.class,
+         *   "asList", methodType(List.class, Object[].class));
+         * assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
          * }
          * @param refc the class from which the method is accessed
          * @param name the name of the method
@@ -2560,33 +2562,34 @@ assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
          * {@link java.lang.invoke.MethodHandles#varHandleInvoker} with
          * the access mode corresponding to the name string and with the same
          * {@code type} arguments.
-         * <p>
-         * <b>Example:</b>
+         *
+         * @note [header=Example:]
+         *
          * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle MH_concat = publicLookup().findVirtual(String.class,
-  "concat", methodType(String.class, String.class));
-MethodHandle MH_hashCode = publicLookup().findVirtual(Object.class,
-  "hashCode", methodType(int.class));
-MethodHandle MH_hashCode_String = publicLookup().findVirtual(String.class,
-  "hashCode", methodType(int.class));
-assertEquals("xy", (String) MH_concat.invokeExact("x", "y"));
-assertEquals("xy".hashCode(), (int) MH_hashCode.invokeExact((Object)"xy"));
-assertEquals("xy".hashCode(), (int) MH_hashCode_String.invokeExact("xy"));
-// interface method:
-MethodHandle MH_subSequence = publicLookup().findVirtual(CharSequence.class,
-  "subSequence", methodType(CharSequence.class, int.class, int.class));
-assertEquals("def", MH_subSequence.invoke("abcdefghi", 3, 6).toString());
-// constructor "internal method" must be accessed differently:
-MethodType MT_newString = methodType(void.class); //()V for new String()
-try { assertEquals("impossible", lookup()
-        .findVirtual(String.class, "<init>", MT_newString));
- } catch (NoSuchMethodException ex) { } // OK
-MethodHandle MH_newString = publicLookup()
-  .findConstructor(String.class, MT_newString);
-assertEquals("", (String) MH_newString.invokeExact());
+         * import static java.lang.invoke.MethodHandles.*;
+         * import static java.lang.invoke.MethodType.*;
+         * ...
+         * MethodHandle MH_concat = publicLookup().findVirtual(String.class,
+         *   "concat", methodType(String.class, String.class));
+         * MethodHandle MH_hashCode = publicLookup().findVirtual(Object.class,
+         *   "hashCode", methodType(int.class));
+         * MethodHandle MH_hashCode_String = publicLookup().findVirtual(String.class,
+         *   "hashCode", methodType(int.class));
+         * assertEquals("xy", (String) MH_concat.invokeExact("x", "y"));
+         * assertEquals("xy".hashCode(), (int) MH_hashCode.invokeExact((Object)"xy"));
+         * assertEquals("xy".hashCode(), (int) MH_hashCode_String.invokeExact("xy"));
+         * // interface method:
+         * MethodHandle MH_subSequence = publicLookup().findVirtual(CharSequence.class,
+         *   "subSequence", methodType(CharSequence.class, int.class, int.class));
+         * assertEquals("def", MH_subSequence.invoke("abcdefghi", 3, 6).toString());
+         * // constructor "internal method" must be accessed differently:
+         * MethodType MT_newString = methodType(void.class); //()V for new String()
+         * try { assertEquals("impossible", lookup()
+         *         .findVirtual(String.class, "<init>", MT_newString));
+         *  } catch (NoSuchMethodException ex) { } // OK
+         * MethodHandle MH_newString = publicLookup()
+         *   .findConstructor(String.class, MT_newString);
+         * assertEquals("", (String) MH_newString.invokeExact());
          * }
          *
          * @param refc the class or interface from which the method is accessed
@@ -2645,23 +2648,25 @@ assertEquals("", (String) MH_newString.invokeExact());
          * <p>
          * If the returned method handle is invoked, the constructor's class will
          * be initialized, if it has not already been initialized.
-         * <p><b>Example:</b>
+         *
+         * @note [header=Example:]
+         *
          * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle MH_newArrayList = publicLookup().findConstructor(
-  ArrayList.class, methodType(void.class, Collection.class));
-Collection orig = Arrays.asList("x", "y");
-Collection copy = (ArrayList) MH_newArrayList.invokeExact(orig);
-assert(orig != copy);
-assertEquals(orig, copy);
-// a variable-arity constructor:
-MethodHandle MH_newProcessBuilder = publicLookup().findConstructor(
-  ProcessBuilder.class, methodType(void.class, String[].class));
-ProcessBuilder pb = (ProcessBuilder)
-  MH_newProcessBuilder.invoke("x", "y", "z");
-assertEquals("[x, y, z]", pb.command().toString());
+         * import static java.lang.invoke.MethodHandles.*;
+         * import static java.lang.invoke.MethodType.*;
+         * ...
+         * MethodHandle MH_newArrayList = publicLookup().findConstructor(
+         *   ArrayList.class, methodType(void.class, Collection.class));
+         * Collection orig = Arrays.asList("x", "y");
+         * Collection copy = (ArrayList) MH_newArrayList.invokeExact(orig);
+         * assert(orig != copy);
+         * assertEquals(orig, copy);
+         * // a variable-arity constructor:
+         * MethodHandle MH_newProcessBuilder = publicLookup().findConstructor(
+         *   ProcessBuilder.class, methodType(void.class, String[].class));
+         * ProcessBuilder pb = (ProcessBuilder)
+         *   MH_newProcessBuilder.invoke("x", "y", "z");
+         * assertEquals("[x, y, z]", pb.command().toString());
          * }
          * @param refc the class or interface from which the method is accessed
          * @param type the type of the method, with the receiver argument omitted, and a void return type
@@ -2877,38 +2882,40 @@ assertEquals("[x, y, z]", pb.command().toString());
          * even though the {@code invokespecial} instruction can refer to them
          * in special circumstances.  Use {@link #findConstructor findConstructor}
          * to access instance initialization methods in a safe manner.)</em>
-         * <p><b>Example:</b>
+         *
+         * @note [header=Example:]
+         *
          * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-static class Listie extends ArrayList {
-  public String toString() { return "[wee Listie]"; }
-  static Lookup lookup() { return MethodHandles.lookup(); }
-}
-...
-// no access to constructor via invokeSpecial:
-MethodHandle MH_newListie = Listie.lookup()
-  .findConstructor(Listie.class, methodType(void.class));
-Listie l = (Listie) MH_newListie.invokeExact();
-try { assertEquals("impossible", Listie.lookup().findSpecial(
-        Listie.class, "<init>", methodType(void.class), Listie.class));
- } catch (NoSuchMethodException ex) { } // OK
-// access to super and self methods via invokeSpecial:
-MethodHandle MH_super = Listie.lookup().findSpecial(
-  ArrayList.class, "toString" , methodType(String.class), Listie.class);
-MethodHandle MH_this = Listie.lookup().findSpecial(
-  Listie.class, "toString" , methodType(String.class), Listie.class);
-MethodHandle MH_duper = Listie.lookup().findSpecial(
-  Object.class, "toString" , methodType(String.class), Listie.class);
-assertEquals("[]", (String) MH_super.invokeExact(l));
-assertEquals(""+l, (String) MH_this.invokeExact(l));
-assertEquals("[]", (String) MH_duper.invokeExact(l)); // ArrayList method
-try { assertEquals("inaccessible", Listie.lookup().findSpecial(
-        String.class, "toString", methodType(String.class), Listie.class));
- } catch (IllegalAccessException ex) { } // OK
-Listie subl = new Listie() { public String toString() { return "[subclass]"; } };
-assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
+         * import static java.lang.invoke.MethodHandles.*;
+         * import static java.lang.invoke.MethodType.*;
+         * ...
+         * static class Listie extends ArrayList {
+         *   public String toString() { return "[wee Listie]"; }
+         *   static Lookup lookup() { return MethodHandles.lookup(); }
+         * }
+         * ...
+         * // no access to constructor via invokeSpecial:
+         * MethodHandle MH_newListie = Listie.lookup()
+         *   .findConstructor(Listie.class, methodType(void.class));
+         * Listie l = (Listie) MH_newListie.invokeExact();
+         * try { assertEquals("impossible", Listie.lookup().findSpecial(
+         *         Listie.class, "<init>", methodType(void.class), Listie.class));
+         *  } catch (NoSuchMethodException ex) { } // OK
+         * // access to super and self methods via invokeSpecial:
+         * MethodHandle MH_super = Listie.lookup().findSpecial(
+         *   ArrayList.class, "toString" , methodType(String.class), Listie.class);
+         * MethodHandle MH_this = Listie.lookup().findSpecial(
+         *   Listie.class, "toString" , methodType(String.class), Listie.class);
+         * MethodHandle MH_duper = Listie.lookup().findSpecial(
+         *   Object.class, "toString" , methodType(String.class), Listie.class);
+         * assertEquals("[]", (String) MH_super.invokeExact(l));
+         * assertEquals(""+l, (String) MH_this.invokeExact(l));
+         * assertEquals("[]", (String) MH_duper.invokeExact(l)); // ArrayList method
+         * try { assertEquals("inaccessible", Listie.lookup().findSpecial(
+         *         String.class, "toString", methodType(String.class), Listie.class));
+         *  } catch (IllegalAccessException ex) { } // OK
+         * Listie subl = new Listie() { public String toString() { return "[subclass]"; } };
+         * assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * }
          *
          * @param refc the class or interface from which the method is accessed
@@ -3185,13 +3192,13 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <p>
          * This is almost equivalent to the following code, with some differences noted below:
          * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle mh0 = lookup().findVirtual(defc, name, type);
-MethodHandle mh1 = mh0.bindTo(receiver);
-mh1 = mh1.withVarargs(mh0.isVarargsCollector());
-return mh1;
+         * import static java.lang.invoke.MethodHandles.*;
+         * import static java.lang.invoke.MethodType.*;
+         * ...
+         * MethodHandle mh0 = lookup().findVirtual(defc, name, type);
+         * MethodHandle mh1 = mh0.bindTo(receiver);
+         * mh1 = mh1.withVarargs(mh0.isVarargsCollector());
+         * return mh1;
          * }
          * where {@code defc} is either {@code receiver.getClass()} or a super
          * type of that class, in which the requested method is accessible
@@ -4399,10 +4406,10 @@ return mh1;
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * {@snippet lang="java" :
-MethodHandle invoker = MethodHandles.invoker(type);
-int spreadArgCount = type.parameterCount() - leadingArgCount;
-invoker = invoker.asSpreader(Object[].class, spreadArgCount);
-return invoker;
+     * MethodHandle invoker = MethodHandles.invoker(type);
+     * int spreadArgCount = type.parameterCount() - leadingArgCount;
+     * invoker = invoker.asSpreader(Object[].class, spreadArgCount);
+     * return invoker;
      * }
      * This method throws no reflective exceptions.
      * @param type the desired target type
@@ -4643,21 +4650,21 @@ return invoker;
      * incoming arguments which are not mentioned in the reordering array
      * may be of any type, as determined only by {@code newType}.
      * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodType intfn1 = methodType(int.class, int.class);
-MethodType intfn2 = methodType(int.class, int.class, int.class);
-MethodHandle sub = ... (int x, int y) -> (x-y) ...;
-assert(sub.type().equals(intfn2));
-MethodHandle sub1 = permuteArguments(sub, intfn2, 0, 1);
-MethodHandle rsub = permuteArguments(sub, intfn2, 1, 0);
-assert((int)rsub.invokeExact(1, 100) == 99);
-MethodHandle add = ... (int x, int y) -> (x+y) ...;
-assert(add.type().equals(intfn2));
-MethodHandle twice = permuteArguments(add, intfn1, 0, 0);
-assert(twice.type().equals(intfn1));
-assert((int)twice.invokeExact(21) == 42);
+     * import static java.lang.invoke.MethodHandles.*;
+     * import static java.lang.invoke.MethodType.*;
+     * ...
+     * MethodType intfn1 = methodType(int.class, int.class);
+     * MethodType intfn2 = methodType(int.class, int.class, int.class);
+     * MethodHandle sub = ... (int x, int y) -> (x-y) ...;
+     * assert(sub.type().equals(intfn2));
+     * MethodHandle sub1 = permuteArguments(sub, intfn2, 0, 1);
+     * MethodHandle rsub = permuteArguments(sub, intfn2, 1, 0);
+     * assert((int)rsub.invokeExact(1, 100) == 99);
+     * MethodHandle add = ... (int x, int y) -> (x+y) ...;
+     * assert(add.type().equals(intfn2));
+     * MethodHandle twice = permuteArguments(add, intfn1, 0, 0);
+     * assert(twice.type().equals(intfn1));
+     * assert((int)twice.invokeExact(21) == 42);
      * }
      * <p>
      * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
@@ -5039,21 +5046,22 @@ assert((int)twice.invokeExact(21) == 42);
      * If {@code pos} is zero, the dummy arguments will precede
      * the target's real arguments; if {@code pos} is <i>N</i>
      * they will come after.
-     * <p>
-     * <b>Example:</b>
+     *
+     * @note [header=Example:]
      * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle cat = lookup().findVirtual(String.class,
-  "concat", methodType(String.class, String.class));
-assertEquals("xy", (String) cat.invokeExact("x", "y"));
-MethodType bigType = cat.type().insertParameterTypes(0, int.class, String.class);
-MethodHandle d0 = dropArguments(cat, 0, bigType.parameterList().subList(0,2));
-assertEquals(bigType, d0.type());
-assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
+     * import static java.lang.invoke.MethodHandles.*;
+     * import static java.lang.invoke.MethodType.*;
+     * ...
+     * MethodHandle cat = lookup().findVirtual(String.class,
+     *   "concat", methodType(String.class, String.class));
+     * assertEquals("xy", (String) cat.invokeExact("x", "y"));
+     * MethodType bigType = cat.type().insertParameterTypes(0, int.class, String.class);
+     * MethodHandle d0 = dropArguments(cat, 0, bigType.parameterList().subList(0,2));
+     * assertEquals(bigType, d0.type());
+     * assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      * }
-     * <p>
+     *
+     * @apiNote
      * This method is also equivalent to the following code:
      * <blockquote><pre>
      * {@link #dropArguments(MethodHandle,int,Class...) dropArguments}{@code (target, pos, valueTypes.toArray(new Class[0]))}
@@ -5112,24 +5120,25 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      * If {@code pos} is zero, the dummy arguments will precede
      * the target's real arguments; if {@code pos} is <i>N</i>
      * they will come after.
-     * @apiNote
+     *
+     * @note [header=Example:]
      * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle cat = lookup().findVirtual(String.class,
-  "concat", methodType(String.class, String.class));
-assertEquals("xy", (String) cat.invokeExact("x", "y"));
-MethodHandle d0 = dropArguments(cat, 0, String.class);
-assertEquals("yz", (String) d0.invokeExact("x", "y", "z"));
-MethodHandle d1 = dropArguments(cat, 1, String.class);
-assertEquals("xz", (String) d1.invokeExact("x", "y", "z"));
-MethodHandle d2 = dropArguments(cat, 2, String.class);
-assertEquals("xy", (String) d2.invokeExact("x", "y", "z"));
-MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
-assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
+     * import static java.lang.invoke.MethodHandles.*;
+     * import static java.lang.invoke.MethodType.*;
+     * ...
+     * MethodHandle cat = lookup().findVirtual(String.class,
+     *   "concat", methodType(String.class, String.class));
+     * assertEquals("xy", (String) cat.invokeExact("x", "y"));
+     * MethodHandle d0 = dropArguments(cat, 0, String.class);
+     * assertEquals("yz", (String) d0.invokeExact("x", "y", "z"));
+     * MethodHandle d1 = dropArguments(cat, 1, String.class);
+     * assertEquals("xz", (String) d1.invokeExact("x", "y", "z"));
+     * MethodHandle d2 = dropArguments(cat, 2, String.class);
+     * assertEquals("xy", (String) d2.invokeExact("x", "y", "z"));
+     * MethodHandle d12 = dropArguments(cat, 1, int.class, boolean.class);
+     * assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      * }
-     * <p>
+     * @apiNote
      * This method is also equivalent to the following code:
      * <blockquote><pre>
      * {@link #dropArguments(MethodHandle,int,List) dropArguments}{@code (target, pos, Arrays.asList(valueTypes))}
@@ -5316,22 +5325,24 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * It is an error if there are elements of {@code filters}
      * (null or not)
      * which do not correspond to argument positions in the target.
-     * <p><b>Example:</b>
+     *
+     * @note [header=Example:]
+     *
      * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle cat = lookup().findVirtual(String.class,
-  "concat", methodType(String.class, String.class));
-MethodHandle upcase = lookup().findVirtual(String.class,
-  "toUpperCase", methodType(String.class));
-assertEquals("xy", (String) cat.invokeExact("x", "y"));
-MethodHandle f0 = filterArguments(cat, 0, upcase);
-assertEquals("Xy", (String) f0.invokeExact("x", "y")); // Xy
-MethodHandle f1 = filterArguments(cat, 1, upcase);
-assertEquals("xY", (String) f1.invokeExact("x", "y")); // xY
-MethodHandle f2 = filterArguments(cat, 0, upcase, upcase);
-assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
+     * import static java.lang.invoke.MethodHandles.*;
+     * import static java.lang.invoke.MethodType.*;
+     * ...
+     * MethodHandle cat = lookup().findVirtual(String.class,
+     *   "concat", methodType(String.class, String.class));
+     * MethodHandle upcase = lookup().findVirtual(String.class,
+     *   "toUpperCase", methodType(String.class));
+     * assertEquals("xy", (String) cat.invokeExact("x", "y"));
+     * MethodHandle f0 = filterArguments(cat, 0, upcase);
+     * assertEquals("Xy", (String) f0.invokeExact("x", "y")); // Xy
+     * MethodHandle f1 = filterArguments(cat, 1, upcase);
+     * assertEquals("xY", (String) f1.invokeExact("x", "y")); // xY
+     * MethodHandle f2 = filterArguments(cat, 0, upcase, upcase);
+     * assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      * }
      * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
      * denotes the return type of both the {@code target} and resulting adapter.
@@ -5476,32 +5487,34 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      * <p>
      * In all cases, {@code pos} must be greater than or equal to zero, and
      * {@code pos} must also be less than or equal to the target's arity.
-     * <p><b>Example:</b>
+     *
+     * @note [header=Example:]
+     *
      * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle deepToString = publicLookup()
-  .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
-
-MethodHandle ts1 = deepToString.asCollector(String[].class, 1);
-assertEquals("[strange]", (String) ts1.invokeExact("strange"));
-
-MethodHandle ts2 = deepToString.asCollector(String[].class, 2);
-assertEquals("[up, down]", (String) ts2.invokeExact("up", "down"));
-
-MethodHandle ts3 = deepToString.asCollector(String[].class, 3);
-MethodHandle ts3_ts2 = collectArguments(ts3, 1, ts2);
-assertEquals("[top, [up, down], strange]",
-             (String) ts3_ts2.invokeExact("top", "up", "down", "strange"));
-
-MethodHandle ts3_ts2_ts1 = collectArguments(ts3_ts2, 3, ts1);
-assertEquals("[top, [up, down], [strange]]",
-             (String) ts3_ts2_ts1.invokeExact("top", "up", "down", "strange"));
-
-MethodHandle ts3_ts2_ts3 = collectArguments(ts3_ts2, 1, ts3);
-assertEquals("[top, [[up, down, strange], charm], bottom]",
-             (String) ts3_ts2_ts3.invokeExact("top", "up", "down", "strange", "charm", "bottom"));
+     * import static java.lang.invoke.MethodHandles.*;
+     * import static java.lang.invoke.MethodType.*;
+     * ...
+     * MethodHandle deepToString = publicLookup()
+     *   .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
+     *
+     * MethodHandle ts1 = deepToString.asCollector(String[].class, 1);
+     * assertEquals("[strange]", (String) ts1.invokeExact("strange"));
+     *
+     * MethodHandle ts2 = deepToString.asCollector(String[].class, 2);
+     * assertEquals("[up, down]", (String) ts2.invokeExact("up", "down"));
+     *
+     * MethodHandle ts3 = deepToString.asCollector(String[].class, 3);
+     * MethodHandle ts3_ts2 = collectArguments(ts3, 1, ts2);
+     * assertEquals("[top, [up, down], strange]",
+     *              (String) ts3_ts2.invokeExact("top", "up", "down", "strange"));
+     *
+     * MethodHandle ts3_ts2_ts1 = collectArguments(ts3_ts2, 3, ts1);
+     * assertEquals("[top, [up, down], [strange]]",
+     *              (String) ts3_ts2_ts1.invokeExact("top", "up", "down", "strange"));
+     *
+     * MethodHandle ts3_ts2_ts3 = collectArguments(ts3_ts2, 1, ts3);
+     * assertEquals("[top, [[up, down, strange], charm], bottom]",
+     *              (String) ts3_ts2_ts3.invokeExact("top", "up", "down", "strange", "charm", "bottom"));
      * }
      * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
      * represents the return type of the {@code target} and resulting adapter.
@@ -5536,7 +5549,8 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
      *   return target3(a...,c...);
      * }
      * }
-     * <p>
+     *
+     * @apiNote
      * A collection adapter {@code collectArguments(mh, 0, coll)} is equivalent to
      * one which first "folds" the affected arguments, and then drops them, in separate
      * steps as follows:
@@ -5610,18 +5624,20 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
      * in the resulting adapted method handle.
      * The argument type of the filter (if any) must be identical to the
      * return type of the target.
-     * <p><b>Example:</b>
+     *
+     * @note [header=Example:]
+     *
      * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle cat = lookup().findVirtual(String.class,
-  "concat", methodType(String.class, String.class));
-MethodHandle length = lookup().findVirtual(String.class,
-  "length", methodType(int.class));
-System.out.println((String) cat.invokeExact("x", "y")); // xy
-MethodHandle f0 = filterReturnValue(cat, length);
-System.out.println((int) f0.invokeExact("x", "y")); // 2
+     * import static java.lang.invoke.MethodHandles.*;
+     * import static java.lang.invoke.MethodType.*;
+     * ...
+     * MethodHandle cat = lookup().findVirtual(String.class,
+     *   "concat", methodType(String.class, String.class));
+     * MethodHandle length = lookup().findVirtual(String.class,
+     *   "length", methodType(int.class));
+     * System.out.println((String) cat.invokeExact("x", "y")); // xy
+     * MethodHandle f0 = filterReturnValue(cat, length);
+     * System.out.println((int) f0.invokeExact("x", "y")); // 2
      * }
      * <p>Here is pseudocode for the resulting adapter. In the code,
      * {@code T}/{@code t} represent the result type and value of the
@@ -5749,20 +5765,22 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * consider using {@link MethodHandle#asCollector asCollector} instead, since those
      * arguments will not need to be live on the stack on entry to the
      * target.)
-     * <p><b>Example:</b>
+     *
+     * @note [header=Example:]
+     *
      * {@snippet lang="java" :
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-...
-MethodHandle trace = publicLookup().findVirtual(java.io.PrintStream.class,
-  "println", methodType(void.class, String.class))
-    .bindTo(System.out);
-MethodHandle cat = lookup().findVirtual(String.class,
-  "concat", methodType(String.class, String.class));
-assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
-MethodHandle catTrace = foldArguments(cat, trace);
-// also prints "boo":
-assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
+     * import static java.lang.invoke.MethodHandles.*;
+     * import static java.lang.invoke.MethodType.*;
+     * ...
+     * MethodHandle trace = publicLookup().findVirtual(java.io.PrintStream.class,
+     *   "println", methodType(void.class, String.class))
+     *     .bindTo(System.out);
+     * MethodHandle cat = lookup().findVirtual(String.class,
+     *   "concat", methodType(String.class, String.class));
+     * assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
+     * MethodHandle catTrace = foldArguments(cat, trace);
+     * // also prints "boo":
+     * assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
      * represents the result type of the {@code target} and resulting adapter.
@@ -5817,20 +5835,20 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * zero-based index. The aforementioned method {@link #foldArguments(MethodHandle, MethodHandle)} assumes position
      * 0.
      *
-     * @apiNote Example:
+     * @note [header=Example:]
      * {@snippet lang="java" :
-    import static java.lang.invoke.MethodHandles.*;
-    import static java.lang.invoke.MethodType.*;
-    ...
-    MethodHandle trace = publicLookup().findVirtual(java.io.PrintStream.class,
-    "println", methodType(void.class, String.class))
-    .bindTo(System.out);
-    MethodHandle cat = lookup().findVirtual(String.class,
-    "concat", methodType(String.class, String.class));
-    assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
-    MethodHandle catTrace = foldArguments(cat, 1, trace);
-    // also prints "jum":
-    assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
+     * import static java.lang.invoke.MethodHandles.*;
+     * import static java.lang.invoke.MethodType.*;
+     * ...
+     * MethodHandle trace = publicLookup().findVirtual(java.io.PrintStream.class,
+     *    "println", methodType(void.class, String.class))
+     *    .bindTo(System.out);
+     * MethodHandle cat = lookup().findVirtual(String.class,
+     *    "concat", methodType(String.class, String.class));
+     * assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
+     * MethodHandle catTrace = foldArguments(cat, 1, trace);
+     * // also prints "jum":
+     * assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
      * represents the result type of the {@code target} and resulting adapter.
@@ -6384,7 +6402,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * to their full length, even though individual clause functions may neglect to take them all.
      * As noted above, missing parameters are filled in as if by {@link #dropArgumentsToMatch(MethodHandle, int, List, int)}.
      *
-     * @apiNote Example:
+     * @note [header=Examples:]
      * {@snippet lang="java" :
      * // iterative implementation of the factorial function as a loop handle
      * static int one(int k) { return 1; }
@@ -6671,7 +6689,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }
      *
-     * @apiNote Example:
+     * @note [header=Example:]
      * {@snippet lang="java" :
      * // implement the zip function for lists as a loop handle
      * static List<String> initZip(Iterator<String> a, Iterator<String> b) { return new ArrayList<>(); }
@@ -6784,7 +6802,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }
      *
-     * @apiNote Example:
+     * @note [header=Example:]
      * {@snippet lang="java" :
      * // int i = 0; while (i < limit) { ++i; } return i; => limit
      * static int zero(int limit) { return 0; }
@@ -6928,7 +6946,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }
      *
-     * @apiNote Example with a fully conformant body method:
+     * @note [header=Examples:]
+     *
+     * Example with a fully conformant body method:
      * {@snippet lang="java" :
      * // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s;
      * // => a variation on a well known theme
@@ -6940,7 +6960,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
      * }
      *
-     * @apiNote Example with the simplest possible body method type,
+     * Example with the simplest possible body method type,
      * and passing the number of iterations to the loop invocation:
      * {@snippet lang="java" :
      * // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s;
@@ -6953,7 +6973,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke(13, "Lambdaman!"));
      * }
      *
-     * @apiNote Example that treats the number of iterations, string to append to, and string to append
+     * Example that treats the number of iterations, string to append to, and string to append
      * as loop parameters:
      * {@snippet lang="java" :
      * // String s = "Lambdaman!", t = "na"; for (int i = 0; i < 13; ++i) { s = t + " " + s; } return s;
@@ -6966,7 +6986,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke(13, "na", "Lambdaman!"));
      * }
      *
-     * @apiNote Example that illustrates the usage of {@link #dropArgumentsToMatch(MethodHandle, int, List, int)}
+     * Example that illustrates the usage of {@link #dropArgumentsToMatch(MethodHandle, int, List, int)}
      * to enforce a loop type:
      * {@snippet lang="java" :
      * // String s = "Lambdaman!", t = "na"; for (int i = 0; i < 13; ++i) { s = t + " " + s; } return s;
@@ -7286,7 +7306,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }
      *
-     * @apiNote Example:
+     * @note [header=Example:]
      * {@snippet lang="java" :
      * // get an iterator from a list
      * static List<String> reverseStep(List<String> r, String e) {
@@ -7605,7 +7625,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * method handle as well. Any arguments assigned to these parameters will be forwarded,
      * together with the selector value, to the selected method handle when invoking it.
      *
-     * @apiNote Example:
+     * @note [header=Example:]
      * The cases each drop the {@code selector} value they are given, and take an additional
      * {@code String} argument, which is concatenated (using {@link String#concat(String)})
      * to a specific constant label string for each case:
