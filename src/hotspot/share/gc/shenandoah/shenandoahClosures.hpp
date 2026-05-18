@@ -94,7 +94,7 @@ public:
     _weak = weak;
   }
 
-  virtual void do_nmethod(nmethod* nm) {
+  void do_nmethod(nmethod* nm) override {
     assert(!is_weak(), "Can't handle weak marking of nmethods");
     ShenandoahSuperClosure::do_nmethod(nm);
   }
