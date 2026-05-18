@@ -813,7 +813,7 @@ public:
   // self-forwarded bit on src, flags src's region, and returns src.
   virtual oop evacuate_object(oop src, Thread* thread);
 
-  // A non-virtual implementation for callers that no what kind of heap they have
+  // A non-virtual implementation for callers that know what kind of heap they have
   oop evacuate_object_nongen(oop src, Thread* thread);
 
   // Parallel scan of flagged cset regions to clear self-forwarded bits on live
