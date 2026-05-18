@@ -1764,21 +1764,6 @@ class vector_VectorPayload : AllStatic {
   static bool is_instance(oop obj);
 };
 
-class java_lang_Integer : AllStatic {
-};
-
-class java_lang_Long : AllStatic {
-};
-
-class java_lang_Character : AllStatic {
-};
-
-class java_lang_Short : AllStatic {
-};
-
-class java_lang_Byte : AllStatic {
-};
-
 class java_lang_Boolean : AllStatic {
  private:
   static int _static_TRUE_offset;
