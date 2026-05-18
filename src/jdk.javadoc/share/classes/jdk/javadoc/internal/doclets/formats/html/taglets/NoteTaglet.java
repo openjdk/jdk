@@ -34,6 +34,7 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.RawHtml;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -131,10 +133,10 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 // The first note in a group therefore determines the style of the group.
                 var content = map.get(header);
                 if (content == null) {
-                    content = HtmlTree.DIV(HtmlTree.DT(getHeader(header)))
-                                .setId(getId(id, holder, false))
-                                .addStyle(getCSSClass(kind))
-                                .add(body);
+                    content = HtmlTree.DIV(HtmlTree.DT(sanitizeHeader(header)))
+                            .setId(getId(id, holder, false))
+                            .addStyle(getCSSClass(kind))
+                            .add(body);
                     map.put(header, content);
                 } else {
                     if (id != null) {
@@ -170,7 +172,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var div = HtmlTree.DIV(HtmlStyles.inlineNote)
                 .addStyle(getCSSClass(kind))
                 .setId(getId(id, element, true))
-                .add(HtmlTree.SPAN(HtmlStyles.noteHeader, getHeader(header)))
+                .add(HtmlTree.SPAN(HtmlStyles.noteHeader, sanitizeHeader(header)))
                 .add(Text.NL)
                 .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
 
@@ -190,7 +192,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     private HtmlId getId(String id, Element e, boolean inline) {
         var existingIds = tagletWriter.htmlWriter.getExistingIds();
         return id != null
-            ? config.htmlIds.makeUnique(id, existingIds)
+            ? config.htmlIds.getUniqueId(id, existingIds)
             : config.htmlIds.forNote(e, defaultKind, inline, existingIds);
     }
 
@@ -219,11 +221,28 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 : CSS_CLASS_PREFIX + "-" + kind.trim();
     }
 
-    // Only allow raw HTML content for trusted default header.
-    private Content getHeader(String header) {
-        return defaultHeader.equals(header)
-                ? RawHtml.of(defaultHeader)
-                : Text.of(header);
+    // Regex to enable HTML tags allowed in note headers
+    private static final Pattern allowedHeaderTags = Pattern.compile(
+            "&lt;(?<tag>b|strong|i|em|code|sub|sup)&gt;" +
+                    "(?<body>.*?)" +
+                    "&lt;/\\k<tag>&gt;",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+    // Only allow a few select safe HTML elements in header, and only
+    // when they are closed properly and don't contain any attributes.
+    private Content sanitizeHeader(String header) {
+        var escaped = Entity.escapeHtmlChars(header);
+
+        if (!escaped.equals(header)) {
+            var matcher = allowedHeaderTags.matcher(escaped);
+            while (matcher.find()) {
+                var tag = matcher.group("tag");
+                var body = matcher.group("body");
+                escaped = matcher.replaceFirst("<" + tag + ">" + body + "</" + tag + ">");
+                matcher = allowedHeaderTags.matcher(escaped);
+            }
+        }
+        return RawHtml.of(escaped);
     }
 
     private static Set<Taglet.Location> getLocations(String locations) {

@@ -548,4 +548,53 @@ public class TestNoteTag extends JavadocTester {
                         <dd>Lorem ipsum dolor sit amet""");
     }
 
+    @Test
+    public void testAttributeEncoding(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * @note [id='id "$ value'
+                 *   header='Multi-line header containing <em>
+                 *           both <sup>supported</sup></EM> and
+                 *           <a href="javascript:alert(0)">unsupported</a> markup'
+                 *   kind='myNote " otherStyle'
+                 *   otherAttribute="ignored"]
+                 * Block note body.
+                 */
+                public class C {
+                    /**
+                     * {@note [id='id "$ value'
+                     *   header='Multi-line header containing <em>
+                     *           both <sup>supported</sup></EM> and
+                     *           <a href="javascript:alert(0)">unsupported</a> markup'
+                     *   kind='myNote " otherStyle'
+                     *   otherAttribute="ignored"]
+                     * Inline note body.
+                     * }
+                     */
+                    public void m() {}
+                }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOrder("p/C.html", """
+                    <dl class="notes">
+                    <div id="id-value" class="note-tag-myNote &quot; otherStyle">
+                    <dt>Multi-line header containing <em>
+                              both <sup>supported</sup></em> and
+                              &lt;a href="javascript:alert(0)"&gt;unsupported&lt;/a&gt; markup</dt>
+                    <dd>Block note body.</dd>
+                    </div>""",
+                """
+                    <div class="inline-note note-tag-myNote &quot; otherStyle" id="id-value1"><span clas\
+                    s="note-header">Multi-line header containing <em>
+                              both <sup>supported</sup></em> and
+                              &lt;a href="javascript:alert(0)"&gt;unsupported&lt;/a&gt; markup</span>
+                    Inline note body.</div>""");
+    }
 }
