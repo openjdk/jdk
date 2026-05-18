@@ -449,9 +449,8 @@ public class TestNoteTag extends JavadocTester {
                 );
     }
 
-    // Generate auto border on block notes with mixed or very long content
     @Test
-    public void testAutoBorder(Path base) throws IOException {
+    public void testLongNotes(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
                     package p;
@@ -520,10 +519,7 @@ public class TestNoteTag extends JavadocTester {
                         /**
                          * @note
                          * Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt
-                         * ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-                         * ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit
-                         * in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat
-                         * cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                         * ut labore et dolore magna aliqua.
                          */
                          public void shortNote() {}
                     }
@@ -535,15 +531,15 @@ public class TestNoteTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("p/C.html", """
-                        <div id="p.C-note" class="note-tag auto-border">
+                        <div id="p.C-note" class="note-tag medium-length-note">
                         <dt>Note:</dt>
                         <dd>Lorem ipsum dolor sit amet""",
                 """
-                        <div id="snippetNote()-note" class="note-tag auto-border">
+                        <div id="snippetNote()-note" class="note-tag medium-length-note">
                         <dt>Note:</dt>
                         <dd>Lorem ipsum dolor sit amet""",
                 """
-                        <div id="longNote()-note" class="note-tag auto-border">
+                        <div id="longNote()-note" class="note-tag long-note">
                         <dt>Note:</dt>
                         <dd>Lorem ipsum dolor sit amet""",
                 """

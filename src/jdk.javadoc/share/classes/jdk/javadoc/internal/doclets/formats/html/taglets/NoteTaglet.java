@@ -28,14 +28,12 @@ package jdk.javadoc.internal.doclets.formats.html.taglets;
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.NoteTree;
-import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
-import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.RawHtml;
@@ -63,9 +61,8 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
     private static final String CSS_CLASS_PREFIX = "note-tag";
 
-    private static final String AUTO_BORDER = "auto-border";
-    private static final int TEXT_BORDER_THRESHOLD = 1500;
-    private static final int MIXED_CONTENT_BORDER_THRESHOLD = 200;
+    private static final int LONG_TEXT_THRESHOLD = 1500;
+    private static final int MEDIUM_TEXT_THRESHOLD = 200;
 
     NoteTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE,
@@ -148,16 +145,12 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                     }
                     content.add(body);
                 }
-
-                if (Objects.equals(kind, defaultKind)) {
-                    setAutoBorder(content, note);
-                }
             }
         }
 
         Content content = new ContentBuilder();
         for (var cnt : map.values()) {
-            content.add(cnt);
+            content.add(setContentLengthStyle(cnt));
         }
         return content;
     }
@@ -174,12 +167,14 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var id = attr.getOrDefault("id", null);
         var kind = attr.getOrDefault("kind", defaultKind);
 
-        return HtmlTree.DIV(HtmlStyles.inlineNote)
+        var div = HtmlTree.DIV(HtmlStyles.inlineNote)
                 .addStyle(getCSSClass(kind))
                 .setId(getId(id, element, true))
                 .add(HtmlTree.SPAN(HtmlStyles.noteHeader, getHeader(header)))
                 .add(Text.NL)
                 .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
+
+        return setContentLengthStyle(div);
     }
 
     private Map<String, String> getAttributes(NoteTree note) {
@@ -199,30 +194,14 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             : config.htmlIds.forNote(e, defaultKind, inline, existingIds);
     }
 
-    private void setAutoBorder(HtmlTree html, NoteTree note) {
-        var styles = html.getAttrs().get(HtmlAttr.CLASS);
-        if (styles == null || !styles.contains(" " + AUTO_BORDER)) {
-            var contentLength = html.charCount();
-            if (contentLength > TEXT_BORDER_THRESHOLD
-                    || (contentLength > MIXED_CONTENT_BORDER_THRESHOLD
-                    && hasMixedContent(note.getBody()))) {
-                html.addStyle(AUTO_BORDER);
-            }
+    private HtmlTree setContentLengthStyle(HtmlTree html) {
+        var contentLength = html.charCount();
+        if (contentLength > LONG_TEXT_THRESHOLD) {
+            html.addStyle(HtmlStyles.longNote);
+        } else if (contentLength > MEDIUM_TEXT_THRESHOLD) {
+            html.addStyle(HtmlStyles.mediumLengthNote);
         }
-    }
-
-    // Check note content for mixed content to decide whether to apply a border.
-    // The mixed content recognized by this method is intentionally narrow.
-    private boolean hasMixedContent(List<? extends DocTree> body) {
-        return body.stream().anyMatch(dt ->
-            switch (dt.getKind()) {
-                case START_ELEMENT -> {
-                    var tagName = ((StartElementTree) dt).getName().toString();
-                    yield  tagName.equalsIgnoreCase("pre") || tagName.matches("(?i)h[1-6]");
-                }
-                case SNIPPET -> true;
-                default -> false;
-        });
+        return html;
     }
 
     private static String stringValueOf(AttributeTree at) {
