@@ -140,7 +140,6 @@ public:
   void complete_degenerated_cycle();
   void complete_concurrent_cycle();
 private:
-  void complete_cycle();
   void initialize_controller() override;
   void entry_global_coalesce_and_fill();
 
