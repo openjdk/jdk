@@ -1013,8 +1013,11 @@ bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool inst
     // Encode the dependencies now, so we can check them right away.
     dependencies()->encode_content_bytes();
   }
-  // Check for {class loads, evolution, breakpoints, ...} during compilation
-  if (!failing() && install_code) {
+  // Check for {class loads, evolution, breakpoints, ...} during compilation.
+  // This check is skipped for RepeatCompilation request.
+  // Execute this check for VerifyAOTCode when loading AOT code.
+  // Note, RepeatCompilation request is ignored for AOT code load.
+  if (!failing() && (install_code || is_loading_aot_code)) {
     // Check for {class loads, evolution, breakpoints, ...} during compilation
     validate_compile_task_dependencies(target);
     if (failing() && preload) {
