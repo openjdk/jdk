@@ -38,7 +38,7 @@ import org.opentest4j.TestAbortedException;
  * @test
  * @library /test/lib
  * @modules java.net.http/jdk.internal.net.http.quic
- * @run junit/othervm VariableLengthTest
+ * @run junit/othervm ${test.main.class}
  * @summary Tests to check quic/util methods encode/decodeVariableLength methods
  *  work as expected.
  */

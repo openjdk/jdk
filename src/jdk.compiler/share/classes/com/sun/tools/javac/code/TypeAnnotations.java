@@ -705,7 +705,7 @@ public class TypeAnnotations {
 
                 @Override
                 public Type visitType(Type t, List<TypeCompound> s) {
-                    return t.annotatedType(s);
+                    return t.hasTag(TypeTag.VOID) ? t : t.annotatedType(s);
                 }
             };
 
@@ -1235,7 +1235,7 @@ public class TypeAnnotations {
 
                 scan(tree.body);
 
-                //parameter types are handled separatelly as variables
+                //parameters are handled separatelly as variables
             } finally {
                 currentLambda = prevLambda;
             }

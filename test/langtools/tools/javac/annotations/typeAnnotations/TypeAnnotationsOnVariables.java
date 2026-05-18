@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8371155 8379550 8381965
+ * @bug 8371155 8379550 8381965 8384843
  * @summary Verify type annotations on local-like variables are propagated to
  *          their types at an appropriate time.
  * @library /tools/lib
