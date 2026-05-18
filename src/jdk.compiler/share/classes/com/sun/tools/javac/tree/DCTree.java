@@ -183,12 +183,16 @@ public abstract class DCTree implements DocTree {
                 return ident.pos + ident.name.length();
             }
 
-            case AUTHOR, DEPRECATED, HIDDEN, PARAM, PROVIDES, RETURN, SEE, SERIAL, SERIAL_DATA, SERIAL_FIELD, SINCE,
-                    THROWS, UNKNOWN_BLOCK_TAG, USES, VERSION -> {
+            case AUTHOR, DEPRECATED, HIDDEN, NOTE, PARAM, PROVIDES, RETURN, SEE, SERIAL, SERIAL_DATA, SERIAL_FIELD,
+                    SINCE, THROWS, UNKNOWN_BLOCK_TAG, USES, VERSION -> {
                 DCTree last = getLastChild();
 
                 if (last != null) {
-                    int correction = (this instanceof DCParam p && p.isTypeParameter && p.getDescription().isEmpty()) ? 1 : 0;
+                    int correction = switch (this) {
+                        case DCParam p ->  p.isTypeParameter && p.getDescription().isEmpty() ? 1 : 0;
+                        case DCNote _ -> last instanceof DCAttribute ? 1 : 0;
+                        default -> 0;
+                    };
                     return last.getEndPosition() + correction;
                 }
 
