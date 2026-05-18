@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -1255,10 +1256,11 @@ public class JavacTrees extends DocTrees {
      * instead of {@code UnknownBlockTagTree} or {@code UnknownInlineTagTree}.
      *
      * @param customTags a set of tag names of known custom tags
+     * @throws NullPointerException if customTags is null
      * @since 27
      */
     public void setCustomTags(Set<String> customTags) {
-        this.customTags = customTags;
+        this.customTags = Objects.requireNonNull(customTags);
     }
 
     /**
