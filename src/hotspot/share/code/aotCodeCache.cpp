@@ -2882,18 +2882,21 @@ Method* AOTCodeReader::read_method() {
 
 bool AOTCodeCache::write_klass(Klass* klass) {
   uint array_dim = 0;
+  bool can_write = true;
   if (klass->is_objArray_klass()) {
+    // We must check klass and its bottom_klass.
+    can_write = AOTCacheAccess::can_generate_aot_code(klass);
     array_dim = ObjArrayKlass::cast(klass)->dimension();
     klass     = ObjArrayKlass::cast(klass)->bottom_klass(); // overwrites klass
   }
   uint init_state = 0;
-  bool can_write = true;
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     init_state = (ik->is_initialized() ? 1 : 0);
-    can_write = AOTCacheAccess::can_generate_aot_code_for(ik);
+    can_write &= AOTCacheAccess::can_generate_aot_code_for(ik);
   } else {
-    can_write = AOTCacheAccess::can_generate_aot_code(klass);
+    assert(klass->is_typeArray_klass(), "must be");
+    can_write &= AOTCacheAccess::can_generate_aot_code(klass);
   }
   ResourceMark rm;
   uint state = (array_dim << 1) | (init_state & 1);
