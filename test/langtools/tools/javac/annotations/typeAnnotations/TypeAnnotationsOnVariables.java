@@ -347,19 +347,26 @@ public class TypeAnnotationsOnVariables {
                           """
                           import java.lang.annotation.ElementType;
                           import java.lang.annotation.Target;
+                          import java.util.function.BiConsumer;
                           import java.util.function.Consumer;
                           import java.util.List;
 
                           class Test {
                               @Target(ElementType.TYPE_USE)
                               @interface TypeAnno { }
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno2 { }
 
-                              static final Consumer<List<@TypeAnno String>> TEST =
+                              static final Consumer<List<@TypeAnno String>> TEST1 =
                                   (List<@TypeAnno String> arg1) -> {};
+                              static final BiConsumer<List<@TypeAnno String>, List<@TypeAnno2 String>> TEST2 =
+                                  (List<@TypeAnno String> arg11, List<@TypeAnno2 String> arg12) -> {};
 
                               private void test() {
-                                  Consumer<List<@TypeAnno String>> test =
+                                  Consumer<List<@TypeAnno String>> test1 =
                                         (List<@TypeAnno String> arg2) -> {};
+                                  BiConsumer<List<@TypeAnno String>, List<@TypeAnno2 String>> test2 =
+                                        (List<@TypeAnno String> arg21, List<@TypeAnno2 String> arg22) -> {};
                               }
                           }
                           """);
@@ -395,12 +402,20 @@ public class TypeAnnotationsOnVariables {
                 .writeAll();
 
         List<String> expected = List.of(
-            "TEST: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
+            "TEST1: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
             "(List<@TypeAnno String> arg1)->{ }: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
             "arg1: java.util.List<java.lang.@Test.TypeAnno String>",
-            "test: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
+            "TEST2: java.util.function.BiConsumer<java.util.List<java.lang.@Test.TypeAnno String>,java.util.List<java.lang.@Test.TypeAnno2 String>>",
+            "(List<@TypeAnno String> arg11, List<@TypeAnno2 String> arg12)->{ }: java.util.function.BiConsumer<java.util.List<java.lang.@Test.TypeAnno String>,java.util.List<java.lang.@Test.TypeAnno2 String>>",
+            "arg11: java.util.List<java.lang.@Test.TypeAnno String>",
+            "arg12: java.util.List<java.lang.@Test.TypeAnno2 String>",
+            "test1: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
             "(List<@TypeAnno String> arg2)->{ }: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
-            "arg2: java.util.List<java.lang.@Test.TypeAnno String>"
+            "arg2: java.util.List<java.lang.@Test.TypeAnno String>",
+            "test2: java.util.function.BiConsumer<java.util.List<java.lang.@Test.TypeAnno String>,java.util.List<java.lang.@Test.TypeAnno2 String>>",
+            "(List<@TypeAnno String> arg21, List<@TypeAnno2 String> arg22)->{ }: java.util.function.BiConsumer<java.util.List<java.lang.@Test.TypeAnno String>,java.util.List<java.lang.@Test.TypeAnno2 String>>",
+            "arg21: java.util.List<java.lang.@Test.TypeAnno String>",
+            "arg22: java.util.List<java.lang.@Test.TypeAnno2 String>"
         );
 
         actual.forEach(System.out::println);
@@ -417,8 +432,12 @@ public class TypeAnnotationsOnVariables {
         checkTypeAnnotations(testClassDesc,
                              "test",
                              this::getAnnotationsFromCode,
-                             "      0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=6, length=1, index=1}, location=[TYPE_ARGUMENT(0), TYPE_ARGUMENT(0)]",
-                             "        Test$TypeAnno");
+                             "        0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=6, length=7, index=1}, location=[TYPE_ARGUMENT(0), TYPE_ARGUMENT(0)]",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=12, length=1, index=2}, location=[TYPE_ARGUMENT(0), TYPE_ARGUMENT(0)]",
+                             "          Test$TypeAnno",
+                             "        2: LTest$TypeAnno2;(): LOCAL_VARIABLE, {start_pc=12, length=1, index=2}, location=[TYPE_ARGUMENT(1), TYPE_ARGUMENT(0)]",
+                             "          Test$TypeAnno2");
 
         checkTypeAnnotations(testClassDesc,
                              "lambda$static$0",
@@ -427,10 +446,26 @@ public class TypeAnnotationsOnVariables {
                              "        Test$TypeAnno");
 
         checkTypeAnnotations(testClassDesc,
+                             "lambda$static$1",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno",
+                             "      1: LTest$TypeAnno2;(): METHOD_FORMAL_PARAMETER, param_index=1, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno2");
+
+        checkTypeAnnotations(testClassDesc,
                              "lambda$test$0",
                              this::getAnnotationsFromHeader,
                              "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
                              "        Test$TypeAnno");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$test$1",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno",
+                             "      1: LTest$TypeAnno2;(): METHOD_FORMAL_PARAMETER, param_index=1, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno2");
     }
 
     @Test
@@ -588,7 +623,7 @@ public class TypeAnnotationsOnVariables {
         String currentFeature = null;
         Map<String, List<String>> feature2Text = new HashMap<>();
 
-        for (String line : expandedJavapOut.split("\n")) {
+        for (String line : expandedJavapOut.split("\\R")) {
             if (line.equals("{")) {
                 inClass = true;
             } else if (line.equals("}")) {
