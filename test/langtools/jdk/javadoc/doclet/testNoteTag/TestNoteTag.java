@@ -556,7 +556,7 @@ public class TestNoteTag extends JavadocTester {
                 /**
                  * @note [id='id "$ value'
                  *   header='Multi-line header containing <em>
-                 *           both <sup>supported</sup></EM> and
+                 *           both <sup>$upported</sup></EM> and
                  *           <a href="javascript:alert(0)">unsupported</a> markup'
                  *   kind='myNote " otherStyle'
                  *   otherAttribute="ignored"]
@@ -566,7 +566,7 @@ public class TestNoteTag extends JavadocTester {
                     /**
                      * {@note [id='id "$ value'
                      *   header='Multi-line header containing <em>
-                     *           both <sup>supported</sup></EM> and
+                     *           both <sup>$upported</sup></EM> and
                      *           <a href="javascript:alert(0)">unsupported</a> markup'
                      *   kind='myNote " otherStyle'
                      *   otherAttribute="ignored"]
@@ -586,14 +586,14 @@ public class TestNoteTag extends JavadocTester {
                     <dl class="notes">
                     <div id="id-value" class="note-tag-myNote &quot; otherStyle">
                     <dt>Multi-line header containing <em>
-                              both <sup>supported</sup></em> and
+                              both <sup>$upported</sup></em> and
                               &lt;a href="javascript:alert(0)"&gt;unsupported&lt;/a&gt; markup</dt>
                     <dd>Block note body.</dd>
                     </div>""",
                 """
                     <div class="inline-note note-tag-myNote &quot; otherStyle" id="id-value1"><span clas\
                     s="note-header">Multi-line header containing <em>
-                              both <sup>supported</sup></em> and
+                              both <sup>$upported</sup></em> and
                               &lt;a href="javascript:alert(0)"&gt;unsupported&lt;/a&gt; markup</span>
                     Inline note body.</div>""");
     }

@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -237,7 +238,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             var matcher = allowedHeaderTags.matcher(escaped);
             while (matcher.find()) {
                 var tag = matcher.group("tag");
-                var body = matcher.group("body");
+                var body = Matcher.quoteReplacement(matcher.group("body"));
                 escaped = matcher.replaceFirst("<" + tag + ">" + body + "</" + tag + ">");
                 matcher = allowedHeaderTags.matcher(escaped);
             }
