@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,12 @@
 
 BOOL DWMIsCompositionEnabled();
 
-void initScreens(JNIEnv *env) {
+BOOL initScreens(JNIEnv *env) {
     if (!Devices::UpdateInstance(env)) {
-        JNU_ThrowInternalError(env, "Could not update the devices array.");
+        J2dRlsTraceLn(J2D_TRACE_ERROR, "initScreens: Could not update the devices array.");
+        return FALSE;
     }
+    return TRUE;
 }
 
 /**
@@ -144,7 +146,9 @@ Java_sun_awt_Win32GraphicsEnvironment_initDisplay(JNIEnv *env,
 
     DWMIsCompositionEnabled();
 
-    initScreens(env);
+    if (!initScreens(env)) {
+        JNU_ThrowInternalError(env, "Could not update the devices array.");
+    }
 }
 
 /*

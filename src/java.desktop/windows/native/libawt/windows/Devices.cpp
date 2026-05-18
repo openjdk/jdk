@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,47 +117,78 @@ static BOOL IsValidMonitor(HMONITOR hMon)
     return TRUE;
 }
 
-// Callback for CountMonitors below
-static BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lpMonitorCounter)
-{
-    if (IsValidMonitor(hMon)) {
-        (*((int *)lpMonitorCounter))++;
-    }
-
-    return TRUE;
-}
-
-int WINAPI CountMonitors(void)
-{
-    int monitorCounter = 0;
-    ::EnumDisplayMonitors(NULL, NULL, clb_fCountMonitors, (LPARAM)&monitorCounter);
-    return monitorCounter;
-}
 
 // Callback for CollectMonitors below
 static BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lpMonitorData)
 {
     MonitorData* pMonitorData = (MonitorData *)lpMonitorData;
-    if ((pMonitorData->monitorCounter < pMonitorData->monitorLimit) && (IsValidMonitor(hMon))) {
-        pMonitorData->hmpMonitors[pMonitorData->monitorCounter] = hMon;
-        pMonitorData->monitorCounter++;
+
+    if (!IsValidMonitor(hMon)) {
+        return TRUE;
     }
+
+    if (pMonitorData->monitorCounter == pMonitorData->monitorLimit) {
+        TRY;
+
+        int newMonitorLimit = pMonitorData->monitorLimit * 2;
+        HMONITOR* newMonitors =
+            (HMONITOR*)SAFE_SIZE_ARRAY_REALLOC(
+                safe_Realloc, pMonitorData->hmpMonitors,
+                newMonitorLimit, sizeof(HMONITOR)
+            );
+        pMonitorData->hmpMonitors = newMonitors;
+        pMonitorData->monitorLimit = newMonitorLimit;
+
+        CATCH_BAD_ALLOC_RET(FALSE);
+    }
+
+    pMonitorData->hmpMonitors[pMonitorData->monitorCounter] = hMon;
+    pMonitorData->monitorCounter++;
 
     return TRUE;
 }
 
-static int WINAPI CollectMonitors(HMONITOR* hmpMonitors, int nNum)
+static HMONITOR* CollectMonitors(int* numScreens)
 {
-    if (NULL != hmpMonitors) {
-        MonitorData monitorData;
-        monitorData.monitorCounter = 0;
-        monitorData.monitorLimit = nNum;
-        monitorData.hmpMonitors = hmpMonitors;
-        ::EnumDisplayMonitors(NULL, NULL, clb_fCollectMonitors, (LPARAM)&monitorData);
-        return monitorData.monitorCounter;
-    } else {
-        return 0;
+    const int initialMonitorLimit = 4;
+
+    *numScreens = 0;
+
+    MonitorData data;
+    data.monitorCounter = 0;
+    data.monitorLimit = initialMonitorLimit;
+
+    TRY;
+
+    data.hmpMonitors = (HMONITOR*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc,
+                            initialMonitorLimit, sizeof(HMONITOR));
+    CATCH_BAD_ALLOC_RET(NULL);
+
+    if (!::EnumDisplayMonitors(NULL, NULL, clb_fCollectMonitors, (LPARAM)&data)) {
+        free(data.hmpMonitors);
+        return NULL;
     }
+
+    *numScreens = data.monitorCounter;
+    return data.hmpMonitors;
+}
+
+int WINAPI CountMonitors()
+{
+    int numScreens = 0;
+    HMONITOR* monHds = CollectMonitors(&numScreens);
+    free(monHds);
+    return numScreens;
+}
+
+static BOOL AreSameMonitorInfo(LPMONITORINFOEX oldInfo, LPMONITORINFOEX newInfo)
+{
+    if (oldInfo == NULL || newInfo == NULL) {
+        return FALSE;
+    }
+
+    return oldInfo->dwFlags == newInfo->dwFlags
+            && ::lstrcmp(oldInfo->szDevice, newInfo->szDevice) == 0;
 }
 
 BOOL WINAPI MonitorBounds(HMONITOR hmMonitor, RECT* rpBounds)
@@ -206,15 +237,24 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
 {
     J2dTraceLn(J2D_TRACE_INFO, "Devices::UpdateInstance");
 
-    int numScreens = CountMonitors();
-    HMONITOR *monHds = (HMONITOR *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc,
-            numScreens, sizeof(HMONITOR));
-    if (numScreens != CollectMonitors(monHds, numScreens)) {
+    int numScreens = 0;
+    HMONITOR *monHds = CollectMonitors(&numScreens);
+    if (monHds == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "Devices::UpdateInstance: Failed to get all "\
+                      "Devices::UpdateInstance: Failed to get "\
                       "monitor handles.");
         free(monHds);
         return FALSE;
+    }
+
+    if (numScreens == 0) {
+        CriticalSection::Lock l(arrayLock);
+        if (theInstance != NULL) {
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "Devices::UpdateInstance: No valid monitor handles.");
+            free(monHds);
+            return FALSE;
+        }
     }
 
     Devices *newDevices = new Devices(numScreens);
@@ -242,18 +282,26 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
         theInstance = newDevices;
 
         if (oldDevices) {
-            // Invalidate the devices with indexes out of the new set of
-            // devices. This doesn't cover all cases when the device
-            // might should be invalidated (like if it's not the last device
-            // that was removed), but it will have to do for now.
             int oldNumScreens = oldDevices->GetNumDevices();
-            int newNumScreens = theInstance->GetNumDevices();
-            J2dTraceLn(J2D_TRACE_VERBOSE, "  Invalidating removed devices");
-            for (int i = newNumScreens; i < oldNumScreens; i++) {
-                // removed device, needs to be invalidated
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  Invalidating changed devices");
+            for (int i = 0; i < oldNumScreens; i++) {
+                AwtWin32GraphicsDevice *oldDevice =
+                    oldDevices->GetDevice(i, FALSE);
+                AwtWin32GraphicsDevice *newDevice =
+                    theInstance->GetDevice(i, FALSE);
+                BOOL changed = (newDevice == NULL)
+                    || !AreSameMonitorInfo(
+                            (LPMONITORINFOEX) oldDevice->GetMonitorInfo(),
+                            (LPMONITORINFOEX) newDevice->GetMonitorInfo());
+
+                if (!changed) {
+                    newDevice->TransferJavaDevice(env, oldDevice);
+                    continue;
+                }
+
                 J2dTraceLn(J2D_TRACE_WARNING,
-                           "Devices::UpdateInstance: device removed: %d", i);
-                oldDevices->GetDevice(i)->Invalidate(env);
+                           "Devices::UpdateInstance: device changed: %d", i);
+                oldDevice->Invalidate(env);
             }
             // Now that we have a new array in place, remove this (possibly the
             // last) reference to the old instance.
@@ -346,6 +394,12 @@ AwtWin32GraphicsDevice *Devices::GetDevice(int index, BOOL adjust)
     J2dTraceLn(J2D_TRACE_INFO,
                "Devices::GetDevice index=%d adjust?=%d",
                index, adjust);
+    if (numDevices <= 0) {
+        J2dTraceLn(J2D_TRACE_WARNING,
+                   "Devices::GetDevice: "\
+                   "no devices, returning NULL.");
+        return NULL;
+    }
     if (index < 0 || index >= numDevices) {
         if (!adjust) {
             J2dTraceLn(J2D_TRACE_WARNING,

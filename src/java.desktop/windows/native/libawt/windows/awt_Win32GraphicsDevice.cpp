@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -618,7 +618,36 @@ void AwtWin32GraphicsDevice::Release()
  */
 void AwtWin32GraphicsDevice::SetJavaDevice(JNIEnv *env, jobject objPtr)
 {
-    javaDevice = env->NewWeakGlobalRef(objPtr);
+    jobject newJavaDevice = NULL;
+    if (objPtr != NULL) {
+        newJavaDevice = env->NewWeakGlobalRef(objPtr);
+        if (newJavaDevice == NULL) {
+            return;
+        }
+    }
+
+    if (javaDevice != NULL) {
+        env->DeleteWeakGlobalRef(javaDevice);
+    }
+    javaDevice = newJavaDevice;
+}
+
+/**
+ * Transfers the java Win32GraphicsDevice's link from a native device that is
+ * being replaced by a new native device for the same monitor.
+ */
+void AwtWin32GraphicsDevice::TransferJavaDevice(JNIEnv *env,
+                                                AwtWin32GraphicsDevice *device)
+{
+    if (device == NULL || device == this || device->javaDevice == NULL) {
+        return;
+    }
+
+    if (javaDevice != NULL) {
+        env->DeleteWeakGlobalRef(javaDevice);
+    }
+    javaDevice = device->javaDevice;
+    device->javaDevice = NULL;
 }
 
 /**
@@ -1398,7 +1427,10 @@ JNIEXPORT void JNICALL
     (JNIEnv *env, jobject thisPtr, jint screen)
 {
     Devices::InstanceAccess devices;
-    devices->GetDevice(screen)->SetJavaDevice(env, thisPtr);
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
+    if (device != NULL) {
+        device->SetJavaDevice(env, thisPtr);
+    }
 }
 
 /*
@@ -1411,9 +1443,8 @@ JNIEXPORT void JNICALL
     (JNIEnv *env, jobject thisPtr, jint screen, jfloat scaleX, jfloat scaleY)
 {
     Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-
-    if (device != NULL ) {
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
+    if (device != NULL) {
         device->DisableScaleAutoRefresh();
         device->SetScale(scaleX, scaleY);
     }
@@ -1429,8 +1460,8 @@ JNIEXPORT jfloat JNICALL
     (JNIEnv *env, jobject thisPtr, jint screen)
 {
     Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-    return (device == NULL) ? 1 : device->GetScaleX();
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
+    return device == NULL ? 1 : device->GetScaleX();
 }
 
 /*
@@ -1443,8 +1474,8 @@ JNIEXPORT jfloat JNICALL
     (JNIEnv *env, jobject thisPtr, jint screen)
 {
     Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-    return (device == NULL) ? 1 : device->GetScaleY();
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
+    return device == NULL ? 1 : device->GetScaleY();
 }
 
 /*
@@ -1457,8 +1488,7 @@ Java_sun_awt_Win32GraphicsDevice_initNativeScale
 (JNIEnv *env, jobject thisPtr, jint screen)
 {
     Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
     if (device != NULL) {
         device->InitDesktopScales();
     }
