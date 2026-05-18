@@ -1254,9 +1254,7 @@ public class TypeAnnotations {
 
                 scan(tree.body);
 
-                if (sigOnly) {
-                    scan(tree.params);
-                }
+                //parameter types are handled separatelly as variables
             } finally {
                 currentLambda = prevLambda;
             }
