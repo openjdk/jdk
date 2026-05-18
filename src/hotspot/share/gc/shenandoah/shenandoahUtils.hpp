@@ -41,6 +41,9 @@
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 
+#include <cmath>
+#include <limits>
+
 class GCTimer;
 class ShenandoahGeneration;
 

@@ -33,9 +33,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "utilities/debug.hpp"
 
-#include <cmath>
-#include <limits>
-
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
 const char* ShenandoahGCSession::cycle_end_message(ShenandoahGenerationType type) {
