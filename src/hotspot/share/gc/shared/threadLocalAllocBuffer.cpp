@@ -90,6 +90,12 @@ void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocSta
       const size_t effective_tlab_capacity = MAX2(tlab_capacity, size_t(1));
       const float alloc_frac = (float)allocated_since_last_gc / effective_tlab_capacity;
       _allocation_fraction.sample(MIN2(alloc_frac, 1.0f));
+    } else {
+      // Use global fraction to approximate local fraction to ensure _allocation_fraction is always updated.
+      const float total_frac = ThreadLocalAllocStats::total_requested_size_fraction_avg();
+      const uint num_threads = ThreadLocalAllocStats::num_allocating_threads_avg();
+      const float alloc_frac = total_frac / num_threads;
+      _allocation_fraction.sample(alloc_frac);
     }
     stats->update_current_thread_stats(_num_refills,
                                        allocated_since_last_gc,
