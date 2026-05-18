@@ -174,7 +174,7 @@ public class GetCanonicalPath {
                 assertEquals(drive + ":\\" + filename, canonicalPath);
                 assertEquals(text, Files.readString(Path.of(canonicalPath)));
             }
-            // use directory junction
+            // use reparse point (directory junction)
             {
                 final String filename = junctionName + "\\file.txt";
                 final String text = "This is some text";
