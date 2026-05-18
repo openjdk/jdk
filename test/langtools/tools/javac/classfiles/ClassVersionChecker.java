@@ -63,6 +63,7 @@ public class ClassVersionChecker {
         TWENTY_FIVE("25", 69),
         TWENTY_SIX("26", 70),
         TWENTY_SEVEN("27", 71),
+        TWENTY_EIGHT("28", 72),
         ; // Reduce code churn when appending new constants
 
         private Version(String release, int classFileVer) {

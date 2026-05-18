@@ -73,9 +73,9 @@ public class Versions {
     public static final Set<String> VALID_SOURCES =
         Set.of("1.8", "1.9", "1.10", "11", "12", "13", "14",
                "15", "16", "17", "18", "19", "20", "21", "22",
-               "23", "24", "25", "26", "27");
+               "23", "24", "25", "26", "27", "28");
 
-    public static final String LATEST_MAJOR_VERSION = "71.0";
+    public static final String LATEST_MAJOR_VERSION = "72.0";
 
     static enum SourceTarget {
         EIGHT(true,      "52.0",  "8"),
@@ -98,6 +98,7 @@ public class Versions {
         TWENTY_FIVE(false,"69.0", "25"),
         TWENTY_SIX(false, "70.0", "26"),
         TWENTY_SEVEN(false, "71.0", "27"),
+        TWENTY_EIGHT(false, "72.0", "28"),
         ; // Reduce code churn when appending new constants
 
         private final boolean dotOne;

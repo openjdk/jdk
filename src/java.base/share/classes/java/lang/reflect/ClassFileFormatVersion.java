@@ -395,6 +395,18 @@ public enum ClassFileFormatVersion {
      * <cite>The Java Virtual Machine Specification, Java SE 27 Edition</cite></a>
      */
     RELEASE_27(71),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 28.
+     *
+     *  28
+     *
+     *  <a
+     * href="https://docs.oracle.com/en/java/javase/28/docs/specs/jvms/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 28 Edition</cite></a>
+     */
+    RELEASE_28(72),
     ; // Reduce code churn when appending new constants
 
     // Note to maintainers: when adding constants for newer releases,
@@ -410,7 +422,7 @@ public enum ClassFileFormatVersion {
      * {@return the latest class file format version}
      */
     public static ClassFileFormatVersion latest() {
-        return RELEASE_27;
+        return RELEASE_28;
     }
 
     /**

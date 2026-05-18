@@ -81,7 +81,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_27)
+@SupportedSourceVersion(RELEASE_28)
 @PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
 public class ElementScannerPreview<R, P> extends ElementScanner14<R, P> {
     /**
