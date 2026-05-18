@@ -27,6 +27,13 @@
 
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 
+inline oop lrb(oop obj) {
+  if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
+    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
+  }
+  return obj;
+}
+
 template <typename T>
 T* reference_discovered_addr(oop reference) {
   return reinterpret_cast<T*>(java_lang_ref_Reference::discovered_addr_raw(reference));

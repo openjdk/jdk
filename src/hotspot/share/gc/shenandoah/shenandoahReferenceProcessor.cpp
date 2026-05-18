@@ -95,14 +95,6 @@ void set_oop_field<narrowOop>(narrowOop* field, oop value) {
   }
 }
 
-oop lrb(oop obj) {
-  if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
-    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
-  } else {
-    return obj;
-  }
-}
-
 template <typename T>
 static volatile T* reference_referent_addr(oop reference) {
   return (volatile T*)java_lang_ref_Reference::referent_addr_raw(reference);

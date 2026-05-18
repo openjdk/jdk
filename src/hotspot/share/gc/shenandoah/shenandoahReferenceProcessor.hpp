@@ -76,8 +76,6 @@ typedef size_t Counters[reference_type_count];
  * referents, we employ a special barrier, the native LRB, which returns nullptr when the referent is unreachable.
  */
 
-oop lrb(oop obj);
-
 class ShenandoahRefProcThreadLocal : public CHeapObj<mtGC> {
 private:
   void* _discovered_list;
