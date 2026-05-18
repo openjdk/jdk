@@ -135,6 +135,15 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Enable workaround for Neoverse N1 erratum 1542419")          \
   product(bool, UseSingleICacheInvalidation, false, DIAGNOSTIC,         \
           "Defer multiple ICache invalidation to single invalidation")  \
+  product(bool, UseStlrForStandaloneRelease, false,                     \
+          "Emit stlr (and elide the leading dmb ish) for release "      \
+          "stores that are not paired with a trailing membar - i.e. "   \
+          "setRelease / putXRelease / putOrdered*, but not volatile "   \
+          "stores (which are already handled).")                        \
+  develop(bool, PrintStandaloneReleaseElisionStats, false,              \
+          "Log unnecessary_release walker outcomes (hit/miss) when "    \
+          "UseStlrForStandaloneRelease is on. Develop-only, intended "  \
+          "for measuring walker coverage on real workloads.")           \
 
 // end of ARCH_FLAGS
 

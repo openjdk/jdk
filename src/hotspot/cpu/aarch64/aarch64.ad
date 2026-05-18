@@ -1581,7 +1581,67 @@ bool unnecessary_release(const Node *n)
 
   MemBarNode *barrier = n->as_MemBar();
   if (!barrier->leading()) {
-    return false;
+    // A non-leading MemBarRelease covers two cases:
+    //   (1) Op_MemBarRelease for putOrdered* / setRelease - created standalone
+    //       by C2AccessFence (no trailing pair) and immediately followed by
+    //       a Store with MO=release.  needs_releasing_store() will upgrade
+    //       that store to stlr, so this leading dmb ish is redundant.
+    //   (2) Op_MemBarRelease emitted at the end of a constructor (final-field
+    //       publication, parse1.cpp / stringopts.cpp).  Its preceding stores
+    //       are MO=unordered plain str, so the dmb ish MUST stay.
+    // Discriminate by walking the memory projection: case (1) drives a
+    // release-paired-less Store; case (2) does not.
+    if (!UseStlrForStandaloneRelease || !barrier->standalone()) {
+      return false;
+    }
+    Node* mem_proj = barrier->proj_out_or_null(TypeFunc::Memory);
+    if (mem_proj == nullptr) return false;
+
+    // Forward DU walk along the memory chain looking for a release-MO
+    // Store with no trailing membar (i.e. setRelease / putOrdered).  We
+    // pass transparently through:
+    //   - MergeMem       (per-alias splitter)
+    //   - MemBarCPUOrder (inserted right after MemBarRelease for Unsafe
+    //                    accesses; carries no aarch64 ordering of its own)
+    // Unique_Node_List dedups, so cycles via Phi / MergeMem terminate
+    // naturally.  A small unique-node cap keeps the predicate O(1) on
+    // pathological graphs; the bound is generous because each kept hop
+    // is either a MergeMem, a CPUOrder Proj, or a Store leaf, and the
+    // C2AccessFence pattern we target is at most ~3 hops deep.
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(mem_proj);
+    const uint kNodeLimit = 32;
+    bool found = false;
+    uint walked = 0;
+    for (uint i = 0; i < wq.size(); i++) {
+      if (i >= kNodeLimit) { walked = wq.size(); break; }
+      Node* cur = wq.at(i);
+      walked = i + 1;
+      for (DUIterator_Fast jmax, j = cur->fast_outs(jmax); j < jmax; j++) {
+        Node* u = cur->fast_out(j);
+        if (u->is_Store() && u->as_Store()->is_release() &&
+            u->as_Store()->trailing_membar() == nullptr) {
+          found = true; goto done;
+        }
+        if (u->is_MergeMem()) {
+          wq.push(u);
+        } else if (u->Opcode() == Op_MemBarCPUOrder) {
+          Node* p = u->as_MemBar()->proj_out_or_null(TypeFunc::Memory);
+          if (p != nullptr) wq.push(p);
+        }
+        // Other users (Phi, other MemBars, Loads, LoadStore, ...) are
+        // not on the C2AccessFence release-store path - ignore.
+      }
+    }
+done:
+#ifndef PRODUCT
+    if (PrintStandaloneReleaseElisionStats) {
+      tty->print_cr("[stlr-release-elide] walked=%u nodes, %s",
+                    walked, found ? "elided" : "kept");
+    }
+#endif
+    return found;
   } else {
     Node* trailing = barrier->trailing_membar();
     MemBarNode* trailing_mb = trailing->as_MemBar();
@@ -1627,7 +1687,7 @@ bool needs_releasing_store(const Node *n)
 {
   // assert n->is_Store();
   StoreNode *st = n->as_Store();
-  return st->trailing_membar() != nullptr;
+  return st->trailing_membar() != nullptr || (UseStlrForStandaloneRelease && st->is_release());
 }
 
 // predicate controlling translation of CAS
