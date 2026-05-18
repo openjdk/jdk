@@ -964,6 +964,7 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
+  Pause this_pause = collector_state()->gc_pause_type(concurrent_operation_is_full_mark);
   record_pause(this_pause, start_time_sec, end_time_sec);
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
