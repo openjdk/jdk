@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,15 +60,16 @@ public class KeepAliveSoftReference {
         ClassUnloadCommon.failIf(isAlive != shouldBeAlive, "" + isAlive + " != " + shouldBeAlive);
     }
 
+    // This version of triggerUnloading only calls a System.gc() which clears weak references, but
+    // may not unload the class yet.
     ClassUnloadCommon.triggerUnloading();
-
     {
         boolean isAlive = wb.isClassAlive(className);
         System.out.println("testSoftReference (2) alive: " + isAlive);
         boolean cleared = (sr.get() == null);
-        boolean shouldBeAlive = !cleared;
-        ClassUnloadCommon.failIf(isAlive != shouldBeAlive, "" + isAlive + " != " + shouldBeAlive);
+        ClassUnloadCommon.failIf(!cleared, "should be cleared " + cleared);
     }
+
     sr.clear();
     ClassUnloadCommon.triggerUnloading(List.of(className));
     {
