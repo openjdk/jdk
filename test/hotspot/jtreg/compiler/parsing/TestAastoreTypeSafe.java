@@ -30,8 +30,12 @@ import jdk.test.lib.Asserts;
  * @library /test/lib
  * @summary Test that aastore generates a type safe graph
  * @run main ${test.main.class}
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:-MonomorphicArrayCheck -XX:+AlwaysIncrementalInline ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileOnly=${test.main.class}::test* -XX:-MonomorphicArrayCheck
+ *                   -XX:+AlwaysIncrementalInline -XX:+UseCompressedOops ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileOnly=${test.main.class}::test* -XX:-MonomorphicArrayCheck
+ *                   -XX:+AlwaysIncrementalInline -XX:-UseCompressedOops ${test.main.class}
  */
 public class TestAastoreTypeSafe {
     private static final class A {
