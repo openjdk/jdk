@@ -142,14 +142,18 @@ public class Reference extends SignatureElementProxy {
 
     private ReferenceData referenceData;
 
-    private static final Set<String> TRANSFORM_ALGORITHMS = Set.of(
-            Transforms.TRANSFORM_C14N_EXCL_OMIT_COMMENTS,
-            Transforms.TRANSFORM_C14N_EXCL_WITH_COMMENTS,
-            Transforms.TRANSFORM_C14N_OMIT_COMMENTS,
-            Transforms.TRANSFORM_C14N_WITH_COMMENTS,
-            Transforms.TRANSFORM_C14N11_OMIT_COMMENTS,
-            Transforms.TRANSFORM_C14N11_WITH_COMMENTS
-    );
+    private static final Set<String> TRANSFORM_ALGORITHMS;
+
+    static {
+        Set<String> algorithms = new HashSet<>();
+        algorithms.add(Transforms.TRANSFORM_C14N_EXCL_OMIT_COMMENTS);
+        algorithms.add(Transforms.TRANSFORM_C14N_EXCL_WITH_COMMENTS);
+        algorithms.add(Transforms.TRANSFORM_C14N_OMIT_COMMENTS);
+        algorithms.add(Transforms.TRANSFORM_C14N_WITH_COMMENTS);
+        algorithms.add(Transforms.TRANSFORM_C14N11_OMIT_COMMENTS);
+        algorithms.add(Transforms.TRANSFORM_C14N11_WITH_COMMENTS);
+        TRANSFORM_ALGORITHMS = Collections.unmodifiableSet(algorithms);
+    }
 
     /**
      * Constructor Reference

@@ -106,7 +106,8 @@ public final class TerminalBuilder {
     public static final String PROP_REDIRECT_PIPE_CREATION_MODE_DEFAULT =
             String.join(",", PROP_REDIRECT_PIPE_CREATION_MODE_REFLECTION, PROP_REDIRECT_PIPE_CREATION_MODE_NATIVE);
 
-    public static final Set<String> DEPRECATED_PROVIDERS = Set.of(PROP_PROVIDER_JNA, PROP_PROVIDER_JANSI);
+    public static final Set<String> DEPRECATED_PROVIDERS =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(PROP_PROVIDER_JNA, PROP_PROVIDER_JANSI)));
 
     public static final String PROP_DISABLE_DEPRECATED_PROVIDER_WARNING =
             "org.jline.terminal.disableDeprecatedProviderWarning";

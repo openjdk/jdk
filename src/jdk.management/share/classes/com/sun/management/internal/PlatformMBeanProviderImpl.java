@@ -49,6 +49,8 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
         "com.sun.management:type=DiagnosticCommand";
 
     private final List<PlatformComponent<?>> mxbeanList;
+    private static HotSpotDiagnostic hsDiagMBean = null;
+    private static OperatingSystemMXBean osMBean = null;
 
     static {
        System.loadLibrary("management_ext");
@@ -64,7 +66,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
     }
 
     private List<PlatformComponent<?>> init() {
-        List<PlatformComponent<?>> initMBeanList = new ArrayList<>(7);
+        List<PlatformComponent<?>> initMBeanList = new ArrayList<>();
         /**
          * Garbage Collector in the Java virtual machine.
          */
@@ -326,17 +328,17 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
         return initMBeanList;
     }
 
-    private static HotSpotDiagnosticMXBean getDiagnosticMXBean() {
-        final class Holder {
-            static final HotSpotDiagnostic HS_DIAG_MBEAN = new HotSpotDiagnostic();
+    private static synchronized HotSpotDiagnosticMXBean getDiagnosticMXBean() {
+        if (hsDiagMBean == null) {
+            hsDiagMBean = new HotSpotDiagnostic();
         }
-        return Holder.HS_DIAG_MBEAN;
+        return hsDiagMBean;
     }
 
-    private static OperatingSystemMXBean getOperatingSystemMXBean() {
-        final class Holder {
-            static final OperatingSystemMXBean OS_MBEAN = new OperatingSystemImpl(ManagementFactoryHelper.getVMManagement());
+    private static synchronized OperatingSystemMXBean getOperatingSystemMXBean() {
+        if (osMBean == null) {
+            osMBean = new OperatingSystemImpl(ManagementFactoryHelper.getVMManagement());
         }
-        return Holder.OS_MBEAN;
+        return osMBean;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,11 +265,13 @@ class ServerSocketChannelImpl
                 set.add(StandardSocketOptions.SO_REUSEPORT);
             }
             set.addAll(ExtendedSocketOptions.serverSocketOptions());
-            return Set.copyOf(set);
+            return Collections.unmodifiableSet(set);
         }
 
         private static Set<SocketOption<?>> defaultUnixDomainOptions() {
-            return Set.of(StandardSocketOptions.SO_RCVBUF);
+            HashSet<SocketOption<?>> set = new HashSet<>();
+            set.add(StandardSocketOptions.SO_RCVBUF);
+            return Collections.unmodifiableSet(set);
         }
     }
 
