@@ -83,7 +83,7 @@ public class SelectOneKeyOutOfMany {
 
         //  String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket)
         Asserts.assertNull(km.chooseClientAlias(new String[]{NOTHING}, null, null),
-                "getServerAliases shouldn't return alias for unsupported type");
+                "chooseClientAlias shouldn't return alias for unsupported type");
 
         Asserts.assertEQ(km.chooseClientAlias(new String[]{RSA}, null, null),
                 RSA_ALIAS,
@@ -104,7 +104,7 @@ public class SelectOneKeyOutOfMany {
 
         //  String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
         Asserts.assertNull(km.chooseServerAlias(NOTHING, null, null),
-                "getServerAliases shouldn't return alias for unsupported type");
+                "chooseServerAlias shouldn't return alias for unsupported type");
 
         Asserts.assertEQ(km.chooseServerAlias(RSA, null, null),
                 RSA_ALIAS,
