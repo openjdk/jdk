@@ -1254,7 +1254,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                         int comp_level,
                                         int hot_count,
                                         CompileTask::CompileReason compile_reason,
-                                        bool requires_online_compilation,
                                         bool blocking,
                                         Thread* thread) {
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
@@ -1269,7 +1268,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     ResourceMark rm;
     stringStream ss;
     const char* aotn = (compile_reason == CompileTask::Reason_AOTPreload) ? "AP" :
-                       (!requires_online_compilation ? " A" : "  ");
+                       (aot_code_entry != nullptr ? " A" : "  ");
     ss.print("request %16s: %s%d", CompileTask::reason_name(compile_reason), aotn, comp_level);
     if (osr_bci != InvocationEntryBci) {
       ss.print(" osr_bci: %d", osr_bci);
@@ -1285,7 +1284,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     MethodCounters* mc = method->method_counters();
     const char* name = method->name_and_sig_as_C_string(true /* use_double_colon */);
     const char* aotn = (compile_reason == CompileTask::Reason_AOTPreload) ? "AP" :
-                       (!requires_online_compilation ? " A" : "  ");
+                       (aot_code_entry != nullptr ? " A" : "  ");
     const char* osrn = (osr_bci != InvocationEntryBci) ? "% " : "";
     log.print("request %16s: %s%d %s%s", CompileTask::reason_name(compile_reason), aotn, comp_level, osrn, name);
     if (mtd != nullptr) {
@@ -1300,7 +1299,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   // A request has been made for compilation.  Before we do any
   // real work, check to see if the method has been compiled
   // in the meantime with a definitive result.
-  if (compilation_is_complete(method, osr_bci, comp_level, requires_online_compilation, compile_reason)) {
+  if (compilation_is_complete(method, osr_bci, comp_level, aot_code_entry, compile_reason)) {
     return;
   }
 
@@ -1333,11 +1332,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     return; // metaspace has hit an OOM
   }
 
-  if (!requires_online_compilation && aot_code_entry == nullptr) {
-    aot_code_entry = find_aot_code_entry(method, osr_bci, comp_level, compile_reason);
-  }
   bool is_aot = (aot_code_entry != nullptr);
-  requires_online_compilation = !is_aot; // Request JIT compilation
 
   // Outputs from the following MutexLocker block:
   CompileTask* task = nullptr;
@@ -1357,7 +1352,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     // We need to check again to see if the compilation has
     // completed.  A previous compilation may have registered
     // some result.
-    if (compilation_is_complete(method, osr_bci, comp_level, requires_online_compilation, compile_reason)) {
+    if (compilation_is_complete(method, osr_bci, comp_level, aot_code_entry, compile_reason)) {
       return;
     }
 
@@ -1448,25 +1443,12 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                compile_id, method,
                                osr_bci, comp_level,
                                hot_count, aot_code_entry, compile_reason,
-                               requires_online_compilation, blocking);
+                               blocking);
   }
 
   if (blocking) {
     wait_for_completion(task);
   }
-}
-
-AOTCodeEntry* CompileBroker::find_aot_code_entry(const methodHandle& method, int osr_bci, int comp_level,
-                                                 CompileTask::CompileReason compile_reason) {
-  if (compile_reason == CompileTask::Reason_Whitebox) {
-    return nullptr; // Need normal JIT compilation
-  }
-  AOTCodeEntry* aot_code_entry = nullptr;
-  if (osr_bci == InvocationEntryBci && AOTCodeCache::is_using_code()) {
-    assert(compile_reason != CompileTask::Reason_AOTPreload, "should not call it for AOT code preload");
-    aot_code_entry = AOTCodeCache::find_code_entry(method, comp_level);
-  }
-  return aot_code_entry;
 }
 
 void CompileBroker::preload_aot_method(const methodHandle& method, AOTCodeEntry* aot_code_entry, TRAPS) {
@@ -1480,14 +1462,13 @@ void CompileBroker::preload_aot_method(const methodHandle& method, AOTCodeEntry*
     int comp_level = CompLevel_full_optimization;
     int hot_count  = 0;
     CompileTask::CompileReason compile_reason = CompileTask::Reason_AOTPreload;
-    bool requires_online_compilation = false;
 
     AbstractCompiler *comp = CompileBroker::compiler(comp_level);
     assert(comp != nullptr, "Ensure we have a compiler");
 
     nmethod* method_code = method->code();
     if (method_code != nullptr) {
-      if (compilation_is_complete(method, osr_bci, comp_level, requires_online_compilation, compile_reason)) {
+      if (compilation_is_complete(method, osr_bci, comp_level, aot_code_entry, compile_reason)) {
         return;
       }
     }
@@ -1507,14 +1488,14 @@ void CompileBroker::preload_aot_method(const methodHandle& method, AOTCodeEntry*
                        (AOTPreloadBlocking && (compile_reason == CompileTask::Reason_AOTPreload));
     // CompileBroker::compile_method can trap and can have pending async exception.
     compile_method_base(method, aot_code_entry, osr_bci, comp_level, hot_count, compile_reason,
-                        requires_online_compilation, is_blocking, THREAD);
+                        is_blocking, THREAD);
   }
 }
 
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
                                        int hot_count,
-                                       bool requires_online_compilation,
+                                       AOTCodeEntry* aot_code_entry,
                                        CompileTask::CompileReason compile_reason,
                                        TRAPS) {
   // Do nothing if compilebroker is not initialized or compiles are submitted on level none
@@ -1534,14 +1515,14 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   CompilerDirectiveMatcher matcher(method, comp_level);
   // CompileBroker::compile_method can trap and can have pending async exception.
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, requires_online_compilation, compile_reason, matcher.directive_set(), THREAD);
+  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, aot_code_entry, compile_reason, matcher.directive_set(), THREAD);
   return nm;
 }
 
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          int comp_level,
                                          int hot_count,
-                                         bool requires_online_compilation,
+                                         AOTCodeEntry* aot_code_entry,
                                          CompileTask::CompileReason compile_reason,
                                          DirectiveSet* directive,
                                          TRAPS) {
@@ -1571,7 +1552,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     // standard compilation
     nmethod* method_code = method->code();
     if (method_code != nullptr) {
-      if (compilation_is_complete(method, osr_bci, comp_level, requires_online_compilation, compile_reason)) {
+      if (compilation_is_complete(method, osr_bci, comp_level, aot_code_entry, compile_reason)) {
         return method_code;
       }
     }
@@ -1648,8 +1629,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     bool is_blocking = ReplayCompiles                                             ||
                        !directive->BackgroundCompilationOption                    ||
                        (AOTPreloadBlocking && (compile_reason == CompileTask::Reason_AOTPreload));
-    compile_method_base(method, nullptr, osr_bci, comp_level, hot_count, compile_reason,
-                        requires_online_compilation, is_blocking, THREAD);
+    compile_method_base(method, aot_code_entry, osr_bci, comp_level, hot_count, compile_reason, is_blocking, THREAD);
   }
 
   // return requested nmethod
@@ -1668,7 +1648,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 bool CompileBroker::compilation_is_complete(const methodHandle&        method,
                                             int                        osr_bci,
                                             int                        comp_level,
-                                            bool                       online_only,
+                                            AOTCodeEntry*              aot_code_entry,
                                             CompileTask::CompileReason compile_reason) {
   if (CompileTask::reason_is_aot_compile(compile_reason)) {
     return false;
@@ -1689,14 +1669,17 @@ bool CompileBroker::compilation_is_complete(const methodHandle&        method,
       if (result == nullptr) {
         return false;
       }
-      if (online_only && result->is_aot()) {
-        return false;
+      if (result->is_aot()) {
+        if (aot_code_entry == nullptr) {
+          return false; // Allow replace AOT code with normal JITed code
+        } else if (aot_code_entry == result->aot_code_entry()) {
+          return true;
+        } else if (result->preloaded()) {
+           // Allow replace preloaded AOT code with regular AOT code of the same level
+          return (comp_level != result->comp_level());
+        }
       }
-      bool same_level = (comp_level == result->comp_level());
-      if (result->preloaded()) {
-        return !same_level; // Allow replace preloaded code with new code of the same level
-      }
-      return same_level;
+      return (comp_level == result->comp_level());
     }
   }
 }
@@ -1813,11 +1796,10 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
                                                 int                 hot_count,
                                                 AOTCodeEntry*       aot_code_entry,
                                                 CompileTask::CompileReason compile_reason,
-                                                bool                requires_online_compilation,
                                                 bool                blocking) {
   CompileTask* new_task = new CompileTask(compile_id, method, osr_bci, comp_level,
                                           hot_count, aot_code_entry, compile_reason,
-                                          requires_online_compilation, blocking);
+                                          blocking);
   queue->add(new_task);
   return new_task;
 }
@@ -2546,7 +2528,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       int repeat_compilation_count = task->is_aot_load() ? 0 : directive->RepeatCompilationOption;
       if (repeat_compilation_count > 0) {
         CHeapStringHolder failure_reason;
-        failure_reason.set(ci_env._failure_reason.get());
+        failure_reason.set(ci_env.failure_reason());
         while (repeat_compilation_count > 0) {
           ResourceMark rm(thread);
           task->print_ul("NO CODE INSTALLED");
@@ -2567,7 +2549,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         reason = "compile failed: reason unknown";
       }
       if (task->is_aot_load()) {
-        ci_env.record_failure(reason);
+        ci_env._failure_reason.set(reason);
       } else {
         // Do not attempt further compilations of this method.
         ci_env.record_method_not_compilable(reason);

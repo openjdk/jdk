@@ -278,7 +278,6 @@ class CompileBroker: AllStatic {
                                           int                 hot_count,
                                           AOTCodeEntry*       aot_code_entry,
                                           CompileTask::CompileReason compile_reason,
-                                          bool                requires_online_compilation,
                                           bool                blocking);
   static void wait_for_completion(CompileTask* task);
 #if INCLUDE_JVMCI
@@ -304,16 +303,12 @@ private:
                                   int comp_level,
                                   int hot_count,
                                   CompileTask::CompileReason compile_reason,
-                                  bool requires_online_compilation,
                                   bool blocking,
                                   Thread* thread);
 
   static CompileQueue* compile_queue(int comp_level, bool is_aot);
   static bool init_compiler_runtime();
   static void shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread);
-
-  static AOTCodeEntry* find_aot_code_entry(const methodHandle& method, int osr_bci, int comp_level,
-                                           CompileTask::CompileReason compile_reason);
 
 public:
   enum {
@@ -328,7 +323,8 @@ public:
   }
 
   static bool initialized() { return _initialized; }
-  static bool compilation_is_complete(const methodHandle& method, int osr_bci, int comp_level, bool online_only,
+  static bool compilation_is_complete(const methodHandle& method, int osr_bci, int comp_level,
+                                      AOTCodeEntry* aot_code_entry,
                                       CompileTask::CompileReason compile_reason);
   static bool compilation_is_in_queue(const methodHandle& method);
   static void print_compile_queues(outputStream* st);
@@ -342,7 +338,7 @@ public:
                                  int osr_bci,
                                  int comp_level,
                                  int hot_count,
-                                 bool requires_online_compilation,
+                                 AOTCodeEntry* aot_code_entry,
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
   static void preload_aot_method(const methodHandle& method,
@@ -356,7 +352,7 @@ private:
                                    int osr_bci,
                                    int comp_level,
                                    int hot_count,
-                                   bool requires_online_compilation,
+                                   AOTCodeEntry* aot_code_entry,
                                    CompileTask::CompileReason compile_reason,
                                    DirectiveSet* directive,
                                    TRAPS);

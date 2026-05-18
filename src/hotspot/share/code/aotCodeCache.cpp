@@ -816,6 +816,7 @@ static void copy_bytes(const char* from, address to, uint size) {
 }
 
 AOTCodeReader::AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry, CompileTask* task) {
+  precond(cache != nullptr);
   _cache = cache;
   _entry = entry;
   _load_buffer = cache->cache_buffer();
@@ -2216,18 +2217,18 @@ AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
 }
 
 bool AOTCodeCache::load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, AbstractCompiler* compiler, CompLevel comp_level) {
-  if (!is_using_code()) {
-    return false;
-  }
-  AOTCodeCache* cache = open_for_use();
-  if (cache == nullptr) {
-    return false;
-  }
+  precond(is_using_code());
   assert(entry_bci == InvocationEntryBci, "unexpected entry_bci=%d", entry_bci);
-  TraceTime t1("Total time to load AOT code", &_t_totalLoad, enable_timers(), false);
   CompileTask* task = env->task();
-  task->mark_aot_load_start(os::elapsed_counter());
   AOTCodeEntry* entry = task->aot_code_entry();
+  precond(entry != nullptr);
+  if (entry->not_entrant()) {
+    // AOT entry could be invalidated while task was in queue
+    task->set_failure_reason("AOT code entry was marked not-entrant while waiting in compilation queue");
+    return false;
+  }
+  TraceTime t1("Total time to load AOT code", &_t_totalLoad, enable_timers(), false);
+  task->mark_aot_load_start(os::elapsed_counter());
   bool preload = task->preload();
   assert(entry != nullptr, "sanity");
   if (log_is_enabled(Info, aot, codecache, nmethod)) {
@@ -2242,9 +2243,11 @@ bool AOTCodeCache::load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, Abs
              (clinit_brs ? ", has clinit barriers" : ""), (preload ? "pre" : ""));
   }
 
+  AOTCodeCache* cache = open_for_use();
   AOTCodeReader reader(cache, entry, task);
   bool success = reader.compile_nmethod(env, target, compiler);
   if (success) {
+    assert(task->is_success(), "sanity");
     task->set_num_inlined_bytecodes(entry->num_inlined_bytecodes());
   } else if (!env->failing() || !env->codecache_full()) {
     // Invalidate AOT entry if there were issues in restoring AOT code or in dependencies

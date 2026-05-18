@@ -256,16 +256,7 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool 
   CompileTask* task = env->task();
   if (install_code && task->is_aot_load()) {
     assert(!task->preload(), "Pre-loading AOT code is not implemented for C1 code");
-    bool success = AOTCodeCache::load_nmethod(env, method, entry_bci, this, CompLevel(task->comp_level()));
-    if (success) {
-      assert(task->is_success(), "sanity");
-      return;
-    }
-    if (env->failing()) {
-      return; // Failure to register AOT code
-    }
-    // Failure happens during AOT code restoration
-    assert(task->failure_reason() != nullptr, "failure should be recorded");
+    AOTCodeCache::load_nmethod(env, method, entry_bci, this, CompLevel(task->comp_level()));
     // We want to go quickly through AOT code load requests
     // instead of spending time on normal compilation.
     return;

@@ -132,8 +132,7 @@ public:
       }
       assert(!HAS_PENDING_EXCEPTION, "");
       CompileBroker::compile_method(mh, InvocationEntryBci, _comp_level,
-                                    0,
-                                    true /*requires_online_comp*/,
+                                    0, nullptr /*requires_online_comp*/,
                                     _for_preload ? CompileTask::Reason_AOTCompileForPreload : CompileTask::Reason_AOTCompile,
                                     THREAD);
       if (HAS_PENDING_EXCEPTION) {

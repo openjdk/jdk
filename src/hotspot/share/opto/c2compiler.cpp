@@ -126,16 +126,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   CompilationMemoryStatisticMark cmsm(directive);
   CompileTask* task = env->task();
   if (install_code && task->is_aot_load()) {
-    bool success = AOTCodeCache::load_nmethod(env, target, entry_bci, this, CompLevel_full_optimization);
-    if (success) {
-      assert(task->is_success(), "sanity");
-      return;
-    }
-    if (env->failing()) {
-      return; // Failure to register AOT code
-    }
-    // Failure happens during AOT code restoration
-    assert(task->failure_reason() != nullptr, "failure should be recorded");
+    AOTCodeCache::load_nmethod(env, target, entry_bci, this, CompLevel_full_optimization);
     // We want to go quickly through AOT code load requests
     // instead of spending time on normal compilation.
     return;

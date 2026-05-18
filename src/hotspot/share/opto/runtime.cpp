@@ -292,8 +292,7 @@ void OptoRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, Java
 JRT_ENTRY(void, OptoRuntime::compile_method_C(Method* method, JavaThread* current))
   methodHandle m(current, method);
   CompLevel level = CompLevel_full_optimization;
-  bool jit_compilation = true;
-  CompileBroker::compile_method(m, InvocationEntryBci, level, 0, jit_compilation, CompileTask::Reason_MustBeCompiled, current);
+  CompileBroker::compile_method(m, InvocationEntryBci, level, 0, nullptr, CompileTask::Reason_MustBeCompiled, current);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }

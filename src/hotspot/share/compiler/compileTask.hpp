@@ -105,7 +105,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int                  _osr_bci;
   bool                 _is_complete;
   bool                 _is_success;
-  bool                 _requires_online_compilation;
   bool                 _is_blocking;
   CodeSection::csize_t _nm_content_size;
   CodeSection::csize_t _nm_total_size;
@@ -141,7 +140,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   CompileTask(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
                   int hot_count, AOTCodeEntry* aot_code_entry,
                   CompileTask::CompileReason compile_reason,
-                  bool requires_online_compilation, bool is_blocking);
+                  bool is_blocking);
   ~CompileTask();
 
   static void wait_for_no_active_tasks();
@@ -154,7 +153,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_success() const                   { return _is_success; }
   bool         is_aot_load() const                  { return _aot_code_entry != nullptr; }
   AOTCodeEntry* aot_code_entry()                    { return _aot_code_entry; }
-  bool         requires_online_compilation() const  { return _requires_online_compilation; }
   DirectiveSet* directive() const                   { return _comp_directive_matcher.directive_set(); }
   void         transfer_directive(CompilerDirectiveMatcher& matcher) { _comp_directive_matcher.transfer_from(matcher); }
   CompileReason compile_reason() const              { return _compile_reason; }

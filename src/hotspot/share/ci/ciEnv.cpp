@@ -1101,7 +1101,7 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
                                 bool install_code)
 {
   AOTCodeEntry* aot_code_entry = task()->aot_code_entry();
-  assert(aot_code_entry != nullptr, "must be");
+  precond(aot_code_entry != nullptr);
   nmethod* nm = nullptr;
   {
     methodHandle method(thread, target->get_Method());
@@ -1127,6 +1127,7 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
 
     // AOTCode entry indicates this shared code was marked invalid while it was loaded.
     if (aot_code_entry->not_entrant()) {
+      record_failure("AOT entry was marked not-entrant");
       return nullptr;
     }
 

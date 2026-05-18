@@ -88,6 +88,20 @@ bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) 
          (AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
+AOTCodeEntry* find_aot_code_entry(const methodHandle& method, int comp_level,
+                                  CompileTask::CompileReason compile_reason) {
+  precond(compile_reason == CompileTask::Reason_AOTLoad ||
+          compile_reason == CompileTask::Reason_Tiered  ||
+          compile_reason == CompileTask::Reason_MustBeCompiled);
+  if (AOTCodeCache::is_using_code()) {
+    AOTCodeEntry* aot_code_entry = AOTCodeCache::find_code_entry(method, comp_level);
+    if (aot_code_entry != nullptr && !aot_code_entry->is_loaded() && !aot_code_entry->not_entrant()) {
+      return aot_code_entry;
+    }
+  }
+  return nullptr;
+}
+
 void CompilationPolicy::maybe_compile_early(const methodHandle& m, MethodTrainingData* mtd, TRAPS) {
   if (m->method_holder()->is_not_initialized()) {
     // 'is_not_initialized' means not only '!is_initialized', but also that
@@ -95,7 +109,7 @@ void CompilationPolicy::maybe_compile_early(const methodHandle& m, MethodTrainin
     // Do not force compilation of methods in uninitialized classes.
     return;
   }
-  // Consider replacing conservatively compiled AOT Preload code with faster AOT code
+  // Consider replacing conservatively compiled AOT Preload code with faster AOT code or normal JITed code
   nmethod* nm = m->code();
   bool recompile = (nm != nullptr) && nm->preloaded();
   CompLevel cur_level = static_cast<CompLevel>(m->highest_comp_level());
@@ -103,21 +117,20 @@ void CompilationPolicy::maybe_compile_early(const methodHandle& m, MethodTrainin
   if ((next_level != cur_level || recompile) && can_be_compiled(m, next_level) && !CompileBroker::compilation_is_in_queue(m)) {
     // We are here because some of CTD have all init dependencies satisfied.
     CompileTrainingData* ctd = mtd->compile_data_for_aot_code(next_level);
-    bool requires_online_compilation = true;
-    if (ctd != nullptr) {
-      // Can't load normal AOT code - not all dependencies are ready,
-      // request normal compilation
-      requires_online_compilation = (ctd->init_deps_left_acquire() > 0);
-    }
-    // Skip compilation if next_level doesn't have CTD or CTD
-    // does not have all class init dependencies satisfied.
-    if (requires_online_compilation) {
+    if (ctd == nullptr || (ctd->init_deps_left_acquire() > 0)) {
+      // Skip compilation beacuse CTD is absent or not all dependencies are ready
       return;
+    }
+    CompileTask::CompileReason reason = CompileTask::Reason_AOTLoad;
+    AOTCodeEntry* aot_code_entry = find_aot_code_entry(m, next_level, reason);
+    if (aot_code_entry == nullptr) {
+      // Request normal JIT compilation if there is no next_level aot code for this method
+      reason = CompileTask::Reason_MustBeCompiled;
     }
     if (PrintTieredEvents) {
       print_event(FORCE_COMPILE, m(), m(), InvocationEntryBci, next_level);
     }
-    CompileBroker::compile_method(m, InvocationEntryBci, next_level, 0, requires_online_compilation, CompileTask::Reason_AOTLoad, THREAD);
+    CompileBroker::compile_method(m, InvocationEntryBci, next_level, 0, aot_code_entry, reason, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
     }
@@ -143,21 +156,25 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   if (must_be_compiled(m)) {
     // This path is unusual, mostly used by the '-Xcomp' stress test mode.
     CompLevel level = initial_compile_level(m);
+    CompileTask::CompileReason reason = CompileTask::Reason_MustBeCompiled;
     if (PrintTieredEvents) {
       print_event(FORCE_COMPILE, m(), m(), InvocationEntryBci, level);
     }
     // Check AOT code too
-    bool requires_online_compilation = true;
     if (TrainingData::have_data()) {
       MethodTrainingData* mtd = MethodTrainingData::find_fast(m);
       if (mtd != nullptr) {
         CompileTrainingData* ctd = mtd->last_toplevel_compile(level);
-        if (ctd != nullptr) {
-          requires_online_compilation = (ctd->init_deps_left_acquire() > 0);
+        if (ctd != nullptr && (ctd->init_deps_left_acquire() == 0)) {
+          AOTCodeEntry* aot_code_entry = find_aot_code_entry(m, level, reason);
+          if (aot_code_entry != nullptr) {
+            CompileBroker::compile_method(m, InvocationEntryBci, level, 0, aot_code_entry, reason, THREAD);
+          } // Request normal JIT compilation too for -Xcomp
         }
       }
     }
-    CompileBroker::compile_method(m, InvocationEntryBci, level, 0, requires_online_compilation, CompileTask::Reason_MustBeCompiled, THREAD);
+    // Request normal JIT compilation
+    CompileBroker::compile_method(m, InvocationEntryBci, level, 0, nullptr, reason, THREAD);
   }
 }
 
@@ -877,7 +894,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
         max_task->transfer_directive(directive_matcher);
 
         if (CompileBroker::compilation_is_complete(max_method_h, max_task->osr_bci(), CompLevel_limited_profile,
-                                                   true /* requires_online_compilation */,
+                                                   nullptr /* requires_online_compilation */,
                                                    CompileTask::Reason_None)) {
           if (PrintTieredEvents) {
             print_event(REMOVE_FROM_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
@@ -1011,18 +1028,24 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
     }
     int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
     update_rate(nanos_to_millis(os::javaTimeNanos()), mh);
+    CompileTask::CompileReason reason = CompileTask::Reason_Tiered;
     // Check AOT code too
-    bool requires_online_compilation = true;
-    if (TrainingData::have_data()) {
+    if (TrainingData::have_data() && (bci == InvocationEntryBci)) {
       MethodTrainingData* mtd = MethodTrainingData::find_fast(mh);
       if (mtd != nullptr) {
         CompileTrainingData* ctd = mtd->last_toplevel_compile(level);
-        if (ctd != nullptr) {
-          requires_online_compilation = (ctd->init_deps_left_acquire() > 0);
+        if (ctd != nullptr && (ctd->init_deps_left_acquire() == 0)) {
+          AOTCodeEntry* aot_code_entry = find_aot_code_entry(mh, level, reason);
+          if (aot_code_entry != nullptr) {
+            CompileBroker::compile_method(mh, InvocationEntryBci, level, hot_count, aot_code_entry, reason, THREAD);
+            if (UseInterpreter) {
+              return;
+            } // Request normal JIT compilation too for -Xcomp
+          }
         }
       }
     }
-    CompileBroker::compile_method(mh, bci, level, hot_count, requires_online_compilation, CompileTask::Reason_Tiered, THREAD);
+    CompileBroker::compile_method(mh, bci, level, hot_count, nullptr, reason, THREAD);
   }
 }
 
