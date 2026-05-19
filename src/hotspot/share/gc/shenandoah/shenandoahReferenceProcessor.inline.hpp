@@ -27,6 +27,11 @@
 
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 
+#include "classfile/javaClasses.inline.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "oops/compressedOops.inline.hpp"
+
 inline oop lrb(oop obj) {
   if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
     return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
