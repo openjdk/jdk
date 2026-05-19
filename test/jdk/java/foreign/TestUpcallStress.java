@@ -24,7 +24,6 @@
 /*
  * @test
  * @requires jdk.foreign.linker != "FALLBACK"
- * @requires (os.arch == "aarch64" | os.arch=="riscv64" | os.arch=="x86_64" | os.arch=="amd64") & os.name == "Linux"
  * @requires vm.compMode != "Xcomp"
  * @modules java.base/jdk.internal.foreign
  * @library /test/lib
