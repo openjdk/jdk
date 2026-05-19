@@ -462,7 +462,7 @@ void CDSConfig::check_aot_flags() {
   // At least one AOT flag has been used
   _new_aot_flags_used = true;
 
-  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
+  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0) {
     check_aotmode_auto_or_on();
   } else if (strcmp(AOTMode, "off") == 0) {
     check_aotmode_off();
@@ -489,7 +489,7 @@ void CDSConfig::check_aotmode_auto_or_on() {
   if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
     RequireSharedSpaces = false;
   } else {
-    assert(strcmp(AOTMode, "on") == 0, "already checked");
+    assert(strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0 , "already checked");
     RequireSharedSpaces = true;
   }
 }
