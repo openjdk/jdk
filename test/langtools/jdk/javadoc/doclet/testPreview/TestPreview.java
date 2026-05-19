@@ -364,7 +364,7 @@ public class TestPreview extends JavadocTester {
                 """
                     <div class="block">Non-preview interface.</div>
                     <dl class="notes">
-                    <div id="p.NonPreviewFeature-previewNote" class="note-tag-previewNote">
+                    <div id="block-previewNote" class="note-tag-previewNote">
                     <dt>Preview Note:</dt>
                     <dd>Block preview note.</dd>
                     </div>""",
