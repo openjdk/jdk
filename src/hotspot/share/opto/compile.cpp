@@ -2002,7 +2002,7 @@ static bool return_val_keeps_allocations_alive(Node* ret_val) {
                n->in(1)->is_Proj() &&
                n->in(1)->in(0)->is_Allocate()) {
       some_allocations = true;
-    } else if (n->is_CheckCastPP()) {
+    } else if (n->is_CheckCastPP() || n->is_CastPP()) {
       wq.push(n->in(1));
     }
   }
@@ -3275,9 +3275,12 @@ void Compile::Optimize() {
     if (failing()) {
       return;
     }
-    process_inline_types(igvn);
   }
   assert(_late_inlines.length() == 0, "late inline queue must be drained");
+
+  // Process inline types before macro expansion. Otherwise, we will not be able to
+  // remove unused allocations because it cannot match the expanded allocation.
+  process_inline_types(igvn);
 
   {
     TracePhase tp(_t_macroExpand);
