@@ -54,9 +54,9 @@ private:
 
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
 
-  // We increase this limit if too many slow allocations (outside TLAB)
-  // happen to reduce outside-TLAB allocations, at the expense of
-  // wasting more memory, i.e., the TLAB is discarded sooner.
+  // If too many slow allocations (outside TLAB) happen, we increase
+  // _refill_waste_limit. This reduces outside-TLAB allocations at
+  // the expense of wasting more memory, i.e., the TLAB is discarded sooner.
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
   uint64_t  _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
@@ -64,7 +64,7 @@ private:
   static unsigned _target_num_refills;           // expected number of refills between GCs
 
   unsigned  _num_refills;
-  // TLAB retirement is invoked in two different contexts:
+  // TLAB retirement is invoked in two main contexts:
   // 1. TLAB refill:
   //    The current TLAB is insufficient to satisfy a pending allocation
   //    request, triggering a refill. The remaining space in the current
@@ -80,7 +80,7 @@ private:
   // Allocated size for filling TLAB in HeapWords
   size_t    _allocated_size;
 
-  // Fraction of eden allocated in TLABs
+  // Fraction of eden allocated by this thread, used for sizing its TLAB.
   AdaptiveWeightedAverage _allocation_fraction;
 
   void reset_statistics();
