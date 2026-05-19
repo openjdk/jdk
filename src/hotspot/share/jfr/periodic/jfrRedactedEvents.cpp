@@ -26,6 +26,7 @@
 #include "jfr/periodic/jfrRedactedEvents.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "logging/log.hpp"
+#include "logging/logMessage.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/os.hpp"
@@ -170,11 +171,26 @@ bool JfrRedactedEvents::append_filters(StringArray* target, bool argument, const
   if (filters[0] == '+') {
     filters++;
     add_default_filters(target, argument);
+  } else {
+    if (strncmp(filters, "none;", 5) != 0) {
+      const char* option_name = argument ? "redact-argument": "redact-key";
+      LogMessage(jfr, redact) msg;
+      msg.warning("Default redaction filters are replaced. Prepend with '+' to add filters to the");
+      msg.warning("defaults, or specify -XX:FlightRecorderOptions:'%s=none;<filters>'", option_name);
+      msg.warning("to replace without a warning.");
+    } else {
+      filters += 5;
+    }
   }
   StringArray* filter_array = split(filters, ';');
   bool success = true;
   for (int i = 0; i < filter_array->length(); i++) {
     const String* filter = filter_array->at(i);
+    if (strcmp(filter->text(), "none") == 0) {
+      log_error(jfr, redact)("'none' can only be used as the first filter.");
+      success = false;
+      break;
+    }
     if (filter->at(0) == '@') {
       const char* filename = filter->text() + 1;
       if (!read_file(target, filename)) {
