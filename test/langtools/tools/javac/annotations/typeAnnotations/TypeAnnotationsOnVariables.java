@@ -426,8 +426,8 @@ public class TypeAnnotationsOnVariables {
         Path testClass = classes.resolve("Test.class");
         TestClassDesc testClassDesc = TestClassDesc.create(testClass);
         MethodModel clInit = singletonValue(testClassDesc.name2Method().get("<clinit>"));
-        var clInitTypeAnnos = getAnnotationsFromCode(clInit);
-        assertFalse(clInitTypeAnnos.isPresent(), () -> clInitTypeAnnos.toString());
+        assertEmpty(getAnnotationsFromHeader(clInit));
+        assertEmpty(getAnnotationsFromCode(clInit));
 
         checkTypeAnnotations(testClassDesc,
                              "test",
@@ -540,11 +540,11 @@ public class TypeAnnotationsOnVariables {
         Path testClass = classes.resolve("Test.class");
         TestClassDesc testClassDesc = TestClassDesc.create(testClass);
         MethodModel clInit = singletonValue(testClassDesc.name2Method().get("<clinit>"));
-        var clInitTypeAnnos = getAnnotationsFromCode(clInit);
-        assertFalse(clInitTypeAnnos.isPresent(), () -> clInitTypeAnnos.toString());
+        assertEmpty(getAnnotationsFromHeader(clInit));
+        assertEmpty(getAnnotationsFromCode(clInit));
         MethodModel test = singletonValue(testClassDesc.name2Method().get("test"));
-        var testTypeAnnos = getAnnotationsFromCode(test);
-        assertFalse(testTypeAnnos.isPresent(), () -> testTypeAnnos.toString());
+        assertEmpty(getAnnotationsFromHeader(test));
+        assertEmpty(getAnnotationsFromCode(test));
 
         checkTypeAnnotations(testClassDesc,
                              "lambda$static$0",
@@ -649,6 +649,10 @@ public class TypeAnnotationsOnVariables {
                 throw new AssertionError("unexpected output");
             }
         }
+    }
+
+    private void assertEmpty(Optional<?> value) {
+        assertFalse(value.isPresent(), () -> value.toString());
     }
 
     record TestClassDesc(Path pathToClass,
