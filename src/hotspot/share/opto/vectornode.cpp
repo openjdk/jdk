@@ -2768,6 +2768,7 @@ static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&
          n->in(1)->bottom_type()->isa_long() &&
+         n->in(1)->bottom_type()->is_long()->get_con() >= 0 &&
          n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
 }
 
@@ -2784,7 +2785,7 @@ static bool has_vector_elements_fit_uint(Node* n) {
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
   };
-  return is_lower_doubleword_mask_pattern(n) ||             // (AndV     SRC (Replicate C)) where C <= 0xFFFFFFFF
+  return is_lower_doubleword_mask_pattern(n) ||             // (AndV     SRC (Replicate C)) where (0 <= C <= 0xFFFFFFFF)
          is_clear_upper_doubleword_uright_shift_pattern(n); // (URShiftV SRC S) where S >= 32
 }
 
