@@ -9519,7 +9519,7 @@ void Assembler::vpsllq(XMMRegister dst, XMMRegister src, Address shift, int vect
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_rex_vex_w_reverted();
-  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_M128, /* input_size_in_bits */ EVEX_NObit);
   vex_prefix(shift, src->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8((unsigned char)0xF3);
   emit_operand(dst, shift, 0);
@@ -9624,7 +9624,7 @@ void Assembler::vpsrlq(XMMRegister dst, XMMRegister src, Address shift, int vect
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_rex_vex_w_reverted();
-  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_M128, /* input_size_in_bits */ EVEX_NObit);
   vex_prefix(shift, src->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8((unsigned char)0xD3);
   emit_operand(dst, shift, 0);
@@ -9771,8 +9771,7 @@ void Assembler::vpsllvq(XMMRegister dst, XMMRegister src, XMMRegister shift, int
 }
 
 void Assembler::vpsllvq(XMMRegister dst, XMMRegister src, Address shift, int vector_len) {
-  assert(UseAVX > 1, "requires AVX2");
-  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx2() :
          vector_len == AVX_256bit ? VM_Version::supports_avx2() :
          vector_len == AVX_512bit ? VM_Version::supports_evex() : 0, "");
   InstructionMark im(this);
@@ -9799,8 +9798,7 @@ void Assembler::vpsrlvq(XMMRegister dst, XMMRegister src, XMMRegister shift, int
 }
 
 void Assembler::vpsrlvq(XMMRegister dst, XMMRegister src, Address shift, int vector_len) {
-  assert(UseAVX > 1, "requires AVX2");
-  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx2() :
          vector_len == AVX_256bit ? VM_Version::supports_avx2() :
          vector_len == AVX_512bit ? VM_Version::supports_evex() : 0, "");
   InstructionMark im(this);

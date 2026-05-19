@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2026, Intel Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -160,7 +160,7 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
   Register round_consts = r11;
   int vector_len = Assembler::AVX_128bit;
   bool multiBlock = stub_id == StubId::stubgen_sha3_implCompressMB_id;
-  bool doubleKeccak = true;
+  bool parallelKeccak = true;
 
   switch (stub_id) {
     case StubId::stubgen_quad_keccak_id:
@@ -175,7 +175,7 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
       state2      = c_rarg1;
       break;
     default:
-      doubleKeccak = false;
+      parallelKeccak = false;
       buf         = c_rarg0;
       state1      = c_rarg1;
       block_size  = c_rarg2;
@@ -236,16 +236,17 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
       __ vshufpd(X2, T0, T1, 0b11, Assembler::AVX_128bit);
       __ vshufpd(T0, C0, C1, 0b00, Assembler::AVX_128bit);
       __ vshufpd(T1, C0, C1, 0b11, Assembler::AVX_128bit);
-      __ evinserti64x2(X1, X1, T0, 0b01, Assembler::AVX_256bit);
-      __ evinserti64x2(X2, X2, T1, 0b01, Assembler::AVX_256bit);
+      __ vinserti128(X1, X1, T0, 1);
+      __ vinserti128(X2, X2, T1, 1);
     } else if (stub_id == StubId::stubgen_double_keccak_id) {
       __ vmovdqu(T0, Address(state1, disp), Assembler::AVX_128bit);
       __ vmovdqu(T1, Address(state2, disp), Assembler::AVX_128bit);
       __ vshufpd(X1, T0, T1, 0b00, Assembler::AVX_128bit);
       __ vshufpd(X2, T0, T1, 0b11, Assembler::AVX_128bit);
     } else {
+      // only care about values in first 64bit columns for non-parallel keccak
       __ vmovdqu(X1, Address(state1, disp), Assembler::AVX_128bit);
-      __ vshufpd(X2, X1, X2, 0b01, Assembler::AVX_128bit);
+      __ vshufpd(X2, X1, X1, 0b1, Assembler::AVX_128bit);
     }
   };
 
@@ -280,7 +281,7 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
   __ BIND(multi_loop);
   __ movl(roundsLeft, 23);
 
-  if (!doubleKeccak) {
+  if (!parallelKeccak) {
     __ evpxorq( A0, k1,  A0, Address(buf,  0 * 8), false, Assembler::AVX_128bit);
     __ evpxorq( A1, k1,  A1, Address(buf,  1 * 8), false, Assembler::AVX_128bit);
     __ evpxorq( A2, k1,  A2, Address(buf,  2 * 8), false, Assembler::AVX_128bit);
@@ -580,7 +581,7 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
     __ vpxorq(rxmm, rxmm, rxmm, Assembler::AVX_512bit);
   }
 
-  if (!doubleKeccak) {
+  if (!parallelKeccak) {
 #ifdef _WIN64
     __ pop_ppx(rdi);
 #endif
@@ -623,7 +624,7 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
 //
 // KECCAK AVX2 design notes:
 //  (1) - The algorithm was written to fit into 128-bit LANE
-//        (i.e. hence doubleKeccak takes full 256bit register)
+//        (i.e. hence parallelKeccak takes full 256bit register)
 //  (2) - a lot of shuffles are inevitable, since there are not enough registers.
 //        To save some shuffles, column1-column3 and column2-4 are placed into
 //        the same 128-bit register. Column 0 is also grouped (by rows).
@@ -655,7 +656,7 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
   __ enter();
 
   bool multiBlock = stub_id == StubId::stubgen_sha3_implCompressMB_id;
-  bool doubleKeccak = stub_id == StubId::stubgen_double_keccak_id;
+  bool parallelKeccak = stub_id == StubId::stubgen_double_keccak_id;
   int vector_len, reg_size;
   Register buf, offset, block_size, limit;
   Register state1, state2;
@@ -663,7 +664,7 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
   Register round_consts = r11;
   Register rotate_consts;
 
-  if (doubleKeccak) {
+  if (parallelKeccak) {
     vector_len = Assembler::AVX_256bit;
     reg_size = 32;
     state1      = c_rarg0;
@@ -733,7 +734,7 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
 
   auto loadState = [=](XMMRegister dst, int disp){
     __ vmovdqu(dst, Address(state1, disp), Assembler::AVX_128bit);
-    if (doubleKeccak) {
+    if (parallelKeccak) {
       __ vinserti128(dst, dst, Address(state2, disp), 1);
     }
   };
@@ -754,7 +755,7 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
   loadState(a21a22, 21 * 8);
   loadState(a23a24, 23 * 8);
 
-  if (!doubleKeccak) {
+  if (!parallelKeccak) {
     Label buffer_done;
     // load input from buffer: 72, 104, 136, 144 or 168 bytes
     // i.e. 5+4, 2*5+3, 3*5+2, 3*5+3 or 4*5+1 longs
@@ -1092,7 +1093,7 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
     int disp2 = disp+10;
     __ pextrq(Address(state1, disp1 * 8), src, 0);
     __ pextrq(Address(state1, disp2 * 8), src, 1);
-    if (doubleKeccak) {
+    if (parallelKeccak) {
       __ vextracti128(src, src, 1);
       __ pextrq(Address(state2, disp1 * 8), src, 0);
       __ pextrq(Address(state2, disp2 * 8), src, 1);
@@ -1107,14 +1108,14 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
     __ vpunpckhqdq(X3X4, X1X3, X2X4, Assembler::AVX_256bit);
     __ vmovdqu(Address(state1, disp1 * 8), X1X2, Assembler::AVX_128bit);
     __ vmovdqu(Address(state1, disp2 * 8), X3X4, Assembler::AVX_128bit);
-    if (doubleKeccak) {
+    if (parallelKeccak) {
       __ vextracti128(Address(state2, disp1 * 8), X1X2, 1);
       __ vextracti128(Address(state2, disp2 * 8), X3X4, 1);
     }
   };
 
   __ pextrq(Address(state1, 0 * 8), A0_, 0);
-  if (doubleKeccak) {
+  if (parallelKeccak) {
     __ vextracti128(A0_, A0_, 1);
     __ pextrq(Address(state2, 0 * 8), A0_, 0);
   }
@@ -1135,7 +1136,7 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
 
   __ movq(rsp, rbp);
   __ pop_ppx(rbp);
-  if (!doubleKeccak) {
+  if (!parallelKeccak) {
     __ pop_ppx(r12);
   #ifdef _WIN64
     __ pop_ppx(rdi);
