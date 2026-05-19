@@ -26,7 +26,6 @@
 source %{
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler_riscv.hpp"
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 %}
 
 instruct load_P_shenandoah(iRegPNoSp dst, memory mem, rFlagsReg cr)
