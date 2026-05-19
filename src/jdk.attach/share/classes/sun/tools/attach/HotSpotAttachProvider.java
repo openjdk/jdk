@@ -58,7 +58,7 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
      */
     @Override
     public VirtualMachine attachVirtualMachine(String vmid, Map<String, ?> env)
-        throws AttachNotSupportedException, IOException {
+        throws AttachNotSupportedException, IllegalArgumentException, IOException {
 
         try {
             if (env.isEmpty() && Integer.parseInt(vmid) > 0) {

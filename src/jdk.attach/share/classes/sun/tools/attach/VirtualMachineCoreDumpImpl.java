@@ -65,7 +65,7 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
      * Attaches to a core file or minidump.
      */
     VirtualMachineCoreDumpImpl(AttachProvider provider, String vmid, Map<String, ?> env)
-            throws AttachNotSupportedException, IOException {
+            throws AttachNotSupportedException, IllegalArgumentException, IOException {
 
         // Superclass HotSpotVirtualMachine modified to accept String that is not a PID.
         super(provider, vmid);
@@ -78,14 +78,20 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
         attach();
     }
 
-    protected void attach() throws IOException {
+    protected void attach() throws AttachNotSupportedException, IllegalArgumentException, IOException {
         checkCoreFile(filename);
+        if (revivalCachePath != null) {
+            File f = new File(revivalCachePath);
+            if (!f.exists() || !f.isDirectory() || !f.canWrite()) {
+                throw new IllegalArgumentException("Bad path for revival cache data");
+            }
+        }
         attached = true;
     }
 
     private static final int HEADER_READ_SIZE = 24; // Enough bytes for magic (and file type on ELF)
 
-    private static void checkCoreFile(String filename) throws IOException {
+    private static void checkCoreFile(String filename) throws AttachNotSupportedException, IOException {
         if (!new File(filename).exists()) {
             throw new IOException("No such file '" + filename + "'");
         }
@@ -94,20 +100,19 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
             byte[] bytes = new byte[HEADER_READ_SIZE];
             int e = is.read(bytes);
             if (e < HEADER_READ_SIZE) {
-                throw new IOException("Truncated file '" + filename + "'");
+                throw new AttachNotSupportedException("Truncated file '" + filename + "'");
             }
             if (OperatingSystem.isWindows()) {
                 if (bytes[0] != 'M' || bytes[1] != 'D' || bytes[2] != 'M' || bytes[3] != 'P') {
-                    throw new IOException("Not a MiniDump: '" + filename + "'");
+                    throw new AttachNotSupportedException("Not a MiniDump: '" + filename + "'");
                 }
             } else if (OperatingSystem.isLinux()) {
                 if (bytes[0] != 0x7f || bytes[1] != 'E' || bytes[2] != 'L' || bytes[3] != 'F'
                     || bytes[16] != 4 /* ET_CORE */) {
-                    throw new IOException("Not a core file: '" + filename + "'");
+                    throw new AttachNotSupportedException("Not a core file: '" + filename + "'");
                 }
             } else {
-                // Should not reach here.
-                throw new IOException("Unimplemented OS");
+                throw new AttachNotSupportedException("Unimplemented OS");
             }
         }
     }

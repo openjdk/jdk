@@ -156,16 +156,16 @@ public abstract class AttachProvider {
      * Java virtual machine is a version to which this provider cannot attach, then
      * an {@code AttachNotSupportedException} is thrown.
      *
-     * @implSpec The default implementation of this method always throws {@link UnsupportedOperationException}
-     *
      * @implNote The default implementation of this method is equivalent to {@link attachVirtualMachine(String id)}
-     * if the id parses as a positive integer, and the Map env is empty.
+     * if {@code env} is empty, and otherwise throws {@link AttachNotSupportedException}.
+     *
+     * @implNote Where implemented by a Provider, this method may attach to a core file in preference to a PID.
      *
      * @param  id
      *         The abstract identifier that identifies the Java virtual machine.
      *
      * @param  env
-     *         A Map of provider-specific settings to configure the attach, may be empty.
+     *         A Map of settings that a specific AttachProvider may reference.  May be empty.
      *
      * @return  VirtualMachine representing the target virtual machine.
      *
@@ -174,13 +174,24 @@ public abstract class AttachProvider {
      *          to a Java virtual machine that does not exist, or it
      *          corresponds to a Java virtual machine which this
      *          provider cannot attach.
+     *          Also thrown if called with a non-empty {@code env}, and this method is not overridden.
+     *
+     * @throws  IllegalArgumentException
+     *          If the implementation encounters an error relating to arguments in {@code env}.
+     *
+     * @throws  IOException
+     *          If some other I/O error occurs
      *
      * @since 27
      */
     public VirtualMachine attachVirtualMachine(String id, Map<String, ?> env)
-        throws AttachNotSupportedException, IOException {
+        throws AttachNotSupportedException, IllegalArgumentException, IOException {
 
-        throw new UnsupportedOperationException("Not implemented in base AttachProvider class");
+        if (env.isEmpty()) {
+            return attachVirtualMachine(id);
+        } else {
+            throw new AttachNotSupportedException("Not implemented in base AttachProvider class");
+        }
     }
 
     /**

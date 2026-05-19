@@ -157,7 +157,7 @@ public abstract class VirtualMachine {
      * AttachProvider.providers()} method. It then iterates overs the list
      * and invokes each provider's {@link
      * com.sun.tools.attach.spi.AttachProvider#attachVirtualMachine(java.lang.String)
-     * attachVirtualMachine} method in turn. If a provider successfully
+     * attachVirtualMachine(String)} method in turn. If a provider successfully
      * attaches then the iteration terminates, and the VirtualMachine created
      * by the provider that successfully attached is returned by this method.
      * If the {@code attachVirtualMachine} method of all providers throws
@@ -215,7 +215,7 @@ public abstract class VirtualMachine {
      * AttachProvider.providers()} method. It then iterates over the list
      * and invokes each provider's {@link
      * com.sun.tools.attach.spi.AttachProvider#attachVirtualMachine(java.lang.String,java.util.Map)
-     * attachVirtualMachine} method in turn. If a provider successfully
+     * attachVirtualMachine(java.lang.String,java.util.Map)} method in turn. If a provider successfully
      * attaches then the iteration terminates, and the VirtualMachine created
      * by the provider that successfully attached is returned by this method.
      * If the {@code attachVirtualMachine} method of all providers throws
@@ -240,6 +240,9 @@ public abstract class VirtualMachine {
      *          If the {@code attachVirtualmachine} method of all installed
      *          providers throws {@code AttachNotSupportedException}, or
      *          there aren't any providers installed.
+     *
+     * @throws IllegalArgumentException
+     *         If the implementation encounters an error relating to arguments in {@code env}.
      *
      * @throws  IOException
      *          If an I/O error occurs
@@ -286,7 +289,7 @@ public abstract class VirtualMachine {
      * @since 27
      */
     public static VirtualMachine attach(String id, Map<String, ?> env)
-        throws AttachNotSupportedException, IOException
+        throws AttachNotSupportedException, IllegalArgumentException, IOException
     {
         if (id == null) {
             throw new NullPointerException("id cannot be null");
