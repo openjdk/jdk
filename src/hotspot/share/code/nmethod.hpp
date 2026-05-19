@@ -291,7 +291,7 @@ public:
 
 private:
   // Persistent bits, set once during construction.
-  Flags _flags;
+  Flags const _flags;
 
   // Used for maintenance of dependencies (under CodeCache_lock)
   bool _has_flushed_dependencies;

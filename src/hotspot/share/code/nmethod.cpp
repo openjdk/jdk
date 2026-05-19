@@ -1231,7 +1231,6 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _is_unloading_state         = 0;
   _state                      = not_installed;
 
-  _flags                      = Flags();
   _has_flushed_dependencies   = false;
   _is_unlinked                = false;
   _load_reported              = false; // jvmti state
@@ -1385,7 +1384,8 @@ nmethod::nmethod(
 }
 
 
-nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm._header_size)
+nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm._header_size),
+  _flags(nm._flags)
 {
 
   if (nm._oop_maps != nullptr) {
@@ -1482,7 +1482,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _is_unloading_state           = nm._is_unloading_state;
   _state                        = not_installed;
 
-  _flags                        = nm._flags;
   _has_flushed_dependencies     = nm._has_flushed_dependencies;
   _is_unlinked                  = nm._is_unlinked;
   _load_reported                = nm._load_reported;
@@ -1693,7 +1692,8 @@ nmethod::nmethod(
   _deoptimization_generation(0),
   _gc_epoch(CodeCache::gc_epoch()),
   _method(method),
-  _osr_link(nullptr)
+  _osr_link(nullptr),
+  _flags(flags)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
@@ -1708,7 +1708,6 @@ nmethod::nmethod(
     _comp_level      = comp_level;
     _compiler_type   = type;
     _orig_pc_offset  = orig_pc_offset;
-    _flags           = flags;
 
     _num_stack_arg_slots = entry_bci != InvocationEntryBci ? 0 : _method->constMethod()->num_stack_arg_slots();
 
