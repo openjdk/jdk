@@ -114,9 +114,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
-  bool should_update_surv_rate_group_predictors() {
-    return collector_state()->is_in_young_only_phase() && !collector_state()->is_in_mark_or_rebuild();
-  }
+  bool should_update_surv_rate_group_predictors();
 
   double pending_cards_processing_time() const;
 public:
@@ -160,12 +158,7 @@ public:
   // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
 
-  void cset_regions_freed() {
-    bool update = should_update_surv_rate_group_predictors();
-
-    _eden_surv_rate_group->all_surviving_words_recorded(predictor(), update);
-    _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
-  }
+  void cset_regions_freed();
 
   G1MMUTracker* mmu_tracker() {
     return _mmu_tracker;
@@ -265,8 +258,6 @@ public:
 
 private:
   void abandon_collection_set_candidates();
-  // Sets up marking if proper conditions are met.
-  void maybe_start_marking(size_t allocation_word_size);
   // Manage time-to-mixed tracking.
   void update_time_to_mixed_tracking(Pause gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
@@ -303,7 +294,8 @@ public:
   void record_young_gc_pause_start();
   void record_young_gc_pause_end(bool evacuation_failed);
 
-  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size);
+  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size) const;
+  bool need_to_start_conc_mark(const char* source, const G1CollectorState& state, size_t allocation_word_size) const;
 
   bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
 
@@ -312,16 +304,14 @@ public:
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_pause_start_time();
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark,
-                                   bool allocation_failure,
-                                   size_t allocation_word_size);
+  // Returns the next CollectorState based on current state without modifying the latter.
+  G1CollectorState record_young_collection_end(bool concurrent_operation_is_full_mark,
+                                               bool allocation_failure,
+                                               size_t allocation_word_size);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
   void record_full_collection_end(size_t allocation_word_size);
-
-  // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end();
 
   void record_concurrent_mark_remark_end();
 
@@ -338,11 +328,6 @@ private:
   // Predict the number of bytes of surviving objects from survivor and old
   // regions and update the associated members.
   void update_survival_estimates_for_next_collection();
-
-  // Set the state to start a concurrent marking cycle and clear
-  // _initiate_conc_mark_if_possible because it has now been
-  // acted on.
-  void initiate_conc_mark();
 
 public:
   // This sets the initiate_conc_mark_if_possible() flag to start a
