@@ -465,6 +465,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
 
   // Special configs that cannot be checked with macros
   _compressedOopBase     = CompressedOops::base();
+  _compressedOopShift    = CompressedOops::shift();
 
 #if defined(X86) && !defined(ZERO)
   _useUnalignedLoadStores = UseUnalignedLoadStores;
@@ -577,10 +578,17 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR, AOTCODECACHE_CHECK_FUN);
 
   // Special configs that cannot be checked with macros
+#define COMPRESSED_OOPS_HINT "Consider adding -XX:+AOTCompatibleOopCompression when creating the AOT cache"
 
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
     load_failure_log().print_cr("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
                                 _compressedOopBase, CompressedOops::base());
+    load_failure_log().print_cr(COMPRESSED_OOPS_HINT);
+    return false;
+  }
+
+  if (!check_config(_compressedOopShift, CompressedOops::shift(), "CompressedOops::shift()")) {
+    load_failure_log().print_cr(COMPRESSED_OOPS_HINT);
     return false;
   }
 
