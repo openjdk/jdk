@@ -236,9 +236,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         if (!escaped.equals(header)) {
             var matcher = allowedHeaderTags.matcher(escaped);
             while (matcher.find()) {
-                var tag = matcher.group("tag");
-                var body = matcher.group("body");
-                escaped = matcher.replaceFirst("<" + tag + ">" + body + "</" + tag + ">");
+                escaped = matcher.replaceFirst("<${tag}>${body}</${tag}>");
                 matcher = allowedHeaderTags.matcher(escaped);
             }
         }
