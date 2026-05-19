@@ -193,7 +193,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var existingIds = tagletWriter.htmlWriter.getExistingIds();
         return id != null
             ? config.htmlIds.getUniqueId(id, existingIds)
-            : config.htmlIds.forNote(e, defaultKind, inline, existingIds);
+            : config.htmlIds.forNote(e, name, inline, existingIds);
     }
 
     private HtmlTree setContentLengthStyle(HtmlTree html) {

@@ -626,14 +626,19 @@ public class HtmlIds {
      * Returns an id for a note.
      *
      * @param e the element in whose documentation the note appears
-     * @param kind the kind of note, or null
+     * @param tagName the tag name of the note
      * @param inline true if the id is for an inline note
      * @param existingIds the set of ids already generated
      * @return a unique id for the note
      */
-    public HtmlId forNote(Element e, String kind, boolean inline, Set<String> existingIds) {
-        var base = kind == null ? "note" : sanitizeWhitespace(kind);
-        var id = getElementId(e) + "-" + base;
+    public HtmlId forNote(Element e, String tagName, boolean inline, Set<String> existingIds) {
+        // Only use element-specific prefix for member elements.
+        var prefix = switch (e) {
+            case ExecutableElement ee -> forMember(ee).getFirst().name();
+            case VariableElement ve   -> forMember(ve).name();
+            default -> inline ? "inline" : "block";
+        };
+        var id = prefix + "-" + tagName;
         // Multiple block notes are merged into a single description list item,
         // so ordinal suffixes are usually not needed for block tag ids.
         return !inline && existingIds.add(id)
@@ -649,25 +654,23 @@ public class HtmlIds {
      * @return a unique id for the snippet
      */
     public HtmlId forSnippet(Element e, Set<String> snippetIds) {
-        return withUniqueOrdinal("snippet-" + getElementId(e), snippetIds);
-    }
-
-    private String getElementId(Element e) {
+        String id = "snippet-";
         ElementKind kind = e.getKind();
         if (kind == ElementKind.PACKAGE) {
-            return forPackage((PackageElement) e).name();
+            id += forPackage((PackageElement) e).name();
         } else if (kind.isDeclaredType()) {
-            return forClass((TypeElement) e).name();
+            id += forClass((TypeElement) e).name();
         } else if (kind.isExecutable()) {
-            return forMember((ExecutableElement) e).getFirst().name();
+            id += forMember((ExecutableElement) e).getFirst().name();
         } else if (kind.isField()) {
-            return forMember((VariableElement) e).name();
+            id += forMember((VariableElement) e).name();
         } else if (kind == ElementKind.MODULE) {
-            return ((ModuleElement) e).getQualifiedName().toString();
+            id += ((ModuleElement) e).getQualifiedName();
         } else {
             // while utterly unexpected, we shouldn't fail
-            return "unknown-element";
+            id += "unknown-element";
         }
+        return withUniqueOrdinal(id, snippetIds);
     }
 
     /**
