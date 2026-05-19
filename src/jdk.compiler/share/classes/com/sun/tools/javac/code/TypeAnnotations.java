@@ -1235,7 +1235,7 @@ public class TypeAnnotations {
 
                 scan(tree.body);
 
-                //parameters are handled separatelly as variables
+                //parameters are handled separately as variables
             } finally {
                 currentLambda = prevLambda;
             }
