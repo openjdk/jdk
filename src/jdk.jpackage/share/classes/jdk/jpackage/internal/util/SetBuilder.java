@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,18 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public final class SetBuilder<T> {
 
-    public static <T> SetBuilder<T> build() {
-        return new SetBuilder<>();
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    public static <T> SetBuilder<T> build(T... v) {
+        return new SetBuilder<T>().add(v);
+    }
+
+    public static <T> SetBuilder<T> build(Collection<? extends T> v) {
+        return new SetBuilder<T>().add(v);
     }
 
     public SetBuilder<T> set(Collection<? extends T> v) {
@@ -65,6 +72,11 @@ public final class SetBuilder<T> {
     @SuppressWarnings("varargs")
     public final SetBuilder<T> remove(T... v) {
         return remove(List.of(v));
+    }
+
+    public SetBuilder<T> mutate(Consumer<SetBuilder<T>> mutator) {
+        mutator.accept(this);
+        return this;
     }
 
     public SetBuilder<T> clear() {
