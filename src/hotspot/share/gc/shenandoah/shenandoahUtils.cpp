@@ -56,8 +56,11 @@ const char* ShenandoahGCSession::cycle_end_message(ShenandoahGenerationType type
   }
 }
 
-ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
-                                         bool is_degenerated, bool is_out_of_cycle) :
+ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause,
+                                         ShenandoahGeneration* generation,
+                                         GCMemoryManager* gc_memory_manager,
+                                         bool is_degenerated,
+                                         bool is_out_of_cycle) :
   _heap(ShenandoahHeap::heap()),
   _generation(generation),
   _timer(_heap->gc_timer()),
@@ -68,7 +71,7 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGenerat
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
 
-  _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
+  _trace_cycle.initialize(gc_memory_manager, cause,
           cycle_end_message(_generation->type()),
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,

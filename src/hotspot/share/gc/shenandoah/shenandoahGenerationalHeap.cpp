@@ -84,6 +84,9 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   _min_plab_size(calculate_min_plab()),
   _max_plab_size(calculate_max_plab()),
   _regulator_thread(nullptr),
+  _young_gc_memory_manager("Shenandoah Young Gen GC Cycle"),
+  _old_gc_memory_manager("Shenandoah Old Gen GC Cycle"),
+  _global_gc_memory_manager("Shenandoah Global GC Cycle"),
   _young_gen_memory_pool(nullptr),
   _old_gen_memory_pool(nullptr) {
   assert(is_aligned(_min_plab_size, CardTable::card_size_in_words()), "min_plab_size must be aligned");
@@ -126,10 +129,22 @@ void ShenandoahGenerationalHeap::initialize_serviceability() {
   assert(mode()->is_generational(), "Only for the generational mode");
   _young_gen_memory_pool = new ShenandoahYoungGenMemoryPool(this);
   _old_gen_memory_pool = new ShenandoahOldGenMemoryPool(this);
-  cycle_memory_manager()->add_pool(_young_gen_memory_pool);
-  cycle_memory_manager()->add_pool(_old_gen_memory_pool);
   stw_memory_manager()->add_pool(_young_gen_memory_pool);
   stw_memory_manager()->add_pool(_old_gen_memory_pool);
+  _young_gc_memory_manager.add_pool(_young_gen_memory_pool);
+  _old_gc_memory_manager.add_pool(_old_gen_memory_pool);
+  _global_gc_memory_manager.add_pool(_young_gen_memory_pool);
+  _global_gc_memory_manager.add_pool(_old_gen_memory_pool);
+}
+
+GrowableArray<GCMemoryManager*> ShenandoahGenerationalHeap::memory_managers() {
+  assert(mode()->is_generational(), "Only for the generational mode");
+  GrowableArray<GCMemoryManager*> memory_managers(4);
+  memory_managers.append(stw_memory_manager());
+  memory_managers.append(&_young_gc_memory_manager);
+  memory_managers.append(&_old_gc_memory_manager);
+  memory_managers.append(&_global_gc_memory_manager);
+  return memory_managers;
 }
 
 GrowableArray<MemoryPool*> ShenandoahGenerationalHeap::memory_pools() {

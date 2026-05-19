@@ -120,6 +120,7 @@ public:
   // ---------- Serviceability
   //
   void initialize_serviceability() override;
+  GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
   ShenandoahRegulatorThread* regulator_thread() const { return _regulator_thread;  }
@@ -137,6 +138,12 @@ public:
   // Balances generations, coalesces and fills old regions if necessary
   void complete_degenerated_cycle();
   void complete_concurrent_cycle();
+
+  // Generation-specific memory managers for MXBean reporting
+  GCMemoryManager* young_gc_memory_manager()   { return &_young_gc_memory_manager;  }
+  GCMemoryManager* old_gc_memory_manager()     { return &_old_gc_memory_manager;    }
+  GCMemoryManager* global_gc_memory_manager()  { return &_global_gc_memory_manager; }
+
 private:
   void initialize_controller() override;
   void entry_global_coalesce_and_fill();
@@ -145,6 +152,10 @@ private:
   void coalesce_and_fill_old_regions(bool concurrent);
 
   ShenandoahRegulatorThread* _regulator_thread;
+
+  GCMemoryManager _young_gc_memory_manager;
+  GCMemoryManager _old_gc_memory_manager;
+  GCMemoryManager _global_gc_memory_manager;
 
   MemoryPool* _young_gen_memory_pool;
   MemoryPool* _old_gen_memory_pool;

@@ -62,6 +62,10 @@ public class TestCycleEndMessage {
                     if (name.equals("Shenandoah Cycles") &&
                         (action.contains("Global") || action.contains("Young") || action.contains("Old"))) {
                         foundGenerationInCycle.set(true);
+                    } else if ((name.equals("Shenandoah Young Gen GC Cycle") && action.contains("Young")) ||
+                               (name.equals("Shenandoah Old Gen GC Cycle") && action.contains("Old")) ||
+                               (name.equals("Shenandoah Global GC Cycle") && action.contains("Global"))) {
+                        foundGenerationInCycle.set(true);
                     }
                 }
             }
