@@ -60,7 +60,7 @@ public class KeepAliveSoftReference {
         ClassUnloadCommon.failIf(isAlive != shouldBeAlive, "" + isAlive + " != " + shouldBeAlive);
     }
 
-    // This version of triggerUnloading only calls a System.gc() which clears weak references, but
+    // This version of triggerUnloading calls a WhiteBox Full GC, which clears soft references, but
     // may not unload the class yet.
     ClassUnloadCommon.triggerUnloading();
     {
