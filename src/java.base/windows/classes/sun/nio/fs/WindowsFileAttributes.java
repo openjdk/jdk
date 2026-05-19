@@ -126,7 +126,7 @@ class WindowsFileAttributes
      *     FILE_ID_128   FileId128;             // offset = 88
      * } FILE_STAT_BASIC_INFORMATION;
      */
-    static final short SIZEOF_STAT_BASIC_INFO = 104;
+    private static final short SIZEOF_STAT_BASIC_INFO = 104;
     private static final short OFFSETOF_STAT_BASIC_INFO_FILEID          = 0;
     private static final short OFFSETOF_STAT_BASIC_INFO_CREATETIME      = 8;
     private static final short OFFSETOF_STAT_BASIC_INFO_LASTACCESSTIME  = 16;
