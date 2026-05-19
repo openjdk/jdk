@@ -888,7 +888,7 @@ pid_t os::Bsd::gettid() {
 #elif defined(__NetBSD__)
   retval = (pid_t) _lwp_self();
 #else
-# error "unsupported OS"
+#error "unsupported OS"
 #endif
 
   if (retval == -1) {
