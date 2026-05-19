@@ -1123,7 +1123,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
 
-void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebuflen) {
+static void *dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   bool ieee_handling = IEEE_subnormal_handling_OK();
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
@@ -1207,7 +1207,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
 
-  return os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
+  return dlopen_helper(filename, ebuf, ebuflen);
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
@@ -1218,7 +1218,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
 
   void* result;
-  result = os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
+  result = dlopen_helper(filename, ebuf, ebuflen);
   if (result != nullptr) {
     return result;
   }
