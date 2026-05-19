@@ -1194,7 +1194,7 @@ const int ObjectAlignmentInBytes = 8;
           "Use Just-In-Time compilation")                                   \
                                                                             \
   product(bool, AlwaysCompileLoopMethods, false,                            \
-          "When using recompilation, never interpret methods "              \
+          "(Deprecated) When using recompilation, never interpret methods " \
           "containing loops")                                               \
                                                                             \
   product(int,  AllocatePrefetchStyle, 1,                                   \
