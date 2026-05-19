@@ -84,7 +84,7 @@ public class DupAlias {
     }
 
     static void ps(String f) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(FileUtils.PowerShellPath(), "-Command", f);
+        ProcessBuilder pb = new ProcessBuilder(FileUtils.powerShellPath(), "-Command", f);
         pb.inheritIO();
         if (pb.start().waitFor() != 0) {
             throw new RuntimeException("Failed");
