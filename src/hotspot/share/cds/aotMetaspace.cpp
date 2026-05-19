@@ -1627,7 +1627,7 @@ FileMapInfo* AOTMetaspace::open_static_archive() {
     delete(mapinfo);
     log_info(cds)("Opening of static archive %s failed", static_archive);
     return nullptr;
-  } 
+  }
   return mapinfo;
 }
 
