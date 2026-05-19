@@ -1843,7 +1843,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 }
 
 //------------------------------------do_if------------------------------------
-void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, Node** ctrl_taken, Node** stress_count_mem) {
+void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, Node** ctrl_taken, Node** mem_taken, Node** io_taken) {
   int target_bci = iter().get_dest();
 
   Block* branch_block = successor_for_bci(target_bci);
@@ -1874,9 +1874,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
   bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
-    if (stress_count_mem != nullptr) {
-      *stress_count_mem = incr_store;
-    }
   }
 
   // Sanity check the probability value
@@ -1950,6 +1947,12 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
         } else if (ctrl_taken != nullptr) {
           // Don't merge but save taken branch to be wired by caller
           *ctrl_taken = control();
+          if (mem_taken != nullptr) {
+            *mem_taken = reset_memory();
+          }
+          if (io_taken != nullptr) {
+            *io_taken = i_o();
+          }
         } else {
           merge(target_bci);
         }
@@ -2391,29 +2394,29 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   // This is the last check, do_if can emit traps now.
   Node* subst_cmp = _gvn.transform(new CmpINode(ret, intcon(1)));
   Node* ctl = C->top();
-  Node* stress_count_mem = nullptr;
+  Node* mem_taken = nullptr;
+  Node* io_taken = nullptr;
   if (btest == BoolTest::eq) {
     PreserveJVMState pjvms(this);
-    do_if(btest, subst_cmp, can_trap, false, nullptr, &stress_count_mem);
+    do_if(btest, subst_cmp, can_trap, false, nullptr, &mem_taken, &io_taken);
     if (!stopped()) {
       ctl = control();
+      mem_taken = reset_memory();
+      io_taken = i_o();
     }
   } else {
     assert(btest == BoolTest::ne, "only eq or ne");
     PreserveJVMState pjvms(this);
-    do_if(btest, subst_cmp, can_trap, false, &ctl, &stress_count_mem);
+    do_if(btest, subst_cmp, can_trap, false, &ctl, &mem_taken, &io_taken);
     if (!stopped()) {
       eq_region->init_req(2, control());
       eq_io_phi->init_req(2, i_o());
       eq_mem_phi->init_req(2, reset_memory());
     }
   }
-  if (stress_count_mem != nullptr) {
-    set_memory(stress_count_mem, stress_count_mem->adr_type());
-  }
   ne_region->init_req(5, ctl);
-  ne_io_phi->init_req(5, i_o());
-  ne_mem_phi->init_req(5, reset_memory());
+  ne_io_phi->init_req(5, io_taken);
+  ne_mem_phi->init_req(5, mem_taken);
 
   record_for_igvn(ne_region);
   set_control(_gvn.transform(ne_region));
