@@ -1860,6 +1860,7 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
         Objects.requireNonNull(defaultTarget);
+        BytecodeHelpers.validateTableSwitchValues(low, high);
         // check cases when we write them
         writeTableSwitch(low, high, defaultTarget, cases);
         return this;

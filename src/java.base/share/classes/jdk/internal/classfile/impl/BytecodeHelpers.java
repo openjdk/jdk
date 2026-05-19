@@ -484,6 +484,16 @@ public class BytecodeHelpers {
                             .concat(Long.toString(value)));
     }
 
+    public static void validateTableSwitchValues(int low, int high) {
+        validateTableSwitchValues(low, high, 0xFFFF);
+    }
+
+    public static void validateTableSwitchValues(int low, int high, int codeLength) {
+        if (high < low || (long)high - low > codeLength >> 2) {
+            throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
+        }
+    }
+
     public static MethodHandleEntry handleDescToHandleInfo(ConstantPoolBuilder constantPool, DirectMethodHandleDesc bootstrapMethod) {
         ClassEntry bsOwner = constantPool.classEntry(bootstrapMethod.owner());
         NameAndTypeEntry bsNameAndType = constantPool.nameAndTypeEntry(constantPool.utf8Entry(bootstrapMethod.methodName()),
