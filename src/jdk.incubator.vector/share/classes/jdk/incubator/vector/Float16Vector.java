@@ -2289,6 +2289,9 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         Float16Vector that = (Float16Vector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
         ShortVector filter = ShortVector.broadcast((ShortVector.ShortSpecies) vspecies().asIntegral(), (short)origin);
         VectorMask<Float16> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());
@@ -2449,7 +2452,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /**
      * {@inheritDoc} <!--workaround-->
-     * @since 19
+     * @since 27
      */
     @Override
     public abstract
@@ -2468,7 +2471,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /**
      * {@inheritDoc} <!--workaround-->
-     * @since 19
+     * @since 27
      */
     @Override
     public abstract
@@ -3095,7 +3098,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      *         for any lane {@code N} in the vector
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
-     * @since 19
+     * @since 27
      */
     @ForceInline
     public static
@@ -3150,7 +3153,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      *         where the mask is set
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
-     * @since 19
+     * @since 27
      */
     @ForceInline
     public static
@@ -3322,7 +3325,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /**
      * {@inheritDoc} <!--workaround-->
-     * @since 19
+     * @since 27
      */
     @Override
     @ForceInline
@@ -3339,7 +3342,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /**
      * {@inheritDoc} <!--workaround-->
-     * @since 19
+     * @since 27
      */
     @Override
     @ForceInline
