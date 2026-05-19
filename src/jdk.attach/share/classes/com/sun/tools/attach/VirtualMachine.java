@@ -232,7 +232,7 @@ public abstract class VirtualMachine {
      *          The abstract identifier that identifies the Java virtual machine.
      *
      * @param   env
-     *          A Map of provider-specific settings to configure the attach, may be empty.
+     *          A Map of settings that a specific AttachProvider may reference.  May be empty.
      *
      * @return  A VirtualMachine representing the target VM.
      *
