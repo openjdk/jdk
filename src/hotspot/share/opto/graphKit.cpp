@@ -3864,8 +3864,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
     } else if (array_obj->is_Phi()) {
       Node* region = array_obj->in(0);
       // TODO make this more robust (see JDK-8231346)
-      if (region->req() == 3 && region->in(2) != nullptr && region->in(2)->in(0) != nullptr) {
-        IfNode* iff = region->in(2)->in(0)->isa_If();
+      if (region->req() == 3 && region->in(1) != nullptr && region->in(1)->in(0) != nullptr) {
+        IfNode* iff = region->in(1)->in(0)->isa_If();
         if (iff != nullptr) {
           iff->is_flat_array_check(&_gvn, &array);
         }

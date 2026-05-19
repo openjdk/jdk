@@ -2160,6 +2160,14 @@ public:
     return saturated_add(saturated_add(flat_nullfree_atomic_count(), flat_nullfree_not_atomic_count()), flat_nullable_count());
   }
 
+  int nullable_count() const {
+    return saturated_add(flat_nullable_count(), not_flat_nullable_count());
+  }
+
+  int null_free_count() const {
+    return saturated_add(saturated_add(flat_nullfree_atomic_count(), flat_nullfree_not_atomic_count()), not_flat_null_free_count());
+  }
+
   int not_flat_null_free_count() const {
     return uint_at(not_flat_null_free_count_off());
   }

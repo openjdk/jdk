@@ -132,6 +132,9 @@ private:
   }
 
   ciArrayLoadData* profile_data() const {
+    if (!UseArrayLoadStoreProfile) {
+      return nullptr;
+    }
     ciMethodData* md = _parse.method()->method_data();
     if (md == nullptr) {
       return nullptr;
@@ -239,12 +242,15 @@ public:
     _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
     assert(array_type->is_flat() || _parse.control()->in(0)->as_If()->is_flat_array_check(&_gvn),
            "Should be found");
-    Node* casted_array = _gvn.transform(new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
-    Node* ld = emit_plain_load(casted_array, true);
-    _res_phi->add_req(ld);
-    _region->add_req(_parse.control());
-    _io_phi->add_req(_parse.i_o());
-    _mem_phi->add_req(_parse.reset_memory());
+    if (!_parse.stopped()) {
+      Node *casted_array = _gvn.
+          transform(new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
+      Node *ld = emit_plain_load(casted_array, true);
+      _res_phi->add_req(ld);
+      _region->add_req(_parse.control());
+      _io_phi->add_req(_parse.i_o());
+      _mem_phi->add_req(_parse.reset_memory());
+    }
     _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
     _parse.set_all_memory(_mem);
     _parse.set_i_o(_io);
@@ -392,15 +398,99 @@ public:
     _mem_phi = new PhiNode(_region, Type::MEMORY, TypePtr::BOTTOM);
   }
 
+  void record_array_profile_for_speculation() {
+    ciArrayLoadData* array_load = profile_data();
+    if (UseTypeSpeculation && array_load != nullptr && array_load->nullable_count() > 0 && array_load->null_free_count() == 0) {
+      const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+      if (!array_type->is_not_null_free() && array_type->speculative() == nullptr) {
+        const TypeAryPtr* spec_array_type = TypeAryPtr::BOTTOM->cast_to_not_null_free();
+        const TypeOopPtr* spec_type = TypeOopPtr::make(TypePtr::BotPTR, Type::Offset::bottom, TypeOopPtr::InstanceBot, spec_array_type);
+        Node* cast = new CheckCastPPNode(_parse.control(), _array, array_type->remove_speculative()->join_speculative(spec_type));
+        cast = _gvn.transform(cast);
+        _parse.replace_in_map(_array, cast);
+      }
+    }
+  }
+
   void finish_merge_point() {
+    _parse.record_for_igvn(_region);
     _parse.set_control(_gvn.transform(_region));
-    _parse.record_for_igvn(_parse.control());
-    _parse.set_all_memory(_gvn.transform(_mem_phi));
+    Node* base = nullptr;
+    for (uint i = 1; i < _mem_phi->req(); ++i) {
+      Node* in = _mem_phi->in(i);
+      Node* new_base = in;
+      if (in->is_MergeMem()) {
+        new_base = in->as_MergeMem()->base_memory();
+      }
+      if (base == nullptr) {
+        base = new_base;
+      } else if (base != new_base) {
+        base = NodeSentinel;
+      }
+    }
+    assert(base != nullptr, "");
+    if (base != NodeSentinel) {
+      MergeMemNode* mm = MergeMemNode::make(base);
+      for (uint i = 1; i < _mem_phi->req(); ++i) {
+        MergeMemNode* in = _mem_phi->in(i)->isa_MergeMem();
+        if (in != nullptr) {
+          for (MergeMemStream mms(in); mms.next_non_empty(); ) {
+            if (mms.at_base_memory()) {
+              continue;
+            }
+            Node* mem = mms.memory();
+            if (mm->memory_at(mms.alias_idx()) == base) {
+              Node* phi = PhiNode::make(_region, base, Type::MEMORY, mms.adr_type());
+              _gvn.set_type(phi, phi->bottom_type());
+              _parse.record_for_igvn(phi);
+              mm->set_memory_at(mms.alias_idx(), phi);
+            }
+            PhiNode* phi = mm->memory_at(mms.alias_idx())->as_Phi();
+            phi->set_req(i, mem);
+          }
+        }
+      }
+      _parse.set_all_memory(_gvn.transform(mm));
+    } else {
+      _parse.record_for_igvn(_mem_phi);
+      _parse.set_all_memory(_gvn.transform(_mem_phi));
+    }
     _parse.set_i_o(_gvn.transform(_io_phi));
     Node* ld = _gvn.transform(_res_phi);
     ld = _parse.record_profile_for_speculation_at_array_load(ld);
     pop_stack();
     _parse.push_node(_bt, ld);
+
+    // record_array_profile_for_speculation();
+  }
+
+  void cast_to_speculative_array_type(const TypeAryPtr *&array_type) {
+    if (!array_type->is_flat() && !array_type->is_not_flat()) {
+      // For arrays that might be flat, speculate that the array has the exact type reported in the profile data such that
+      // we can rely on a fixed memory layout (i.e. either a flat layout or not).
+      Deoptimization::DeoptReason reason = Deoptimization::Reason_speculate_class_check;
+      ciKlass* speculative_array_type = array_type->speculative_type();
+      if (speculative_array_type != nullptr && !_parse.too_many_traps_or_recompiles(reason)) {
+        // Speculate that this array has the exact type reported by profile data
+        Node* casted_array = nullptr;
+        DEBUG_ONLY(Node* old_control = _parse.control();)
+        Node* slow_ctl = _parse.type_check_receiver(_array, speculative_array_type, 1.0, &casted_array);
+        if (_parse.stopped()) {
+          // The check always fails and therefore profile information is incorrect. Don't use it.
+          assert(old_control == slow_ctl, "type check should have been removed");
+          _parse.set_control(slow_ctl);
+        } else if (!slow_ctl->is_top()) {
+          { PreserveJVMState pjvms(&_parse);
+            _parse.set_control(slow_ctl);
+            _parse.uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+          }
+          _parse.replace_in_map(_array, casted_array);
+          array_type = _gvn.type(casted_array)->is_aryptr();
+          _elemtype = array_type->elem();
+          _array = casted_array;
+        }
+      }
+    }
   }
 
   bool emit() {
@@ -409,8 +499,11 @@ public:
     // Check for always knowing you are throwing a range-check exception
     if (_parse.stopped())  return true; //top();
 
-    const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
     const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+
+    cast_to_speculative_array_type(array_type);
+
+    const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
 
     if (array_type->is_not_flat()) {
       if (_elemtype == TypeInt::BOOL) {
@@ -419,10 +512,11 @@ public:
       Node* ld = emit_plain_load(_array, false, true);
       // pop_stack();
       _parse.push_node(_bt, ld);
+      // record_array_profile_for_speculation();
       return true;
     }
 
-    if (array_type->is_flat()) {
+    if (array_type->is_flat() && element_ptr->is_inlinetypeptr()) {
       pop_stack();
       ciInlineKlass* vk = element_ptr->inline_klass();
       Node* flat_array = _array;
@@ -508,9 +602,11 @@ public:
           Node* casted_array = _gvn.transform(
             new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
           _parse.replace_in_map(_array, casted_array);
+          _array = casted_array;
           Node* ld = emit_plain_load(casted_array, true);
           ld = _parse.record_profile_for_speculation_at_array_load(ld);
           _parse.push_node(_bt, ld);
+          record_array_profile_for_speculation();
           return true;
         }
         if (flat_count != 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
@@ -523,6 +619,7 @@ public:
           Node* ld = load_from_unknown_flat_array(element_ptr);
           pop_stack();
           _parse.push_node(_bt, ld);
+          // record_array_profile_for_speculation();
           return true;
         }
         if (flat_count != 0 && not_flat_count != 0) {
@@ -546,12 +643,14 @@ public:
 
 //---------------------------------array_load----------------------------------
 void Parse::array_load(BasicType bt) {
-  ArrayLoad array_load(bt, *this);
-  if (array_load.emit()) {
-    return;
-  }
+  if (!UseNewCode) {
+    ArrayLoad array_load(bt, *this);
+    if (array_load.emit()) {
+      return;
+    }
 
-  ShouldNotReachHere();
+    ShouldNotReachHere();
+  }
   const Type* elemtype = Type::TOP;
   Node* prep_array = prepare_array_addressing(bt, 0, elemtype);
   if (stopped())  return;     // guaranteed null or range check
@@ -1095,10 +1194,10 @@ Node* Parse::create_speculative_inline_type_array_checks(Node* array, const Type
   // Even though the type does not tell us whether we have an inline type array or not, we can still check the profile data
   // whether we have a non-null-free or non-flat array. Speculating on a non-null-free array doesn't help aaload but could
   // be profitable for a subsequent aastore.
-  if (!array_type->is_null_free() && !array_type->is_not_null_free() && 0) {
+  if (!array_type->is_null_free() && !array_type->is_not_null_free()) {
     array = speculate_non_null_free_array(array, array_type);
   }
-  if (!array_type->is_flat() && !array_type->is_not_flat() && 0) {
+  if (!array_type->is_flat() && !array_type->is_not_flat()) {
     array = speculate_non_flat_array(array, array_type);
   }
   return array;
