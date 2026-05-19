@@ -14178,12 +14178,12 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, iRegL val, Universe d
   ins_pipe(pipe_class_memory);
 %}
 
-instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe dummy, rFlagsReg cr)
+instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, immL0 zero, Universe dummy, rFlagsReg cr)
 %{
-  predicate((uint64_t)n->in(2)->get_long()
+  predicate((uint64_t)n->in(2)->in(1)->get_long()
             < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord)
             && !((ClearArrayNode*)n)->word_copy_only());
-  match(Set dummy (ClearArray cnt base));
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(TEMP temp, USE_KILL base, KILL cr);
 
   ins_cost(4 * INSN_COST);
