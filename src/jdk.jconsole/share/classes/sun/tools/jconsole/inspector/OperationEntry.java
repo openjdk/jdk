@@ -53,7 +53,7 @@ public class OperationEntry extends JPanel {
             inputs = new XTextField[params.length];
             for (int i = 0; i < params.length; i++) {
                 if(params[i].getName() != null) {
-                    JLabel name = new JLabel(params[i].getName(), JLabel.CENTER) {
+                    JLabel name = new JLabel() {
                         @Override
                         public JToolTip createToolTip() {
                             JToolTip t = super.createToolTip();
@@ -62,6 +62,8 @@ public class OperationEntry extends JPanel {
                         }
                     };
                     name.putClientProperty("html.disable", Boolean.TRUE);
+                    name.setText(params[i].getName());
+                    name.setHorizontalAlignment(JLabel.CENTER);
                     name.setToolTipText(params[i].getDescription());
                     add(name);
                 }

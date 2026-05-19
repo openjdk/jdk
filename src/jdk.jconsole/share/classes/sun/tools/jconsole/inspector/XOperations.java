@@ -106,8 +106,10 @@ public abstract class XOperations extends JPanel implements ActionListener {
                             "been defined in the MBean's implementation code.");
                 }
             } else {
-                methodLabel = new JLabel(Utils.getReadableClassName(returnType), JLabel.RIGHT);
+                methodLabel = new JLabel();
                 methodLabel.putClientProperty("html.disable", Boolean.TRUE);
+                methodLabel.setText(Utils.getReadableClassName(returnType));
+                methodLabel.setHorizontalAlignment(JLabel.RIGHT);
             }
             innerPanelLeft.add(methodLabel);
             if (methodLabel.getText().length() > 20) {
