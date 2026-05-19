@@ -41,8 +41,7 @@ import jdk.incubator.vector.VectorMask;
 public class TestVectorTest {
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   "-XX:-IncrementalInlineVector",
-                                   "-XX:InlineSmallCode=1000000");
+                                   "-XX:-IncrementalInlineVector");
     }
 
     @DontInline
