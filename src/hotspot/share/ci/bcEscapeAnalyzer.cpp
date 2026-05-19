@@ -34,6 +34,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/integerCast.hpp"
 
 #ifndef PRODUCT
   #define TRACE_BCEA(level, code)                                            \
@@ -1082,7 +1083,7 @@ bool BCEscapeAnalyzer::datasize_overflow(uint numblocks, uint stkSize, uint numL
   if (datacount64 > SIZE_MAX / sizeof(ArgumentMap)) {
     return true;
   }
-  datasize = (size_t)datacount64 * sizeof(ArgumentMap);
+  datasize = integer_cast_permit_tautology<size_t>(datacount64 * sizeof(ArgumentMap));
   return false;
 }
 
