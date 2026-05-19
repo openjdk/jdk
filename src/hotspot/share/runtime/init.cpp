@@ -133,7 +133,7 @@ jint init_globals() {
   bytecodes_init();
   classLoader_init1();
   compilationPolicy_init();
-  AOTMetaspace::open_static_archive();
+  AOTMetaspace::get_aot_code_region_size();
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
   icache_init2();                 // depends on VM_Version for choosing the mechanism

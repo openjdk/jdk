@@ -125,14 +125,14 @@ void CDSConfig::ergo_initialize() {
   // between training and production runs (e.g., if you specify -Xmx128m for
   // both training and production runs, and you know the OS will always reserve
   // the heap under 4GB), you can explicitly disable this with:
-  //     java -XX:+UnlockDiagnosticVMOptions -XX:-UseCompatibleCompressedOops ...
+  //     java -XX:+UnlockDiagnosticVMOptions -XX:-AOTCompatibleOopCompression ...
   // However, this is risky and there's a chance that the production run will be slower
   // than expected because it is unable to load the AOT code cache.
   //
   if (UseCompressedOops && AOTCodeCache::is_caching_enabled()) {
-    FLAG_SET_ERGO_IF_DEFAULT(UseCompatibleCompressedOops, true);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTCompatibleOopCompression, true);
   } else {
-    FLAG_SET_ERGO(UseCompatibleCompressedOops, false);
+    FLAG_SET_ERGO(AOTCompatibleOopCompression, false);
   }
 #endif // _LP64
 }
@@ -487,7 +487,7 @@ void CDSConfig::check_aot_flags() {
   // At least one AOT flag has been used
   _new_aot_flags_used = true;
 
-  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
+  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0) {
     check_aotmode_auto_or_on();
   } else if (strcmp(AOTMode, "off") == 0) {
     check_aotmode_off();
@@ -514,7 +514,7 @@ void CDSConfig::check_aotmode_auto_or_on() {
   if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
     RequireSharedSpaces = false;
   } else {
-    assert(strcmp(AOTMode, "on") == 0, "already checked");
+    assert(strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0 , "already checked");
     RequireSharedSpaces = true;
   }
 }

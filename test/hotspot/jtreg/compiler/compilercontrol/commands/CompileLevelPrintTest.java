@@ -165,12 +165,12 @@ public class CompileLevelPrintTest {
                 "[0-9.]+: \\[(call|loop|compile|force-compile|remove-from-queue|update-in-queue|reprofile|make-not-entrant) "
                       + "level=\\d \\[([^]]+)] @-?\\d+ queues=(\\d+),(\\d+).*]");
         private static final Pattern reCompilation = Pattern.compile(
-                "(\\d+) (C1|C2|no compiler): *(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+).*");
+                "(\\d+) (C1|C2|no compiler): *(\\d+) ([ %][ s][ !][ b][ n][ A][ P]) ([-0-4 ]) +([^ ]+).*");
         private static final Pattern reExcludeCompile = Pattern.compile(
                 ".*made not compilable on level (\\d) +([^ ]+) .* excluded by CompileCommand");
         private static final Pattern reCompiledMethod = Pattern.compile(
                 ".*-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) ([Cc][12]): *"
-                      + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+) +(@ -?[0-9]+ +)?\\(\\d+ bytes\\)", Pattern.DOTALL);
+                      + "(\\d+) ([ %][ s][ !][ b][ n][ A][ P]) ([-0-4 ]) +([^ ]+) +(@ -?[0-9]+ +)?\\(\\d+ bytes\\)", Pattern.DOTALL);
         private static final Pattern reMethodData = Pattern.compile(
                 ".*-{72}\\nstatic ([^\\n]+)\\n *interpreter_invocation_count: *\\d+\\n *invocation_counter: *\\d+", Pattern.DOTALL);
         private static final Pattern reEndOfLog = Pattern.compile("<hotspot_log_done .*/>");

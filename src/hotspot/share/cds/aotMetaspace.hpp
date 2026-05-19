@@ -77,7 +77,7 @@ class AOTMetaspace : AllStatic {
 
   static void dump_static_archive(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
-  static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_heap_settings() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:
@@ -91,9 +91,9 @@ public:
   }
 
   static void initialize_for_static_dump() NOT_CDS_RETURN;
-  static void open_static_archive() NOT_CDS_RETURN;
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
+  static void get_aot_code_region_size() NOT_CDS_RETURN;
 
   static void print_on(outputStream* st);
 
@@ -197,6 +197,7 @@ private:
                                    FileMapInfo* map_info,
                                    AOTMappedHeapInfo* mapped_heap_info,
                                    AOTStreamedHeapInfo* streamed_heap_info);
+  static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the
   static MapArchiveResult map_archives(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo,

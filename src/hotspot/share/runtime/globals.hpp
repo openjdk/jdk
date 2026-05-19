@@ -124,8 +124,8 @@ const size_t minimumSymbolTableSize = 1024;
           "Use 32-bit object references in 64-bit VM. "                     \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseCompatibleCompressedOops, false,                         \
-          "Always use HeapBasedNarrowOop mode, so that AOT code can be "    \
+  product(bool, AOTCompatibleOopCompression, false, DIAGNOSTIC,             \
+          "Always use HeapBasedNarrowOop mode, so that AOT code will "      \
           "always work regardless of runtime heap range")                   \
                                                                             \
   product(bool, UseCompactObjectHeaders, false,                             \
@@ -146,6 +146,7 @@ const size_t minimumSymbolTableSize = 1024;
                            range,                                           \
                            constraint)
 const bool UseCompressedOops = false;
+const bool AOTCompatibleOopCompression = false;
 const bool UseCompactObjectHeaders = false;
 const int ObjectAlignmentInBytes = 8;
 
@@ -1906,6 +1907,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, UseContinuationFastPath, true,                              \
           "Use fast-path frame walking in continuations")                   \
+                                                                            \
+  develop(bool, ForceSingleFrameThaw, false,                                \
+          "Force thawing one frame at a time")                              \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \

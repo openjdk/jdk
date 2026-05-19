@@ -1003,7 +1003,26 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
-void AOTMetaspace::adjust_heap_sizes_for_dumping() {
+void AOTMetaspace::init_heap_settings() {
+  if (UseCompressedOops) {
+    if (!AOTCodeCache::is_caching_enabled()) {
+      // We don't need it -- always disable for better jitted code.
+      FLAG_SET_ERGO(AOTCompatibleOopCompression, false);
+    } else if (CDSConfig::is_dumping_final_static_archive()) {
+      // Obey the command-line switch. Do not override
+    } else if (CDSConfig::is_using_archive()) {
+      FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+      // may have been opened by get_aot_code_region_size()
+      if (static_mapinfo == nullptr) {
+        static_mapinfo = open_static_archive();
+      }
+      if (static_mapinfo != nullptr && static_mapinfo->header()->compatible_oop_compression()) {
+        // Use the same setting as recorded in the archive.
+        FLAG_SET_ERGO(AOTCompatibleOopCompression, true);
+      }
+    }
+  }
+
   if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
     return;
   }
@@ -1512,7 +1531,10 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
 
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo* static_mapinfo = FileMapInfo::current_info(); // may have been opened by init_heap_settings()
+  if (static_mapinfo == nullptr) {
+    static_mapinfo = open_static_archive();
+  }
   FileMapInfo* dynamic_mapinfo = nullptr;
 
   if (static_mapinfo != nullptr) {
@@ -1580,21 +1602,33 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
   }
 }
 
-// This is called very early at VM start up to get the size of the AOT code region
-void AOTMetaspace::open_static_archive() {
-  if (!UseSharedSpaces) {
+// This is called very early at VM start up to get AOT cache header
+// and the size of the AOT code region during production run.
+// We need the size to reseve space in CodeCache to map code from AOT code region.
+void AOTMetaspace::get_aot_code_region_size() {
+  if (!AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_final_static_archive()) {
     return;
+  } else if (CDSConfig::is_using_archive()) { // production run with AOT code cache
+    precond(FileMapInfo::current_info() == nullptr);
+    precond(CodeCache::max_capacity() == 0);
+    FileMapInfo* static_mapinfo = open_static_archive();
+    if (static_mapinfo != nullptr) {
+      FileMapRegion* aot_code_region = static_mapinfo->region_at(AOTMetaspace::ac);
+      AOTCacheAccess::set_aot_code_region_size(aot_code_region->used_aligned());
+    }
   }
+}
+
+FileMapInfo* AOTMetaspace::open_static_archive() {
   const char* static_archive = CDSConfig::input_static_archive_path();
   assert(static_archive != nullptr, "sanity");
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
     log_info(cds)("Opening of static archive %s failed", static_archive);
-  } else {
-    FileMapRegion* r = mapinfo->region_at(AOTMetaspace::ac);
-    AOTCacheAccess::set_aot_code_region_size(r->used_aligned());
-  }
+    return nullptr;
+  } 
+  return mapinfo;
 }
 
 FileMapInfo* AOTMetaspace::open_dynamic_archive() {

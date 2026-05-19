@@ -192,7 +192,7 @@ static void report_store_failure() {
 // where we set number of compiler threads for AOT assembly phase.
 //
 // 3. We determine presence of AOT code in AOT Cache in
-// AOTMetaspace::open_static_archive() which is calles
+// AOTMetaspace::get_aot_code_region_size() which is called
 // after compilationPolicy_init() but before codeCache_init().
 //
 // 4. AOTCodeCache::initialize() is called during universe_init()
@@ -618,6 +618,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
 
   // Special configs that cannot be checked with macros
   _compressedOopBase     = CompressedOops::base();
+  _compressedOopShift    = CompressedOops::shift();
   _compressedKlassBase   = CompressedKlassPointers::base();
   _codeCacheSize         = pointer_delta(CodeCache::high_bound(), CodeCache::low_bound(), 1);
 
@@ -732,6 +733,7 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR, AOTCODECACHE_CHECK_FUN);
 
   // Special configs that cannot be checked with macros
+#define COMPRESSED_OOPS_HINT "Consider adding -XX:+AOTCompatibleOopCompression when creating the AOT cache"
 
   size_t codeCacheSize = pointer_delta(CodeCache::high_bound(), CodeCache::low_bound(), 1);
   if (codeCacheSize > _codeCacheSize) { // Only allow smaller or equal CodeCache size in production run
@@ -741,6 +743,12 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
     load_failure_log().print_cr("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
                                 _compressedOopBase, CompressedOops::base());
+    load_failure_log().print_cr(COMPRESSED_OOPS_HINT);
+    return false;
+  }
+
+  if (!check_config(_compressedOopShift, CompressedOops::shift(), "CompressedOops::shift()")) {
+    load_failure_log().print_cr(COMPRESSED_OOPS_HINT);
     return false;
   }
   if ((_compressedKlassBase == nullptr || CompressedKlassPointers::base() == nullptr) && (_compressedKlassBase != CompressedKlassPointers::base())) {
