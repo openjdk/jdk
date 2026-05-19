@@ -778,6 +778,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"CastLL")       ||
        !strcmp(_matrule->_rChild->_opType,"CastVV")       ||
        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"CastI2N")      ||
        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
        !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||

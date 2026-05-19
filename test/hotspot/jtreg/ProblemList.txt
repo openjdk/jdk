@@ -211,7 +211,6 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 compiler/c2/irTests/TestFloat16ScalarOperations.java 8377808 linux-aarch64
 compiler/codegen/TestRedundantLea.java#Spill              8361089 generic-all
 compiler/valhalla/inlinetypes/TestArrayNullMarkers.java#NVF-nAVF 8384262 generic-all
-compiler/valhalla/inlinetypes/TestMemBars.java  8384642 generic-all
 
 serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8382548 linux-aarch64
 
