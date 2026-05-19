@@ -35,13 +35,14 @@ CompilationLog* CompilationLog::_log;
 CompilationLog::CompilationLog() : StringEventLog("Compilation events", "jit") {
 }
 
+static const size_t buf_size = FormatBufferBase::BufferSize;
+
 void CompilationLog::log_compile(JavaThread* thread, CompileTask* task) {
   ResourceMark rm;
-  StringLogMessage lm;
-  stringStream sstr(lm.buffer(), lm.size());
+  stringStream ss(NEW_RESOURCE_ARRAY(char, buf_size), buf_size);
   // msg.time_stamp().update_to(tty->time_stamp().ticks());
-  task->print(&sstr, nullptr, true, false);
-  log(thread, "%s", (const char*)lm);
+  task->print(&ss, nullptr, true, false);
+  log(thread, "%s", ss.freeze());
 }
 
 void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
@@ -52,27 +53,25 @@ void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
 
 void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
   ResourceMark rm;
-  StringLogMessage lm;
-  stringStream sstr(lm.buffer(), lm.size());
+  stringStream ss(NEW_RESOURCE_ARRAY(char, buf_size), buf_size);
   if (task == nullptr) {
-    sstr.print("Id not known, task was 0;  COMPILE SKIPPED: %s", reason);
+    ss.print("Id not known, task was 0;  COMPILE SKIPPED: %s", reason);
   } else {
-    sstr.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
+    ss.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
   }
   if (retry_message != nullptr) {
-    sstr.print(" (%s)", retry_message);
+    ss.print(" (%s)", retry_message);
   }
-  log(thread, "%s", (const char*)lm);
+  log(thread, "%s", ss.freeze());
 }
 
 void CompilationLog::log_metaspace_failure(const char* reason) {
   // Note: This method can be called from non-Java/compiler threads to
   // log the global metaspace failure that might affect profiling.
   ResourceMark rm;
-  StringLogMessage lm;
-  stringStream sstr(lm.buffer(), lm.size());
-  sstr.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
-  log(Thread::current(), "%s", (const char*)lm);
+  stringStream ss(NEW_RESOURCE_ARRAY(char, buf_size), buf_size);
+  ss.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
+  log(Thread::current(), "%s", ss.freeze());
 }
 
 void CompilationLog::init() {
