@@ -1875,25 +1875,30 @@ address StubGenerator::generate_libmPow() {
 
 #if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_pow(GrowableArray<address>& external_addresses) {
-#define ADD(addr) external_addresses.append((address)addr);
+#define ADD(addr) external_addresses.append((address)(addr));
+  address HIGHMASK_Y = (address)_HIGHMASK_Y;
+  address e_coeff    = (address)_e_coeff;
+  address coeff_h    = (address)_coeff_h;
+  address coeff_pow  = (address)_coeff_pow;
+
   ADD(_HIGHSIGMASK);
   ADD(_LOG2_E);
-  ADD(_HIGHMASK_Y);
-  ADD((address)_HIGHMASK_Y+8);
+  ADD(HIGHMASK_Y);
+  ADD(HIGHMASK_Y + 8);
   ADD(_T_exp);
-  ADD(_e_coeff);
-  ADD((address)_e_coeff+16);
-  ADD((address)_e_coeff+32);
-  ADD(_coeff_h);
-  ADD((address)_coeff_h+8);
+  ADD(e_coeff);
+  ADD(e_coeff + 16);
+  ADD(e_coeff + 32);
+  ADD(coeff_h);
+  ADD(coeff_h + 8);
   ADD(_HIGHMASK_LOG_X);
   ADD(_HALFMASK);
-  ADD(_coeff_pow);
-  ADD((address)_coeff_pow+16);
-  ADD((address)_coeff_pow+32);
-  ADD((address)_coeff_pow+48);
-  ADD((address)_coeff_pow+64);
-  ADD((address)_coeff_pow+80);
+  ADD(coeff_pow);
+  ADD(coeff_pow + 16);
+  ADD(coeff_pow + 32);
+  ADD(coeff_pow + 48);
+  ADD(coeff_pow + 64);
+  ADD(coeff_pow + 80);
   ADD(_L_tbl_pow);
   ADD(_log2_pow);
   ADD(_DOUBLE2);

@@ -420,11 +420,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  // UseSHA
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
   // AES
   if (UseZvkn) {
     UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);

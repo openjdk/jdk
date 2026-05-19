@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahTrace.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -72,17 +73,13 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
 }
 
 ShenandoahHeuristics::~ShenandoahHeuristics() {
-  FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
+  FREE_C_HEAP_ARRAY(_region_data);
 }
 
 void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(collection_set->is_empty(), "Must be empty");
-  assert(!heap->mode()->is_generational(), "Wrong heuristic for heap mode");
-
-  // Check all pinned regions have updated status before choosing the collection set.
-  heap->assert_pinned_region_status();
 
   // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
 
@@ -103,6 +100,10 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
 
+    if (!_space_info->contains(region)) {
+      continue;
+    }
+
     size_t garbage = region->garbage();
     total_garbage += garbage;
 
@@ -117,6 +118,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         region->make_trash_immediate();
       } else {
         // This is our candidate for later consideration.
+        assert(region->get_top_before_promote() == nullptr,
+               "Cannot add region %zu scheduled for in-place-promotion to the collection set", i);
         candidates[cand_idx].set_region_and_garbage(region, garbage);
         cand_idx++;
       }
@@ -149,6 +152,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
+  ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
 }
 
 void ShenandoahHeuristics::start_idle_span() {

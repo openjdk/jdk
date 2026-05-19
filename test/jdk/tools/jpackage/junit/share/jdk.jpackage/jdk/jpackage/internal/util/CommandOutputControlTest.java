@@ -1248,7 +1248,7 @@ public class CommandOutputControlTest {
 
         static <T extends CommandOutputControlMutator> Function<T, Set<T>> addToSet(Set<T> set) {
             return m -> {
-                return new SetBuilder<T>().add(set).add(m).create();
+                return SetBuilder.build(set).add(m).create();
             };
         }
     }

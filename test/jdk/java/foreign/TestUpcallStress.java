@@ -24,7 +24,7 @@
 /*
  * @test
  * @requires jdk.foreign.linker != "FALLBACK"
- * @requires (os.arch == "aarch64" | os.arch=="riscv64") & os.name == "Linux"
+ * @requires (os.arch == "aarch64" | os.arch=="riscv64" | os.arch=="x86_64" | os.arch=="amd64") & os.name == "Linux"
  * @requires os.maxMemory > 4G
  * @requires vm.compMode != "Xcomp"
  * @modules java.base/jdk.internal.foreign

@@ -818,15 +818,6 @@ class MacroAssembler: public Assembler {
   void double_bgt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
 
 private:
-  int push_reg(unsigned int bitset, Register stack);
-  int pop_reg(unsigned int bitset, Register stack);
-  int push_fp(unsigned int bitset, Register stack);
-  int pop_fp(unsigned int bitset, Register stack);
-#ifdef COMPILER2
-  int push_v(unsigned int bitset, Register stack);
-  int pop_v(unsigned int bitset, Register stack);
-#endif // COMPILER2
-
   // The signed 20-bit upper imm can materialize at most negative 0xF...F80000000, two G.
   // The following signed 12-bit imm can at max subtract 0x800, two K, from that previously loaded two G.
   bool is_valid_32bit_offset(int64_t x) {
@@ -844,15 +835,19 @@ private:
   }
 
 public:
+  // Stack push and pop individual 64 bit registers
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
-  void push_reg(RegSet regs, Register stack) { if (regs.bits()) push_reg(regs.bits(), stack); }
-  void pop_reg(RegSet regs, Register stack)  { if (regs.bits()) pop_reg(regs.bits(), stack); }
-  void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(FloatRegSet regs, Register stack)  { if (regs.bits()) pop_fp(regs.bits(), stack); }
+
+  int push_reg(RegSet regset, Register stack);
+  int pop_reg(RegSet regset, Register stack);
+
+  int push_fp(FloatRegSet regset, Register stack);
+  int pop_fp(FloatRegSet regset, Register stack);
+
 #ifdef COMPILER2
-  void push_v(VectorRegSet regs, Register stack) { if (regs.bits()) push_v(regs.bits(), stack); }
-  void pop_v(VectorRegSet regs, Register stack)  { if (regs.bits()) pop_v(regs.bits(), stack); }
+  int push_v(VectorRegSet regset, Register stack);
+  int pop_v(VectorRegSet regset, Register stack);
 #endif // COMPILER2
 
   // Push and pop everything that might be clobbered by a native

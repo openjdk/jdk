@@ -110,7 +110,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
   }
 
   // Do the real work
-  pm->drain_stacks(false);
+  pm->trim_stacks();
 }
 
 static void steal_work(TaskTerminator& terminator, uint worker_id) {
@@ -118,15 +118,13 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
 
   PSPromotionManager* pm =
     PSPromotionManager::gc_thread_promotion_manager(worker_id);
-  pm->drain_stacks(true);
-  guarantee(pm->stacks_empty(),
-            "stacks should be empty at this point");
+  guarantee(pm->stacks_empty(), "precondition");
 
   while (true) {
     ScannerTask task;
     if (PSPromotionManager::steal_depth(worker_id, task)) {
       pm->process_popped_location_depth(task, true);
-      pm->drain_stacks(true);
+      pm->drain_stacks();
     } else {
       if (terminator.offer_termination()) {
         break;
@@ -181,9 +179,7 @@ class PSEvacuateFollowersClosure: public VoidClosure {
 
   virtual void do_void() {
     assert(_promotion_manager != nullptr, "Sanity");
-    _promotion_manager->drain_stacks(true);
-    guarantee(_promotion_manager->stacks_empty(),
-              "stacks should be empty at this point");
+    _promotion_manager->drain_stacks();
 
     if (_terminator != nullptr) {
       steal_work(*_terminator, _worker_id);
@@ -227,7 +223,7 @@ public:
     thread->oops_do(&roots_closure, nullptr);
 
     // Do the real work
-    _pm->drain_stacks(false);
+    _pm->trim_stacks();
   }
 };
 
@@ -278,7 +274,7 @@ public:
                                                _active_workers);
 
         // Do the real work
-        pm->drain_stacks(false);
+        pm->trim_stacks();
       }
     }
 
@@ -295,14 +291,11 @@ public:
       _oop_storage_strong_par_state.oops_do(&root_closure);
 
       // Do the real work
-      pm->drain_stacks(false);
+      pm->trim_stacks();
     }
 
-    // If active_workers can exceed 1, add a steal_work().
-    // PSPromotionManager::drain_stacks_depth() does not fully drain its
-    // stacks and expects a steal_work() to complete the draining if
-    // ParallelGCThreads is > 1.
-
+    // Drain worker local stacks and perform work stealing if more than one worker.
+    pm->drain_stacks();
     if (_active_workers > 1) {
       steal_work(_terminator, worker_id);
     }

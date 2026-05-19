@@ -76,6 +76,17 @@
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
+  product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
+          "Optimize reachability fences "                                   \
+          "(leave reachability fence nodes intact when turned off)")        \
+                                                                            \
+  product(bool, PreserveReachabilityFencesOnConstants, false, DIAGNOSTIC,   \
+          "Keep reachability fences on compile-time constants")             \
+                                                                            \
+  product(bool, StressReachabilityFences, false, DIAGNOSTIC,                \
+          "Aggressively insert reachability fences "                        \
+          "for all oop method arguments")                                   \
+                                                                            \
   develop(uint, StressBailoutMean, 100000,                                  \
           "The expected number of failing() checks made until "             \
           "a random bailout.")                                              \
@@ -496,8 +507,12 @@
   /* controls for heat-based inlining */                                    \
                                                                             \
   develop(intx, NodeCountInliningCutoff, 18000,                             \
-          "If parser node generation exceeds limit stop inlining")          \
+          "If node count exceeds limit stop inlining")                      \
           range(0, max_jint)                                                \
+                                                                            \
+  product(bool, DelayAfterInliningCutoff, false, DIAGNOSTIC,                \
+          "If node count exceeds limit during parsing, attempt inlining "   \
+          "later instead of giving up completely")                          \
                                                                             \
   product(intx, MaxNodeLimit, 80000,                                        \
           "Maximum number of nodes")                                        \

@@ -69,7 +69,7 @@ CompactHashtableWriter::~CompactHashtableWriter() {
     delete bucket;
   }
 
-  FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
+  FREE_C_HEAP_ARRAY(_buckets);
 }
 
 // Add an entry to the temporary hash table

@@ -62,6 +62,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahObjArrayAllocator.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
@@ -1074,6 +1075,11 @@ HeapWord* ShenandoahHeap::mem_allocate(size_t size) {
   return allocate_memory(req);
 }
 
+oop ShenandoahHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
+  ShenandoahObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
+  return allocator.allocate();
+}
+
 MetaWord* ShenandoahHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                              size_t size,
                                                              Metaspace::MetadataType mdtype) {
@@ -1144,12 +1150,10 @@ public:
   void work(uint worker_id) {
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj;
-      ShenandoahEvacOOMScope oom_evac_scope;
+      SuspendibleThreadSetJoiner stsj;
       do_work();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     }
   }
@@ -1297,19 +1301,22 @@ void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure)
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
-  if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
-    // This thread went through the OOM during evac protocol. It is safe to return
-    // the forward pointer. It must not attempt to evacuate any other objects.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
-  }
-
-  assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
   ShenandoahHeapRegion* r = heap_region_containing(p);
-  if (_has_self_forwarded_objects && r->has_evacuation_failures()) {
+  if (_has_self_forwarded_objects && r->has_self_forwards()) {
     // We don't want GC threads to evacuate objects in regions that have evacuation failures. We'd
     // rather have them concentrate on regions that still have a chance of being completely evacuated.
-    return ShenandoahForwarding::try_forward_to_self(p);
+    markWord old_mark = p->mark();
+    if (old_mark.is_forwarded()) {
+      return ShenandoahForwarding::get_forwardee(p);
+    }
+    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
+    if (winner == nullptr) {
+      // we installed the self-forwarding pointer.
+      return p;
+    }
+    // another thread installed a (possibly self-forwarded, possibly forwarded elsewhere) pointer
+    return winner;
   }
 
   assert(!r->is_humongous(), "never evacuate humongous objects");
@@ -1347,16 +1354,24 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // control_thread()->handle_alloc_failure_evac(size);
     // _oom_evac_handler.handle_out_of_memory_during_evacuation();
 
-
-    // Take regions with self-forwarded oops out of the collection set. We'd rather have
-    // evacuating threads work on regions that haven't failed evacuation yet (on the hope
-    // that they may succeed evacuating other regions - this region is already failed).
-    //
-    // We still indicate that this region contains objects that were not evacuated.
-    from_region->set_has_evacuation_failures(true);
-    _has_self_forwarded_objects = true;
-    log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), from_region->index());
-    return ShenandoahForwarding::try_forward_to_self(p);
+    // Install the self-forwarded bit on p so other evacuators/LRBs see
+    // the object as "already handled, do not try to evacuate". The CAS
+    // may fail if another thread concurrently installed a real forwardee
+    // (they succeeded where we failed) or self-forwarded first.
+    markWord old_mark = p->mark();
+    if (old_mark.is_forwarded()) {
+      return ShenandoahForwarding::get_forwardee(p);
+    }
+    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
+    if (winner == nullptr) {
+      // We own the self-forwarding. Flag the region so the degen/full GC
+      // entry drain knows to scan it for self_fwd bits to clear.
+      _has_self_forwarded_objects = true;
+      from_region->set_has_self_forwards();
+      log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), from_region->index());
+      return p;
+    }
+    return winner;
   }
 
   if (ShenandoahEvacTracking) {
@@ -1415,6 +1430,71 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 }
 
+// Clear the self_fwd bit on a live cset object, if set. Runs at a safepoint,
+// so a plain store is sufficient — no concurrent writers to the mark word.
+class ShenandoahUnSelfForwardObjectClosure : public ObjectClosure {
+public:
+  void do_object(oop obj) override {
+    markWord m = obj->mark();
+    if (m.is_self_forwarded()) {
+      obj->set_mark(m.unset_self_forwarded());
+    }
+  }
+};
+
+// Parallel task over flagged cset regions. Iterates the live objects via the
+// mark bitmap (skipping evacuated and never-marked memory), clears self_fwd
+// bits, and resets the region flag once done.
+class ShenandoahUnSelfForwardTask : public WorkerTask {
+private:
+  ShenandoahHeap*          const _heap;
+  ShenandoahCollectionSet* const _cs;
+
+public:
+  ShenandoahUnSelfForwardTask(ShenandoahHeap* heap, ShenandoahCollectionSet* cs) :
+    WorkerTask("Shenandoah Un-Self-Forward"),
+    _heap(heap),
+    _cs(cs) {}
+
+  void work(uint worker_id) override {
+    ShenandoahParallelWorkerSession worker_session(worker_id);
+    ShenandoahUnSelfForwardObjectClosure cl;
+    ShenandoahHeapRegion* r;
+    while ((r = _cs->claim_next()) != nullptr) {
+      if (r->has_self_forwards()) {
+        _heap->marked_object_iterate(r, &cl);
+        r->clear_has_self_forwards();
+      }
+    }
+  }
+};
+
+void ShenandoahHeap::un_self_forward_cset_regions() {
+  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
+  ShenandoahCollectionSet* cs = collection_set();
+  if (cs == nullptr || cs->is_empty()) {
+    return;
+  }
+  cs->clear_current_index();
+  ShenandoahUnSelfForwardTask task(this, cs);
+  workers()->run_task(&task);
+  DEBUG_ONLY(assert_no_self_forwards());
+}
+
+#ifdef ASSERT
+void ShenandoahHeap::assert_no_self_forwards() const {
+  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
+  ShenandoahCollectionSet* cs = collection_set();
+  if (cs == nullptr) return;
+  cs->clear_current_index();
+  ShenandoahHeapRegion* r;
+  while ((r = cs->next()) != nullptr) {
+    assert(!r->has_self_forwards(), "region still flagged after drain");
+  }
+  cs->clear_current_index();
+}
+#endif
+
 void ShenandoahHeap::trash_cset_regions() {
   ShenandoahHeapLocker locker(lock());
 
@@ -1423,9 +1503,9 @@ void ShenandoahHeap::trash_cset_regions() {
   ShenandoahHeapRegion* r;
   set->clear_current_index();
   while ((r = set->next()) != nullptr) {
-    if (r->has_evacuation_failures()) {
+    if (r->has_self_forwards()) {
       r->make_regular_allocation(r->affiliation());
-      r->set_has_evacuation_failures(false);
+      r->clear_has_self_forwards();
       r->clear_self_forwarded_mark_words();
       free_bytes_in_evac_failed_regions += r->free();
     } else {
@@ -1677,7 +1757,8 @@ void ShenandoahHeap::set_active_generation(ShenandoahGeneration* generation) {
   _active_generation = generation;
 }
 
-void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation) {
+void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation,
+                                    bool is_degenerated, bool is_out_of_cycle) {
   shenandoah_policy()->record_collection_cause(cause);
 
   const GCCause::Cause current = gc_cause();
@@ -1686,7 +1767,11 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
 
   set_gc_cause(cause);
 
-  generation->heuristics()->record_cycle_start();
+  if (is_degenerated) {
+    generation->heuristics()->record_degenerated_cycle_start(is_out_of_cycle);
+  } else {
+    generation->heuristics()->record_cycle_start();
+  }
 }
 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
@@ -1982,6 +2067,26 @@ void ShenandoahHeap::heap_region_iterate(ShenandoahHeapRegionClosure* blk) const
   }
 }
 
+class ShenandoahHeapRegionIteratorTask : public WorkerTask {
+private:
+  ShenandoahRegionIterator _regions;
+  ShenandoahHeapRegionClosure* _closure;
+
+public:
+  ShenandoahHeapRegionIteratorTask(ShenandoahHeapRegionClosure* closure)
+    : WorkerTask("Shenandoah Heap Region Iterator")
+    , _closure(closure) {}
+
+  void work(uint worker_id) override {
+    ShenandoahParallelWorkerSession worker_session(worker_id);
+    ShenandoahHeapRegion* region = _regions.next();
+    while (region != nullptr) {
+      _closure->heap_region_do(region);
+      region = _regions.next();
+    }
+  }
+};
+
 class ShenandoahParallelHeapRegionTask : public WorkerTask {
 private:
   ShenandoahHeap* const _heap;
@@ -2036,6 +2141,11 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   } else {
     heap_region_iterate(blk);
   }
+}
+
+void ShenandoahHeap::heap_region_iterator(ShenandoahHeapRegionClosure* closure) const {
+  ShenandoahHeapRegionIteratorTask task(closure);
+  workers()->run_task(&task);
 }
 
 class ShenandoahRendezvousHandshakeClosure : public HandshakeClosure {
@@ -2276,6 +2386,11 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
+
+  if (mode()->is_generational()) {
+    old_generation()->set_parsable(false);
+  }
+
   DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
@@ -2342,24 +2457,23 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
   // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
-  // Note that there is no lock to prevent additional alloations between sampling bytes_allocated_since_gc_start() and
-  // reset_bytes_allocated_since_gc_start().  If additional allocations happen, they will be ignored in the average
-  // allocation rate computations.  This effect is considered to be be negligible.
-
-  // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
-  // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
-  // bytes are allocated after the start of subsequent gc.
-  size_t unaccounted_bytes;
-  ShenandoahFreeSet* _free_set = free_set();
-  size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
-  if (mode()->is_generational()) {
-    unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
-  } else {
-    // Single-gen Shenandoah uses global heuristics.
-    unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
+  // Note that we obtain heap lock to prevent additional allocations between sampling bytes_allocated_since_gc_start()
+  // and reset_bytes_allocated_since_gc_start()
+  {
+    ShenandoahHeapLocker locker(lock());
+    // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
+    // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
+    // bytes are allocated after the start of subsequent gc.
+    size_t unaccounted_bytes;
+    size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
+    if (mode()->is_generational()) {
+      unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
+    } else {
+      // Single-gen Shenandoah uses global heuristics.
+      unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
+    }
+    _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
   }
-  ShenandoahHeapLocker locker(lock());
-  _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {
@@ -2503,7 +2617,7 @@ public:
   void work(uint worker_id) {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj;
+      SuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
@@ -2537,7 +2651,7 @@ private:
       // HeapWord* update_watermark = MAX2(r->top(), r->get_update_watermark());
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
-      if ((r->is_active() && !r->is_cset()) || r->has_evacuation_failures()) {
+      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
         // TODO: Some of the marked objects we iterate might be evacuated, would rather not update them
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
       }

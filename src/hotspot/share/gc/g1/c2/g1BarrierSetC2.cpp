@@ -68,7 +68,7 @@
  * has happened since the allocation.
  */
 bool G1BarrierSetC2::g1_can_remove_pre_barrier(GraphKit* kit,
-                                               PhaseValues* phase,
+                                               PhaseGVN* phase,
                                                Node* adr,
                                                BasicType bt,
                                                uint adr_idx) const {

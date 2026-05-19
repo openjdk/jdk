@@ -59,7 +59,7 @@ inline JfrConcurrentHashtable<T, IdType, TableEntry>::JfrConcurrentHashtable(uns
 
 template <typename T, typename IdType, template <typename, typename> class TableEntry>
 inline JfrConcurrentHashtable<T, IdType, TableEntry>::~JfrConcurrentHashtable() {
-  FREE_C_HEAP_ARRAY(Bucket, _buckets);
+  FREE_C_HEAP_ARRAY(_buckets);
 }
 
 template <typename T, typename IdType, template <typename, typename> class TableEntry>

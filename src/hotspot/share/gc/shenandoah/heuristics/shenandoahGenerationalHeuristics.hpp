@@ -34,6 +34,11 @@ class ShenandoahHeap;
 class ShenandoahCollectionSet;
 class RegionData;
 
+typedef struct {
+  ShenandoahHeapRegion* _region;
+  size_t _live_data;
+} AgedRegionData;
+
 /*
  * This class serves as the base class for heuristics used to trigger and
  * choose the collection sets for young and global collections. It leans
@@ -48,9 +53,12 @@ class ShenandoahGenerationalHeuristics : public ShenandoahAdaptiveHeuristics {
 public:
   explicit ShenandoahGenerationalHeuristics(ShenandoahGeneration* generation);
 
-  void choose_collection_set(ShenandoahCollectionSet* collection_set) override;
+  void post_initialize() override;
 
-  virtual void post_initialize() override;
+  // Wraps budget computation, subclass region selection, budget adjustment, and tracing.
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                             RegionData* data, size_t data_size,
+                                             size_t free) override;
 
 private:
   // Compute evacuation budgets prior to choosing collection set.
@@ -73,8 +81,11 @@ private:
   // to false.
   size_t select_aged_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions, const size_t old_promotion_reserve);
 
-  // Filter and sort remaining regions before adding to collection set.
-  void filter_regions(ShenandoahCollectionSet* collection_set);
+  // Select regions for inclusion in the collection set that are tenured, but do
+  // not hold enough live data to warrant promotion in place.
+  void add_tenured_regions_to_collection_set(size_t old_promotion_reserve,
+                                             ShenandoahGenerationalHeap *const heap,
+                                             size_t candidates, AgedRegionData* sorted_regions);
 
   // Adjust evacuation budgets after choosing collection set.  On entry, the instance variable _regions_to_xfer
   // represents regions to be transferred to old based on decisions made in top_off_collection_set()
@@ -82,6 +93,11 @@ private:
                                  ShenandoahCollectionSet* const collection_set);
 
 protected:
+  // Subclasses override this to perform generation-specific region selection.
+  virtual void select_collection_set_regions(ShenandoahCollectionSet* set,
+                                             RegionData* data, size_t data_size,
+                                             size_t free) = 0;
+
   ShenandoahGeneration* _generation;
 
   size_t _add_regions_to_old;

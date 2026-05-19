@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,17 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "memory/universe.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/integerCast.hpp"
 
-LRUCurrentHeapPolicy::LRUCurrentHeapPolicy() {
-  setup();
-}
-
-// Capture state (of-the-VM) information needed to evaluate the policy
-void LRUCurrentHeapPolicy::setup() {
-  _max_interval = (Universe::heap()->free_at_last_gc() / M) * SoftRefLRUPolicyMSPerMB;
-  assert(_max_interval >= 0,"Sanity check");
+void AbstractLRUReferencePolicy::set_max_interval(jlong max_interval) {
+  assert(max_interval >= 0, "Sanity check");
+  _max_interval = max_interval;
 }
 
 // The oop passed in is the SoftReference object, and not
 // the object the SoftReference points to.
-bool LRUCurrentHeapPolicy::should_clear_reference(oop p,
-                                                  jlong timestamp_clock) {
+bool AbstractLRUReferencePolicy::should_clear_reference(oop p, jlong timestamp_clock) {
+  assert(_max_interval >= 0, "Forgot to call setup");
   jlong interval = timestamp_clock - java_lang_ref_SoftReference::timestamp(p);
   assert(interval >= 0, "Sanity check");
 
@@ -54,10 +50,9 @@ bool LRUCurrentHeapPolicy::should_clear_reference(oop p,
   return true;
 }
 
-/////////////////////// MaxHeap //////////////////////
-
-LRUMaxHeapPolicy::LRUMaxHeapPolicy() {
-  setup();
+// Capture state (of-the-VM) information needed to evaluate the policy
+void LRUCurrentHeapPolicy::setup() {
+  set_max_interval(integer_cast<jlong>(Universe::heap()->free_at_last_gc() / M) * SoftRefLRUPolicyMSPerMB);
 }
 
 // Capture state (of-the-VM) information needed to evaluate the policy
@@ -66,21 +61,5 @@ void LRUMaxHeapPolicy::setup() {
   max_heap -= Universe::heap()->used_at_last_gc();
   max_heap /= M;
 
-  _max_interval = max_heap * SoftRefLRUPolicyMSPerMB;
-  assert(_max_interval >= 0,"Sanity check");
-}
-
-// The oop passed in is the SoftReference object, and not
-// the object the SoftReference points to.
-bool LRUMaxHeapPolicy::should_clear_reference(oop p,
-                                             jlong timestamp_clock) {
-  jlong interval = timestamp_clock - java_lang_ref_SoftReference::timestamp(p);
-  assert(interval >= 0, "Sanity check");
-
-  // The interval will be zero if the ref was accessed since the last scavenge/gc.
-  if(interval <= _max_interval) {
-    return false;
-  }
-
-  return true;
+  set_max_interval(integer_cast<jlong>(max_heap) * SoftRefLRUPolicyMSPerMB);
 }

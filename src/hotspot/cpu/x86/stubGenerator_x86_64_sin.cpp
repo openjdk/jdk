@@ -661,7 +661,7 @@ address StubGenerator::generate_libmSin() {
 
 #if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_sin(GrowableArray<address>& external_addresses) {
-#define ADD(addr) external_addresses.append((address)addr);
+#define ADD(addr) external_addresses.append((address)(addr));
   ADD(_ALL_ONES);
 #undef ADD
 }

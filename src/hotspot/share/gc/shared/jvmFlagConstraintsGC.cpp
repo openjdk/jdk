@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ JVMFlag::Error SoftMaxHeapSizeConstraintFunc(size_t value, bool verbose) {
 }
 
 JVMFlag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose) {
-  // If an overflow happened in Arguments::set_heap_size(), MaxHeapSize will have too large a value.
+  // If an overflow happened in GCArguments::set_heap_size(), MaxHeapSize will have too large a value.
   // Check for this by ensuring that MaxHeapSize plus the requested min base address still fit within max_uintx.
   if (value > (max_uintx - MaxHeapSize)) {
     JVMFlag::printError(verbose,
@@ -409,6 +409,18 @@ JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
                         "GCCardSizeInBytes ( %u ) must be "
                         "a power of 2\n",
                         value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  } else {
+    return JVMFlag::SUCCESS;
+  }
+}
+
+JVMFlag::Error ArrayMarkingMinStrideConstraintFunc(uintx value, bool verbose) {
+  if (value > ObjArrayMarkingStride) {
+    JVMFlag::printError(verbose,
+                        "ArrayMarkingMinStride (%zu) must be "
+                        "less than or equal to ObjArrayMarkingStride (%zu)\n",
+                        value, ObjArrayMarkingStride);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;

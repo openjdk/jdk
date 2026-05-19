@@ -29,6 +29,7 @@
  *          in the same directory as the libjvm.so file, in a subdirectory called .debug, or in the path specified
  *          by the environment variable _JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
  * @requires vm.debug == true & vm.flagless & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
+ * @requires !vm.ubsan
  * @modules java.base/jdk.internal.misc
  * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash TestDwarf
  */

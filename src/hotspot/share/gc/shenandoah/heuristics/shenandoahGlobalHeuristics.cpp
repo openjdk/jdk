@@ -112,9 +112,9 @@ ShenandoahGlobalHeuristics::ShenandoahGlobalHeuristics(ShenandoahGlobalGeneratio
         : ShenandoahGenerationalHeuristics(generation) {
 }
 
-void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                       RegionData* data, size_t size,
-                                                                       size_t actual_free) {
+void ShenandoahGlobalHeuristics::select_collection_set_regions(ShenandoahCollectionSet* cset,
+                                                               RegionData* data, size_t size,
+                                                               size_t actual_free) {
   QuickSort::sort<RegionData>(data, size, compare_by_garbage);
   choose_global_collection_set(cset, data, size, actual_free, 0);
 }

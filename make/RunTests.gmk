@@ -1020,6 +1020,9 @@ define SetupRunJtregTestBody
         VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
     $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-AotJdk.txt) \
+    ))
   endif
 
 

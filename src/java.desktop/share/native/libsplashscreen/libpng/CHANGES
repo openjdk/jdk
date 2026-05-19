@@ -6368,6 +6368,17 @@ Version 1.6.56 [March 25, 2026]
     (Contributed by Bob Friesenhahn and Philippe Antoine.)
   Performed various refactorings and cleanups.
 
+Version 1.6.57 [April 8, 2026]
+  Fixed CVE-2026-34757 (medium severity):
+    Use-after-free in `png_set_PLTE`, `png_set_tRNS` and `png_set_hIST`
+    leading to corrupted chunk data and potential heap information disclosure.
+    Also hardened the append-style setters (`png_set_text`, `png_set_sPLT`,
+    `png_set_unknown_chunks`) against a theoretical variant of the same
+    aliasing pattern.
+    (Reported by Iv4n <Iv4n550@users.noreply.github.com>.)
+  Fixed integer overflow in rowbytes computation in read transforms.
+    (Contributed by Mohammad Seet.)
+
 Send comments/corrections/commendations to png-mng-implement at lists.sf.net.
 Subscription is required; visit
 <https://lists.sourceforge.net/lists/listinfo/png-mng-implement>

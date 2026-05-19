@@ -108,17 +108,9 @@ inline bool ShenandoahHeap::should_evacuate_object(oop obj) const {
   if (_has_self_forwarded_objects) {
     // Stop evacuating from this region, it will not be recycled. Threads should use
     // their remaining LABs on regions that might still be completely evacuated.
-    return !heap_region_containing(obj)->has_evacuation_failures();
+    return !heap_region_containing(obj)->has_self_forwards();
   }
   return true;
-}
-
-inline void ShenandoahHeap::enter_evacuation(Thread* t) {
-  _oom_evac_handler.enter_evacuation(t);
-}
-
-inline void ShenandoahHeap::leave_evacuation(Thread* t) {
-  _oom_evac_handler.leave_evacuation(t);
 }
 
 template <class T>
@@ -289,7 +281,6 @@ inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
 inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(GCCause::_no_gc);
   reset_cancellation_time();
-  _oom_evac_handler.clear();
 }
 
 inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
@@ -472,7 +463,7 @@ inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
 }
 
 inline char ShenandoahHeap::gc_state() const {
-  return _gc_state.raw_value();
+  return integer_cast<char>(_gc_state.raw_value());
 }
 
 inline bool ShenandoahHeap::is_gc_state(GCState state) const {
@@ -674,7 +665,7 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
       marked_object_iterate(region, &objs);
     }
   } else {
-    if (region->has_evacuation_failures()) {
+    if (region->has_self_forwards()) {
       ShenandoahNonForwardedObjectToOopClosure<T> objs(cl);
       marked_object_iterate(region, &objs, top);
     } else {

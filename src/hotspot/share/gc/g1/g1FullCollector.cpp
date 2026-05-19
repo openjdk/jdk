@@ -167,10 +167,10 @@ G1FullCollector::~G1FullCollector() {
 
   delete _partial_array_state_manager;
 
-  FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
-  FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
-  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _compaction_tops);
-  FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
+  FREE_C_HEAP_ARRAY(_markers);
+  FREE_C_HEAP_ARRAY(_compaction_points);
+  FREE_C_HEAP_ARRAY(_compaction_tops);
+  FREE_C_HEAP_ARRAY(_live_stats);
 }
 
 class PrepareRegionsClosure : public G1HeapRegionClosure {

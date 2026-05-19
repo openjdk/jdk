@@ -33,6 +33,8 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 public class TestVmSocket {
+    public static final String IDENTITY = "#TestVM-Java#";
+
     private static final boolean REPRODUCE = Boolean.getBoolean("Reproduce");
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
     private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
@@ -88,6 +90,7 @@ public class TestVmSocket {
             // Keep the client socket open until the test VM terminates (calls closeClientSocket before exiting main()).
             socket = new Socket(InetAddress.getLoopbackAddress(), SERVER_PORT);
             writer = new PrintWriter(socket.getOutputStream(), true);
+            writer.println(IDENTITY);
         } catch (Exception e) {
             // When the test VM is directly run, we should ignore all messages that would normally be sent to the
             // driver VM.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8298127 8347596
+ * @bug 8298127 8347596 8369917
  * @library /test/lib
  * @summary tests for HSS/LMS provider
  * @modules java.base/sun.security.util
@@ -194,6 +194,8 @@ public class TestHSS {
     static TestCase[] TestCases = new TestCase[] {
         // Test Case #1
         // RFC 8554 Test Case 1
+        // LM_SHA256_M32_H5, LMOTS_SHA256_N32_W8
+        // LM_SHA256_M32_H5, LMOTS_SHA256_N32_W8
         new TestCase(
             null, // exception
             true, // expected result
@@ -307,6 +309,8 @@ public class TestHSS {
 
         // Test Case #2
         // RFC 8554 Test Case 2
+        // LM_SHA256_M32_H10, LMOTS_SHA256_N32_W4
+        // LM_SHA256_M32_H5, LMOTS_SHA256_N32_W8
         new TestCase(
             null, // exception
             true, // expected result
@@ -456,11 +460,11 @@ public class TestHSS {
         ),
 
         // Test Case #3
-        // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
-        // This test should fail because SHA256_M24 is supported.
+        // RFC 9858 A.1
+        // LMS_SHA256_M24_H5, LMOTS_SHA256_N24_W8
         new TestCase(
-            new InvalidKeySpecException(),
-            false, // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000001
                 0000000a
@@ -502,11 +506,11 @@ public class TestHSS {
         ),
 
         // Test Case #4
-        // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
-        // This test should fail because SHAKE is not supported.
+        // RFC 9858 A.2
+        // LMS_SHAKE_M24_H5, LMOTS_SHAKE_N24_W8
         new TestCase(
-            new InvalidKeySpecException(),
-            false, // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000001
                 00000014
@@ -549,11 +553,11 @@ public class TestHSS {
         ),
 
         // Test Case #5
-        // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
-        // This test should fail because SHAKE is not supported.
+        // RFC 9858 A.3
+        // LMS_SHAKE_M32_H5, LMOTS_SHAKE_N32_W8
         new TestCase(
-            new InvalidKeySpecException(),
-            false, // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000001
                 0000000f
@@ -611,6 +615,83 @@ public class TestHSS {
         ),
 
         // Test Case #6
+        // RFC 9858 A.4
+        // LMS_SHA256_M24_H20, LMOTS_SHA256_N24_W4
+        new TestCase(
+            null, // exception
+            true, // expected result
+            decode("""
+                00000001
+                0000000d
+                00000007
+                404142434445464748494a4b4c4d4e4f9c08a50d170406869892802ee4142fcd
+                eac990f110c2460c"""),
+            decode("""
+                54657374206d65737361676520666f72205348413235362f31393220773d34
+                """),
+            decode("""
+                00000000
+                00000064
+                00000007
+                853fa6e1a65fef076acd2485505b93be9aeb2641e3d3805c1887f26f4bcdb6ac
+                0337b76fa5d6603834287e010b20516f7c336df2134c0a981f1ec2bb7baee516
+                e91e67d3bd16c8d945a7f2be4fd84a604ae3743efc609ee0e69572e9c6d4a682
+                50e877b75d3cae63e9d5c15a32bb3cd17045f6b3e195284fdd1ee3cfbe18f1cb
+                d06ef3e7af34b1844d42dac453115a4507ed525cec120d054b403c61a7e5034f
+                ac4be6ef5412d194d4b6bbc0ae6cd3fe9993d583ee06f4030bc832efec24d1f7
+                13f5088731b91a98491fa3adf1b322bce26df24c8415e3a46bdfe07a6fd48e6d
+                951515758cd6434991098bf6949249fca338ec235871dd564998d07d9b1b1b8d
+                644e657fee8039da8fe195d129faddb12d543b86b0ab8cf6f26c121783f3b828
+                d03f793b42909272f688e4ef6d46e82bdd1a02b1ff86c3b79920b2e6f19faf75
+                c623242f1f2c549f84fb2f4c3ffead3120d97baea507467bb2da79f132bbe15b
+                596fdfcb70983107ebca2597de9d55bd83bcae5c28a85259dadb354859986e60
+                c8afa0b10bd08a8f9ed9b1ede3377075fe0ae36349f7d2ed7bfc9ece0d4cd697
+                2059329419feaf3b9a1045b6cfa4ae89b1cea8950aea4af870d1a3a3909ebc5a
+                3013d6deb927abc0f95093e83cb36a9c1d6f13add19268ac7a0371f8335b0952
+                a57fdb0141d55d937dd6ebb08fee8a5cf426ac97d54ee7aa17e6c57be5e62a52
+                a6b1b986730d3a3aad8a7d327ddf883e6bc7b636eb2a5c4f2a635ae5bada5418
+                d43dfedb69c0a0209334fac89d420d6ad5a2e1df95d26a1bfeb99a5e8455061b
+                fdf2d6e8394caf8a4be699b8afa38e524d4053330af478f85bf33d3ca3a35bc9
+                6987282bd513a8f6a52db9ba36aa90882b3bf573fa275449d8d49eb30bed2bb1
+                7a0ecc7d8a20807f2ea3dd37acd46c713cc2ac9d01a20a30d6832eef86a1e26d
+                1cad7761bf4130a6565572766026509deeddaf46b605452b218a4e137a7ce063
+                b546a35c52510f0ea2cac879192ec443e43b37c5ffa23da7a7fc254324a3de70
+                5c771794f10ea356e5a747e5146fd804a47719803c185b380e34b8dcc8269c2b
+                073d86b2307cf90c6c3ef9271f2d53df2579f0c4cfb632db37a9025965f70b46
+                16673228e98644be6576417b7a97f104350259e7f697408cdf8cf81a3e774162
+                6ccdb87ad8531264cb5ceb7c8c097cec505091a3ee3a826c54f78169abc2e7d0
+                a318dac10250ba940e51e79a3f572fb32bf442be6fd81267946e6387f9a8c705
+                d945c653f2684655e3fa6b9ee311d8a091bef9898292fa272fb8761f066c23d8
+                7aa10d67871cc5419c843b796855c51ad1272e9264acd2035a82b12c2ddbc85a
+                dfcd7c22366a36495349391dbf0001064b8f6b28365445d733e48f1b058a6cb3
+                e71bbb8df3e90406299894f4ca682943ceeba410b33b07716ffc18d6eab75f2d
+                6372f1133605fa3c3ed66f2d8f7c5abe59e87d4500965e347523d73cb356c144
+                827aaa22b1c72a15293c7400e02aaefcf36f68a8246900e6e6228e7ad19d1450
+                c23434f1e45043dc2b6db57f20d8f5b344d4162aa651333287cd8bf8fac41c78
+                d61fe2929209bfe2dc5a2f80205c043b22e540a29f0ea0a5ff529e55bf1dfe42
+                96fc4bb4ac2e875322ab115db479fe979d64f78409af4ec3ad3b758fff83af1b
+                9c48e90ca39366f426c2fb921df55c72786a9217723945a1ac1a66af7def4f8b
+                367001732cce0e5bac91ac9d603807f8bab105b46d315d4cb88feb1c8686884b
+                0000000d
+                13d1a8ef00c5811c15c4d774fdcf75155315aff53ebdff8fb6a54f12c165963d
+                d5690cc9842b0e2190afc5443497584c832155599d00aced84bb3b59170396f7
+                db4fa84aa8577f76cf9367d6e99d3d5be3555d7156b004f2002f505681b1ad22
+                9b9b46a666672aa8ee662c3a0456a9adda7a44fbaca46789577dcd36dc5cdff3
+                4b864d0a32492a0acbcaa6c011748f205b91ab2ab84f2333fb3e3b9acaecdac3
+                8b58aa5f32e718e225631ed6674cccb8c119acbd4992ab3130a6e912deec5983
+                5ab52fbc549430f8b403e4a2a51cc7f46fc143d365763aa1708fd25bcd657a79
+                0e54718d970906242a3b8a97dff18e91a44c4ba818a8dd2d242251265b023b82
+                6077eb740f6682e6c4ada2b85a67988d406132c2ad899099e44cfe610c3a5af7
+                0b406224411a59597e5dda0f31cd16c914b67e96141661f0074f43eb02273481
+                bc324ded26c64f2388559d8c8bd0ef8b34ca4afebfac2a689b4246c264241488
+                dcf922350dc44f7bc09d57dc1126291b2318810e0f44801c071e572fd032c780
+                f44c9503a4c03c37417dc96422ba0849c37956f9fd5d33ea4fcab84276effec6
+                52ca77d7d47ac93c633d99e0a236f03d5587d1990ffaef737fced1f5cdd8f373
+                844e9f316aad41a0b12302639f83a2d74c9fe30d305a942bc0c30352a5e44dfb
+                """)
+        ),
+
+        // Test Case #7
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w8
         new TestCase(
             null, // exception
@@ -713,7 +794,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #7
+        // Test Case #8
         // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w8
         new TestCase(
             null, // exception
@@ -821,7 +902,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #8
+        // Test Case #9
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         new TestCase(
             null, // exception
@@ -957,7 +1038,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #9
+        // Test Case #10
         // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
         new TestCase(
             null, // exception
@@ -1098,7 +1179,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #10
+        // Test Case #11
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4
         new TestCase(
@@ -1320,7 +1401,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #11
+        // Test Case #12
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         new TestCase(
@@ -1547,7 +1628,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #12
+        // Test Case #13
         // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
         // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4
         new TestCase(
@@ -1774,7 +1855,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #13
+        // Test Case #14
         // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         new TestCase(
@@ -2006,7 +2087,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #14
+        // Test Case #15
         // LMS signature length is incorrect
         new TestCase(
             new SignatureException(),
@@ -2119,7 +2200,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #15
+        // Test Case #16
         // HSS signature and public key have different tree heights
         new TestCase(
             new SignatureException(),
@@ -2232,7 +2313,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #16
+        // Test Case #17
         // bad signature
         new TestCase(
             null,  // exception
@@ -2345,7 +2426,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #17
+        // Test Case #18
         // Invalid key in HSS signature
         new TestCase(
             new SignatureException(),
@@ -2458,7 +2539,7 @@ public class TestHSS {
                 """)
         ),
 
-        // Test Case #18
+        // Test Case #19
         // LMS signature is too short
         new TestCase(
             new SignatureException(),
@@ -2485,7 +2566,7 @@ public class TestHSS {
                 965a25bfd37f196b9073f3d4a232feb6""")
         ),
 
-        // Test Case #19
+        // Test Case #20
         // bad signature
         new TestCase(
             null,  // exception

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,28 +56,28 @@ class AlwaysClearPolicy : public ReferencePolicy {
   }
 };
 
-class LRUCurrentHeapPolicy : public ReferencePolicy {
+class AbstractLRUReferencePolicy : public ReferencePolicy {
  private:
-  jlong _max_interval;
+  jlong _max_interval = -1;
+
+ protected:
+  void set_max_interval(jlong max_interval);
 
  public:
-  LRUCurrentHeapPolicy();
-
-  // Capture state (of-the-VM) information needed to evaluate the policy
-  void setup();
-  virtual bool should_clear_reference(oop p, jlong timestamp_clock);
+  bool should_clear_reference(oop p, jlong timestamp_clock) final;
+  void setup() override = 0;
 };
 
-class LRUMaxHeapPolicy : public ReferencePolicy {
- private:
-  jlong _max_interval;
-
+class LRUCurrentHeapPolicy : public AbstractLRUReferencePolicy {
  public:
-  LRUMaxHeapPolicy();
-
   // Capture state (of-the-VM) information needed to evaluate the policy
-  void setup();
-  virtual bool should_clear_reference(oop p, jlong timestamp_clock);
+  void setup() final;
+};
+
+class LRUMaxHeapPolicy : public AbstractLRUReferencePolicy {
+ public:
+  // Capture state (of-the-VM) information needed to evaluate the policy
+  void setup() final;
 };
 
 #endif // SHARE_GC_SHARED_REFERENCEPOLICY_HPP

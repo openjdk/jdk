@@ -152,9 +152,12 @@ bool PhaseCFG::is_CFG(Node* n) {
 }
 
 bool PhaseCFG::is_control_proj_or_safepoint(Node* n) const {
-  bool result = (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) || (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
-  assert(!result || (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint)
-          || (n->is_Proj() && n->as_Proj()->_con == 0), "If control projection, it must be projection 0");
+  bool result = n->is_ReachabilityFence() ||
+                (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) ||
+                (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
+  assert(!n->is_Proj() ||
+         n->as_Proj()->bottom_type() != Type::CONTROL ||
+         n->as_Proj()->_con == 0, "If control projection, it must be projection 0");
   return result;
 }
 
@@ -1740,6 +1743,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       // are needed make sure that after placement in a block we don't
       // need any new precedence edges.
       verify_anti_dependences(late, self);
+      if (C->failing()) {
+        return;
+      }
     }
 #endif
   } // Loop until all nodes have been visited

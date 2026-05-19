@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -322,6 +322,14 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_SUBST(COMPILE_WITH_DEBUG_SYMBOLS)
   AC_SUBST(COPY_DEBUG_SYMBOLS)
   AC_SUBST(ZIP_EXTERNAL_DEBUG_SYMBOLS)
+
+  # Should we enable objcopy debuginfo compression ?
+  UTIL_ARG_ENABLE(NAME: objcopy-debuginfo-compression, DEFAULT: false,
+      RESULT: ENABLE_OBJCOPY_DEBUGINFO_COMPRESSION,
+      DESC: [Set to enable compression in the debuginfo files (Linux only)],
+      CHECKING_MSG: [if debuginfo compression with objcopy is done],
+      IF_ENABLED: [ OBJCOPY_COMPRESS_FLAGS="--compress-debug-sections=zlib-gnu" ])
+  AC_SUBST(OBJCOPY_COMPRESS_FLAGS)
 
   # Should we add external native debug symbols to the shipped bundles?
   AC_MSG_CHECKING([if we should add external native debug symbols to the shipped bundles])

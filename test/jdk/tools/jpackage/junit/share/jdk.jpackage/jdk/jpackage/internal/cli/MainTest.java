@@ -160,6 +160,10 @@ public class MainTest extends JUnitAdapter {
     }
 
     private static Collection<TestSpec> testOutput() {
+
+        // Non-empty directory
+        var invalidTempValue = Path.of(System.getProperty("java.home")).toString();
+
         return Stream.of(
                 // Print the tool version
                 build().expectShortHelp(),
@@ -180,22 +184,40 @@ public class MainTest extends JUnitAdapter {
                 // Invalid command line requesting to print the version of the tool.
                 // Additional error messages may be printed if the default bundling operation
                 // can not be identified; don't verify these errors in the output.
-                build().args("foo", "--version").stderrMatchType(OutputMatchType.STARTS_WITH).expectErrors(I18N.format("error.non-option-arguments", 1))
+                build().args("foo", "--version").stderrMatchType(OutputMatchType.STARTS_WITH).expectErrors(I18N.format("error.non-option-arguments", 1)),
+                // Should print two errors: one for the invalid value of the "--type" option
+                // and another for the invalid value of the "--verbose" option.
+                build().args("--temp", invalidTempValue, "--verbose", "bar").expectErrors(
+                        I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp"),
+                        I18N.format("error.parameter-invalid-value", "bar", "--verbose")),
+                build().args("--verbose", "bar", "--temp", invalidTempValue).expectErrors(
+                        I18N.format("error.parameter-invalid-value", "bar", "--verbose"),
+                        I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp")),
+                // This is just for the coverage.
+                build().args("--verbose", "errors", "--temp", invalidTempValue).expectErrors(
+                        I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp")),
+                // Silent failure.
+                build().args("--verbose", "", "--temp", invalidTempValue).expectErrorExitCode(),
+                // If the value of the "--type" option is invalid, this is the only reported error.
+                build().args("--type", "foo", "--verbose", "bar").expectErrors(
+                        I18N.format("ERR_InvalidInstallerType", "foo"))
         ).map(TestSpec.Builder::create).toList();
     }
 
     private static List<ErrorReporterTestSpec> test_ErrorReporter() {
         var testCases = new ArrayList<ErrorReporterTestSpec>();
-        for (var verbose : List.of(true, false)) {
-            test_ErrorReporter_Exception(verbose, testCases::add);
-            test_ErrorReporter_UnexpectedResultException(verbose, testCases::add);
-            test_ErrorReporter_suppressedExceptions(verbose, testCases::add);
+        for (var alwaysPrintStackTrace : List.of(true, false)) {
+            test_ErrorReporter_Exception(alwaysPrintStackTrace, testCases::add);
+            for (var printCommandOutput : List.of(true, false)) {
+                test_ErrorReporter_UnexpectedResultException(alwaysPrintStackTrace, printCommandOutput, testCases::add);
+                test_ErrorReporter_suppressedExceptions(alwaysPrintStackTrace, printCommandOutput, testCases::add);
+            }
         }
 
         return testCases;
     }
 
-    private static void test_ErrorReporter_Exception(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+    private static void test_ErrorReporter_Exception(boolean alwaysPrintStackTrace, Consumer<ErrorReporterTestSpec> sink) {
 
         for (var makeCause : List.<UnaryOperator<Exception>>of(
                 ex -> ex,
@@ -220,6 +242,8 @@ public class MainTest extends JUnitAdapter {
             for (var expect : List.of(
                     new IOException("I/O error"),
                     new NullPointerException(),
+                    // Exception without a message
+                    new Exception(),
                     new JPackageException("Kaput!"),
                     new ConfigException("It is broken", "Fix it!"),
                     new ConfigException("It is broken. No advice how to fix it", (String)null),
@@ -232,13 +256,14 @@ public class MainTest extends JUnitAdapter {
                 }
 
                 var expectedOutput = new ArrayList<ExceptionFormatter>();
-                ErrorReporterTestSpec.expectExceptionFormatters(expect, verbose, expectedOutput::add);
-                sink.accept(ErrorReporterTestSpec.create(cause, expect, verbose, expectedOutput));
+                ErrorReporterTestSpec.expectExceptionFormatters(expect, alwaysPrintStackTrace, false, expectedOutput::add);
+                sink.accept(ErrorReporterTestSpec.create(cause, expect, alwaysPrintStackTrace, false, expectedOutput));
             }
         }
     }
 
-    private static void test_ErrorReporter_UnexpectedResultException(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+    private static void test_ErrorReporter_UnexpectedResultException(
+            boolean alwaysPrintStackTrace, boolean printCommandOutput, Consumer<ErrorReporterTestSpec> sink) {
 
         var execAttrs = new CommandOutputControl.ProcessAttributes(Optional.of(12345L), List.of("foo", "--bar"));
 
@@ -263,8 +288,8 @@ public class MainTest extends JUnitAdapter {
             )) {
                 var cause = makeCause.apply(expect);
                 var expectedOutput = new ArrayList<ExceptionFormatter>();
-                ErrorReporterTestSpec.expectExceptionFormatters(expect, verbose, expectedOutput::add);
-                sink.accept(ErrorReporterTestSpec.create(cause, expect, verbose, expectedOutput));
+                ErrorReporterTestSpec.expectExceptionFormatters(expect, alwaysPrintStackTrace, printCommandOutput, expectedOutput::add);
+                sink.accept(ErrorReporterTestSpec.create(cause, expect, alwaysPrintStackTrace, printCommandOutput, expectedOutput));
             }
         }
     }
@@ -286,7 +311,8 @@ public class MainTest extends JUnitAdapter {
         }
     }
 
-    private static void test_ErrorReporter_suppressedExceptions(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+    private static void test_ErrorReporter_suppressedExceptions(
+            boolean alwaysPrintStackTrace, boolean printCommandOutput, Consumer<ErrorReporterTestSpec> sink) {
 
         var execAttrs = new CommandOutputControl.ProcessAttributes(Optional.of(567L), List.of("foo", "--bar"));
 
@@ -329,10 +355,11 @@ public class MainTest extends JUnitAdapter {
 
                 var expectedOutput = new ArrayList<FormattedException>();
 
-                ErrorReporterTestSpec.expectOutputFragments(ExceptionBox.unbox(suppressed), verbose, expectedOutput::add);
-                ErrorReporterTestSpec.expectOutputFragments(main, verbose, expectedOutput::add);
+                ErrorReporterTestSpec.expectOutputFragments(
+                        ExceptionBox.unbox(suppressed), alwaysPrintStackTrace, printCommandOutput, expectedOutput::add);
+                ErrorReporterTestSpec.expectOutputFragments(main, alwaysPrintStackTrace, printCommandOutput, expectedOutput::add);
 
-                sink.accept(new ErrorReporterTestSpec(cause, verbose, expectedOutput));
+                sink.accept(new ErrorReporterTestSpec(cause, alwaysPrintStackTrace, printCommandOutput, expectedOutput));
             }
         }
     }
@@ -614,7 +641,11 @@ public class MainTest extends JUnitAdapter {
     }
 
 
-    record ErrorReporterTestSpec(Exception cause, boolean verbose, List<FormattedException> expectOutput) {
+    record ErrorReporterTestSpec(
+            Exception cause,
+            boolean alwaysPrintStackTrace,
+            boolean printCommandOutput,
+            List<FormattedException> expectOutput) {
 
         ErrorReporterTestSpec {
             Objects.requireNonNull(cause);
@@ -625,26 +656,40 @@ public class MainTest extends JUnitAdapter {
         }
 
         static ErrorReporterTestSpec create(
-                Exception cause, boolean verbose, List<ExceptionFormatter> expectOutput) {
-            return create(cause, cause, verbose, expectOutput);
+                Exception cause,
+                boolean alwaysPrintStackTrace,
+                boolean printCommandOutput,
+                List<ExceptionFormatter> expectOutput) {
+            return create(cause, cause, alwaysPrintStackTrace, printCommandOutput, expectOutput);
         }
 
         static ErrorReporterTestSpec create(
-                Exception cause, Exception expect, boolean verbose, List<ExceptionFormatter> expectOutput) {
+                Exception cause,
+                Exception expect,
+                boolean alwaysPrintStackTrace,
+                boolean printCommandOutput,
+                List<ExceptionFormatter> expectOutput) {
+
             Objects.requireNonNull(cause);
             Objects.requireNonNull(expect);
-            return new ErrorReporterTestSpec(cause, verbose, expectOutput.stream().map(formatter -> {
+
+            return new ErrorReporterTestSpec(cause, alwaysPrintStackTrace, printCommandOutput, expectOutput.stream().map(formatter -> {
                 return new FormattedException(formatter, expect);
             }).toList());
         }
 
-        static void expectExceptionFormatters(Exception ex, boolean verbose, Consumer<ExceptionFormatter> sink) {
+        static void expectExceptionFormatters(
+                Exception ex,
+                boolean alwaysPrintStackTrace,
+                boolean printCommandOutput,
+                Consumer<ExceptionFormatter> sink) {
+
             Objects.requireNonNull(ex);
             Objects.requireNonNull(sink);
 
             final var isSelfContained = (ex.getClass().getAnnotation(SelfContainedException.class) != null);
 
-            if (verbose || !(isSelfContained || ex instanceof UnexpectedResultException)) {
+            if (alwaysPrintStackTrace || !(isSelfContained || ex instanceof UnexpectedResultException)) {
                 sink.accept(ExceptionFormatter.STACK_TRACE);
             }
 
@@ -664,7 +709,10 @@ public class MainTest extends JUnitAdapter {
                     } else {
                         sink.accept(ExceptionFormatter.FAILED_COMMAND_TIMEDOUT_MESSAGE);
                     }
-                    sink.accept(ExceptionFormatter.FAILED_COMMAND_OUTPUT);
+
+                    if (printCommandOutput) {
+                        sink.accept(ExceptionFormatter.FAILED_COMMAND_OUTPUT);
+                    }
                 }
                 default -> {
                     if (isSelfContained) {
@@ -676,9 +724,14 @@ public class MainTest extends JUnitAdapter {
             }
         }
 
-        static void expectOutputFragments(Exception ex, boolean verbose, Consumer<FormattedException> sink) {
+        static void expectOutputFragments(
+                Exception ex,
+                boolean alwaysPrintStackTrace,
+                boolean printCommandOutput,
+                Consumer<FormattedException> sink) {
+
             Objects.requireNonNull(sink);
-            expectExceptionFormatters(ex, verbose, formatter -> {
+            expectExceptionFormatters(ex, alwaysPrintStackTrace, printCommandOutput, formatter -> {
                 sink.accept(formatter.bind(ex));
             });
         }
@@ -708,8 +761,12 @@ public class MainTest extends JUnitAdapter {
                 }).collect(Collectors.joining("+")));
             }
 
-            if (verbose) {
-                tokens.add("verbose");
+            if (alwaysPrintStackTrace) {
+                tokens.add("stacktrace-always");
+            }
+
+            if (printCommandOutput) {
+                tokens.add("command-output");
             }
 
             return tokens.stream().collect(Collectors.joining("; "));
@@ -723,7 +780,7 @@ public class MainTest extends JUnitAdapter {
                     t.printStackTrace(pw);
                 }, msg -> {
                     pw.println(msg);
-                }, verbose).reportError(cause);
+                }, alwaysPrintStackTrace, printCommandOutput).reportError(cause);
             }
 
             var expected = expectOutput.stream().map(FormattedException::format).collect(Collectors.joining(""));

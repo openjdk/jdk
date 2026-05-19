@@ -55,6 +55,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef PRODUCT
@@ -2538,6 +2539,17 @@ void MacroAssembler::sign_extend_byte(Register reg) {
 
 void MacroAssembler::sign_extend_short(Register reg) {
   movswl(reg, reg); // movsxw
+}
+
+void MacroAssembler::narrow_subword_type(Register reg, BasicType bt) {
+  assert(is_subword_type(bt), "required");
+  switch (bt) {
+  case T_BOOLEAN: andl(reg, 1); break;
+  case T_BYTE:    movsbl(reg, reg); break;
+  case T_CHAR:    movzwl(reg, reg); break;
+  case T_SHORT:   movswl(reg, reg); break;
+  default:        ShouldNotReachHere();
+  }
 }
 
 void MacroAssembler::testl(Address dst, int32_t imm32) {
@@ -5343,12 +5355,10 @@ void MacroAssembler::print_CPU_state() {
 void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
   // Either restore the MXCSR register after returning from the JNI Call
   // or verify that it wasn't changed (with -Xcheck:jni flag).
-  if (VM_Version::supports_sse()) {
-    if (RestoreMXCSROnJNICalls) {
-      ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), rscratch);
-    } else if (CheckJNICalls) {
-      call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
-    }
+  if (RestoreMXCSROnJNICalls) {
+    ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), rscratch);
+  } else if (CheckJNICalls) {
+    call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
   }
   // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
   vzeroupper();
@@ -6955,7 +6965,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   xorq(result, result);
 
   if ((AVX3Threshold == 0) && (UseAVX > 2) &&
-      VM_Version::supports_avx512vlbw()) {
+      VM_Version::supports_avx512vlbw() && UseCountTrailingZerosInstruction) {
     Label VECTOR64_LOOP, VECTOR64_NOT_EQUAL, VECTOR32_TAIL;
 
     cmpq(length, 64);
@@ -9799,7 +9809,6 @@ void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
 void MacroAssembler::cache_wb(Address line)
 {
   // 64 bit cpus always support clflush
-  assert(VM_Version::supports_clflush(), "clflush should be available");
   bool optimized = VM_Version::supports_clflushopt();
   bool no_evict = VM_Version::supports_clwb();
 
@@ -9821,7 +9830,6 @@ void MacroAssembler::cache_wb(Address line)
 
 void MacroAssembler::cache_wbsync(bool is_pre)
 {
-  assert(VM_Version::supports_clflush(), "clflush should be available");
   bool optimized = VM_Version::supports_clflushopt();
   bool no_evict = VM_Version::supports_clwb();
 

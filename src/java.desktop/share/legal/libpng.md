@@ -1,4 +1,4 @@
-## libpng v1.6.56
+## libpng v1.6.57
 
 ### libpng License
 <pre>
@@ -180,6 +180,7 @@ Authors, for copyright and licensing purposes.
  * Mans Rullgard
  * Matt Sarett
  * Mike Klein
+ * Mohammad Seet
  * Pascal Massimino
  * Paul Schmidt
  * Petr Simecek

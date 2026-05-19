@@ -55,7 +55,7 @@ void G1EvacFailureRegions::post_collection() {
   _regions_pinned.resize(0);
   _regions_alloc_failed.resize(0);
 
-  FREE_C_HEAP_ARRAY(uint, _evac_failed_regions);
+  FREE_C_HEAP_ARRAY(_evac_failed_regions);
   _evac_failed_regions = nullptr;
 }
 

@@ -37,9 +37,9 @@ ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* 
 }
 
 
-void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                      RegionData* data, size_t size,
-                                                                      size_t actual_free) {
+void ShenandoahYoungHeuristics::select_collection_set_regions(ShenandoahCollectionSet* cset,
+                                                              RegionData* data, size_t size,
+                                                              size_t actual_free) {
   // See comments in ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata():
   // we do the same here, but with the following adjustments for generational mode:
   //

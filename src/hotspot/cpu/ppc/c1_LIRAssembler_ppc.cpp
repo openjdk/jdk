@@ -210,7 +210,7 @@ int LIR_Assembler::emit_unwind_handler() {
   _masm->block_comment("Unwind handler");
 
   int offset = code_offset();
-  bool preserve_exception = method()->is_synchronized() || compilation()->env()->dtrace_method_probes();
+  bool preserve_exception = method()->is_synchronized();
   const Register Rexception = R3 /*LIRGenerator::exceptionOopOpr()*/, Rexception_save = R31;
 
   // Fetch the exception from TLS and clear out exception related thread state.
@@ -230,10 +230,6 @@ int LIR_Assembler::emit_unwind_handler() {
     stub = new MonitorExitStub(FrameMap::R4_opr, 0);
     __ unlock_object(R5, R6, R4, *stub->entry());
     __ bind(*stub->continuation());
-  }
-
-  if (compilation()->env()->dtrace_method_probes()) {
-    Unimplemented();
   }
 
   // Dispatch to the unwind logic.
