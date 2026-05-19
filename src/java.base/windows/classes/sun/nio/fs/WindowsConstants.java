@@ -96,7 +96,6 @@ class WindowsConstants {
     public static final int ERROR_NOT_SAME_DEVICE       = 17;
     public static final int ERROR_NOT_READY             = 21;
     public static final int ERROR_SHARING_VIOLATION     = 32;
-    public static final int ERROR_NOT_SUPPORTED         = 50;
     public static final int ERROR_NETWORK_ACCESS_DENIED = 65;
     public static final int ERROR_FILE_EXISTS           = 80;
     public static final int ERROR_INVALID_PARAMETER     = 87;

@@ -388,8 +388,7 @@ class WindowsFileAttributes
         }
 
         if (supportsGetFileInformationByName()) {
-            try (NativeBuffer buffer =
-                NativeBuffers.getNativeBuffer(SIZEOF_STAT_BASIC_INFO)) {
+            try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(SIZEOF_STAT_BASIC_INFO)) {
                 long addr = buffer.address();
                 GetFileInformationByName(path.getPathForWin32Calls(),
                                             FileStatBasicByNameInfo, addr,

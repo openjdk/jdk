@@ -565,7 +565,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFileInformationByName0(JNIEnv* env,
     PVOID pInfo = jlong_to_ptr(infoAddress);
 
     if (pGetFileInformationByName == NULL) {
-        throwWindowsException(env, ERROR_NOT_SUPPORTED);
+        JNU_ThrowInternalError(env, "should not reach here");
         return;
     }
 
