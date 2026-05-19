@@ -203,7 +203,7 @@ bool ShenandoahHeuristics::should_start_gc() {
 }
 
 bool ShenandoahHeuristics::should_degenerate_cycle() {
-  return ShenandoahHeap::heap()->shenandoah_policy()->consecutive_degenerated_gc_count() <= ShenandoahFullGCThreshold;
+  return false;
 }
 
 void ShenandoahHeuristics::adjust_penalty(intx step) {

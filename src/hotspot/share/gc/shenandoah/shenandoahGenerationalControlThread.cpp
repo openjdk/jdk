@@ -145,7 +145,7 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   GCMode mode;
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
     mode = prepare_for_allocation_failure_gc(request);
-  } else if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
+  } else if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || request.cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     mode = prepare_for_explicit_gc(request);
   } else {
     mode = prepare_for_concurrent_gc(request);
@@ -644,10 +644,12 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const Sh
 }
 
 void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
-  if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-    notify_control_thread(cause);
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+    handle_alloc_failure_full();
+  } else if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
+    handle_requested_gc(cause, ShenandoahHeap::heap()->young_generation());
   } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
-    handle_requested_gc(cause);
+    handle_requested_gc(cause, ShenandoahHeap::heap()->global_generation());
   }
 }
 
@@ -740,7 +742,7 @@ bool ShenandoahGenerationalControlThread::preempt_old_marking(ShenandoahGenerati
   return generation->is_young() && _allow_old_preemption.try_unset();
 }
 
-void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause) {
+void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause, ShenandoahGeneration* generation) {
   // For normal requested GCs (System.gc) we want to block the caller. However,
   // for whitebox requested GC, we want to initiate the GC and return immediately.
   // The whitebox caller thread will arrange for itself to wait until the GC notifies
@@ -763,10 +765,30 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   size_t current_gc_id = get_gc_id();
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
-    // Make requests to run a global cycle until at least one is completed
-    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
+    // Make requests to run a cycle until at least one is completed
+    notify_control_thread(cause, generation);
     ml.wait();
     current_gc_id = get_gc_id();
+  }
+}
+
+void ShenandoahGenerationalControlThread::handle_alloc_failure_full() {
+  if (should_terminate()) {
+    log_info(gc)("Control thread is terminating, no more GCs");
+    return;
+  }
+
+  // Make sure we have at least one full GC cycle before unblocking
+  // from the explicit GC request.
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  const ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
+  MonitorLocker ml(&_gc_waiters_lock);
+  size_t full_gc_count = policy->full_gc_count();
+  const size_t required_count = full_gc_count + 1;
+  while (full_gc_count < required_count && !should_terminate()) {
+    notify_control_thread(GCCause::_shenandoah_upgrade_to_full_gc, heap->global_generation());
+    ml.wait();
+    full_gc_count = policy->full_gc_count();
   }
 }
 

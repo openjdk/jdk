@@ -62,6 +62,11 @@ private:
   }
 
 public:
+  // excludes old and degenerated gcs
+  size_t total_gc_count() const {
+    return _success_concurrent_gcs + _abbreviated_concurrent_gcs + _success_full_gcs;
+  }
+
   // The most common scenario for lack of good progress following a degenerated GC is an accumulation of floating
   // garbage during the most recently aborted concurrent GC effort.  Usually, it is far more effective to
   // reclaim this floating garbage with another degenerated cycle (which focuses on young generation and might require

@@ -121,8 +121,11 @@ private:
 
   void notify_gc_waiters();
 
-  // Blocks until at least one global GC cycle is complete.
-  void handle_requested_gc(GCCause::Cause cause);
+  // Blocks until at least one cycle is complete. WARNING: it doesn't know what kind of cycle will be run.
+  void handle_requested_gc(GCCause::Cause cause, ShenandoahGeneration* generation);
+
+  // Blocks until at least one full GC cycle is comp
+  void handle_alloc_failure_full();
 
   // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(ShenandoahGeneration* generation);

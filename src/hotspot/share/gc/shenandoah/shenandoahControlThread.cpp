@@ -23,6 +23,7 @@
  *
  */
 
+#include "gc/shared/allocTracer.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -356,7 +357,9 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
 }
 
 void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
-  if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+    handle_alloc_failure_full();
+  } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause);
   }
 }
@@ -402,6 +405,25 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
     notify_control_thread(cause);
     ml.wait();
     current_gc_id = get_gc_id();
+  }
+}
+
+void ShenandoahControlThread::handle_alloc_failure_full() {
+  if (should_terminate()) {
+    log_info(gc)("Control thread is terminating, no more GCs");
+    return;
+  }
+
+  // Make sure we have at least one full GC cycle before unblocking
+  // from the explicit GC request.
+  const ShenandoahCollectorPolicy* policy = ShenandoahHeap::heap()->shenandoah_policy();
+  MonitorLocker ml(&_gc_waiters_lock);
+  size_t full_gc_count = policy->full_gc_count();
+  const size_t required_count = full_gc_count + 1;
+  while (full_gc_count < required_count && !should_terminate()) {
+    notify_control_thread(GCCause::_shenandoah_upgrade_to_full_gc);
+    ml.wait();
+    full_gc_count = policy->full_gc_count();
   }
 }
 
