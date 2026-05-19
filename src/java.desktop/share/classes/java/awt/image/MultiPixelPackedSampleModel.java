@@ -111,8 +111,8 @@ public class MultiPixelPackedSampleModel extends SampleModel
                                        int numberOfBits) {
         this(dataType,w,h,
              numberOfBits,
-            (w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
-                DataBuffer.getDataTypeSize(dataType),
+            (int)(((long)w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
+                DataBuffer.getDataTypeSize(dataType)),
              0);
         if (dataType != DataBuffer.TYPE_BYTE &&
             dataType != DataBuffer.TYPE_USHORT &&
@@ -144,7 +144,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @throws IllegalArgumentException if {@code scanlineStride}
      *         is less than or equal to 0
      * @throws RasterFormatException if
-     *         {@code ((numberOfBits * w) + DataBuffer.getDataTypeSize(dataType) - 1)
+     *         {@code ((numberOfBits * (long)w) + DataBuffer.getDataTypeSize(dataType) - 1)
      *         / DataBuffer.getDataTypeSize(dataType)}
      *         is greater than {@code scanlineStride}
      * @throws RasterFormatException if the number of bits per pixel
