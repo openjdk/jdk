@@ -1187,7 +1187,7 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
     return 12;
   } else {
-    return 24 + MacroAssembler::instr_size_for_decode_klass_not_null();
+    return 20 + MacroAssembler::instr_size_for_load_klass();
   }
 }
 
@@ -1818,52 +1818,26 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     // VectorRegister->Memory Spill.
     else if (src_lo_rc == rc_vec && dst_lo_rc == rc_stack) {
       VectorSRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]).to_vsr();
-      if (PowerArchitecturePPC64 >= 9) {
-        if (masm) {
-          __ stxv(Rsrc, dst_offset, R1_SP); // matches storeV16_Power9
-        }
-        size += 4;
-      } else {
-        if (masm) {
-          __ addi(R0, R1_SP, dst_offset);
-          __ stxvd2x(Rsrc, R0); // matches storeV16_Power8
-        }
-        size += 8;
+      if (masm) {
+        __ stxv(Rsrc, dst_offset, R1_SP); // matches storeV16
       }
+      size += 4;
 #ifndef PRODUCT
       if (st != nullptr) {
-        if (PowerArchitecturePPC64 >= 9) {
-          st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "STXV", Matcher::regName[src_lo], dst_offset);
-        } else {
-          st->print("%-7s R0, R1_SP, %d \t// vector spill copy\n\t"
-                    "%-7s %s, [R0] \t// vector spill copy", "ADDI", dst_offset, "STXVD2X", Matcher::regName[src_lo]);
-        }
+        st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "STXV", Matcher::regName[src_lo], dst_offset);
       }
 #endif // !PRODUCT
     }
     // Memory->VectorRegister Spill.
     else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vec) {
       VectorSRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]).to_vsr();
-      if (PowerArchitecturePPC64 >= 9) {
-        if (masm) {
-          __ lxv(Rdst, src_offset, R1_SP);
-        }
-        size += 4;
-      } else {
-        if (masm) {
-          __ addi(R0, R1_SP, src_offset);
-          __ lxvd2x(Rdst, R0);
-        }
-        size += 8;
+      if (masm) {
+        __ lxv(Rdst, src_offset, R1_SP);
       }
+      size += 4;
 #ifndef PRODUCT
       if (st != nullptr) {
-        if (PowerArchitecturePPC64 >= 9) {
-          st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "LXV", Matcher::regName[dst_lo], src_offset);
-        } else {
-          st->print("%-7s R0, R1_SP, %d \t// vector spill copy\n\t"
-                    "%-7s %s, [R0] \t// vector spill copy", "ADDI", src_offset, "LXVD2X", Matcher::regName[dst_lo]);
-        }
+        st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "LXV", Matcher::regName[dst_lo], src_offset);
       }
 #endif // !PRODUCT
     }
@@ -2284,7 +2258,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_UMaxV:
       return bt == T_INT || bt == T_LONG;
     case Op_NegVI:
-      return PowerArchitecturePPC64 >= 9 && bt == T_INT;
+      return bt == T_INT;
   }
   return true; // Per default match rules are supported.
 }
@@ -2322,10 +2296,12 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 // Vector width in bytes.
 int Matcher::vector_width_in_bytes(BasicType bt) {
   if (SuperwordUseVSX) {
-    assert(MaxVectorSize == 16, "");
+    assert(MaxVectorSize == 16,
+           "SuperwordUseVSX requires MaxVectorSize 16, got " INT64_FORMAT, (int64_t)MaxVectorSize);
     return 16;
   } else {
-    assert(MaxVectorSize == 8, "");
+    assert(MaxVectorSize == 8,
+           "expected MaxVectorSize 8, got " INT64_FORMAT, (int64_t)MaxVectorSize);
     return 8;
   }
 }
@@ -2333,10 +2309,14 @@ int Matcher::vector_width_in_bytes(BasicType bt) {
 // Vector ideal reg.
 uint Matcher::vector_ideal_reg(int size) {
   if (SuperwordUseVSX) {
-    assert(MaxVectorSize == 16 && size == 16, "");
+    assert(MaxVectorSize == 16 && size == 16,
+           "SuperwordUseVSX requires MaxVectorSize 16 and size 16, got MaxVectorSize=" INT64_FORMAT ", size=%d",
+           (int64_t)MaxVectorSize, size);
     return Op_VecX;
   } else {
-    assert(MaxVectorSize == 8 && size == 8, "");
+    assert(MaxVectorSize == 8 && size == 8,
+           "expected MaxVectorSize 8 and size 8, got MaxVectorSize=" INT64_FORMAT ", size=%d",
+           (int64_t)MaxVectorSize, size);
     return Op_RegL;
   }
 }
@@ -5413,23 +5393,9 @@ instruct loadV8(iRegLdst dst, memoryAlg4 mem) %{
   ins_pipe(pipe_class_memory);
 %}
 
-// Load Aligned Packed Byte
-// Note: The Power8 instruction loads the contents in a special order in Little Endian mode.
-instruct loadV16_Power8(vecX dst, indirect mem) %{
-  predicate(n->as_LoadVector()->memory_size() == 16 && PowerArchitecturePPC64 == 8);
-  match(Set dst (LoadVector mem));
-  ins_cost(MEMORY_REF_COST);
 
-  format %{ "LXVD2X      $dst, $mem \t// load 16-byte Vector" %}
-  size(4);
-  ins_encode %{
-    __ lxvd2x($dst$$VectorRegister.to_vsr(), $mem$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct loadV16_Power9(vecX dst, memoryAlg16 mem) %{
-  predicate(n->as_LoadVector()->memory_size() == 16 && PowerArchitecturePPC64 >= 9);
+instruct loadV16(vecX dst, memoryAlg16 mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 16);
   match(Set dst (LoadVector mem));
   ins_cost(MEMORY_REF_COST);
 
@@ -6424,23 +6390,9 @@ instruct storeA8B(memoryAlg4 mem, iRegLsrc src) %{
   ins_pipe(pipe_class_memory);
 %}
 
-// Store Packed Byte long register to memory
-// Note: The Power8 instruction stores the contents in a special order in Little Endian mode.
-instruct storeV16_Power8(indirect mem, vecX src) %{
-  predicate(n->as_StoreVector()->memory_size() == 16 && PowerArchitecturePPC64 == 8);
-  match(Set mem (StoreVector mem src));
-  ins_cost(MEMORY_REF_COST);
 
-  format %{ "STXVD2X     $mem, $src \t// store 16-byte Vector" %}
-  size(4);
-  ins_encode %{
-    __ stxvd2x($src$$VectorRegister.to_vsr(), $mem$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct storeV16_Power9(memoryAlg16 mem, vecX src) %{
-  predicate(n->as_StoreVector()->memory_size() == 16 && PowerArchitecturePPC64 >= 9);
+instruct storeV16(memoryAlg16 mem, vecX src) %{
+  predicate(n->as_StoreVector()->memory_size() == 16);
   match(Set mem (StoreVector mem src));
   ins_cost(MEMORY_REF_COST);
 
@@ -12480,6 +12432,19 @@ instruct countTrailingZerosL_cnttzd(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Expand nodes for byte_reverse_int/ushort/short.
+instruct rlwinm(iRegIdst dst, iRegIsrc src, immI16 shift, immI16 mb, immI16 me) %{
+  effect(DEF dst, USE src, USE shift, USE mb, USE me);
+  predicate(false);
+
+  format %{ "RLWINM  $dst, $src, $shift, $mb, $me" %}
+  size(4);
+  ins_encode %{
+    __ rlwinm($dst$$Register, $src$$Register, $shift$$constant, $mb$$constant, $me$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Expand nodes for byte_reverse_int.
 instruct insrwi_a(iRegIdst dst, iRegIsrc src, immI16 n, immI16 b) %{
   effect(DEF dst, USE src, USE n, USE b);
@@ -12636,32 +12601,20 @@ instruct bytes_reverse_long(iRegLdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Need zero extend. Must not use brh only.
 instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIsrc src) %{
   match(Set dst (ReverseBytesUS src));
-  predicate(!UseByteReverseInstructions);
   ins_cost(2*DEFAULT_COST);
 
   expand %{
+    immI16  imm31 %{ (int) 31 %}
+    immI16  imm24 %{ (int) 24 %}
     immI16  imm16 %{ (int) 16 %}
     immI16   imm8 %{ (int)  8 %}
 
-    urShiftI_reg_imm(dst, src, imm8);
+    rlwinm(dst, src, imm24, imm24, imm31);
     insrwi(dst, src, imm8, imm16);
   %}
-%}
-
-instruct bytes_reverse_ushort(iRegIdst dst, iRegIsrc src) %{
-  match(Set dst (ReverseBytesUS src));
-  predicate(UseByteReverseInstructions);
-  ins_cost(DEFAULT_COST);
-  size(4);
-
-  format %{ "BRH  $dst, $src" %}
-
-  ins_encode %{
-    __ brh($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_class_default);
 %}
 
 instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIsrc src) %{
@@ -13656,7 +13609,7 @@ instruct vneg2D_reg(vecX dst, vecX src) %{
 
 instruct vneg4I_reg(vecX dst, vecX src) %{
   match(Set dst (NegVI src));
-  predicate(PowerArchitecturePPC64 >= 9 && Matcher::vector_element_basic_type(n) == T_INT);
+  predicate(Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "VNEGW $dst,$src\t// negate int vector" %}
   size(4);
   ins_encode %{

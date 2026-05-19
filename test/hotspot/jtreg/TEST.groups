@@ -73,7 +73,8 @@ hotspot_misc = \
  -:hotspot_gc \
  -:hotspot_runtime \
  -:hotspot_serviceability \
- -:hotspot_containers
+ -:hotspot_containers \
+ -:hotspot_resourcehogs
 
 hotspot_native_sanity = \
   native_sanity
@@ -587,7 +588,8 @@ hotspot_metaspace = \
 tier1_runtime_appcds = \
   runtime/cds/appcds/aotCache/HelloAOTCache.java \
   runtime/cds/appcds/aotCode \
-  runtime/cds/appcds/HelloTest.java
+  runtime/cds/appcds/HelloTest.java \
+  -runtime/cds/appcds/aotCode/AOTCodeFlags.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \

@@ -55,6 +55,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -2814,6 +2815,17 @@ void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in
   }
 }
 
+void MacroAssembler::narrow_subword_type(Register reg, BasicType bt) {
+  assert(is_subword_type(bt), "required");
+  switch (bt) {
+  case T_BOOLEAN: andw(reg, reg, 1); break;
+  case T_BYTE:    sxtbw(reg, reg); break;
+  case T_CHAR:    uxthw(reg, reg); break;
+  case T_SHORT:   sxthw(reg, reg); break;
+  default:        ShouldNotReachHere();
+  }
+}
+
 void MacroAssembler::decrementw(Register reg, int value)
 {
   if (value < 0)  { incrementw(reg, -value);      return; }
@@ -2916,7 +2928,11 @@ void MacroAssembler::increment(Address dst, int value)
 
 // Push lots of registers in the bit set supplied.  Don't push sp.
 // Return the number of words pushed
-int MacroAssembler::push(unsigned int bitset, Register stack) {
+int MacroAssembler::push(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
 
   // Scan bitset to accumulate register pairs
@@ -2946,7 +2962,11 @@ int MacroAssembler::push(unsigned int bitset, Register stack) {
   return count;
 }
 
-int MacroAssembler::pop(unsigned int bitset, Register stack) {
+int MacroAssembler::pop(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
 
   // Scan bitset to accumulate register pairs
@@ -2978,7 +2998,11 @@ int MacroAssembler::pop(unsigned int bitset, Register stack) {
 
 // Push lots of registers in the bit set supplied.  Don't push sp.
 // Return the number of dwords pushed
-int MacroAssembler::push_fp(unsigned int bitset, Register stack, FpPushPopMode mode) {
+int MacroAssembler::push_fp(FloatRegSet regset, Register stack, FpPushPopMode mode) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
@@ -3091,7 +3115,11 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack, FpPushPopMode m
 }
 
 // Return the number of dwords popped
-int MacroAssembler::pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode) {
+int MacroAssembler::pop_fp(FloatRegSet regset, Register stack, FpPushPopMode mode) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
@@ -3201,7 +3229,11 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack, FpPushPopMode mo
 }
 
 // Return the number of dwords pushed
-int MacroAssembler::push_p(unsigned int bitset, Register stack) {
+int MacroAssembler::push_p(PRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   bool use_sve = false;
   int sve_predicate_size_in_slots = 0;
 
@@ -3238,7 +3270,11 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
 }
 
 // Return the number of dwords popped
-int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_p(PRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   bool use_sve = false;
   int sve_predicate_size_in_slots = 0;
 
@@ -6699,13 +6735,14 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src,
 // by the call to JavaThread::aarch64_get_thread_helper() or, indeed,
 // the call setup code.
 //
-// On Linux, aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On Linux and Windows, aarch64_get_thread_helper() is implemented in
+// assembly and clobbers only r0, r1, and flags.
 // On other systems, the helper is a usual C function.
 //
 void MacroAssembler::get_thread(Register dst) {
   RegSet saved_regs =
-    LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
-    NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
+    BSD_ONLY(RegSet::range(r0, r17) + lr - dst)
+    NOT_BSD (RegSet::range(r0, r1)  + lr - dst);
 
   protect_return_address();
   push(saved_regs, sp);
@@ -7237,4 +7274,21 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   b(slow);
 
   bind(unlocked);
+}
+
+// Rotate using USHR and SLI instructions (or copy, if rotate count is zero)
+void MacroAssembler::neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
+                                        FloatRegister src, int shift_amount) {
+  assert(src != dst, "did not expect src and dst to be the same register");
+
+  int esize = BitsPerByte << (T / 2);
+  int lshift = shift_amount & (esize - 1);
+
+  if (lshift == 0) {
+    // T & 1 == 0 => 64-bit arrangements, else 128-bit arrangements
+    orr(dst, (T & 1) == 0 ? T8B : T16B, src, src);
+  } else {
+    ushr(dst, T, src, esize - lshift);
+    sli(dst, T, src, lshift);
+  }
 }
