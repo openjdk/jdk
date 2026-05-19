@@ -102,6 +102,14 @@
   #include <elf.h>
 #endif
 
+#ifdef __FreeBSD__
+  #include <pthread_np.h>
+#endif
+
+#ifdef __NetBSD__
+#include <lwp.h>
+#endif
+
 #ifdef __APPLE__
   #include <libproc.h>
   #include <mach/task_info.h>
