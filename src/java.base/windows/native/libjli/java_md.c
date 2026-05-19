@@ -35,6 +35,7 @@
 #include <wtypes.h>
 #include <commctrl.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include <jni.h>
 #include "java.h"
@@ -504,45 +505,116 @@ static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar
     return ERROR_SUCCESS;
 }
 
-/* taken from hotspot and slightly adjusted for jli lib;
- * creates a UNC/ELP path from input 'path'
- * the return buffer is allocated in C heap and needs to be freed using
- * JLI_MemFree by the caller.
- */
-static wchar_t* create_unc_path(const char* path, errno_t* err) {
-    wchar_t* wpath = NULL;
-    if (path[0] == '\\' && path[1] == '\\') {
-        if (path[2] == '?' && path[3] == '\\') {
-            /* if it already has a \\?\ don't do the prefix */
-            *err = convert_to_unicode(path, L"", &wpath);
+static errno_t get_full_path(LPCWSTR unicode_path, LPWSTR* full_path) {
+    /* Get required buffer size to convert to full path. The return
+       value INCLUDES the terminating null character. */
+    DWORD full_path_len = GetFullPathNameW(unicode_path, 0, NULL, NULL);
+    if (full_path_len == 0) {
+        return EINVAL;
+    }
+
+    *full_path = (LPWSTR)JLI_MemAlloc(full_path_len * sizeof(WCHAR));
+    if (*full_path == NULL) {
+        return ENOMEM;
+    }
+
+    /* When the buffer has sufficient size, the return value EXCLUDES the
+       terminating null character */
+    if (GetFullPathNameW(unicode_path, full_path_len, *full_path, NULL) == 0) {
+        JLI_MemFree(*full_path);
+        *full_path = NULL;
+        return EINVAL;
+    }
+
+    return ERROR_SUCCESS;
+}
+
+static void set_path_prefix(const char* buf, const wchar_t** prefix,
+                            int* prefix_off, int* needs_fullpath) {
+    *prefix_off = 0;
+    *needs_fullpath = 1;
+
+    if (isalpha((unsigned char)buf[0]) && !IsDBCSLeadByte(buf[0])
+            && buf[1] == ':' && (buf[2] == '\\' || buf[2] == '/')) {
+        *prefix = L"\\\\?\\";
+    } else if ((buf[0] == '\\' || buf[0] == '/')
+            && (buf[1] == '\\' || buf[1] == '/')) {
+        if (buf[2] == '?' && (buf[3] == '\\' || buf[3] == '/')) {
+            *prefix = L"";
+            *needs_fullpath = 0;
         } else {
-            /* only UNC pathname includes double slashes here */
-            *err = convert_to_unicode(path, L"\\\\?\\UNC", &wpath);
+            *prefix = L"\\\\?\\UNC";
+            /* Overwrite the first char with the prefix, so \\share\path becomes
+             * \\?\UNC\share\path */
+            *prefix_off = 1;
         }
     } else {
-        *err = convert_to_unicode(path, L"\\\\?\\", &wpath);
+        *prefix = L"\\\\?\\";
     }
-    return wpath;
+}
+
+/* Adapted from HotSpot's wide_abs_unc_path() in os_windows.cpp. */
+static wchar_t* create_unc_path(const char* path, errno_t* err) {
+    *err = ERROR_SUCCESS;
+    if (path == NULL || path[0] == '\0') {
+        *err = ENOENT;
+        return NULL;
+    }
+
+    int prefix_off = 0;
+    int needs_fullpath = 1;
+    const wchar_t* prefix = NULL;
+    set_path_prefix(path, &prefix, &prefix_off, &needs_fullpath);
+
+    wchar_t* unicode_path = NULL;
+    *err = convert_to_unicode(path, L"", &unicode_path);
+    if (*err != ERROR_SUCCESS) {
+        return NULL;
+    }
+
+    wchar_t* full_path = NULL;
+    if (needs_fullpath) {
+        *err = get_full_path(unicode_path, &full_path);
+        if (*err != ERROR_SUCCESS) {
+            JLI_MemFree(unicode_path);
+            return NULL;
+        }
+    } else {
+        full_path = unicode_path;
+    }
+
+    wchar_t* result = NULL;
+    size_t prefix_len = wcslen(prefix);
+    size_t result_len = prefix_len - prefix_off + wcslen(full_path) + 1;
+    result = (wchar_t*)JLI_MemAlloc(result_len * sizeof(wchar_t));
+    if (result == NULL) {
+        *err = ENOMEM;
+    } else {
+        _snwprintf(result, result_len, L"%s%s", prefix, &full_path[prefix_off]);
+    }
+
+    if (full_path != unicode_path) {
+        JLI_MemFree(full_path);
+    }
+
+    JLI_MemFree(unicode_path);
+    return result;
 }
 
 int JLI_Open(const char* name, int flags) {
     int fd;
-    if (strlen(name) < MAX_PATH) {
-        fd = _open(name, flags);
-    } else {
-        errno_t err = ERROR_SUCCESS;
-        wchar_t* wpath = create_unc_path(name, &err);
-        if (err != ERROR_SUCCESS) {
-            if (wpath != NULL) JLI_MemFree(wpath);
-            errno = err;
-            return -1;
-        }
-        fd = _wopen(wpath, flags);
-        if (fd == -1) {
-            errno = GetLastError();
-        }
-        JLI_MemFree(wpath);
+    errno_t err = ERROR_SUCCESS;
+    wchar_t* wpath = create_unc_path(name, &err);
+    if (err != ERROR_SUCCESS) {
+        if (wpath != NULL) JLI_MemFree(wpath);
+        errno = err;
+        return -1;
     }
+    fd = _wopen(wpath, flags);
+    if (fd == -1) {
+        errno = GetLastError();
+    }
+    JLI_MemFree(wpath);
     return fd;
 }
 
