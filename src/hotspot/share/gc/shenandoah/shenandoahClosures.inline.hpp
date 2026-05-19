@@ -25,8 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 
-#include "shenandoahBarrierSet.hpp"
-#include "shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
 
 #include "gc/shared/barrierSetNMethod.hpp"
