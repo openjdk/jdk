@@ -47,9 +47,9 @@ import static java.lang.System.Logger.Level.ERROR;
 /**
  * Filter classes, array lengths, and graph metrics during deserialization.
  *
- * {@note [kind=critical header="Warning: Deserialization of untrusted data is inherently dangerous
- * and should be avoided."] Untrusted data should be carefully validated according to the
- * "Serialization and Deserialization" section of the
+ * {@note [kind=critical header="Warning:"] Deserialization of untrusted data is
+ * inherently dangerous and should be avoided. Untrusted data should be carefully
+ * validated according to the "Serialization and Deserialization" section of the
  * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.
  * {@extLink serialization_filter_guide Serialization Filtering} describes best
  * practices for defensive use of serial filters.
