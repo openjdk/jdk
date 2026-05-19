@@ -74,8 +74,7 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _queue(q),
         _old_queue(old_q),
         _mark_context(ShenandoahHeap::heap()->marking_context()),
-        _weak(false),
-        _reference_iteration_mode(DO_DISCOVERY) {}
+        _weak(false) {}
 
 template<class T, ShenandoahGenerationType GENERATION>
 inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
