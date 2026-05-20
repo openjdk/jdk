@@ -142,10 +142,16 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   }
 
   assert(request.generation != nullptr, "request.generation cannot be null, cause is: %s", GCCause::to_string(request.cause));
-  GCMode mode;
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
-    mode = prepare_for_allocation_failure_gc(request);
-  } else if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || request.cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+    // these things used to happen in preparation for a degenerated cycle.
+    _heap->old_generation()->clear_failed_evacuation();
+    request.generation->heuristics()->record_allocation_failure_gc();
+    // TODO: Do we still want to keep track of _degen_point? Do we care what phase is running when an allocation failure happens
+    _heap->shenandoah_policy()->record_alloc_failure_to_degenerated(_degen_point);
+  }
+
+  GCMode mode;
+  if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || request.cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     mode = prepare_for_explicit_gc(request);
   } else {
     mode = prepare_for_concurrent_gc(request);
