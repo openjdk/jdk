@@ -846,12 +846,16 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
   // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
   if (is_narrow) {
     if (is_acquire) {
+      assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
+          "is_acquire path requires address to be base-only");
       __ ldarw(dst, src.base());
     } else {
       __ ldrw(dst, src);
     }
   } else {
     if (is_acquire) {
+      assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
+          "is_acquire path requires address to be base-only");
       __ ldar(dst, src.base());
     } else {
       __ ldr(dst, src);
@@ -879,12 +883,16 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
     }
 
     if (is_volatile) {
+      assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
+          "is_acquire path requires address to be base-only");
       __ stlrw(src, dst.base());
     } else {
       __ strw(src, dst);
     }
   } else {
     if (is_volatile) {
+      assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
+          "is_acquire path requires address to be base-only");
       __ stlr(src, dst.base());
     } else {
       __ str(src, dst);
