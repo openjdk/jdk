@@ -46,11 +46,7 @@ void ThreadSampler::sample_all_java_threads() {
     }
 
     CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == nullptr) {
-      continue;
-    }
-
-    if (cb->is_nmethod()) {
+    if (cb != nullptr && cb->is_nmethod()) {
       bool created = false;
       int *count = _samples.put_if_absent(cb->as_nmethod(), 0, &created);
       (*count)++;
