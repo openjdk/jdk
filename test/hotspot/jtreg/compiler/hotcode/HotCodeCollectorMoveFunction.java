@@ -85,6 +85,8 @@ public class HotCodeCollectorMoveFunction {
     public static void func() {
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < FUNC_RUN_MILLIS) {
+            // Perform multiplicative LCG to ensure the compiler does not optimize away the code.
+            // Integer overflow is used for the modulus so the loop terminates after (2^32)/4 iterations
             int num = 1;
             do {
                 blackholeCount++;
