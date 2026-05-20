@@ -1225,16 +1225,17 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     ShenandoahGenerationalHeap::heap()->set_aging_cycle(false);
   }
 
-  if (ShenandoahVerify) {
-    ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_update_refs_verify);
-    heap->verifier()->verify_after_update_refs(_generation);
-  }
-
   if (VerifyAfterGC) {
     Universe::verify();
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
+
+  if (ShenandoahVerify) {
+    ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_update_refs_verify);
+    heap->verifier()->verify_after_update_refs(_generation);
+  }
+
   _generation->heuristics()->start_idle_span();
 
   {
