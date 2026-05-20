@@ -1274,19 +1274,26 @@ void* AllocChunk(cmsIT8* it8, cmsUInt32Number size)
 
         it8 ->Allocator.Used = 0;
         new_block = (cmsUInt8Number*)AllocBigBlock(it8, it8->Allocator.BlockSize);
-        if (new_block == NULL)
-            return NULL;
+        if (new_block == NULL) goto Error;
 
         it8->Allocator.Block = new_block;
     }
 
     if (it8->Allocator.Block == NULL)
-        return NULL;
+        goto Error;
 
     ptr = it8 ->Allocator.Block + it8 ->Allocator.Used;
     it8 ->Allocator.Used += size;
 
     return (void*) ptr;
+
+Error:
+
+    SynError(it8, "Allocation error");
+    it8->Allocator.BlockSize = 0;
+    it8->Allocator.Used = 0;
+    it8->Allocator.Block = NULL;
+    return NULL;
 }
 
 
@@ -1706,8 +1713,8 @@ cmsBool SetDataFormat(cmsIT8* it8, int n, const char *label)
             return FALSE;
     }
 
-    if (n >= t -> nSamples) {
-        SynError(it8, "More than NUMBER_OF_FIELDS fields.");
+    if (n < 0 || n >= t -> nSamples) {
+        SynError(it8, "Invalid or more than NUMBER_OF_FIELDS fields.");
         return FALSE;
     }
 
@@ -1720,9 +1727,11 @@ cmsBool SetDataFormat(cmsIT8* it8, int n, const char *label)
 }
 
 
-cmsBool CMSEXPORT cmsIT8SetDataFormat(cmsHANDLE  h, int n, const char *Sample)
+cmsBool CMSEXPORT cmsIT8SetDataFormat(cmsHANDLE h, int n, const char *Sample)
 {
     cmsIT8* it8 = (cmsIT8*)h;
+
+    _cmsAssert(n >= 0);
     return SetDataFormat(it8, n, Sample);
 }
 
@@ -3144,6 +3153,8 @@ cmsBool ParseCube(cmsIT8* cube, cmsStage** Shaper, cmsStage** CLUT, char title[]
             InSymbol(cube);
             if (!Check(cube, SINUM, "Shaper size expected")) return FALSE;
             shaper_size = cube->inum;
+            if (shaper_size < 2 || shaper_size > 65536)
+                 return SynError(cube, "LUT_1D_SIZE '%d' is out of bounds", shaper_size);
             InSymbol(cube);
             break;
 
@@ -3209,7 +3220,16 @@ cmsBool ParseCube(cmsIT8* cube, cmsStage** Shaper, cmsStage** CLUT, char title[]
 
             if (lut_size > 0) {
 
-                int nodes = lut_size * lut_size * lut_size;
+                int nodes;
+
+                /**
+                * Professional LUT generation tools (e.g., Nobe LutBake) list 65×65×65 as their highest supported size.
+                */
+                if (lut_size < 2 || lut_size > 65)
+                    return SynError(cube, "LUT size '%d' is not allowed", lut_size);
+
+                nodes = lut_size * lut_size * lut_size;
+
 
                 cmsFloat32Number* lut_table = (cmsFloat32Number*) _cmsMalloc(cube->ContextID, nodes * 3 * sizeof(cmsFloat32Number));
                 if (lut_table == NULL) return FALSE;
@@ -3280,13 +3300,17 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
 
     // Populates the pipeline
     if (Shaper != NULL) {
-        if (!cmsPipelineInsertStage(Pipeline, cmsAT_BEGIN, Shaper))
+        if (!cmsPipelineInsertStage(Pipeline, cmsAT_BEGIN, Shaper)) {
+            cmsStageFree(Shaper);
             goto Done;
+        }
     }
 
     if (CLUT != NULL) {
-        if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT))
+        if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT)) {
+            cmsStageFree(CLUT);
             goto Done;
+        }
     }
 
     // Propagate the description. We put no copyright because we know

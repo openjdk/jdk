@@ -893,13 +893,11 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   Register tmp2 = stub->tmp2()->as_register();
   assert_different_registers(addr, res, tmp1, tmp2);
 
-#ifdef ASSERT
-  // Ensure that 'res' is 'R3_ARG1' and contains the same value as 'obj' to reduce the number of required
-  // copy instructions.
   assert(R3_RET == res, "res must be r3");
-  __ cmpd(CR0, res, obj);
-  __ asm_assert_eq("result register must contain the reference stored in obj");
-#endif
+
+  if (res != obj) {
+    __ mr(res, obj);
+  }
 
   DecoratorSet decorators = stub->decorators();
 
@@ -1034,7 +1032,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   __ save_volatile_gprs(R1_SP, -nbytes_save, true, false);
 
   // Load arguments from stack.
-  // No load required, as assured by assertions in 'ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub'.
+  // No load required, as caller has already loaded obj into R3.
   Register R3_obj = R3_ARG1;
   Register R4_load_addr = R4_ARG2;
   __ ld(R4_load_addr, -8, R1_SP);
