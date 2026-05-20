@@ -399,6 +399,8 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
     if (_old_generation_ref_processor != nullptr) {
       log_trace(gc,ref)("Discovered reference for old: " PTR_FORMAT, p2i(reference));
       _old_generation_ref_processor->discover_reference(reference, type);
+      // Whether old discovered this reference or not, we must still mark it during
+      // young, or we risk having the reference itself be reclaimed as garbage.
       mark_discovered_reference_with_old_referent(reference);
       return true;
     }
