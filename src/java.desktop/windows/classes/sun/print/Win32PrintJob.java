@@ -602,8 +602,8 @@ public final class Win32PrintJob implements CancelablePrintJob {
         String userName = System.getProperty("user.name");
 
         if (userName == null || userName.isEmpty()) {
-            RequestingUserName ruName =
-                (RequestingUserName)reqSet.get(RequestingUserName.class);
+            RequestingUserName ruName = (reqSet != null) ?
+                (RequestingUserName)reqSet.get(RequestingUserName.class) : null;
             if (ruName != null) {
                 jobAttrSet.add(
                     new JobOriginatingUserName(ruName.getValue(),
