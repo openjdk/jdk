@@ -66,9 +66,7 @@ import javax.print.attribute.PrintRequestAttribute;
  * <p>
  * The rectangular printable area is defined thus: The (x,y) origin is
  * positioned at the top-left of the paper in portrait mode regardless of the
- * orientation specified in the requesting context. For example a printable area
- * for A4 paper in portrait or landscape orientation will have height
- * {@literal >} width.
+ * orientation specified in the requesting context.
  * <p>
  * A printable area attribute's values are stored internally as integers in
  * units of micrometers (&#181;m), where 1 micrometer = 10<SUP>-6</SUP> meter =
