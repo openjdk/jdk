@@ -36,6 +36,7 @@
 
 package compiler.rangechecks;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
@@ -65,6 +66,9 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * - Other test generators currently don't have IR rules, but check
  *   correctness in various relevant scenarios I came across during
  *   the bugfix of JDK-8346420.
+ * - I'm also mixing signed and unsigned comparisons, just to ensure
+ *   the less often used (and tested) unsigned comparisons don't slip
+ *   through the cracks.
  *
  * In the future, we could add more cases:
  * - Extend to long - though the optimization does not yet cover longs anyway.
@@ -125,25 +129,48 @@ public class TestFoldComparesFuzzer {
     }
 
     enum Comparator {
-        LT(" < "),
-        LE(" <= "),
-        GT(" > "),
-        GE(" >= "),
-        EQ(" == "),
-        NE(" != ");
+        ULT(" <  0", false),
+        ULE(" <= 0", false),
+        UGT(" >  0", false),
+        UGE(" >= 0", false),
+        UEQ(" == 0", false),
+        UNE(" != 0", false),
+        LT(" <  ", true),
+        LE(" <= ", true),
+        GT(" >  ", true),
+        GE(" >= ", true),
+        EQ(" == ", true),
+        NE(" != ", true);
+
+
+        // TODO: rm
+        private static final List<Comparator> SIGNED = Arrays.stream(values())
+            .filter(Comparator::isSigned).toList();
 
         private final String token;
+        private final boolean signed;
 
-        Comparator(String token) {
+        Comparator(String token, boolean signed) {
             this.token = token;
+            this.signed = signed;
         }
 
         public String getToken() {
             return token;
         }
 
+        public boolean isSigned() {
+            return signed;
+        }
+
         public Comparator negate() {
             return switch(this) {
+                case ULT -> UGE;
+                case ULE -> UGT;
+                case UGT -> ULE;
+                case UGE -> ULT;
+                case UEQ -> UNE;
+                case UNE -> UEQ;
                 case LT -> GE;
                 case LE -> GT;
                 case GT -> LE;
@@ -155,6 +182,12 @@ public class TestFoldComparesFuzzer {
 
         public Comparator flip() {
             return switch(this) {
+                case ULT -> UGT;
+                case ULE -> UGE;
+                case UGT -> ULT;
+                case UGE -> ULE;
+                case UEQ -> UEQ;
+                case UNE -> UNE;
                 case LT -> GT;
                 case LE -> GE;
                 case GT -> LT;
@@ -164,7 +197,11 @@ public class TestFoldComparesFuzzer {
             };
         }
 
-        static Comparator random() {
+        static Comparator randomSigned() {
+            return SIGNED.get(RANDOM.nextInt(SIGNED.size()));
+        }
+
+        static Comparator randomSignedOrUnsigned() {
             return values()[RANDOM.nextInt(values().length)];
         }
 
@@ -183,7 +220,9 @@ public class TestFoldComparesFuzzer {
         }
 
         public String toString() {
-            return (negated ? "!" : "") + "(" + lhs + " "+ cmp.getToken() + " " + rhs + ")";
+            return cmp.isSigned()
+                ? ((negated ? "!" : "") + "(" + lhs + " "+ cmp.getToken() + " " + rhs + ")")
+                : ((negated ? "!" : "") + "(Integer.compareUnsigned(" + lhs + ", " + rhs + ")" + cmp.getToken() + ")");
         }
 
         // Keep the same semantics of the test, but change its form.
@@ -230,8 +269,8 @@ public class TestFoldComparesFuzzer {
         private final int con1 = INT_GEN.next();
         private final int con2 = INT_GEN.next();
 
-        private final Comparison c1 = new Comparison("n", Comparator.random(), "con1").permuteRandom();
-        private final Comparison c2 = new Comparison("n", Comparator.random(), "con2").permuteRandom();
+        private final Comparison c1 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "con1").permuteRandom();
+        private final Comparison c2 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "con2").permuteRandom();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("con1", con1),
@@ -267,8 +306,8 @@ public class TestFoldComparesFuzzer {
         private final String m1 = RANDOM.nextBoolean() ? "Integer.MIN_VALUE" : "Integer.MAX_VALUE";
         private final String m2 = RANDOM.nextBoolean() ? "Integer.MIN_VALUE" : "Integer.MAX_VALUE";
 
-        private final Comparison c1 = new Comparison("n", Comparator.random(), "a").permuteRandom();
-        private final Comparison c2 = new Comparison("n", Comparator.random(), "b").permuteRandom();
+        private final Comparison c1 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "a").permuteRandom();
+        private final Comparison c2 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "b").permuteRandom();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("con1", con1),
@@ -306,8 +345,8 @@ public class TestFoldComparesFuzzer {
         private final int b_hi = INT_GEN.next();
         private final int b_lo = INT_GEN.next();
 
-        private final Comparison c1 = new Comparison("n", Comparator.random(), "a").permuteRandom();
-        private final Comparison c2 = new Comparison("n", Comparator.random(), "b").permuteRandom();
+        private final Comparison c1 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "a").permuteRandom();
+        private final Comparison c2 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "b").permuteRandom();
 
         private final Template.OneArg<String> template = Template.make("methodName", (String methodName) -> scope(
             let("n_hi", n_hi),
@@ -599,8 +638,8 @@ public class TestFoldComparesFuzzer {
         private final int size = INT_GEN.restricted(0, 100_000).next();
 
         // Get checks like: n < a || n >= arr.length
-        private final Comparison c_lo = new Comparison("n", Comparator.random(), "a").permuteRandom();
-        private final Comparison c_hi = new Comparison("n", Comparator.random(), "arr.length").permuteRandom();
+        private final Comparison c_lo = new Comparison("n", Comparator.randomSignedOrUnsigned(), "a").permuteRandom();
+        private final Comparison c_hi = new Comparison("n", Comparator.randomSignedOrUnsigned(), "arr.length").permuteRandom();
         private final boolean swap = RANDOM.nextBoolean();
         private final Comparison c1Permuted = (swap ? c_lo : c_hi).permuteRandom();
         private final Comparison c2Permuted = (swap ? c_hi : c_lo).permuteRandom();
