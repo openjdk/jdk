@@ -131,7 +131,7 @@ class ZBarrierSet::ZClonerOopClosure : public BasicOopIterateClosure {
   const zaddress _src;
   const zaddress _dst;
   const size_t _size;
-  const bool _may_elide_store_barrier;
+  const bool _is_dst_old;
 
   size_t _copied_bytes;
 
@@ -158,7 +158,7 @@ public:
     : _src(src),
       _dst(dst),
       _size(size),
-      _may_elide_store_barrier(initializing_stores_may_elide_store_barriers(dst)),
+      _is_dst_old(ZHeap::heap()->page(dst)->is_old()),
       _copied_bytes(0) {}
 
   ~ZClonerOopClosure() {
@@ -184,12 +184,7 @@ public:
     // Clone the oop element or field
     const zaddress element_or_field = ZBarrier::load_barrier_on_oop_field(src_p);
 
-    if (!_may_elide_store_barrier) {
-      // The newly allocated object has been or is being tenured and cannot skip
-      // store barriers. This can occur because of segmented large allocations,
-      // or serviceability APIs which run Java code between object allocation and
-      // object initialization.
-
+    if (_is_dst_old) {
       // We avoid healing here because the store below colors the pointer store good,
       // hence avoiding the cost of a CAS.
       ZBarrier::store_barrier_on_heap_oop_field(dst_p, false /* heal */);
@@ -209,10 +204,6 @@ void ZBarrierSet::clone_obj(zaddress src, zaddress dst, size_t size) {
   // Clone the object
   ZClonerOopClosure cl(src, dst, size);
   ZIterator::oop_iterate(to_oop(src), &cl);
-}
-
-bool ZBarrierSet::initializing_stores_may_elide_store_barriers(zaddress new_obj) {
-  return ZHeap::heap()->page(new_obj)->allows_raw_null();
 }
 
 ZBarrierSet::ZBarrierSet()
@@ -292,7 +283,7 @@ static void deoptimize_allocation(JavaThread* thread) {
 }
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
-  if (!initializing_stores_may_elide_store_barriers(to_zaddress(new_obj))) {
+  if (!ZHeap::heap()->page(to_zaddress(new_obj))->allows_raw_null()) {
     // We promised C2 that its allocations would end up in young gen. This object
     // is too old to guarantee that. Take a few steps in the interpreter instead,
     // which does not elide barriers based on the age of an object.

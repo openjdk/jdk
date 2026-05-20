@@ -51,8 +51,6 @@ private:
   class ZClonerOopClosure;
   static void clone_obj(zaddress src, zaddress dst, size_t size);
 
-  static bool initializing_stores_may_elide_store_barriers(zaddress new_obj);
-
 public:
   ZBarrierSet();
 
