@@ -63,6 +63,7 @@ package gc.shenandoah.generational;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.ref.ReferenceQueue;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
@@ -87,7 +88,7 @@ public class TestGenerationalReferenceProcessing {
     private static final int OBJECTS_PER_REGION = REGION_SIZE / OBJECT_SIZE / 2;
     private static final int OBJECT_COUNT = OBJECTS_PER_REGION * REGIONS_TO_FILL;
 
-    private static final List<WeakReference<?>> WEAK_REFS = new ArrayList<>(OBJECT_COUNT);
+    private static final Collection<WeakReference<?>> WEAK_REFS = new HashSet<>(OBJECT_COUNT);
     private static final List<LeakedObject> REFERENTS = new ArrayList<>(OBJECT_COUNT);
     private static final ReferenceQueue<LeakedObject> REF_QUEUE = new ReferenceQueue<>();
 
@@ -106,8 +107,7 @@ public class TestGenerationalReferenceProcessing {
         void classify() {
             clear();
 
-            for (int j = 0; j < TestGenerationalReferenceProcessing.WEAK_REFS.size(); ++j) {
-                var weakRef = TestGenerationalReferenceProcessing.WEAK_REFS.get(j);
+            for (var weakRef : TestGenerationalReferenceProcessing.WEAK_REFS) {
                 var referent = weakRef.get();
                 if (referent != null) {
                     int row = WB.isObjectInOldGen(weakRef) ? OLD : YOUNG;
@@ -138,16 +138,22 @@ public class TestGenerationalReferenceProcessing {
         }
     }
 
+    public static void usage() {
+        System.out.println("Call with generation to test: young|old");
+        throw new IllegalArgumentException("Missing required argument: young|old");
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
-            System.out.println("Call with generation to test: young|old");
-            throw new IllegalArgumentException("Missing required argument: young|old");
+            usage();
         }
 
         if ("young".equals(args[0])) {
             testCollectCrossGenerationalReferents(OLD, YOUNG);
         } else if ("old".equals(args[0])) {
             testCollectCrossGenerationalReferents(YOUNG, OLD);
+        } else {
+            usage();
         }
     }
 
@@ -257,7 +263,6 @@ public class TestGenerationalReferenceProcessing {
     }
 
     private static void allocateReferences(int regions) {
-
         // Fill up regions that are equal parts garbage and references
         // We want to create cross region references to increase the chances
         // of cross generational references.
