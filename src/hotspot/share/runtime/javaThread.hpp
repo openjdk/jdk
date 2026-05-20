@@ -26,6 +26,9 @@
 #ifndef SHARE_RUNTIME_JAVATHREAD_HPP
 #define SHARE_RUNTIME_JAVATHREAD_HPP
 
+#ifndef PRODUCT
+#include "interpreter/bytecodeTracer.hpp"
+#endif // PRODUCT
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -291,6 +294,16 @@ class JavaThread: public Thread {
   }
 #endif // ASSERT
 
+#ifndef PRODUCT
+ private:
+  BytecodeTracerData _bytecode_tracer_data;
+
+ public:
+  BytecodeTracerData* bytecode_tracer_data() {
+    return &_bytecode_tracer_data;
+  }
+#endif // PRODUCT
+
   // JavaThread termination support
  public:
   enum TerminatedTypes {
@@ -445,8 +458,11 @@ class JavaThread: public Thread {
   volatile address _exception_handler_pc;        // PC for handler of exception
 
  private:
-  // support for JNI critical regions
+  // support for JNI critical regions interaction with GC
   jint    _jni_active_critical;                  // count of entries into JNI critical region
+
+  // support for JNI critical regions deferral of JVM TI suspension
+  jint    _jni_deferred_suspension_count;
 
   // Checked JNI: function name requires exception check
   char* _pending_jni_exception_check_fn;
@@ -967,9 +983,18 @@ public:
     _jni_active_critical--;
     assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
   }
-
   // Atomic version; invoked by a thread other than the owning thread.
   bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
+
+  bool jni_deferred_suspension() { return AtomicAccess::load(&_jni_deferred_suspension_count); }
+  inline void enter_jni_deferred_suspension();
+  void exit_jni_deferred_suspension() {
+    precond(Thread::current() == this);
+    int sc = AtomicAccess::load(&_jni_deferred_suspension_count);
+    AtomicAccess::store(&_jni_deferred_suspension_count, sc - 1);
+    assert(_jni_deferred_suspension_count >= 0,
+           "JNI deferred suspension nesting problem?");
+  }
 
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the

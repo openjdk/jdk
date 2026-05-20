@@ -98,29 +98,6 @@ inline void G1CollectorState::assert_is_young_pause(Pause type) {
   assert(type != Pause::Cleanup, "must be");
 }
 
-inline bool G1CollectorState::is_young_only_pause(Pause type) {
-  assert_is_young_pause(type);
-  return type == Pause::ConcurrentStartUndo ||
-         type == Pause::ConcurrentStartFull ||
-         type == Pause::PrepareMixed ||
-         type == Pause::Normal;
-}
-
-inline bool G1CollectorState::is_mixed_pause(Pause type) {
-  assert_is_young_pause(type);
-  return type == Pause::Mixed;
-}
-
-inline bool G1CollectorState::is_prepare_mixed_pause(Pause type) {
-  assert_is_young_pause(type);
-  return type == Pause::PrepareMixed;
-}
-
-inline bool G1CollectorState::is_concurrent_start_pause(Pause type) {
-  assert_is_young_pause(type);
-  return type == Pause::ConcurrentStartFull || type == Pause::ConcurrentStartUndo;
-}
-
 inline bool G1CollectorState::is_concurrent_cycle_pause(Pause type) {
   return type == Pause::Cleanup || type == Pause::Remark;
 }

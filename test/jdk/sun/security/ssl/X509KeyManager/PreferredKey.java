@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,89 +21,91 @@
  * questions.
  */
 
-//
-// Security properties, once set, cannot revert to unset.  To avoid
-// conflicts with tests running in the same VM isolate this test by
-// running it in otherVM mode.
-//
-
 /*
  * @test
  * @bug 6302644
  * @summary X509KeyManager implementation for NewSunX509 doesn't return most
  *          preferable key
- * @run main/othervm PreferredKey
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.util
+ * @library /test/lib
  */
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import javax.net.ssl.*;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.security.CertificateBuilder;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 public class PreferredKey {
 
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
-     * Where do we find the keystores?
-     */
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String passwd = "passphrase";
-
-
     public static void main(String[] args) throws Exception {
-        // MD5 is used in this test case, don't disable MD5 algorithm.
-        Security.setProperty("jdk.certpath.disabledAlgorithms",
-                "MD2, RSA keySize < 1024");
-        Security.setProperty("jdk.tls.disabledAlgorithms",
-                "SSLv3, RC4, DH keySize < 768");
+        X509KeyManager km = getKeyManager();
 
-        KeyStore ks;
-        KeyManagerFactory kmf;
-        X509KeyManager km;
+        testPreferredKey(km, "RSA", new String[] {"RSA", "DSA"});
+        testPreferredKey(km, "DSA", new String[] {"DSA", "RSA"});
+    }
 
-        String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        char [] password = passwd.toCharArray();
+    private static void testPreferredKey(X509KeyManager km,
+                                         String keyType,
+                                         String[] multiKeyTypes) {
+        String[] aliases = km.getClientAliases(keyType, null);
+        String alias = km.chooseClientAlias(multiKeyTypes, null, null);
 
-        ks = KeyStore.getInstance(new File(keyFilename), password);
-        kmf = KeyManagerFactory.getInstance("NewSunX509");
-        kmf.init(ks, password);
-        km = (X509KeyManager) kmf.getKeyManagers()[0];
+        Asserts.assertTrue(aliases != null && alias != null,
+                "Should return preferred alias");
 
-        /*
-         * There should be both an rsa and a dsa entry in the
-         * keystore, otherwise the test will no work.
-         */
-        String[] aliases = km.getClientAliases("RSA", null);
-        String alias = km.chooseClientAlias(new String[] {"RSA", "DSA"},
-                                     null, null);
+        String algorithm = km.getPrivateKey(alias).getAlgorithm();
+        Asserts.assertTrue(algorithm.equals(keyType) && algorithm.equals(
+                km.getPrivateKey(aliases[0]).getAlgorithm()),
+                "Failed to get the preferable key aliases");
+    }
 
-        // there're should both be null or nonnull
-        if (aliases != null || alias != null) {
-            String algorithm = km.getPrivateKey(alias).getAlgorithm();
-            if (!algorithm.equals("RSA") || !algorithm.equals(
-                        km.getPrivateKey(aliases[0]).getAlgorithm())) {
-                throw new Exception("Failed to get the preferable key aliases");
-            }
-        }
+    private static X509KeyManager getKeyManager() throws Exception {
+        char[] passphrase = "passphrase".toCharArray();
 
-        aliases = km.getClientAliases("DSA", null);
-        alias = km.chooseClientAlias(new String[] {"DSA", "RSA"},
-                                     null, null);
+        KeyPair rsaKey = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        KeyPair dsaKey = KeyPairGenerator.getInstance("DSA").generateKeyPair();
 
-        // there're should both be null or nonnull
-        if (aliases != null || alias != null) {
-            String algorithm = km.getPrivateKey(alias).getAlgorithm();
-            if (!algorithm.equals("DSA") || !algorithm.equals(
-                        km.getPrivateKey(aliases[0]).getAlgorithm())) {
-                throw new Exception("Failed to get the preferable key aliases");
-            }
-        }
+        // create a key store
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(null, passphrase);
+
+        ks.setKeyEntry("dummyrsa",
+                rsaKey.getPrivate(),
+                passphrase,
+                new Certificate[]{createSelfSignedCert(rsaKey,
+                        "SHA256withRSA")});
+        ks.setKeyEntry("dummydsa",
+                dsaKey.getPrivate(),
+                passphrase,
+                new Certificate[]{createSelfSignedCert(dsaKey,
+                        "SHA256withDSA")});
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
+        kmf.init(ks, passphrase);
+
+        return (X509KeyManager) kmf.getKeyManagers()[0];
+    }
+
+    private static X509Certificate createSelfSignedCert(KeyPair caKeys,
+                                                        String keyAlg)
+            throws CertificateException, IOException {
+        return (new CertificateBuilder()
+                .setSubjectName("CN=dummy.example.com, OU=Dummy, " +
+                        "O=Dummy, L=Cupertino, ST=CA, C=US")
+                .setPublicKey(caKeys.getPublic())
+                .setOneHourValidity()
+                .setSerialNumber(BigInteger.valueOf(
+                        new SecureRandom().nextLong(1000000) + 1))
+        ).build(null, caKeys.getPrivate(), keyAlg);
     }
 }
