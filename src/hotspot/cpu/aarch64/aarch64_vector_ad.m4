@@ -730,6 +730,14 @@ BINARY_OP_NEON_SVE_PAIRWISE(vmulI, MulVI, mulv, sve_mul, S)
 instruct vmulL_neon(vReg dst, vReg src1, vReg src2) %{
   predicate(UseSVE == 0);
   match(Set dst (MulVL src1 src2));
+  // TEMP_DEF dst: NEON has no T2D mul, so we lower MulVL to per-lane GPR
+  // extract-mul-insert. The "mov dst.D[0]" inherits a partial-write merge
+  // dependency on the old dst, and if dst aliases src1 or src2 the subsequent
+  // "umov ..., src.D[1]" must wait for that merge to retire, serialising the
+  // two scalar muls within an iteration and across unrolled iterations.
+  // Forcing dst into a fresh register breaks the chain and exposes lane-level
+  // parallelism.
+  effect(TEMP_DEF dst);
   format %{ "vmulL_neon $dst, $src1, $src2\t# 2L" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);

@@ -215,6 +215,8 @@ class VectorNode : public TypeNode {
     }
 #endif
   }
+
+  static bool is_lanewise_binary_op(const Node* n);
 };
 
 //===========================Vector=ALU=Operations=============================
@@ -1801,6 +1803,8 @@ class VectorBlendNode : public VectorNode {
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
   Node* vec_mask() const { return in(3); }
+ private:
+  Node* Ideal_VectorBlend_lanewise_binary_op(PhaseGVN* phase, bool can_reshape);
 };
 
 // Rearrange lane elements from a source vector under the control of a shuffle
