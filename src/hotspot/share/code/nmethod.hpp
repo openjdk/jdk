@@ -267,14 +267,40 @@ class nmethod : public CodeBlob {
   // Protected by NMethodState_lock
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
-  // set during construction
-  uint8_t _has_unsafe_access:1,        // May fault due to unsafe access.
-          _has_wide_vectors:1,         // Preserve wide vectors at safepoints
-          _has_monitors:1,             // Fastpath monitor detection for continuations
-          _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
-          _has_flushed_dependencies:1, // Used for maintenance of dependencies (under CodeCache_lock)
-          _is_unlinked:1,              // mark during class unloading
-          _load_reported:1;            // used by jvmti to track if an event has been posted for this nmethod
+public:
+  union Flags {
+    uint8_t _raw;
+    struct {
+      bool _has_unsafe_access:1;   // May fault due to unsafe access.
+      bool _has_wide_vectors:1;    // Preserve wide vectors at safepoints
+      bool _has_monitors:1;        // Fastpath monitor detection for continuations
+      bool _has_scoped_access:1;   // Used by shared scope closure (scopedMemoryAccess.cpp)
+    };
+    Flags() {
+      _raw = 0;
+    }
+    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) : Flags() {
+      _has_unsafe_access = has_unsafe_access;
+      _has_wide_vectors = has_wide_vectors;
+      _has_monitors = has_monitors;
+      _has_scoped_access = has_scoped_access;
+    }
+  };
+
+  static_assert(sizeof(Flags) == sizeof(uint8_t), "Must fit exactly");
+
+private:
+  // Persistent bits, set once during construction.
+  Flags const _flags;
+
+  // Used for maintenance of dependencies (under CodeCache_lock)
+  bool _has_flushed_dependencies;
+
+  // Mark during class unloading
+  bool _is_unlinked;
+
+  // Used by JVMTI to track if an event has been posted for this nmethod
+  bool _load_reported;
 
   enum DeoptimizationStatus : u1 {
     not_marked,
@@ -327,7 +353,8 @@ class nmethod : public CodeBlob {
           ExceptionHandlerTable* handler_table,
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
-          CompLevel comp_level
+          CompLevel comp_level,
+          Flags flags
 #if INCLUDE_JVMCI
           , char* speculations = nullptr,
           int speculations_len = 0,
@@ -567,7 +594,8 @@ public:
                               ExceptionHandlerTable* handler_table,
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
-                              CompLevel comp_level
+                              CompLevel comp_level,
+                              Flags flags
 #if INCLUDE_JVMCI
                               , char* speculations = nullptr,
                               int speculations_len = 0,
@@ -751,17 +779,10 @@ public:
   template<typename T>
   void set_gc_data(T* gc_data)                    { _gc_data = reinterpret_cast<void*>(gc_data); }
 
-  bool  has_unsafe_access() const                 { return _has_unsafe_access; }
-  void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }
-
-  bool  has_monitors() const                      { return _has_monitors; }
-  void  set_has_monitors(bool z)                  { _has_monitors = z; }
-
-  bool  has_scoped_access() const                 { return _has_scoped_access; }
-  void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }
-
-  bool  has_wide_vectors() const                  { return _has_wide_vectors; }
-  void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
+  bool  has_unsafe_access() const                 { return _flags._has_unsafe_access; }
+  bool  has_monitors() const                      { return _flags._has_monitors; }
+  bool  has_scoped_access() const                 { return _flags._has_scoped_access; }
+  bool  has_wide_vectors() const                  { return _flags._has_wide_vectors; }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
