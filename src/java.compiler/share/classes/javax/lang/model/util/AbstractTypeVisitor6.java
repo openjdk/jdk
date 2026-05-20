@@ -35,7 +35,7 @@ import static javax.lang.model.SourceVersion.*;
  * the {@link javax.lang.model.SourceVersion#RELEASE_6 RELEASE_6}
  * source version.
  *
- * {@note [id=note_for_subclasses header=Warning:]
+ * @note [id=note_for_subclasses header=Warning: kind=bordered]
  * The {@code TypeVisitor} interface implemented by this class may have methods
  * added to it in the future to accommodate new, currently unknown,
  * language structures added to future versions of the Java
@@ -53,7 +53,6 @@ import static javax.lang.model.SourceVersion.*;
  * for the visit method in question.  When a new visitor is
  * introduced, portions of this visitor class may be deprecated,
  * including its constructors.
- * }
  *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.

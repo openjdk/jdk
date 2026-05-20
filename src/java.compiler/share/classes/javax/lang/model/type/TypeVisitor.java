@@ -40,7 +40,7 @@ import javax.lang.model.util.*;
  * is {@code null}; see documentation of the implementing class for
  * details.
  *
- * {@note [header=Warning:]
+ * @note [header=Warning: kind=bordered]
  * It is possible that methods will be added
  * to this interface to accommodate new, currently unknown, language
  * structures added to future versions of the Java programming
@@ -63,7 +63,6 @@ import javax.lang.model.util.*;
  * turn call {@link visitUnknown visitUnknown}, behavior that will be
  * overridden in concrete visitors supporting the source version with
  * the new language construct.
- * }
  *
  * @apiNote There are several families of classes implementing this visitor
  * interface in the {@linkplain javax.lang.model.util util

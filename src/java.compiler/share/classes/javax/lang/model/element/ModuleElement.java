@@ -217,14 +217,13 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * is {@code null}; see documentation of the implementing class for
      * details.
      *
-     * {@note [header=Warning:]
+     * @note [header=Warning: kind=bordered]
      * It is possible that methods will be added to
      * this interface to accommodate new, currently unknown, language
      * structures added to future versions of the Java programming
      * language. Methods to accommodate new language constructs will
      * be added in a source <em>compatible</em> way using
      * <em>default methods</em>.
-     * }
      *
      * @param <R> the return type of this visitor's methods.  Use {@link
      *            Void} for visitors that do not need to return results.

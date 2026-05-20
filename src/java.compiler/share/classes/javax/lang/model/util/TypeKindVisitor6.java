@@ -41,7 +41,7 @@ import static javax.lang.model.SourceVersion.*;
  * call {@link #defaultAction defaultAction}, passing their arguments
  * to {@code defaultAction}'s corresponding parameters.
  *
- * {@note [id=note_for_subclasses header=Warning:]
+ * @note [id=note_for_subclasses header=Warning: kind=bordered]
  * The {@code TypeVisitor} interface implemented by this class may have methods
  * added to it or the {@link TypeKind TypeKind enum} used in this
  * class may have constants added to it in the future to accommodate
@@ -60,7 +60,6 @@ import static javax.lang.model.SourceVersion.*;
  * for the visit method in question.  When a new visitor is
  * introduced, portions of this visitor class may be deprecated,
  * including its constructors.
- * }
  *
  * @apiNote
  * Methods in this class may be overridden subject to their general
