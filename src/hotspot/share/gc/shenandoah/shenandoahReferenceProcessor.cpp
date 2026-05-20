@@ -126,12 +126,12 @@ static void reference_set_discovered(oop reference, oop discovered);
 
 template <>
 void reference_set_discovered<oop>(oop reference, oop discovered) {
-  *reference_discovered_addr<oop>(reference) = discovered;
+  *ShenandoahReferenceProcessor::discovered_addr<oop>(reference) = discovered;
 }
 
 template <>
 void reference_set_discovered<narrowOop>(oop reference, oop discovered) {
-  *reference_discovered_addr<narrowOop>(reference) = CompressedOops::encode(discovered);
+  *ShenandoahReferenceProcessor::discovered_addr<narrowOop>(reference) = CompressedOops::encode(discovered);
 }
 
 template<typename T>
@@ -148,7 +148,7 @@ static T* reference_next_addr(oop reference) {
 template <typename T>
 static oop reference_next(oop reference) {
   T heap_oop = RawAccess<>::oop_load(reference_next_addr<T>(reference));
-  return lrb(CompressedOops::decode(heap_oop));
+  return ShenandoahReferenceProcessor::lrb(CompressedOops::decode(heap_oop));
 }
 
 static void reference_set_next(oop reference, oop next) {
@@ -233,6 +233,8 @@ void ShenandoahRefProcThreadLocal::heal_discovered_list() {
       break;
     }
 
+    // lrb only operates on marked objects, these references have been discovered so may not be marked.
+    // Here, we need the barrier to handle these possibly unmarked references too
     const oop reference = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(discovered_ref);
     if (discovered_ref != reference) {
       // Update our list with the forwarded object
@@ -240,16 +242,16 @@ void ShenandoahRefProcThreadLocal::heal_discovered_list() {
     }
 
     // Discovered list terminates with a self-loop
-    const oop discovered = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(reference_discovered<T>(reference));
+    const oop discovered = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ShenandoahReferenceProcessor::discovered<T>(reference));
     if (reference == discovered) {
       // Heal the self-loop if it contains a stale (pre-forwarding) pointer
-      T* discovered_addr = reference_discovered_addr<T>(reference);
+      T* discovered_addr = ShenandoahReferenceProcessor::discovered_addr<T>(reference);
       if (CompressedOops::decode(*discovered_addr) != reference) {
         set_oop_field(discovered_addr, reference);
       }
       break;
     }
-    list = reference_discovered_addr<T>(reference);
+    list = ShenandoahReferenceProcessor::discovered_addr<T>(reference);
   }
 }
 
@@ -449,7 +451,7 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
     return false;
   }
 
-  if (reference_discovered<T>(reference) != nullptr) {
+  if (discovered<T>(reference) != nullptr) {
     // Already discovered. This can happen if the reference is marked finalizable first, and then strong,
     // in which case it will be seen 2x by marking.
     log_trace(gc,ref)("Reference already discovered: " PTR_FORMAT, p2i(reference));
@@ -529,7 +531,7 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
 #endif
 
   // Unlink and return next in list
-  oop next = reference_discovered<T>(reference);
+  oop next = discovered<T>(reference);
   reference_set_discovered<T>(reference, nullptr);
   // When this reference was discovered, it would not have been marked. If it ends up surviving
   // the cycle, we need to dirty the card if the reference is old and the referent is young.  Note
@@ -549,7 +551,7 @@ T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type) {
   make_inactive<T>(reference, type);
 
   // Return next in list
-  return reference_discovered_addr<T>(reference);
+  return discovered_addr<T>(reference);
 }
 
 template <typename T>
@@ -581,8 +583,8 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
       p = keep<T>(reference, type);
     }
 
-    const oop discovered = lrb(reference_discovered<T>(reference));
-    if (reference == discovered) {
+    const oop discovered_ref = discovered<T>(reference);
+    if (reference == discovered_ref) {
       // Reset terminating self-loop to null
       reference_set_discovered<T>(reference, oop(nullptr));
       break;
@@ -681,7 +683,7 @@ void ShenandoahReferenceProcessor::clean_discovered_list(T* list) {
   while (!CompressedOops::is_null(discovered)) {
     oop discovered_ref = CompressedOops::decode_not_null(discovered);
     set_oop_field<T>(list, oop(nullptr));
-    list = reference_discovered_addr<T>(discovered_ref);
+    list = discovered_addr<T>(discovered_ref);
     discovered = *list;
   }
 }
@@ -699,10 +701,10 @@ void ShenandoahReferenceProcessor::abandon_partial_discovery() {
     oop pending = _pending_list.load_relaxed();
     _pending_list.store_relaxed(nullptr);
     if (UseCompressedOops) {
-      narrowOop* list = reference_discovered_addr<narrowOop>(pending);
+      narrowOop* list = discovered_addr<narrowOop>(pending);
       clean_discovered_list<narrowOop>(list);
     } else {
-      oop* list = reference_discovered_addr<oop>(pending);
+      oop* list = discovered_addr<oop>(pending);
       clean_discovered_list<oop>(list);
     }
   }

@@ -32,7 +32,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "oops/compressedOops.inline.hpp"
 
-inline oop lrb(oop obj) {
+inline oop ShenandoahReferenceProcessor::lrb(oop obj) {
   if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
     return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
   }
@@ -40,13 +40,13 @@ inline oop lrb(oop obj) {
 }
 
 template <typename T>
-T* reference_discovered_addr(oop reference) {
+T* ShenandoahReferenceProcessor::discovered_addr(oop reference) {
   return reinterpret_cast<T*>(java_lang_ref_Reference::discovered_addr_raw(reference));
 }
 
 template <typename T>
-oop reference_discovered(oop reference) {
-  T heap_oop = *reference_discovered_addr<T>(reference);
+oop ShenandoahReferenceProcessor::discovered(oop reference) {
+  T heap_oop = *ShenandoahReferenceProcessor::discovered_addr<T>(reference);
   return lrb(CompressedOops::decode(heap_oop));
 }
 
@@ -109,11 +109,11 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
     discovered_ref->oop_iterate(&marker);
 
     // Discovered list terminates with a self-loop
-    const oop discovered = reference_discovered<OopType>(discovered_ref);
-    if (discovered_ref == discovered) {
+    const oop discovered_next = ShenandoahReferenceProcessor::discovered<OopType>(discovered_ref);
+    if (discovered_ref == discovered_next) {
       break;
     }
-    list = reference_discovered_addr<OopType>(discovered_ref);
+    list = ShenandoahReferenceProcessor::discovered_addr<OopType>(discovered_ref);
   }
 }
 

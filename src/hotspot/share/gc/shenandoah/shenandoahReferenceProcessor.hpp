@@ -246,6 +246,18 @@ public:
   void abandon_partial_discovery();
 
   void mark_discovered_reference_with_old_referent(oop reference) const;
+
+  // These are used by the inline header and so were scoped to this class to prevent pollution of global namespace
+  // Returns the address of j.l.r.Reference.discovered
+  template <typename T>
+  static T* discovered_addr(oop reference);
+
+  // Returns the decoded oop of j.l.r.Reference.discovered
+  template <typename T>
+  static oop discovered(oop reference);
+
+  // Invokes the load-reference-barrier on marked objects
+  static oop lrb(oop obj);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
