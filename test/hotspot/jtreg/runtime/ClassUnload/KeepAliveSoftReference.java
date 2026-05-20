@@ -55,7 +55,7 @@ public class KeepAliveSoftReference {
     {
         boolean isAlive = wb.isClassAlive(className);
         System.out.println("testSoftReference (1) alive: " + isAlive);
-        boolean cleared = (sr.get() == null);
+        boolean cleared = sr.refersTo(null);
         boolean shouldBeAlive = !cleared;
         ClassUnloadCommon.failIf(isAlive != shouldBeAlive, "" + isAlive + " != " + shouldBeAlive);
     }
@@ -66,7 +66,7 @@ public class KeepAliveSoftReference {
     {
         boolean isAlive = wb.isClassAlive(className);
         System.out.println("testSoftReference (2) alive: " + isAlive);
-        boolean cleared = (sr.get() == null);
+        boolean cleared = sr.refersTo(null);
         ClassUnloadCommon.failIf(!cleared, "should be cleared " + cleared);
     }
 
@@ -75,7 +75,7 @@ public class KeepAliveSoftReference {
     {
         boolean isAlive = wb.isClassAlive(className);
         System.out.println("testSoftReference (3) alive: " + isAlive);
-        boolean cleared = (sr.get() == null);
+        boolean cleared = sr.refersTo(null);
         boolean shouldBeAlive = !cleared;
         ClassUnloadCommon.failIf(isAlive != shouldBeAlive, "" + isAlive + " != " + shouldBeAlive);
     }
