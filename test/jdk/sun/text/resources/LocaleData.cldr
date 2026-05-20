@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -2413,7 +2413,7 @@ FormatData/zh_HK/DatePatterns/0=y年M月d日EEEE
 FormatData/zh_HK/DatePatterns/1=y年M月d日
 FormatData/zh_HK/DatePatterns/2=y年M月d日
 FormatData/zh_HK/DatePatterns/3=d/M/y
-FormatData/zh_HK/DateTimePatterns/0={1}{0}
+FormatData/zh_HK/DateTimePatterns/0={1} {0}
 
 #bug #4149569
 LocaleNames/tr/TR=Türkiye

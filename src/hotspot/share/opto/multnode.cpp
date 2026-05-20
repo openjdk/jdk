@@ -265,5 +265,6 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptR
 
 NarrowMemProjNode::NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type)
   : ProjNode(src, TypeFunc::Memory), _adr_type(adr_type) {
+  assert(Compile::current()->have_alias_type(adr_type), "alias index should have been allocated already");
   init_class_id(Class_NarrowMemProj);
 }
