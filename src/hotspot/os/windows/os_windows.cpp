@@ -465,7 +465,7 @@ void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   *stack_size = size;
 }
 
-bool os::live_in_range(address start, size_t size, address& live_start, size_t& live_size) {
+bool os::resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
   constexpr size_t stripe = 1024;  // query this many pages each time
   PSAPI_WORKING_SET_EX_INFORMATION wsinfo[stripe];
 
@@ -475,10 +475,10 @@ bool os::live_in_range(address start, size_t size, address& live_start, size_t& 
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
 
-  live_start = nullptr;
+  resident_start = nullptr;
 
   uintx loops = (pages_left + stripe - 1) / stripe;
-  uintx live_pages = 0;
+  uintx resident_pages = 0;
   address pos = start;
   bool found_range = false;
 
@@ -487,7 +487,7 @@ bool os::live_in_range(address start, size_t size, address& live_start, size_t& 
     uintx pages_to_query = MIN2(pages_left, stripe);
     pages_left -= pages_to_query;
 
-    for (int i = 0; i < pages_to_query; i++) {
+    for (uintx i = 0; i < pages_to_query; i++) {
       wsinfo[i].VirtualAddress = (PVOID)(pos + i * page_sz);
     }
 
@@ -496,31 +496,31 @@ bool os::live_in_range(address start, size_t size, address& live_start, size_t& 
       return false;
     }
 
-    for (int i = 0; i < pages_to_query; i++) {
+    for (uintx i = 0; i < pages_to_query; i++) {
       if (wsinfo[i].VirtualAttributes.Valid == 0) {
-        if (live_start != nullptr) {
+        if (resident_start != nullptr) {
           found_range = true;
           break;
         }
-        // Still searching for start of live region
+        // Still searching for start of resident region
       } else {
-        if (live_start == nullptr) {
-          // Found first live page in region
-          live_start = pos + i * page_sz;
+        if (resident_start == nullptr) {
+          // Found first resident page in region
+          resident_start = pos + i * page_sz;
         }
-        live_pages++;
+        resident_pages++;
       }
     }
     pos += pages_to_query * page_sz;
   }
-  if (live_start != nullptr) {
-    assert(live_pages > 0, "Must have live region");
-    assert(live_pages <= size / page_sz, "Region cannot be smaller than size of live pages");
-    assert(live_start >= start && live_start < start + size, "Out of range");
-    live_size = page_sz * live_pages;
+  if (resident_start != nullptr) {
+    assert(resident_pages > 0, "Must have a resident region");
+    assert(resident_pages <= size / page_sz, "Resident size exceeds region size");
+    assert(resident_start >= start && resident_start < start + size, "Out of range");
+    resident_size = page_sz * resident_pages;
     return true;
   } else {
-    assert(live_pages == 0, "Should not have live region");
+    assert(resident_pages == 0, "Should not have a resident region");
     return false;
   }
 }

@@ -167,11 +167,11 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
   }
 }
 
-bool os::live_in_range(address start, size_t size, address& live_start, size_t& live_size) {
+bool os::resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
 
 #ifdef _AIX
-  live_start = start;
-  live_size = size;
+  resident_start = start;
+  resident_size = size;
   return true;
 #else
 
@@ -188,10 +188,10 @@ bool os::live_in_range(address start, size_t size, address& live_start, size_t& 
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
 
-  live_start = nullptr;
+  resident_start = nullptr;
 
   int loops = checked_cast<int>((pages + stripe - 1) / stripe);
-  int live_pages = 0;
+  int resident_pages = 0;
   address loop_base = start;
   bool found_range = false;
 
@@ -210,7 +210,7 @@ bool os::live_in_range(address start, size_t size, address& live_start, size_t& 
 
     // During shutdown, some memory goes away without properly notifying NMT,
     // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
-    // Bailout and return as not committed for now.
+    // Bailout and return as not resident for now.
     if (mincore_return_value == -1 && errno == ENOMEM) {
       return false;
     }
@@ -224,32 +224,32 @@ bool os::live_in_range(address start, size_t size, address& live_start, size_t& 
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe
     for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
-      if ((vec[vecIdx] & 0x01) == 0) { // not committed
+      if ((vec[vecIdx] & 0x01) == 0) { // not resident
         // End of current contiguous region
-        if (live_start != nullptr) {
+        if (resident_start != nullptr) {
           found_range = true;
           break;
         }
-      } else { // committed
+      } else { // resident
         // Start of region
-        if (live_start == nullptr) {
-          live_start = loop_base + page_sz * vecIdx;
+        if (resident_start == nullptr) {
+          resident_start = loop_base + page_sz * vecIdx;
         }
-        live_pages ++;
+        resident_pages ++;
       }
     }
 
     loop_base += pages_to_query * page_sz;
   }
 
-  if (live_start != nullptr) {
-    assert(live_pages > 0, "Must have live region");
-    assert(live_pages <= int(size / page_sz), "Region cannot be smaller than size of live pages");
-    assert(live_start >= start && live_start < start + size, "Out of range");
-    live_size = page_sz * live_pages;
+  if (resident_start != nullptr) {
+    assert(resident_pages > 0, "Must have a resident region");
+    assert(resident_pages <= int(size / page_sz), "Resident size exceeds region size");
+    assert(resident_start >= start && resident_start < start + size, "Out of range");
+    resident_size = page_sz * resident_pages;
     return true;
   } else {
-    assert(live_pages == 0, "Should not have live region");
+    assert(resident_pages == 0, "Should not have a resident region");
     return false;
   }
 #endif
