@@ -140,7 +140,7 @@ class ShenandoahReferenceProcessor;
 class ShenandoahRefProcIterator {
   ShenandoahReferenceProcessor* _rp;
   size_t _max;
-  size_t _index;
+  Atomic<size_t> _index;
 public:
   explicit ShenandoahRefProcIterator(size_t max);
   ShenandoahRefProcThreadLocal* next();

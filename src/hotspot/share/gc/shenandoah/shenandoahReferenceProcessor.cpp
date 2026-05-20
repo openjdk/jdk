@@ -285,7 +285,7 @@ ShenandoahRefProcIterator::ShenandoahRefProcIterator(size_t max) : _max(max), _i
 }
 
 ShenandoahRefProcThreadLocal* ShenandoahRefProcIterator::next() {
-  const size_t next_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed) - 1;
+  const size_t next_index = _index.fetch_then_add(1UL, memory_order_relaxed);
   return next_index < _max ? &_rp->_ref_proc_thread_locals[next_index] : nullptr;
 }
 
