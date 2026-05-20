@@ -1577,10 +1577,21 @@ void InterpreterMacroAssembler::notify_method_exit(
   // track stack depth.  If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
   if (mode == NotifyJVMTI && can_post_interpreter_events()) {
+    Label L;
+    const Register thread_state = R2_tmp;
+
     // Note: frame::interpreter_frame_result has a dependency on how the
     // method result is saved across the call to post_method_exit. If this
     // is changed then the interpreter_frame_result implementation will
     // need to be updated too.
+
+    ldr(thread_state, Address(Rthread, JavaThread::jvmti_thread_state_offset()));
+    cbz(thread_state, L); // if (thread->jvmti_thread_state() == nullptr) exit;
+
+    ldr_s32(thread_state, Address(thread_state, JvmtiThreadState::frame_pop_cnt_offset()));
+    ldr_s32(Rtemp, Address(Rthread, JavaThread::interp_only_mode_offset()));
+    orr(Rtemp, Rtemp, thread_state);
+    cbz(Rtemp, L);
 
     if (native) {
       // For c++ and template interpreter push both result registers on the
@@ -1613,6 +1624,8 @@ void InterpreterMacroAssembler::notify_method_exit(
       call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
       pop(state);
     }
+
+    bind(L);
   }
 
   // Note: Disable DTrace runtime check for now to eliminate overhead on each method exit

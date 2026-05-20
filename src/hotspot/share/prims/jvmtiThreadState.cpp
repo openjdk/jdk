@@ -62,6 +62,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;
   _hide_level           = 0;
+  _frame_pop_cnt        = 0;
   _pending_step_for_popframe = false;
   _class_being_redefined = nullptr;
   _class_load_kind = jvmti_class_load_kind_load;

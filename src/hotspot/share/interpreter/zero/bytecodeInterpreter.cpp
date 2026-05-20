@@ -3146,9 +3146,13 @@ run:
     // entry/exit events are sent for that thread to track stack depth.
 
     if (JVMTI_ENABLED && !suppress_exit_event) {
-      // Prevent any HandleMarkCleaner from freeing our live handles
-      HandleMark __hm(THREAD);
-      CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
+      JvmtiThreadState* state = THREAD->jvmti_thread_state();
+      int frame_pop_cnt = state == nullptr ? 0 : state->frame_pop_cnt();
+      if (THREAD->is_interp_only_mode() || frame_pop_cnt) {
+        // Prevent any HandleMarkCleaner from freeing our live handles
+        HandleMark __hm(THREAD);
+        CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
+      }
     }
 
     //

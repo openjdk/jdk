@@ -1368,6 +1368,9 @@ bool JvmtiExport::has_frame_pop_for_top_frame(JavaThread *current) {
   if (state == nullptr || !state->is_enabled(JVMTI_EVENT_FRAME_POP)) {
     return false;
   }
+  if (state->frame_pop_cnt() == 0) {
+    return false;
+  }
   JvmtiEnvThreadStateIterator it(state);
   int top_frame_num = state->count_frames();
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {

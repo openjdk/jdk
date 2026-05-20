@@ -1604,6 +1604,7 @@ void InterpreterMacroAssembler::notify_method_exit(
   Register rthread = r15_thread;
   Register rarg = c_rarg1;
   if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
+    Label L;
     // Note: frame::interpreter_frame_result has a dependency on how the
     // method result is saved across the call to post_method_exit. If this
     // is changed then the interpreter_frame_result implementation will
@@ -1611,8 +1612,21 @@ void InterpreterMacroAssembler::notify_method_exit(
 
     // template interpreter will leave the result on the top of the stack.
     push(state);
+
+    movptr(rdx, Address(rthread, JavaThread::jvmti_thread_state_offset()));
+    testptr(rdx, rdx);
+    jcc(Assembler::zero, L); // if (thread->jvmti_thread_state() == nullptr) exit;
+    
+    movl(rdx, Address(rdx, JvmtiThreadState::frame_pop_cnt_offset()));
+    movl(rcx, Address(rthread, JavaThread::interp_only_mode_offset())); // can we use rcx too?
+
+    orl(rdx, rcx);
+    testl(rdx,rdx);
+    jcc(Assembler::zero, L);
+
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
+    bind(L);
     pop(state);
   }
 

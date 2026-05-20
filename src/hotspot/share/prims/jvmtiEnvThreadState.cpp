@@ -229,6 +229,7 @@ void JvmtiEnvThreadState::set_frame_pop(int frame_number) {
          "frame pop data only accessible from same or detached thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::set_frame_pop(this, fpop);
+  _state->incr_frame_pop_cnt();
 }
 
 
@@ -237,11 +238,14 @@ void JvmtiEnvThreadState::clear_frame_pop(int frame_number) {
          "frame pop data only accessible from same or detached thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::clear_frame_pop(this, fpop);
+  _state->decr_frame_pop_cnt();
 }
 
 void JvmtiEnvThreadState::clear_all_frame_pops() {
   assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
+  int frame_pop_delta = _frame_pops == nullptr ? 0 :  _frame_pops->length();
+  _state->decr_frame_pop_cnt(frame_pop_delta);
   JvmtiEventController::clear_all_frame_pops(this);
 }
 

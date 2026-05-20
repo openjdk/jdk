@@ -139,6 +139,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   bool              _top_frame_is_exiting;
   bool              _saved_interp_only_mode;
   int               _hide_level;
+  volatile int       _frame_pop_cnt;
 
  public:
   enum ExceptionState {
@@ -239,6 +240,26 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   JvmtiThreadState *next()                  {
     return _next;
+  }
+
+  // Optimizations for FramePop support.
+  static ByteSize frame_pop_cnt_offset() { return byte_offset_of(JvmtiThreadState, _frame_pop_cnt); }
+
+  int frame_pop_cnt() { return AtomicAccess::load(&_frame_pop_cnt); }
+
+  void incr_frame_pop_cnt() {
+    assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
+    AtomicAccess::inc(&_frame_pop_cnt);
+  }
+
+  void decr_frame_pop_cnt() {
+    assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
+    AtomicAccess::dec(&_frame_pop_cnt);
+  }
+
+  void decr_frame_pop_cnt(int delta) {
+    assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
+    AtomicAccess::store(&_frame_pop_cnt, AtomicAccess::load(&_frame_pop_cnt) - delta);
   }
 
   // Current stack depth is only valid when is_interp_only_mode() returns true.
