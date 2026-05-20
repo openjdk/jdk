@@ -1193,7 +1193,7 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
                                        // expect generation and heap sizes to match exactly, including trash
-          _verify_size_exact_including_trash,
+          _verify_size_exact,
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
   );
 }
@@ -1210,7 +1210,7 @@ void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
                                        // expect generation and heap sizes to match exactly, including trash
-          _verify_size_exact_including_trash,
+          _verify_size_exact,
           _verify_gcstate_stable       // GC state was turned off
   );
 }
