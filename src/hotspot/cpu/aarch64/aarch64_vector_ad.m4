@@ -750,8 +750,26 @@ instruct vmulL_neon(vReg dst, vReg src1, vReg src2) %{
 dnl VMUL_L_NEON($1,     $2     )
 dnl VMUL_L_NEON(kind,   insn   )
 define(`VMUL_L_NEON', `dnl
+// Specialization of vmulL_$1_neon when both inputs are the same IR node
+// (e.g. v * v). Avoids one redundant xtn and saves one temporary register.
+instruct vmulL_$1_neon_same(vReg dst, vReg src, vReg tmp) %{
+  predicate(UseSVE == 0 && n->as_MulVL()->has_$1_inputs() &&
+            n->in(1) == n->in(2));
+  match(Set dst (MulVL src src));
+  effect(TEMP tmp);
+  format %{ "vmulL_$1_neon_same $dst, $src, $src\t# 2L. KILL $tmp" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 16, "must be");
+    __ xtn($tmp$$FloatRegister, __ T2S, $src$$FloatRegister, __ T2D);
+    __ $2($dst$$FloatRegister, __ T2S, $tmp$$FloatRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmulL_$1_neon(vReg dst, vReg src1, vReg src2, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE == 0 && n->as_MulVL()->has_$1_inputs());
+  predicate(UseSVE == 0 && n->as_MulVL()->has_$1_inputs() &&
+            n->in(1) != n->in(2));
   match(Set dst (MulVL src1 src2));
   effect(TEMP tmp1, TEMP tmp2);
   format %{ "vmulL_$1_neon $dst, $src1, $src2\t# 2L. KILL $tmp1, $tmp2" %}
