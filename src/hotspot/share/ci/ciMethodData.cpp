@@ -328,6 +328,7 @@ bool ciMegamorphicTypeData::translate_type_data_from(const MegamorphicTypeData* 
   return cleared_row;
 }
 
+#ifndef PRODUCT
 void ciMegamorphicTypeData::print_receiver_data_on(outputStream* st, int total) const {
   total += count();
   for (uint row = 0; row < row_limit(); row++) {
@@ -338,6 +339,7 @@ void ciMegamorphicTypeData::print_receiver_data_on(outputStream* st, int total) 
     }
   }
 }
+#endif
 
 void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries* entries) {
   for (int i = 0; i < number_of_entries(); i++) {
