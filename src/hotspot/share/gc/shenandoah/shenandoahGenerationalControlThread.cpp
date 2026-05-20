@@ -754,7 +754,7 @@ void ShenandoahGenerationalControlThread::wait_for_gc_cycle(GCCause::Cause cause
   size_t current_gc_id = get_gc_id();
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
-    // Make requests to run a global cycle until at least one is completed
+    // Make requests to run cycles until at least one is completed
     notify_control_thread(cause, generation);
     ml.wait();
     current_gc_id = get_gc_id();
