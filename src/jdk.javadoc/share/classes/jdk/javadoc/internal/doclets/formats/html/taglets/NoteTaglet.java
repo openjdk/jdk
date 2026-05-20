@@ -36,6 +36,7 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.RawHtml;
 import jdk.javadoc.internal.html.Text;
@@ -55,7 +56,8 @@ import java.util.stream.Collectors;
  */
 public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
-    private final static boolean OLD_SCHOOL_BLOCK_TAGS = false;
+    // Flag to re-enable pre-note tag output for block tags.
+    private static final boolean OLD_SCHOOL_BLOCK_TAGS = false;
 
     private final String defaultHeader;
     private final String defaultKind;
@@ -196,14 +198,30 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             : config.htmlIds.forNote(e, name, inline, existingIds);
     }
 
-    private HtmlTree setContentLengthStyle(HtmlTree html) {
-        var contentLength = html.charCount();
+    private static HtmlTree setContentLengthStyle(HtmlTree html) {
+        var contentLength = countTextLength(html.getContents());
         if (contentLength > LONG_TEXT_THRESHOLD) {
             html.addStyle(HtmlStyles.longNote);
         } else if (contentLength > MEDIUM_TEXT_THRESHOLD) {
             html.addStyle(HtmlStyles.mediumLengthNote);
         }
         return html;
+    }
+
+    // Similar to Content::charCount but discount <pre> and raw content.
+    private static int countTextLength(List<Content> contents) {
+        var count = 0;
+        for (var c : contents) {
+            count += switch (c) {
+                case HtmlTree html -> html.tag == HtmlTag.PRE
+                        ? html.charCount() / 2
+                        : countTextLength(html.getContents());
+                case Text text -> text.charCount();
+                case ContentBuilder b -> countTextLength(b.getContents());
+                default -> 0;
+            };
+        }
+        return count;
     }
 
     private static String stringValueOf(AttributeTree at) {
@@ -215,7 +233,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     }
 
     // Returns the main CSS class for a note depending on its kind.
-    private String getCSSClass(String kind) {
+    private static String getCSSClass(String kind) {
         return kind == null
                 ? CSS_CLASS_PREFIX
                 : CSS_CLASS_PREFIX + "-" + kind.trim();
@@ -230,7 +248,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
     // Only allow a few select safe HTML elements in header, and only
     // when they are closed properly and don't contain any attributes.
-    private Content sanitizeHeader(String header) {
+    private static Content sanitizeHeader(String header) {
         var escaped = Entity.escapeHtmlChars(header);
 
         if (!escaped.equals(header)) {
