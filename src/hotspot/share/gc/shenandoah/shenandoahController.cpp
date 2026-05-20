@@ -38,7 +38,7 @@ size_t ShenandoahController::get_gc_id() {
   return _gc_id.load_relaxed();
 }
 
-void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& req, bool block) {
+void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &req) {
   assert(current()->is_Java_thread(), "expect Java thread here");
 
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
@@ -49,13 +49,6 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& re
   log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
   request_gc(cause);
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
-
-  if (block) {
-    MonitorLocker ml(&_alloc_failure_waiters_lock);
-    while (!should_terminate() && ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
-      ml.wait();
-    }
-  }
 }
 
 void ShenandoahController::handle_alloc_failure_evac(size_t words) {

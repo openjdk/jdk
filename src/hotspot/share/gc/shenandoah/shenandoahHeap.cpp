@@ -951,7 +951,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // an OOME to the mutator if the last Full GCs have not made progress.
     // gc_no_progress_count is incremented following each degen or full GC that fails to achieve is_good_progress().
     if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
-      control_thread()->handle_alloc_failure(req, false);
+      control_thread()->handle_alloc_failure(req);
       req.set_actual_size(0);
       return nullptr;
     }
@@ -970,7 +970,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 
       const size_t original_count = shenandoah_policy()->total_gc_count();
       while (result == nullptr) {
-        control_thread()->handle_alloc_failure(req, true);
+        control_thread()->handle_alloc_failure(req);
         result = allocate_memory_under_lock(req, in_new_region);
         if (result == nullptr) {
           const size_t current_count = shenandoah_policy()->total_gc_count();
