@@ -29,7 +29,8 @@ import jdk.internal.vm.annotation.Stable;
 
 /**
  * Port of the "Freely Distributable Math Library", version 5.3, from
- * C to Java.
+ * C to Java, with a fix to pow so that its error bounds conform to
+ * the quality of implementation criteria for the method.
  *
  * <p>The C version of fdlibm relied on the idiom of pointer aliasing
  * a 64-bit double floating-point value as a two-element array of
