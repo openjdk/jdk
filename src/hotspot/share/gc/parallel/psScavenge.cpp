@@ -333,9 +333,6 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
   heap->print_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
-  assert(!NeverTenure || _tenuring_threshold == markWord::max_age + 1, "Sanity");
-  assert(!AlwaysTenure || _tenuring_threshold == 0, "Sanity");
-
   // Fill in TLABs
   heap->ensure_parsability(true);  // retire TLABs
 
@@ -430,14 +427,11 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
       size_policy->sample_old_gen_used_bytes(old_gen->used_in_bytes());
 
       if (UseAdaptiveSizePolicy) {
-        _tenuring_threshold = size_policy->compute_tenuring_threshold(_survivor_overflow,
-                                                                      _tenuring_threshold);
-
-        log_debug(gc, age)("New threshold %u (max threshold %u)", _tenuring_threshold, MaxTenuringThreshold);
-
         if (young_gen->is_from_to_layout()) {
           size_policy->print_stats(_survivor_overflow);
           heap->resize_after_young_gc(_survivor_overflow);
+          _tenuring_threshold = size_policy->compute_tenuring_threshold(young_gen->sizing_state(),
+                                                                        _tenuring_threshold);
         }
 
         if (UsePerfData) {
@@ -522,9 +516,9 @@ void PSScavenge::initialize() {
            "MaxTenuringThreshold should be 0 or markWord::max_age + 1, but is %d", (int) MaxTenuringThreshold);
     _tenuring_threshold = MaxTenuringThreshold;
   } else {
-    // We want to smooth out our startup times for the AdaptiveSizePolicy
-    _tenuring_threshold = (UseAdaptiveSizePolicy) ? InitialTenuringThreshold :
-                                                    MaxTenuringThreshold;
+    // We want to smooth out startup times for AdaptiveSizePolicy.
+    _tenuring_threshold = UseAdaptiveSizePolicy ? InitialTenuringThreshold
+                                                : MaxTenuringThreshold;
   }
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
