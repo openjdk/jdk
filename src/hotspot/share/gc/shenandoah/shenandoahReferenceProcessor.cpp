@@ -333,7 +333,7 @@ void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
 void ShenandoahReferenceProcessor::heal_discovered_lists(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
   assert(_generation->is_old(), "This is only for old reference processing");
   ShenandoahReferenceProcessorTask heal_lists_task(phase, concurrent, _ref_proc_thread_locals,
-[&](ShenandoahRefProcThreadLocal& ref_proc_data, uint worker_id) {
+    [](ShenandoahRefProcThreadLocal& ref_proc_data, uint worker_id) {
        if (UseCompressedOops) {
          ref_proc_data.heal_discovered_list<narrowOop>();
        } else {
