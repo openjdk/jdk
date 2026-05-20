@@ -968,12 +968,12 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       //   a) We experienced a GC that had good progress, or
       //   b) We experienced at least one Full GC (whether or not it had good progress)
 
-      const size_t original_count = shenandoah_policy()->total_gc_count();
+      const size_t original_count = total_collections();
       while (result == nullptr) {
         control_thread()->handle_alloc_failure(req);
         result = allocate_memory_under_lock(req, in_new_region);
         if (result == nullptr) {
-          const size_t current_count = shenandoah_policy()->total_gc_count();
+          const size_t current_count = total_collections();
           if (current_count - original_count > ShenandoahFullGCThreshold) {
             // We are not getting what we need from concurrent allocations, so request a full gc.
             // Whether this satisfies the allocation or not, we are done trying.
