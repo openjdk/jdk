@@ -614,7 +614,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 
   address call_pc = __ trampoline_call(AddressLiteral(op->addr(), rtype));
   if (call_pc == nullptr) {
-    bailout("const/stub overflow in call w/ trampoline");
+    bailout("const/stub overflow in call with trampoline");
     return;
   }
   add_call_info(code_offset(), op->info());
@@ -625,7 +625,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   __ calculate_address_from_global_toc(R2_TOC, __ method_toc());
   bool success = __ ic_call(R2_TOC, op->addr());
   if (!success) {
-    bailout("const/stub overflow in ic_call w/ trampoline");
+    bailout("const/stub overflow in ic_call with trampoline");
     return;
   }
   add_call_info(code_offset(), op->info());

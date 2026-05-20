@@ -1253,7 +1253,7 @@ address MacroAssembler::trampoline_call(AddressLiteral target,
     bctr();
 
     assert(target_toc_offset == NativeCallTrampolineStub_at(addr_at(stub_start_offset))->destination_toc_offset(),
-        "encoded offset into the constant pool must match");
+           "encoded offset into the constant pool must match");
     assert((uint)(offset() - stub_start_offset) <= trampoline_stub_size, "should be good size");
     assert(is_NativeCallTrampolineStub_at(addr_at(stub_start_offset)), "doesn't look like a trampoline");
 

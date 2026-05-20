@@ -447,7 +447,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
                          relocInfo::static_call_type);
   address call_pc = __ trampoline_call(resolve);
   if (call_pc == nullptr) {
-    ce->bailout("const/stub overflow in call w/ trampoline");
+    ce->bailout("const/stub overflow in call with trampoline");
     return;
   }
   ce->add_call_info_here(info());
