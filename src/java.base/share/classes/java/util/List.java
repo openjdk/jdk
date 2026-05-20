@@ -624,7 +624,7 @@ public interface List<E> extends SequencedCollection<E> {
      * from their indices).  Returns the element that was removed from the
      * list.
      * <p>
-     * When removing by index, prefer {@linkplain #removeAtIndex(int)} over
+     * When removing by index, prefer {@linkplain #removeAt(int)} over
      * this method, especially for {@code List<Integer>}, to avoid confusion
      * with {@linkplain #remove(Object)}.
      *
@@ -651,11 +651,11 @@ public interface List<E> extends SequencedCollection<E> {
      * The default implementation invokes {@link #remove(int) remove(index)}.
      *
      * @apiNote
-     * The {@linkplain #removeAtIndex(int)} method is a synonym for
+     * The {@linkplain #removeAt(int)} method is a synonym for
      * {@linkplain remove(int)}. They have exactly the same semantics. Given that
-     * the default implementation of {@linkplain #removeAtIndex(int)} simply calls
+     * the default implementation of {@linkplain #removeAt(int)} simply calls
      * {@linkplain #remove(int)}, it is usually unnecessary for subclasses to override
-     * the {@linkplain #removeAtIndex(int)} method.
+     * the {@linkplain #removeAt(int)} method.
      *
      * @param index the index of the element to be removed
      * @return the element previously at the specified position
@@ -665,7 +665,7 @@ public interface List<E> extends SequencedCollection<E> {
      *         ({@code index < 0 || index >= size()})
      * @since 27
      */
-    default E removeAtIndex(int index) {
+    default E removeAt(int index) {
         return remove(index);
     }
 

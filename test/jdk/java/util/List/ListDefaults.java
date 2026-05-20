@@ -277,7 +277,7 @@ public class ListDefaults {
     }
 
     @Test
-    public void testRemoveAtIndex() {
+    public void testRemoveAt() {
         final class RemoveTrackingList extends AbstractList<Integer> {
             boolean removeCalled;
             final List<Integer> delegate = new ArrayList<>(List.of(10, 20, 30));
@@ -291,7 +291,7 @@ public class ListDefaults {
         }
 
         var trackingList = new RemoveTrackingList();
-        assertEquals(trackingList.removeAtIndex(1), Integer.valueOf(20));
+        assertEquals(trackingList.removeAt(1), Integer.valueOf(20));
         assertTrue(trackingList.removeCalled);
         assertEquals(trackingList, List.of(10, 30));
 
@@ -299,7 +299,7 @@ public class ListDefaults {
         // overload.
 
         List<Integer> byIndex = new ArrayList<>(List.of(1, 2, 1));
-        assertEquals(byIndex.removeAtIndex(1), Integer.valueOf(2));
+        assertEquals(byIndex.removeAt(1), Integer.valueOf(2));
         assertEquals(byIndex, List.of(1, 1));
 
         List<Integer> byValue = new ArrayList<>(List.of(1, 2, 1));
@@ -307,12 +307,12 @@ public class ListDefaults {
         assertEquals(byValue, List.of(2, 1));
 
         try {
-            byIndex.removeAtIndex(byIndex.size());
+            byIndex.removeAt(byIndex.size());
             fail("expected IndexOutOfBoundsException not thrown");
         } catch (IndexOutOfBoundsException _) {}
 
         try {
-            List.of(1, 2, 3).removeAtIndex(1);
+            List.of(1, 2, 3).removeAt(1);
             fail("expected UnsupportedOperationException not thrown");
         } catch (UnsupportedOperationException _) {}
     }
