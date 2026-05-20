@@ -54,18 +54,11 @@ jobs:
       fail-fast: false
       matrix:
         target-cpu:
-          - aarch64
           - arm
           - s390x
           - ppc64le
           - riscv64
         include:
-          - target-cpu: aarch64
-            gnu-arch: aarch64
-            debian-arch: arm64
-            debian-repository: https://httpredir.debian.org/debian/
-            debian-version: trixie
-            tolerate-sysroot-errors: false
           - target-cpu: arm
             gnu-arch: arm
             debian-arch: armhf
