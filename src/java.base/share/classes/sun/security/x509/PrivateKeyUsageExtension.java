@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ public class PrivateKeyUsageExtension extends Extension {
     private static final byte TAG_BEFORE = 0;
     private static final byte TAG_AFTER = 1;
 
-    private Instant notBefore = null;
-    private Instant notAfter = null;
+    private Instant notBefore;
+    private Instant notAfter;
 
     // Encode this extension value.
     private void encodeThis() {

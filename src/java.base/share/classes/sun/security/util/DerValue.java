@@ -1081,8 +1081,8 @@ public class DerValue {
     }
 
     /**
-     * Determines whether {@code Instant} was encoded as UTC or Generalized time and
-     * calls getUTCInstant or getGeneralizedInstant accordingly
+     * Determines whether {@code Instant} was encoded as UTC or Generalized time
+     * and calls getUTCInstant or getGeneralizedInstant accordingly.
      */
     public Instant getInstant() throws IOException {
         return (tag == tag_UtcTime) ? getUTCInstant() : getGeneralizedInstant();

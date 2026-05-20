@@ -27,7 +27,7 @@
  * @library /test/lib
  * @summary check that default implementation of
  *          X509Certificate.verify(PublicKey, Provider) works on custom
- *          X509Certificate impl.
+ *          X509Certificate impl. and verify certificate validity
  */
 
 import java.math.BigInteger;
@@ -142,14 +142,14 @@ public class VerifyDefault {
                                              (Provider)null);
 
         // verify the validity dates
-        verifyValidityTimes(new TestX509Certificate(cert));
+        verifyValidityTimes(cert);
     }
 
-    private static void verifyValidityTimes(final TestX509Certificate cert)
+    private static void verifyValidityTimes(final X509Certificate cert)
             throws CertificateNotYetValidException,
             CertificateExpiredException {
 
-        final Date notBeforeDate =cert.getNotBefore();
+        final Date notBeforeDate = cert.getNotBefore();
         final Instant notBeforeInstant = cert.getNotBeforeInstant();
         final Date notAfterDate = cert.getNotAfter();
         final Instant notAfterInstant = cert.getNotAfterInstant();

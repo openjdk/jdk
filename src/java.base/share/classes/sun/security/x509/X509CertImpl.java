@@ -539,6 +539,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @exception CertificateNotYetValidException if the certificate is not
      * yet valid with respect to the <code>instant</code> supplied.
      */
+    @Override
     public void checkValidity(Instant instant)
     throws CertificateExpiredException, CertificateNotYetValidException {
 
@@ -689,6 +690,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @return the start instant of the validity period.
      * @since 27
      */
+    @Override
     public Instant getNotBeforeInstant() {
         return info.getValidity().getNotBefore();
     }
@@ -708,6 +710,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @return the end instant of the validity period.
      * @since 27
      */
+    @Override
     public Instant getNotAfterInstant() {
         return info.getValidity().getNotAfter();
     }
