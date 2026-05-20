@@ -74,12 +74,12 @@ public class TestFullGCCount {
         //   Any increase >=2 is unexpected (except G1 Concurrent GC: each concurrent
         //   STW pause increments that bean, so two pauses in one cycle are normal).
         for (String collector : counts.keySet()) {
-            int threhold = 2;
+            int threshold = 2;
             if ("G1 Concurrent GC".equals(collector)) {
                 // G1ConcGCMonitoringScope runs once per concurrent STW pause
                 // (e.g. Remark and Cleanup), not once per concurrent cycle, so
                 // two increments between consecutive System.gc() samples are valid.
-                threhold = 3;
+                threshold = 3;
             }
             System.out.println("Checking: " + collector);
 
@@ -87,7 +87,7 @@ public class TestFullGCCount {
                 List<Long> theseCounts = counts.get(collector);
                 long a = theseCounts.get(i);
                 long b = theseCounts.get(i + 1);
-                if (b - a >= threhold) {
+                if (b - a >= threshold) {
                     failed = true;
                     errorMessage += "Collector '" + collector + "' has increment " + (b - a) +
                                     " at iteration " + i + "\n";
