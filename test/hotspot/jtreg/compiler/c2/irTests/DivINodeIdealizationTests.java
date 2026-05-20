@@ -148,8 +148,8 @@ public class DivINodeIdealizationTests {
     @IR(counts = {IRNode.AND, "1",
                   IRNode.RSHIFT, "1",
                  })
-    // Checks (x & -(2^c0)) / 2^c1 => (x >> c1) & (2^c0 >> c1) => (x >> c1) & c3 where 2^c0 > |2^c1| "AND" c3 = 2^c0 >> c1
-    // Having a large enough and in the dividend removes the need to account for rounding when converting to shifts and multiplies as in divByPow2()
+    // Having a a sufficient number of trailing zeroes in the dividend removes the need to account
+    // for rounding when converting to shifts and multiplies as in divByPow2()
     public int divByPow2And(int x) {
         return (x & -6) / 2;
     }

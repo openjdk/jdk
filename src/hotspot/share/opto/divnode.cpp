@@ -441,7 +441,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
     addend0 = phase->transform(new RShiftLNode(mul_hi, phase->intcon(shift_const - N)));
   }
 
-  // q = mul_hi(x, c) >> (s - 64) + (x < 0 ? 1 : 0) = mul_hi(x, c) >> (x - 64) - (x >> 63)
+  // q = (mul_hi(x, c) >> (s - 64)) + (x < 0 ? 1 : 0) = (mul_hi(x, c) >> (s - 64)) - (x >> 63)
   constexpr int N = 64;
   Node *addend1 = phase->transform(new RShiftLNode(dividend, phase->intcon(N - 1)));
 
@@ -559,46 +559,6 @@ static Node* divModIdealCommon(Node* n, BasicType bt, PhaseGVN* phase, bool need
   }
 
   return need_const_divisor ? nullptr : NodeSentinel;
-}
-
-template <typename TypeClass, typename Unsigned>
-Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
-  // Check for dead control input
-  if (div->in(0) != nullptr && div->remove_dead_region(phase, can_reshape)) {
-    return div;
-  }
-  // Don't bother trying to transform a dead node
-  if (div->in(0) != nullptr && div->in(0)->is_top()) {
-    return nullptr;
-  }
-
-  const Type* t = phase->type(div->in(2));
-  if (t == Type::TOP) {
-    return nullptr;
-  }
-  const TypeClass* type_divisor = t->cast<TypeClass>();
-
-  // Check for useless control input
-  // Check for excluding div-zero case
-  if (div->in(0) != nullptr && (type_divisor->_hi < 0 || type_divisor->_lo > 0)) {
-    div->set_req(0, nullptr); // Yank control input
-    return div;
-  }
-
-  if (!type_divisor->is_con()) {
-    return nullptr;
-  }
-  Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con()); // Get divisor
-
-  if (divisor == 0 || divisor == 1) {
-    return nullptr; // Dividing by zero constant does not idealize
-  }
-
-  if (is_power_of_2(divisor)) {
-    return make_urshift<TypeClass>(div->in(1), phase->intcon(log2i_graceful(divisor)));
-  }
-
-  return nullptr;
 }
 
 template<typename IntegerType>

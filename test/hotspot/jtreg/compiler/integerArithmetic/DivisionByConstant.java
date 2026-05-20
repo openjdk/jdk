@@ -32,7 +32,8 @@ import jdk.test.lib.Utils;
  * @test
  * @bug 8282365
  * @summary Test that Ideal transformations of division nodes provide correct
- * result.
+ *          result.
+ * @key randomness
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib /
  * @run driver compiler.integerArithmetic.DivisionByConstant
