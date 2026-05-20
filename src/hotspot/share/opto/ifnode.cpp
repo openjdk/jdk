@@ -703,7 +703,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
             case BoolTest::lt:
               // Condition leading to if_proj: val < cmp2
               //   val in [min_int .. max(min_int, cmp2->_hi - 1)]
-              lo = TypeInt::INT->_lo;
+              lo = min_jint;
               if (hi != min_jint) {
                 hi = hi - 1;
               }
@@ -711,7 +711,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
             case BoolTest::le:
               // Condition leading to if_proj: val <= cmp2
               //   val in [min_int .. cmp2->_hi]
-              lo = TypeInt::INT->_lo;
+              lo = min_jint;
               break;
             case BoolTest::gt:
               // Condition leading to if_proj: val > cmp2
@@ -719,12 +719,12 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               if (lo != max_jint) {
                 lo = lo + 1;
               }
-              hi = TypeInt::INT->_hi;
+              hi = max_jint;
               break;
             case BoolTest::ge:
               // Condition leading to if_proj: val >= cmp2
               //   val in [cmp2->_lo .. max_int]
-              hi = TypeInt::INT->_hi;
+              hi = max_jint;
               break;
             default:
               assert(false, "impossible case");
@@ -999,6 +999,8 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   BoolNode* bool2 = iff2->in(1)->as_Bool();
   CmpNode* cmp1 = bool1->in(1)->as_Cmp();
   CmpNode* cmp2 = bool2->in(1)->as_Cmp();
+  assert(cmp1->Opcode() == Op_CmpI, "comparisons must be CmpI");
+  assert(cmp2->Opcode() == Op_CmpI, "comparisons must be CmpI");
 
   IfProjNode* fail1 = middle->other_if_proj();
 
@@ -1165,6 +1167,11 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   Node* x2 = nullptr;
   BoolTest::mask cond = BoolTest::illegal;
   if (lo_test == BoolTest::gt && hi_test == BoolTest::lt) {
+    // We perform the the (CHECK) below, which implies (LO-HI),
+    // as we will show below.
+    if (lo_type->_hi >= hi_type->_lo) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
+    }
     // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
@@ -1215,15 +1222,18 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //
     // Note: we cannot use anything more relaxed than the assumption
     //       lo < hi: with lo=hi the rhs of the CmpU would underflow.
-    if (lo_type->_hi >= hi_type->_lo) {
-      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
-    }
+    //
     // Produce form: n - lo + x1 <cond> hi - lo + x2
     //               n - lo -  1   <u   hi - lo - 1
     x1 = igvn->intcon(-1);
     x2 = igvn->intcon(-1);
     cond = BoolTest::lt;
   } else if (lo_test == BoolTest::gt && hi_test == BoolTest::le) {
+    // We perform the the (CHECK) below, which implies (LO-HI),
+    // as we will show below.
+    if (lo_type->_hi >= hi_type->_lo) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
+    }
     // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
@@ -1287,15 +1297,18 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //
     // Note: we cannot use anything more relaxed than the assumption
     //       lo <= hi: with lo=hi+1 the rhs of the CmpU would underflow.
-    if (lo_type->_hi >= hi_type->_lo) {
-      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
-    }
+    //
     // Produce form: n - lo + x1 <cond> hi - lo + x2
     //               n - lo -  1   <u   hi - lo
     x1 = igvn->intcon(-1);
     x2 = igvn->intcon(0);
     cond = BoolTest::lt;
   } else if (lo_test == BoolTest::ge && hi_test == BoolTest::lt) {
+    // We perform the the (CHECK) below, which implies (LO-HI),
+    // as we will show below.
+    if (lo_type->_hi >= hi_type->_lo) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
+    }
     // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
@@ -1339,9 +1352,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //
     /// Note: we cannot use anything more relaxed than the assumption
     //       lo <= hi: with lo=hi+1 the rhs of the CmpU would underflow.
-    if (lo_type->_hi >= hi_type->_lo) {
-      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
-    }
+    //
     // Produce form: n - lo + x1 <cond> hi - lo + x2
     //               n - lo        <u   hi - lo
     x1 = igvn->intcon(0);
@@ -1349,6 +1360,13 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     cond = BoolTest::lt;
   } else {
     assert (lo_test == BoolTest::ge && hi_test == BoolTest::le, "");
+    // We perform the the (CHECK) below, which implies (LO-HI),
+    // as we will show below.
+    jlong lo_type_hi = lo_type->_hi;
+    jlong hi_type_lo = hi_type->_lo;
+    if (lo_type_hi >= hi_type_lo - 1) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
+    }
     // d)  (n >= lo && n <= hi)  ->   n - lo     <=u hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
@@ -1402,11 +1420,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //            which implies lo <= hi and excludes this bad case.
     //       - Before JDK-8346420: transform into: n - lo <u hi - lo + 1
     //         leads to rhs overflow  with lo=min_int and hi=max_int
-    jlong lo_type_hi = lo_type->_hi;
-    jlong hi_type_lo = hi_type->_lo;
-    if (lo_type_hi >= hi_type_lo - 1) {
-      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
-    }
+    //
     // Produce form: n - lo + x1 <cond> hi - lo + x2
     //               n - lo        <=u  hi - lo
     x1 = igvn->intcon(0);
