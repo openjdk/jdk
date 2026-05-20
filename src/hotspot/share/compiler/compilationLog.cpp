@@ -35,11 +35,11 @@ CompilationLog* CompilationLog::_log;
 CompilationLog::CompilationLog() : StringEventLog("Compilation events", "jit") {
 }
 
+// Initial size for stringStream, big enough for these logs
 static const size_t buf_size = FormatBufferBase::BufferSize;
 
 void CompilationLog::log_compile(JavaThread* thread, CompileTask* task) {
-  ResourceMark rm;
-  stringStream ss(NEW_RESOURCE_ARRAY(char, buf_size), buf_size);
+  stringStream ss(buf_size);
   // msg.time_stamp().update_to(tty->time_stamp().ticks());
   task->print(&ss, nullptr, true, false);
   log(thread, "%s", ss.freeze());
@@ -52,8 +52,7 @@ void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
 }
 
 void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
-  ResourceMark rm;
-  stringStream ss(NEW_RESOURCE_ARRAY(char, buf_size), buf_size);
+  stringStream ss(buf_size);
   if (task == nullptr) {
     ss.print("Id not known, task was 0;  COMPILE SKIPPED: %s", reason);
   } else {
@@ -68,8 +67,7 @@ void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const ch
 void CompilationLog::log_metaspace_failure(const char* reason) {
   // Note: This method can be called from non-Java/compiler threads to
   // log the global metaspace failure that might affect profiling.
-  ResourceMark rm;
-  stringStream ss(NEW_RESOURCE_ARRAY(char, buf_size), buf_size);
+  stringStream ss(buf_size);
   ss.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
   log(Thread::current(), "%s", ss.freeze());
 }
