@@ -16,30 +16,7 @@
 #include <cuda.h>
 
 #include "sleefquadinline_cuda.h"
-#include "sleefquadinline_purecfma_scalar.h"
-
-#if (defined(__MINGW32__) || defined(__MINGW64__) || defined(__CYGWIN__) || defined(_MSC_VER)) && !defined(SLEEF_STATIC_LIBS)
-#ifdef SLEEF_IMPORT_IS_EXPORT
-#define SLEEF_IMPORT __declspec(dllexport)
-#else // #ifdef SLEEF_IMPORT_IS_EXPORT
-#define SLEEF_IMPORT __declspec(dllimport)
-#if (defined(_MSC_VER))
-#pragma comment(lib,"sleefquad.lib")
-#endif // #if (defined(_MSC_VER))
-#endif // #ifdef SLEEF_IMPORT_IS_EXPORT
-#else // #if (defined(__MINGW32__) || defined(__MINGW64__) || defined(__CYGWIN__) || defined(_MSC_VER)) && !defined(SLEEF_STATIC_LIBS)
-#define SLEEF_IMPORT
-#endif // #if (defined(__MINGW32__) || defined(__MINGW64__) || defined(__CYGWIN__) || defined(_MSC_VER)) && !defined(SLEEF_STATIC_LIBS)
-
-extern "C" {
-SLEEF_IMPORT Sleef_quad Sleef_strtoq(const char *str, char **endptr);
-SLEEF_IMPORT int Sleef_fprintf(FILE *fp, const char *fmt, ...);
-SLEEF_IMPORT int Sleef_vfprintf(FILE *fp, const char *fmt, va_list ap);
-SLEEF_IMPORT int Sleef_printf(const char *fmt, ...);
-SLEEF_IMPORT int Sleef_vprintf(const char *fmt, va_list ap);
-SLEEF_IMPORT int Sleef_snprintf(char *str, size_t size, const char *fmt, ...);
-SLEEF_IMPORT int Sleef_vsnprintf(char *str, size_t size, const char *fmt, va_list ap);
-}
+#include "sleefquadinline_purec_scalar.h"
 
 #define STDIN_FILENO 0
 
@@ -407,7 +384,7 @@ int main(int argc, char **argv) {
     xmulq_u05<<<1, 1>>>(r, a0, a1);
     cudaDeviceSynchronize();
     Sleef_quad v0 = Sleef_getq1_cuda(*r, 0);
-    if (Sleef_icmpneq1_purecfma(v0, sleef_q(+0x1114580b45d47LL, 0x49e6108579a2d0caULL, 3))) {
+    if (Sleef_icmpneq1_purec(v0, sleef_q(+0x1114580b45d47LL, 0x49e6108579a2d0caULL, 3))) {
       fprintf(stderr, "Testing with Sleef_mulq1_u05cuda failed\n");
       exit(-1);
     }

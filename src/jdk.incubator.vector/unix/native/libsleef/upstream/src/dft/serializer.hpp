@@ -11,8 +11,6 @@
 
 using namespace std;
 
-namespace sleef_internal {
-
 class Serializer {
 public:
   virtual void write(const void *, size_t) = 0;
@@ -145,5 +143,3 @@ Deserializer& operator>>(Deserializer &d, tuple<Ts...> &t) {
   deserialize_tuple(d, t);
   return d;
 }
-
-} // namespace sleef_internal

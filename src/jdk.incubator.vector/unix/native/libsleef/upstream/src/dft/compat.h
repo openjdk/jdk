@@ -1,10 +1,5 @@
 #if !(defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER))
 
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#endif
-
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/file.h>
@@ -26,7 +21,7 @@ static sigjmp_buf sigjmp;
 
 #else
 
-#include <windows.h>
+#include <Windows.h>
 #include <io.h>
 #include <signal.h>
 #include <setjmp.h>

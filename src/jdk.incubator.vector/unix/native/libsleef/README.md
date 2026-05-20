@@ -25,7 +25,7 @@ the JDK source tree. The generated files reside in
 
 To update the version of libsleef that is used in the JDK, clone
 `https://github.com/shibatch/sleef.git`, and copy all files, except the `docs`,
-`.github` and `.git` directories, into
+`.github` and `.git` directories, and the `.nojekyll` file, into
 `src/jdk.incubator.vector/unix/native/libsleef/upstream`.
 
 The libsleef source code does not follow the JDK whitespace rules as enforced by

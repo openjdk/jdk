@@ -59,7 +59,13 @@ elseif(SLEEF_ARCH_AARCH64)
     DSPX2_AARCH64
     )
   set(QMKDISP_PARAMS_X2 2 Sleef_quadx2 float64x2_t int32x2_t int64x2_t uint64x2_t advsimd x)
-elseif(SLEEF_ARCH_PPC64 AND COMPILER_SUPPORTS_VSX)
+elseif(SLEEF_ARCH_AARCH32)
+  set(SLEEF_HEADER_LIST
+    PUREC_SCALAR
+    PURECFMA_SCALAR
+    DSPSCALAR
+    )
+elseif(SLEEF_ARCH_PPC64)
   set(SLEEF_HEADER_LIST
     VSX
     VSX3
@@ -69,7 +75,7 @@ elseif(SLEEF_ARCH_PPC64 AND COMPILER_SUPPORTS_VSX)
     DSPX2_PPC64
     )
   set(QMKDISP_PARAMS_X2 2 Sleef_quadx2 "SLEEF_VECTOR_DOUBLE" "SLEEF_VECTOR_INT" "SLEEF_VECTOR_LONGLONG" "SLEEF_VECTOR_ULONGLONG" vsx vsx3)
-elseif(SLEEF_ARCH_S390X AND COMPILER_SUPPORTS_VXE)
+elseif(SLEEF_ARCH_S390X)
   set(SLEEF_HEADER_LIST
     VXE
     VXE2
@@ -83,12 +89,6 @@ elseif(SLEEF_ARCH_RISCV64)
   set(SLEEF_HEADER_LIST
     RVVM1
     RVVM2
-    PUREC_SCALAR
-    PURECFMA_SCALAR
-    DSPSCALAR
-    )
-else()
-  set(SLEEF_HEADER_LIST
     PUREC_SCALAR
     PURECFMA_SCALAR
     DSPSCALAR
@@ -207,14 +207,14 @@ foreach(SIMD ${SLEEF_SUPPORTED_QUAD_EXTENSIONS})
     target_compile_definitions(${OBJECT} PRIVATE ENABLE_${SIMD}=1 DORENAME=1 ${COMMON_TARGET_DEFINITIONS})
 
     set_target_properties(${OBJECT} PROPERTIES ${COMMON_TARGET_PROPERTIES})
-    add_dependencies(${OBJECT} qrename${SIMD}.h_generated ext_tlfloat)
+    add_dependencies(${OBJECT} qrename${SIMD}.h_generated)
     target_compile_options(${OBJECT} PRIVATE ${FLAGS_ENABLE_${SIMD}})
 
     list(APPEND SLEEFQUAD_OBJECTS $<TARGET_OBJECTS:${OBJECT}>)
   endif()
 endforeach()
 
-add_library(sleefquad rempitabqp.c printf.c ${SLEEFQUAD_OBJECTS})
+add_library(sleefquad rempitabqp.c ${SLEEFQUAD_OBJECTS})
 
 set_target_properties(sleefquad PROPERTIES
   VERSION ${SLEEF_VERSION}
@@ -229,13 +229,15 @@ if(LIBM AND ((NOT COMPILER_SUPPORTS_BUILTIN_MATH) OR (SLEEF_ARCH_32BIT AND SLEEF
   target_link_libraries(sleefquad ${LIBM})
 endif()
 
-target_link_libraries(sleefquad ${TARGET_COMMONXX_OBJ} ${TARGET_LIBSLEEF} ${TLFLOAT_LIBRARIES} ${LIBM})
-
 # --------------------------------------------------------------------
 # Inline headers
 # --------------------------------------------------------------------
 
 if(SLEEF_BUILD_INLINE_HEADERS)
+  if(CMAKE_C_COMPILER_ID MATCHES "Intel")
+    message(FATAL_ERROR "SLEEF_BUILD_INLINE_HEADERS is not supported with Intel Compiler")
+  endif()
+
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/)
   set(INLINE_HEADER_FILES_GENERATED "")
 
@@ -243,7 +245,7 @@ if(SLEEF_BUILD_INLINE_HEADERS)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sleefquadinline_cuda_header.h.org.in ${CMAKE_CURRENT_BINARY_DIR}/sleefquadinline_cuda_header.h.org)
 
   if (SED_COMMAND)
-    foreach(SIMD ${SLEEF_SUPPORTED_INLINE_QUAD_EXTENSIONS} CUDA)
+    foreach(SIMD ${SLEEF_SUPPORTED_QUAD_EXTENSIONS} CUDA)
       if(COMPILER_SUPPORTS_${SIMD} OR "${SIMD}" STREQUAL "CUDA")
         string(TOLOWER ${SIMD} SIMDLC)
 
@@ -420,11 +422,7 @@ add_custom_target(qrenamedspscalar.h_generated SOURCES ${CMAKE_CURRENT_BINARY_DI
 
 add_library(qdispscalar_obj OBJECT qdispscalar.c)
 set_target_properties(qdispscalar_obj PROPERTIES ${COMMON_TARGET_PROPERTIES})
-if (COMPILER_SUPPORTS_PURECFMA_SCALAR)
-  target_compile_definitions(qdispscalar_obj PRIVATE ${COMMON_TARGET_DEFINITIONS} ENABLE_PURECFMA=1)
-else()
-  target_compile_definitions(qdispscalar_obj PRIVATE ${COMMON_TARGET_DEFINITIONS})
-endif()
+target_compile_definitions(qdispscalar_obj PRIVATE ${COMMON_TARGET_DEFINITIONS})
 target_include_directories(qdispscalar_obj PRIVATE ${sleef_BINARY_DIR}/include)
 add_dependencies(qdispscalar_obj qdispscalar.c_generated qrenamedspscalar.h_generated
    sleefquad_headers ${TARGET_LIBSLEEF} ${TARGET_HEADERS})

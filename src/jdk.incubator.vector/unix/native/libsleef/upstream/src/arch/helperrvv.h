@@ -60,10 +60,14 @@
 //@#define ENABLE_DP
 
 #if CONFIG != 2
+#if defined(ENABLE_RVVM1NOFMA) || defined(ENABLE_RVVM2NOFMA)
+#error "RVV NOFMA only supported for CONFIG=2"
+#else
 #define ENABLE_FMA_SP
 //@#define ENABLE_FMA_SP
 #define ENABLE_FMA_DP
 //@#define ENABLE_FMA_DP
+#endif
 #endif
 
 #if __riscv_v_intrinsic < 1000000 && !(defined(__clang_major__) && __clang_major__ >= 18)
@@ -125,7 +129,7 @@ static INLINE vfloat64m2x4_t __riscv_vcreate_v_f64m2x4(vfloat64m2_t x, vfloat64m
 // wide-LMUL register group. In the largest cases (ddi_t and ddf_t), this
 // requires LMUL=8 if the base type (vfloat or vdouble) has LMUL=2, meaning
 // LMUL=2 is currently the widest option for SLEEF function argument types.
-#if defined(ENABLE_RVVM1)
+#if defined(ENABLE_RVVM1) || defined(ENABLE_RVVM1NOFMA)
 
 typedef vuint32m1_t rvv_vmask32;
 typedef vuint64m1_t vmask;
@@ -235,7 +239,7 @@ typedef vfloat64m1x4_t tdi_t;
 #define SLEEF_RVV_DP_VFCVT_F_X_VD __riscv_vfcvt_f_x_v_f64m1
 #define SLEEF_RVV_DP_VFCVT_X_F_VD_RM __riscv_vfcvt_x_f_v_i64m1_rm
 
-#elif defined(ENABLE_RVVM2)
+#elif defined(ENABLE_RVVM2) || defined(ENABLE_RVVM2NOFMA)
 
 typedef vuint32m2_t rvv_vmask32;
 typedef vuint64m2_t vmask;
@@ -1344,6 +1348,8 @@ static vquad loadu_vq_p(const int32_t *ptr) {
 
 static INLINE vquad cast_vq_aq(vargquad aq) { return aq; }
 static INLINE vargquad cast_aq_vq(vquad vq) { return vq; }
+
+static INLINE void vprefetch_v_p(const void *ptr) {}
 
 
 /****************************************/

@@ -20,8 +20,7 @@ typedef __vector float  vector_float;
 
 #ifdef ENABLE_VSX3
 void sleef_tryVSX3();
-static int cache_vsx3 = -1;
-#define SUBST_IF_EXT1(funcvsx3) if (Sleef_internal_cpuSupportsExt(sleef_tryVSX3, &cache_vsx3)) p = funcvsx3;
+#define SUBST_IF_EXT1(funcvsx3) if (cpuSupportsExt(sleef_tryVSX3)) p = funcvsx3;
 #else
 #define SUBST_IF_EXT1(funcvsx3)
 #endif

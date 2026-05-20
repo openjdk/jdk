@@ -41,8 +41,6 @@ int main(int argc, char **argv) {
 
   if (strcmp(baseType, "paramonly") == 0) exit(0);
 
-  printf("namespace sleef_internal {\n");
-
   for(int k=isastart;k<argc;k++) {
     for(int config=0;config<4;config++) {
 #if ENABLE_STREAM == 0
@@ -252,6 +250,4 @@ int main(int argc, char **argv) {
   for(int k=isastart;k<argc;k++) printf("getPtr_%s, ", argv[k]);
   for(int k=0;k<16-(argc-isastart);k++) printf("NULL, ");
   printf("\n};\n\n");
-
-  printf("} // namespace sleef_internal\n");
 }

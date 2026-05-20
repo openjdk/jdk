@@ -29,6 +29,10 @@
 #include "helperavx512f.h"
 #endif
 
+#ifdef ENABLE_NEON32
+#include "helperneon32.h"
+#endif
+
 #ifdef ENABLE_ADVSIMD
 #include "helperadvsimd.h"
 #endif
@@ -98,6 +102,7 @@ static INLINE void stream(real *ptr, int offset, real2 v) { vstream_v_p_vd(&ptr[
 static INLINE void scatter(real *ptr, int offset, int step, real2 v) { vscatter2_v_p_i_i_vd(ptr, offset, step, v); }
 static INLINE void scstream(real *ptr, int offset, int step, real2 v) { vsscatter2_v_p_i_i_vd(ptr, offset, step, v); }
 
+static INLINE void prefetch(real *ptr, int offset) { vprefetch_v_p(&ptr[2*offset]); }
 #elif BASETYPEID == 2
 #define LOG2VECWIDTH (LOG2VECTLENSP-1)
 #define VECWIDTH (1 << LOG2VECWIDTH)
@@ -131,6 +136,8 @@ static INLINE void storeu(real *ptr, int offset, real2 v) { vstoreu_v_p_vf(&ptr[
 static INLINE void stream(real *ptr, int offset, real2 v) { vstream_v_p_vf(&ptr[2*offset], v); }
 static INLINE void scatter(real *ptr, int offset, int step, real2 v) { vscatter2_v_p_i_i_vf(ptr, offset, step, v); }
 static INLINE void scstream(real *ptr, int offset, int step, real2 v) { vsscatter2_v_p_i_i_vf(ptr, offset, step, v); }
+
+static INLINE void prefetch(real *ptr, int offset) { vprefetch_v_p(&ptr[2*offset]); }
 #else
 #error No BASETYPEID specified
 #endif

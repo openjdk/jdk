@@ -46,7 +46,8 @@ static void testem(EVP_MD_CTX *ctx, Sleef_quad val, char *types) {
                      types);
 
             r = Sleef_snprintf(buf, 99, fmt, &val);
-            EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : strlen(buf));
+            assert(r < 100);
+            EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : r);
             q = Sleef_strtoq(buf, NULL);
             convertEndianness(&q, sizeof(q));
             EVP_DigestUpdate(ctx, &q, sizeof(Sleef_quad));
@@ -61,7 +62,8 @@ static void testem(EVP_MD_CTX *ctx, Sleef_quad val, char *types) {
                        width, types);
 
               r = Sleef_snprintf(buf, 99, fmt, &val);
-              EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : strlen(buf));
+              assert(r < 100);
+              EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : r);
               q = Sleef_strtoq(buf, NULL);
               convertEndianness(&q, sizeof(q));
               EVP_DigestUpdate(ctx, &q, sizeof(Sleef_quad));
@@ -78,7 +80,8 @@ static void testem(EVP_MD_CTX *ctx, Sleef_quad val, char *types) {
                          width, prec, types);
 
                 r = Sleef_snprintf(buf, 99, fmt, &val);
-                EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : strlen(buf));
+                assert(r < 100);
+                EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : r);
                 q = Sleef_strtoq(buf, NULL);
                 convertEndianness(&q, sizeof(q));
                 EVP_DigestUpdate(ctx, &q, sizeof(Sleef_quad));
@@ -93,7 +96,8 @@ static void testem(EVP_MD_CTX *ctx, Sleef_quad val, char *types) {
                        prec, types);
 
               r = Sleef_snprintf(buf, 99, fmt, &val);
-              EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : strlen(buf));
+              assert(r < 100);
+              EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : r);
               q = Sleef_strtoq(buf, NULL);
               convertEndianness(&q, sizeof(q));
               EVP_DigestUpdate(ctx, &q, sizeof(Sleef_quad));
@@ -125,6 +129,37 @@ static int test2(const char *fmt, ...) {
 }
 
 int main(int argc, char **argv) {
+#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 13)
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+  Sleef_registerPrintfHook();
+  static char buf[110];
+  Sleef_quad q = Sleef_strtoq("3.1415926535897932384626433832795028842", NULL);
+
+  snprintf(buf, 100, "%50.40Pe", &q);
+  if (strcmp(buf, "    3.1415926535897932384626433832795027974791e+00") != 0) {
+    fprintf(stderr, "%%50.40Pe %s\n", buf);
+    exit(-1);
+  }
+  snprintf(buf, 100, "%50.40Pf", &q);
+  if (strcmp(buf, "        3.1415926535897932384626433832795027974791") != 0) {
+    fprintf(stderr, "%%50.40Pf %s\n", buf);
+    exit(-1);
+  }
+  snprintf(buf, 100, "%50.40Pg", &q);
+  if (strcmp(buf, "         3.141592653589793238462643383279502797479") != 0) {
+    fprintf(stderr, "%%50.40Pg %s\n", buf);
+    exit(-1);
+  }
+  snprintf(buf, 100, "%Pa", &q);
+  if (strcmp(buf, "0x1.921fb54442d18469898cc51701b8p+1") != 0) {
+    fprintf(stderr, "%%Pa %s\n", buf);
+    exit(-1);
+  }
+#endif
+
+  //
+
   FILE *fp = NULL;
 
   if (argc != 1) {

@@ -15,14 +15,10 @@
 
 #include "qdispatcher.h"
 
-#ifdef ENABLE_PURECFMA
 NOEXPORT Sleef_quad sleef_cpuid_QUADFMA_0;
-static int cache_fma = -1;
 static void tryFMA() { sleef_cpuid_QUADFMA_0 = Sleef_sinq1_u10purecfma(sleef_cpuid_QUADFMA_0); }
 
-#define SUBST_IF_EXT1(funcExt1) if (Sleef_internal_cpuSupportsExt(tryFMA, &cache_fma)) p = funcExt1;
-#else
-#define SUBST_IF_EXT1(funcExt1)
-#endif
+#define SUBST_IF_EXT1(funcExt1) if (cpuSupportsExt(tryFMA)) p = funcExt1;
+
 //
 

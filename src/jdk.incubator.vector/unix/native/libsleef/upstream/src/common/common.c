@@ -15,11 +15,23 @@
 
 EXPORT void *Sleef_malloc(size_t z) { return _aligned_malloc(z, 256); }
 EXPORT void Sleef_free(void *ptr) { _aligned_free(ptr); }
+
+EXPORT uint64_t Sleef_currentTimeMicros() {
+  struct __timeb64 t;
+  _ftime64(&t);
+  return t.time * INT64_C(1000000) + t.millitm*1000;
+}
 #elif defined(__APPLE__)
 #include <sys/time.h>
 
 EXPORT void *Sleef_malloc(size_t z) { void *ptr = NULL; posix_memalign(&ptr, 256, z); return ptr; }
 EXPORT void Sleef_free(void *ptr) { free(ptr); }
+
+EXPORT uint64_t Sleef_currentTimeMicros() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return (uint64_t)((time.tv_sec * INT64_C(1000000)) + time.tv_usec);
+}
 #else // #if defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER)
 #include <time.h>
 #include <unistd.h>
@@ -31,6 +43,12 @@ EXPORT void Sleef_free(void *ptr) { free(ptr); }
 
 EXPORT void *Sleef_malloc(size_t z) { void *ptr = NULL; posix_memalign(&ptr, 4096, z); return ptr; }
 EXPORT void Sleef_free(void *ptr) { free(ptr); }
+
+EXPORT uint64_t Sleef_currentTimeMicros() {
+  struct timespec tp;
+  clock_gettime(CLOCK_MONOTONIC, &tp);
+  return (uint64_t)tp.tv_sec * INT64_C(1000000) + ((uint64_t)tp.tv_nsec/1000);
+}
 #endif // #if defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER)
 
 #ifdef _MSC_VER
@@ -39,7 +57,7 @@ EXPORT void Sleef_x86CpuID(int32_t out[4], uint32_t eax, uint32_t ecx) {
   __cpuidex(out, eax, ecx);
 }
 #else
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(__i386__)
 EXPORT void Sleef_x86CpuID(int32_t out[4], uint32_t eax, uint32_t ecx) {
   uint32_t a, b, c, d;
   __asm__ __volatile__ ("cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d) : "a" (eax), "c"(ecx));
@@ -48,7 +66,7 @@ EXPORT void Sleef_x86CpuID(int32_t out[4], uint32_t eax, uint32_t ecx) {
 #endif
 #endif
 
-#if defined(__x86_64__) || defined(_MSC_VER)
+#if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
 static char x86BrandString[256];
 
 EXPORT char *Sleef_getCpuIdString() {

@@ -67,6 +67,7 @@ typedef quadVector vquad;
 //
 
 static INLINE int vavailability_i(int name) { return -1; }
+static INLINE void vprefetch_v_p(const void *ptr) { }
 
 static INLINE int vtestallones_i_vo64(vopmask g) {
   int ret = 1; for(int i=0;i<VECTLENDP;i++) ret = ret && g.x[i]; return ret;

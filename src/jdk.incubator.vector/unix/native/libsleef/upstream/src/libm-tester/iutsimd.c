@@ -31,9 +31,9 @@
 #include <float.h>
 #include <limits.h>
 
-#if defined(__AVX2__) || defined(__aarch64__) || defined(__powerpc64__)
-#ifndef __FMA__
-#define __FMA__
+#if defined(__AVX2__) || defined(__aarch64__) || defined(__arm__) || defined(__powerpc64__)
+#ifndef FP_FAST_FMA
+#define FP_FAST_FMA
 #endif
 #endif
 
@@ -41,7 +41,7 @@
 #define __STDC__ 1
 #endif
 
-#if (defined(__GNUC__) || defined(__CLANG__)) && defined(__x86_64__)
+#if (defined(__GNUC__) || defined(__CLANG__)) && (defined(__i386__) || defined(__x86_64__))
 #include <x86intrin.h>
 #endif
 
@@ -75,8 +75,8 @@
 #include USE_INLINE_HEADER
 #include MACRO_ONLY_HEADER
 
-#ifndef ENABLE_PURECFMA_SCALAR
-#include "sleefinline_purecfma_scalar.h"
+#ifndef ENABLE_PUREC_SCALAR
+#include "sleefinline_purec_scalar.h"
 #endif
 
 #endif // #if !defined(USE_INLINE_HEADER)
@@ -92,6 +92,36 @@
 #include "helpersse2.h"
 typedef Sleef___m128d_2 vdouble2;
 typedef Sleef___m128_2 vfloat2;
+#endif
+#endif
+
+#ifdef ENABLE_SSE4
+#include "renamesse4.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 4
+#include "helpersse2.h"
+typedef Sleef___m128d_2 vdouble2;
+typedef Sleef___m128_2 vfloat2;
+#endif
+#endif
+
+#ifdef ENABLE_AVX
+#include "renameavx.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 1
+#include "helperavx.h"
+typedef Sleef___m256d_2 vdouble2;
+typedef Sleef___m256_2 vfloat2;
+#endif
+#endif
+
+#ifdef ENABLE_FMA4
+#include "renamefma4.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 4
+#include "helperavx.h"
+typedef Sleef___m256d_2 vdouble2;
+typedef Sleef___m256_2 vfloat2;
 #endif
 #endif
 
@@ -125,16 +155,60 @@ typedef Sleef___m512_2 vfloat2;
 #endif
 #endif
 
+#ifdef ENABLE_AVX512FNOFMA
+#include "renameavx512fnofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 2
+#include "helperavx512f.h"
+typedef Sleef___m512d_2 vdouble2;
+typedef Sleef___m512_2 vfloat2;
+#endif
+#endif
+
+#ifdef ENABLE_VECEXT
+#define CONFIG 1
+#include "helpervecext.h"
+#include "norename.h"
+#endif
+
 #ifdef ENABLE_PUREC
 #define CONFIG 1
 #include "helperpurec.h"
 #include "norename.h"
 #endif
 
+#ifdef ENABLE_NEON32
+#include "renameneon32.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 1
+#include "helperneon32.h"
+typedef Sleef_float32x4_t_2 vfloat2;
+#endif
+#endif
+
+#ifdef ENABLE_NEON32VFPV4
+#include "renameneon32vfpv4.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 4
+#include "helperneon32.h"
+typedef Sleef_float32x4_t_2 vfloat2;
+#endif
+#endif
+
 #ifdef ENABLE_ADVSIMD
 #include "renameadvsimd.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 1
+#include "helperadvsimd.h"
+typedef Sleef_float64x2_t_2 vdouble2;
+typedef Sleef_float32x4_t_2 vfloat2;
+#endif
+#endif
+
+#ifdef ENABLE_ADVSIMDNOFMA
+#include "renameadvsimdnofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 2
 #include "helperadvsimd.h"
 typedef Sleef_float64x2_t_2 vdouble2;
 typedef Sleef_float32x4_t_2 vfloat2;
@@ -153,6 +227,14 @@ typedef Sleef___m128_2 vfloat2;
 #include "renamesve.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 1
+#include "helpersve.h"
+#endif
+#endif
+
+#ifdef ENABLE_SVENOFMA
+#include "renamesvenofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 2
 #include "helpersve.h"
 #endif
 #endif
@@ -176,12 +258,34 @@ typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
 #endif
 
+#ifdef ENABLE_VSXNOFMA
+#include "renamevsxnofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 2
+#include "helperpower_128.h"
+#include "renamevsxnofma.h"
+typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
+typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
+#endif
+#endif
+
 #ifdef ENABLE_VSX3
 #include "renamevsx3.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 3
 #include "helperpower_128.h"
 #include "renamevsx3.h"
+typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
+typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
+#endif
+#endif
+
+#ifdef ENABLE_VSX3NOFMA
+#include "renamevsx3nofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 4
+#include "helperpower_128.h"
+#include "renamevsx3nofma.h"
 typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
 typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
@@ -197,10 +301,30 @@ typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
 #endif
 
+#ifdef ENABLE_VXENOFMA
+#include "renamevxenofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 141
+#include "helpers390x_128.h"
+typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
+typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
+#endif
+#endif
+
 #ifdef ENABLE_VXE2
 #include "renamevxe2.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 150
+#include "helpers390x_128.h"
+typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
+typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
+#endif
+#endif
+
+#ifdef ENABLE_VXE2NOFMA
+#include "renamevxe2nofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 151
 #include "helpers390x_128.h"
 typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
 typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
@@ -231,10 +355,26 @@ typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
 #endif
 
+#ifdef ENABLE_RVVM1NOFMA
+#include "renamervvm1nofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 2
+#include "helperrvv.h"
+#endif
+#endif
+
 #ifdef ENABLE_RVVM2
 #include "renamervvm2.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 1
+#include "helperrvv.h"
+#endif
+#endif
+
+#ifdef ENABLE_RVVM2NOFMA
+#include "renamervvm2nofma.h"
+#if !defined(USE_INLINE_HEADER)
+#define CONFIG 2
 #include "helperrvv.h"
 #endif
 #endif
@@ -322,12 +462,12 @@ int check_feature(double d, float f) {
   return 0;
 }
 
-#if defined(ENABLE_DP) && !(defined(ENABLE_SVE) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM2) || defined(USE_INLINE_HEADER))
+#if defined(ENABLE_DP) && !(defined(ENABLE_SVE) || defined(ENABLE_SVENOFMA) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM1NOFMA) || defined(ENABLE_RVVM2) || defined(ENABLE_RVVM2NOFMA) || defined(USE_INLINE_HEADER))
 static vdouble vd2getx_vd_vd2(vdouble2 v) { return v.x; }
 static vdouble vd2gety_vd_vd2(vdouble2 v) { return v.y; }
 #endif
 
-#if defined(ENABLE_SP) && !(defined(ENABLE_SVE) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM2) || defined(USE_INLINE_HEADER))
+#if defined(ENABLE_SP) && !(defined(ENABLE_SVE) || defined(ENABLE_SVENOFMA) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM1NOFMA) || defined(ENABLE_RVVM2) || defined(ENABLE_RVVM2NOFMA) || defined(USE_INLINE_HEADER))
 static vfloat vf2getx_vf_vf2(vfloat2 v) { return v.x; }
 static vfloat vf2gety_vf_vf2(vfloat2 v) { return v.y; }
 #endif
@@ -516,6 +656,11 @@ int main2(int argc, char **argv) {
 #endif
 #ifdef ENABLE_SP
     k += 2;
+#endif
+#if defined(ENABLE_NEON32) || defined(ENABLE_NEON32VFPV4)
+    k += 4; // flush to zero
+#elif defined(ENABLE_VECEXT)
+    if (vcast_f_vf(xpowf(vcast_vf_f(0.5f), vcast_vf_f(140))) == 0) k += 4;
 #endif
 #if defined(DETERMINISTIC)
     k += 8;

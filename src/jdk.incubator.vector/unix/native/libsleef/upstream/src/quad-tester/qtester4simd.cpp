@@ -30,9 +30,9 @@ using namespace std;
 #include <float.h>
 #include <limits.h>
 
-#if defined(__AVX2__) || defined(__aarch64__) || defined(__powerpc64__)
-#ifndef __FMA__
-#define __FMA__
+#if defined(__AVX2__) || defined(__aarch64__) || defined(__arm__) || defined(__powerpc64__)
+#ifndef FP_FAST_FMA
+#define FP_FAST_FMA
 #endif
 #endif
 
@@ -40,7 +40,7 @@ using namespace std;
 #define __STDC__ 1
 #endif
 
-#if (defined(__GNUC__) || defined(__CLANG__)) && defined(__x86_64__)
+#if (defined(__GNUC__) || defined(__CLANG__)) && (defined(__i386__) || defined(__x86_64__))
 #include <x86intrin.h>
 #endif
 
@@ -74,8 +74,8 @@ using namespace std;
 #include USE_INLINE_HEADER
 #include MACRO_ONLY_HEADER
 
-#ifndef ENABLE_PURECFMA_SCALAR
-#include "sleefquadinline_purecfma_scalar.h"
+#ifndef ENABLE_PUREC_SCALAR
+#include "sleefquadinline_purec_scalar.h"
 #endif
 
 #endif // #if !defined(USE_INLINE_HEADER)
@@ -574,18 +574,20 @@ int main2(int argc, char **argv) {
   {
     VARGQUAD v0 = xsplatq(SLEEF_QUAD_C(3.141592653589793238462643383279502884));
     VARGQUAD v1 = xsplatq(sleef_q(+0x1921fb54442d1LL, 0x8469898cc51701b8ULL, 1));
-    if (Sleef_icmpneq1_purecfma(xgetq(v0, 0), xgetq(v1, 0))) {
+    if (Sleef_icmpneq1_purec(xgetq(v0, 0), xgetq(v1, 0))) {
       fprintf(stderr, "Testing on SLEEF_QUAD_C failed\n");
       exit(-1);
     }
   }
+#elif defined(ENABLE_PUREC_SCALAR)
+#pragma message ("SLEEF_QUAD_C not defined")
 #endif
 
   {
     VARGQUAD v0 = xsplatq(SLEEF_M_PIq);
     VARGQUAD v1 = xsplatq((Sleef_quad)tlfloat_strtoq("2.718281828459045235360287471352662498", NULL));
     Sleef_quad q = xgetq(xmulq_u05(v0, v1), 0);
-    if (Sleef_icmpneq1_purecfma(q, (Sleef_quad)tlfloat_strtoq("8.539734222673567065463550869546573820", NULL))) {
+    if (Sleef_icmpneq1_purec(q, (Sleef_quad)tlfloat_strtoq("8.539734222673567065463550869546573820", NULL))) {
       tlfloat_printf("Testing with xgetq failed : %.35Qg\n", q);
       exit(-1);
     }
@@ -736,7 +738,7 @@ int main2(int argc, char **argv) {
   cout << "fmaxq ";
   success = check_q_q_q("fmaxq", xfmaxq, tlfloat_fmaxo,
                         stdCheckVals, sizeof(stdCheckValsStr)/sizeof(stdCheckValsStr[0]),
-                        arithEB, false) && success;
+                        arithEB, true) && success;
   success = check_q_q_q("fmaxq", xfmaxq, tlfloat_fmaxo, "1e-100" , "1e+100" , true, 5 * NTEST, 1ULL, arithEB, true) && success;
   success = check_q_q_q("fmaxq", xfmaxq, tlfloat_fmaxo, "1e-4000", "1e+4000", true, 5 * NTEST, 1ULL, arithEB, true) && success;
   showULP(success);
@@ -744,7 +746,7 @@ int main2(int argc, char **argv) {
   cout << "fminq ";
   success = check_q_q_q("fminq", xfminq, tlfloat_fmino,
                         stdCheckVals, sizeof(stdCheckValsStr)/sizeof(stdCheckValsStr[0]),
-                        arithEB, false) && success;
+                        arithEB, true) && success;
   success = check_q_q_q("fminq", xfminq, tlfloat_fmino, "1e-100" , "1e+100" , true, 5 * NTEST, 1ULL, arithEB, true) && success;
   success = check_q_q_q("fminq", xfminq, tlfloat_fmino, "1e-4000", "1e+4000", true, 5 * NTEST, 1ULL, arithEB, true) && success;
   showULP(success);

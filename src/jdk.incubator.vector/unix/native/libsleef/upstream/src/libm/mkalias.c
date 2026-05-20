@@ -26,6 +26,11 @@ int main(int argc, char **argv) {
   char *isaname = argc == 6 ? argv[5] : "";
 
   char * vectorcc="";
+#ifdef ENABLE_AAVPCS
+  if (strcmp(isaname, "advsimd") == 0)
+    vectorcc =" __attribute__((aarch64_vector_pcs))";
+  genAliasVectorABI = 0;
+#endif
 
   static char *argType2[] = {
     "a0", "a0, a1", "a0", "a0, a1",
@@ -89,7 +94,7 @@ int main(int argc, char **argv) {
                funcList[i].name, typeSpec[fptype], vw, funcList[i].ulp, isaname, vectorcc
                );
         if (genAliasVectorABI && vparameterStr[funcList[i].funcType] != NULL) {
-          printf("EXPORT CONST %s _ZGV%sN%d%s_Sleef_%s%s_u%02d(%s) __attribute__((alias(\"Sleef_%s%s%d_u%02d%s\")))%s;\n",
+          printf("EXPORT CONST VECTOR_CC %s _ZGV%sN%d%s_Sleef_%s%s_u%02d(%s) __attribute__((alias(\"Sleef_%s%s%d_u%02d%s\")))%s;\n",
                  returnType[funcList[i].funcType],
                  mangledisa, vw, vparameterStr[funcList[i].funcType], funcList[i].name, typeSpecS[fptype], funcList[i].ulp,
                  argType0[funcList[i].funcType],
@@ -104,7 +109,7 @@ int main(int argc, char **argv) {
                funcList[i].name, typeSpec[fptype], vw, isaname, vectorcc
                );
         if (genAliasVectorABI && vparameterStr[funcList[i].funcType] != NULL) {
-          printf("EXPORT CONST %s _ZGV%sN%d%s_Sleef_%s%s(%s) __attribute__((alias(\"Sleef_%s%s%d_%s\")))%s;\n",
+          printf("EXPORT CONST VECTOR_CC %s _ZGV%sN%d%s_Sleef_%s%s(%s) __attribute__((alias(\"Sleef_%s%s%d_%s\")))%s;\n",
                  returnType[funcList[i].funcType],
                  mangledisa, vw, vparameterStr[funcList[i].funcType], funcList[i].name, typeSpecS[fptype],
                  argType0[funcList[i].funcType],

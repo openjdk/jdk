@@ -3,7 +3,7 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-// gcc -O3 -Wno-format tester2printf.c ../../src/common/qtesterutil.c ../../src/common/testerutil.c -I ../../build-x86_64/include -I ../../src/common -I ../../../install/include -L ../../../install/lib -lsleefquad -lsleef -lquadmath -ltlfloat -lm
+// gcc -O3 -Wno-format tester2printf.c qtesterutil.c -I ../../src/common -I ../../build/include -L ../../build/lib -lsleefquad -lsleef -lquadmath
 
 #include <stdio.h>
 #include <stdlib.h>

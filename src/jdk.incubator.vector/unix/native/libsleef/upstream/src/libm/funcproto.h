@@ -25,11 +25,11 @@ typedef struct {
   funcType:
   0 : vdouble func(vdouble);
   1 : vdouble func(vdouble, vdouble);
-  2 : vdouble2 func(vdouble);
+  2 : vdouble2 func(vdouble);   GNUABI : void func(vdouble, double *, double *);
   3 : vdouble func(vdouble, vint);
   4 : vint func(vdouble);
   5 : vdouble func(vdouble, vdouble, vdouble);
-  6 : vdouble2 func(vdouble);
+  6 : vdouble2 func(vdouble);   GNUABI : vdouble func(vdouble, double *);
   7 : int func(int);
   8 : void *func(int);
 

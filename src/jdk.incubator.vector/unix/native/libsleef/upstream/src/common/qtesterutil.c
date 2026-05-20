@@ -234,7 +234,7 @@ char *sprintfr(mpfr_t fr) {
 
 //
 
-#if MPFR_VERSION_MAJOR >= 4 && defined(SLEEF_FLOAT128_IS_IEEEQP) && !defined(__PPC64__) && !(defined(__APPLE__) && defined(__MACH__))
+#if MPFR_VERSION_MAJOR >= 4 && defined(SLEEF_FLOAT128_IS_IEEEQP) && !defined(__PPC64__) && !defined(__i386__) && !(defined(__APPLE__) && defined(__MACH__))
 void mpfr_set_f128(mpfr_t frx, Sleef_quad q, mpfr_rnd_t rnd) {
   int mpfr_set_float128(mpfr_t rop, __float128 op, mpfr_rnd_t rnd);
   union {

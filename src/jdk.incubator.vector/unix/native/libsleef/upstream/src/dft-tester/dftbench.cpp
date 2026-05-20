@@ -144,7 +144,7 @@ class FWFFTW3 : public FFTFramework<cplx> {
 public:
   FWFFTW3(int n_, int m_, bool forward, bool mt, bool check) : n(n_), m(m_) {
     //FFTW_CLEANUP();
-    FFTW_PLAN_WITH_NTHREADS(mt ? thread::hardware_concurrency() : 1);
+    FFTW_PLAN_WITH_NTHREADS(mt ? omp_get_max_threads() : 1);
     in  = (cplx*)FFTW_MALLOC(sizeof(FFTW_COMPLEX) * n * m);
     out = (cplx*)FFTW_MALLOC(sizeof(FFTW_COMPLEX) * n * m);
     unsigned flags = check ? FFTW_ESTIMATE : FFTW_MEASURE;

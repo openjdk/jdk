@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
   const int m = 1 << atoi(argv[2]);
   const int nloop = argc >= 4 ? atoi(argv[3]) : 1;
 
-  srand((unsigned int)(Sleef_currentTimeMicros() & 0xffffffff));
+  srand((unsigned int)time(NULL));
 
   SleefDFT_setPlanFilePath(NULL, NULL, SLEEF_PLAN_RESET | SLEEF_PLAN_READONLY);
 

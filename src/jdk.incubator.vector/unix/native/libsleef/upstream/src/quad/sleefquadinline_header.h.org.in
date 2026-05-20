@@ -8,7 +8,7 @@
 #cmakedefine SLEEF_LONGDOUBLE_IS_IEEEQP
 
 #ifndef SLEEF_ALWAYS_INLINE
-#if defined (__GNUC__) || defined (__clang__)
+#if defined (__GNUC__) || defined (__clang__) || defined(__INTEL_COMPILER)
 #define SLEEF_ALWAYS_INLINE inline __attribute__((always_inline))
 #elif defined(_MSC_VER)
 #define SLEEF_ALWAYS_INLINE inline __forceinline

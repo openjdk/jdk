@@ -93,6 +93,8 @@ static INLINE int vavailability_i(int n) {
 
 #endif // #if !defined(SLEEF_GENHEADER)
 
+static INLINE void vprefetch_v_p(const void *ptr) { }
+
 static vint2 vloadu_vi2_p(int32_t *p) { return (vint2) { p[0], p[1], p[2], p[3] }; }
 static void vstoreu_v_p_vi2(int32_t *p, vint2 v) { p[0] = v[0]; p[1] = v[1]; p[2] = v[2]; p[3] = v[3]; }
 static vint vloadu_vi_p(int32_t *p) { return (vint) { p[0], p[1] }; }

@@ -7,7 +7,6 @@
 #include <unordered_map>
 #include <sstream>
 #include <chrono>
-#include <thread>
 
 #include <cstdio>
 #include <cstdlib>
@@ -16,9 +15,7 @@
 #include <cassert>
 #include <cmath>
 
-#ifndef SLEEF_ENABLE_PARALLELFOR
 #include <omp.h>
-#endif
 
 #include "compat.h"
 
@@ -64,8 +61,14 @@ static int checkISAAvailability(int isa, int (*GETINT_[16])(int), int BASETYPEID
   return 0;
 }
 
+static int omp_thread_count() {
+  int n = 0;
+#pragma omp parallel reduction(+:n)
+  n += 1;
+  return n;
+}
+
 static void startAllThreads(const int nth) {
-#ifndef SLEEF_ENABLE_PARALLELFOR
   volatile int8_t *state = (int8_t *)calloc(nth, 1);
   int th=0;
 #pragma omp parallel for
@@ -78,7 +81,6 @@ static void startAllThreads(const int nth) {
     }
   }
   free((void *)state);
-#endif
 }
 
 static uint32_t ilog2(uint32_t q) {
@@ -241,15 +243,9 @@ static void transposeMT(real *RESTRICT ALIGNED(256) d, real *RESTRICT ALIGNED(25
     typedef struct { real r[BS*2]; } row_t;
     typedef struct { real r0, r1; } element_t;
 #endif
-
-#ifndef SLEEF_ENABLE_PARALLELFOR
     int y=0;
 #pragma omp parallel for
     for(y=0;y<(1 << log2n);y+=BS) {
-#else
-    parallelFor(0, (1 << log2n), BS, [&](int64_t start, int64_t end, int64_t inc) {
-    for(int y=start;y<end;y+=inc) {
-#endif
       for(int x=0;x<(1 << log2m);x+=BS) {
         row_t row[BS];
         for(int y2=0;y2<BS;y2++) {
@@ -270,9 +266,6 @@ static void transposeMT(real *RESTRICT ALIGNED(256) d, real *RESTRICT ALIGNED(25
         }
       }
     }
-#ifdef SLEEF_ENABLE_PARALLELFOR
-    });
-#endif
   }
 }
 
@@ -482,20 +475,8 @@ public:
 
 template<typename real, typename real2, int MAXSHIFT, int MAXBUTWIDTH>
 void SleefDFTXX<real, real2, MAXSHIFT, MAXBUTWIDTH>::measurementRun(real *d, const real *s, const vector<Action> &path, uint64_t niter) {
-  auto tid = this_thread::get_id();
-  real *t[] = { nullptr, nullptr, d };
-  {
-    unique_lock lock(mtx);
-    if (xn.count(tid) != 0) {
-      auto e = xn[tid];
-      t[0] = e.first;
-      t[1] = e.second;
-    } else {
-      t[0] = (real *)Sleef_malloc(sizeof(real) * 2 * (1L << log2len));
-      t[1] = (real *)Sleef_malloc(sizeof(real) * 2 * (1L << log2len));
-      xn[tid] = pair<real *, real *>{ t[0], t[1] };
-    }
-  }
+  const int tn = omp_get_thread_num();
+  real *t[] = { x1[tn], x0[tn], d };
 
   for(uint64_t i=0;i<niter;i++) {
     const real *lb = s;
@@ -612,23 +593,15 @@ double SleefDFT2DXX<real, real2, MAXSHIFT, MAXBUTWIDTH>::measurePath(SleefDFTXX<
 
   for(;;) {
     auto tm0 = chrono::high_resolution_clock::now();
+    int y=0;
 
     if (mt) {
-#ifndef SLEEF_ENABLE_PARALLELFOR
-      int y=0;
 #pragma omp parallel for
       for(y=0;y<(int)vlen;y++) {
         inst->measurementRun(&tBuf[hlen*2*y], &s[hlen*2*y], path, niter);
       }
-#else
-      parallelFor(0, (int)vlen, 1, [&](int64_t start, int64_t end, int64_t inc) {
-        for(int y=start;y<end;y+=inc) {
-          inst->measurementRun(&tBuf[hlen*2*y], &s[hlen*2*y], path, niter);
-        }
-      });
-#endif
     } else {
-      for(int y=0;y<(int)vlen;y++) {
+      for(y=0;y<(int)vlen;y++) {
         inst->measurementRun(&tBuf[hlen*2*y], &s[hlen*2*y], path, niter);
       }
     }
@@ -645,22 +618,15 @@ double SleefDFT2DXX<real, real2, MAXSHIFT, MAXBUTWIDTH>::measurePath(SleefDFTXX<
   {
     auto tm0 = chrono::high_resolution_clock::now();
 
+    int y=0;
+
     if (mt) {
-#ifndef SLEEF_ENABLE_PARALLELFOR
-      int y=0;
 #pragma omp parallel for
       for(y=0;y<(int)vlen;y++) {
         inst->measurementRun(&tBuf[hlen*2*y], &s[hlen*2*y], path, niter);
       }
-#else
-      parallelFor(0, (int)vlen, 1, [&](int64_t start, int64_t end, int64_t inc) {
-        for(int y=start;y<end;y+=inc) {
-          inst->measurementRun(&tBuf[hlen*2*y], &s[hlen*2*y], path, niter);
-        }
-      });
-#endif
     } else {
-      for(int y=0;y<(int)vlen;y++) {
+      for(y=0;y<(int)vlen;y++) {
         inst->measurementRun(&tBuf[hlen*2*y], &s[hlen*2*y], path, niter);
       }
     }
@@ -1061,7 +1027,7 @@ SleefDFTXX<real, real2, MAXSHIFT, MAXBUTWIDTH>::SleefDFTXX(uint32_t n, const rea
     void (*TBUTFS_[MAXSHIFT][CONFIGMAX][ISAMAX][MAXBUTWIDTH+1])(real *, uint32_t *, const real *, const real *, const int),
     void (*TBUTBS_[MAXSHIFT][CONFIGMAX][ISAMAX][MAXBUTWIDTH+1])(real *, uint32_t *, const real *, const real *, const int)
   ) :
-  magic(MAGIC_), baseTypeID(BASETYPEID_), in(in_), out(out_), nThread(thread::hardware_concurrency()),
+  magic(MAGIC_), baseTypeID(BASETYPEID_), in(in_), out(out_), nThread(omp_thread_count()),
   log2len((mode_ & SLEEF_MODE_REAL) ? ilog2(n)-1 : ilog2(n)),
   mode(((mode_ & SLEEF_MODE_ALT) && log2len > 1) ? mode_ ^ SLEEF_MODE_BACKWARD : mode_),
   minshift(minshift_),
@@ -1101,6 +1067,14 @@ SleefDFTXX<real, real2, MAXSHIFT, MAXBUTWIDTH>::SleefDFTXX(uint32_t n, const rea
   perm = (uint32_t **)calloc(sizeof(uint32_t *), log2len+1);
   for(int level = log2len;level >= 1;level--) {
     perm[level] = (uint32_t *)Sleef_malloc(sizeof(uint32_t) * ((1 << log2len) + 8));
+  }
+
+  x0 = (real **)malloc(sizeof(real *) * nThread);
+  x1 = (real **)malloc(sizeof(real *) * nThread);
+
+  for(int i=0;i<nThread;i++) {
+    x0[i] = (real *)Sleef_malloc(sizeof(real) * 2 * n);
+    x1[i] = (real *)Sleef_malloc(sizeof(real) * 2 * n);
   }
 
   if ((mode & SLEEF_MODE_REAL) != 0) {
@@ -1339,20 +1313,8 @@ void SleefDFTXX<real, real2, MAXSHIFT, MAXBUTWIDTH>::execute(const real *s0, rea
 
   //
 
-  auto tid = this_thread::get_id();
-  real *t[] = { nullptr, nullptr, d };
-  {
-    unique_lock lock(mtx);
-    if (xn.count(tid) != 0) {
-      auto e = xn[tid];
-      t[0] = e.first;
-      t[1] = e.second;
-    } else {
-      t[0] = (real *)Sleef_malloc(sizeof(real) * 2 * (1L << log2len));
-      t[1] = (real *)Sleef_malloc(sizeof(real) * 2 * (1L << log2len));
-      xn[tid] = pair<real *, real *>{ t[0], t[1] };
-    }
-  }
+  const int tn = omp_get_thread_num();
+  real *t[] = { x1[tn], x0[tn], d };
 
   const real *lb = s;
   int nb = 0;
@@ -1408,34 +1370,18 @@ void SleefDFT2DXX<real, real2, MAXSHIFT, MAXBUTWIDTH>::execute(const real *s0, r
   if ((mode3 & SLEEF_MODE3_MT2D) != 0 &&
       (((mode & SLEEF_MODE_DEBUG) == 0 && planMT) ||
        ((mode & SLEEF_MODE_DEBUG) != 0 && (rand() & 1)))) {
-#ifndef SLEEF_ENABLE_PARALLELFOR
     int y=0;
 #pragma omp parallel for
     for(y=0;y<vlen;y++) {
       instH->execute(&s[hlen*2*y], &tBuf[hlen*2*y], MAGIC_, MAGIC2D_);
     }
-#else
-    parallelFor(0, vlen, 1, [&](int64_t start, int64_t end, int64_t inc) {
-      for(int y=start;y<end;y+=inc) {
-        instH->execute(&s[hlen*2*y], &tBuf[hlen*2*y], MAGIC_, MAGIC2D_);
-      }
-    });
-#endif
 
     transposeMT<real, real2, MAXSHIFT, MAXBUTWIDTH>(d, tBuf, log2vlen, log2hlen);
 
-#ifndef SLEEF_ENABLE_PARALLELFOR
 #pragma omp parallel for
     for(y=0;y<hlen;y++) {
       instV->execute(&d[vlen*2*y], &tBuf[vlen*2*y], MAGIC_, MAGIC2D_);
     }
-#else
-    parallelFor(0, hlen, 1, [&](int64_t start, int64_t end, int64_t inc) {
-      for(int y=start;y<end;y+=inc) {
-        instV->execute(&d[vlen*2*y], &tBuf[vlen*2*y], MAGIC_, MAGIC2D_);
-      }
-    });
-#endif
 
     transposeMT<real, real2, MAXSHIFT, MAXBUTWIDTH>(d, tBuf, log2hlen, log2vlen);
   } else {
