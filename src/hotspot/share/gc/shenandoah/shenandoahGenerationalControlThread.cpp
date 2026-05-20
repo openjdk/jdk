@@ -273,14 +273,10 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   }
 
   // If this cycle completed successfully, notify threads waiting for gc
-  if (!_heap->cancelled_gc()) {
-    notify_gc_waiters();
-    notify_alloc_failure_waiters();
-    // Report current free set state at the end of cycle if normal completion.
-    // Do not report if cancelled, since we may not have rebuilt free set and content is unreliable.
-    _heap->free_set()->log_status_under_lock();
-  }
+  notify_gc_waiters();
+  notify_alloc_failure_waiters();
 
+  _heap->free_set()->log_status_under_lock();
 
   // Notify Universe about new heap usage. This has implications for
   // global soft refs policy, and we better report it every time heap
@@ -403,12 +399,14 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       young_generation->set_old_gen_task_queues(old_generation->task_queues());
       service_concurrent_cycle(young_generation, request.cause, true);
       _heap->process_gc_stats();
-      if (_heap->cancelled_gc()) {
-        // Young generation bootstrap cycle has failed. Concurrent mark for old generation
-        // is going to resume after degenerated bootstrap cycle completes.
-        log_info(gc)("Bootstrap cycle for old generation was cancelled");
-        return;
-      }
+      // TODO: We can detect if there is a pending allocation failure request. Instead
+      // of proceeding with marking old, we could instead run a global cycle.
+      // if (_heap->cancelled_gc()) {
+      //   // Young generation bootstrap cycle has failed. Concurrent mark for old generation
+      //   // is going to resume after degenerated bootstrap cycle completes.
+      //   log_info(gc)("Bootstrap cycle for old generation was cancelled");
+      //   return;
+      // }
 
       // From here we will 'resume' the old concurrent mark. This will skip reset
       // and init mark for the concurrent mark. All of that work will have been
