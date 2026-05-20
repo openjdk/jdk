@@ -1029,7 +1029,9 @@ Compile::Compile(ciEnv* ci_env,
 
   Code_Gen();
 
-  c2_do_stub_init_complete = (_stub_entry_point != nullptr);
+  // First successful stub generation will set it to `true`
+  // and it will stay `true` after that.
+  c2_do_stub_init_complete ||= (_stub_entry_point != nullptr);
 }
 
 Compile::~Compile() {
