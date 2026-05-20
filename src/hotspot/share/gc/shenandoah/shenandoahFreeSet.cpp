@@ -3187,6 +3187,9 @@ void ShenandoahFreeSet::log_status() {
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
 
       size_t total_free = available_locked() + collector_available_locked();
+      if (_heap->mode()->is_generational()) {
+        total_free += old_collector_available_locked();
+      }
       ls.print("Whole heap stats: Total free: " PROPERFMT ", Total used: " PROPERFMT
                ", Max humongous allocatable: " PROPERFMT "; ",
                PROPERFMTARGS(total_free), PROPERFMTARGS(global_used()), PROPERFMTARGS(max_humongous));

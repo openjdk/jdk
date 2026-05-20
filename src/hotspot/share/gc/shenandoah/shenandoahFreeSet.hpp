@@ -857,6 +857,11 @@ public:
     return _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
   }
 
+  inline size_t old_collector_available_locked() const {
+    return _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
+  }
+
+
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
   inline size_t humongous_waste_in_mutator() const {
     return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator);
