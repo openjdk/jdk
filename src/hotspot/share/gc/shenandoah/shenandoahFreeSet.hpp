@@ -307,6 +307,10 @@ public:
     return _capacity[int(which_partition)];
   }
 
+  inline size_t get_capacity_region_count(ShenandoahFreeSetPartitionId which_partition) {
+    return get_capacity(which_partition) / ShenandoahHeapRegion::region_size_bytes();
+  }
+
   inline void increase_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline void decrease_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline size_t get_available(ShenandoahFreeSetPartitionId which_partition);
