@@ -2100,7 +2100,7 @@ private:
   static int extra_cells_off() {
     return SingleTypeEntry::static_cell_count() + MegamorphicTypeData::static_cell_count(TypeProfileWidth);
   }
-  
+
   static int not_flat_null_free_count_off() {
     return extra_cells_off() + not_flat_null_free_count_off_in_extra_cells;
   }
