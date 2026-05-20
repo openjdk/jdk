@@ -1182,7 +1182,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
 
   Address cset_addr_arg;
   intptr_t cset_addr = reinterpret_cast<intptr_t>(ShenandoahHeap::in_cset_fast_test_addr());
-  if ((cset_addr >> 3) < INT32_MAX) {
+  if (cset_addr < INT32_MAX) {
     // Cset bitmap is at easily encodeable address. Just use it as offset.
     assert(is_aligned(cset_addr, 8), "Sanity");
     cset_addr_arg = Address(tmp, cset_addr >> 3, Address::times_8);
