@@ -53,20 +53,12 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
     /**
      * This method accepts a Map of parameters which is passed to the attach provider.
      *
-     * This implementation is equivalent to attachVirtualMachine(String id)
-     * if the id parses as a positive integer, and the Map env is empty.
+     * This implementation is equivalent to attachVirtualMachine(String id) if
+     * vmid does not name a file that exists.
      */
     @Override
     public VirtualMachine attachVirtualMachine(String vmid, Map<String, ?> env)
         throws AttachNotSupportedException, IllegalArgumentException, IOException {
-
-        try {
-            if (env.isEmpty() && Integer.parseInt(vmid) > 0) {
-                return attachVirtualMachine(vmid);
-            }
-        } catch (NumberFormatException nfe) {
-            // ignored
-        }
 
         // The 'vmid' existing as a file implies it is a core or minidump:
         if (new File(vmid).exists()) {
