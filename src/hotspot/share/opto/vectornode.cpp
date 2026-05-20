@@ -2764,13 +2764,60 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return VectorNode::Ideal(phase, can_reshape);
 }
 
+Node* VectorBlendNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  Node* mask = in(3);
+  // (VectorBlend (VectorBlend X A MASK) B MASK) => (VectorBlend X B MASK)
+  if (in1->Opcode() == Op_VectorBlend &&
+      mask == in1->in(3)) {
+    return new VectorBlendNode(in1->in(1), in2, mask);
+  }
+
+  // (VectorBlend A (VectorBlend B X MASK) MASK) => (VectorBlend A X MASK)
+  if (in2->Opcode() == Op_VectorBlend &&
+      mask == in2->in(3)) {
+    return new VectorBlendNode(in1, in2->in(2), mask);
+  }
+
+  // (VectorBlend A B (XorV/XorVMask M -1)) => (VectorBlend B A M)
+  int mask_opc = mask->Opcode();
+  if ((mask_opc == Op_XorV || mask_opc == Op_XorVMask) &&
+       !mask->is_predicated_vector()) {
+    Node* m = nullptr;
+    if (VectorNode::is_all_ones_vector(mask->in(1))) {
+      m = mask->in(2);
+    } else if (VectorNode::is_all_ones_vector(mask->in(2))) {
+      m = mask->in(1);
+    }
+    if (m != nullptr) {
+      return new VectorBlendNode(in2, in1, m);
+    }
+  }
+
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
 Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   // (VectorBlend X X MASK) => X
   if (in(1) == in(2)) {
     return in(1);
   }
+
+  // (VectorBlend X Y (Replicate -1)) => Y
+  // (VectorBlend X Y (MaskAll   -1)) => Y
+  if (VectorNode::is_all_ones_vector(in(3))) {
+    return in(2);
+  }
+
+  // (VectorBlend X Y (Replicate 0)) => X
+  // (VectorBlend X Y (MaskAll   0)) => X
+  if (VectorNode::is_all_zeros_vector(in(3))) {
+    return in(1);
+  }
   return this;
 }
+
 static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&
