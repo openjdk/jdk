@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2703,13 +2704,21 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   dmb(Assembler::barrier(order_constraint));
 }
 
-bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
-  if (ldst_can_merge(rt, adr, size_in_bytes, is_store)) {
-    merge_ldst(rt, adr, size_in_bytes, is_store);
+template <typename T>
+bool MacroAssembler::try_merge_ldst(T rt, const Address& adr,
+                                    unsigned size_in_bytes, AccessDir dir) {
+  constexpr bool is_simd = std::is_same<T, FloatRegister>::value;
+  static_assert(is_simd || std::is_same<T, Register>::value,
+                "unsupported register parameter type");
+  if (!can_form_ldst_pair(size_in_bytes, is_simd)) {
+    return false;
+  }
+
+  if (ldst_can_merge(rt, adr, size_in_bytes, dir)) {
+    merge_ldst(rt, adr, size_in_bytes, dir);
     code()->clear_last_insn();
     return true;
   } else {
-    assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
     const uint64_t mask = size_in_bytes - 1;
     if (adr.getMode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
@@ -2721,29 +2730,41 @@ bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size
 
 void MacroAssembler::ldr(Register Rx, const Address &adr) {
   // We always try to merge two adjacent loads into one ldp.
-  if (!try_merge_ldst(Rx, adr, 8, false)) {
+  if (!try_merge_ldst(Rx, adr, 8, LOAD)) {
     Assembler::ldr(Rx, adr);
   }
 }
 
 void MacroAssembler::ldrw(Register Rw, const Address &adr) {
   // We always try to merge two adjacent loads into one ldp.
-  if (!try_merge_ldst(Rw, adr, 4, false)) {
+  if (!try_merge_ldst(Rw, adr, 4, LOAD)) {
     Assembler::ldrw(Rw, adr);
   }
 }
 
 void MacroAssembler::str(Register Rx, const Address &adr) {
   // We always try to merge two adjacent stores into one stp.
-  if (!try_merge_ldst(Rx, adr, 8, true)) {
+  if (!try_merge_ldst(Rx, adr, 8, STORE)) {
     Assembler::str(Rx, adr);
   }
 }
 
 void MacroAssembler::strw(Register Rw, const Address &adr) {
   // We always try to merge two adjacent stores into one stp.
-  if (!try_merge_ldst(Rw, adr, 4, true)) {
+  if (!try_merge_ldst(Rw, adr, 4, STORE)) {
     Assembler::strw(Rw, adr);
+  }
+}
+
+void MacroAssembler::ldr(FloatRegister Rq, SIMD_RegVariant T, const Address& adr) {
+  if (!try_merge_ldst(Rq, adr, (1 << T), LOAD)) {
+    Assembler::ldr(Rq, T, adr);
+  }
+}
+
+void MacroAssembler::str(FloatRegister Rq, SIMD_RegVariant T, const Address& adr) {
+  if (!try_merge_ldst(Rq, adr, (1 << T), STORE)) {
+    Assembler::str(Rq, T, adr);
   }
 }
 
@@ -3871,14 +3892,21 @@ bool MacroAssembler::merge_alignment_check(Register base,
 
 // Checks whether current and previous loads/stores can be merged.
 // Returns true if it can be merged, else false.
-bool MacroAssembler::ldst_can_merge(Register rt,
-                                    const Address &adr,
-                                    size_t cur_size_in_bytes,
-                                    bool is_store) const {
+template <typename T>
+bool MacroAssembler::ldst_can_merge(T rt,
+                                    const Address& adr,
+                                    unsigned cur_size_in_bytes,
+                                    AccessDir dir) const {
+  constexpr bool is_simd = std::is_same<T, FloatRegister>::value;
+  static_assert(is_simd || std::is_same<T, Register>::value,
+                "unsupported register parameter type");
+  assert(can_form_ldst_pair(cur_size_in_bytes, is_simd),
+         "only supports 32/64-bit for integers and additionally 128-bit for FP/SIMD merging.");
+
   address prev = pc() - NativeInstruction::instruction_size;
   address last = code()->last_insn();
 
-  if (last == nullptr || !nativeInstruction_at(last)->is_Imm_LdSt()) {
+  if (last == nullptr || !nativeInstruction_at(last)->is_Imm_LdSt<T>()) {
     return false;
   }
 
@@ -3886,13 +3914,13 @@ bool MacroAssembler::ldst_can_merge(Register rt,
     return false;
   }
 
-  NativeLdSt* prev_ldst = NativeLdSt_at(prev);
+  NativeLdSt<T>* prev_ldst = NativeLdSt_at<T>(prev);
   size_t prev_size_in_bytes = prev_ldst->size_in_bytes();
 
-  assert(prev_size_in_bytes == 4 || prev_size_in_bytes == 8, "only supports 64/32bit merging.");
-  assert(cur_size_in_bytes == 4 || cur_size_in_bytes == 8, "only supports 64/32bit merging.");
+  assert(can_form_ldst_pair(prev_size_in_bytes, is_simd),
+         "only supports 32/64-bit for integers and additionally 128-bit for FP/SIMD merging.");
 
-  if (cur_size_in_bytes != prev_size_in_bytes || is_store != prev_ldst->is_store()) {
+  if (cur_size_in_bytes != prev_size_in_bytes || dir != prev_ldst->dir()) {
     return false;
   }
 
@@ -3913,15 +3941,21 @@ bool MacroAssembler::ldst_can_merge(Register rt,
     return false;
   }
 
-  // Following cases can not be merged:
-  // ldr x2, [x2, #8]
-  // ldr x3, [x2, #16]
-  // or:
+  // Following case can not be merged:
   // ldr x2, [x3, #8]
   // ldr x2, [x3, #16]
   // If t1 and t2 is the same in "ldp t1, t2, [xn, #imm]", we'll get SIGILL.
-  if (!is_store && (adr.base() == prev_ldst->target() || rt == prev_ldst->target())) {
+  T prev_rt = prev_ldst->target();
+  if (dir == LOAD && rt == prev_rt) {
     return false;
+  }
+  // Following case can not be merged:
+  // ldr x2, [x2, #8]
+  // ldr x3, [x2, #16]
+  if constexpr (!is_simd) {
+    if (dir == LOAD && adr.base() == prev_rt) {
+      return false;
+    }
   }
 
   int64_t low_offset = prev_offset > cur_offset ? cur_offset : prev_offset;
@@ -3938,16 +3972,19 @@ bool MacroAssembler::ldst_can_merge(Register rt,
 }
 
 // Merge current load/store with previous load/store into ldp/stp.
-void MacroAssembler::merge_ldst(Register rt,
-                                const Address &adr,
-                                size_t cur_size_in_bytes,
-                                bool is_store) {
+template <typename T>
+void MacroAssembler::merge_ldst(T rt,
+                                const Address& adr,
+                                unsigned cur_size_in_bytes,
+                                AccessDir dir) {
+  static_assert(std::is_same<T, FloatRegister>::value ||
+                std::is_same<T, Register>::value, "unsupported register parameter type");
+  assert(ldst_can_merge(rt, adr, cur_size_in_bytes, dir) == true,
+                        "cur and prev must be able to be merged.");
 
-  assert(ldst_can_merge(rt, adr, cur_size_in_bytes, is_store) == true, "cur and prev must be able to be merged.");
-
-  Register rt_low, rt_high;
+  T rt_low, rt_high;
   address prev = pc() - NativeInstruction::instruction_size;
-  NativeLdSt* prev_ldst = NativeLdSt_at(prev);
+  NativeLdSt<T>* prev_ldst = NativeLdSt_at<T>(prev);
 
   int64_t offset;
 
@@ -3965,22 +4002,17 @@ void MacroAssembler::merge_ldst(Register rt,
   // Overwrite previous generated binary.
   code_section()->set_end(prev);
 
-  const size_t sz = prev_ldst->size_in_bytes();
-  assert(sz == 8 || sz == 4, "only supports 64/32bit merging.");
-  if (!is_store) {
-    BLOCK_COMMENT("merged ldr pair");
-    if (sz == 8) {
-      ldp(rt_low, rt_high, adr_p);
-    } else {
-      ldpw(rt_low, rt_high, adr_p);
-    }
-  } else {
-    BLOCK_COMMENT("merged str pair");
-    if (sz == 8) {
-      stp(rt_low, rt_high, adr_p);
-    } else {
-      stpw(rt_low, rt_high, adr_p);
-    }
+  const unsigned sz = (unsigned)prev_ldst->size_in_bytes();
+  switch (dir) {
+    case LOAD:
+      BLOCK_COMMENT("merged ldr pair");
+      load_pair(rt_low, rt_high, adr_p, sz);
+      break;
+    case STORE:
+      BLOCK_COMMENT("merged str pair");
+      store_pair(rt_low, rt_high, adr_p, sz);
+      break;
+    default: ShouldNotReachHere();
   }
 }
 

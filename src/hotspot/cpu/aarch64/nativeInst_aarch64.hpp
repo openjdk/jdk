@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +54,7 @@
 // Provides the primitive operations to manipulate code relative to this.
 
 class NativeCall;
+template <typename T> class NativeLdSt;
 
 class NativeInstruction {
   friend class Relocation;
@@ -137,11 +139,9 @@ public:
       Instruction_aarch64::extract(insn, 7, 0) == 0b10111111;
   }
 
-  bool is_Imm_LdSt() {
-    unsigned int insn = uint_at(0);
-    return Instruction_aarch64::extract(insn, 29, 27) == 0b111 &&
-      Instruction_aarch64::extract(insn, 23, 23) == 0b0 &&
-      Instruction_aarch64::extract(insn, 26, 25) == 0b00;
+  template <typename T> bool is_Imm_LdSt() {
+    return NativeLdSt<T>::is_ldst_ur_at(addr_at(0)) ||
+           NativeLdSt<T>::is_ldst_unsigned_offset_at(addr_at(0));
   }
 };
 
@@ -458,58 +458,113 @@ inline NativeMembar* NativeMembar_at(address addr) {
   return (NativeMembar*)addr;
 }
 
-class NativeLdSt : public NativeInstruction {
-private:
-  int32_t size() { return Instruction_aarch64::extract(uint_at(0), 31, 30); }
-  // Check whether instruction is with unscaled offset.
-  bool is_ldst_ur() {
-    return (Instruction_aarch64::extract(uint_at(0), 29, 21) == 0b111000010 ||
-            Instruction_aarch64::extract(uint_at(0), 29, 21) == 0b111000000) &&
-      Instruction_aarch64::extract(uint_at(0), 11, 10) == 0b00;
+template <typename T>
+class NativeLdStImpl;
+
+template <>
+class NativeLdStImpl<Register> : public NativeInstruction {
+protected:
+  int32_t size() {
+    assert(Instruction_aarch64::extract(uint_at(0), 26, 26) == 0b0, "");
+    return Instruction_aarch64::extract(uint_at(0), 31, 30);
   }
-  bool is_ldst_unsigned_offset() {
-    return Instruction_aarch64::extract(uint_at(0), 29, 22) == 0b11100101 ||
-      Instruction_aarch64::extract(uint_at(0), 29, 22) == 0b11100100;
-  }
+
 public:
+  // Check whether instruction is with unscaled offset.
+  static bool is_ldst_ur_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return (Instruction_aarch64::extract(insn, 29, 21) == 0b111000010 ||
+            Instruction_aarch64::extract(insn, 29, 21) == 0b111000000) &&
+      Instruction_aarch64::extract(insn, 11, 10) == 0b00;
+  }
+
+  static bool is_ldst_unsigned_offset_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return Instruction_aarch64::extract(insn, 29, 22) == 0b11100101 ||
+           Instruction_aarch64::extract(insn, 29, 22) == 0b11100100;
+  }
+
+
   Register target() {
     uint32_t r = Instruction_aarch64::extract(uint_at(0), 4, 0);
     return r == 0x1f ? zr : as_Register(r);
   }
+};
+
+template <>
+class NativeLdStImpl<FloatRegister> : public NativeInstruction {
+protected:
+  int32_t size() {
+    assert(Instruction_aarch64::extract(uint_at(0), 26, 26) == 0b1, "");
+    uint32_t is_q = Instruction_aarch64::extract(uint_at(0), 23, 23);
+    return is_q == 0b1 ? 4 : Instruction_aarch64::extract(uint_at(0), 31, 30);
+  }
+
+public:
+
+  // Check whether instruction is with unscaled offset.
+  static bool is_ldst_ur_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return Instruction_aarch64::extract(insn, 29, 24) == 0b111100 &&
+           Instruction_aarch64::extract(insn, 21, 21) == 0b0 &&
+           Instruction_aarch64::extract(insn, 11, 10) == 0b00;
+  }
+
+  static bool is_ldst_unsigned_offset_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return Instruction_aarch64::extract(insn, 29, 24) == 0b111101;
+  }
+
+  FloatRegister target() {
+    uint32_t r = Instruction_aarch64::extract(uint_at(0), 4, 0);
+    return as_FloatRegister(r);
+  }
+
+};
+
+template <typename T>
+class NativeLdSt : public NativeLdStImpl<T> {
+protected:
+  bool is_ldst_ur() {
+    return NativeLdSt<T>::is_ldst_ur_at(this->addr_at(0));
+  }
+
+  bool is_ldst_unsigned_offset() {
+    return NativeLdSt<T>::is_ldst_unsigned_offset_at(this->addr_at(0));
+  }
+
+public:
   Register base() {
-    uint32_t b = Instruction_aarch64::extract(uint_at(0), 9, 5);
+    uint32_t b = Instruction_aarch64::extract(this->uint_at(0), 9, 5);
     return b == 0x1f ? sp : as_Register(b);
   }
   int64_t offset() {
     if (is_ldst_ur()) {
-      return Instruction_aarch64::sextract(uint_at(0), 20, 12);
+      return Instruction_aarch64::sextract(this->uint_at(0), 20, 12);
     } else if (is_ldst_unsigned_offset()) {
-      return Instruction_aarch64::extract(uint_at(0), 21, 10) << size();
+      return Instruction_aarch64::extract(this->uint_at(0), 21, 10) << this->size();
     } else {
       // others like: pre-index or post-index.
       ShouldNotReachHere();
       return 0;
     }
   }
-  size_t size_in_bytes() { return 1ULL << size(); }
-  bool is_not_pre_post_index() { return (is_ldst_ur() || is_ldst_unsigned_offset()); }
-  bool is_load() {
-    assert(Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01 ||
-           Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00, "must be ldr or str");
+  size_t size_in_bytes() { return 1ULL << this->size(); }
+  bool is_not_pre_post_index() { return is_ldst_ur() || is_ldst_unsigned_offset(); }
 
-    return Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01;
-  }
-  bool is_store() {
-    assert(Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01 ||
-           Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00, "must be ldr or str");
-
-    return Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00;
+  Assembler::AccessDir dir() {
+    switch(Instruction_aarch64::extract(this->uint_at(0), 22, 22)) {
+      case 0b0: return Assembler::STORE;
+      case 0b1: return Assembler::LOAD;
+      default: ShouldNotReachHere();
+    }
   }
 };
 
-inline NativeLdSt* NativeLdSt_at(address addr) {
-  assert(nativeInstruction_at(addr)->is_Imm_LdSt(), "no immediate load/store found");
-  return (NativeLdSt*)addr;
+template <typename T>
+inline NativeLdSt<T>* NativeLdSt_at(address addr) {
+  assert(nativeInstruction_at(addr)->is_Imm_LdSt<T>(), "no immediate load/store found");
+  return (NativeLdSt<T>*)addr;
 }
 
 // A NativePostCallNop takes the form of three instructions:

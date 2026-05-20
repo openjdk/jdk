@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +184,23 @@ class MacroAssembler: public Assembler {
   void ldrw(Register Rw, const Address &adr);
   void str(Register Rx, const Address &adr);
   void strw(Register Rx, const Address &adr);
+  void ldr(FloatRegister Rt, SIMD_RegVariant T, const Address& adr);
+  void str(FloatRegister Rt, SIMD_RegVariant T, const Address& adr);
+
+#define DEFINE_LDR_STR_FUNCS(suffix, elem_kind)              \
+  void ldr##suffix(FloatRegister Rq, const Address& adr) {   \
+    MacroAssembler::ldr(Rq, elem_kind, adr);                 \
+  }                                                          \
+                                                             \
+  void str##suffix(FloatRegister Rq, const Address& adr) {   \
+    MacroAssembler::str(Rq, elem_kind, adr);                 \
+  }
+
+  DEFINE_LDR_STR_FUNCS(q, Q)
+  DEFINE_LDR_STR_FUNCS(d, D)
+  DEFINE_LDR_STR_FUNCS(s, S)
+
+#undef DEFINE_LDR_STR_FUNCS
 
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
@@ -1648,14 +1666,25 @@ private:
 
   bool merge_alignment_check(Register base, size_t size, int64_t cur_offset, int64_t prev_offset) const;
 
+  // Returns true if a load/store of the given element size can be combined into an LDP/STP pair
+  // instruction.
+  // For scalar types, 4- and 8-byte accesses are supported.
+  // For SIMD types, 16-byte accesses are additionally supported.
+  bool can_form_ldst_pair(size_t size_in_bytes, bool is_simd) const {
+    return size_in_bytes == 4 || size_in_bytes == 8 || (is_simd && size_in_bytes == 16);
+  }
+
   // Check whether two loads/stores can be merged into ldp/stp.
-  bool ldst_can_merge(Register rx, const Address &adr, size_t cur_size_in_bytes, bool is_store) const;
+  template <typename T>
+  bool ldst_can_merge(T rx, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir) const;
 
   // Merge current load/store with previous load/store into ldp/stp.
-  void merge_ldst(Register rx, const Address &adr, size_t cur_size_in_bytes, bool is_store);
+  template <typename T>
+  void merge_ldst(T rx, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir);
 
   // Try to merge two loads/stores into ldp/stp. If success, returns true else false.
-  bool try_merge_ldst(Register rt, const Address &adr, size_t cur_size_in_bytes, bool is_store);
+  template <typename T>
+  bool try_merge_ldst(T rt, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir);
 
 public:
   void spill(Register Rx, bool is64, int offset) {
