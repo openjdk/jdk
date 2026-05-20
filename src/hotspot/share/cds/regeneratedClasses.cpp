@@ -151,6 +151,6 @@ void RegeneratedClasses::cleanup() {
   }
   if (_regenerated_objs != nullptr) {
     delete _regenerated_objs;
-    _regenerated_objs= nullptr;
+    _regenerated_objs = nullptr;
   }
 }
