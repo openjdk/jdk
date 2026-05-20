@@ -786,14 +786,14 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 #
 # Enable or disable the default CDS archive generation for Compact Object Headers
 #
-AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_NOCOH],
 [
-  UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_COH,
-      DESC: [enable generation of default CDS archives for compact object headers (requires --enable-cds-archive)],
+  UTIL_ARG_ENABLE(NAME: cds-archive-nocoh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_NOCOH,
+      DESC: [enable generation of default CDS archives for no compact object headers (requires --enable-cds-archive)],
       DEFAULT_DESC: [auto],
-      CHECKING_MSG: [if default CDS archives for compact object headers should be generated],
+      CHECKING_MSG: [if default CDS archives for no compact object headers should be generated],
       CHECK_AVAILABLE: [
-        AC_MSG_CHECKING([if CDS archive with compact object headers is available])
+        AC_MSG_CHECKING([if CDS archive with no compact object headers is available])
         if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
           AC_MSG_RESULT([no (CDS default archive generation is disabled)])
           AVAILABLE=false
@@ -810,7 +810,7 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
           AVAILABLE=true
         fi
       ])
-  AC_SUBST(BUILD_CDS_ARCHIVE_COH)
+  AC_SUBST(BUILD_CDS_ARCHIVE_NOCOH)
 ])
 
 ################################################################################
