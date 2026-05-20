@@ -399,7 +399,7 @@ public class ComponentSampleModel extends SampleModel
      * @throws IllegalArgumentException if the number of bands is not greater than 0
      * @throws RasterFormatException if the number of bands is greater than
      *                               the number of banks in this sample model.
-     * @throws ArrayIndexOutOfBoundsException if any of the bank indices is out of bounds
+     * @throws ArrayIndexOutOfBoundsException if any of the band indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
        if (bands.length > bankIndices.length)

@@ -307,7 +307,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * SinglePixelPackedSampleModel/DataBuffer combination will represent
      * an image with a subset of the bands of the original
      * SinglePixelPackedSampleModel/DataBuffer combination.
-
+     *
      * @throws NullPointerException if {@code bands} is {@code null}
      * @throws IllegalArgumentException if the number of bands is not greater than 0
      * @throws RasterFormatException if the length of the bands argument is

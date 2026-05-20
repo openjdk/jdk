@@ -35,12 +35,14 @@ public class PixelInterleavedSMConstructor {
     static final int[] nullbands = null;
     static final int[] zerobands = { };
     static final int[] oneband = { 0 };
+    static final int[] negband = { -1 };
 
     public static void main(String[] args) {
 
         cons(nullbands, NullPointerException.class);
         cons(zerobands, IllegalArgumentException.class);
         cons(oneband, null);
+        cons(negband, IllegalArgumentException.class);
     }
 
     static void cons(int[] bands, Class eType) {
