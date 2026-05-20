@@ -1212,8 +1212,12 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         default patterns instead of replacing them, prefix the whole list with
         `+`, for example, `+*foo*;@redact.txt`. Use `none` (lowercase) to disable
         all redaction filters for command-line arguments. Redacted arguments will
-        be replaced with `[REDACTED]`. Use `-XX:FlightRecorderOptions:help` to
-        see the default filters used by the `redact-argument` option.
+        be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
+        and applies only to command-line arguments in the `jdk.JVMInformation`
+        event and to the `java.command` system property in the
+        `jdk.InitialSystemProperty` event. Other events, such as `jdk.ProcessStart`
+        (child processes), are not redacted. Use `-XX:FlightRecorderOptions:help`
+        to see the default filters used by the `redact-argument` option.
 
     `redact-key=`key-filter
     :   Replace the value of environment variables and system properties
@@ -1224,8 +1228,12 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         instead of replacing them, prefix the whole list with `+`,
         for example, `+*cred*;@keys.txt`. Use `none` (lowercase) to
         disable all redaction filters for key matching. Redacted values
-        will be replaced with `[REDACTED]`. Use `-XX:FlightRecorderOptions:help`
-        to see the default filters used by the `redact-key` option.
+        will be replaced with `[REDACTED]`. The option `redact-key` is
+        best-effort and applies only to the `jdk.InitialSystemProperty`,
+        `jdk.InitialEnvironmentVariable` and `jdk.JVMInformation` (-Dkey=...)
+        events. Other events, such as `jdk.InitialSecurityProperty`, are not
+        redacted. Use `-XX:FlightRecorderOptions:help` to see the default filters
+        used by the `redact-key` option.
 
     `stackdepth=`*depth*
     :   Stack depth for stack traces. By default, the depth is set to 64 method

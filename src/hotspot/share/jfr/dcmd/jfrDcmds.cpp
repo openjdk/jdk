@@ -483,6 +483,11 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
     out->print_cr("                      command-line argument, for example,");
     out->print_cr("                      -XX:FlightRecorderOptions:'redact-argument=--auth *:*'.");
     out->print_cr("                      Arguments containing spaces might not be matched as expected.");
+    out->print_cr("                      The option redact-argument is best-effort and applies only to");
+    out->print_cr("                      command-line arguments in the jdk.JVMInformation event and to");
+    out->print_cr("                      the java.command system property in the jdk.InitialSystemProperty");
+    out->print_cr("                      event. Other events, such as jdk.ProcessStart (child processes),");
+    out->print_cr("                      are not redacted.");
     out->print_cr("");
     out->print_cr("                      If the redact-argument option is not specified, the following");
     out->print_cr("                      filters are used by default:");
@@ -500,9 +505,13 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
     out->print_cr("                      properties whose key matches a semicolon-separated list of glob");
     out->print_cr("                      patterns, for example, *password*;*token*. Matching is");
     out->print_cr("                      case-insensitive, and the supported wildcards are '*' and '?'.");
+    out->print_cr("                      The option redact-key is best-effort and applies only to the");
+    out->print_cr("                      jdk.InitialSystemProperty, jdk.InitialEnvironmentVariable and");
+    out->print_cr("                      jdk.JVMInformation (-Dkey...) events. Other events, such as");
+    out->print_cr("                      jdk.InitialSecurityProperty, are not redacted.");
     out->print_cr("");
-    out->print_cr("                      If the redact-key option is not specified, the following filters");
-    out->print_cr("                      are used by default:");
+    out->print_cr("                      If the redact-key option is not specified, the");
+    out->print_cr("                      following filters are used by default:");
     out->print_cr("");
     print_filters(out, JfrRedactedEvents::key_filters());
     out->print_cr("");
