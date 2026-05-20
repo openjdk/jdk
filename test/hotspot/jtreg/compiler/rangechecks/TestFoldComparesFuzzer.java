@@ -36,7 +36,6 @@
 
 package compiler.rangechecks;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
@@ -142,11 +141,6 @@ public class TestFoldComparesFuzzer {
         EQ(" == ", true),
         NE(" != ", true);
 
-
-        // TODO: rm
-        private static final List<Comparator> SIGNED = Arrays.stream(values())
-            .filter(Comparator::isSigned).toList();
-
         private final String token;
         private final boolean signed;
 
@@ -197,11 +191,7 @@ public class TestFoldComparesFuzzer {
             };
         }
 
-        static Comparator randomSigned() {
-            return SIGNED.get(RANDOM.nextInt(SIGNED.size()));
-        }
-
-        static Comparator randomSignedOrUnsigned() {
+        static Comparator random() {
             return values()[RANDOM.nextInt(values().length)];
         }
 
@@ -269,8 +259,8 @@ public class TestFoldComparesFuzzer {
         private final int con1 = INT_GEN.next();
         private final int con2 = INT_GEN.next();
 
-        private final Comparison c1 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "con1").permuteRandom();
-        private final Comparison c2 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "con2").permuteRandom();
+        private final Comparison c1 = new Comparison("n", Comparator.random(), "con1").permuteRandom();
+        private final Comparison c2 = new Comparison("n", Comparator.random(), "con2").permuteRandom();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("con1", con1),
@@ -306,8 +296,8 @@ public class TestFoldComparesFuzzer {
         private final String m1 = RANDOM.nextBoolean() ? "Integer.MIN_VALUE" : "Integer.MAX_VALUE";
         private final String m2 = RANDOM.nextBoolean() ? "Integer.MIN_VALUE" : "Integer.MAX_VALUE";
 
-        private final Comparison c1 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "a").permuteRandom();
-        private final Comparison c2 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "b").permuteRandom();
+        private final Comparison c1 = new Comparison("n", Comparator.random(), "a").permuteRandom();
+        private final Comparison c2 = new Comparison("n", Comparator.random(), "b").permuteRandom();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("con1", con1),
@@ -345,8 +335,8 @@ public class TestFoldComparesFuzzer {
         private final int b_hi = INT_GEN.next();
         private final int b_lo = INT_GEN.next();
 
-        private final Comparison c1 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "a").permuteRandom();
-        private final Comparison c2 = new Comparison("n", Comparator.randomSignedOrUnsigned(), "b").permuteRandom();
+        private final Comparison c1 = new Comparison("n", Comparator.random(), "a").permuteRandom();
+        private final Comparison c2 = new Comparison("n", Comparator.random(), "b").permuteRandom();
 
         private final Template.OneArg<String> template = Template.make("methodName", (String methodName) -> scope(
             let("n_hi", n_hi),
@@ -638,8 +628,8 @@ public class TestFoldComparesFuzzer {
         private final int size = INT_GEN.restricted(0, 100_000).next();
 
         // Get checks like: n < a || n >= arr.length
-        private final Comparison c_lo = new Comparison("n", Comparator.randomSignedOrUnsigned(), "a").permuteRandom();
-        private final Comparison c_hi = new Comparison("n", Comparator.randomSignedOrUnsigned(), "arr.length").permuteRandom();
+        private final Comparison c_lo = new Comparison("n", Comparator.random(), "a").permuteRandom();
+        private final Comparison c_hi = new Comparison("n", Comparator.random(), "arr.length").permuteRandom();
         private final boolean swap = RANDOM.nextBoolean();
         private final Comparison c1Permuted = (swap ? c_lo : c_hi).permuteRandom();
         private final Comparison c2Permuted = (swap ? c_hi : c_lo).permuteRandom();
