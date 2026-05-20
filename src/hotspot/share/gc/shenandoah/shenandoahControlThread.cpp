@@ -42,9 +42,7 @@
 #include "memory/metaspaceUtils.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
-  ShenandoahController(),
   _requested_gc_cause(GCCause::_no_gc),
-  _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _control_lock(CONTROL_LOCK_RANK, "ShenandoahControl_lock", true) {
   set_name("ShenControl");
   create_and_start();
@@ -80,23 +78,11 @@ void ShenandoahControlThread::run_service() {
     if (alloc_failure_pending) {
       // Allocation failure takes precedence: we have to deal with it first thing
       heuristics->log_trigger("Handle Allocation Failure");
-
       cause = GCCause::_allocation_failure;
-
-      // Consume the degen point, and seed it with default value
-      degen_point = _degen_point;
-      _degen_point = ShenandoahGC::_degenerated_outside_cycle;
-
-      if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle()) {
-        heuristics->record_allocation_failure_gc();
-        policy->record_alloc_failure_to_degenerated(degen_point);
-        mode = stw_degenerated;
-      } else {
-        heuristics->record_allocation_failure_gc();
-        policy->record_alloc_failure_to_full();
-        mode = stw_full;
-      }
-    } else if (is_gc_requested) {
+      heap->set_unload_classes(heuristics->can_unload_classes());
+      heuristics->record_allocation_failure_gc();
+      mode = default_mode;
+    } else if (is_gc_requested ) {
       cause = requested_gc_cause;
       heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
@@ -139,10 +125,7 @@ void ShenandoahControlThread::run_service() {
 
       heuristics->cancel_trigger_request();
 
-      if (mode != stw_degenerated) {
-        // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
-        heap->reset_bytes_allocated_since_gc_start();
-      }
+      heap->reset_bytes_allocated_since_gc_start();
 
       MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
@@ -157,9 +140,6 @@ void ShenandoahControlThread::run_service() {
       switch (mode) {
         case concurrent_normal:
           service_concurrent_normal_cycle(cause);
-          break;
-        case stw_degenerated:
-          service_stw_degenerated_cycle(cause, degen_point);
           break;
         case stw_full:
           service_stw_full_cycle(cause);
@@ -318,13 +298,6 @@ bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahGC::Shenando
       return true;
     }
 
-    if (ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
-      assert (_degen_point == ShenandoahGC::_degenerated_outside_cycle,
-              "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
-      _degen_point = point;
-      return true;
-    }
-
     fatal("Unexpected reason for cancellation: %s", GCCause::to_string(heap->cancelled_cause()));
   }
   return false;
@@ -341,18 +314,6 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   heap->increment_total_collections(true);
 
   ShenandoahFullGC gc;
-  gc.collect(cause);
-}
-
-void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
-  assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCSession session(cause, heap->global_generation(), true,
-                              point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
-
-  heap->increment_total_collections(false);
-
-  ShenandoahDegenGC gc(point, heap->global_generation());
   gc.collect(cause);
 }
 

@@ -42,7 +42,6 @@ public:
   typedef enum {
     none,
     concurrent_normal,
-    stw_degenerated,
     stw_full,
     bootstrapping_old,
     servicing_old,
@@ -72,10 +71,6 @@ private:
   // This may be read without taking the _control_lock, but should be read again under the lock
   // before making any state changes (double-checked locking idiom).
   volatile GCMode _gc_mode;
-
-  // Only the control thread knows the correct degeneration point. This is used to have the
-  // control thread resume a STW cycle from the point where the concurrent cycle was cancelled.
-  ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
   // A reference to the heap
   ShenandoahGenerationalHeap* _heap;
@@ -115,7 +110,6 @@ private:
   // Various service methods handle different gc cycle types
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
-  void service_stw_degenerated_cycle(const ShenandoahGCRequest& request);
   void service_concurrent_normal_cycle(const ShenandoahGCRequest& request);
   void service_concurrent_old_cycle(const ShenandoahGCRequest& request);
 
@@ -152,7 +146,6 @@ private:
   // the `prepare` methods are used to configure the heap and update heuristics accordingly.
   void check_for_request(ShenandoahGCRequest& request);
 
-  GCMode prepare_for_allocation_failure_gc(ShenandoahGCRequest &request);
   GCMode prepare_for_explicit_gc(ShenandoahGCRequest &request) const;
   GCMode prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const;
 

@@ -37,13 +37,11 @@ private:
   typedef enum {
     none,
     concurrent_normal,
-    stw_degenerated,
     stw_full
   } GCMode;
 
   ShenandoahSharedFlag _gc_requested;
   GCCause::Cause       _requested_gc_cause;
-  ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
   // This lock is used to coordinate waking up the control thread
   Monitor _control_lock;
@@ -63,7 +61,6 @@ private:
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
-  void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
 
   void notify_gc_waiters();
 

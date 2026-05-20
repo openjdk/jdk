@@ -52,7 +52,6 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
   _gc_mode(none),
-  _degen_point(ShenandoahGC::_degenerated_unset),
   _heap(ShenandoahGenerationalHeap::heap()),
   _age_period(0) {
   shenandoah_assert_generational();
@@ -114,12 +113,14 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
 
   request.cause = _requested_gc_cause;
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
-    if (_degen_point == ShenandoahGC::_degenerated_unset) {
-      request.generation = _heap->young_generation();
-      _degen_point = ShenandoahGC::_degenerated_outside_cycle;
-    } else {
-      assert(request.generation != nullptr, "Must know which generation to use for degenerated cycle");
-    }
+    // TODO: consider an escalation path where a concurrent global gc is tried before a STW full gc.
+    request.generation = _heap->young_generation();
+
+    // these things used to happen in preparation for a degenerated cycle.
+    _heap->old_generation()->clear_failed_evacuation();
+
+    // TODO: This is always young now. How does the global heuristic now learn of allocation failures? Does it matter?
+    request.generation->heuristics()->record_allocation_failure_gc();
   } else {
     if (request.cause == GCCause::_shenandoah_concurrent_gc || ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
       // This is a regulator request or an explicit gc request. Note that an explicit gc request is allowed to
@@ -142,13 +143,6 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   }
 
   assert(request.generation != nullptr, "request.generation cannot be null, cause is: %s", GCCause::to_string(request.cause));
-  if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
-    // these things used to happen in preparation for a degenerated cycle.
-    _heap->old_generation()->clear_failed_evacuation();
-    request.generation->heuristics()->record_allocation_failure_gc();
-    // TODO: Do we still want to keep track of _degen_point? Do we care what phase is running when an allocation failure happens
-    _heap->shenandoah_policy()->record_alloc_failure_to_degenerated(_degen_point);
-  }
 
   GCMode mode;
   if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || request.cause == GCCause::_shenandoah_upgrade_to_full_gc) {
@@ -157,34 +151,6 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
     mode = prepare_for_concurrent_gc(request);
   }
   set_gc_mode(ml, mode);
-}
-
-ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_allocation_failure_gc(ShenandoahGCRequest &request) {
-  // Important: not all paths update the request.generation. This is intentional.
-  // A degenerated cycle must use the same generation carried over from the previous request.
-  if (request.generation->is_old()) {
-    // This means we degenerated during the young bootstrap for the old generation
-    // cycle. The following degenerated cycle should therefore also be young.
-    request.generation = _heap->young_generation();
-  }
-
-  ShenandoahHeuristics* heuristics = request.generation->heuristics();
-  bool old_gen_evacuation_failed = _heap->old_generation()->clear_failed_evacuation();
-
-  heuristics->log_trigger("Handle Allocation Failure");
-
-  // Do not bother with degenerated cycle if old generation evacuation failed or if humongous allocation failed
-  if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() &&
-      !old_gen_evacuation_failed && request.cause != GCCause::_shenandoah_humongous_allocation_failure) {
-    heuristics->record_allocation_failure_gc();
-    _heap->shenandoah_policy()->record_alloc_failure_to_degenerated(_degen_point);
-    return stw_degenerated;
-  } else {
-    heuristics->record_allocation_failure_gc();
-    _heap->shenandoah_policy()->record_alloc_failure_to_full();
-    request.generation = _heap->global_generation();
-    return stw_full;
-  }
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
@@ -262,8 +228,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  if ((gc_mode() != servicing_old) && (gc_mode() != stw_degenerated)) {
-    // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
+  if (gc_mode() != servicing_old) {
     _heap->reset_bytes_allocated_since_gc_start();
   }
 
@@ -290,10 +255,6 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     switch (gc_mode()) {
       case concurrent_normal: {
         service_concurrent_normal_cycle(request);
-        break;
-      }
-      case stw_degenerated: {
-        service_stw_degenerated_cycle(request);
         break;
       }
       case stw_full: {
@@ -448,8 +409,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
         log_info(gc)("Bootstrap cycle for old generation was cancelled");
         return;
       }
-
-      assert(_degen_point == ShenandoahGC::_degenerated_unset, "Degen point should not be set if gc wasn't cancelled");
 
       // From here we will 'resume' the old concurrent mark. This will skip reset
       // and init mark for the concurrent mark. All of that work will have been
@@ -607,19 +566,7 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
     return true;
   }
 
-  if (ShenandoahCollectorPolicy::is_allocation_failure(_heap->cancelled_cause())) {
-    assert(_degen_point == ShenandoahGC::_degenerated_unset,
-           "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
-    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    _requested_gc_cause = _heap->cancelled_cause();
-    _degen_point = point;
-    log_debug(gc, thread)("Cancellation detected:, reason: %s, degen point: %s",
-                          GCCause::to_string(_heap->cancelled_cause()),
-                          ShenandoahGC::degen_point_to_string(_degen_point));
-    return true;
-  }
-
-  fatal("Cancel GC either for alloc failure GC, or gracefully exiting, or to pause old generation marking");
+  fatal("Cancel GC either for gracefully exiting, or to pause old generation marking");
   return false;
 }
 
@@ -629,24 +576,6 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
   maybe_set_aging_cycle();
   ShenandoahFullGC gc;
   gc.collect(cause);
-  _degen_point = ShenandoahGC::_degenerated_unset;
-}
-
-void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
-  assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
-  _heap->increment_total_collections(false);
-
-  ShenandoahGCSession session(request.cause, request.generation, true,
-                              _degen_point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
-  ShenandoahDegenGC gc(_degen_point, request.generation);
-  gc.collect(request.cause);
-  _degen_point = ShenandoahGC::_degenerated_unset;
-
-  assert(_heap->young_generation()->task_queues()->is_empty(), "Unexpected young generation marking tasks");
-  if (request.generation->is_global()) {
-    assert(_heap->old_generation()->task_queues()->is_empty(), "Unexpected old generation marking tasks");
-    assert(_heap->global_generation()->task_queues()->is_empty(), "Unexpected global generation marking tasks");
-  }
 }
 
 void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
@@ -807,7 +736,6 @@ const char* ShenandoahGenerationalControlThread::gc_mode_name(GCMode mode) {
   switch (mode) {
     case none:              return "idle";
     case concurrent_normal: return "normal";
-    case stw_degenerated:   return "degenerated";
     case stw_full:          return "full";
     case servicing_old:     return "old";
     case bootstrapping_old: return "bootstrap";
