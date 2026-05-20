@@ -65,21 +65,29 @@ public class TestFullGCCount {
         // Perform some gc, record collector counts.
         for (int i = 0; i < iterations; i++) {
             System.gc();
-            addCollectionCount(counts, i);
+            addCollectionCount(counts);
         }
 
         // Check the increments:
         //   Old gen collectors should increase by one,
         //   New collectors may or may not increase.
-        //   Any increase >=2 is unexpected.
+        //   Any increase >=2 is unexpected (except G1 Concurrent GC: each concurrent
+        //   STW pause increments that bean, so two pauses in one cycle are normal).
         for (String collector : counts.keySet()) {
+            int threhold = 2;
+            if ("G1 Concurrent GC".equals(collector)) {
+                // G1ConcGCMonitoringScope runs once per concurrent STW pause
+                // (e.g. Remark and Cleanup), not once per concurrent cycle, so
+                // two increments between consecutive System.gc() samples are valid.
+                threhold = 3;
+            }
             System.out.println("Checking: " + collector);
 
             for (int i = 0; i < iterations - 1; i++) {
                 List<Long> theseCounts = counts.get(collector);
                 long a = theseCounts.get(i);
                 long b = theseCounts.get(i + 1);
-                if (b - a >= 2) {
+                if (b - a >= threhold) {
                     failed = true;
                     errorMessage += "Collector '" + collector + "' has increment " + (b - a) +
                                     " at iteration " + i + "\n";
@@ -93,7 +101,7 @@ public class TestFullGCCount {
         System.out.println("Passed.");
     }
 
-    private static void addCollectionCount(HashMap<String, List<Long>> counts, int iteration) {
+    private static void addCollectionCount(HashMap<String, List<Long>> counts) {
         for (int i = 0; i < collectors.size(); i++) {
             GarbageCollectorMXBean collector = collectors.get(i);
             List<Long> thisList = counts.get(collector.getName());
