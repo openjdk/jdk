@@ -333,6 +333,11 @@ public class UUIDTest {
         if (test.timestamp() != (Long.MAX_VALUE >> 3)) {
             throw new Exception("Incorrect timestamp");
         }
+        // UUIDv7
+        test = UUID.fromString("00000000-0001-7000-8a5a-be785f17dcda");
+        if (test.timestamp() != 1) {
+            throw new Exception("Incorrect timestamp");
+        }
     }
 
     private static void clockSequenceTest() throws Exception {

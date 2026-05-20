@@ -419,21 +419,22 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * October 15, 1582 UTC.
      *
      * <p> The timestamp value is only meaningful in a time-based UUID, which
-     * has version type 1.  If this {@code UUID} is not a time-based UUID then
+     * has version type 1 or 7. If this {@code UUID} is not a time-based UUID then
      * this method throws UnsupportedOperationException.
      *
      * @throws UnsupportedOperationException
-     *         If this UUID is not a version 1 UUID
+     *         If this UUID is not a version 1 or 7 UUID
      * @return The timestamp of this {@code UUID}.
      */
     public long timestamp() {
-        if (version() != 1) {
-            throw new UnsupportedOperationException("Not a time-based UUID");
-        }
-
-        return (mostSigBits & 0x0FFFL) << 48
-             | ((mostSigBits >> 16) & 0x0FFFFL) << 32
-             | mostSigBits >>> 32;
+        return switch(version()) {
+            case 1 -> 
+                (mostSigBits & 0x0FFFL) << 48
+                | ((mostSigBits >> 16) & 0x0FFFFL) << 32
+                | mostSigBits >>> 32;
+            case 7 -> mostSigBits >>> 16;
+            default -> throw new UnsupportedOperationException("Not a time-based UUID");
+        };
     }
 
     /**
