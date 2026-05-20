@@ -6379,6 +6379,13 @@ Version 1.6.57 [April 8, 2026]
   Fixed integer overflow in rowbytes computation in read transforms.
     (Contributed by Mohammad Seet.)
 
+Version 1.6.58 [April 15, 2026]
+  Fixed a regression introduced in version 1.6.56 that caused `png_get_PLTE`
+    to return stale palette data after applying gamma and background transforms
+    in-place.
+    (Reported by ralfjunker <ralfjunker@users.noreply.github.com>.)
+
+
 Send comments/corrections/commendations to png-mng-implement at lists.sf.net.
 Subscription is required; visit
 <https://lists.sourceforge.net/lists/listinfo/png-mng-implement>
