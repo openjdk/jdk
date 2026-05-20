@@ -27,6 +27,7 @@
 
 #include "ci/ciClassList.hpp"
 #include "memory/allocation.hpp"
+#include "opto/c2_globals.hpp"
 
 // ciCallProfile
 //
