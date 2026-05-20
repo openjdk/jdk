@@ -1183,9 +1183,8 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
   Address cset_addr_arg;
   intptr_t cset_addr = reinterpret_cast<intptr_t>(ShenandoahHeap::in_cset_fast_test_addr());
   if (cset_addr < INT32_MAX) {
-    // Cset bitmap is at easily encodeable address. Just use it as offset.
-    assert(is_aligned(cset_addr, 8), "Sanity");
-    cset_addr_arg = Address(tmp, cset_addr >> 3, Address::times_8);
+    // Cset bitmap is at easily encodeable address. Just use it as displacement.
+    cset_addr_arg = Address(tmp, checked_cast<int>(cset_addr));
   } else {
     // Cset bitmap is way further than our encoding limit. Add its address fully.
     bool tmp2_live;
