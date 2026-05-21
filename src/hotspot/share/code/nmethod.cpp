@@ -1286,7 +1286,6 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
 
   _is_unloading_state         = 0;
   _state                      = not_installed;
-  _used                       = false;
 
   _has_flushed_dependencies   = false;
   _is_unlinked                = false;

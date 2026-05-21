@@ -271,8 +271,6 @@ class nmethod : public CodeBlob {
   // Protected by NMethodState_lock
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
-  bool _used; // has this nmethod ever been invoked? Set in nmethod entry barrier
-
 public:
   union Flags {
     uint8_t _raw;
@@ -783,9 +781,6 @@ public:
   bool make_in_use() {
     return try_transition(in_use);
   }
-  // nmethod was called and entry barrier code was executed
-  bool  used() const { return _used; }
-  void  set_used()   { _used = true; }
 
   // Make the nmethod non entrant. The nmethod will continue to be
   // alive.  It is used when an uncommon trap happens.  Returns true

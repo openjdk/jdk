@@ -838,11 +838,9 @@ private:
 
   oop read_oop(JavaThread* thread);
   Metadata* read_metadata();
-  bool read_oops(OopRecorder* oop_recorder);
   bool read_metadata(OopRecorder* oop_recorder);
 
   bool read_oop_metadata_list(JavaThread* thread, GrowableArray<Handle> &oop_list, GrowableArray<Metadata*> &metadata_list, OopRecorder* oop_recorder);
-  void apply_relocations(nmethod* nm, GrowableArray<Handle> &oop_list, GrowableArray<Metadata*> &metadata_list) NOT_CDS_RETURN;
 
   ImmutableOopMapSet* read_oop_map_set();
   void read_stub_data(CodeBlob* code_blob, AOTStubData *stub_data);

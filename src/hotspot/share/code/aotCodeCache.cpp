@@ -466,6 +466,7 @@ static CachedCodeDirectory* _aot_code_directory = nullptr;
 CachedCodeDirectory* CachedCodeDirectory::create() {
   assert(AOTCacheAccess::is_aot_code_region_empty(), "must be");
   CachedCodeDirectory* dir = (CachedCodeDirectory*)AOTCacheAccess::allocate_aot_code_region(sizeof(CachedCodeDirectory));
+  dir->set_aot_code_data(0, nullptr);
   return dir;
 }
 
