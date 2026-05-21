@@ -73,6 +73,26 @@ import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
  *
  * <li>{@code intVal}, {@code byteVal}, etc. &mdash; the operand of a
  * conversion, with the indicated type
+ *
+ * <li id="type_letters">Single-letter type codes used in the names of
+ * {@linkplain Conversion conversion} operator tokens (for example
+ * {@link #B2D}, {@link #F2H}, {@link #H2F}, {@link #REINTERPRET_F2I},
+ * {@link #ZERO_EXTEND_B2L}) abbreviate lane types as follows:
+ * <table class="striped">
+ * <caption style="display:none">Lane type letter codes</caption>
+ * <thead>
+ * <tr><th scope="col">Letter</th><th scope="col">Lane type</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">{@code B}</th><td>{@code byte}</td></tr>
+ * <tr><th scope="row">{@code S}</th><td>{@code short}</td></tr>
+ * <tr><th scope="row">{@code I}</th><td>{@code int}</td></tr>
+ * <tr><th scope="row">{@code L}</th><td>{@code long}</td></tr>
+ * <tr><th scope="row">{@code F}</th><td>{@code float}</td></tr>
+ * <tr><th scope="row">{@code D}</th><td>{@code double}</td></tr>
+ * <tr><th scope="row">{@code H}</th><td>{@link Float16} ("half")</td></tr>
+ * </tbody>
+ * </table>
  * </ul>
  *
  * <h2>Operations on floating point vectors</h2>
