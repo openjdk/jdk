@@ -710,24 +710,22 @@ WB_ENTRY(jint, WB_ShenandoahRegionSize(JNIEnv* env, jobject o))
   if (UseShenandoahGC) {
     return ShenandoahHeapRegion::region_size_bytes_jint();
   }
-THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
 WB_END
 
 WB_ENTRY(jint, WB_ShenandoahRegionCount(JNIEnv* env, jobject o))
   if (UseShenandoahGC) {
     return static_cast<jint>(ShenandoahHeap::heap()->num_regions());
   }
-THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionCount: Shenandoah GC is not enabled");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionCount: Shenandoah GC is not enabled");
 WB_END
 
-WB_ENTRY(jboolean, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
-  if (UseShenandoahGC) {
-    if (ShenandoahHeap::heap()->mode()->is_generational()) {
-      return ShenandoahGenerationalHeap::heap()->start_old_collection();
-    }
-    return false;
+WB_ENTRY(void, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
+  if (UseShenandoahGC && ShenandoahHeap::heap()->mode()->is_generational()) {
+    ShenandoahGenerationalHeap::heap()->wait_for_old_collection();
+    return;
   }
-THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahOldGC: Shenandoah GC is not enabled");
+  THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahOldGC: Generational mode for Shenandoah GC is not enabled");
 WB_END
 
 #endif // INCLUDE_SHENANDOAHGC
@@ -2903,7 +2901,7 @@ static JNINativeMethod methods[] = {
 #if INCLUDE_SHENANDOAHGC
   {CC"shenandoahRegionSize",   CC"()I",                   (void*)&WB_ShenandoahRegionSize  },
   {CC"shenandoahRegionCount",  CC"()I",                   (void*)&WB_ShenandoahRegionCount },
-  {CC"shenandoahOldGC",        CC"()Z",                   (void*)&WB_ShenandoahOldGC },
+  {CC"shenandoahOldGC",        CC"()V",                   (void*)&WB_ShenandoahOldGC },
 #endif
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},

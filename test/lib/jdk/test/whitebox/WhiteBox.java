@@ -319,7 +319,7 @@ public class WhiteBox {
 
   public native int shenandoahRegionSize();
   public native int shenandoahRegionCount();
-  public native boolean shenandoahOldGC();
+  public native void shenandoahOldGC();
 
   // NMT
   public native long NMTMalloc(long size);

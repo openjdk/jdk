@@ -122,9 +122,8 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _old_generation->initialize_heuristics(mode());
 }
 
-bool ShenandoahGenerationalHeap::start_old_collection() {
+void ShenandoahGenerationalHeap::wait_for_old_collection() {
   static_cast<ShenandoahGenerationalControlThread*>(_control_thread)->wait_for_gc_cycle(GCCause::_shenandoah_concurrent_gc, old_generation());
-  return true;
 }
 
 void ShenandoahGenerationalHeap::initialize_serviceability() {
