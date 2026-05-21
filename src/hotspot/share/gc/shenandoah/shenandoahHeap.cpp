@@ -2654,12 +2654,9 @@ private:
     T cl;
     ShenandoahHeapRegion* r = _regions->next();
     while (r != nullptr) {
-      // TODO: We can't use just the update watermark right now.
-      //
       // Regions put into service after final mark will not have an update watermark. Without degenerated
       // cycles we cannot guarantee that references into the collection set won't point at objects that
       // are forwarded.
-      // HeapWord* update_watermark = MAX2(r->top(), r->get_update_watermark());
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
       if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
