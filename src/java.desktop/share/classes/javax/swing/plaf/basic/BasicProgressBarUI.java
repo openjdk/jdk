@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -710,7 +710,8 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * @since 1.4
      */
     protected void paintDeterminate(Graphics g, JComponent c) {
-        if (!(g instanceof Graphics2D)) {
+        boolean isPrinting = SwingUtilities2.isPrinting(g);
+        if (!(g instanceof Graphics2D) && !isPrinting) {
             return;
         }
 
@@ -727,49 +728,94 @@ public class BasicProgressBarUI extends ProgressBarUI {
         // amount of progress to draw
         int amountFull = getAmountFull(b, barRectWidth, barRectHeight);
 
-        Graphics2D g2 = (Graphics2D)g;
-        g2.setColor(progressBar.getForeground());
+        Graphics2D g2d = null;
+        if (g instanceof Graphics2D) {
+            g2d = (Graphics2D) g;
+        }
+        g.setColor(progressBar.getForeground());
 
         if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {
             // draw the cells
-            if (cellSpacing == 0 && amountFull > 0) {
-                // draw one big Rect because there is no space between cells
-                g2.setStroke(new BasicStroke((float)barRectHeight,
-                        BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
-            } else {
-                // draw each individual cell
-                g2.setStroke(new BasicStroke((float)barRectHeight,
-                        BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
-                        0.f, new float[] { cellLength, cellSpacing }, 0.f));
+            if (g instanceof Graphics2D) {
+                if (cellSpacing == 0 && amountFull > 0) {
+                    // draw one big Rect because there is no space between cells
+                    g2d.setStroke(new BasicStroke((float) barRectHeight,
+                            BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
+                } else {
+                    // draw each individual cell
+                    g2d.setStroke(new BasicStroke((float) barRectHeight,
+                            BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
+                            0.f, new float[]{cellLength, cellSpacing}, 0.f));
+                }
             }
 
             if (BasicGraphicsUtils.isLeftToRight(c)) {
-                g2.drawLine(b.left, (barRectHeight/2) + b.top,
-                        amountFull + b.left, (barRectHeight/2) + b.top);
+                if (g instanceof Graphics2D) {
+                    g.drawLine(b.left, (barRectHeight / 2) + b.top,
+                            amountFull + b.left, (barRectHeight / 2) + b.top);
+                } else {
+                    g.drawRect(b.left, b.top, barRectWidth, barRectHeight);
+                    if (cellSpacing == 0 && amountFull > 0) {
+                        g.fillRect(b.left, b.top, amountFull, barRectHeight);
+                    } else {
+                        for (int i = 0; i < barRectWidth; i += cellLength + cellSpacing) {
+                            g.fillRect(b.left + i, b.top,
+                                        cellLength, barRectHeight);
+                        }
+                    }
+                }
             } else {
-                g2.drawLine((barRectWidth + b.left),
-                        (barRectHeight/2) + b.top,
-                        barRectWidth + b.left - amountFull,
-                        (barRectHeight/2) + b.top);
+                if (g instanceof Graphics2D) {
+                    g.drawLine((barRectWidth + b.left),
+                            (barRectHeight / 2) + b.top,
+                            barRectWidth + b.left - amountFull,
+                            (barRectHeight / 2) + b.top);
+                } else {
+                    g.drawRect(b.left, b.top, barRectWidth, barRectHeight);
+                    if (cellSpacing == 0 && amountFull > 0) {
+                        g.fillRect(barRectWidth + b.left, b.top, amountFull, barRectHeight);
+                    } else {
+                        for (int i = 0; i < barRectWidth; i += cellLength + cellSpacing) {
+                            g.fillRect( barRectWidth + b.left + i, b.top,
+                                    cellLength, barRectHeight);
+                        }
+                    }
+                }
             }
 
         } else { // VERTICAL
             // draw the cells
-            if (cellSpacing == 0 && amountFull > 0) {
-                // draw one big Rect because there is no space between cells
-                g2.setStroke(new BasicStroke((float)barRectWidth,
-                        BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
-            } else {
-                // draw each individual cell
-                g2.setStroke(new BasicStroke((float)barRectWidth,
-                        BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
-                        0f, new float[] { cellLength, cellSpacing }, 0f));
+            if (g instanceof Graphics2D) {
+                if (cellSpacing == 0 && amountFull > 0) {
+                    // draw one big Rect because there is no space between cells
+                    g2d.setStroke(new BasicStroke((float) barRectWidth,
+                            BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
+                } else {
+                    // draw each individual cell
+                    g2d.setStroke(new BasicStroke((float) barRectWidth,
+                            BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
+                            0f, new float[]{cellLength, cellSpacing}, 0f));
+                }
             }
 
-            g2.drawLine(barRectWidth/2 + b.left,
-                    b.top + barRectHeight,
-                    barRectWidth/2 + b.left,
-                    b.top + barRectHeight - amountFull);
+            if (g instanceof Graphics2D) {
+                g.drawLine(barRectWidth / 2 + b.left,
+                        b.top + barRectHeight,
+                        barRectWidth / 2 + b.left,
+                        b.top + barRectHeight - amountFull);
+            } else {
+                g.drawRect(b.left, b.top, barRectWidth, barRectHeight);
+                if (cellSpacing == 0 && amountFull > 0) {
+                    g.fillRect(b.left, b.top + barRectHeight - amountFull,
+                               barRectWidth, amountFull);
+                }
+                else {
+                    for (int i = 0; i < barRectHeight; i += cellLength + cellSpacing) {
+                        g.fillRect(b.left, b.top + barRectHeight - i,
+                                   barRectWidth, cellLength);
+                    }
+                }
+            }
         }
 
         // Deal with possible text painting
@@ -838,40 +884,35 @@ public class BasicProgressBarUI extends ProgressBarUI {
      */
     private void paintString(Graphics g, int x, int y, int width, int height,
                              int fillStart, int amountFull, Insets b) {
-        if (!(g instanceof Graphics2D)) {
-            return;
-        }
-
-        Graphics2D g2 = (Graphics2D)g;
         String progressString = progressBar.getString();
-        g2.setFont(progressBar.getFont());
-        Point renderLocation = getStringPlacement(g2, progressString,
+        g.setFont(progressBar.getFont());
+        Point renderLocation = getStringPlacement(g, progressString,
                                                   x, y, width, height);
-        Rectangle oldClip = g2.getClipBounds();
+        Rectangle oldClip = g.getClipBounds();
 
         if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {
-            g2.setColor(getSelectionBackground());
-            SwingUtilities2.drawString(progressBar, g2, progressString,
+            g.setColor(getSelectionBackground());
+            SwingUtilities2.drawString(progressBar, g, progressString,
                                        renderLocation.x, renderLocation.y);
-            g2.setColor(getSelectionForeground());
-            g2.clipRect(fillStart, y, amountFull, height);
-            SwingUtilities2.drawString(progressBar, g2, progressString,
-                                       renderLocation.x, renderLocation.y);
+            g.setColor(getSelectionForeground());
+            g.clipRect(fillStart, y, amountFull, height);
+            SwingUtilities2.drawString(progressBar, g, progressString,
+                    renderLocation.x, renderLocation.y);
         } else { // VERTICAL
-            g2.setColor(getSelectionBackground());
+            g.setColor(getSelectionBackground());
             AffineTransform rotate =
                     AffineTransform.getRotateInstance(Math.PI/2);
-            g2.setFont(progressBar.getFont().deriveFont(rotate));
-            renderLocation = getStringPlacement(g2, progressString,
+            g.setFont(progressBar.getFont().deriveFont(rotate));
+            renderLocation = getStringPlacement(g, progressString,
                                                   x, y, width, height);
-            SwingUtilities2.drawString(progressBar, g2, progressString,
+            SwingUtilities2.drawString(progressBar, g, progressString,
                                        renderLocation.x, renderLocation.y);
-            g2.setColor(getSelectionForeground());
-            g2.clipRect(x, fillStart, width, amountFull);
-            SwingUtilities2.drawString(progressBar, g2, progressString,
+            g.setColor(getSelectionForeground());
+            g.clipRect(x, fillStart, width, amountFull);
+            SwingUtilities2.drawString(progressBar, g, progressString,
                                        renderLocation.x, renderLocation.y);
         }
-        g2.setClip(oldClip);
+        g.setClip(oldClip);
     }
 
 

@@ -444,7 +444,7 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
       return;
     }
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
+    ContinuationGCSupport::transform_stack_chunk(obj, klass);
 
     // Check for deduplicating young Strings.
     if (G1StringDedup::is_candidate_from_evacuation(klass,

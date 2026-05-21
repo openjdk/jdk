@@ -269,7 +269,7 @@ void PSCardTable::process_range(Func&& object_start,
     }
 
     // Finished a dirty chunk.
-    pm->drain_stacks_cond_depth();
+    pm->trim_stacks();
   }
 }
 

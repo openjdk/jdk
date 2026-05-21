@@ -3967,7 +3967,7 @@ void MatchNode::count_commutative_op(int& count) {
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
-    "AndV", "OrV", "XorV",
+    "AndV", "OrV", "XorV", "AndVMask", "OrVMask", "XorVMask",
     "MaxVHF", "MinVHF", "MaxV", "MinV", "UMax","UMin"
   };
 
