@@ -22,13 +22,13 @@
  */
 
 /**
- * @TestDeadAllocRem
+ * @test
  * @bug 8230397
  * @summary TestDeadAllocRem removal of an already dead AllocateNode with not-yet removed proj outputs.
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main/othervm -Xbatch compiler.valhalla.inlinetypes.TestDeadAllocRemDeadAllocationRemoval
+ * @run main/othervm -Xbatch compiler.valhalla.inlinetypes.TestDeadAllocationRemoval
  */
 
 package compiler.valhalla.inlinetypes;
