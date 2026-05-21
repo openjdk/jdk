@@ -226,6 +226,7 @@ void ShenandoahRefProcThreadLocal::heal_discovered_list() {
     return;
   }
 
+  ShenandoahBarrierSet* barriers = ShenandoahBarrierSet::barrier_set();
   T* list = reinterpret_cast<T*>(&_discovered_list);
   while (list != nullptr) {
     const oop discovered_ref = CompressedOops::decode(*list);
@@ -233,25 +234,26 @@ void ShenandoahRefProcThreadLocal::heal_discovered_list() {
       break;
     }
 
-    // lrb only operates on marked objects, these references have been discovered so may not be marked.
-    // Here, we need the barrier to handle these possibly unmarked references too
-    const oop reference = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(discovered_ref);
+    // The `lrb` static method only operates on marked objects, these references have been discovered
+    // so may not be marked. Here, we need the barrier to handle these possibly unmarked references too.
+    const oop reference = barriers->load_reference_barrier(discovered_ref);
     if (discovered_ref != reference) {
       // Update our list with the forwarded object
       set_oop_field(list, reference);
     }
 
     // Discovered list terminates with a self-loop
-    const oop discovered = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ShenandoahReferenceProcessor::discovered<T>(reference));
-    if (reference == discovered) {
+    T* next_addr = ShenandoahReferenceProcessor::discovered_addr<T>(reference);
+    const oop raw_discovered = CompressedOops::decode(*next_addr);
+    const oop healed_discovered = barriers->load_reference_barrier(raw_discovered);
+    if (reference == healed_discovered) {
       // Heal the self-loop if it contains a stale (pre-forwarding) pointer
-      T* discovered_addr = ShenandoahReferenceProcessor::discovered_addr<T>(reference);
-      if (CompressedOops::decode(*discovered_addr) != reference) {
-        set_oop_field(discovered_addr, reference);
+      if (raw_discovered != healed_discovered) {
+        set_oop_field(next_addr, healed_discovered);
       }
       break;
     }
-    list = ShenandoahReferenceProcessor::discovered_addr<T>(reference);
+    list = next_addr;
   }
 }
 
