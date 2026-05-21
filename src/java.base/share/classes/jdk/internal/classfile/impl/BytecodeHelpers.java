@@ -489,7 +489,7 @@ public class BytecodeHelpers {
     }
 
     public static void validateTableSwitchValues(int low, int high, int codeLength) {
-        if (high < low || (long)high - low > codeLength >> 2) {
+        if (high < low || 1L + high - low > codeLength >> 2) {
             throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
         }
     }
