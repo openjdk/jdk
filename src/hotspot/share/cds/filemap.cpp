@@ -225,6 +225,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
 #endif
   _compressed_oops = UseCompressedOops;
+  _compatible_oop_compression = AOTCompatibleOopCompression;
   _narrow_klass_pointer_bits = CompressedKlassPointers::narrow_klass_pointer_bits();
   _narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
 
@@ -1339,6 +1340,10 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
   FileMapRegion* r = region_at(AOTMetaspace::ac);
   assert(r->used() > 0 && r->used_aligned() == rs.size(), "must be");
 
+  if (UseCompressedOops) {
+    precond(header()->compatible_oop_compression() == AOTCompatibleOopCompression);
+  }
+
   char* requested_base = rs.base();
   assert(requested_base != nullptr, "should be inside code cache");
 
@@ -1592,6 +1597,7 @@ bool FileMapInfo::can_use_heap_region() {
   if (UseCompressedOops) {
     aot_log_info(aot)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                       narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
+    aot_log_info(aot)("    AOTCompatibleOopCompression = %s", header()->compatible_oop_compression() ? "true" : "false");
   }
   aot_log_info(aot)("The current max heap size = %zuM, G1HeapRegion::GrainBytes = %zu",
                 MaxHeapSize/M, G1HeapRegion::GrainBytes);
@@ -1600,6 +1606,7 @@ bool FileMapInfo::can_use_heap_region() {
   if (UseCompressedOops) {
     aot_log_info(aot)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                       CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
+    aot_log_info(aot)("    AOTCompatibleOopCompression = %s", AOTCompatibleOopCompression ? "true" : "false");
   }
   if (!object_streaming_mode()) {
     aot_log_info(aot)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",

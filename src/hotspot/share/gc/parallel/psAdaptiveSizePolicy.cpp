@@ -41,7 +41,8 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t space_alignment,
      AdaptiveSizePolicy(gc_pause_goal_sec),
      _avg_promoted(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding)),
      _space_alignment(space_alignment),
-     _young_gen_size_increment_supplement(YoungGenerationSizeSupplement) {}
+     _young_gen_size_increment_supplement(YoungGenerationSizeSupplement),
+     _tenuring_threshold_gc_count(0) {}
 
 void PSAdaptiveSizePolicy::major_collection_begin() {
   _major_timer.reset();
@@ -223,36 +224,63 @@ size_t PSAdaptiveSizePolicy::eden_decrement_aligned_down(size_t cur_eden) {
   return align_down(eden_heap_delta, _space_alignment);
 }
 
-uint PSAdaptiveSizePolicy::compute_tenuring_threshold(bool is_survivor_overflowing,
+static const char* sizing_state_to_string(PSYoungGen::SizingState sizing_state) {
+  switch (sizing_state) {
+    case PSYoungGen::SizingState::balanced:
+      return "balanced";
+    case PSYoungGen::SizingState::constrained:
+      return "constrained";
+    case PSYoungGen::SizingState::surplus:
+      return "surplus";
+    default:
+      ShouldNotReachHere();
+      return "unknown";
+  }
+}
+
+uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGen::SizingState sizing_state,
                                                       uint tenuring_threshold) {
-  if (!young_gen_policy_is_ready()) {
+  if (AlwaysTenure || NeverTenure) {
     return tenuring_threshold;
   }
 
-  if (is_survivor_overflowing) {
-    return tenuring_threshold;
+  const uint original_threshold = tenuring_threshold;
+  constexpr uint min_tenuring_threshold = 1;
+  constexpr uint tenuring_threshold_gc_limit = 5;
+
+  switch (sizing_state) {
+    case PSYoungGen::SizingState::constrained:
+      _tenuring_threshold_gc_count = 0;
+      if (tenuring_threshold > min_tenuring_threshold) {
+        tenuring_threshold--;
+      }
+      break;
+    case PSYoungGen::SizingState::surplus:
+      if (_tenuring_threshold_gc_count < tenuring_threshold_gc_limit) {
+        _tenuring_threshold_gc_count++;
+      }
+
+      if (_tenuring_threshold_gc_count >= tenuring_threshold_gc_limit &&
+          tenuring_threshold < MaxTenuringThreshold) {
+        tenuring_threshold++;
+        _tenuring_threshold_gc_count = 0;
+      }
+      break;
+    case PSYoungGen::SizingState::balanced:
+      _tenuring_threshold_gc_count = 0;
+      break;
+    default:
+      ShouldNotReachHere();
+      break;
   }
 
-  bool incr_tenuring_threshold = false;
-
-  const double major_cost = major_gc_time_sum();
-  const double minor_cost = minor_gc_time_sum();
-
-  if (minor_cost > major_cost * _threshold_tolerance_percent) {
-    // nothing; we prefer young-gc over full-gc
-  } else if (major_cost > minor_cost * _threshold_tolerance_percent) {
-    // Major times are too long, so we want less promotion.
-    incr_tenuring_threshold = true;
-  }
-
-  // Finally, increment or decrement the tenuring threshold, as decided above.
-  // We test for decrementing first, as we might have hit the target size
-  // limit.
-  if (!(AlwaysTenure || NeverTenure)) {
-    if (incr_tenuring_threshold && tenuring_threshold < MaxTenuringThreshold) {
-      tenuring_threshold++;
-    }
-  }
+  log_debug(gc, age)("Adaptive tenuring threshold %u -> %u (max %u, young gen state: %s, increase count: %u/%u)",
+                     original_threshold,
+                     tenuring_threshold,
+                     MaxTenuringThreshold,
+                     sizing_state_to_string(sizing_state),
+                     _tenuring_threshold_gc_count,
+                     tenuring_threshold_gc_limit);
 
   return tenuring_threshold;
 }

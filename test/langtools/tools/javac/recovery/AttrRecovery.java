@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159 8333107 8332230 8338678 8351260 8366196 8372336 8373094
+ * @bug 8301580 8322159 8333107 8332230 8338678 8351260 8366196 8372336 8373094 8384229
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -798,6 +798,66 @@ public class AttrRecovery {
         );
 
         assertEquals(expected, actual);
+    }
+
+    @Test //JDK-8384229
+    public void testStaticFieldTypeLookup() throws Exception {
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev")
+                .sources("""
+                         package test;
+                         import static test.A.Object;
+                         enum A {
+                             Object;
+                         }
+                         class Test {
+                             void foo() {
+                                 Object f = "";
+                             }
+                         }
+                         """)
+                .outdir(out)
+                .run()
+                .writeAll();
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev")
+                .sources("""
+                         package test;
+                         import static test.A.Object;
+                         enum A {
+                             Object;
+                         }
+                         class Test {
+                             private static final Object f = "";
+                         }
+                         """)
+                .outdir(out)
+                .run()
+                .writeAll();
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev")
+                .sources("""
+                         package test;
+                         import static test.A.Object;
+                         class A {
+                             public static java.lang.Object Object() { return null; }
+                         }
+                         class Test {
+                             private static final Object f = Object();
+                         }
+                         """)
+                .outdir(out)
+                .run()
+                .writeAll();
     }
 
     @BeforeEach

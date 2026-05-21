@@ -600,11 +600,11 @@ public:
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
-  int               inlining_progress() const   { return _inlining_progress; }
+  bool              inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
-  int               inlining_incrementally() const { return _inlining_incrementally; }
+  bool              inlining_incrementally() const { return _inlining_incrementally; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
-  int               do_cleanup() const          { return _do_cleanup; }
+  bool              do_cleanup() const          { return _do_cleanup; }
   bool              major_progress() const      { return _major_progress; }
   void          set_major_progress()            { _major_progress = true; }
   void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
