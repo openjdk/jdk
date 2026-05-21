@@ -243,6 +243,7 @@ void JfrBuffer::set_retired() {
 
 void JfrBuffer::clear_retired() {
   if (retired()) {
+      _last_tick = 0;
     clear(&_flags, RETIRED);
   }
 }
