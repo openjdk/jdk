@@ -4608,6 +4608,8 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
           }
         }
         result = proj_in->in(TypeFunc::Memory);
+      } else if (proj_in->is_LoadFlat()) {
+        result = proj_in->in(TypeFunc::Memory);
       }
     } else if (result->is_MergeMem()) {
       MergeMemNode *mmem = result->as_MergeMem();
