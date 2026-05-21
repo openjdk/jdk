@@ -896,7 +896,7 @@ void G1CollectedHeap::abort_refinement() {
 
     // Record any available refinement statistics.
     policy()->record_refinement_stats(sweep_state.stats());
-    sweep_state.complete_work(false /* concurrent */, false /* print_log */);
+    sweep_state.cancel_refinement();
   }
   sweep_state.reset_stats();
 }
@@ -2650,6 +2650,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   if (collector_state()->is_in_concurrent_start_gc()) {
     log_debug(gc, verify)("Marking state");
     _verifier->verify_marking_state();
+    _verifier->verify_bitmap_clear(true /* above_tams_only */);
   }
   _verifier->verify_free_regions_card_tables_clean();
 
@@ -2733,12 +2734,12 @@ void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_si
   // Perform the collection.
   G1YoungCollector collector(gc_cause(), allocation_word_size);
   collector.collect();
-
+  // Update collector state.
+  _collector_state = collector.next_state();
   // It should now be safe to tell the concurrent mark thread to start
   // without its logging output interfering with the logging output
   // that came from the pause.
   if (should_start_concurrent_mark_operation) {
-    verifier()->verify_bitmap_clear(true /* above_tams_only */);
     // CAUTION: after the start_concurrent_cycle() call below, the concurrent marking
     // thread(s) could be running concurrently with us. Make sure that anything
     // after this point does not assume that we are the only GC thread running.

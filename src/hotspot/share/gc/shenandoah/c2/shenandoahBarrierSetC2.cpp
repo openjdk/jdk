@@ -843,6 +843,36 @@ Node* ShenandoahBarrierSetC2::step_over_gc_barrier(Node* c) const {
   return c;
 }
 
+static bool is_barrier_traversal_node(int op) {
+  // Node types that ShenandoahLoadReferenceBarrierNode::Identity traverses via needs_barrier_impl.
+  return op == Op_Phi || op == Op_DecodeN || op == Op_EncodeP || op == Op_CastPP ||
+         op == Op_CheckCastPP || op == Op_CMoveN || op == Op_CMoveP || op == Op_Proj;
+}
+
+void ShenandoahBarrierSetC2::enqueue_dependent_gc_barriers(Unique_Node_List& worklist, Node* n) const {
+  if (!is_barrier_traversal_node(n->Opcode())) {
+    return;
+  }
+  Unique_Node_List visited;
+  Unique_Node_List stack;
+  stack.push(n);
+  while (stack.size() > 0) {
+    Node* cur = stack.pop();
+    if (visited.member(cur)) {
+      continue;
+    }
+    visited.push(cur);
+    for (DUIterator_Fast imax, i = cur->fast_outs(imax); i < imax; i++) {
+      Node* u = cur->fast_out(i);
+      if (u->Opcode() == Op_ShenandoahLoadReferenceBarrier) {
+        worklist.push(u);
+      } else if (is_barrier_traversal_node(u->Opcode())) {
+        stack.push(u);
+      }
+    }
+  }
+}
+
 bool ShenandoahBarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
   return !ShenandoahBarrierC2Support::expand(C, igvn);
 }
@@ -990,19 +1020,23 @@ void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node*
     shenandoah_eliminate_wb_pre(node, &macro->igvn());
   }
   if (ShenandoahCardBarrier && node->Opcode() == Op_CastP2X) {
-    Node* shift = node->unique_out();
-    Node* addp = shift->unique_out();
-    for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
-      Node* mem = addp->last_out(j);
-      if (UseCondCardMark && mem->is_Load()) {
-        assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
-        // The load is checking if the card has been written so
-        // replace it with zero to fold the test.
-        macro->replace_node(mem, macro->intcon(0));
-        continue;
+    for (DUIterator_Last imin, i = node->last_outs(imin); i >= imin; --i) {
+      Node* shift = node->last_out(i);
+      for (DUIterator_Last kmin, k = shift->last_outs(kmin); k >= kmin; --k) {
+        Node* addp = shift->last_out(k);
+        for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
+          Node* mem = addp->last_out(j);
+          if (UseCondCardMark && mem->is_Load()) {
+            assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
+            // The load is checking if the card has been written so
+            // replace it with zero to fold the test.
+            macro->replace_node(mem, macro->intcon(0));
+            continue;
+          }
+          assert(mem->is_Store(), "store required");
+          macro->replace_node(mem, mem->in(MemNode::Memory));
+        }
       }
-      assert(mem->is_Store(), "store required");
-      macro->replace_node(mem, mem->in(MemNode::Memory));
     }
   }
 }

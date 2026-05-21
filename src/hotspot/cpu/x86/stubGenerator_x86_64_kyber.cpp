@@ -957,6 +957,9 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
     __ mov64(rax, 0); // return 0
     __ ret(0);
 
+    // record the stub entry and end
+    stubgen->store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 

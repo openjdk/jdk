@@ -137,6 +137,15 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  // A full GC may be entered directly, or as an upgrade from a failed
+  // degenerated GC. In the latter case, self-forwarded objects may be
+  // present from the failed evacuation. Drain those marks before any phase
+  // (verify, update_roots, phase1_mark_heap) walks headers.
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_un_self_forward);
+    heap->un_self_forward_cset_regions();
+  }
+
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::prepare();
   }
@@ -265,6 +274,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
+
+  DEBUG_ONLY(heap->assert_no_self_forwards());
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_fullgc(_generation);
