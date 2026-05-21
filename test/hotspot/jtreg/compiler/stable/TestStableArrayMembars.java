@@ -131,7 +131,8 @@ public class TestStableArrayMembars {
     @IR(counts = { IRNode.MEMBAR, ">0",
                    IRNode.LOAD, "=1"}, // There is exactly one load fence, but no load
         applyIfAnd = {"enable-valhalla", "true",
-                      "UseArrayFlattening", "true"})
+                      "UseArrayFlattening", "true",
+                      "TieredCompilation", "true"})
     static Integer test() {
         return la.get(0);
     }
