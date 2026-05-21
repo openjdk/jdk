@@ -118,4 +118,3 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_INLINE_HPP
-
