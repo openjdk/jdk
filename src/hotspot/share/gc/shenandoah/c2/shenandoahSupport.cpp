@@ -1617,7 +1617,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
         } else if (mem->is_MergeMem()) {
           MergeMemNode* mm = mem->as_MergeMem();
           mem = mm->memory_at(_alias);
-        } else if (mem->is_Store() || mem->is_LoadStore() || mem->is_ClearArray()) {
+        } else if (mem->is_Store() || mem->is_LoadStore() || mem->is_ClearArray() || mem->Opcode() == Op_PrefetchAllocation) {
           assert(_alias == Compile::AliasIdxRaw, "");
           stack.push(mem, mem->req());
           mem = mem->in(MemNode::Memory);

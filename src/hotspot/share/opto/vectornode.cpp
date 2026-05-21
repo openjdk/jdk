@@ -1017,6 +1017,13 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
   return false;
 }
 
+bool VectorNode::is_vectormask_bitwise_not_pattern(Node* n) {
+  if (n->Opcode() == Op_XorVMask) {
+    return is_all_ones_vector(n->in(1)) ||
+           is_all_ones_vector(n->in(2));
+  }
+  return false;
+}
 
 bool VectorNode::is_reinterpret_opcode(int opc) {
   switch (opc) {

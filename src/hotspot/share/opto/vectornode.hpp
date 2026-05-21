@@ -182,6 +182,7 @@ class VectorNode : public TypeNode {
   // Return true if every bit in this vector is 0.
   static bool is_all_zeros_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
+  static bool is_vectormask_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
 
