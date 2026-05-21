@@ -5114,7 +5114,6 @@ void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
 
   // Increment polymorphic counter instead of receiver slot.
   bind(L_polymorphic);
-  return false;
 }
 
 // Handle the receiver type profile update given the "recv" klass.
