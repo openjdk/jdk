@@ -25,9 +25,6 @@
 /*
  * @test
  * @requires vm.compiler2.enabled
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
- * @requires vm.opt.TieredCompilation != false
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
