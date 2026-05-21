@@ -268,26 +268,22 @@ class nmethod : public CodeBlob {
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
 public:
-  union Flags {
-    uint8_t _raw;
-    struct {
-      bool _has_unsafe_access:1;   // May fault due to unsafe access.
-      bool _has_wide_vectors:1;    // Preserve wide vectors at safepoints
-      bool _has_monitors:1;        // Fastpath monitor detection for continuations
-      bool _has_scoped_access:1;   // Used by shared scope closure (scopedMemoryAccess.cpp)
-    };
+  struct Flags {
+    uint8_t _bits;
     Flags() {
-      _raw = 0;
+      _bits = 0;
     }
-    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) : Flags() {
-      _has_unsafe_access = has_unsafe_access;
-      _has_wide_vectors = has_wide_vectors;
-      _has_monitors = has_monitors;
-      _has_scoped_access = has_scoped_access;
+    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) {
+      _bits = (has_unsafe_access ? 0x1 : 0x0) |
+              (has_wide_vectors  ? 0x2 : 0x0) |
+              (has_monitors      ? 0x4 : 0x0) |
+              (has_scoped_access ? 0x8 : 0x0);
     }
+    bool has_unsafe_access() const { return _bits & 0x1; }  // May fault due to unsafe access
+    bool has_wide_vectors()  const { return _bits & 0x2; }  // Preserve wide vectors at safepoints
+    bool has_monitors()      const { return _bits & 0x4; }  // Fastpath monitor detection for continuations
+    bool has_scoped_access() const { return _bits & 0x8; }  // Used by shared scope closure (scopedMemoryAccess.cpp)
   };
-
-  static_assert(sizeof(Flags) == sizeof(uint8_t), "Must fit exactly");
 
 private:
   // Persistent bits, set once during construction.
@@ -779,10 +775,10 @@ public:
   template<typename T>
   void set_gc_data(T* gc_data)                    { _gc_data = reinterpret_cast<void*>(gc_data); }
 
-  bool  has_unsafe_access() const                 { return _flags._has_unsafe_access; }
-  bool  has_monitors() const                      { return _flags._has_monitors; }
-  bool  has_scoped_access() const                 { return _flags._has_scoped_access; }
-  bool  has_wide_vectors() const                  { return _flags._has_wide_vectors; }
+  bool  has_unsafe_access() const                 { return _flags.has_unsafe_access(); }
+  bool  has_monitors() const                      { return _flags.has_monitors(); }
+  bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
+  bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
