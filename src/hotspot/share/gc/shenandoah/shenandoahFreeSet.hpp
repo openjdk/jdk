@@ -302,12 +302,12 @@ public:
 
   inline void increase_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline void decrease_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-  inline size_t get_capacity(ShenandoahFreeSetPartitionId which_partition) {
+  inline size_t get_capacity(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "Partition must be valid");
     return _capacity[int(which_partition)];
   }
 
-  inline size_t get_capacity_region_count(ShenandoahFreeSetPartitionId which_partition) {
+  inline size_t get_capacity_region_count(ShenandoahFreeSetPartitionId which_partition) const {
     return get_capacity(which_partition) / ShenandoahHeapRegion::region_size_bytes();
   }
 
@@ -764,7 +764,7 @@ public:
   }
 
   inline size_t total_old_regions() {
-    return _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) / ShenandoahHeapRegion::region_size_bytes();
+    return _partitions.get_capacity_region_count(ShenandoahFreeSetPartitionId::OldCollector);
   }
 
   size_t total_global_regions() {
@@ -860,7 +860,6 @@ public:
   inline size_t old_collector_available_locked() const {
     return _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
   }
-
 
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
   inline size_t humongous_waste_in_mutator() const {

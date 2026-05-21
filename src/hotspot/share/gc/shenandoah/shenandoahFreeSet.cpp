@@ -3068,12 +3068,12 @@ void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition
     }
   }
 
-  ls.print_cr("  %s partition stats: Partition overall count: %zu, Partition count in freeset: %zu, "
+  ls.print_cr("  %s partition stats: regions in capacity: %zu, regions in freeset: %zu. "
           "Used size including retired regions: " PROPERFMT ", used size in freeset: " PROPERFMT
-          ", free size: " PROPERFMT  ", max free available in a single region: " PROPERFMT ";",
-            partition_name(partition_id), _partitions.get_capacity_region_count(partition_id), _partitions.count(partition_id),
-            PROPERFMTARGS(_partitions.get_used(partition_id)), PROPERFMTARGS(freeset_total_used),
-            PROPERFMTARGS(freeset_free), PROPERFMTARGS(max_free_in_single_region)
+          ". Free available size: " PROPERFMT ". Max free available in a single region: " PROPERFMT ".",
+          partition_name(partition_id), _partitions.get_capacity_region_count(partition_id), _partitions.count(partition_id),
+          PROPERFMTARGS(_partitions.get_used(partition_id)), PROPERFMTARGS(freeset_total_used),
+          PROPERFMTARGS(freeset_free), PROPERFMTARGS(max_free_in_single_region)
           );
 }
 
@@ -3187,24 +3187,23 @@ void ShenandoahFreeSet::log_status() {
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
 
       size_t total_free = available_locked() + collector_available_locked();
-      if (_heap->mode()->is_generational()) {
-        total_free += old_collector_available_locked();
-      }
+      total_free += old_collector_available_locked();
       ls.print("Whole heap stats: Total free: " PROPERFMT ", Total used: " PROPERFMT
                ", Max humongous allocatable: " PROPERFMT "; ",
                PROPERFMTARGS(total_free), PROPERFMTARGS(global_used()), PROPERFMTARGS(max_humongous));
 
       double frag_ext;
       if (total_free_ext > 0) {
-        frag_ext = 100 - (1.0 * 100 * max_humongous / total_free_ext);
+        frag_ext = 100 - (100.0 * max_humongous / total_free_ext);
       } else {
         frag_ext = 0;
       }
-      ls.print("External fragmentation: %.2f%%, ", frag_ext);
+      ls.print("External fragmentation: %.2f%%; ", frag_ext);
 
       double mutator_filling_percentage = 0;
-      if (_partitions.count(ShenandoahFreeSetPartitionId::Mutator) > 0) {
-        mutator_filling_percentage = 100 * (1.0 * total_used_in_freeset / _partitions.count(ShenandoahFreeSetPartitionId::Mutator))
+      size_t mutator_partition = _partitions.count(ShenandoahFreeSetPartitionId::Mutator);
+      if (mutator_partition > 0) {
+        mutator_filling_percentage = 100 * (1.0 * total_used_in_freeset / mutator_partition)
                     / ShenandoahHeapRegion::region_size_bytes();
       }
       ls.print_cr("Mutator freeset filling percentage: %.2f%%", mutator_filling_percentage);
