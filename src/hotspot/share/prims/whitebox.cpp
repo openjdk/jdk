@@ -720,18 +720,6 @@ WB_ENTRY(jint, WB_ShenandoahRegionCount(JNIEnv* env, jobject o))
 THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionCount: Shenandoah GC is not enabled");
 WB_END
 
-WB_ENTRY(jint, WB_ShenandoahRegionIndex(JNIEnv* env, jobject o, jobject obj))
-  if (UseShenandoahGC) {
-    oop resolved = JNIHandles::resolve(obj);
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    if (heap->is_in(resolved)) {
-      return static_cast<jint>(heap->heap_region_containing(resolved)->index());
-    }
-    return -1;
-  }
-THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionIndex: Shenandoah GC is not enabled");
-WB_END
-
 WB_ENTRY(jboolean, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
   if (UseShenandoahGC) {
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
@@ -2915,7 +2903,6 @@ static JNINativeMethod methods[] = {
 #if INCLUDE_SHENANDOAHGC
   {CC"shenandoahRegionSize",   CC"()I",                   (void*)&WB_ShenandoahRegionSize  },
   {CC"shenandoahRegionCount",  CC"()I",                   (void*)&WB_ShenandoahRegionCount },
-  {CC"shenandoahRegionIndex",  CC"(Ljava/lang/Object;)I", (void*)&WB_ShenandoahRegionIndex },
   {CC"shenandoahOldGC",        CC"()Z",                   (void*)&WB_ShenandoahOldGC },
 #endif
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },

@@ -319,7 +319,6 @@ public class WhiteBox {
 
   public native int shenandoahRegionSize();
   public native int shenandoahRegionCount();
-  public native int shenandoahRegionIndex(Object o);
   public native boolean shenandoahOldGC();
 
   // NMT
