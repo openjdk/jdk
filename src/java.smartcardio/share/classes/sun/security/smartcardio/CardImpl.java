@@ -59,7 +59,7 @@ final class CardImpl extends Card {
     private volatile Thread exclusiveThread;
 
     /* State and code for cleanup */
-    static class Context implements Runnable {
+    static final class Context implements Runnable {
         // the native SCARDHANDLE
         final long cardId;
 
