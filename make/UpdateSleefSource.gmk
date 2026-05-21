@@ -85,7 +85,8 @@ $(eval $(call SetupExecute, sleef_native_config, \
     COMMAND := $(CMAKE) -S . -B $(SLEEF_NATIVE_BUILD_DIR) \
        -DCMAKE_INSTALL_PREFIX=$(SLEEF_NATIVE_BUILD_DIR) \
        -DSLEEF_BUILD_TESTS=OFF \
-       -DSLEEF_ENABLE_SSL=OFF \
+       -DSLEEF_DISABLE_SSL=ON \
+       -DSLEEF_ENABLE_TLFLOAT=OFF \
        -DSLEEF_ENABLE_TESTER4=OFF, \
 ))
 
@@ -112,7 +113,8 @@ $(eval $(call SetupExecute, sleef_cross_config, \
         -DNATIVE_BUILD_DIR=$(SLEEF_NATIVE_BUILD_DIR) \
         -DCMAKE_INSTALL_PREFIX=$(SLEEF_CROSS_BUILD_DIR) \
         -DSLEEF_BUILD_TESTS=OFF \
-        -DSLEEF_ENABLE_SSL=OFF \
+        -DSLEEF_DISABLE_SSL=ON \
+        -DSLEEF_ENABLE_TLFLOAT=OFF \
         -DSLEEF_ENABLE_TESTER4=OFF \
         -DSLEEF_BUILD_INLINE_HEADERS=TRUE \
         $(EXTRA_CROSS_OPTIONS), \
