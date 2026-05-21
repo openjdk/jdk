@@ -578,9 +578,9 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
     return (a1 != a2);
   } else if (a1 != nullptr) {                  // one allocation a1
     // (Note:  p2->is_Con implies p2->in(0)->is_Root, which dominates.)
-    return all_controls_dominate(p2, a1, phase);
+    return all_controls_dominate(p2->uncast(), a1, phase);
   } else { //(a2 != null)                   // one allocation a2
-    return all_controls_dominate(p1, a2, phase);
+    return all_controls_dominate(p1->uncast(), a2, phase);
   }
   return false;
 }
@@ -886,7 +886,7 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       known_identical = true;
     } else if (_alloc != nullptr) {
       known_independent = true;
-    } else if (MemNode::all_controls_dominate(_n, st_alloc, _phase)) {
+    } else if (MemNode::all_controls_dominate(_base->uncast(), st_alloc, _phase)) {
       known_independent = true;
     }
 
