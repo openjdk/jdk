@@ -36,7 +36,7 @@ class Bytes: AllStatic {
 
  public:
   static inline u2 get_Java_u2(address p) {
-    return (u2(p[0]) << 8) | u2(p[1]);
+    return static_cast<u2>((u2(p[0]) << 8) | u2(p[1]));
   }
 
   static inline u4 get_Java_u4(address p) {
@@ -58,32 +58,32 @@ class Bytes: AllStatic {
   }
 
   static inline void put_Java_u2(address p, u2 x) {
-    p[0] = x >> 8;
-    p[1] = x;
+    p[0] = static_cast<u1>(x >> 8);
+    p[1] = static_cast<u1>(x);
   }
 
   static inline void put_Java_u4(address p, u4 x) {
-    ((u1*)p)[0] = x >> 24;
-    ((u1*)p)[1] = x >> 16;
-    ((u1*)p)[2] = x >>  8;
-    ((u1*)p)[3] = x;
+    ((u1*)p)[0] = static_cast<u1>(x >> 24);
+    ((u1*)p)[1] = static_cast<u1>(x >> 16);
+    ((u1*)p)[2] = static_cast<u1>(x >>  8);
+    ((u1*)p)[3] = static_cast<u1>(x);
   }
 
   static inline void put_Java_u8(address p, u8 x) {
-    ((u1*)p)[0] = x >> 56;
-    ((u1*)p)[1] = x >> 48;
-    ((u1*)p)[2] = x >> 40;
-    ((u1*)p)[3] = x >> 32;
-    ((u1*)p)[4] = x >> 24;
-    ((u1*)p)[5] = x >> 16;
-    ((u1*)p)[6] = x >>  8;
-    ((u1*)p)[7] = x;
+    ((u1*)p)[0] = static_cast<u1>(x >> 56);
+    ((u1*)p)[1] = static_cast<u1>(x >> 48);
+    ((u1*)p)[2] = static_cast<u1>(x >> 40);
+    ((u1*)p)[3] = static_cast<u1>(x >> 32);
+    ((u1*)p)[4] = static_cast<u1>(x >> 24);
+    ((u1*)p)[5] = static_cast<u1>(x >> 16);
+    ((u1*)p)[6] = static_cast<u1>(x >>  8);
+    ((u1*)p)[7] = static_cast<u1>(x);
   }
 
 #ifdef VM_LITTLE_ENDIAN
 
   static inline u2 get_native_u2(address p) {
-    return (intptr_t(p) & 1) == 0 ? *(u2*)p : u2(p[0]) | (u2(p[1]) << 8);
+    return (intptr_t(p) & 1) == 0 ? *(u2*)p : static_cast<u2>(u2(p[0]) | (u2(p[1]) << 8));
   }
 
   static inline u4 get_native_u4(address p) {
@@ -122,8 +122,8 @@ class Bytes: AllStatic {
     if ((intptr_t(p) & 1) == 0) {
       *(u2*)p = x;
     } else {
-      p[0] = x;
-      p[1] = x >> 8;
+      p[0] = static_cast<u1>(x);
+      p[1] = static_cast<u1>(x >> 8);
     }
   }
 
@@ -131,13 +131,13 @@ class Bytes: AllStatic {
     switch (intptr_t(p) & 3) {
       case 0:  *(u4*)p = x;
                break;
-      case 2:  ((u2*)p)[0] = x;
-               ((u2*)p)[1] = x >> 16;
+      case 2:  ((u2*)p)[0] = static_cast<u2>(x);
+               ((u2*)p)[1] = static_cast<u2>(x >> 16);
                break;
-      default: ((u1*)p)[0] = x;
-               ((u1*)p)[1] = x >>  8;
-               ((u1*)p)[2] = x >> 16;
-               ((u1*)p)[3] = x >> 24;
+      default: ((u1*)p)[0] = static_cast<u1>(x);
+               ((u1*)p)[1] = static_cast<u1>(x >>  8);
+               ((u1*)p)[2] = static_cast<u1>(x >> 16);
+               ((u1*)p)[3] = static_cast<u1>(x >> 24);
                break;
     }
   }
@@ -146,22 +146,22 @@ class Bytes: AllStatic {
     switch (intptr_t(p) & 7) {
       case 0:  *(u8*)p = x;
                break;
-      case 4:  ((u4*)p)[0] = x;
-               ((u4*)p)[1] = x >> 32;
+      case 4:  ((u4*)p)[0] = static_cast<u4>(x);
+               ((u4*)p)[1] = static_cast<u4>(x >> 32);
                break;
-      case 2:  ((u2*)p)[0] = x;
-               ((u2*)p)[1] = x >> 16;
-               ((u2*)p)[2] = x >> 32;
-               ((u2*)p)[3] = x >> 48;
+      case 2:  ((u2*)p)[0] = static_cast<u2>(x);
+               ((u2*)p)[1] = static_cast<u2>(x >> 16);
+               ((u2*)p)[2] = static_cast<u2>(x >> 32);
+               ((u2*)p)[3] = static_cast<u2>(x >> 48);
                break;
-      default: ((u1*)p)[0] = x;
-               ((u1*)p)[1] = x >>  8;
-               ((u1*)p)[2] = x >> 16;
-               ((u1*)p)[3] = x >> 24;
-               ((u1*)p)[4] = x >> 32;
-               ((u1*)p)[5] = x >> 40;
-               ((u1*)p)[6] = x >> 48;
-               ((u1*)p)[7] = x >> 56;
+      default: ((u1*)p)[0] = static_cast<u1>(x);
+               ((u1*)p)[1] = static_cast<u1>(x >>  8);
+               ((u1*)p)[2] = static_cast<u1>(x >> 16);
+               ((u1*)p)[3] = static_cast<u1>(x >> 24);
+               ((u1*)p)[4] = static_cast<u1>(x >> 32);
+               ((u1*)p)[5] = static_cast<u1>(x >> 40);
+               ((u1*)p)[6] = static_cast<u1>(x >> 48);
+               ((u1*)p)[7] = static_cast<u1>(x >> 56);
     }
   }
 

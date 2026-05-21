@@ -25,6 +25,7 @@
 #ifndef CPU_ARM_ASSEMBLER_ARM_HPP
 #define CPU_ARM_ASSEMBLER_ARM_HPP
 
+#include "utilities/integerCast.hpp"
 #include "utilities/macros.hpp"
 
 enum AsmCondition {
@@ -272,7 +273,7 @@ class VFP {
     virtual unsigned int s() const = 0;
 
     inline bool can_be_imm8() const { return e() >= -3 && e() <= 4 && f_lo_is_null(); }
-    inline unsigned char imm8() const { int v = (s() << 7) | (((e() - 1) & 0x7) << 4) | f_hi4(); assert((v >> 8) == 0, "overflow"); return v; }
+    inline unsigned char imm8() const { int v = (s() << 7) | (((e() - 1) & 0x7) << 4) | f_hi4(); return integer_cast<unsigned char>(v); }
   };
 
  public:
@@ -297,10 +298,10 @@ class VFP {
       _bits = PrimitiveConversions::cast<uint64_t>(v);
     }
 
-    unsigned int f_hi4() const override { return (_bits << 12) >> (48+12); }
+    unsigned int f_hi4() const override { return integer_cast<unsigned int>((_bits << 12) >> (48+12)); }
     bool f_lo_is_null() const override { return (_bits & ((1LL << 48) - 1)) == 0; }
-    int e() const override { return ((_bits << 1) >> (52+1)) - 1023; }
-    unsigned int s() const override { return _bits >> 63; }
+    int e() const override { return integer_cast<int>(((_bits << 1) >> (52+1)) - 1023); }
+    unsigned int s() const override { return integer_cast<unsigned int>(_bits >> 63); }
 
    private:
     uint64_t _bits;

@@ -149,7 +149,7 @@ private:
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
               _min_capacity :
-              _min_capacity * ( 1ULL << (bucket - 1));
+              _min_capacity * (static_cast<size_t>(1) << (bucket - 1));
     }
 
     static unsigned int find_highest_bit(uintptr_t mask) {
@@ -168,7 +168,7 @@ private:
       if (array_idx < _min_capacity) {
         return array_idx;
       }
-      return array_idx - (1ULL << find_highest_bit(array_idx));
+      return array_idx - (static_cast<size_t>(1) << find_highest_bit(array_idx));
     }
 
     bool reserve(size_t new_capacity);
