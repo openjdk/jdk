@@ -60,18 +60,18 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   cl->set_weak(weak);
 
   if (task->is_not_chunked()) {
-    if (obj->is_instance()) {
+    Klass* klass = obj->klass();
+    if (klass->is_instance_klass()) {
       // Case 1: Normal oop, process as usual.
-      if (obj->is_stackChunk()) {
+      if (STRING_DEDUP && (klass == vmClasses::String_klass())) {
+        dedup_string(obj, req);
+      }
+      if (klass->is_stack_chunk_instance_klass()) {
         // Loom doesn't support mixing of weak marking and strong marking of stack chunks.
         cl->set_weak(false);
       }
-
       obj->oop_iterate(cl);
-      if (STRING_DEDUP) {
-        dedup_string(obj, req);
-      }
-    } else if (obj->is_objArray()) {
+    } else if (klass->is_objArray_klass()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
       do_chunked_array_start<T>(q, cl, obj, weak);
@@ -80,7 +80,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
       // performance tweak TypeArrayKlass::oop_oop_iterate_impl is using:
       // We skip iterating over the klass pointer since we know that
       // Universe::TypeArrayKlass never moves.
-      assert (obj->is_typeArray(), "should be type array");
+      assert(klass->is_typeArray_klass(), "should be type array");
     }
     // Count liveness the last: push the outstanding work to the queues first
     // Avoid double-counting objects that are visited twice due to upgrade
@@ -95,11 +95,6 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 }
 
 void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
-  // Skip non-Strings.
-  if (!java_lang_String::is_instance(obj)) {
-    return;
-  }
-
   // Skip if already requested or dedup is forbidden.
   // The overwhelming majority of Strings would be filtered here.
   // These bits are also sticky, so older Strings would be filtered here too.
