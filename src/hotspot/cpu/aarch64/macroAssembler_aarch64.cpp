@@ -2687,10 +2687,11 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
       BLOCK_COMMENT("merged membar");
       return;
     } else {
-      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped
-      // We need check the last 2 instructions
+      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped.
+      // We need to check the second-to-last instruction, only if it is inside
+      // the current code section.
       address prev2 = prev - NativeMembar::instruction_size;
-      if (last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
+      if (prev2 >= begin() && last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
         NativeMembar *bar2 = NativeMembar_at(prev2);
         assert(bar2->get_kind() == order_constraint, "it should be merged before");
         BLOCK_COMMENT("merged membar(elided)");
