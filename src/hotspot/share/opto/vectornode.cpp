@@ -1161,14 +1161,32 @@ static bool is_commutative_vector_operation(int opcode) {
   }
 }
 
-bool VectorNode::is_associative_vector_operation() {
-  if (!is_commutative_vector_operation(Opcode())) {
-    return false;
+bool VectorNode::is_associative_and_commutative_vector_operation() {
+  switch (Opcode()) {
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVL:
+    case Op_MaxV:
+    case Op_MinV:
+    case Op_UMinV:
+    case Op_UMaxV:
+    case Op_XorV:
+    case Op_OrV:
+    case Op_AndV:
+    case Op_AndVMask:
+    case Op_OrVMask:
+    case Op_XorVMask:
+      return true;
+    case Op_SaturatingAddV:
+      return is_SaturatingVector() && as_SaturatingVector()->is_unsigned();
+    default:
+      return false;
   }
-  if (is_SaturatingVector() && !as_SaturatingVector()->is_unsigned()) {
-    return false;
-  }
-  return true;
 }
 
 bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
@@ -1315,8 +1333,8 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
     return nullptr;
   }
 
-  // Enable re-association only for associative vector operations.
-  if (!is_associative_vector_operation()) {
+  // Enable re-association only for associative and commutative vector operations.
+  if (!is_associative_and_commutative_vector_operation()) {
     return nullptr;
   }
 
