@@ -709,7 +709,7 @@ public:
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
-  bool profile_receiver_type_helper(Register recv, Register mdp,
+  void profile_receiver_type_helper(Register recv, Register mdp,
                                     Label &L_found_recv, int mdp_offset, int base, uint row_limit);
 
   void profile_receiver_type(Register recv, Register mdp, int mdp_offset);

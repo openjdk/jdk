@@ -4953,7 +4953,7 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   return Address(rsp, scale_reg, scale_factor, offset);
 }
 
-bool MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, Label &L_found_recv, int mdp_offset, int base, uint row_limit) {
+void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, Label &L_found_recv, int mdp_offset, int base, uint row_limit) {
   int base_receiver_offset   = in_bytes(MegamorphicTypeData::receiver_offset(base, 0));
   int end_receiver_offset    = in_bytes(MegamorphicTypeData::receiver_offset(base, row_limit));
   int receiver_step          = in_bytes(MegamorphicTypeData::receiver_offset(base, 1)) - base_receiver_offset;
@@ -5212,30 +5212,26 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
   profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ArrayLoadData::base_of_megamorphic_type_data(), ArrayLoadData::row_limit());
   Register offset = rscratch1;
   int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
-  Label null_free_non_atomic, null_free_atomic, nullable_atomic_flat, done, failure;
+  Label null_free_non_atomic, null_free_atomic, nullable_atomic_flat, failure, L_count_update;
   cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULL_FREE_ATOMIC_FLAT);
   jccb(Assembler::notEqual, null_free_non_atomic);
   movptr(offset, flat_nullfree_atomic_count_offset);
 
-  jmpb(done);
+  jmpb(L_count_update);
   bind(null_free_non_atomic);
   cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
   jccb(Assembler::notEqual, nullable_atomic_flat);
   movptr(offset, flat_nullfree_not_atomic_count_offset);
 
-  jmpb(done);
+  jmpb(L_count_update);
   bind(nullable_atomic_flat);
   cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULLABLE_ATOMIC_FLAT);
   jccb(Assembler::notEqual, failure);
   movptr(offset, flat_nullable_count_offset);
 
-  jmpb(done);
+  jmpb(L_count_update);
   bind(failure);
   stop("unexpected flat array");
-  bind(done);
-
-  Label L_count_update;
-  jmpb(L_count_update);
 
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
