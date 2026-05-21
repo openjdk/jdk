@@ -34,26 +34,52 @@
 
 static uint* z_numa_id_to_node = nullptr;
 static uint32_t* z_node_to_numa_id = nullptr;
+static size_t z_node_to_numa_id_size = 0;
+
+static uint32_t z_numa_id_from_node(int node) {
+  assert(node >= 0, "Invalid NUMA node: %d", node);
+  assert((size_t)node < z_node_to_numa_id_size,
+         "NUMA node is out of bounds node=%d, max=%zu", node, z_node_to_numa_id_size);
+
+  if (node < 0 || (size_t)node >= z_node_to_numa_id_size) {
+    return (uint32_t)-1;
+  }
+
+  return z_node_to_numa_id[node];
+}
 
 void ZNUMA::pd_initialize() {
   _enabled = UseNUMA;
 
-  size_t configured_nodes = 0;
+  uint32_t configured_nodes = 0;
 
   if (UseNUMA) {
-    const size_t max_nodes = os::Linux::numa_num_configured_nodes();
-    z_numa_id_to_node = NEW_C_HEAP_ARRAY(uint, max_nodes, mtGC);
-    configured_nodes = os::numa_get_leaf_groups(z_numa_id_to_node, 0);
+    const int max_node = os::Linux::numa_max_node();
+    const int configured_nodes_limit = os::Linux::numa_num_configured_nodes();
+    assert(max_node >= 0, "Invalid highest NUMA node: %d", max_node);
+    assert(configured_nodes_limit > 0, "Invalid number of configured NUMA nodes: %d", configured_nodes_limit);
 
-    z_node_to_numa_id = NEW_C_HEAP_ARRAY(uint32_t, max_nodes, mtGC);
+    const size_t node_id_limit = (size_t)max_node + 1;
+    const size_t configured_node_count = (size_t)configured_nodes_limit;
+    z_node_to_numa_id_size = node_id_limit;
+
+    z_numa_id_to_node = NEW_C_HEAP_ARRAY(uint, configured_node_count, mtGC);
+    const size_t available_nodes = os::numa_get_leaf_groups(z_numa_id_to_node, configured_node_count);
+    assert(available_nodes <= configured_node_count,
+           "Too many NUMA nodes: %zu <= %d", available_nodes, configured_nodes_limit);
+    configured_nodes = checked_cast<uint32_t>(MIN2(available_nodes, configured_node_count));
+
+    z_node_to_numa_id = NEW_C_HEAP_ARRAY(uint32_t, node_id_limit, mtGC);
 
     // Fill the array with invalid NUMA ids
-    for (uint32_t i = 0; i < max_nodes; i++) {
+    for (size_t i = 0; i < node_id_limit; i++) {
       z_node_to_numa_id[i] = (uint32_t)-1;
     }
 
     // Fill the reverse mappings
     for (uint32_t i = 0; i < configured_nodes; i++) {
+      assert(z_numa_id_to_node[i] < node_id_limit,
+             "NUMA node is out of bounds node=%u, max=%zu", z_numa_id_to_node[i], node_id_limit);
       z_node_to_numa_id[z_numa_id_to_node[i]] = i;
     }
   }
@@ -77,7 +103,9 @@ uint32_t ZNUMA::id() {
     return 0;
   }
 
-  return z_node_to_numa_id[os::Linux::get_node_by_cpu(ZCPU::id())];
+  const uint32_t id = z_numa_id_from_node(os::Linux::get_node_by_cpu(ZCPU::id()));
+  assert(id != (uint32_t)-1, "Unknown NUMA node");
+  return id;
 }
 
 uint32_t ZNUMA::memory_id(uintptr_t addr) {
@@ -93,10 +121,7 @@ uint32_t ZNUMA::memory_id(uintptr_t addr) {
     fatal("Failed to get NUMA id for memory at " PTR_FORMAT " (%s)", addr, err.to_string());
   }
 
-  DEBUG_ONLY(const int max_nodes = os::Linux::numa_num_configured_nodes();)
-  assert(node < max_nodes, "NUMA node is out of bounds node=%d, max=%d", node, max_nodes);
-
-  return z_node_to_numa_id[node];
+  return z_numa_id_from_node(node);
 }
 
 int ZNUMA::numa_id_to_node(uint32_t numa_id) {
