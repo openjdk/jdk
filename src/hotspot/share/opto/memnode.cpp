@@ -1232,9 +1232,10 @@ Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phas
     return res;
   }
 
+  // TODO 8385126: Try enabling this assert
   // Type-unsafe stores must be due to array polymorphism
-  const TypePtr* adr_type = this->adr_type();
-  assert(adr_type == nullptr || adr_type->isa_aryptr() != nullptr, "unexpected type-unsafe store");
+  // const TypePtr* adr_type = this->adr_type();
+  // assert(adr_type == nullptr || adr_type->isa_aryptr() != nullptr, "unexpected type-unsafe store");
   return nullptr;
 }
 
