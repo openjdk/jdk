@@ -1616,7 +1616,7 @@ void InterpreterMacroAssembler::notify_method_exit(
     movptr(rdx, Address(rthread, JavaThread::jvmti_thread_state_offset()));
     testptr(rdx, rdx);
     jcc(Assembler::zero, L); // if (thread->jvmti_thread_state() == nullptr) exit;
-    
+
     movl(rdx, Address(rdx, JvmtiThreadState::frame_pop_cnt_offset()));
     movl(rcx, Address(rthread, JavaThread::interp_only_mode_offset())); // can we use rcx too?
 
