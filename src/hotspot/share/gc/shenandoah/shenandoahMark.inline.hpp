@@ -88,7 +88,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
     } else if (klass->is_objArray_klass()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
-      do_chunked_array_start<T>(q, cl, obj, weak);
+      do_chunked_array_start<T>(q, cl, obj, klass, weak);
     } else {
       // Case 3: Primitive array. Do nothing, no oops there. We use the same
       // performance tweak TypeArrayKlass::oop_oop_iterate_impl is using:
@@ -153,14 +153,14 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
 }
 
 template <class T>
-inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, bool weak) {
+inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, bool weak) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
   int len = array->length();
 
   // Mark objArray klass metadata
   if (Devirtualizer::do_metadata(cl)) {
-    Devirtualizer::do_klass(cl, array->klass());
+    Devirtualizer::do_klass(cl, klass);
   }
 
   if (len <= (int) ObjArrayMarkingStride*2) {
