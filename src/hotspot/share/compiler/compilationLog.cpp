@@ -35,14 +35,12 @@ CompilationLog* CompilationLog::_log;
 CompilationLog::CompilationLog() : StringEventLog("Compilation events", "jit") {
 }
 
-// Initial size for stringStream, big enough for these logs
-static const size_t buf_size = FormatBufferBase::BufferSize;
-
 void CompilationLog::log_compile(JavaThread* thread, CompileTask* task) {
-  stringStream ss(buf_size);
+  StringLogMessage lm;
+  stringStream sstr(lm.buffer(), lm.size());
   // msg.time_stamp().update_to(tty->time_stamp().ticks());
-  task->print(&ss, nullptr, true, false);
-  log(thread, "%s", ss.freeze());
+  task->print(&sstr, nullptr, true, false);
+  log(thread, "%s", (const char*)lm);
 }
 
 void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
@@ -52,24 +50,26 @@ void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
 }
 
 void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
-  stringStream ss(buf_size);
+  StringLogMessage lm;
+  stringStream sstr(lm.buffer(), lm.size());
   if (task == nullptr) {
-    ss.print("Id not known, task was 0;  COMPILE SKIPPED: %s", reason);
+    sstr.print("Id not known, task was 0;  COMPILE SKIPPED: %s", reason);
   } else {
-    ss.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
+    sstr.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
   }
   if (retry_message != nullptr) {
-    ss.print(" (%s)", retry_message);
+    sstr.print(" (%s)", retry_message);
   }
-  log(thread, "%s", ss.freeze());
+  log(thread, "%s", (const char*)lm);
 }
 
 void CompilationLog::log_metaspace_failure(const char* reason) {
   // Note: This method can be called from non-Java/compiler threads to
   // log the global metaspace failure that might affect profiling.
-  stringStream ss(buf_size);
-  ss.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
-  log(Thread::current(), "%s", ss.freeze());
+  StringLogMessage lm;
+  stringStream sstr(lm.buffer(), lm.size());
+  sstr.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
+  log(Thread::current(), "%s", (const char*)lm);
 }
 
 void CompilationLog::init() {
