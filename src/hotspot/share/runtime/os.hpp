@@ -441,9 +441,8 @@ class os: AllStatic {
  public:
   // get allowed minimum java stack size
   static jlong get_minimum_java_stack_size();
-  // Find the first resident memory region within specified range (start, start + size).
-  // The search begins at the provided start address.
-  // Returns true after the first contiguous resident region is found, otherwise false if none found.
+  // Find the first resident memory region within the specified range (start, start + size) beginning at the start address.
+  // Returns true if successful or false if none are found.
   static bool first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size);
 
   // OS interface to Virtual Memory
