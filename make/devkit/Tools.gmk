@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -185,10 +185,8 @@ RPM_LIST := \
 ################################################################################
 # Define common directories and files
 
-# Ensure we have 32-bit libs also for x64. We enable mixed-mode.
 ifeq (x86_64,$(ARCH))
-  LIBDIRS := lib64 lib
-  CFLAGS_lib := -m32
+  LIBDIRS := lib64
 else
   LIBDIRS := lib
 endif
@@ -426,6 +424,11 @@ ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
   LINKER_CONFIG := --enable-gold=default
 endif
 
+# --enable-multilib would be specified to other than x86_64
+ifneq (x86_64, $(ARCH))
+  BINUTILS_CFG += --enable-multilib
+endif
+
 # Makefile creation. Simply run configure in build dir.
 # Setting CFLAGS to -O2 generates a much faster ld.
 $(BFDMAKES) \
@@ -442,7 +445,6 @@ $(BUILDDIR)/$(BINUTILS_VER)/Makefile \
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
 	      --program-prefix=$(TARGET)- \
-	      --enable-multilib \
 	      --enable-threads \
 	      --enable-plugins \
 	) > $(@D)/log.config 2>&1
@@ -506,7 +508,7 @@ ifeq ($(ARCH), armhfp)
   $(BUILDDIR)/$(GCC_VER)/Makefile : CONFIG +=  --with-float=hard
 endif
 
-ifneq ($(filter riscv64 ppc64le s390x, $(ARCH)), )
+ifneq ($(filter riscv64 ppc64le s390x x86_64, $(ARCH)), )
   # We only support 64-bit on these platforms anyway
   CONFIG += --disable-multilib
 endif
