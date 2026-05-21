@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,7 @@
 
 /*
  * @test
+ * @key randomness
  * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
@@ -39,6 +41,7 @@ package compiler.hotcode;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.whitebox.WhiteBox;
@@ -90,7 +93,7 @@ public class StressHotCodeCollector {
         generateCode();
 
         long start = System.currentTimeMillis();
-        Random random = new Random();
+        Random random = Utils.getRandomInstance();
 
         while (System.currentTimeMillis() - start < RUN_MILLIS) {
             for (TestMethod m : methods) {
