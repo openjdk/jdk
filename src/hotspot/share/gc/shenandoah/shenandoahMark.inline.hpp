@@ -38,7 +38,6 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
@@ -48,21 +47,7 @@
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-template <StringDedupMode STRING_DEDUP>
-void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
-  if (STRING_DEDUP == ENQUEUE_DEDUP) {
-    if (ShenandoahStringDedup::is_candidate(obj)) {
-      req->add(obj);
-    }
-  } else if (STRING_DEDUP == ALWAYS_DEDUP) {
-    if (ShenandoahStringDedup::is_string_candidate(obj) &&
-        !ShenandoahStringDedup::dedup_requested(obj)) {
-        req->add(obj);
-    }
-  }
-}
-
-template <class T, ShenandoahGenerationType GENERATION, StringDedupMode STRING_DEDUP>
+template <class T, ShenandoahGenerationType GENERATION, bool STRING_DEDUP>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id) {
   oop obj = task->obj();
 
@@ -83,7 +68,9 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
       }
 
       obj->oop_iterate(cl);
-      dedup_string<STRING_DEDUP>(obj, req);
+      if (STRING_DEDUP) {
+        dedup_string(obj, req);
+      }
     } else if (obj->is_objArray()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
@@ -104,6 +91,25 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
     do_chunked_array<T>(q, cl, obj, task->chunk(), task->pow(), weak);
+  }
+}
+
+void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
+  // Skip non-Strings.
+  if (!java_lang_String::is_instance(obj)) {
+    return;
+  }
+
+  // Skip if already requested or dedup is forbidden.
+  // The overwhelming majority of Strings would be filtered here.
+  // These bits are also sticky, so older Strings would be filtered here too.
+  if (java_lang_String::deduplication_requested_or_forbidden(obj)) {
+    return;
+  }
+
+  // Accept deduplication request.
+  if (!java_lang_String::test_and_set_deduplication_requested(obj)) {
+    req->add(obj);
   }
 }
 

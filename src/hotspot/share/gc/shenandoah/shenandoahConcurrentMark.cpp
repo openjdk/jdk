@@ -36,7 +36,6 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
@@ -61,8 +60,7 @@ public:
     SuspendibleThreadSetJoiner stsj;
     StringDedup::Requests requests;
     _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/,
-                   ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
-                   &requests);
+                   StringDedup::is_enabled(), &requests);
   }
 };
 
@@ -99,8 +97,7 @@ public:
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
     _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/,
-                   _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
-                   &requests);
+                   _dedup_string, &requests);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };
@@ -278,22 +275,22 @@ void ShenandoahConcurrentMark::finish_mark_work() {
 
   switch (_generation->type()) {
     case YOUNG:{
-      ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator, StringDedup::is_enabled());
       heap->workers()->run_task(&task);
       break;
     }
     case OLD:{
-      ShenandoahFinalMarkingTask<OLD> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      ShenandoahFinalMarkingTask<OLD> task(this, &terminator, StringDedup::is_enabled());
       heap->workers()->run_task(&task);
       break;
     }
     case GLOBAL:{
-      ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator, StringDedup::is_enabled());
       heap->workers()->run_task(&task);
       break;
     }
     case NON_GEN:{
-      ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator, StringDedup::is_enabled());
       heap->workers()->run_task(&task);
       break;
     }

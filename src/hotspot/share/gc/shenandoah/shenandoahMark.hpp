@@ -34,12 +34,6 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
-enum StringDedupMode {
-  NO_DEDUP,      // Do not do anything for String deduplication
-  ENQUEUE_DEDUP, // Enqueue candidate Strings for deduplication, if meet age threshold
-  ALWAYS_DEDUP   // Enqueue Strings for deduplication
-};
-
 class ShenandoahMarkingContext;
 
 // Base class for mark
@@ -76,7 +70,7 @@ public:
 private:
 // ---------- Marking loop and tasks
 
-  template <class T, ShenandoahGenerationType GENERATION, StringDedupMode STRING_DEDUP>
+  template <class T, ShenandoahGenerationType GENERATION, bool STRING_DEDUP>
   inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id);
 
   template <class T>
@@ -88,10 +82,10 @@ private:
   template <ShenandoahGenerationType GENERATION>
   inline void count_liveness(ShenandoahLiveData* live_data, oop obj, uint worker_id);
 
-  template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
+  template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 
-  template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
+  template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req, bool update_refs);
 
   template <ShenandoahGenerationType GENERATION>
@@ -104,15 +98,14 @@ private:
                        ShenandoahMarkingContext* const mark_context,
                        bool weak, oop obj);
 
-  template <StringDedupMode STRING_DEDUP>
-  inline void dedup_string(oop obj, StringDedup::Requests* const req);
+  static inline void dedup_string(oop obj, StringDedup::Requests* const req);
 protected:
-  template<bool CANCELLABLE, StringDedupMode STRING_DEDUP>
+  template<bool CANCELLABLE, bool STRING_DEDUP>
   void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
                 StringDedup::Requests* const req);
 
   void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                 bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
+                 bool cancellable, bool string_dedup, StringDedup::Requests* const req);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
