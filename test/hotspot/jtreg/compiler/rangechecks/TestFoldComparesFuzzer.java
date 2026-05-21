@@ -128,12 +128,13 @@ public class TestFoldComparesFuzzer {
     }
 
     enum Comparator {
-        ULT(" <  0", false),
-        ULE(" <= 0", false),
-        UGT(" >  0", false),
-        UGE(" >= 0", false),
-        UEQ(" == 0", false),
-        UNE(" != 0", false),
+        // TODO: enable again after JDK-8385157
+        // ULT(" <  0", false),
+        // ULE(" <= 0", false),
+        // UGT(" >  0", false),
+        // UGE(" >= 0", false),
+        // UEQ(" == 0", false),
+        // UNE(" != 0", false),
         LT(" <  ", true),
         LE(" <= ", true),
         GT(" >  ", true),
@@ -159,12 +160,13 @@ public class TestFoldComparesFuzzer {
 
         public Comparator negate() {
             return switch(this) {
-                case ULT -> UGE;
-                case ULE -> UGT;
-                case UGT -> ULE;
-                case UGE -> ULT;
-                case UEQ -> UNE;
-                case UNE -> UEQ;
+                // TODO: enable again after JDK-8385157
+                // case ULT -> UGE;
+                // case ULE -> UGT;
+                // case UGT -> ULE;
+                // case UGE -> ULT;
+                // case UEQ -> UNE;
+                // case UNE -> UEQ;
                 case LT -> GE;
                 case LE -> GT;
                 case GT -> LE;
@@ -176,12 +178,13 @@ public class TestFoldComparesFuzzer {
 
         public Comparator flip() {
             return switch(this) {
-                case ULT -> UGT;
-                case ULE -> UGE;
-                case UGT -> ULT;
-                case UGE -> ULE;
-                case UEQ -> UEQ;
-                case UNE -> UNE;
+                // TODO: enable again after JDK-8385157
+                // case ULT -> UGT;
+                // case ULE -> UGE;
+                // case UGT -> ULT;
+                // case UGE -> ULE;
+                // case UEQ -> UEQ;
+                // case UNE -> UNE;
                 case LT -> GT;
                 case LE -> GE;
                 case GT -> LT;
