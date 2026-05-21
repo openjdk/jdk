@@ -465,7 +465,7 @@ void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   *stack_size = size;
 }
 
-bool os::resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
+bool os::first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
   constexpr size_t stripe = 1024;  // query this many pages each time
   PSAPI_WORKING_SET_EX_INFORMATION wsinfo[stripe];
 

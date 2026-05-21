@@ -167,7 +167,7 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
   }
 }
 
-bool os::resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
+bool os::first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
 
 #ifdef _AIX
   resident_start = start;

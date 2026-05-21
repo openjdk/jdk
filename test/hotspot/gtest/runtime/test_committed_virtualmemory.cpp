@@ -187,25 +187,25 @@ public:
     }
 
     // Test whole range
-    result = os::resident_in_range((address)base, size, resident_start, resident_size);
+    result = os::first_resident_in_range((address)base, size, resident_start, resident_size);
     ASSERT_TRUE(result);
     ASSERT_EQ(num_pages * page_sz, resident_size);
     ASSERT_EQ(resident_start, (address)base);
 
     // Test beginning of the range
-    result = os::resident_in_range((address)base, 2 * page_sz, resident_start, resident_size);
+    result = os::first_resident_in_range((address)base, 2 * page_sz, resident_start, resident_size);
     ASSERT_TRUE(result);
     ASSERT_EQ(2 * page_sz, resident_size);
     ASSERT_EQ(resident_start, (address)base);
 
     // Test end of the range
-    result = os::resident_in_range((address)(base + page_sz), 3 * page_sz, resident_start, resident_size);
+    result = os::first_resident_in_range((address)(base + page_sz), 3 * page_sz, resident_start, resident_size);
     ASSERT_TRUE(result);
     ASSERT_EQ(3 * page_sz, resident_size);
     ASSERT_EQ(resident_start, (address)(base + page_sz));
 
     // Test middle of the range
-    result = os::resident_in_range((address)(base + page_sz), 2 * page_sz, resident_start, resident_size);
+    result = os::first_resident_in_range((address)(base + page_sz), 2 * page_sz, resident_start, resident_size);
     ASSERT_TRUE(result);
     ASSERT_EQ(2 * page_sz, resident_size);
     ASSERT_EQ(resident_start, (address)(base + page_sz));
@@ -213,7 +213,7 @@ public:
     os::release_memory(base, size);
   }
 
-  static void test_resident_in_range(size_t num_pages, size_t pages_to_touch) {
+  static void test_first_resident_in_range(size_t num_pages, size_t pages_to_touch) {
     bool result;
     size_t resident_size;
     address resident_start;
@@ -228,7 +228,7 @@ public:
     result = os::commit_memory(base, size, !ExecMem);
     ASSERT_TRUE(result);
 
-    result = os::resident_in_range((address)base, size, resident_start, resident_size);
+    result = os::first_resident_in_range((address)base, size, resident_start, resident_size);
     ASSERT_FALSE(result);
 
     // Touch pages
@@ -236,14 +236,14 @@ public:
       base[index * page_sz] = 'a';
     }
 
-    result = os::resident_in_range((address)base, size, resident_start, resident_size);
+    result = os::first_resident_in_range((address)base, size, resident_start, resident_size);
     ASSERT_TRUE(result);
     ASSERT_EQ(pages_to_touch * page_sz, resident_size);
     ASSERT_EQ(resident_start, (address)base);
 
     os::uncommit_memory(base, size, false);
 
-    result = os::resident_in_range((address)base, size, resident_start, resident_size);
+    result = os::first_resident_in_range((address)base, size, resident_start, resident_size);
     ASSERT_FALSE(result);
 
     os::release_memory(base, size);
@@ -267,8 +267,8 @@ TEST_VM(NMTCommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
 }
 
 #if !defined(_AIX)
-TEST_VM(NMTCommittedVirtualMemory, test_resident_in_range){
-  CommittedVirtualMemoryTest::test_resident_in_range(1024, 1024);
-  CommittedVirtualMemoryTest::test_resident_in_range(2, 1);
+TEST_VM(NMTCommittedVirtualMemory, test_first_resident_in_range){
+  CommittedVirtualMemoryTest::test_first_resident_in_range(1024, 1024);
+  CommittedVirtualMemoryTest::test_first_resident_in_range(2, 1);
 }
 #endif
