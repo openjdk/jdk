@@ -1141,12 +1141,28 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
   }
 
   // Cset-check. Fall-through to slow if in collection set.
-  __ mov(_tmp1, ShenandoahHeap::in_cset_fast_test_addr());
-  if (_narrow) {
-    __ decode_heap_oop_not_null(_tmp2, _obj);
-    __ add(_tmp1, _tmp1, _tmp2, Assembler::LSR, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+  bool is_aot = AOTCodeCache::is_on_for_dump();
+  if (!is_aot) {
+    __ mov(_tmp1, ShenandoahHeap::in_cset_fast_test_addr());
+    if (_narrow) {
+      __ decode_heap_oop_not_null(_tmp2, _obj);
+      __ add(_tmp1, _tmp1, _tmp2, Assembler::LSR, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    } else {
+      __ add(_tmp1, _tmp1, _obj, Assembler::LSR, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    }
   } else {
-    __ add(_tmp1, _tmp1, _obj, Assembler::LSR, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    // Generating AOT code, pull the cset bitmap and region shift from AOT table.
+    if (_narrow) {
+      __ decode_heap_oop_not_null(_tmp1, _obj);
+    } else {
+      __ mov(_tmp1, _obj);
+    }
+    __ lea(_tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+    __ ldrw(_tmp2, Address(_tmp2));
+    __ lsrv(_tmp2, _tmp1, _tmp2);
+    __ lea(_tmp1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+    __ ldr(_tmp1, Address(_tmp1));
+    __ add(_tmp1, _tmp1, _tmp2);
   }
   __ ldrb(_tmp1, Address(_tmp1, 0));
   maybe_far_jump_if_zero(masm, _tmp1);

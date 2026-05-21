@@ -1165,9 +1165,11 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     __ jccb(Assembler::notEqual, L_slow);
   }
 
+  bool is_aot = AOTCodeCache::is_on_for_dump();
+
   // Need temp to work, allocate one now.
   bool tmp_live;
-  Register tmp = select_temp_register(tmp_live);
+  Register tmp = select_temp_register(tmp_live, /* skip_reg1 = */ is_aot ? rcx : noreg);
   if (tmp_live) {
     __ push(tmp);
   }
@@ -1178,22 +1180,35 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
   } else {
     __ movptr(tmp, _obj);
   }
-  __ shrptr(tmp, ShenandoahHeapRegion::region_size_bytes_shift_jint());
 
   Address cset_addr_arg;
   intptr_t cset_addr = reinterpret_cast<intptr_t>(ShenandoahHeap::in_cset_fast_test_addr());
-  if (cset_addr < INT32_MAX) {
+  if (!is_aot && cset_addr < INT32_MAX) {
     // Cset bitmap is at easily encodeable address. Just use it as displacement.
+    __ shrptr(tmp, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     cset_addr_arg = Address(tmp, checked_cast<int>(cset_addr));
   } else {
-    // Cset bitmap is way further than our encoding limit. Add its address fully.
     bool tmp2_live;
-    Register tmp2 = select_temp_register(tmp2_live, /* skip_reg1 = */ tmp);
+    Register tmp2 = select_temp_register(tmp2_live, /* skip_reg1 = */ tmp, /* skip_reg2 = */ is_aot ? rcx : noreg);
     if (tmp2_live) {
       __ push(tmp2);
     }
-    __ movptr(tmp2, cset_addr);
-    __ addptr(tmp, tmp2);
+    if (is_aot) {
+      // Generating AOT code, pull the cset bitmap and region shift from AOT table.
+      assert_different_registers(tmp, tmp2, rcx);
+      __ push(rcx);
+      __ lea(rcx, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+      __ movl(rcx, Address(rcx));
+      __ shrptr(tmp);
+      __ pop(rcx);
+      __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+      __ addptr(tmp, Address(tmp2));
+    } else {
+      // Cset bitmap is far away. Add its address fully.
+      __ shrptr(tmp, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+      __ movptr(tmp2, cset_addr);
+      __ addptr(tmp, tmp2);
+    }
     if (tmp2_live) {
       __ pop(tmp2);
     }
