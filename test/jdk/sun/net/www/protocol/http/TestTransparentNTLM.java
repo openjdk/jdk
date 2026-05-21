@@ -26,7 +26,8 @@
  * @bug 8225425
  * @summary Verifies that transparent NTLM (on Windows) is not used by default,
  *          and is used only when the relevant property is set.
- * @requires os.family == "windows"
+ * @comment Only run on specific Windows OS versions because NTLMv1 is no longer supported starting Windows 11 and Windows Server 2025
+ * @requires os.family == "windows" & (os.name == "Windows 10" | os.name == "Windows Server 2016" | os.name == "Windows Server 2019" | os.name == "Windows Server 2022")
  * @library /test/lib
  * @run junit/othervm
  *      -Dtest.auth.succeed=false
