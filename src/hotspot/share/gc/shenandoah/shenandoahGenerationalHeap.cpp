@@ -355,6 +355,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     if (winner == nullptr) {
       // We own the self-forwarding. Flag the from-region so the degen/full
       // GC entry drain knows to scan it for self_fwd bits to clear.
+      _has_self_forwarded_objects = true;
       heap_region_containing(p)->set_has_self_forwards();
       return p;
     }
@@ -781,7 +782,7 @@ private:
       assert(update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      if (r->is_active() && !r->is_cset()) {
+      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
         if (r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         } else if (r->is_old()) {
@@ -834,7 +835,10 @@ private:
     while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
       // Keep grabbing next work chunk to process until finished, or asked to yield
       ShenandoahHeapRegion* r = assignment._r;
-      if (r->is_active() && !r->is_cset() && r->is_old()) {
+      if (r->is_active() && (!r->is_cset() || r->has_self_forwards()) && r->is_old()) {
+        // allocations into old (i.e., promotions or evacuations) do _not_ update references
+        // when they copy, so we move the UWM up for each such allocation.
+        // TODO: could we just use 'top' here and ignore the uwm on the allocation path?
         HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
         HeapWord* end_of_range = r->get_update_watermark();
         if (end_of_range > start_of_range + assignment._chunk_size) {
