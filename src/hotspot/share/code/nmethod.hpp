@@ -269,20 +269,34 @@ class nmethod : public CodeBlob {
 
 public:
   struct Flags {
-    uint8_t _bits;
-    Flags() {
-      _bits = 0;
-    }
-    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) {
-      _bits = (has_unsafe_access ? 0x1 : 0x0) |
-              (has_wide_vectors  ? 0x2 : 0x0) |
-              (has_monitors      ? 0x4 : 0x0) |
-              (has_scoped_access ? 0x8 : 0x0);
-    }
-    bool has_unsafe_access() const { return _bits & 0x1; }  // May fault due to unsafe access
-    bool has_wide_vectors()  const { return _bits & 0x2; }  // Preserve wide vectors at safepoints
-    bool has_monitors()      const { return _bits & 0x4; }  // Fastpath monitor detection for continuations
-    bool has_scoped_access() const { return _bits & 0x8; }  // Used by shared scope closure (scopedMemoryAccess.cpp)
+    uint8_t const _bits;
+
+    enum : uint8_t {
+      UNSAFE_ACCESS = 1 << 0,
+      WIDE_VECTORS  = 1 << 1,
+      MONITORS      = 1 << 2,
+      SCOPED_ACCESS = 1 << 3
+    };
+
+    Flags() : _bits(0) {}
+    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) :
+      _bits((has_unsafe_access ? UNSAFE_ACCESS : 0) |
+            (has_wide_vectors  ? WIDE_VECTORS  : 0) |
+            (has_monitors      ? MONITORS      : 0) |
+            (has_scoped_access ? SCOPED_ACCESS : 0))
+    {}
+
+    // May fault due to unsafe access
+    bool has_unsafe_access() const { return (_bits & UNSAFE_ACCESS) != 0; }
+
+    // Preserve wide vectors at safepoints
+    bool has_wide_vectors()  const { return (_bits & WIDE_VECTORS)  != 0; }
+
+    // Fastpath monitor detection for continuations
+    bool has_monitors()      const { return (_bits & MONITORS)      != 0; }
+
+    // Used by shared scope closure (scopedMemoryAccess.cpp)
+    bool has_scoped_access() const { return (_bits & SCOPED_ACCESS) != 0; }
   };
 
 private:
