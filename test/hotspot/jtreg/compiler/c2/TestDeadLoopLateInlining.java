@@ -26,16 +26,22 @@
  * @bug 8375694
  * @summary C2: Dead loop constructed with CastPP in late inlining
  * @requires vm.debug
- * @run main TestDeadLoopLateInlining
- * @run main/othervm -XX:+AlwaysIncrementalInline -XX:CompileOnly=TestDeadLoopLateInlining::test1 -Xcomp TestDeadLoopLateInlining
+ * @run main ${test.main.class}
+ * @run main/othervm -XX:+AlwaysIncrementalInline -XX:CompileOnly=${test.main.class}::test1 -Xcomp ${test.main.class}
  */
+
+package compiler.c2;
+
 public class TestDeadLoopLateInlining {
     private static Object fieldObject;
     private static int field;
+    private static A fieldA = new A();
+    private static B fieldB = new B();
 
     public static void main(String[] args) {
         Object o = new Object();
         test1(0, true);
+        test2(0, 0, true);
     }
 
     private static Object test1(int j, boolean flag) {
@@ -63,11 +69,63 @@ public class TestDeadLoopLateInlining {
         return null;
     }
 
+    private static Object test2(int j, int k, boolean flag) {
+        A a;
+        if (k < 42) {
+            if (flag) {
+                field = 42;
+            }
+            if (k >= 42) {
+                a = fieldA;
+            } else {
+                a = fieldB;
+            }
+            if (a == null) {
+                throw new RuntimeException("never taken");
+            }
+            if (j < 42) {
+                if (flag) {
+                    field = 42;
+                }
+                Object o = fieldObject;
+                if (j >= 42) {
+                    for (int i = 1; i < 10; ) {
+                        boolean boolRes = lateInlined2();
+                        if (boolRes) {
+                            i *= 2;
+                            o = a.lateInlined(o);
+                            if (o == null) {
+                                throw new RuntimeException();
+                            }
+                        } else {
+                            i++;
+                        }
+                    }
+                }
+                return o;
+            }
+        }
+        return null;
+    }
+
     private static boolean lateInlined2() {
         return true;
     }
 
     private static Object lateInlined1(Object o) {
         return o;
+    }
+
+
+    static class A {
+        Object lateInlined(Object o) {
+            return o;
+        }
+    }
+
+    static class B extends A {
+        Object lateInlined(Object o) {
+            return o;
+        }
     }
 }
