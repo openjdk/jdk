@@ -76,7 +76,7 @@ public class TestNonNMethodHeapOverflow {
             blobType = CodeBlob.getCodeBlob(addr).code_blob_type;
         } while (blobType == BlobType.NonNMethod);
 
-        if (blobType != BlobType.NonProfiled) {
+        if (blobType != BlobType.MethodNonProfiled) {
             throw new RuntimeException("NonNMethod->NonProfiled fallback mechanism was changed? Need to update the test");
         }
 
@@ -125,10 +125,10 @@ public class TestNonNMethodHeapOverflow {
 }
 
 class TestNonNMethodHeapOverflowTarget {
-   static float a(float f1, double d1, long l1, int i1, float f2, double d2) {
-       return f1;
-   }
-   static float b() {
-       return a(1.0f, 2.0, 3L, 4, 5.0f, 6.0);
-   }
+    static float a(float f1, double d1, long l1, int i1, float f2, double d2) {
+        return f1;
+    }
+    static float b() {
+        return a(1.0f, 2.0, 3L, 4, 5.0f, 6.0);
+    }
 }

@@ -942,7 +942,7 @@ void MacroAssembler::emit_static_call_stub() {
   mov_metadata(rmethod, nullptr);
 
   // Jump to the entry point of the c2i stub.
-  if (far_branches()) {
+  if (codestub_branch_needs_far_jump()) {
     movptr(rscratch1, 0);
     br(rscratch1);
   } else {
@@ -954,7 +954,7 @@ int MacroAssembler::static_call_stub_size() {
   // During AOT production run AOT and JIT compiled code
   // are used at the same time. We need this size
   // to be the same for both types of code.
-  if (!far_branches() && !AOTCodeCache::is_on_for_use()) {
+  if (!codestub_branch_needs_far_jump() && !AOTCodeCache::is_on_for_use()) {
     // isb; movk; movz; movz; b
     return 5 * NativeInstruction::instruction_size;
   }

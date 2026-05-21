@@ -1321,6 +1321,14 @@ public:
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
+  // Check if the static call stub branch needs a far jump.
+  static bool codestub_branch_needs_far_jump() {
+    if (AOTCodeCache::is_on_for_dump()) {
+      // To calculate static_call_stub_size correctly.
+      return true;
+    }
+    return far_branches();
+  }
   // Check if a branch to the given address needs a far jump.
   static bool target_needs_far_branch(address addr);
 
