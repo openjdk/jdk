@@ -27,7 +27,7 @@
  * @summary C2: Dead loop constructed with CastPP in late inlining
  * @requires vm.debug
  * @run main ${test.main.class}
- * @run main/othervm -XX:+AlwaysIncrementalInline -XX:CompileOnly=${test.main.class}::test1 -Xcomp ${test.main.class}
+ * @run main/othervm -XX:+AlwaysIncrementalInline -XX:CompileOnly=${test.main.class}::test* -Xcomp ${test.main.class}
  */
 
 package compiler.c2;
