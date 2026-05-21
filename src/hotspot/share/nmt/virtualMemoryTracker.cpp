@@ -272,29 +272,29 @@ public:
     _start(start), _size(size), _current_start(start) {
   }
 
-  // return true if committed region is found
-  bool next_committed(address& start, size_t& size);
+  // return true if resident region is found
+  bool next_resident(address& start, size_t& size);
 private:
   address end() const { return _start + _size; }
 };
 
-bool RegionIterator::next_committed(address& committed_start, size_t& committed_size) {
+bool RegionIterator::next_resident(address& resident_start, size_t& resident_size) {
   if (end() <= _current_start) return false;
 
   const size_t page_sz = os::vm_page_size();
   const size_t current_size = end() - _current_start;
-  if (os::resident_in_range(_current_start, current_size, committed_start, committed_size)) {
-    assert(committed_start != nullptr, "Must be");
-    assert(committed_size > 0 && is_aligned(committed_size, os::vm_page_size()), "Must be");
+  if (os::resident_in_range(_current_start, current_size, resident_start, resident_size)) {
+    assert(resident_start != nullptr, "Must be");
+    assert(resident_size > 0 && is_aligned(resident_size, os::vm_page_size()), "Must be");
 
-    _current_start = committed_start + committed_size;
+    _current_start = resident_start + resident_size;
     return true;
   } else {
     return false;
   }
 }
 
-// Walk all known thread stacks, snapshot their committed ranges.
+// Walk all known thread stacks, snapshot their resident ranges.
 class SnapshotThreadStackWalker : public VirtualMemoryWalker {
 public:
   SnapshotThreadStackWalker() {}
