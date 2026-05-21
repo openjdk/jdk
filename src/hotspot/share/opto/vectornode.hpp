@@ -49,7 +49,7 @@
 //
 // - PVectMask: Platform-specific mask stored in predicate/mask registers. Generated
 //   on architectures with predicate/mask feature, such as AArch64 SVE, x86 AVX-512,
-//   and RISC-V Vector Extension (RVV). The corresponding type is TypeVectMask.
+//   and RISC-V Vector Extension (RVV). The corresponding type is TypePVectMask.
 //
 // NVectMask and PVectMask encode element data type and vector length information.
 // They are the primary mask representations used in most mask and masked vector
@@ -146,12 +146,20 @@ class VectorNode : public TypeNode {
   static bool is_minmax_opcode(int opc);
 
   bool should_swap_inputs_to_help_global_value_numbering();
+  Node* reassociate_vector_operation(PhaseGVN* phase);
+  static Node* create_reassociated_node(Node* parent, Node* child, Node* cinput1, Node* cinput2,
+                                        Node* pinput2, PhaseGVN* phase);
 
   static bool is_vshift_cnt_opcode(int opc);
 
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
+  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc, 0 if not handled
+  static Node* make_scalar(Compile* c, int vopc, BasicType bt, Node* control, Node* in1, Node* in2, Node* in3);
+
+  bool can_push_through_replicate(BasicType bt);
+  Node* push_through_replicate(PhaseGVN* phase);
 
   static int shift_count_opcode(int opc);
 
@@ -174,6 +182,7 @@ class VectorNode : public TypeNode {
   // Return true if every bit in this vector is 0.
   static bool is_all_zeros_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
+  static bool is_vectormask_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
 
@@ -1332,7 +1341,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatterMasked);
      assert(indices->bottom_type()->is_vect(), "indices must be in vector");
-     assert(mask->bottom_type()->isa_vectmask(), "sanity");
+     assert(mask->bottom_type()->isa_pvectmask(), "sanity");
      add_req(indices);
      add_req(mask);
      assert(req() == MemNode::ValueIn + 3, "match_edge expects that last input is in MemNode::ValueIn+2");
@@ -1887,7 +1896,7 @@ class VectorMaskCastNode : public VectorNode {
     assert(in_vt->length() == vt->length(), "vector length must match");
     assert((in_vt->element_basic_type() == T_BOOLEAN) == (vt->element_basic_type() == T_BOOLEAN),
            "Cast from/to BVectMask not allowed, use VectorLoadMask/VectorStoreMask instead");
-    assert((in_vt->isa_vectmask() == nullptr) == (vt->isa_vectmask() == nullptr),
+    assert((in_vt->isa_pvectmask() == nullptr) == (vt->isa_pvectmask() == nullptr),
            "Both BVectMask, or both NVectMask, or both PVectMask");
   }
   Node* Identity(PhaseGVN* phase);
@@ -1904,7 +1913,7 @@ class VectorReinterpretNode : public VectorNode {
  public:
   VectorReinterpretNode(Node* in, const TypeVect* src_vt, const TypeVect* dst_vt)
      : VectorNode(in, dst_vt), _src_vt(src_vt) {
-     assert((!dst_vt->isa_vectmask() && !src_vt->isa_vectmask()) ||
+     assert((!dst_vt->isa_pvectmask() && !src_vt->isa_pvectmask()) ||
             (type2aelembytes(src_vt->element_basic_type()) >= type2aelembytes(dst_vt->element_basic_type())),
             "unsupported mask widening reinterpretation");
      init_class_id(Class_VectorReinterpret);

@@ -31,7 +31,8 @@
 
 DwarfParser::DwarfParser(lib_info *lib) : _lib(lib),
                                           _buf(NULL),
-                                          _encoding(0),
+                                          _has_augmentation(false),
+                                          _fde_ptr_encoding(0),
                                           _code_factor(0),
                                           _data_factor(0),
                                           _current_pc(0L) {
@@ -106,17 +107,23 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   _data_factor = static_cast<int>(read_leb(true));
   enum DWARF_Register initial_ra = static_cast<enum DWARF_Register>(*_buf++);
 
-  if (strpbrk(augmentation_string, "LP") != NULL) {
-    // Language personality routine (P) and Language Specific Data Area (LSDA:L)
-    // are not supported because we need compliant Unwind Library Interface,
-    // but we want to unwind without it.
-    //
-    //   Unwind Library Interface (SysV ABI AMD64 6.2)
-    //     https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf
-    return false;
-  } else if (strchr(augmentation_string, 'R') != NULL) {
-    read_leb(false); // augmentation length
-    _encoding = *_buf++;
+  if (*augmentation_string == 'z') {
+    _has_augmentation = true;
+    read_leb(false); // Skip augmentation length
+    augmentation_string++; // Skip first char ('z')
+    while (*augmentation_string != '\0') {
+      if (*augmentation_string == 'R') {
+        _fde_ptr_encoding = *_buf++;
+      } else if (*augmentation_string == 'P') {
+        print_debug("DWARF Warning: Ignore augmentation: P\n");
+        unsigned char enc = *_buf++; // first argument (encoding)
+        get_decoded_value(enc); // skip second argument (personality routine handler)
+      } else if (*augmentation_string == 'L') {
+        print_debug("DWARF Warning: Ignore augmentation: L\n");
+        _buf++; // skip 1 arguments
+      }
+      augmentation_string++;
+    }
   }
 
   // Clear state
@@ -147,7 +154,7 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
       case 0x0:  // DW_CFA_nop
         return;
       case 0x01: // DW_CFA_set_loc
-        operand1 = get_decoded_value();
+        operand1 = get_decoded_value(_fde_ptr_encoding);
         if (_current_pc != 0L) {
           _current_pc = operand1;
         }
@@ -239,11 +246,11 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
 }
 
 /* from dwarf.c in binutils */
-uint32_t DwarfParser::get_decoded_value() {
+uint32_t DwarfParser::get_decoded_value(unsigned char enc) {
   int size;
   uintptr_t result;
 
-  switch (_encoding & 0x7) {
+  switch (enc & 0x7) {
     case 0:  // DW_EH_PE_absptr
       size = sizeof(void *);
       result = *(reinterpret_cast<uintptr_t *>(_buf));
@@ -272,7 +279,7 @@ uint32_t DwarfParser::get_decoded_value() {
     size = 4;
   } else
 #endif
-  if ((_encoding & 0x70) == 0x10) { // 0x10 = DW_EH_PE_pcrel
+  if ((enc & 0x70) == 0x10) { // 0x10 = DW_EH_PE_pcrel
     result += _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
   } else  if (size == 2) {
     result = static_cast<int>(result) + _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
@@ -287,7 +294,7 @@ unsigned int DwarfParser::get_pc_range() {
   int size;
   uintptr_t result;
 
-  switch (_encoding & 0x7) {
+  switch (_fde_ptr_encoding & 0x7) {
     case 0:  // DW_EH_PE_absptr
       size = sizeof(void *);
       result = *(reinterpret_cast<uintptr_t *>(_buf));
@@ -334,7 +341,7 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
     uint32_t id = *(reinterpret_cast<uint32_t *>(_buf));
     _buf += 4;
     if (id != 0) { // FDE
-      uintptr_t pc_begin = get_decoded_value() + _lib->eh_frame.library_base_addr;
+      uintptr_t pc_begin = get_decoded_value(_fde_ptr_encoding) + _lib->eh_frame.library_base_addr;
       uintptr_t pc_end = pc_begin + get_pc_range();
 
       if ((pc >= pc_begin) && (pc < pc_end)) {
@@ -344,8 +351,10 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
         }
 
         // Skip Augumenation
-        uintptr_t augmentation_length = read_leb(false);
-        _buf += augmentation_length; // skip
+        if (_has_augmentation) {
+          uintptr_t augmentation_length = read_leb(false);
+          _buf += augmentation_length;
+        }
 
         // Process FDE
         parse_dwarf_instructions(pc_begin, pc, next_entry);

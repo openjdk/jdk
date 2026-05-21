@@ -283,7 +283,7 @@ JVMFlag::Error SoftMaxHeapSizeConstraintFunc(size_t value, bool verbose) {
 }
 
 JVMFlag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose) {
-  // If an overflow happened in Arguments::set_heap_size(), MaxHeapSize will have too large a value.
+  // If an overflow happened in GCArguments::set_heap_size(), MaxHeapSize will have too large a value.
   // Check for this by ensuring that MaxHeapSize plus the requested min base address still fit within max_uintx.
   if (value > (max_uintx - MaxHeapSize)) {
     JVMFlag::printError(verbose,

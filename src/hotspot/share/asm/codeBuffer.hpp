@@ -561,11 +561,11 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   OopRecorder* _oop_recorder;
 
-  OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
+  OopRecorder  _default_oop_recorder; // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
-  address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
-  address      _last_label;     // record last bind label address, it's also the start of current bb.
+  address      _last_label;           // record last bind label address, it's also the start of current bb.
+  address      _last_merge_candidate; // used to merge consecutive memory barriers, loads or stores.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
   SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
@@ -591,11 +591,11 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _total_size      = 0;
     _oop_recorder    = nullptr;
     _overflow_arena  = nullptr;
-    _last_insn       = nullptr;
     _last_label      = nullptr;
-    _finalize_stubs  = false;
+    _last_merge_candidate = nullptr;
     _shared_stub_to_interp_requests = nullptr;
     _shared_trampoline_requests = nullptr;
+    _finalize_stubs  = false;
 
     _consts.initialize_outer(this, SECT_CONSTS);
     _insts.initialize_outer(this,  SECT_INSTS);
@@ -812,9 +812,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   OopRecorder* oop_recorder() const { return _oop_recorder; }
 
-  address last_insn() const { return _last_insn; }
-  void set_last_insn(address a) { _last_insn = a; }
-  void clear_last_insn() { set_last_insn(nullptr); }
+  address last_merge_candidate() const { return _last_merge_candidate; }
+  void set_last_merge_candidate(address a) { _last_merge_candidate = a; }
+  void clear_last_merge_candidate() { set_last_merge_candidate(nullptr); }
 
   address last_label() const { return _last_label; }
   void set_last_label(address a) { _last_label = a; }
