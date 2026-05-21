@@ -212,10 +212,6 @@ public:
     _old_generation_ref_processor = nullptr;
   }
 
-  ShenandoahReferenceProcessor* get_old_generation_ref_processor() const {
-    return _old_generation_ref_processor;
-  }
-
   // The generational mode for Shenandoah will collect _referents_ for the generation
   // being collected. For example, if we have a young reference pointing to an old
   // referent, that young reference will be processed after we finish marking the old
