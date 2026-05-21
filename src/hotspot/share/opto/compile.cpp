@@ -902,6 +902,13 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   Code_Gen();
 }
 
+// C2 uses runtime stubs serialized generation to initialize its static tables
+// shared by all compilations, like Type::_shared_type_dict.
+// At least one stub have to be completely generated to execute intialization
+// before we can skip the rest stubs generation by loading AOT cached stubs.
+
+static bool c2_do_stub_init_complete = false;
+
 //------------------------------Compile----------------------------------------
 // Compile a runtime stub
 Compile::Compile(ciEnv* ci_env,
@@ -976,7 +983,7 @@ Compile::Compile(ciEnv* ci_env,
   C = this;
 
   // try to reuse an existing stub
-  {
+  if (c2_do_stub_init_complete) {
     BlobId blob_id = StubInfo::blob(_stub_id);
     CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, blob_id);
     if (blob != nullptr) {
@@ -1021,6 +1028,10 @@ Compile::Compile(ciEnv* ci_env,
   NOT_PRODUCT( verify_graph_edges(); )
 
   Code_Gen();
+
+  // First successful stub generation will set it to `true`
+  // and it will stay `true` after that.
+  c2_do_stub_init_complete = c2_do_stub_init_complete || (_stub_entry_point != nullptr);
 }
 
 Compile::~Compile() {
