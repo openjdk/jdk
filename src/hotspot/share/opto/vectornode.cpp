@@ -1182,8 +1182,6 @@ bool VectorNode::is_associative_and_commutative_vector_operation() {
     case Op_OrVMask:
     case Op_XorVMask:
       return true;
-    case Op_SaturatingAddV:
-      return is_SaturatingVector() && as_SaturatingVector()->is_unsigned();
     default:
       return false;
   }
