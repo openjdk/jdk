@@ -36,6 +36,24 @@ struct GCPauseData {
   size_t _non_hum_alloc_bytes = 0;
   size_t _hum_alloc_bytes = 0;
   size_t _total_hum_after_gc = 0;
+  size_t _gc_trigger_hum_bytes = 0;
+
+GCPauseData(double mutator_time_s,
+            double gc_start_time,
+            double gc_pause_time,
+            size_t desired_young,
+            size_t non_hum_alloc_bytes,
+            size_t hum_alloc_bytes,
+            size_t total_hum_after_gc,
+            size_t gc_trigger_hum_bytes = 0)
+    : _mutator_time_s(mutator_time_s),
+      _gc_start_time(gc_start_time),
+      _gc_pause_time(gc_pause_time),
+      _desired_young(desired_young),
+      _non_hum_alloc_bytes(non_hum_alloc_bytes),
+      _hum_alloc_bytes(hum_alloc_bytes),
+      _total_hum_after_gc(total_hum_after_gc),
+      _gc_trigger_hum_bytes(gc_trigger_hum_bytes) {}
 };
 
 struct G1IHOPTestController {
@@ -59,6 +77,12 @@ struct G1IHOPTestController {
     _alloc_tracker.add_allocated_humongous_bytes_since_last_gc(pause_data._hum_alloc_bytes);
 
     G1MutatorPeriodStatsBytes period_stats = _alloc_tracker.end_mutator_period(pause_data._total_hum_after_gc);
+
+    if (pause_data._gc_trigger_hum_bytes > 0) {
+      // Mirror G1Policy::record_pause() and the successful allocation tracking
+      period_stats.record_humongous_allocation(pause_data._gc_trigger_hum_bytes);
+      _alloc_tracker.record_collection_pause_humongous_allocation(pause_data._gc_trigger_hum_bytes);
+    }
 
     _conc_cycle_tracker.record_mutator_period(pause_type,
                                               false /* is_periodic_gc */,
@@ -691,4 +715,78 @@ TEST_VM(G1IHOPControl, adaptive_ihop_cycle_duration_scales) {
 
   EXPECT_LT(ctrl_long._ihop_control.old_gen_threshold_for_conc_mark_start(),
             ctrl_short._ihop_control.old_gen_threshold_for_conc_mark_start());
+}
+
+TEST_VM(G1IHOPControl, adaptive_ihop_gc_humongous_allocation) {
+  // Test requires G1
+  if (!UseG1GC) {
+    return;
+  }
+
+  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  // G1Predictions require 5 or more samples to skip special considerations for
+  // small samples.
+  size_t num_samples = 5;
+
+  size_t target_occupancy = 100;
+  size_t young_reserve    = 10;
+  size_t trigger_hum_bytes = 30;
+
+  double mutator_time_s = 1.0;
+  double gc_pause_time = 1.0;
+  double gc_start_time = mutator_time_s;
+
+  G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, target_occupancy);
+
+  for (size_t i = 0; i < num_samples; i++) {
+    ctrl.mutator_phase_end_with_conc_start({
+        mutator_time_s,
+        gc_start_time,
+        gc_pause_time,
+        young_reserve,
+        10 /* non_hum_bytes */,
+        0  /* hum_alloc_bytes */,
+        0  /* total_hum_after_gc */
+      });
+
+    // First mutator phase:
+    // No new humongous allocations in this phase.
+    // h_t1 < h_t0 (eager reclaim)
+    gc_start_time += (gc_pause_time + mutator_time_s);
+    size_t h_t1 = 60;
+    ctrl.mutator_phase_end_with_normal_gc({
+        mutator_time_s,
+        gc_start_time,
+        gc_pause_time,
+        young_reserve,
+        20 /* non_hum_bytes */,
+        0  /* hum_alloc_bytes */,
+        0  /* total_hum_after_gc */,
+        trigger_hum_bytes
+      });
+
+    EXPECT_EQ(trigger_hum_bytes, ctrl._conc_cycle_tracker.peak_extra_humongous_reserve_bytes());
+
+    // Second mutator phase:
+    gc_start_time += (gc_pause_time + mutator_time_s);
+    ctrl.mutator_phase_end_with_mixed_gc({
+        mutator_time_s,
+        gc_start_time,
+        gc_pause_time,
+        10   /* young_reserve_bytes */,
+        10   /* non_hum_bytes */,
+        0,   /* hum_alloc_bytes */
+        trigger_hum_bytes /* total_hum_after_gc */
+      });
+
+    gc_start_time += (gc_pause_time + mutator_time_s);
+  }
+
+  // Expected:
+  // predicted_needed = young_reserve + non_hum_bytes + peak_extra_hum_reserve
+  //                  = 10 + 30 + 30
+  // threshold        = target - predicted_needed
+  //                  = 100 - 70
+  EXPECT_EQ(30ul, ctrl._ihop_control.old_gen_threshold_for_conc_mark_start());
+
 }

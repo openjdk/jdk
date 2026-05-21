@@ -45,6 +45,11 @@ struct G1MutatorPeriodStatsBytes {
       _total_hum_before(total_hum_before),
       _total_hum_after(total_hum_after)
     { }
+
+  void record_humongous_allocation(size_t humongous_allocation_bytes) {
+    _hum_allocated += humongous_allocation_bytes;
+    _total_hum_after += humongous_allocation_bytes;
+  }
 };
 
 // The Concurrent Cycle is the interval After the Concurrent-Start-GC until

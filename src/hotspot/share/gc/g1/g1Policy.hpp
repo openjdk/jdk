@@ -261,7 +261,8 @@ private:
   // Record the given STW pause with the given start and end times (in s).
   void record_pause(Pause gc_type,
                     double start,
-                    double end);
+                    double end,
+                    size_t humongous_allocation_bytes = 0);
 
   void update_gc_pause_time_ratios(Pause gc_type, double start_sec, double end_sec);
 

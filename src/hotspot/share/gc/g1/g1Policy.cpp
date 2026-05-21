@@ -1364,7 +1364,8 @@ void G1Policy::update_gc_pause_time_ratios(Pause gc_type, double start_time_sec,
 
 void G1Policy::record_pause(Pause gc_type,
                             double start,
-                            double end) {
+                            double end,
+                            size_t humongous_allocation_bytes) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (gc_type != Pause::Full) {
     _mmu_tracker->add_pause(start, end);
@@ -1375,6 +1376,13 @@ void G1Policy::record_pause(Pause gc_type,
   G1MutatorPeriodStatsBytes period_stats = _old_gen_alloc_tracker.end_mutator_period(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
   bool is_periodic_gc = _g1h->gc_cause() == GCCause::_g1_periodic_collection;
 
+  if (humongous_allocation_bytes > 0) {
+    // Record the humongous allocation that triggered the GC. This allocation
+    // is attributed to the ending mutator period. We account for it eagerly
+    // before the actual allocation because any subsequent allocation failure
+    // will reset the G1ConcurrentCycleTracker.
+    period_stats.record_humongous_allocation(humongous_allocation_bytes);
+  }
   _concurrent_cycle_tracker.record_mutator_period(gc_type, is_periodic_gc, start, end, period_stats);
 
   double elapsed_gc_cpu_time = _analytics->gc_cpu_time_ms();
