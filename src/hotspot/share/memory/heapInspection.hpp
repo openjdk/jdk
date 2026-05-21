@@ -190,9 +190,9 @@ class KlassInfoHisto : public StackObj {
   void sort();
 };
 
-class PrintClassLayout : AllStatic {
+class ClassPrintLayout : AllStatic {
  public:
-  static void print_class_layout(outputStream* st, char* classname);
+  static void class_print_layout(outputStream* st, char* classname);
 };
 
 #endif // INCLUDE_SERVICES
