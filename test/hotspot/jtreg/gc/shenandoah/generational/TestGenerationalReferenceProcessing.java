@@ -58,6 +58,41 @@
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing old
  */
 
+/*
+ * @test id=young-no-compressed-oops
+ * @requires vm.gc.Shenandoah
+ * @summary Confirm that young referents are cleared (when compressed oops are disabled).
+ * @bug 8373203
+ * @library /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:.
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
+ *      -Xmx128M -Xms128M -ea
+ *      gc.shenandoah.generational.TestGenerationalReferenceProcessing young
+ */
+
+/*
+ * @test id=old-no-compressed-oops
+ * @requires vm.gc.Shenandoah
+ * @summary Confirm that old referents are cleared (when compressed oops are disabled).
+ * @bug 8373203
+ * @library /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:.
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
+ *      -Xmx128M -Xms128M -ea
+ *      gc.shenandoah.generational.TestGenerationalReferenceProcessing old
+ */
 package gc.shenandoah.generational;
 
 import java.lang.ref.Reference;
