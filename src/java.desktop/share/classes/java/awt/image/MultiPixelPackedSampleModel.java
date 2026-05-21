@@ -109,11 +109,12 @@ public class MultiPixelPackedSampleModel extends SampleModel
                                        int w,
                                        int h,
                                        int numberOfBits) {
-        this(dataType,w,h,
-             numberOfBits,
-            (int)(((long)w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
-                DataBuffer.getDataTypeSize(dataType)),
-             0);
+        int sls = (int)(((long)w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
+                        DataBuffer.getDataTypeSize(dataType));
+        if (sls < 0) {
+            throw new RasterFormatException("Pixels do not fit");
+        };
+        this(dataType, w, h, numberOfBits, sls, 0);
         if (dataType != DataBuffer.TYPE_BYTE &&
             dataType != DataBuffer.TYPE_USHORT &&
             dataType != DataBuffer.TYPE_INT) {
