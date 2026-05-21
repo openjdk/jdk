@@ -128,7 +128,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Always use HeapBasedNarrowOop mode, so that AOT code will "      \
           "always work regardless of runtime heap range")                   \
                                                                             \
-  product(bool, UseCompactObjectHeaders, false,                             \
+  product(bool, UseCompactObjectHeaders, true,                              \
           "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
   product(int, ObjectAlignmentInBytes, 8,                                   \
@@ -1194,7 +1194,7 @@ const int ObjectAlignmentInBytes = 8;
           "Use Just-In-Time compilation")                                   \
                                                                             \
   product(bool, AlwaysCompileLoopMethods, false,                            \
-          "When using recompilation, never interpret methods "              \
+          "(Deprecated) When using recompilation, never interpret methods " \
           "containing loops")                                               \
                                                                             \
   product(int,  AllocatePrefetchStyle, 1,                                   \

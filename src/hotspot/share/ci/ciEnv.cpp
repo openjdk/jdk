@@ -1156,7 +1156,7 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
       }
 #endif
       aot_code_entry->set_loaded();
-      nm->set_has_clinit_barriers(aot_code_entry->has_clinit_barriers());
+      assert(nm->has_clinit_barriers() == aot_code_entry->has_clinit_barriers(), "should match");
       make_code_usable(thread, target, preload, InvocationEntryBci, aot_code_entry, nm);
     }
   }
@@ -1240,17 +1240,17 @@ void ciEnv::register_method(ciMethod* target,
                                  debug_info(), dependencies(), code_buffer,
                                  frame_words, oop_map_set,
                                  handler_table, inc_table,
-                                 compiler, CompLevel(task()->comp_level()));
+                                 compiler, CompLevel(task()->comp_level()),
+                                 nmethod::Flags(has_unsafe_access,
+                                                has_wide_vectors,
+                                                has_monitors,
+                                                has_scoped_access,
+                                                has_clinit_barriers));
     }
     // Free codeBlobs
     code_buffer->free_blob();
 
     if (nm != nullptr) {
-      nm->set_has_unsafe_access(has_unsafe_access);
-      nm->set_has_wide_vectors(has_wide_vectors);
-      nm->set_has_monitors(has_monitors);
-      nm->set_has_scoped_access(has_scoped_access);
-      nm->set_has_clinit_barriers(has_clinit_barriers);
       assert(!method->is_synchronized() || nm->has_monitors(), "");
 
 #if INCLUDE_CDS
@@ -1289,6 +1289,8 @@ void ciEnv::register_method(ciMethod* target,
             MethodCounters* mc = method->get_method_counters(thread);
             assert(mc != nullptr, "CompileBroker should create MethodCounters if it is missing");
             mc->set_aot_preload_code_entry(aot_code_entry);
+            // Set it only for printing purpose, otherwise it is unused
+            // during assembly phase.
             nm->set_preloaded(true);
           }
         }
