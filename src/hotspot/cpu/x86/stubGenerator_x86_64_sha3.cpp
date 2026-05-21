@@ -189,7 +189,7 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
   #endif
   }
 
-  __ movl(rax, 0x1F);
+  __ movl(rax, 0x1);
   __ kmovwl(k1, rax);
   __ lea(round_consts, ExternalAddress(round_constsAddr()));
 
@@ -270,7 +270,7 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
     __ movq(T0, Address(state3, 24 * 8));
     __ movq(T1, Address(state4, 24 * 8));
     __ vshufpd(T0, T0, T1, 0b00, Assembler::AVX_128bit);
-    __ evinserti64x2(A24, A24, T0, 0b01, Assembler::AVX_256bit);
+    __ vinserti128(A24, A24, T0, 1);
   } else if (stub_id == StubId::stubgen_double_keccak_id) {
     __ movq(T0, Address(state2, 24 * 8));
     __ vshufpd(A24, A24, T0, 0b00, Assembler::AVX_128bit);
@@ -577,8 +577,8 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
   // Cleanup
   // Zero out zmm0-zmm31.
   __ vzeroall();
-  for (XMMRegister rxmm = xmm16; vector_len == Assembler::AVX_512bit && rxmm->is_valid(); rxmm = rxmm->successor()) {
-    __ vpxorq(rxmm, rxmm, rxmm, Assembler::AVX_512bit);
+  for (XMMRegister rxmm = xmm16; rxmm->is_valid(); rxmm = rxmm->successor()) {
+    __ vpxorq(rxmm, rxmm, rxmm, vector_len);
   }
 
   if (!parallelKeccak) {
@@ -1153,7 +1153,7 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
 }
 
 void StubGenerator::generate_sha3_stubs() {
-  bool avx512Available = VM_Version::supports_evex() && VM_Version::supports_avx512bw();
+  bool avx512Available = VM_Version::supports_evex() && VM_Version::supports_avx512vlbw();
   if (UseSHA3Intrinsics) {
     if (avx512Available) {
       StubRoutines::_sha3_implCompress =
