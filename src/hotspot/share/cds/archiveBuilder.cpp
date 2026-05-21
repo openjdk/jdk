@@ -711,7 +711,6 @@ bool ArchiveBuilder::has_been_archived(address src_addr) const {
     // the "regenerated" version of it.
     address regen_obj = RegeneratedClasses::maybe_get_regenerated_object(src_addr);
     if (regen_obj != src_addr) {
-      precond(regen_obj != nullptr);
       assert(has_been_archived(regen_obj), "must be");
       assert(get_buffered_addr(src_addr) == get_buffered_addr(regen_obj), "must be");
     }});
