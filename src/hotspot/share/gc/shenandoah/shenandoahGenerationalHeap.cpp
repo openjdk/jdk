@@ -829,7 +829,7 @@ private:
   template<class T>
   void update_references_in_remembered_set(uint worker_id, T &cl, const ShenandoahMarkingContext* ctx, bool is_mixed) {
 
-    struct ShenandoahRegionChunk assignment;
+    ShenandoahRegionChunk assignment;
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
 
     while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
@@ -889,9 +889,11 @@ private:
     while (p < end_of_range) {
       // p is known to point to the beginning of marked object obj
       oop obj = cast_to_oop(p);
-      objs.do_object(obj);
+      if (obj->is_self_forwarded() || !obj->is_forwarded()) {
+        objs.do_object(obj);
+      }
       HeapWord* prev_p = p;
-      p += obj->size();
+      p += ShenandoahForwarding::size(obj);
       if (p < tams) {
         p = ctx->get_next_marked_addr(p, tams);
         // If there are no more marked objects before tams, this returns tams.  Note that tams is
