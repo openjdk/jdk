@@ -75,7 +75,7 @@
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
     /* Note colors */
-    --note-background-color: var(--body-background-color);
+    --note-background-color: inherit;
     --note-border-color: #8c8c8c;
     --note-header-color: var(--block-text-color);
     --note-text-color: var(--block-text-color);
@@ -150,7 +150,7 @@
     --snippet-highlight-color: #f7c590;
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
-    --note-background-color: var(--body-background-color);
+    --note-background-color: inherit;
     --note-border-color: #adadad;
     --note-header-color: var(--block-text-color);
     --note-text-color: var(--block-text-color);
@@ -566,8 +566,9 @@ section.class-description > div.horizontal-scroll > :last-child > :is(li, dd):la
  */
 div.inline-note {
     padding: 1px 16px;
-    margin: 14px 0;
-    border-left: 1px solid var(--note-border-color);
+    margin: 14px 2px;
+    border: 0 solid var(--note-border-color);
+    border-left-width: 1px;
     background-color: var(--note-background-color);
     border-radius: 0;
     > :is(p, div, pre, ul, ol):last-child {
@@ -588,20 +589,22 @@ div.inline-note.note-tag-previewNote {
 }
 div.inline-note:has(h2, h3, h4, h5, pre),
 div.inline-note.note-tag-hairline {
-    border-left: var(--hairline-border-width) solid var(--hairline-border-color);
+    border: 0 solid var(--hairline-border-color);
+    border-left-width: var(--hairline-border-width);
 }
 div.inline-note.note-tag-indented {
     border: none;
-    padding: 0 16px;
+    padding: 0 17px;
 }
 div.inline-note.note-tag-bordered {
-    border-left: 1px solid var(--note-border-color);
+    border: 0 solid var(--note-border-color);
+    border-left-width: 1px;
 }
 div.inline-note.note-tag-important {
     padding: 12px 16px;
-    margin: 14px 0;
     border-radius: 0;
-    border-left: 3px solid var(--note-important-border-color);
+    border: 0 solid var(--note-important-border-color);
+    border-left-width: 3px;
     background-color: var(--note-important-background-color);
     pre, pre.snippet, div.snippet-container {
         background-color: var(--note-important-pre-color);
@@ -609,9 +612,9 @@ div.inline-note.note-tag-important {
 }
 div.inline-note.note-tag-critical {
     padding: 12px 16px;
-    margin: 16px 0;
-    border-radius: 0;
-    border-left: 4px solid var(--note-critical-border-color);
+    margin: 16px 2px;
+    border: 0 solid var(--note-critical-border-color);
+    border-left-width: 4px;
     background-color: var(--note-critical-background-color);
     pre, pre.snippet, div.snippet-container {
         background-color: var(--note-critical-pre-color);
@@ -620,6 +623,17 @@ div.inline-note.note-tag-critical {
 section.detail div.inline-note.note-tag-important,
 section.detail div.inline-note.note-tag-critical {
     padding: 9px 14px;
+}
+div.inline-note.block {
+    border-width: 1px;
+    margin: 14px 0;
+    padding: 10px 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+div.inline-note.block:has(h2, h3, h4, h5, pre),
+div.inline-note.note-tag-hairline.block {
+    border-width: var(--hairline-border-width);
 }
 /*
  * Styles for block notes.
@@ -649,7 +663,7 @@ dl.notes > div.note-tag-bordered,
 dl.notes > div.note-tag-important,
 dl.notes > div.note-tag-critical,
 dl.notes > div.note-tag-previewNote {
-    margin: 12px 0;
+    margin: 14px 0;
     padding: 0 12px;
     border-radius: 4px;
     overflow-x: auto;
