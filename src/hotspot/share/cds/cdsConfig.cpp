@@ -676,6 +676,19 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     UseStringDeduplication = false;
   }
 
+  if (is_dumping_heap()) {
+    precond(allow_only_single_java_thread());
+
+    // The AttachListenerThread may execute Java code or load new classes. It might see
+    // unexpected results after HeapShared::prepare_for_archiving().
+    //
+    // We disable all new incoming attach requests, so you can't use jcmd, etc, on this JVM.
+    // Since we are not running any application code in this JVM and only executed a very
+    // limited set of Java code (for module system init, class loading, indy resolution,
+    // etc), there is usually no need to attach to this JVM.
+    FLAG_SET_ERGO(DisableAttachMechanism, true);
+  }
+
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
   if (ArchiveClassesAtExit != nullptr && RecordDynamicDumpInfo) {
     jio_fprintf(defaultStream::output_stream(),
