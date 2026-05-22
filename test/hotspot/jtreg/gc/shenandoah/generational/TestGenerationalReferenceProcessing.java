@@ -27,7 +27,7 @@
  * @requires vm.gc.Shenandoah
  * @summary Confirm that young referents are cleared.
  * @bug 8373203
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
@@ -45,7 +45,7 @@
  * @requires vm.gc.Shenandoah
  * @summary Confirm that old referents are cleared.
  * @bug 8373203
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
