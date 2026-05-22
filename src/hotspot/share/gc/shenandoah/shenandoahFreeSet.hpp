@@ -441,9 +441,6 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
-  size_t _total_bytes_previously_allocated;
-  size_t _mutator_bytes_at_last_sample;
-
   // Temporarily holds mutator_Free allocatable bytes between prepare_to_rebuild() and finish_rebuild()
   size_t _prepare_to_rebuild_mutator_free;
 
@@ -518,8 +515,6 @@ private:
 
   size_t _total_young_regions;
   size_t _total_global_regions;
-
-  size_t _mutator_bytes_allocated_since_gc_start;
 
   // If only affiliation changes are promote-in-place and generation sizes have not changed,
   //    we have AffiliatedChangesAreGlobalNeutral
@@ -666,37 +661,6 @@ public:
   inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
                                                                 idx_t low_idx, idx_t high_idx, size_t num_regions) {
     return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
-  }
-
-  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
-
-  void increase_bytes_allocated(size_t bytes);
-
-  // Return an approximation of the bytes allocated since GC start.  The value returned is monotonically non-decreasing
-  // in time within each GC cycle.  For certain GC cycles, the value returned may include some bytes allocated before
-  // the start of the current GC cycle.
-  inline size_t get_bytes_allocated_since_gc_start() const {
-    return _mutator_bytes_allocated_since_gc_start;
-  }
-
-  inline size_t get_total_bytes_allocated() {
-    return  _mutator_bytes_allocated_since_gc_start + _total_bytes_previously_allocated;
-  }
-
-  inline size_t get_bytes_allocated_since_previous_sample() {
-    const size_t total_bytes_allocated = get_total_bytes_allocated();
-    // total_bytes_allocated could overflow (wraps around) size_t in rare condition, we are relying on
-    // wrap-around arithmetic of size_t type to produce meaningful result when total_bytes_allocated overflows
-    // its 64-bit counter. The expression below is equivalent to code:
-    // if (total_bytes < _mutator_bytes_at_last_sample) {
-    //   // overflow
-    //   return total_bytes + (SIZE_T_MAX - _mutator_bytes_at_last_sample) + 1;
-    // } else {
-    //   return total_bytes - _mutator_bytes_at_last_sample;
-    // }
-    const size_t result = total_bytes_allocated - _mutator_bytes_at_last_sample;
-    _mutator_bytes_at_last_sample = total_bytes_allocated;
-    return result;
   }
 
   // Public because ShenandoahRegionPartitions assertions require access.
