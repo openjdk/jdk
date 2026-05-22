@@ -788,6 +788,10 @@ public:
     return _is_in_vthread_transition || _is_disable_suspend || _is_in_java_upcall || _jvmti_events_disabled != 0;
   }
 
+  bool should_defer_self_suspend() const {
+    return _is_disable_suspend || _is_vthread_transition_disabler || jni_deferred_suspension();
+  }
+
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
 
@@ -986,7 +990,7 @@ public:
   // Atomic version; invoked by a thread other than the owning thread.
   bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
 
-  bool jni_deferred_suspension() { return AtomicAccess::load(&_jni_deferred_suspension_count); }
+  bool jni_deferred_suspension() const { return AtomicAccess::load(&_jni_deferred_suspension_count); }
   inline void enter_jni_deferred_suspension();
   void exit_jni_deferred_suspension() {
     precond(Thread::current() == this);

@@ -528,16 +528,13 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(allow_suspend || !check_async_exception, "invalid case");
-#if INCLUDE_JVMTI
+
   // Filter out suspend operations while JavaThread can not be suspended.
   // Potentially this could be folded into the `is_enabled` state of the operation
   // and filtered directly through _queue.peek, but the incoming `allow_suspend`
   // complicates that so we just maintain the explicit checks for now.
-  if (allow_suspend && (_handshakee->is_disable_suspend() || _handshakee->is_vthread_transition_disabler() ||
-                        _handshakee->jni_deferred_suspension())) {
-    allow_suspend = false;
-  }
-#endif
+  JVMTI_ONLY(allow_suspend = allow_suspend && !_handshakee->should_defer_self_suspend();)
+
   if (!allow_suspend) {
     return _queue.peek(no_suspend_no_async_exception_filter);
   } else if (check_async_exception && !_async_exceptions_blocked) {
