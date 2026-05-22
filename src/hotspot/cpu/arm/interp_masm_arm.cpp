@@ -1576,7 +1576,7 @@ void InterpreterMacroAssembler::notify_method_exit(
   // Whenever JVMTI is interp_only_mode, method entry/exit events are sent to
   // track stack depth.  If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
-  if (mode == NotifyJVMTI && can_post_interpreter_events()) {
+  if (mode == NotifyJVMTI && (can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
     Label L;
     const Register thread_state = R2_tmp;
 

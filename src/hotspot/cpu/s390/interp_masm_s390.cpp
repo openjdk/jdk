@@ -2002,7 +2002,7 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
   // entry/exit events are sent for that thread to track stack
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
-  if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
+  if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
     if (!native_method) push(state); // see frame::interpreter_frame_result()
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     if (!native_method) pop(state);

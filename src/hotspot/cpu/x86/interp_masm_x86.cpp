@@ -1603,7 +1603,7 @@ void InterpreterMacroAssembler::notify_method_exit(
   // the code to check if the event should be sent.
   Register rthread = r15_thread;
   Register rarg = c_rarg1;
-  if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
+  if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
     Label L;
     // Note: frame::interpreter_frame_result has a dependency on how the
     // method result is saved across the call to post_method_exit. If this
@@ -1618,7 +1618,7 @@ void InterpreterMacroAssembler::notify_method_exit(
     jcc(Assembler::zero, L); // if (thread->jvmti_thread_state() == nullptr) exit;
 
     movl(rdx, Address(rdx, JvmtiThreadState::frame_pop_cnt_offset()));
-    movl(rcx, Address(rthread, JavaThread::interp_only_mode_offset())); // can we use rcx too?
+    movl(rcx, Address(rthread, JavaThread::interp_only_mode_offset()));
 
     orl(rdx, rcx);
     testl(rdx,rdx);

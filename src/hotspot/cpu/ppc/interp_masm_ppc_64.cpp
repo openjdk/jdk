@@ -2345,7 +2345,7 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
   // entry/exit events are sent for that thread to track stack
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
-  if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
+  if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
     if (!is_native_method) { push(state); } // Expose tos to GC.
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit), check_exceptions);
     if (!is_native_method) { pop(state); }
