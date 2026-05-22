@@ -100,7 +100,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
     // Avoid double-counting objects that are visited twice due to upgrade
     // from final- to strong mark.
     if (task->count_liveness()) {
-      count_liveness<GENERATION>(live_data, obj, worker_id);
+      count_liveness<GENERATION>(live_data, obj, klass, worker_id);
     }
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
@@ -109,11 +109,11 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 }
 
 template <ShenandoahGenerationType GENERATION>
-inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, uint worker_id) {
+inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klass* klass, uint worker_id) {
   const ShenandoahHeap* const heap = ShenandoahHeap::heap();
   const size_t region_idx = heap->heap_region_index_containing(obj);
   ShenandoahHeapRegion* const region = heap->get_region(region_idx);
-  const size_t size = obj->size();
+  const size_t size = obj->size_given_klass(klass);
 
   // Age census for objects in the young generation
   if (GENERATION == YOUNG || (GENERATION == GLOBAL && region->is_young())) {
