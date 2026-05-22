@@ -46,6 +46,9 @@ bool MallocSiteTable::initialize() {
   if (_table == nullptr) {
     return false;
   }
+  for (int i = 0; i < table_size; i++) {
+    new (&_table[i]) Atomic<MallocSiteHashtableEntry*>(nullptr);
+  }
 
   // Fake the call stack for hashtable entry allocation
   assert(NMT_TrackingStackDepth > 1, "At least one tracking stack");
