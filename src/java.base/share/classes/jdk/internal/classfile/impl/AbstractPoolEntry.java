@@ -102,6 +102,12 @@ public abstract sealed class AbstractPoolEntry {
         return hash;
     }
 
+    int poolHash() {
+        // Hash used by constant pool maps.  Unlike Object.hashCode(), this may be
+        // based on pool-local indices to keep lookup and building paths cheap.
+        return hash != 0 ? hash : hashCode();
+    }
+
     public abstract int tag();
 
     public int width() {
@@ -521,14 +527,23 @@ public abstract sealed class AbstractPoolEntry {
 
     abstract static sealed class AbstractRefEntry<T extends PoolEntry> extends AbstractPoolEntry {
         protected final T ref1;
+        private @Stable int contentHash;
 
         public AbstractRefEntry(ConstantPool constantPool, int tag, int index, T ref1) {
-            super(constantPool, index, hash1(tag, ref1.hashCode()));
+            super(constantPool, index, hash1(tag, ref1.index()));
             this.ref1 = ref1;
         }
 
         public T ref1() {
             return ref1;
+        }
+
+        @Override
+        public int hashCode() {
+            var hash = this.contentHash;
+            if (hash != 0)
+                return hash;
+            return this.contentHash = hash1(tag(), ref1.hashCode());
         }
 
         void writeTo(BufWriterImpl pool) {
@@ -545,9 +560,10 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractPoolEntry {
         protected final T ref1;
         protected final U ref2;
+        private @Stable int contentHash;
 
         public AbstractRefsEntry(ConstantPool constantPool, int tag, int index, T ref1, U ref2) {
-            super(constantPool, index, hash2(tag, ref1.hashCode(), ref2.hashCode()));
+            super(constantPool, index, hash2(tag, ref1.index(), ref2.index()));
             this.ref1 = ref1;
             this.ref2 = ref2;
         }
@@ -558,6 +574,14 @@ public abstract sealed class AbstractPoolEntry {
 
         public U ref2() {
             return ref2;
+        }
+
+        @Override
+        public int hashCode() {
+            var hash = this.contentHash;
+            if (hash != 0)
+                return hash;
+            return this.contentHash = hash2(tag(), ref1.hashCode(), ref2.hashCode());
         }
 
         void writeTo(BufWriterImpl pool) {
@@ -673,6 +697,11 @@ public abstract sealed class AbstractPoolEntry {
                 return hash;
 
             return this.hash = hashClassFromUtf8(ref1.mayBeArrayDescriptor(), ref1);
+        }
+
+        @Override
+        int poolHash() {
+            return hashCode();
         }
     }
 
@@ -881,7 +910,7 @@ public abstract sealed class AbstractPoolEntry {
         private final int bsmIndex;
         private BootstrapMethodEntryImpl bootstrapMethod;
         private final NameAndTypeEntryImpl nameAndType;
-        private @Stable int hash;
+        private @Stable int contentHash;
 
         AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                          NameAndTypeEntryImpl nameAndType) {
@@ -889,12 +918,11 @@ public abstract sealed class AbstractPoolEntry {
             this.bsmIndex = bootstrapMethod.bsmIndex();
             this.bootstrapMethod = bootstrapMethod;
             this.nameAndType = nameAndType;
-            this.hash = hash;
         }
 
-        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int bsmIndex,
+        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int hash, int bsmIndex,
                                          NameAndTypeEntryImpl nameAndType) {
-            super(cpm, index, 0);
+            super(cpm, index, hash);
             this.bsmIndex = bsmIndex;
             this.bootstrapMethod = null;
             this.nameAndType = nameAndType;
@@ -926,11 +954,11 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public int hashCode() {
-            var h = this.hash;
+            int h = this.contentHash;
             if (h != 0) {
                 return h;
             }
-            return this.hash = hash2(tag(), bootstrap().hashCode(), nameAndType.hashCode());
+            return this.contentHash = hash2(tag(), bootstrap().hashCode(), nameAndType.hashCode());
         }
 
         void writeTo(BufWriterImpl pool) {
@@ -968,7 +996,8 @@ public abstract sealed class AbstractPoolEntry {
 
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                    NameAndTypeEntryImpl nameAndType) {
-            super(cpm, index, bsmIndex, nameAndType);
+            super(cpm, index, hash2(TAG_INVOKE_DYNAMIC, bsmIndex, nameAndType.index()),
+                  bsmIndex, nameAndType);
         }
 
         @Override
@@ -1006,7 +1035,8 @@ public abstract sealed class AbstractPoolEntry {
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                      NameAndTypeEntryImpl nameAndType) {
-            super(cpm, index, bsmIndex, nameAndType);
+            super(cpm, index, hash2(TAG_DYNAMIC, bsmIndex, nameAndType.index()),
+                  bsmIndex, nameAndType);
         }
 
         @Override
@@ -1037,6 +1067,7 @@ public abstract sealed class AbstractPoolEntry {
 
         private final int refKind;
         private final AbstractPoolEntry.AbstractMemberRefEntry reference;
+        private @Stable int contentHash;
         public @Stable DirectMethodHandleDesc sym;
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
@@ -1048,7 +1079,7 @@ public abstract sealed class AbstractPoolEntry {
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
-            super(cpm, index, hash2(TAG_METHOD_HANDLE, refKind, reference.hashCode()));
+            super(cpm, index, hash2(TAG_METHOD_HANDLE, refKind, reference.index()));
             this.refKind = refKind;
             this.reference = reference;
         }
@@ -1066,6 +1097,14 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public AbstractPoolEntry.AbstractMemberRefEntry reference() {
             return reference;
+        }
+
+        @Override
+        public int hashCode() {
+            var hash = this.contentHash;
+            if (hash != 0)
+                return hash;
+            return this.contentHash = hash2(TAG_METHOD_HANDLE, refKind, reference.hashCode());
         }
 
         @Override
