@@ -66,7 +66,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
       if (STRING_DEDUP && (klass == vmClasses::String_klass())) {
         dedup_string(obj, req);
       }
-      if (obj->is_stackChunk()) {
+      if (klass->is_stack_chunk_instance_klass()) {
         // Loom doesn't support mixing of weak marking and strong marking of stack chunks.
         cl->set_weak(false);
       }
@@ -86,7 +86,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
     // Avoid double-counting objects that are visited twice due to upgrade
     // from final- to strong mark.
     if (task->count_liveness()) {
-      count_liveness<GENERATION>(live_data, obj, worker_id);
+      count_liveness<GENERATION>(live_data, obj, klass, worker_id);
     }
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
@@ -109,11 +109,11 @@ void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
 }
 
 template <ShenandoahGenerationType GENERATION>
-inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, uint worker_id) {
+inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klass* klass, uint worker_id) {
   const ShenandoahHeap* const heap = ShenandoahHeap::heap();
   const size_t region_idx = heap->heap_region_index_containing(obj);
   ShenandoahHeapRegion* const region = heap->get_region(region_idx);
-  const size_t size = obj->size();
+  const size_t size = obj->size_given_klass(klass);
 
   // Age census for objects in the young generation
   if (GENERATION == YOUNG || (GENERATION == GLOBAL && region->is_young())) {

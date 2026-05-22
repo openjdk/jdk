@@ -80,7 +80,7 @@ private:
   inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow, bool weak);
 
   template <ShenandoahGenerationType GENERATION>
-  inline void count_liveness(ShenandoahLiveData* live_data, oop obj, uint worker_id);
+  inline void count_liveness(ShenandoahLiveData* live_data, oop obj, Klass* klass, uint worker_id);
 
   template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
