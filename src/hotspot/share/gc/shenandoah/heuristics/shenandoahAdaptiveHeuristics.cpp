@@ -214,13 +214,13 @@ void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start,
   if (predict_gc_time(time_at_start) < gc_time) {
     // Only add abbreviated GC cycle times if we are learning, but count them as half a normal GC cycle time.
     const size_t max_learn = ShenandoahLearningSteps;
-    if (!abbreviated || (_gc_times_learned <= max_learn)) {
-      if (abbreviated) {
-	// Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
-	// All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
-	// synchronization than marking, so we expect this approximation is conservative.
-	gc_time *= 2;
-      }
+    if (abbreviated) {
+      // Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
+      // All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
+      // synchronization than marking, so we expect this approximation is conservative.
+      gc_time += gc_time;
+    }
+    if ((gc_time > predict_gc_time(time_at_start)) || (_gc_times_learned <= max_learn)) {
       add_gc_time(time_at_start, gc_time);
     }
   }
@@ -342,22 +342,25 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
 void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
   ShenandoahHeuristics::record_success_concurrent(abbreviated);
   double now = os::elapsedTime();
-
+  double gc_time = elapsed_cycle_time();
 #undef KELVIN_CONC
 #ifdef KELVIN_CONC
-  log_info(gc)("SAH::record_success_concurrent() adding GC time (%.3f) to average", elapsed_cycle_time());
+  log_info(gc)("SAH::record_success_concurrent() adding GC time (%.3f) to average", gc_time);
 #endif
-  // Only add abbreviated GC cycle times if we are learning, but count them as half a normal cycle time.
+  if (abbreviated) {
+    // Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
+    // All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
+    // synchronization than marking, so we expect this approximation is conservative.
+    gc_time += gc_time;
+  }
+  // We always add non-abbreviated GC cycles times into linear prediction history.  We add adjusted abbreviated cycle times
+  // only if we are still learning, or if the new adjusted measurements is below the most current prediction.  Workloads
+  // that have a large number of abbreviated cycles are vulnerable to overly conservative linear prediction of execution
+  // time based on learning cycles alone.  We do not make this adjustment for degenerated cycle times: if we degenerated,
+  // then our prediction was apparently not overly conservative.
   const size_t max_learn = ShenandoahLearningSteps;
-  if (!abbreviated || (_gc_times_learned <= max_learn)) {
-    double cycle_time = elapsed_cycle_time();
-    if (abbreviated) {
-      // Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
-      // All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
-      // synchronization than marking, so we expect this approximation is conservative.
-      cycle_time *= 2;
-    }
-    add_gc_time(_cycle_start, cycle_time);
+  if (!abbreviated || (_gc_times_learned <= max_learn) || (gc_time < predict_gc_time(_cycle_start))) {
+    add_gc_time(_cycle_start, gc_time);
   }
 
   size_t available = _space_info->available();
