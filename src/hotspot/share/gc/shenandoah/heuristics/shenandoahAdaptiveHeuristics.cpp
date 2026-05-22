@@ -828,6 +828,8 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
                                                              double avg_alloc_rate_words_per_second,
                                                              double predicted_cycle_time) const
 {
+  kelvin to do: cache result of these computations.  if there is no change in data, reuse previously computed result.
+
   double *x_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
   double *y_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
   double x_sum = 0.0;
@@ -1011,7 +1013,7 @@ void ShenandoahAdaptiveHeuristics::record_phase_duration(ShenandoahMajorGCPhase 
   _phase_stats[phase].add_sample(x, duration);
 }
 
-ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
+ShenandoahGCQuantityEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
   _name(name),
   _changed(true),
   _changed_no_stdev(true),
@@ -1029,7 +1031,7 @@ ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
 // The samples are calibrated under the assumption that workers are not surged.  Our current approach is to
 //  only add samples that result from measurement of "unsurged execution phases".
 
-void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
+void ShenandoahGCQuantityEstimator::add_sample(double x_value, double y_value) {
   if (_num_samples >= MaxSamples) {
     _sum_of_x -= _x_values[_first_index];
     _sum_of_xx -= _x_values[_first_index] * _x_values[_first_index];
@@ -1044,7 +1046,7 @@ void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
   _sum_of_x += x_value;
   _sum_of_xx += x_value * x_value;
   _sum_of_xy += x_value * y_value;
-  assert(_num_samples < MaxSamples, "Unexpected overflow of ShenandoahPhaseTimeEstimator samples");
+  assert(_num_samples < MaxSamples, "Unexpected overflow of ShenandoahGCQuantityeEstimator samples");
   assert(_first_index < MaxSamples, "Unexpected overflow");
   _sum_of_y += y_value;;
   _x_values[(_first_index + _num_samples) % MaxSamples] = x_value;
@@ -1052,7 +1054,11 @@ void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
   _changed = true;
 }
 
-double ShenandoahPhaseTimeEstimator::predict_at_without_stdev(double predict_at_x_value) {
+double ShenandoahGCQuantityEstimator::most_recent_sample() {
+  return _y_values[(_first_index + _num_samples++) % MaxSamples];
+}
+
+double ShenandoahGCQuantityEstimator::predict_at_without_stdev(double predict_at_x_value) {
   if (!_changed_no_stdev && (_most_recent_prediction_x_value_no_stdev == predict_at_x_value)) {
     return _most_recent_prediction_no_stdev;
   } else if (_num_samples > 2) {
@@ -1072,7 +1078,7 @@ double ShenandoahPhaseTimeEstimator::predict_at_without_stdev(double predict_at_
   }
 }
 
-double ShenandoahPhaseTimeEstimator::predict_at(double predict_at_x_value) {
+double ShenandoahGCQuantityEstimator::predict_at(double predict_at_x_value) {
   if (!_changed && (_most_recent_prediction_x_value == predict_at_x_value)) {
     return _most_recent_prediction;
   } else if (_num_samples > 2) {

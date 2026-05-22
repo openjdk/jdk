@@ -34,7 +34,11 @@
 #include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
-class ShenandoahPhaseTimeEstimator {
+// This general purpose linear estimator associates an independent double input value with a predicted double result value.
+// It can be used to predict phase-times, memory sizes, and other values as a function of time.
+
+// Rename to ShenandoahGCQuantityEstimator
+class ShenandoahGCQuantityEstimator {
  private:
   static const uint MaxSamples = 8;
 
@@ -66,6 +70,9 @@ class ShenandoahPhaseTimeEstimator {
   //   average_prediction is average + std_dev, and
   //   linear_prediction is determined best-fit line + std_dev of this calculation
   double predict_at(double independent_value);
+
+  // Return the dependent value for the most recently added sample
+  double most_recent_sample();
 
   double predict_at_without_stdev(double independent_value);
 
@@ -125,6 +132,10 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   // Test whether rate significantly diverges from the computed average allocation rate.  If so, return true.
   // Otherwise, return false.  Significant divergence is recognized if (rate - _rate.avg()) / _rate.sd() > threshold.
   bool is_spiking(double rate, double threshold) const;
+
+  double most_recent_instantaneous() {
+    return _rate.last();
+  }
 
  private:
 
@@ -210,6 +221,12 @@ public:
   2. Implement and test (with logging details and asserts) all of the primitive-data collecting routines
   3. Implement the enhanced triggering decisions, and test on Extremem and on specjbb and on complete CI test suite.
 
+  Progress:
+  1. I have implemeneted the primitive data functions
+  2. Next, I need to insert instrumentation into the primitive data functions
+  3. Then, I will insert invocations of the primitive data functions
+  4. Then I will modify the non-primitive functions to use the new primitive infrastructure
+
 
   Primitive functions:
 
@@ -218,58 +235,76 @@ public:
 
   // Returns the most recently logged value
   size_t marked_young_words()
+
   // Uses linear prediction to predict a future value
   size_t predict_marked_young_words(double at_gc_start_tiem);
 
   // The stable remset is the size of remset minus the transient burst size
   // feeds into predict_mark_time()
-  void log_stable_remset_WORDS(double at_gc_start_time, size_t remset_words);
-  // Uses linear prediction to predicat a future value
+  void log_stable_remset_words(double at_gc_start_time, size_t remset_words);
+
+  // Uses linear prediction to predict a future value
   size_t predict_stable_remset_words(double at_gc_start_time);
 
   // A remset burst size is the size by which the remset has grown due to the most recent cycle's old evacuations and promotions,
   // including promotions in place.  All of this data is identified as DIRTY.
   // feeds into predict_mark_time()
   void log_burst_remset_words(size_t remset_words);
-  size_t predict_burst_remset_words();
+
+  size_t most_recent_burst_remset_words();
+
+  // Log the start of old GC marking
+  void log_start_of_old_marking();
+
+  // How many words in old need to be updated, worst case
+  size_t total_old_update_words();
 
   // At tne end of evacuation, log words promoted by evacuation.  This is the growth of old used minus the live data promoted in
   // place.  This is more accurate that promotion reserve.
   void log_words_promoted_by_evacuation(size_t words_promoted);
-  size_t words_promoted_by_evacuation();
+  size_t most_recent_words_promoted_by_evacuation();
+
+  // At end of choose_collection_set(), call this to identify how many regions will be promoted in place
+  void log_words_promoted_in_place(size_t promote_in_place_words))
+  void most_recent_words_promoted_in_place()
 
   // Words evacuated from young to young
   void log_young_evacuation_words(double at_gc_start_time, size_t young_words_evacuated)
   size_t predict_young_evacuation_words(double at_gc_start_time);
 
-  // At end of choose_collection_set(), call this to identify how many regions will be promoted in place
-  void log_words_promoted_in_place(size_t promote_in_place_words))
-  void words_promoted_in_place()
-
   // At the end of marking, we record how much memory was allocated during marking.  This represents an additional "floating
   // garbage" workload that needs to be processed during update refs.
-  size_t log_words_allocated_during_mark(size_t words_allocated)
-  size_t words_allocated_during_mark()
+  size_t log_words_allocated_during_mark((size_t words_allocated)
+  size_t most_recent_words_allocated_during_mark()
 
-  // At the end of old marking, we update marked words in old.  This has the side effect of setting recently_promoted_words
-  // to zero.
-  void log_marked_old_words(size_t words_marked)
-  size_t marked_old_words();
+  // At the end of old marking, we update marked words in old.  This includes only the marked words.  It does not include
+  // words that were promoted during concurrent marking. This has the side effect of setting recently_promoted_words
+  // to represent words promoted during concurrent old marking (words above TAMS within old-gen regions).
+  void log_marked_old_words(double at_old_gc_start_time, size_t words_marked, size_t words_promoted_during_mark)
+
+  // Returns most recently logged value of words_marked
+  size_t most_recently_marked_old_words();
+
+  // Returns prediction of how much live data will be marked in old during next old-gen GC
+  size_t predict_marked_old_words(double at_old_gc_start_time);
 
   // At the start of each evacuation, we add to the total of recently_promoted_words.  Doing this at final mark allows
   // simpler invocations of predict_update_time().  Note that recently_promoted includes promotion_reserve plus planned
   // promotion in place.
-  void add_to_recently_promoted_words(size_t recently_promoted)
+  void add_to_words_promoted_since_start_of_old_gc(size_t recently_promoted);
 
   // At the end of evacuation, we decrease recently_promoted_words by the unexpended promotion reserve.
   void subtract_from_recently_promoted_words(size_t recently_not_promoted)
-  size_t recently_promoted_words()
-  
 
+  size_t words_promoted_since_start_of_old_gc();
 
   Nonprimitive functions:
+
+kelvin is here
+
   // processed_words is sum of marked_young_words plus stable_remset_words plus burst_remset_words
-  void log_gc_mark_time(double at_gc_start_time, long processed_words, double mark_time)
+  void log_gc_mark_time(double at_gc_start_time, size_t marked_young_words, size_t stable_remset_words, size_t burst_remset_words,
+                        double mark_time);
 
   // prediction based on sum of predict_marked_young_words() plus predict_stable_remset_words() plus predict_burst_remset_words()
   double predict_mark_time(double at_gc_start_time)
@@ -289,13 +324,15 @@ public:
    // in place is easier than promotion by evacuation, even including the extra costs to be paid during update references
    // to coalesce and fill the pip region. Here, we predict that all promotion is performed by evacuation. Thus, this 
    // represents a conservative approxmation of evacuation time.
-   double predict_evac_time(double at_gc_start_time)
+   double predict_evac_time_before_trigger(double at_gc_start_time)
 
-   // Use this to predict evacuation time component after we have completed marking.  After marking, we know "exactly" how
-   // may words will be evacuated.  This is the sum of all live data for regions in the collection set.  Our linear prediction
-   // model does not distinguish between words targeting young and old generations (for simplicity, even though it appears
-   // that words evacuated to old generation are more expensive than words evacuated to young generation).
-   double predict_evac_time(size_t words_to_be_evacuated, words_to_be_promoted_in_place)
+   // Use this to predict evacuation time component after we have completed marking. We use this prediction to assess whether
+   // it is necessary to surge GC workers. After marking, we know "exactly" how/ many words will be evacuated. This is the
+   // sum of all live data for regions in the collection set. Our linear prediction model does not distinguish between words
+   // targeting young and old generations (for simplicity, even though it appears that words evacuated to old generation are
+   // more expensive than words evacuated to young generation). The linear prediction model does recognize that it is easier
+   // to promote words in place than to promote by evacuation.
+   double predict_evac_time_after_mark(size_t words_to_be_evacuated, words_to_be_promoted_in_place)
 
    // At GC trigger time, we call this with conservative parameter values:
    //               anticipated_live_young: predict_marked_young_words(at_gc_start_time) - 
@@ -471,11 +508,48 @@ public:
 
 protected:
   // Use this to estimate how much time will be required for future mark, evac, update, final-roots phases.
-  ShenandoahPhaseTimeEstimator _phase_stats[ShenandoahMajorGCPhase::_num_phases] = {
-    ShenandoahPhaseTimeEstimator("mark"),
-    ShenandoahPhaseTimeEstimator("evac"),
-    ShenandoahPhaseTimeEstimator("update"),
-    ShenandoahPhaseTimeEstimator("final-roots") };
+
+  ShenandoahGCQuantityEstimator _phase_stats[ShenandoahMajorGCPhase::_num_phases] = {
+    // input: total words processed (remset size + live marked words; output: time to mark young
+    ShenandoahGCQuantityEstimator("mark"),
+    // input: total words processed (evac to young, evac to old, scaled promoted-in-place; output: time to evacuate
+    ShenandoahGCQuantityEstimator("evac"),
+    // input: total words processed (remsets, non-collected memory, etc); output: time to update
+    ShenandoahGCQuantityEstimator("update"),
+    // input: total words processed (words promoted in place); output: time to do final roots
+    ShenandoahGCQuantityEstimator("final-roots") };
+
+  // input: uptime at start of young gc, output: anticipated marked words
+  ShenandoahGCQuantityEstimator _marked_young_words("marked_young_words");
+  // input: uptime at start of old gc, output: anticipated marked old words
+  ShenandoahGCQuantityEstimator _marked_old_words("marked_old_words");
+  // input: uptime st start of young gc, output: ancicipated words in stable remembered set
+  ShenandoahGCQuantityEstimator _stable_remset_words("stable_remset_wrods");
+  // input: uptime at start of young gc, output: anticipated words evacuated from young to young
+  ShenandoahGCQuantityEstimator _words_evacuated_from_young_to_young("evacuation_from_young_to_young");
+  
+  size_t _burst_of_remset_words;
+  size_t _words_promoted_by_evacuation;
+  size_t _words_promoted_in_place;
+  size_t _words_allocated_during_mark;
+
+  // "Live" memory in old is represented by
+  //   _words_marked_by_old + _words_promoted_since_start_of_completed_old_gc;
+  // Important to initialize to zero.
+  size_t _words_marked_by_old = 0;
+
+  // At the start of marking, we reset _words_promoted_during_old_gc to zero.
+  //
+  // At the end of each GC cycle, we increment both _words_promoted_during_old_gc and
+  // _words_promoted_since_start_of_completed_old_gc by the promoted words. Updating _words_promoted_during_old_gc
+  // is only useful if we are concurrently marking old. It is a don't care at other times.  Easier to always update
+  // than to decide when the update is necessary.
+  //
+  // Each time we finish old marking:
+  //  We overwrite _words_marked_by_old with updated value, and
+  //  We copy _words_promoted_during_old_gc to _words_promoted_since_start_of_completed_old_gc
+  size_t _words_promoted_during_old_gc;
+  size_t _words_promoted_since_start_of_completed_old_gc;
 
   // Used to record the last trigger that signaled to start a GC.
   // This itself is used to decide whether or not to adjust the margin of
@@ -484,6 +558,237 @@ protected:
   enum Trigger {
     SPIKE, RATE, OTHER
   };
+
+#define KELVIN_PRIMITIVES
+
+#ifndef KELVIN_REPLACE_DEPRECATED
+
+  // We maintain a history of young words marked for the purpose of predicting future young-gc mark times.
+  void log_marked_young_words(double at_gc_start_time, size_t words_marked) {
+    _marked_young_words.add_sample(at_gc_start_time, (double) words_marked);
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("log_marked_young_words(at_gc_start_time: %.3f, words_marked: %zu)",
+                 at_gc_start_time, words_marked);
+#endif
+  }
+
+  // Predict how many young words will be marked in the next GC cycle as a function of when the next GC cycle will begin.
+  // This assumes a linear model, returning max of average and linear prediction plus stdev.
+  size_t predict_marked_young_words(double gc_start_time) {
+    // Learning cycles generally prime prediction of marked young words
+    size_t result = (siz_t) _marked_young_words.predict_at(gc_start_time);
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("predict_marked_young_words(gcc_start_time: %.3f) returns  %zu)",
+                 gc_start_time, result);
+#endif
+    return result;
+  }
+
+  // The stable remset is the size of remset minus the transient burst size.  The transient burst in remset size corresponds
+  // to the most recent GC cycle's evacuation into old.  All newly populated old-gen memory is assumed to be dirty.  We account
+  // for ths transient burst of remset memory separately from the size of stable remset.  The stable remset is modeled by
+  // linear prediction.  The stable remset_words is computed by subtracting most_recent_burst_remset_words() from the total
+  // scanned remset words at the end marking.
+  void log_stable_remset_words(double at_gc_start_time, size_t remset_words) {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("log_stable_resmset_words(at_gc_start_time: %.3f, remset_words: %zu)",
+                 at_gc_start_time, remset_words);
+#endif
+    _stable_remset_words.add_sample(at_gc_start_time, (double) remset_words);
+  }
+
+  // Uses linear prediction to estimate the size of the stable remset, returning max of average and linear prediction, plus
+  // stdev.
+  size_t predict_stable_remset_words(double gc_start_time) {
+    size_t result = (size_t) _stable_remset_words.predict_at(gc_start_time);
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("predict_stable_remset_words(gcc_start_time: %.3f) returns  %zu",
+                 gc_start_time, result);
+#endif
+    return result;
+  }
+
+  // A remset burst size is the size by which the remset has grown due to the most recent cycle's old evacuations and promotions,
+  // including promotions in place.  All of this data is identified as DIRTY.  This quantity does not use a linear prediction
+  // model.  Rather, it remembers only the amount of memory that was evacuated into old during the previous GC cycle.
+  void log_burst_remset_words(size_t remset_words) {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("log_burst_remset_words(remset_words: %zu)", remset_words);
+#endif
+    _burst_of_remset_words = remset_words;
+  }
+
+  // Return the value most recently stored by log_burst_remset_words()
+  size_t most_recent_burst_remset_words() {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("most_recent_burest_remset_words() returns %zu", _burst_of_reset_words);
+#endif
+    return _burst_of_remset_words;
+  }
+
+  // At tne end of evacuation, log words promoted by evacuation.
+  // For regular (not mixed) cycles This is the growth of old used minus the live data promoted in place.
+  // For mixed cycles, this is calculated using the following:
+  //   expected_old_gen_used = original_old_gen_used - collection_set->get_old_garbage()
+  //   total_promotion = new_old_gen_used - expected_old_gen_used
+  //   promoted_by_evacuation = total_promotion - in_place_promotion
+  // Note that mixed evacuation reduces used within old, but it does not affect live within old.
+  void log_words_promoted_by_evacuation(size_t words_promoted) {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("log_words_promoted_by_evacuation(words_promoted: %zu)", words_promoted);
+#endif
+    _words_promoted_by_evacuation = words_promoted;
+    _words_promoted_during_old+gc += words_promoted;
+    _words_promoted_since_start_of_completed_old_gc += words_promoted;
+  }
+
+  size_t most_recent_words_promoted_by_evacuation() {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("most_recent_words_promoted_by_evacuation() returns %zu", _wors_promoted_by_evacuation);
+#endif
+    return _words_promoted_by_evacuation;
+  }
+
+  void log_words_promoted_in_place(size_t promote_in_place_words) {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("log_words_promoted_in_place(promote_in_place_words: %zu", promote_in_place_words);
+#endif
+    _words_promoted_in_place = promote_in_place_words;
+    _words_promoted_during_old+gc += promote_in_place_words;
+    _words_promoted_since_start_of_completed_old_gc += promote_in_place_words;
+  }
+
+  size_t most_recent_words_promoted_in_place() {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("most_recent_words_promoted_in_place() returns %zu", _words_promoted_in_place);
+#endif
+    return _words_promoted_in_place;
+  }
+
+  void log_young_evacuation_words(double at_gc_start_time, size_t young_words_evacuated) {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("log_young_evacuation_words(at_gc_start_time: %.3f, young_words_evacuated: %zu)"
+                 at_gc_start_time, young_words_evacuated);
+#endif
+    _words_evacuated_from_young_to_young.add_sample(at_gc_start_time, (double) young_words_evacuated);
+  }
+
+  size_t predict_young_evacuation_words(double gc_start_time) {
+    size_t result = (size_t) _words_evacuated_from_young_to_young.predict_at(gc_start_time);
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("predict_young_evacuation_words(gc_start_time: %.3f) returns %zu", gc_start_time, result);
+#endif
+    return result;
+  }
+  
+  void log_start_of_old_marking() {
+    _words_promoted_during_old_gc = 0;
+  }
+
+  void log_words_allocated_during_mark(size_t words_allocated) {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("log_words_alloaated_during_mark(%zu)", words_allocated);
+#endif
+    _words_allocated_during_mark = words_allocated;
+  }
+
+  size_t most_recent_words_allocated_during_mark() {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("most_recent_words_allocated_during_mark() returns %zu", _words_allocated_during_mark);
+#endif
+    return _words_allocated_during_mark;
+  }
+
+  void log_marked_old_words(double at_old_gc_start_time, size_t words_marked, words_promoted_during_mark) {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("log_marked_old_words(at_old_gc_start_time: %.3f, words_marked: %zu, words_promoted_during_mark: %zu)",
+                 at_old_gc_start_time, words_marked, words_promoted_during_mark);
+#endif
+    _marked_old_words.add_sample(at_old_gc_start_time, (ddouble) words_marked);
+    _words_promoted_since_start_of_completed_old_gc = words_promoted_during_old_gc;;
+  }
+
+  size_t most_recent_marked_old_words() {
+    size_t result = (size_t) _marked_old_words.most_recent_sample();
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("most_recent_marked_old_words) returns %zu", result);
+#endif
+    return result;
+  }
+
+  size_t total_old_update_words() {
+    return _words_marked_by_old + _words_promoted_since_start_of_completed_old_gc;
+  }
+
+  size_t predict_marked_old_words(double old_gc_start_time) {
+    size_t result = (size_t) _marked_old_words.predict_at(old_gc_start_time);
+    // Learning cycles may not have primted the prediction of old marked words.  If there is not history upon which
+    // to predict old marked words, assume all of old is live.
+    if (result == 0) {
+      ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+      assert(heap->mode()->is_generational(), "Do not queury old marked words unless genertional");
+      ShenandoahOldGeneration*  old_gen = heap->old_generation();
+      size_t old_used = old_gen->used();
+      result = old_used;
+    }
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("predict_marked_old_words(%.3f) results %zu", old_gc_start_time, result);
+#endif
+    return result;
+  }
+
+  // At the start of each evacuation, we add to total recently_promoted_words the sum of promoted_reserve and live words in
+  // planned promote-in-place regions.  Doing this at final mark allows simpler invocations of predict_update_time() during
+  // evacuation.
+  void add_to_words_promoted_since_start_of_old_gc(size_t planned_promotion) {
+    _words_promoted_since_start_of_old_gc += planned_promotion;
+    _words_promoted_during_old_gc += planned_promotion;
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("add_to_words_promoted_since_start_of_old_gc(planned_promotion: %zu), total: %zu",
+                 planned_promotion, _words_promoted_since_start_of_old_gc);
+#endif
+  }
+
+  // At the end of evacuation, we decrease recently_promoted_words by the unexpended promotion reserve.  We proably over-budgeted
+  // at the start of evacuation because some of the promotion potential may reside in regions that were not selected for the
+  // collection set and/or some of the planned promotions may fail.
+  void subtract_from_recently_promoted_words(size_t recently_not_promoted) {
+    assert(_words_promoted_since_start_of_old_gc > recently_not_promoted,
+           "Expect _words_promoted_since_start_of_old_gc (%z8) > recently_not_promoted (%zu)",
+           _words_promoted_since_start_of_old_gc, recently_not_promoted);
+    assert(_words_promoted_during_old_gc > recently_not_promoted,
+           "Expect _words_promoted_since_start_of_old_gc (%z8) > recently_not_promoted (%zu)",
+           _words_promoted_since_start_of_old_gc, recently_not_promoted);
+    _words_promoted_since_start_of_old_gc -= recently_not_promoted;
+    _words_promoted_during_old_gc -= recently_not_promoted;
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("subtract_from_recently_promoted_words(recently_not_promoted: %zu), total: %zu",
+                 recently_not_promoted, _words_promoted_since_start_of_old_gc);
+#endif
+  }
+
+  // At the end of evacuation, we decrease recently_promoted_words by the unexpended promotion reserve.  We proably over-budgeted
+  // at the start of evacuation because some of the promotion potential may reside in regions that were not selected for the
+  // collection set and/or some of the planned promotions may fail.
+
+  // It is also possible (in the current implementation) that we will promote more words than the anticipated budget.  This
+  // may happen if there are opportunistic promotions from regions that do not reside within aged regions.
+  void add_to_recently_promoted_words(size_t excess_recently_promoted) {
+    _words_promoted_since_start_of_old_gc += excess_recently_promoted;
+    _words_promoted_during_old_gc += excess_recently_promoted;
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("add_to_recently_promoted_words(excess_recently_promoted: %zu), total: %zu",
+                 excess_recently_promoted, _words_promoted_since_start_of_old_gc);
+#endif
+  }
+
+
+  size_t words_promoted_since_start_of_most_recently_completed_old_gc() {
+#ifdef KELVIN_PRIMITIVES
+    log_info(gc)("words_promoted_since_start_of_old_gc() returns %zu", _words_promoted_since_start_of_old_gc);
+#endif
+    return _words_promoted_since_start_of_old_gc;
+  }
 
   void record_success_concurrent() override;
 
@@ -550,6 +855,8 @@ protected:
   double predict_update_time(size_t anticipated_update_words) override;
   double predict_final_roots_time(size_t pip_words) override;
 
+#ifdef  KELVIN_DEPRECATE
+
   double predict_gc_time(size_t mark_words) override;
 
   inline size_t get_anticipated_mark_words() {
@@ -575,6 +882,216 @@ protected:
   inline size_t get_anticipated_update_words() {
     return _anticipated_update_words;
   }
+#else
+
+  // processed_words is sum of marked_young_words plus stable_remset_words plus burst_remset_words
+  void log_gc_mark_time(double at_gc_start_time, size_t marked_young_words, size_t stable_remset_words, size_t burst_remset_words,
+                        double mark_time) {
+    log_marked_young_words(at_gc_start_time, marked_young_words);
+    log_stable_remset_words(at_gc_start_time, stable_remset_words);
+    log_burst_remset_words(at_gc_start_time, burst_remset_words);
+    size_t total_processed_words = marked_young_words + stable_remset_words + burst_remset_words;
+    record_phase_duration(ShenandoahMajorGCPhase::_mark, total_processed_words, mark_time);
+  }
+
+  double predict_mark_time(double gc_start_time) {
+    size_t anticipated_mark_words = predict_marked_young_words(gc_start_time);
+    size_t anticipated_stable_remset_words = predict_stable_remset_words(gc_start_time);
+    size_t burst_remset_words = most_recent_burst_remset_words();
+    size_t anticipated_mark_words = anticipated_mark_words + anticipated_stable_remset_words + burst_remset_words;
+    return predict_mark_time(anticipated_mark_words);
+  }
+
+  // Adaptive heuristics do not normally trigger global GC. However, after we have accepted a GC trigger, we may
+  // discover that we need to perform a global GC.  With this new knowledge, we recalculate anticipated GC time.
+  // The new mark time will be larger than the trigger-specific calculation of mark time because we now know that
+  // all of old generation must also be marked. Other GC phases will also be affected. Since we are likely to evacuate
+  // both young and old regions, we will need to update all of old generation rather than only the remembered set.
+  double predict_global_mark_time_after_trigger(double gc_start_time) {
+    // For global marking, we do not use remembered set.  We mark everything starting from roots.
+    size_t anticipated_mark_words = predict_marked_young_words(gc_start_time) + predict_marked_old_words(gc_start_time);
+    return predict_mark_time(anticipated_mark_words);
+  }
+
+  // The linear prediction model predicts evacuation time as a function of total words evacuated.  We sum the first three
+  // arguments to represent the independenet value.  evacuation_time is the dependent value.  Predictions include a stdev from
+  // the best-fit line. This logs the time spent in evacuation in relation to the total evacuation workload.  It also logs
+  // the individual evacuation quantities for purposes of predicting future values of these quantities.
+
+  // Caller has to compute words_evacuated_to_old_from_old from cset->get_old_bytes_reserved_for_evacuation() / HeapWordSize;
+  // growth_of_old is measured from change in old_generation->used()
+  //   consult most_recent_words_promoted_in_place() to determine live_memory_contained_in_pip_regions
+  //   promotion_by_evacuation = growth_of_old - (words_evacuated_to_old_from_old + live_memory_contained_in_pip_regions)
+  // words_promoted_in_place = most_recent_words_promoted_in_place()
+
+  voId log_gc_evac_time(double start_gc_time,
+                        size_t words_evacuated_to_young, size_t words_promoted_by_evacuation, size_t words_evacuated_to_old,
+                        size_t words_promoted_in_place, double evacuation_time) {
+    log_young_evacuation_words(start_gc_time, words_evcuated_to_young);
+    log_most_recent_words_promoted_by_evacuation(words_promoted_by_evacuation);
+    log_most_recent_words_promoted_in_place(words_promoted_in_place);
+    log_burst_remset_words(words_promoted_by_evacuation + words_evacuated_to_old + words_promoted_in_place);
+    // evacuated words are 5x heavier than promoted-in-place words according to our linear prediction model.
+    size_t total_workload =
+      5 * (words_evacuated_to_young + words_promoted_by_evacuation + words_evacuated_to_old) + words_promoted_in_place;
+    record_phase_duration(ShenandoahMajorGCPhase::_evac, total_workload, evac_time);
+  }
+
+   // Use this to predict evacuation time component of an anticipated GC cycle (before we have completed marking)
+   // The estimate is based on the total anticipated evacuation load, which is the sum of:
+   //     old_generation->get_promoted_reserve() / ShenandoahPromoEvacWaste, plus
+   //     old_generation->get_evacuation_reserve() / ShenandoahOldEvacWaste, plus
+   //     predict_young_evacuation_words(at_gc_start_time)
+   // Note that old_generation->get_promoted_reserve() includes promotions that may be implemented "in place".  Promotion
+   // in place is easier than promotion by evacuation, even including the extra costs to be paid during update references
+   // to coalesce and fill the pip region. Here, we predict that all promotion is performed by evacuation. Thus, this 
+   // represents a conservative approxmation of evacuation time.
+  double predict_evac_time_before_trigger(double at_gc_start_time) {
+    size_t anticipated_young_evac_words = predict_young_evacuation_words(at_gc_start_time);
+    ShenandoahGenerationHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
+    size_t anticipated_promo_evac_words  (old_gen->get_promoted_reserve() * 100) / ShenandoahPromoEvacWaste;
+    size_t anticipated_old_evac_words = (old_gen->get_evacuation_reserve() * 100) / ShenandoahOldEvacWaste;
+    return predict_evac_time(anticipated_young_evac_words + anticipated_promo_evac_words + anticipated_old_evac_words, 0UL);
+  }
+
+   // Use this to predict evacuation time component after we have completed marking. We use this prediction to assess whether
+   // it is necessary to surge GC workers. After marking, we know "exactly" how/ many words will be evacuated. This is the
+   // sum of all live data for regions in the collection set. Our linear prediction model does not distinguish between words
+   // targeting young and old generations (for simplicity, even though it appears that words evacuated to old generation are
+   // more expensive than words evacuated to young generation). The linear prediction model does recognize that it is easier
+   // to promote words in place than to promote by evacuation.
+  double predict_evac_time_after_mark(size_t words_evacuated_to_young, size_t words_promoted_by_evacuation,
+                                      size_t words_evacuated_to_old, size_t words_to_be_promoted_in_place) {
+    return predict_evac_time(words_evacuated_to_young + words_promoted_by_evacuation + words_evacuated_to_old,
+                             words_to_be_promoted_in_place);
+  }
+
+  void log_update_time(size_t total_remset_words, size_t young_updated_words, size_t old_updated_words, double update_time) {
+    assert((burst_remset_words + stable_remset_words == 0) || (old_updated_words == 0),
+           "Do not scan remembered set during update of mixed evacuation");
+    assert(total_remset_words > most_recent_burst_remset_words(), "Sanity");
+    size_t stable_remset_words = total_remset_words - most_recent_burst_remset_words();
+
+    size_t total_update_words = burst_remset_words + stable_remset_words + young_updated_words + old_updated_words;
+    record_phase_duration(ShenandoahMajorGCPhse::_update, total_update_words, update_time);
+  }
+
+   // The linear prediction model is based on the total number of words to be evacuated.  This is computed as:
+   //    (anticipated_live_young + anticipated_floating_garbage_young - anticipated_young_evacuated) +
+   //    (anticipated_live_old + anticipated_words_promoted_in_place - anticipated_old_evacuated) +
+   //    anticipated_old_remset_words
+   // We assert that (anticipated_old_remset_words == 0) || (anticipated_old_evacuated == 0) 
+  double  predict_update_time_before_trigger(double at_gc_start_time, double predicted_mark_time) {
+    size_t anticipated_young_evac = predict_young_evacuation_words(at_gc_start_time);
+    size_t anticipated_young_marked = predict_marked_young_words(at_gc_start_time);
+
+    double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+    size_t anticipated_allocations = avg_alloc_rate * predicted_mark_time;
+    // This is a bit imprecise, as we don't know when the most recent instantaneous rate was "sampled". We want to make
+    // conservative approximations here, so consider it anyway.
+    double instantaneous_rate = _allocation_rate.most_recent_instantaneous();
+    bool is_spiking = _allocation_rate.is_spiking(instantaneous_rate, _spike_threshold_sd);
+    if (is_spiking) {
+      size_t instantaneous_allocations = instantaneous_rate * predicted_mark_time;
+      if (instantaneous_allocations > anticipated_allocations) {
+        anticipated_allocations = instantaneous_allocations;
+      }
+    }
+    double acceleration;
+    double momentary_rate;
+    size_t accelerated_allocations = accelerated_consumption(acceleration, momentary_rate,
+                                                             avg_alloc_rate / HeapWordSize, predicted_mark_time);
+    if (accelerated_allocations > anticipated_allocations) {
+      anticipated_allocations = accelerated_allocations;
+    }
+
+    // The burst remset inherited from previous GC cycle will have been processed and eliminated by the time we update.
+    size_t anticipated_steady_remset = predict_stable_remset_words(at_gc_start_time);
+
+    ShenandoahGenerationHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
+    size_t anticipated_promotions = (old_gen->get_promoted_reserve() * 100) / ShenandoahOldEvacWaste;
+    size_t anticipated_old_evac_words = (old_gen->get_evacuation_reserve() * 100) / ShenandoahOldEvacWaste;
+    bool is_mixed = (anticipated_old_evac_words > 0)?
+    if (is_mixed) {
+      size_t old_live = most_recent_marked_old_words() + words_promoted_since_start_of_most_recently_completed_old_gc();
+      size_t anticipated_old_update = (old_live - anticipated_old_evac) + anticipated_promotions;
+      size_t total_update_words =
+        (anticipated_young_marked - anticipated_young_evac) + anticipated_allocations + anticipated_old_update;
+
+      return predict_update_time(total_update_words);
+    } else {                    // Regular young GC is not mixed
+      size_t total_update_words =
+        (anticipated_young_marked - anticipated_young_evac) + anticipated_allocations + anticipated_steady_remset;
+    }
+  }
+
+  // After trigger, we might know this is a global GC.  So adjust our estimage of duration.
+  size_t predict_global_update_time_after_trigger(double at_gc_start_time) {
+    // same as predict_update_time_before_trigger() with mixed evac
+    size_t anticipated_young_evac = predict_young_evacuation_words(at_gc_start_time);
+    size_t anticipated_young_marked = predict_marked_young_words(at_gc_start_time);
+
+    double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+    size_t anticipated_allocations = avg_alloc_rate * predicted_mark_time;
+    // This is a bit imprecise, as we don't know when the most recent instantaneous rate was "sampled". We want to make
+    // conservative approximations here, so consider it anyway.
+    double instantaneous_rate = _allocation_rate.most_recent_instantaneous();
+    bool is_spiking = _allocation_rate.is_spiking(instantaneous_rate, _spike_threshold_sd);
+    if (is_spiking) {
+      size_t instantaneous_allocations = instantaneous_rate * predicted_mark_time;
+      if (instantaneous_allocations > anticipated_allocations) {
+        anticipated_allocations = instantaneous_allocations;
+      }
+    }
+    double acceleration;
+    double momentary_rate;
+    size_t accelerated_allocations = accelerated_consumption(acceleration, momentary_rate,
+                                                             avg_alloc_rate / HeapWordSize, predicted_mark_time);
+    if (accelerated_allocations > anticipated_allocations) {
+      anticipated_allocations = accelerated_allocations;
+    }
+
+    // The burst remset inherited from previous GC cycle will have been processed and eliminated by the time we update.
+    size_t anticipated_steady_remset = predict_stable_remset_words(at_gc_start_time);
+
+    ShenandoahGenerationHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
+    size_t anticipated_promotions = (old_gen->get_promoted_reserve() * 100) / ShenandoahOldEvacWaste;
+
+    // Assume sharing of young and old evac reserves.  Anything not consumed by anticipated_young_evac will be
+    //  evacuated from old, approximately.
+    size_t anticipated_old_evac_words =
+      (old_gen->get_evacuation_reserve() + young_gen->get_evacuation_reserve()
+       - anticipated_young_evac * ShenandoahEvacWaste / 100) * 100) / ShenandoahOldEvacWaste;
+
+    size_t old_live = most_recent_marked_old_words() + words_promoted_since_start_of_most_recently_completed_old_gc();
+    size_t anticipated_old_update = (old_live - anticipated_old_evac) + anticipated_promotions;
+    size_t total_update_words =
+      (anticipated_young_marked - anticipated_young_evac) + anticipated_allocations + anticipated_old_update;
+
+    return predict_update_time(total_update_words);
+  }
+
+  size_t predict_update_time_after_mark() {
+    // now we know exactly how much old, young, allocated_during_mark, etc to be updated.
+    size_t young_evac = collection_set->get_live_bytes_in_untenurable_regions() / HeapWordSize;
+    size_t young_promo = collection_set->get_live_bytes_in_tenurable_regions() / HeapWordSize;
+    size_t old_evac = collection_set->get_live_bytes_in_old_regions() / HeapWordSize;
+
+    size_t young_live = ;
+
+    // kelvin to do: what if we just started 
+
+    size_t old_live = most_recent_marked_old_words() + words_promoted_since_start_of_most_recently_completed_old_gc();
+
+  }
+
+
+
+#endif
+
 
   ShenandoahFreeSet* _free_set;
 

@@ -219,6 +219,9 @@ void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPl
   old_generation->set_evacuation_reserve(old_evacuation_reserve);
   old_generation->set_promoted_reserve(old_promo_reserve);
 
+  size_t anticipated_words_promoted_by_evac = (size_t) (old_evac_reserve / ShenandoahPromoEvacWaste);
+  add_to_words_promoted_since_start_of_old_gc(anticipated_words_promoted_by_evac);
+
   // There is no need to expand OLD because all memory used here was set aside at end of previous GC, except in the
   // case of a GLOBAL gc.  During choose_collection_set() of GLOBAL, old will be expanded on demand.
 }
@@ -337,6 +340,7 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
   size_t regular_regions_promoted_live_words =
     (in_place_promotions.regular_region_stats().usage - in_place_promotions.regular_region_stats().garbage) / HeapWordSize;
   heap->old_generation()->set_expected_in_place_promotable_regular_region_live_data_words(regular_regions_promoted_live_words);
+  log_words_promoted_in_place(regular_regions_promoted_live_words + humongous_live_words_promoted);
 
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
   ShenandoahTracer::report_evacuation_info(collection_set,
