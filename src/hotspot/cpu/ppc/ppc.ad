@@ -3712,36 +3712,6 @@ frame %{
   //    4 what apparently works and saves us some spills.
   return_addr(STACK 4);
 
-  c_return_value %{
-    assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
-            (ideal_reg == Op_RegN && CompressedOops::base() == nullptr && CompressedOops::shift() == 0),
-            "only return normal values");
-    // enum names from opcodes.hpp
-    static int typeToRegLo[Op_RegL+1] = {
-      0,              // Op_Node
-      0,              // Op_Set
-      R3_num,         // Op_RegN
-      R3_num,         // Op_RegI
-      R3_num,         // Op_RegP
-      F1_num,         // Op_RegF
-      F1_num,         // Op_RegD
-      R3_num,         // Op_RegL
-    };
-
-    static int typeToRegHi[Op_RegL+1] = {
-      0,              // Op_Node
-      0,              // Op_Set
-      OptoReg::Bad,   // Op_RegN
-      OptoReg::Bad,   // Op_RegI
-      R3_H_num,       // Op_RegP
-      OptoReg::Bad,   // Op_RegF
-      F1_H_num,       // Op_RegD
-      R3_H_num        // Op_RegL
-    };
-
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
-  %}
-
   // Location of compiled Java return values.  Same as C
   return_value %{
     assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
