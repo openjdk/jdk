@@ -102,18 +102,19 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator,
 }
 
 void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                               bool cancellable, bool string_dedup, StringDedup::Requests* const req) {
-  if (cancellable) {
-    if (string_dedup) {
-      mark_loop<true, true>(worker_id, terminator, generation_type, req);
+                               bool cancellable, bool string_dedup) {
+  if (string_dedup) {
+    StringDedup::Requests req;
+    if (cancellable) {
+      mark_loop<true, true>(worker_id, terminator, generation_type, &req);
     } else {
-      mark_loop<true, false>(worker_id, terminator, generation_type, req);
+      mark_loop<false, true>(worker_id, terminator, generation_type, &req);
     }
   } else {
-    if (string_dedup) {
-      mark_loop<false, true>(worker_id, terminator, generation_type, req);
+    if (cancellable) {
+      mark_loop<true, false>(worker_id, terminator, generation_type, nullptr);
     } else {
-      mark_loop<false, false>(worker_id, terminator, generation_type, req);
+      mark_loop<false, false>(worker_id, terminator, generation_type, nullptr);
     }
   }
 }

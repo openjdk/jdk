@@ -58,9 +58,7 @@ public:
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
     SuspendibleThreadSetJoiner stsj;
-    StringDedup::Requests requests;
-    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/,
-                   StringDedup::is_enabled(), &requests);
+    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/, StringDedup::is_enabled());
   }
 };
 
@@ -82,7 +80,6 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
 
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    StringDedup::Requests requests;
     // First drain remaining SATB buffers.
     {
       ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
@@ -96,8 +93,7 @@ public:
       ShenandoahFlushSATB tc(satb_mq_set);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
-    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/,
-                   _dedup_string, &requests);
+    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/, _dedup_string);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };

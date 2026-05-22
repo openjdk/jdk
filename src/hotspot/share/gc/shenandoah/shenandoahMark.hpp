@@ -105,7 +105,7 @@ protected:
                 StringDedup::Requests* const req);
 
   void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                 bool cancellable, bool string_dedup, StringDedup::Requests* const req);
+                 bool cancellable, bool string_dedup);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP

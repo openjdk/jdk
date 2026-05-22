@@ -97,6 +97,8 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 }
 
 void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
+  assert(req != nullptr, "Should be available if dedup is enabled");
+
   // Skip if already requested or dedup is forbidden.
   // The overwhelming majority of Strings would be filtered here.
   // These bits are also sticky, so older Strings would be filtered here too.
