@@ -516,7 +516,6 @@ endif
 # Want:
 # c,c++
 # shared libs
-# multilib (-m32/-m64 on x64)
 # skip native language.
 # and link and assemble with the binutils we created
 # earlier, so --with-gnu*
