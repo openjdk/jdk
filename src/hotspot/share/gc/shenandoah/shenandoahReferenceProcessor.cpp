@@ -226,34 +226,40 @@ void ShenandoahRefProcThreadLocal::heal_discovered_list() {
     return;
   }
 
+  // Heal the head of the list first to simplify and avoid extra LRB calls when looping over the list
   ShenandoahBarrierSet* barriers = ShenandoahBarrierSet::barrier_set();
   T* list = reinterpret_cast<T*>(&_discovered_list);
-  while (list != nullptr) {
-    const oop discovered_ref = CompressedOops::decode(*list);
-    if (discovered_ref == nullptr) {
-      break;
-    }
+  const oop raw_reference = CompressedOops::decode(*list);
+  if (raw_reference == nullptr) {
+    return;
+  }
 
-    // The `lrb` static method only operates on marked objects, these references have been discovered
-    // so may not be marked. Here, we need the barrier to handle these possibly unmarked references too.
-    const oop reference = barriers->load_reference_barrier(discovered_ref);
-    if (discovered_ref != reference) {
-      // Update our list with the forwarded object
-      set_oop_field(list, reference);
-    }
+  // The `lrb` static method only operates on marked objects, these references have been discovered
+  // so may not be marked. Here, we need the barrier to handle these possibly unmarked references too.
+  oop healed_reference = barriers->load_reference_barrier(raw_reference);
+  if (raw_reference != healed_reference) {
+    set_oop_field(list, healed_reference);
+  }
 
-    // Discovered list terminates with a self-loop
-    T* next_addr = ShenandoahReferenceProcessor::discovered_addr<T>(reference);
+  // discovered list terminates with self loop (reference.discovered == reference).
+  while (true) {
+    T* next_addr = ShenandoahReferenceProcessor::discovered_addr<T>(healed_reference);
     const oop raw_discovered = CompressedOops::decode(*next_addr);
-    const oop healed_discovered = barriers->load_reference_barrier(raw_discovered);
-    if (reference == healed_discovered) {
-      // Heal the self-loop if it contains a stale (pre-forwarding) pointer
-      if (raw_discovered != healed_discovered) {
-        set_oop_field(next_addr, healed_discovered);
-      }
+    if (raw_discovered == nullptr) {
       break;
     }
-    list = next_addr;
+
+    const oop healed_discovered = barriers->load_reference_barrier(raw_discovered);
+    if (raw_discovered != healed_discovered) {
+      // Update our list with the forwarded object
+      set_oop_field(next_addr, healed_discovered);
+    }
+
+    if (healed_reference == healed_discovered) {
+      // Discovered list terminates with a self-loop
+      break;
+    }
+    healed_reference = healed_discovered;
   }
 }
 
