@@ -306,7 +306,7 @@ public class WindowsHelper {
     }
 
     public static String getExecutableDescription(Path pathToExeFile) {
-        Executor exec = Executor.of("powershell",
+        Executor exec = Executor.of(PowerShellPath(),
                 "-NoLogo",
                 "-NoProfile",
                 "-Command",
@@ -455,7 +455,7 @@ public class WindowsHelper {
         ;
 
         Path getPath() {
-            final var str = Executor.of("powershell", "-NoLogo", "-NoProfile",
+            final var str = Executor.of(PowerShellPath(), "-NoLogo", "-NoProfile",
                     "-NonInteractive", "-Command",
                     String.format("[Environment]::GetFolderPath('%s')", name())
                     ).saveFirstLineOfOutput().execute().getFirstLineOfOutput();
@@ -661,4 +661,11 @@ public class WindowsHelper {
     private static final String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
 
     private static final int WIN_MAX_PATH = 260;
+
+    public static String PowerShellPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        String suffix = "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+        String fullPath = systemRoot == null ? null : systemRoot + suffix;
+        return (fullPath != null && Files.exists(Path.of(fullPath))) ? fullPath : "powershell";
+    }
 }

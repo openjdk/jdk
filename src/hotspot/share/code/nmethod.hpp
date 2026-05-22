@@ -268,26 +268,36 @@ class nmethod : public CodeBlob {
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
 public:
-  union Flags {
-    uint8_t _raw;
-    struct {
-      bool _has_unsafe_access:1;   // May fault due to unsafe access.
-      bool _has_wide_vectors:1;    // Preserve wide vectors at safepoints
-      bool _has_monitors:1;        // Fastpath monitor detection for continuations
-      bool _has_scoped_access:1;   // Used by shared scope closure (scopedMemoryAccess.cpp)
-    };
-    Flags() {
-      _raw = 0;
-    }
-    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) : Flags() {
-      _has_unsafe_access = has_unsafe_access;
-      _has_wide_vectors = has_wide_vectors;
-      _has_monitors = has_monitors;
-      _has_scoped_access = has_scoped_access;
-    }
-  };
+  struct Flags {
+    uint8_t const _bits;
 
-  static_assert(sizeof(Flags) == sizeof(uint8_t), "Must fit exactly");
+    enum : uint8_t {
+      UNSAFE_ACCESS = 1 << 0,
+      WIDE_VECTORS  = 1 << 1,
+      MONITORS      = 1 << 2,
+      SCOPED_ACCESS = 1 << 3
+    };
+
+    Flags() : _bits(0) {}
+    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) :
+      _bits((has_unsafe_access ? UNSAFE_ACCESS : 0) |
+            (has_wide_vectors  ? WIDE_VECTORS  : 0) |
+            (has_monitors      ? MONITORS      : 0) |
+            (has_scoped_access ? SCOPED_ACCESS : 0))
+    {}
+
+    // May fault due to unsafe access
+    bool has_unsafe_access() const { return (_bits & UNSAFE_ACCESS) != 0; }
+
+    // Preserve wide vectors at safepoints
+    bool has_wide_vectors()  const { return (_bits & WIDE_VECTORS)  != 0; }
+
+    // Fastpath monitor detection for continuations
+    bool has_monitors()      const { return (_bits & MONITORS)      != 0; }
+
+    // Used by shared scope closure (scopedMemoryAccess.cpp)
+    bool has_scoped_access() const { return (_bits & SCOPED_ACCESS) != 0; }
+  };
 
 private:
   // Persistent bits, set once during construction.
@@ -779,10 +789,10 @@ public:
   template<typename T>
   void set_gc_data(T* gc_data)                    { _gc_data = reinterpret_cast<void*>(gc_data); }
 
-  bool  has_unsafe_access() const                 { return _flags._has_unsafe_access; }
-  bool  has_monitors() const                      { return _flags._has_monitors; }
-  bool  has_scoped_access() const                 { return _flags._has_scoped_access; }
-  bool  has_wide_vectors() const                  { return _flags._has_wide_vectors; }
+  bool  has_unsafe_access() const                 { return _flags.has_unsafe_access(); }
+  bool  has_monitors() const                      { return _flags.has_monitors(); }
+  bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
+  bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
