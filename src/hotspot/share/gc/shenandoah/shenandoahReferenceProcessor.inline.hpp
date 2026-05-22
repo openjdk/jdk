@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "memory/iterator.hpp"
 #include "oops/compressedOops.inline.hpp"
 
 inline oop ShenandoahReferenceProcessor::lrb(oop obj) {
