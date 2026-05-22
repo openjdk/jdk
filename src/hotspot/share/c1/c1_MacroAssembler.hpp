@@ -50,7 +50,6 @@ class C1_MacroAssembler: public MacroAssembler {
     return scalarized_entry(ces, frame_size_in_bytes, bang_size_in_bytes, sp_offset_for_orig_pc, verified_inline_entry_label, true);
   }
   void verified_entry(bool breakAtEntry);
-
   void verify_stack_oop(int offset) PRODUCT_RETURN;
   void verify_not_null_oop(Register r)  PRODUCT_RETURN;
 

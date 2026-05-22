@@ -277,9 +277,9 @@ class InstructionVisitor: public StackObj {
     return (enabled) ? HASH5(name(), f1, f2, f3, f4) : 0; \
   }                                                   \
   virtual bool is_equal(Value v) const {              \
-    if (!(enabled)  ) return false;                   \
+    if (!(enabled)) return false;                     \
     class_name* _v = v->as_##class_name();            \
-    if (_v == nullptr  ) return false;                   \
+    if (_v == nullptr) return false;                  \
     if (f1 != _v->f1) return false;                   \
     if (f2 != _v->f2) return false;                   \
     if (f3 != _v->f3) return false;                   \
@@ -934,7 +934,8 @@ BASE(AccessIndexed, AccessArray)
   , _length(length)
   , _elt_type(elt_type)
   , _mismatched(mismatched)
-  , _profiled_method(nullptr), _profiled_bci(0)
+  , _profiled_method(nullptr)
+  , _profiled_bci(0)
   {
     set_flag(Instruction::NeedsRangeCheckFlag, true);
     ASSERT_VALUES
@@ -957,7 +958,6 @@ BASE(AccessIndexed, AccessArray)
   bool      should_profile() const                   { return check_flag(ProfileMDOFlag); }
   ciMethod* profiled_method() const                  { return _profiled_method;     }
   int       profiled_bci() const                     { return _profiled_bci;        }
-
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessArray::input_values_do(f); f->visit(&_index); if (_length != nullptr) f->visit(&_length); }
@@ -1182,7 +1182,7 @@ LEAF(IfOp, Op2)
   Condition cond() const                         { return (Condition)Op2::op(); }
   Value tval() const                             { return _tval; }
   Value fval() const                             { return _fval; }
-  bool substitutability_check() const             { return _substitutability_check; }
+  bool substitutability_check() const            { return _substitutability_check; }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { Op2::input_values_do(f); f->visit(&_tval); f->visit(&_fval); }
 };
@@ -1500,7 +1500,7 @@ LEAF(CheckCast, TypeCheck)
  public:
   // creation
   CheckCast(ciKlass* klass, Value obj, ValueStack* state_before)
-  : TypeCheck(klass, obj, objectType, state_before) { }
+  : TypeCheck(klass, obj, objectType, state_before) {}
 
   void set_incompatible_class_change_check() {
     set_flag(ThrowIncompatibleClassChangeErrorFlag, true);
@@ -2073,7 +2073,7 @@ LEAF(If, BlockEnd)
   void set_profiled_method(ciMethod* method)      { _profiled_method = method; }
   void set_profiled_bci(int bci)                  { _profiled_bci = bci;       }
   void set_swapped(bool value)                    { _swapped = value;         }
-  bool substitutability_check() const              { return _substitutability_check; }
+  bool substitutability_check() const             { return _substitutability_check; }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { BlockEnd::input_values_do(f); f->visit(&_x); f->visit(&_y); }
 };

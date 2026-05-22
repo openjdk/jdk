@@ -3679,7 +3679,6 @@ bool LIRGenerator::profile_inline_klass(ciMethodData* md, ciProfileData* data, V
   return true;
 }
 
-
 void LIRGenerator::do_ProfileACmpTypes(ProfileACmpTypes* x) {
   ciMethod* method = x->method();
   assert(method != nullptr, "method should be set if branch is profiled");
