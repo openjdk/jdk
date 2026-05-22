@@ -893,7 +893,7 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
     if (known_independent) {
       // The bases are provably independent: Either they are
       // manifestly distinct allocations, or else the control
-      // of _n dominates the store's allocation.
+      // of _base dominates the store's allocation.
       if (_alias_idx == Compile::AliasIdxRaw) {
         other = st_alloc->in(TypeFunc::Memory);
       } else {
