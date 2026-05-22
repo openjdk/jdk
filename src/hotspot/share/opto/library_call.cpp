@@ -8354,7 +8354,7 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
 
 //------------------------------inline_keccak
 bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
-  address stubAddr;
+  address stubAddr = nullptr;
   const char *stubName;
   assert(UseSHA3Intrinsics, "need SHA3 intrinsics support");
   assert((id == vmIntrinsics::_double_keccak && callee()->signature()->size() == 2) ||
@@ -8371,7 +8371,7 @@ bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
       stubName = "quad_keccak";
       break;
     default:
-      assert(false, "dont call");
+      ShouldNotReachHere();
   }
 
   if (!stubAddr) return false;
