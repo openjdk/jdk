@@ -61,6 +61,8 @@ public class MultiPixelPackedSampleModelConstructor {
         new Args4(TYPE_BYTE, 1, 1, 3, RasterFormatException.class),
         new Args4(TYPE_BYTE, 1, 1, 4, null),
         new Args4(TYPE_BYTE, 1, 1, 16, RasterFormatException.class),
+        new Args4(TYPE_BYTE, -1, 1, 1, IllegalArgumentException.class),
+        new Args4(TYPE_SHORT, -1, 1, 1, IllegalArgumentException.class),
         new Args4(TYPE_SHORT, 1, 1, 16, IllegalArgumentException.class),
         new Args4(TYPE_USHORT, 1, 1, 16, null),
         new Args4(TYPE_INT, 1, 1, 16, null),
@@ -68,6 +70,7 @@ public class MultiPixelPackedSampleModelConstructor {
         new Args4(TYPE_BYTE, 0, 1, 4, IllegalArgumentException.class),
         new Args4(TYPE_BYTE, 1<<29, 1, 4, null),
         new Args4(TYPE_BYTE, 1<<30, 1, 16, RasterFormatException.class),
+        new Args4(99, 8, 1, 1, IllegalArgumentException.class),
     };
 
     static record Args6(int dType, int w, int h, int bits, int stride, int bitOffset, Class eType) { }
@@ -90,9 +93,11 @@ public class MultiPixelPackedSampleModelConstructor {
         new Args6(TYPE_BYTE, 1, 1, 2, 1, 1, IllegalArgumentException.class),
         new Args6(TYPE_BYTE, 1, 1, 2, 1, -1, IllegalArgumentException.class),
         new Args6(TYPE_BYTE, 1, 1, 1, -1, 1, IllegalArgumentException.class),
+        new Args6(TYPE_BYTE, -1, 1, 1, 1, 1, IllegalArgumentException.class),
         new Args6(TYPE_BYTE, 1, 1, 1, 1, 1, null),
         new Args6(TYPE_INT, 77777777, 2, 32, 1, 0, RasterFormatException.class),
         new Args6(TYPE_BYTE, 1<<29, 1, 4, 1<<28, 0, null),
+        new Args6(99, 8, 1, 1, 1, 0, IllegalArgumentException.class),
     };
 
     static void test4(Args4 a) {

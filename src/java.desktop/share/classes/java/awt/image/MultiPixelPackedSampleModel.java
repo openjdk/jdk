@@ -109,6 +109,23 @@ public class MultiPixelPackedSampleModel extends SampleModel
                                        int w,
                                        int h,
                                        int numberOfBits) {
+        long size = (long)w * h;
+        if (w <= 0 || h <= 0) {
+            throw new IllegalArgumentException("Width ("+w+") and height ("+
+                                               h+") must be > 0");
+        }
+        if (size > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Dimensions (width="+w+
+                                               " height="+h+") are too large");
+        }
+
+        if (dataType < DataBuffer.TYPE_BYTE ||
+            (dataType > DataBuffer.TYPE_DOUBLE &&
+             dataType != DataBuffer.TYPE_UNDEFINED))
+        {
+            throw new IllegalArgumentException("Unsupported dataType: "+
+                                               dataType);
+        }
         int sls = (int)(((long)w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
                         DataBuffer.getDataTypeSize(dataType));
         if (sls < 0) {
