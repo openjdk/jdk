@@ -57,7 +57,7 @@ public:
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
     SuspendibleThreadSetJoiner stsj;
     StringDedup::Requests requests;
     _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/,
@@ -83,6 +83,7 @@ public:
   void work(uint worker_id) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::finish_mark, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahParallelWorkerSession worker_session(worker_id);
     StringDedup::Requests requests;
     // First drain remaining SATB buffers.
