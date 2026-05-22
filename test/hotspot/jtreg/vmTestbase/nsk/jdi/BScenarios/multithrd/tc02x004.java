@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,13 @@ public class tc02x004 {
         }
         display("method:\t" + event.location().method().name());
         display("line:\t" + event.location().lineNumber());
+
+        // When done() is called we disable the MethodEntryRequest because we don't
+        // want it enabled while the debuggee exits. See JDK-8375076 and JDK-8384569.
+        if (event.method().name().equals("done")) {
+            return;
+        }
+
         if (event.location().lineNumber() == tc02x004a.checkClassBrkpLine) {
             display("ClassBreakpoint stops on the expected line "
                         + event.location().lineNumber() + " in method "
@@ -227,5 +234,10 @@ public class tc02x004 {
         display("");
 
         brkpEventCount++;
+        if (brkpEventCount == tc02x004a.threadCount) {
+            // When done we disable the MethodEntryRequest because we don't
+            // want it enabled while the debuggee exits. See JDK-8375076 and JDK-8384569.
+            event.request().disable();
+        }
     }
 }
