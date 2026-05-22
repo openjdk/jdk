@@ -328,7 +328,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private<T extends AbstractPoolEntry> AbstractPoolEntry findEntry(int tag, T ref1) {
         // invariant: canWriteDirect(ref1.constantPool())
-        int hash = AbstractPoolEntry.hash1(tag, ref1.index());
+        int hash = AbstractPoolEntry.hash1(tag, ref1.hashCode());
         EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map.getIndexByToken(token));
@@ -347,7 +347,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private <T extends AbstractPoolEntry, U extends AbstractPoolEntry>
             AbstractPoolEntry findEntry(int tag, T ref1, U ref2) {
         // invariant: canWriteDirect(ref1.constantPool()), canWriteDirect(ref2.constantPool())
-        int hash = AbstractPoolEntry.hash2(tag, ref1.index(), ref2.index());
+        int hash = AbstractPoolEntry.hash2(tag, ref1.hashCode(), ref2.hashCode());
         EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map.getIndexByToken(token));
@@ -596,7 +596,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     public MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference) {
         Util.checkU1(refKind, "reference kind");
         reference = AbstractPoolEntry.maybeClone(this, reference);
-        int hash = AbstractPoolEntry.hash2(TAG_METHOD_HANDLE, refKind, reference.index());
+        int hash = AbstractPoolEntry.hash2(TAG_METHOD_HANDLE, refKind, reference.hashCode());
         EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map1.getIndexByToken(token));
@@ -621,7 +621,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                                             bootstrapMethodEntry.arguments());
         nameAndType = AbstractPoolEntry.maybeClone(this, nameAndType);
         int hash = AbstractPoolEntry.hash2(TAG_INVOKE_DYNAMIC,
-                bootstrapMethodEntry.bsmIndex(), nameAndType.index());
+                bootstrapMethodEntry.hashCode(), nameAndType.hashCode());
         EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map1.getIndexByToken(token));
@@ -651,7 +651,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                                             bootstrapMethodEntry.arguments());
         nameAndType = AbstractPoolEntry.maybeClone(this, nameAndType);
         int hash = AbstractPoolEntry.hash2(TAG_DYNAMIC,
-                bootstrapMethodEntry.bsmIndex(), nameAndType.index());
+                bootstrapMethodEntry.hashCode(), nameAndType.hashCode());
         EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map1.getIndexByToken(token));
