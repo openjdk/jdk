@@ -4120,10 +4120,8 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
       if (n != mmem->memory_at(general_idx) || alias_idx == general_idx) {
         continue; // Nothing to do
       }
-      // Replace previous general reference to mem node.
-      uint orig_uniq = C->unique();
-      Node* m = find_inst_mem(n, general_idx, orig_phis);
-      assert(orig_uniq == C->unique(), "no new nodes");
+      // Replace previous general reference to mem node and assert no new node is created.
+      Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
       mmem->set_memory_at(general_idx, m);
       --imax;
       --i;
@@ -4140,15 +4138,26 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
           alias_idx == general_idx) {
         continue; // Nothing to do
       }
-      // Move to general memory slice.
-      uint orig_uniq = C->unique();
-      Node* m = find_inst_mem(n, general_idx, orig_phis);
-      assert(orig_uniq == C->unique(), "no new nodes");
+      // Move to general memory slice and assert no new node is created.
+      Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
       igvn->hash_delete(use);
       imax -= use->replace_edge(n, m, igvn);
       igvn->hash_insert(use);
       record_for_optimizer(use);
       --i;
+    } else if (is_mem_read_only_string_intrinsic(use)) {
+      if (alias_idx == general_idx) {
+        continue;
+      }
+      if (use->in(MemNode::Memory) == n) {
+        // Move to general memory slice and assert no new node is created.
+        Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
+        igvn->hash_delete(use);
+        imax -= use->replace_edge(n, m, igvn);
+        igvn->hash_insert(use);
+        record_for_optimizer(use);
+        --i;
+      }
 #ifdef ASSERT
     } else if (use->is_Mem()) {
       // Memory nodes should have new memory input.
@@ -4332,6 +4341,23 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   }
   // the result is either MemNode, PhiNode, InitializeNode.
   return result;
+}
+
+Node* ConnectionGraph::find_inst_mem_assert_no_new_node(Node* orig_mem, int alias_idx, GrowableArray<PhiNode*>& orig_phis) {
+  uint orig_uniq = _compile->unique();
+  Node* result = find_inst_mem(orig_mem, alias_idx, orig_phis);
+  assert(orig_uniq == _compile->unique(), "no new nodes");
+  return result;
+}
+
+bool ConnectionGraph::is_mem_read_only_string_intrinsic(Node* n) {
+  uint op = n->Opcode();
+  if (op == Op_AryEq || op == Op_CountPositives ||
+    op == Op_StrComp || op == Op_StrEquals ||
+    op == Op_StrIndexOf || op == Op_StrIndexOfChar) {
+      return true;
+    }
+  return false;
 }
 
 //
@@ -4911,9 +4937,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.append_if_missing(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
-              op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
-              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
+              is_mem_read_only_string_intrinsic(use) || op == Op_VectorizedHashCode ||
+              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing memory path");
