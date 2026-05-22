@@ -2941,7 +2941,7 @@ const TypePtr *TypePtr::with_offset(intptr_t offset) const {
 // Structural equality check for Type representations
 bool TypePtr::eq( const Type *t ) const {
   const TypePtr *a = (const TypePtr*)t;
-  return _ptr == a->ptr() && _offset == a->_offset && _reloc == a->reloc() &&
+  return _ptr == a->ptr() && offset() == a->offset() && _reloc == a->reloc() &&
          eq_speculative(a) && _inline_depth == a->_inline_depth;
 }
 
