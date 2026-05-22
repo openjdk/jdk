@@ -29,6 +29,7 @@
 
 #include "gc/shenandoah/shenandoahMark.hpp"
 
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
