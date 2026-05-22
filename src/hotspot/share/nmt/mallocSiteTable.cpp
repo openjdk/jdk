@@ -42,7 +42,7 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = n
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
-  _table = (Atomic<MallocSiteHashtableEntry*>*)permit_forbidden_function::calloc(table_size, sizeof(Atomic<MallocSiteHashtableEntry*>));
+  _table = (Atomic<MallocSiteHashtableEntry*>*)permit_forbidden_function::malloc(table_size * sizeof(Atomic<MallocSiteHashtableEntry*>));
   if (_table == nullptr) {
     return false;
   }

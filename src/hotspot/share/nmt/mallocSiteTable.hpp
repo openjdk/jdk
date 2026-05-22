@@ -57,9 +57,9 @@ class MallocSite : public AllocationSite {
 // Malloc site hashtable entry
 class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  private:
-  MallocSite                         _malloc_site;
-  const unsigned int                 _hash;
-  Atomic<MallocSiteHashtableEntry*>  _next;
+  MallocSite                        _malloc_site;
+  const unsigned int                _hash;
+  Atomic<MallocSiteHashtableEntry*> _next;
 
  public:
 
