@@ -629,7 +629,7 @@ public final class System {
      * {@link Locale##default_locale Default Locale} section in the {@code Locale}
      * class description may also be obtained with this method.
      *
-     * @apiNote [kind=critical]
+     * @apiNote [kind=important id=system-properties-api-note]
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
      * Property values may be cached during initialization or on first use.
@@ -700,10 +700,10 @@ public final class System {
      * {@code null}, then the current set of system properties is
      * forgotten.
      *
-     * @apiNote [kind=critical]
+     * @apiNote [kind=important]
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
-     * See {@linkplain #getProperties getProperties} for details.
+     * See {@linkplain ##system-properties-api-note getProperties} for details.
      *
      * @param      props   the new system properties.
      * @see        #getProperties
@@ -725,10 +725,10 @@ public final class System {
      * properties is first created and initialized in the same manner as
      * for the {@code getProperties} method.
      *
-     * @apiNote [kind=critical]
+     * @apiNote [kind=important]
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
-     * See {@linkplain #getProperties getProperties} for details.
+     * See {@linkplain ##system-properties-api-note getProperties} for details.
      *
      * @param      key   the name of the system property.
      * @return     the string value of the system property,
@@ -769,10 +769,10 @@ public final class System {
     /**
      * Sets the system property indicated by the specified key.
      *
-     * @apiNote [kind=critical]
+     * @apiNote [kind=important]
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
-     * See {@linkplain #getProperties getProperties} for details.
+     * See {@linkplain ##system-properties-api-note getProperties} for details.
      *
      * @param      key   the name of the system property.
      * @param      value the value of the system property.
@@ -795,10 +795,10 @@ public final class System {
     /**
      * Removes the system property indicated by the specified key.
      *
-     * @apiNote [kind=critical]
+     * @apiNote [kind=important]
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
-     * See {@linkplain #getProperties getProperties} method for details.
+     * See {@linkplain ##system-properties-api-note getProperties} method for details.
      *
      * @param      key   the name of the system property to be removed.
      * @return     the previous string value of the system property,
