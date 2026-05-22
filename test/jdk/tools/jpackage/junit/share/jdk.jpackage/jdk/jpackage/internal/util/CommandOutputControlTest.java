@@ -22,6 +22,8 @@
  */
 package jdk.jpackage.internal.util;
 
+import jdk.jpackage.test.WindowsHelper;
+
 import static java.util.stream.Collectors.joining;
 import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
@@ -1004,7 +1006,7 @@ public class CommandOutputControlTest {
                     commandSeparator = " && ";
                 }
                 case POWERSHELL -> {
-                    commandline.addAll(List.of("powershell", "-NoProfile", "-Command"));
+                    commandline.addAll(List.of(WindowsHelper.PowerShellPath(), "-NoProfile", "-Command"));
                     commandSeparator = "; ";
                 }
                 default -> {
@@ -1176,7 +1178,7 @@ public class CommandOutputControlTest {
                     // It sends packets every second.
                     // To wait N seconds, it should send N+1 packets.
                     // The "timeout" command works only in a console.
-                    return String.format("(ping -n %d localhost > nul)", sleep.seconds() + 1);
+                    return String.format("(%%SystemRoot%%\\System32\\ping.exe -n %d localhost > nul)", sleep.seconds() + 1);
                 }
                 case POWERSHELL -> {
                     return "Start-Sleep -Seconds " + sleep.seconds();
