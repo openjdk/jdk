@@ -292,7 +292,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
   // super call
   MacroAssembler::call_VM_leaf_base(entry_point, number_of_arguments);
   // interpreter specific
-  // LP64: Used to ASSERT that r13/r14 were equal to frame's bcp/locals
+  // Used to ASSERT that r13/r14 were equal to frame's bcp/locals
   // but since they may not have been saved (and we don't want to
   // save them here (see note above) the assert is invalid.
 }
@@ -430,7 +430,7 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
                                          Register arg_1,
                                          Register arg_2,
                                          bool check_exceptions) {
-  LP64_ONLY(assert_different_registers(arg_1, c_rarg2));
+  assert_different_registers(arg_1, c_rarg2);
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
   call_VM_preemptable_helper(oop_result, entry_point, 2, check_exceptions);
@@ -1074,9 +1074,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // Check if we are returning a non-null inline type and load its fields into registers
     test_oop_is_not_inline_type(rax, rscratch1, skip, /* can_be_null= */ false);
 
-#ifndef _LP64
-    super_call_VM_leaf(StubRoutines::load_inline_type_fields_in_regs());
-#else
     // Load fields from a buffered value with an inline class specific handler
     load_klass(rdi, rax, rscratch1);
     movptr(rdi, Address(rdi, InlineKlass::adr_members_offset()));
@@ -1085,7 +1082,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     testptr(rdi, rdi);
     jcc(Assembler::zero, skip);
     call(rdi);
-#endif
     // call above kills the value in rbx. Reload it.
     movptr(rbx, Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize));
     bind(skip);
