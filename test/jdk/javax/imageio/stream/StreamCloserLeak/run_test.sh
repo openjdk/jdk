@@ -118,6 +118,14 @@ case "$OS" in
       TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
       ;;
 
+    MSYS* | MINGW* )
+      VAR="A different value for Cygwin"
+      DEFAULT_JDK="/c/Program\ Files/Java/jdk1.8.0"
+      FILESEP="/"
+      PATHSEP=";"
+      TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
+      ;;
+
    # catch all other OSs
    * )
       echo "Unrecognized system!  $OS"

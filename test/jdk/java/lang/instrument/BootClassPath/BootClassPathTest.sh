@@ -66,7 +66,7 @@ echo "Creating manifest file..."
 
 OS=`uname -s`
 case ${OS} in
-    CYGWIN*)
+    CYGWIN* | MSYS* | MINGW*)
         CYGWIN="CYGWIN"
         ;;
     *)
