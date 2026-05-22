@@ -458,7 +458,7 @@ void VM_Version::initialize() {
   }
 
   if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
-        UseIntPolyIntrinsics = true;
+     UseIntPolyIntrinsics = true;
   }
 
   if (supports_feature(CPU_ASIMD)) {

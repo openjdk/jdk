@@ -543,7 +543,6 @@ FloatRegister vs_head(const VSeq<N>& v) {
 
 template<int N>
 VSeq<N-1> vs_tail(const VSeq<N>& v) {
-  static_assert(N > 1, "tail sequence length must be greater than 2");
   return VSeq<N-1>(v.base() + v.delta(), v.delta());
 }
 

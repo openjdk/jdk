@@ -7724,18 +7724,27 @@ class StubGenerator: public StubCodeGenerator {
 
   static constexpr int montMulP256Shift1 = 12; // 64 - bits per limb
   static constexpr int montMulP256Shift2 = 52; // bits per limb
+  // stack space needed for carry computation
+  static constexpr int cDataSize = 6 * BytesPerLong;
+  // stack space needed for data computed by the neon side
+  static constexpr int mulDataSize = 16 * BytesPerLong;
 
 
   // Subroutine used by the 52 x 52 bit multiplication algorithm in
   // generate_intpoly_montgomeryMult_P256().
   // This function computes partial results of eight 52 x 52 bit multiplications,
   // where the multiplicands are stored as 64-bit values, specifically
-  // (b_0, b_1, b_2, b_3) * (a_0, a_1).
-  // In a call to this function, either the high or low 32 bits of the b_i
-  // values are multiplied by either the high or low 32 bits of the a_j values,
-  // so four calls with the appropriate parameters will produce the 64-bit
-  // low32 * low32, low32 * high32, high32 * low32, high32 * high32
-  // values in the output register sequences.
+  // (b_0, b_1, b_2, b_3) * (a_3, a_4). (The 4 calls to this function
+  // together provide the results of these limb-multiplications.)
+  // Calls to this function accept either the low 32 bits or high 20 bits
+  // of each b_i packed into bs in ascending order. a_3 and a_4 are packed
+  // into successive 64 bit elements of as. lane selects the low 32 or high
+  // 20 bits of each a_j value. So four calls with the appropriate parameters
+  // will produce the 64-bit low32 * low32, low32 * high20, high20 * low32,
+  // high20 * high20 values in the output register sequences vs. The
+  // 64-bit partial products are returned in vs in ascending order:
+  // vs[0] = (b_0*a_3, b_1*a_3) . . .  vs[3] = (b_2*a_4, b_3*a_4)
+
   void neon_partial_mult_64(const VSeq<4>& vs, FloatRegister bs, FloatRegister as, int lane_lo) {
     __ umullv(vs[0], __ T2D, bs, __ T2S, as, __ S, lane_lo);
     __ umull2v(vs[1], __ T2D, bs, __ T4S, as, __ S, lane_lo);
@@ -7750,11 +7759,14 @@ class StubGenerator: public StubCodeGenerator {
     // and hi (most significant 52 bits).
     void gpr_partial_mult_52(Register a, Register b, Register hi, Register lo,
      Register tmp, Register mask) {
+      // compute 104-bit (40 + 64) full product
       __ umulh(hi, a, b);
       __ mul(lo, a, b);
+      // combine 40 + 12 bits into hi result
       __ lsl(hi, hi, montMulP256Shift1);
       __ lsr(tmp, lo, montMulP256Shift2);
       __ orr(hi, hi, tmp);
+      // mask off 52 bits of lo result
       __ andr(lo, lo, mask);
     }
 
@@ -7766,6 +7778,7 @@ class StubGenerator: public StubCodeGenerator {
   // multiplication, we split each 64 bit value into lower and upper halves
   // and use the "schoolbook" multiplication algorithm.
   address generate_intpoly_montgomeryMult_P256() {
+    assert(UseIntPolyIntrinsics, "what are we doing here?");
     StubId stub_id = StubId::stubgen_intpoly_montgomeryMult_P256_id;
     int entry_count = StubInfo::entry_count(stub_id);
     assert(entry_count == 1, "sanity check");
@@ -7814,27 +7827,31 @@ class StubGenerator: public StubCodeGenerator {
     __ push(callee_saved, sp);
 
     // Allocate space on the stack for carry values
-    __ sub(sp, sp, 48);
+    __ sub(sp, sp, cDataSize);
     __ mov(c_ptr, sp);
 
-    // Calculate limb mask
+    // Calculate (52-bit) limb masks for both gpr and vector registers
     __ mov(limb_mask, -UCONST64(1) >> montMulP256Shift1);
     __ dup(limb_mask_vec, __ T2D, limb_mask);
 
     //Load input arrays and modulus
     Register a_ptr = *common_regs++, mod_ptr = *common_regs++;
-    __ add(a_ptr, a, 24);
+     // skip 3 limbs so a_ptr addresses trailing pair {a3, a4}
+    __ add(a_ptr, a, 3 * BytesPerLong);
     __ lea(mod_ptr, ExternalAddress((address)_modulus_P256));
     __ ldr(b_0, Address(b));
-    __ ldr(b_1, Address(b, 8));
-    __ ldr(b_2, Address(b, 16));
-    __ ldr(b_3, Address(b, 24));
-    __ ldr(b_4, Address(b, 32));
-    __ ldr(mod_0, __ post(mod_ptr, 8));
-    __ ldr(mod_1, __ post(mod_ptr, 8));
-    __ ldr(mod_3, __ post(mod_ptr, 8));
+    __ ldr(b_1, Address(b, BytesPerLong));
+    __ ldr(b_2, Address(b, 2 * BytesPerLong));
+    __ ldr(b_3, Address(b, 3 * BytesPerLong));
+    __ ldr(b_4, Address(b, 4 * BytesPerLong));
+    __ ldr(mod_0, __ post(mod_ptr, BytesPerLong));
+    __ ldr(mod_1, __ post(mod_ptr, BytesPerLong));
+    __ ldr(mod_3, __ post(mod_ptr, BytesPerLong));
     __ ldr(mod_4, mod_ptr);
     __ ld1(a_vals, __ T2D, a_ptr);
+    // use an interleaved load to group low 32 bits and high 20 bits
+    // of 4 successive b values into two vector registers
+    // n.b. these are the same inputs as the ones in b_0 ... b4
     __ ld2(b_lows, b_highs, __ T4S, b);
     common_regs = common_regs.remaining()
       + a_ptr + mod_ptr;
@@ -7851,37 +7868,53 @@ class StubGenerator: public StubCodeGenerator {
       tmp = *common_regs++,
       n = *common_regs++;
 
+    // vector sequences used to compute and combine partial products of
+    // b_i * a_j for i = {0,1,2,3} j = {3,4}
     VSeq<4> A(16);
     VSeq<4> B(20);
     VSeq<4> C(24);
     VSeq<4> D(28);
 
-    /////////////////////////
 
-    __ sub(sp, sp, 128);
+    // neon and gpr computations are interleaved to maximize parallelism
+
+    // allocate stack space for the neon results
+    __ sub(sp, sp, mulDataSize);
     __ mov(mul_ptr, sp);
 
+    // cross-multiply low * low for limbs b0-b3 and a3-a4 in parallel
     neon_partial_mult_64(A, b_lows, a_vals, 0);
 
     // Limb 0
-    __ ldr(a_i, __ post(a, 8));
+    __ ldr(a_i, __ post(a, BytesPerLong));
     gpr_partial_mult_52(a_i, b_0, high, low, tmp, limb_mask);
-    __ andr(n, low, limb_mask);
+    __ mov(n, low);
+   // __ andr(n, low, limb_mask);
 
+    // cross-multiply high * low for limbs b0-b3 and a3-a4 in parallel
     neon_partial_mult_64(B, b_highs, a_vals, 0);
 
-    // Limb 0 cont
+    // Limb 0 modulus computation
+    // n.b. modulus computation requires multiplying successive
+    // limbs of the product by corresponding limbs of the p256
+    // prime adding the result to the limb and folding this
+    // partial result into a running 256-bit sum in c_i. Limbs
+    // of c_i are stored via c_ptr once carries are included.
+    // n.b. the mul + add is omitted for limb 2 since the
+    // corresponding prime bits are zero.
     gpr_partial_mult_52(n, mod_0, mod_high, mod_low, tmp, limb_mask);
     __ add(low, low, mod_low);
     __ add(high, high, mod_high);
     __ lsr(c_i, low, montMulP256Shift2);
     __ add(c_i, c_i, high);
 
+    // cross-multiply low * high for limbs b0-b3 and a3-a4 in parallel
     neon_partial_mult_64(C, b_lows, a_vals, 1);
 
     // Limb 1
     gpr_partial_mult_52(a_i, b_1, high, low, tmp, limb_mask);
 
+    // cross-multiply high * high for limbs b0-b3 and a3-a4 in parallel
     neon_partial_mult_64(D, b_highs, a_vals, 1);
 
     gpr_partial_mult_52(n, mod_1, mod_high, mod_low, tmp, limb_mask);
@@ -7891,6 +7924,10 @@ class StubGenerator: public StubCodeGenerator {
     __ str(c_i, c_ptr);
     __ mov(c_i, high);
 
+    // combine neon 32-bit partial products, regrouping to produce
+    // 8*52-bit low products in A and 8*52-bit high products in D
+
+    // add low*high/high*low intermediate products before regrouping
     vs_addv(B, __ T2D, B, C); // Store (B+C) in B
 
     // Limb 2
@@ -7899,43 +7936,56 @@ class StubGenerator: public StubCodeGenerator {
     __ str(c_i, Address(c_ptr, 8));
     __ mov(c_i, high);
 
+    // shift high*high (40-bit) product up into 52-bits of output
     vs_shl(D, __ T2D, D, montMulP256Shift1);
 
     // Limb 3
     gpr_partial_mult_52(a_i, b_3, high, low, tmp, limb_mask);
 
+    // shift high 32 (or 33) bits of intermediate products for addition to D
     vs_ushr(C, __ T2D, B, 32 - montMulP256Shift1); // Use C for ((B+C) >>> 20)
 
     gpr_partial_mult_52(n, mod_3, mod_high, mod_low, tmp, limb_mask);
     __ add(low, low, mod_low);
     __ add(high, high, mod_high);
     __ add(c_i, c_i, low);
-    __ str(c_i, Address(c_ptr, 16));
+    __ str(c_i, Address(c_ptr, 2 * BytesPerLong));
     __ mov(c_i, high);
 
+    // shift low 32 bits of intermediate product up for masking and addition to A
     vs_shl(B, __ T2D, B, 32);
 
     // Limb 4
     gpr_partial_mult_52(a_i, b_4, high, low, tmp, limb_mask);
 
+    // add high bits of intermediate product into D
     vs_addv(D, __ T2D, D, C);
 
     gpr_partial_mult_52(n, mod_4, mod_high, mod_low, tmp, limb_mask);
     __ add(low, low, mod_low);
     __ add(high, high, mod_high);
     __ add(c_i, c_i, low);
-    __ str(c_i, Address(c_ptr, 24));
-    __ str(high, Address(c_ptr, 32));
+    __ str(c_i, Address(c_ptr, 3 * BytesPerLong));
+    __ str(high, Address(c_ptr, 4 * BytesPerLong));
 
+    // top 12 bits of 32*32 bit product in A need adding into high 52-bit output
     vs_ushr(C, __ T2D, A, 52); // C now holds (A >>> 52)
+    // Only 20 of the 32 bits now in the top of B should be added into A
     vs_andr(B, B, limb_mask_vec);
+    // reduce original 64-bit product to 52-bits
     vs_andr(A, A, limb_mask_vec);
+    // add intermediate products to high 52-bit result in D
     vs_addv(D, __ T2D, D, C);
+    // add 20/21 bits of intermediate product in top of B into low 52-bit result
     vs_addv(A, __ T2D, A, B);
+    // save and then mask off any overflow bit from computing low 52-bit result
     vs_ushr(B, __ T2D, A, montMulP256Shift2);
     vs_andr(A, A, limb_mask_vec);
+    // add any remaining carry into the high 52-bit result
     vs_addv(D, __ T2D, D, B);
 
+    // the write interleaves the 4 successive pairs of low and
+    // high results: (l0, l1), (h0, h1), ... (l6, l7), (h6, h7)
     vs_st1_interleaved(A, D, mul_ptr);
 
     // Free mul_ptr
@@ -7948,15 +7998,15 @@ class StubGenerator: public StubCodeGenerator {
 
     for (int i = 0; i < 2; i++) {
       // Load a_i and increment by 8 bytes
-      __ ldr(a_i, __ post(a, 8));
+      __ ldr(a_i, __ post(a, BytesPerLong));
       __ ldr(c_i, c_ptr); //Load prior c_i
 
       // Limb 0
-    gpr_partial_mult_52(a_i, b_0, high, low, tmp, limb_mask);
+      gpr_partial_mult_52(a_i, b_0, high, low, tmp, limb_mask);
       __ add(low, low, c_i);
-      __ ldr(c_i, Address(c_ptr, 8));
+      __ ldr(c_i, Address(c_ptr, BytesPerLong));
       __ andr(n, low, limb_mask);
-    gpr_partial_mult_52(n, mod_0, mod_high, mod_low, tmp, limb_mask);
+      gpr_partial_mult_52(n, mod_0, mod_high, mod_low, tmp, limb_mask);
       __ add(low, low, mod_low);
       __ add(high, high, mod_high);
       __ lsr(tmp, low, montMulP256Shift2);
@@ -7964,9 +8014,9 @@ class StubGenerator: public StubCodeGenerator {
       __ add(c_i, c_i, high);
 
       // Limb 1
-    gpr_partial_mult_52(a_i, b_1, high, low, tmp, limb_mask);
-    gpr_partial_mult_52(n, mod_1, mod_high, mod_low, tmp, limb_mask);
-      __ ldr(tmp, Address(c_ptr, 16));
+      gpr_partial_mult_52(a_i, b_1, high, low, tmp, limb_mask);
+      gpr_partial_mult_52(n, mod_1, mod_high, mod_low, tmp, limb_mask);
+      __ ldr(tmp, Address(c_ptr, 2 * BytesPerLong));
       __ add(low, low, mod_low);
       __ add(high, high, mod_high);
       __ add(c_i, c_i, low);
@@ -7974,31 +8024,35 @@ class StubGenerator: public StubCodeGenerator {
       __ add(c_i, tmp, high);
 
       // Limb 2
-    gpr_partial_mult_52(a_i, b_2, high, low, tmp, limb_mask);
-      __ ldr(tmp, Address(c_ptr, 24));
+      gpr_partial_mult_52(a_i, b_2, high, low, tmp, limb_mask);
+      __ ldr(tmp, Address(c_ptr, 3 * BytesPerLong));
       __ add(c_i, c_i, low);
-      __ str(c_i, Address(c_ptr, 8));
+      __ str(c_i, Address(c_ptr, BytesPerLong));
       __ add(c_i, tmp, high);
 
       // Limb 3
-    gpr_partial_mult_52(a_i, b_3, high, low, tmp, limb_mask);
-    gpr_partial_mult_52(n, mod_3, mod_high, mod_low, tmp, limb_mask);
-      __ ldr(tmp, Address(c_ptr, 32));
+      gpr_partial_mult_52(a_i, b_3, high, low, tmp, limb_mask);
+      gpr_partial_mult_52(n, mod_3, mod_high, mod_low, tmp, limb_mask);
+      __ ldr(tmp, Address(c_ptr, 4 * BytesPerLong));
       __ add(low, low, mod_low);
       __ add(high, high, mod_high);
       __ add(c_i, c_i, low);
-      __ str(c_i, Address(c_ptr, 16));
+      __ str(c_i, Address(c_ptr, 2 * BytesPerLong));
       __ add(c_i, tmp, high);
 
       // Limb 4
-    gpr_partial_mult_52(a_i, b_4, high, low, tmp, limb_mask);
-    gpr_partial_mult_52(n, mod_4, mod_high, mod_low, tmp, limb_mask);
+      gpr_partial_mult_52(a_i, b_4, high, low, tmp, limb_mask);
+      gpr_partial_mult_52(n, mod_4, mod_high, mod_low, tmp, limb_mask);
       __ add(low, low, mod_low);
       __ add(high, high, mod_high);
       __ add(c_i, c_i, low);
-      __ str(c_i, Address(c_ptr, 24));
-      __ str(high, Address(c_ptr, 32));
+      __ str(c_i, Address(c_ptr, 3 * BytesPerLong));
+      __ str(high, Address(c_ptr, 4 * BytesPerLong));
     }
+    // Reallocate regs b_0, b_1, b_2 and b_3
+        common_regs = common_regs.remaining()
+          + b_0 + b_1 + b_2 + b_3;
+            b_0 = b_1 = b_2 = b_3 = noreg;
 
     Register low_1 = *common_regs++;
     Register high_1 = *common_regs++;
@@ -8008,16 +8062,16 @@ class StubGenerator: public StubCodeGenerator {
     //////////////////////////////
 
     __ ldr(low_1, Address(sp));
-    __ ldr(high_1, Address(sp, 16));
+    __ ldr(high_1, Address(sp, 2 * BytesPerLong));
 
-    __ ldr(low, Address(sp, 8));
-    __ ldr(high, Address(sp, 24));
-    __ ldr(a_i, __ post(a, 8));
+    __ ldr(low, Address(sp, BytesPerLong));
+    __ ldr(high, Address(sp, 3 * BytesPerLong));
+    __ ldr(a_i, __ post(a, BytesPerLong));
     __ ldr(c_i, c_ptr);
 
-    // Limb 1
+    // Limb 0
     __ add(low_1, low_1, c_i);
-    __ ldr(c_i, Address(c_ptr, 8));
+    __ ldr(c_i, Address(c_ptr, BytesPerLong));
     __ andr(n, low_1, limb_mask);
     gpr_partial_mult_52(n, mod_0, mod_high, mod_low, tmp, limb_mask);
     __ add(low_1, low_1, mod_low);
@@ -8026,11 +8080,11 @@ class StubGenerator: public StubCodeGenerator {
     __ add(c_i, c_i, tmp);
     __ add(c_i, c_i, high_1);
 
-    // Limb 2
-    __ ldr(low_1, Address(sp, 32));
-    __ ldr(high_1, Address(sp, 48));
+    // Limb 1
+    __ ldr(low_1, Address(sp, 4 * BytesPerLong));
+    __ ldr(high_1, Address(sp, 6 * BytesPerLong));
     gpr_partial_mult_52(n, mod_1, mod_high, mod_low, tmp, limb_mask);
-    __ ldr(tmp, Address(c_ptr, 16));
+    __ ldr(tmp, Address(c_ptr, 2 * BytesPerLong));
     __ andr(mod_low, mod_low, limb_mask);
     __ add(low, low, mod_low);
     __ add(high, high, mod_high);
@@ -8039,41 +8093,36 @@ class StubGenerator: public StubCodeGenerator {
     __ add(c_i, tmp, high);
 
     // Limb 2
-    __ ldr(low, Address(sp, 40));
-    __ ldr(high, Address(sp, 56));
-    __ ldr(tmp, Address(c_ptr, 24));
+    __ ldr(low, Address(sp, 5 * BytesPerLong));
+    __ ldr(high, Address(sp, 7 * BytesPerLong));
+    __ ldr(tmp, Address(c_ptr, 3 * BytesPerLong));
     __ add(c_i, c_i, low_1);
-    __ str(c_i, Address(c_ptr, 8));
+    __ str(c_i, Address(c_ptr, BytesPerLong));
     __ add(c_i, tmp, high_1);
 
     // Limb 3
     gpr_partial_mult_52(n, mod_3, mod_high, mod_low, tmp, limb_mask);
-    __ ldr(tmp, Address(c_ptr, 32));
+    __ ldr(tmp, Address(c_ptr, 4 * BytesPerLong));
     __ add(low, low, mod_low);
     __ add(high, high, mod_high);
     __ add(c_i, c_i, low);
-    __ str(c_i, Address(c_ptr, 16));
+    __ str(c_i, Address(c_ptr, 2 * BytesPerLong));
     __ add(c_i, tmp, high);
 
     // Limb 4
-    __ ldr(low, Address(sp, 64));
-    __ ldr(high, Address(sp, 80));
+    __ ldr(low, Address(sp, 8 * BytesPerLong));
+    __ ldr(high, Address(sp, 10 * BytesPerLong));
     gpr_partial_mult_52(a_i, b_4, high_1, low_1, tmp, limb_mask);
     gpr_partial_mult_52(n, mod_4, mod_high, mod_low, tmp, limb_mask);
     __ add(low_1, low_1, mod_low);
     __ add(high_1, high_1, mod_high);
     __ add(c_i, c_i, low_1);
-    __ str(c_i, Address(c_ptr, 24));
-    __ str(high_1, Address(c_ptr, 32));
+    __ str(c_i, Address(c_ptr, 3 * BytesPerLong));
+    __ str(high_1, Address(c_ptr, 4 * BytesPerLong));
 
     //////////////////////////////
     // a[4]
     //////////////////////////////
-
-    // Reallocate regs b_0, b_1, b_2
-    common_regs = common_regs.remaining()
-      + b_0 + b_1 + b_2;
-        b_0 = b_1 = b_2 = noreg;
 
     Register c5 = *common_regs++,
       c6 = *common_regs++,
@@ -8083,11 +8132,11 @@ class StubGenerator: public StubCodeGenerator {
     __ ldr(c_i, c_ptr);
 
     // Limb 0
-    __ ldr(low_1, Address(sp, 72));
-    __ ldr(high_1, Address(sp, 88));
+    __ ldr(low_1, Address(sp, 9 * BytesPerLong));
+    __ ldr(high_1, Address(sp, 11 * BytesPerLong));
 
     __ add(low, low, c_i);
-    __ ldr(c_i, Address(c_ptr, 8));
+    __ ldr(c_i, Address(c_ptr, BytesPerLong));
     __ andr(n, low, limb_mask);
     gpr_partial_mult_52(n, mod_0, mod_high, mod_low, tmp, limb_mask);
     __ add(low, low, mod_low);
@@ -8096,23 +8145,22 @@ class StubGenerator: public StubCodeGenerator {
     __ add(c_i, c_i, tmp);
     __ add(c_i, c_i, high);
 
-    // Limb 1
-    __ ldr(low, Address(sp, 96));
-    __ ldr(high, Address(sp, 112));
+    __ ldr(low, Address(sp, 12 * BytesPerLong));
+    __ ldr(high, Address(sp, 14 * BytesPerLong));
     gpr_partial_mult_52(n, mod_1, mod_high, mod_low, tmp, limb_mask);
     __ add(low_1, low_1, mod_low);
     __ add(high_1, high_1, mod_high);
     __ add(c5, c_i, low_1);
-    __ ldr(c_i, Address(c_ptr, 16));
+    __ ldr(c_i, Address(c_ptr, 2 * BytesPerLong));
     __ lsr(tmp, c5, montMulP256Shift2);
     __ add(c_i, c_i, tmp);
     __ add(c_i, c_i, high_1);
 
     // Limb 2
-    __ ldr(low_1, Address(sp, 104));
-    __ ldr(high_1, Address(sp, 120));
+    __ ldr(low_1, Address(sp, 13 * BytesPerLong));
+    __ ldr(high_1, Address(sp, 15 * BytesPerLong));
     __ add(c6, c_i, low);
-    __ ldr(c_i, Address(c_ptr, 24));
+    __ ldr(c_i, Address(c_ptr, 3 * BytesPerLong));
     __ lsr(tmp, c6, montMulP256Shift2);
     __ add(c_i, c_i, tmp);
     __ add(c_i, c_i, high);
@@ -8122,7 +8170,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(low_1, low_1, mod_low);
     __ add(high_1, high_1, mod_high);
     __ add(c7, c_i, low_1);
-    __ ldr(c_i, Address(c_ptr, 32));
+    __ ldr(c_i, Address(c_ptr, 4 * BytesPerLong));
     __ lsr(tmp, c7, montMulP256Shift2);
     __ add(c_i, c_i, tmp);
     __ add(c_i, c_i, high_1);
@@ -8133,10 +8181,9 @@ class StubGenerator: public StubCodeGenerator {
     __ add(low, low, mod_low);
     __ add(high, high, mod_high);
 
-    // Reallocate regs b_3, b_4
-    common_regs = common_regs.remaining()
-      + b_3 + b_4;
-        b_3 = b_4 = noreg;
+    // Reallocate b_4
+    common_regs = common_regs.remaining() + b_4;
+    b_4 = noreg;
 
     Register c8 = *common_regs++,
       c9 = *common_regs++;
@@ -8175,12 +8222,7 @@ class StubGenerator: public StubCodeGenerator {
       c1 = *common_regs++,
       c2 = *common_regs++,
       c3 = *common_regs++,
-      c4 = *common_regs++,
-      tmp0 = *common_regs++,
-      tmp1 = *common_regs++,
-      tmp2 = *common_regs++,
-      tmp3 = *common_regs++,
-      tmp4 = *common_regs++;
+      c4 = *common_regs++;
 
     __ sub(c0, c5, mod_0);
     __ sub(c1, c6, mod_1);
@@ -8229,13 +8271,13 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(c9, c9, tmp);
 
     __ str(c5, result);
-    __ str(c6, Address(result, 8));
-    __ str(c7, Address(result, 16));
-    __ str(c8, Address(result, 24));
-    __ str(c9, Address(result, 32));
+    __ str(c6, Address(result, BytesPerLong));
+    __ str(c7, Address(result, 2 * BytesPerLong));
+    __ str(c8, Address(result, 3 * BytesPerLong));
+    __ str(c9, Address(result, 4 * BytesPerLong));
 
     // End intrinsic call
-    __ add(sp, sp, 176);
+    __ add(sp, sp, cDataSize + mulDataSize);
     __ pop(callee_saved, sp);
     __ leave();
     __ mov(r0, zr); // return 0
@@ -8264,11 +8306,18 @@ class StubGenerator: public StubCodeGenerator {
     //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
     //   P521OrderField:         19 = 8 + 8 + 2 + 1
     // Special Cases 5, 10, 14, 16, 19
+    assert(UseIntPolyIntrinsics, "what are we doing here?");
+    StubId stub_id = StubId::stubgen_intpoly_assign_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
 
     __ align(CodeEntryAlignment);
-    StubId stub_id = StubId::stubgen_intpoly_assign_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     // Inputs
@@ -8565,6 +8614,10 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
