@@ -61,6 +61,8 @@ long c1_load_fubar = 0;
 long c1_store_fubar = 0;
 long conjoint_fubar = 0;
 long copy_load_slow_fubar = 0;
+long setup_args_fubar = 0;
+long c2_load_fubar = 0;
 long disjoint_fubar = 0;
 long atomic_nmethod_fubar = 0;
 long c1_load_runtime_fubar = 0;
@@ -350,10 +352,13 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
     __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
     // TODO: check for the condition rnew_zaddress == noreg i.e. nullptr
-    __ z_sllg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
-    __ z_ogr(rnew_zpointer, rnew_zaddress);
-    // TODO: try to optimize it later -> the contents of rnew_zaddress should not change
-    __ z_srlg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
+    if (rnew_zaddress != noreg) {
+      // noreg means null, no need to color
+      __ z_sllg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
+      __ z_ogr(rnew_zpointer, rnew_zaddress);
+      // TODO: try to optimize it later -> the contents of rnew_zaddress should not change
+      __ z_srlg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
+    }
   } else {
     //TODO: check if this assert failure is necssary
     assert(!is_atomic, "atomics outside of nmethods not supported");
@@ -1108,7 +1113,10 @@ public:
     // _ref_addr: Z_ARG2
 
     // '_ref_addr' can be unspecified. In that case, the barrier will not heal the reference.
-    __ stop("Z Setup Arguments");
+    //__ z_ldgr(Z_F0, Z_R1);
+    //__ load_const_optimized(Z_R1, (uintptr_t)&setup_args_fubar);
+    //__ z_agsi(0, Z_R1, 1);
+    //__ z_lgdr(Z_R1, Z_F0);
     if (_ref_addr.base() == noreg) {
       // TODO: Check the usage of this assert?
       assert_different_registers(_ref, noreg, Z_R0);
@@ -1118,26 +1126,32 @@ public:
     } else {
       // TODO: Check the usage of this assert? Why Z_R0 -> I think it's more related to ppc
       assert_different_registers(_ref, _ref_addr.base(), Z_R0, noreg);
-      assert(!_ref_addr.index()->is_valid(), "reference addresses must not contain an index component");
 
-      if (_ref != Z_ARG2) {
-        // Calculate address first as the address' base register might clash with Z_ARG2
+      if (_ref == Z_ARG1) {
         __ z_lay(Z_ARG2, _ref_addr);
-        __ lgr_if_needed(Z_ARG1, _ref);
-      } else if (_ref_addr.base() != Z_ARG1) {
+      } else if (_ref != Z_ARG2) {
+        __ z_lay(Z_ARG2, _ref_addr);
+        __ z_lgr(Z_ARG1, _ref);
+      } else if (_ref_addr.base() != Z_ARG1 && _ref_addr.index() != Z_ARG1) {
+        assert(_ref == Z_ARG2, "Mov ref first, vacating Z_ARG1");
         __ z_lgr(Z_ARG1, _ref);
         __ z_lay(Z_ARG2, _ref_addr);
       } else {
-        __ z_lgr(Z_R0, _ref);
-        __ z_lay(Z_ARG2, _ref_addr);
-        __ z_lgr(Z_ARG1, Z_R0);
+        assert(_ref == Z_ARG2, "Need to vacate Z_ARG2 and _ref_addr is using Z_ARG1");
+        if (_ref_addr.base() == Z_ARG1 || _ref_addr.index() == Z_ARG1) {
+          __ z_lgr(Z_R0_scratch, Z_ARG2);
+          __ z_lay(Z_ARG2, _ref_addr);
+          __ z_lgr(Z_ARG1, Z_R0_scratch);
+        } else {
+          ShouldNotReachHere();
+        }
       }
     }
   }
 
   ~ZSetupArguments() {
     // Transfer result
-    __ lgr_if_needed(_ref, Z_R0);
+    __ lgr_if_needed(_ref, Z_R2);
   }
 };
 
@@ -1147,7 +1161,6 @@ public:
 // Runtime TODO: Check the path from where we are calling these functions
 // Purpose: We are just setting up the arguments and calling the runtime
 void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
-  __ stop("generate c2 load barrier stub");
   // TODO: ppc, x86 and aarch64 all have slightly different implementations fot this, I am following x86
 
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
@@ -1156,8 +1169,10 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   // Stub entry
   __ bind(*stub->entry());
 
-  // The fast-path shift destroyed the oop - need to re-read it
-  __ z_lay(stub->ref(), stub->ref_addr());
+  //__ z_ldgr(Z_F0, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&c2_load_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F0);
 
   {
     SaveLiveRegisters save_live_registers(masm, stub);
@@ -1171,19 +1186,19 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
 // Purpose: We are also here just calling the runtime but we are also trying it is_atomic null condition and
 // trying to put it in the buffer
 void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const {
-  __ stop("generate c2 store barrier stub");
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   BLOCK_COMMENT("ZStoreBarrierStubC2");
 
   // Stub entry
   __ bind(*stub->entry());
 
+   //__ stop("generate c2 store barrier stub");
   Label slow;
   Label slow_continuation;
   store_barrier_medium(masm,
                        stub->ref_addr(),
                        stub->new_zpointer(),
-                       Z_R0_scratch,
+                       Z_R1_scratch,          // TODO: Check if this is live or not
                        stub->is_native(),
                        stub->is_atomic(),
                        *stub->continuation(),

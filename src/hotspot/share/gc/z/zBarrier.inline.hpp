@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_Z_ZBARRIER_INLINE_HPP
 #define SHARE_GC_Z_ZBARRIER_INLINE_HPP
 
-static long _monotonicity_fubar = 0;
 #include "gc/z/zBarrier.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
@@ -63,15 +62,7 @@ inline void ZBarrier::assert_transition_monotonicity(zpointer old_ptr, zpointer 
   const bool new_is_marked_young = ZPointer::is_marked_young(new_ptr);
   const bool new_is_marked_old = ZPointer::is_marked_old(new_ptr);
   const bool new_is_marked_finalizable = ZPointer::is_marked_finalizable(new_ptr);
-  if (old_is_marked_young && !new_is_marked_young) {
-  tty->print_cr("old_ptr=" PTR_FORMAT " new_ptr=" PTR_FORMAT,
-              p2i((void*)static_cast<uintptr_t>(old_ptr)),
-              p2i((void*)static_cast<uintptr_t>(new_ptr)));
-  _monotonicity_fubar++;
 
-      breakpoint();
-      assert(false, "please stop here");
-  }
   assert(!old_is_marked_young || new_is_marked_young, "non-monotonic marked young transition");
   assert(!old_is_marked_old || new_is_marked_old, "non-monotonic marked old transition");
   assert(!old_is_marked_finalizable || new_is_marked_finalizable || new_is_marked_old, "non-monotonic marked final transition");
