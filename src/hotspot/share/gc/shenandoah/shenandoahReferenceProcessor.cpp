@@ -288,8 +288,9 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
   *discovered_list_addr<oop>() = head;
 }
 
-ShenandoahRefProcIterator::ShenandoahRefProcIterator(size_t max) : _max(max), _index(0) {
-  _rp = ShenandoahGenerationalHeap::heap()->old_generation()->ref_processor();
+ShenandoahRefProcIterator::ShenandoahRefProcIterator(size_t max) :
+  _rp(ShenandoahGenerationalHeap::heap()->old_generation()->ref_processor()),
+  _max(max), _index(0) {
 }
 
 ShenandoahRefProcThreadLocal* ShenandoahRefProcIterator::next() {
