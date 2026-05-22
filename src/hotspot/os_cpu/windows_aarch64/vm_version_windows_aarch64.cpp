@@ -152,7 +152,7 @@ void VM_Version::get_os_cpu_info() {
       RRF_RT_REG_QWORD, &key_type, &value, &value_size) == ERROR_SUCCESS) && (value_size == sizeof(value))) {
       _cpu = value >> 24 & 0xFF;
       _variant = value >> 20 & 0x0F;
-      _model = value >> 16 & 0x0FFF;
+      _model = value >> 4 & 0x0FFF;
       _revision = value & 0x0F;
     }
   }
