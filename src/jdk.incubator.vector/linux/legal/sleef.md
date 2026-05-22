@@ -2,7 +2,7 @@
 
 ### Notice
 ```
-Copyright © 2010-2024 SLEEF Project, Naoki Shibata and contributors
+Copyright © 2010-2025 SLEEF Project, Naoki Shibata and contributors
 
 -------
 src/arch/helpersve.h has the following copyright:
