@@ -209,15 +209,31 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
-void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
+void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time, bool abbreviated) {
   // Conservatively add sample into linear model If this time is above the predicted concurrent gc time
   if (predict_gc_time(time_at_start) < gc_time) {
-    add_gc_time(time_at_start, gc_time);
+    // Only add abbreviated GC cycle times if we are learning, but count them as half a normal GC cycle time.
+    const size_t max_learn = ShenandoahLearningSteps;
+    if (!abbreviated || (_gc_times_learned <= max_learn)) {
+      if (abbreviated) {
+	// Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
+	// All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
+	// synchronization than marking, so we expect this approximation is conservative.
+	gc_time *= 2;
+      }
+      add_gc_time(time_at_start, gc_time);
+    }
   }
 }
 
 void ShenandoahAdaptiveHeuristics::add_gc_time(double time_at_start, double gc_time) {
   // Update best-fit linear predictor of GC time
+
+#undef KELVIN_GC_TIME
+#ifdef KELVIN_GC_TIME
+  log_info(gc)("add_gc_time(%.6f, %.6f)", time_at_start, gc_time);
+#endif
+
   uint index = (_gc_time_first_sample_index + _gc_time_num_samples) % GC_TIME_SAMPLE_SIZE;
   if (_gc_time_num_samples == GC_TIME_SAMPLE_SIZE) {
     _gc_time_sum_of_timestamps -= _gc_time_timestamps[index];
@@ -246,6 +262,9 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double time_at_start, double gc_t
     _gc_time_m = 0;
     _gc_time_b = gc_time;
     _gc_time_sd = 0.0;
+#ifdef KELVIN_GC_TIME
+    log_info(gc)(" _gc_time_sd: 0.0 because num_samples is 1");
+#endif
   } else if (_gc_time_num_samples == 2) {
 
     assert(time_at_start > _gc_time_timestamps[_gc_time_first_sample_index],
@@ -260,6 +279,9 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double time_at_start, double gc_t
     // so b = y0 - mx0
     _gc_time_b = gc_time - _gc_time_m * time_at_start;
     _gc_time_sd = 0.0;
+#ifdef KELVIN_GC_TIME
+    log_info(gc)(" _gc_time_sd: 0.0 because num_samples is 2");
+#endif
   } else {
     // Since timestamps are monotonically increasing, denominator does not equal zero.
     double denominator = _gc_time_num_samples * _gc_time_sum_of_xx - _gc_time_sum_of_timestamps * _gc_time_sum_of_timestamps;
@@ -275,13 +297,26 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double time_at_start, double gc_t
       double predicted_y = _gc_time_m * x + _gc_time_b;
       double deviation = predicted_y - _gc_time_samples[index];
       sum_of_squared_deviations += deviation * deviation;
+#ifdef KELVIN_GC_TIME
+      log_info(gc)(" with sample[%zu], x: %.3f, predicted y: %.3f, actual y: %.3f, deviation: %.3f, sum_of_squared: %.3f",
+		   i, x, predicted_y, _gc_time_samples[index], deviation, sum_of_squared_deviations);
+#endif
     }
     _gc_time_sd = sqrt(sum_of_squared_deviations / _gc_time_num_samples);
+#ifdef KELVIN_GC_TIME
+    log_info(gc)(" _gc_time_sd: %.6f is sqrt(%.6f / %u)", _gc_time_sd, sum_of_squared_deviations, _gc_time_num_samples);
+#endif
   }
 }
 
 double ShenandoahAdaptiveHeuristics::predict_gc_time(double timestamp_at_start) {
-  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;
+  double result = _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;
+#undef KELVIN_GC_TIME
+#ifdef KELVIN_GC_TIME
+  log_info(gc)("predict_gc_time(%.3f) returns %.3f from slope: %.3f, intercept: %.3f, sd: %.3f, error_margin: %.3f",
+	       timestamp_at_start, result, _gc_time_m, _gc_time_b, _gc_time_sd, _margin_of_error_sd);
+#endif
+  return result;
 }
 
 void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double timestamp, double rate) {
@@ -304,12 +339,26 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   _allocation_rate.allocation_counter_reset();
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
-  ShenandoahHeuristics::record_success_concurrent();
+void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
+  ShenandoahHeuristics::record_success_concurrent(abbreviated);
   double now = os::elapsedTime();
 
-  // Should we not add GC time if this was an abbreviated cycle?
-  add_gc_time(_cycle_start, elapsed_cycle_time());
+#undef KELVIN_CONC
+#ifdef KELVIN_CONC
+  log_info(gc)("SAH::record_success_concurrent() adding GC time (%.3f) to average", elapsed_cycle_time());
+#endif
+  // Only add abbreviated GC cycle times if we are learning, but count them as half a normal cycle time.
+  const size_t max_learn = ShenandoahLearningSteps;
+  if (!abbreviated || (_gc_times_learned <= max_learn)) {
+    double cycle_time = elapsed_cycle_time();
+    if (abbreviated) {
+      // Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
+      // All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
+      // synchronization than marking, so we expect this approximation is conservative.
+      cycle_time *= 2;
+    }
+    add_gc_time(_cycle_start, cycle_time);
+  }
 
   size_t available = _space_info->available();
 
@@ -360,11 +409,15 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_degenerated() {
-  ShenandoahHeuristics::record_degenerated();
-  add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
+void ShenandoahAdaptiveHeuristics::record_degenerated(bool abbreviated) {
+  ShenandoahHeuristics::record_degenerated(abbreviated);
+  add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time(), abbreviated);
   // Adjust both trigger's parameters in the case of a degenerated GC because
   // either of them should have triggered earlier to avoid this case.
+#undef KELVIN_DEGEN
+#ifdef KELVIN_DEGEN
+  log_info(gc)("SAH::record_degenerated(%s), adding penalties: %.3f", abbreviated? "true": "false", DEGENERATE_PENALTY_SD);
+#endif
   adjust_margin_of_error(DEGENERATE_PENALTY_SD);
   adjust_spike_threshold(DEGENERATE_PENALTY_SD);
 }
@@ -703,11 +756,17 @@ void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount)
 
 void ShenandoahAdaptiveHeuristics::adjust_margin_of_error(double amount) {
   _margin_of_error_sd = saturate(_margin_of_error_sd + amount, MINIMUM_CONFIDENCE, MAXIMUM_CONFIDENCE);
+#ifdef KELVIN_DEGEN
+  log_info(gc)("adjust_margin_of_error(%.3f), result: %.3f", amount, _margin_of_error_sd);
+#endif
   log_debug(gc, ergo)("Margin of error now %.2f", _margin_of_error_sd);
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
   _spike_threshold_sd = saturate(_spike_threshold_sd - amount, MINIMUM_CONFIDENCE, MAXIMUM_CONFIDENCE);
+#ifdef KELVIN_DEGEN
+  log_info(gc)("adjust_spike_threshold(%.3f), result: %.3f", amount, _spike_threshold_sd);
+#endif
   log_debug(gc, ergo)("Spike threshold now: %.2f", _spike_threshold_sd);
 }
 

@@ -195,14 +195,11 @@ protected:
 
   virtual void adjust_penalty(intx step);
 
-  inline void accept_trigger() {
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
-    _start_gc_is_pending = true;
-  }
-
   inline void decline_trigger() {
     _declined_trigger_count++;
+#ifdef KELVIN_DECLINE
+    log_info(gc)("decline_trigger(), count is: %zu", _declined_trigger_count);
+#endif
   }
 
   inline double get_most_recent_wake_time() const {
@@ -216,6 +213,16 @@ protected:
 public:
   ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
+
+  inline void accept_trigger() {
+    _most_recent_declined_trigger_count = _declined_trigger_count;
+    _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#undef KELVIN_DECLINE
+#ifdef KELVIN_DECLINE
+    log_info(gc)("accept_trigger(), declination count is: %zu", _most_recent_declined_trigger_count);
+#endif
+  }
 
   void record_metaspace_oom()     { _metaspace_oom.set(); }
   void clear_metaspace_oom()      { _metaspace_oom.unset(); }
@@ -249,9 +256,9 @@ public:
 
   virtual bool should_degenerate_cycle();
 
-  virtual void record_success_concurrent();
+  virtual void record_success_concurrent(bool abbreviated);
 
-  virtual void record_degenerated();
+  virtual void record_degenerated(bool abbreviated);
 
   virtual void record_success_full();
 

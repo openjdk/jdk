@@ -216,6 +216,12 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
+
+#undef KELVIN_PENALTY
+#ifdef KELVIN_PENALTY
+  log_info(gc)("SH::adjust_penalty(%zd), _most_recent_declined_trigger_count: %zu, Penalty_Free_Declinations: %zu",
+	       step, _most_recent_declined_trigger_count, Penalty_Free_Declinations);
+#endif
   if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
     // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
     // previous GC for self calibration without penalty.
@@ -229,6 +235,9 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
   if (new_val > 100) {
     new_val = 100;
   }
+#ifdef KELVIN_PENALTY
+  log_info(gc)(" original value: %ld, new value: %ld", _gc_time_penalties, new_val);
+#endif
   _gc_time_penalties = new_val;
 
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
@@ -253,14 +262,25 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
   }
 }
 
-void ShenandoahHeuristics::record_success_concurrent() {
+void ShenandoahHeuristics::record_success_concurrent(bool abbreviated) {
+
+#undef KELVIN_CONC
+#ifdef KELVIN_CONC
+  log_info(gc)("SH::record_success_concurrent(%s) adding GC time (%.3f) to gc_cycle_time_history",
+	       abbreviated? "true": "false", elapsed_cycle_time());
+#endif
+
   _gc_cycle_time_history->add(elapsed_cycle_time());
   _gc_times_learned++;
 
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_degenerated() {
+void ShenandoahHeuristics::record_degenerated(bool abbreviated) {
+#undef KELVIN_DEGEN
+#ifdef KELVIN_DEGEN
+  log_info(gc)("SH::record_degenerated(%s), adding penalties: %ld", abbreviated? "true": "false", Degenerated_Penalty);
+#endif
   adjust_penalty(Degenerated_Penalty);
 }
 

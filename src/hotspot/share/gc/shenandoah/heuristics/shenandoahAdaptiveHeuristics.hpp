@@ -135,8 +135,8 @@ public:
                                                        size_t actual_free) override;
 
   void record_cycle_start() override;
-  void record_success_concurrent() override;
-  void record_degenerated() override;
+  void record_success_concurrent(bool abbreviated) override;
+  void record_degenerated(bool abbreviated) override;
   void record_success_full() override;
 
   bool should_start_gc() override;
@@ -243,7 +243,7 @@ protected:
   void compute_headroom_adjustment() override;
 
   void add_gc_time(double timestamp_at_start, double duration);
-  void add_degenerated_gc_time(double timestamp_at_start, double duration);
+  void add_degenerated_gc_time(double timestamp_at_start, double duration, bool abbreviated);
   double predict_gc_time(double timestamp_at_start);
 
   // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
