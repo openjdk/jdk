@@ -101,6 +101,9 @@
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/support/jfrIntrinsics.hpp"
+#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
@@ -3463,6 +3466,7 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(StubRoutines::crc_table_addr());
+    ADD_EXTERNAL_ADDRESS(StubRoutines::verify_oop_count_addr()); // used by generate_verify_oop()
   }
 
   // Record addresses of VM runtime methods
@@ -3490,8 +3494,10 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(SharedRuntime::enable_stack_reserved_zone);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::rc_trace_method_entry);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::reguard_yellow_pages);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::dtrace_method_entry);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::dtrace_method_exit);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::complete_monitor_unlocking_C);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::OSR_migration_end);
 
 #if defined(AMD64) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(SharedRuntime::montgomery_multiply);
@@ -3541,6 +3547,11 @@ void AOTCodeAddressTable::init_extrs() {
 #if INCLUDE_JFR
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::write_checkpoint);
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::return_lease);
+  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::load_barrier);
+  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::epoch_address());
+  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::epoch_generation_address());
+  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::signal_address());
+  ADD_EXTERNAL_ADDRESS(&VMContinuations)
 #endif
   // For JFR
   ADD_EXTERNAL_ADDRESS(os::elapsed_counter);
@@ -3558,8 +3569,6 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(SharedRuntime::resolve_opt_virtual_call_C);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::resolve_virtual_call_C);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::resolve_static_call_C);
-    // already added
-    // ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_AbstractMethodError);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_IncompatibleClassChangeError);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_NullPointerException_at_call);
@@ -3704,11 +3713,11 @@ void AOTCodeAddressTable::init_extrs() {
 void AOTCodeAddressTable::init_extrs2() {
   assert(initializing_extrs && !_extrs_complete,
          "invalid sequence for init_extrs2");
-
   {
-  ADD_EXTERNAL_ADDRESS(Continuation::prepare_thaw); // used by cont_thaw
-  ADD_EXTERNAL_ADDRESS(Continuation::thaw_entry()); // used by cont_thaw
-  ADD_EXTERNAL_ADDRESS(ContinuationEntry::thaw_call_pc_address()); // used by cont_preempt_stub
+    ADD_EXTERNAL_ADDRESS(Continuation::prepare_thaw); // used by cont_thaw
+    ADD_EXTERNAL_ADDRESS(Continuation::thaw_entry()); // used by cont_thaw
+    ADD_EXTERNAL_ADDRESS(ContinuationEntry::thaw_call_pc_address()); // used by cont_preempt_stub
+    ADD_EXTERNAL_ADDRESS(Continuation::freeze_entry()); // used by gen_continuation_yield
   }
   _extrs_complete = true;
   initializing_extrs = false;
