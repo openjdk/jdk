@@ -92,11 +92,17 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
 
   ShenandoahOldDiscoveredMarker<ClosureType> marker(cl);
   OopType* list = reinterpret_cast<OopType*>(&_discovered_list);
-  while (list != nullptr) {
-    const oop discovered_ref = CompressedOops::decode(*list);
-    if (discovered_ref == nullptr) {
-      break;
-    }
+  const oop head = CompressedOops::decode(*list);
+  if (head == nullptr) {
+    return;
+  }
+
+  // Mark the head of the list. Fields in the object (except for referent)
+  // will be marked by oop iterate in the loop body. This avoids redundant
+  // marking of the reference.
+  cl->do_oop(list);
+  oop current = head;
+  while (true) {
 
     // We have discovered this reference, and it has an old referent. We must keep this young
     // reference itself alive until old reference processing is complete. If we don't do this,
@@ -105,15 +111,14 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
     // end of young marking even if they are unreachable. If the reference has a queue associated
     // with it, we _must_ wait until old marking is complete before enqueueing the reference.
     // Mark the reference itself as a root so it survives young GC.
-    cl->do_oop(list);
-    discovered_ref->oop_iterate(&marker);
+    current->oop_iterate(&marker);
 
     // Discovered list terminates with a self-loop
-    const oop discovered_next = ShenandoahReferenceProcessor::discovered<OopType>(discovered_ref);
-    if (discovered_ref == discovered_next) {
+    const oop discovered_next = ShenandoahReferenceProcessor::discovered<OopType>(current);
+    if (current == discovered_next) {
       break;
     }
-    list = ShenandoahReferenceProcessor::discovered_addr<OopType>(discovered_ref);
+    current = discovered_next;
   }
 }
 
