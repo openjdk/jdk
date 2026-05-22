@@ -44,7 +44,7 @@ runs:
 
     - name: 'Install MSYS2 on ARM64'
       id: msys2-arm64
-      uses: msys2/setup-msys2@v2.28.0
+      uses: msys2/setup-msys2@v2.31.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal

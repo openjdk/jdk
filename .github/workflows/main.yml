@@ -462,4 +462,5 @@ jobs:
       bootjdk-platform: windows-aarch64
       architecture: 'ARM64'
       runs-on: windows-11-arm
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
