@@ -82,6 +82,11 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return bsmSize;
     }
 
+    private static int poolHash(PoolEntry cpi) {
+        // SplitConstantPool only stores the AbstractPoolEntry implementation.
+        return ((AbstractPoolEntry) cpi).poolHash();
+    }
+
     @Override
     public PoolEntry entryByIndex(int index) {
         if (index <= 0 || index >= size()) {
@@ -193,13 +198,13 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                     doneFullScan = false;
                     i++;
                 } else {
-                    map.put(cpi.hashCode(), cpi.index());
+                    map.put(poolHash(cpi), cpi.index());
                     i += cpi.width();
                 }
             }
             for (int i = Math.max(parentSize, 1); i < size; ) {
                 PoolEntry cpi = myEntries[i - parentSize];
-                map.put(cpi.hashCode(), cpi.index());
+                map.put(poolHash(cpi), cpi.index());
                 i += cpi.width();
             }
         }
@@ -209,7 +214,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private void fullScan() {
         for (int i=1; i<parentSize;) {
             PoolEntry cpi = parent.entryByIndex(i);
-            map.put(cpi.hashCode(), cpi.index());
+            map.put(poolHash(cpi), cpi.index());
             i += cpi.width();
         }
         doneFullScan = true;
@@ -222,18 +227,18 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             this.bsmMap = bsmMap = new EntryMap(Math.max(bsmSize, 16), .75f);
             for (int i=0; i<parentBsmSize; i++) {
                 BootstrapMethodEntryImpl bsm = parent.bootstrapMethodEntry(i);
-                bsmMap.put(bsm.hash, bsm.index);
+                bsmMap.put(bsm.poolHash, bsm.index);
             }
             for (int i = parentBsmSize; i < bsmSize; ++i) {
                 BootstrapMethodEntryImpl bsm = myBsmEntries[i - parentBsmSize];
-                bsmMap.put(bsm.hash, bsm.index);
+                bsmMap.put(bsm.poolHash, bsm.index);
             }
         }
         return bsmMap;
     }
 
     private <E extends PoolEntry> E internalAdd(E cpi) {
-        return internalAdd(cpi, cpi.hashCode());
+        return internalAdd(cpi, poolHash(cpi));
     }
 
     private <E extends PoolEntry> E internalAdd(E cpi, int hash) {
@@ -328,7 +333,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private<T extends AbstractPoolEntry> AbstractPoolEntry findEntry(int tag, T ref1) {
         // invariant: canWriteDirect(ref1.constantPool())
-        int hash = AbstractPoolEntry.hash1(tag, ref1.hashCode());
+        int hash = AbstractPoolEntry.hash1(tag, ref1.index());
         EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map.getIndexByToken(token));
@@ -347,7 +352,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private <T extends AbstractPoolEntry, U extends AbstractPoolEntry>
             AbstractPoolEntry findEntry(int tag, T ref1, U ref2) {
         // invariant: canWriteDirect(ref1.constantPool()), canWriteDirect(ref2.constantPool())
-        int hash = AbstractPoolEntry.hash2(tag, ref1.hashCode(), ref2.hashCode());
+        int hash = AbstractPoolEntry.hash2(tag, ref1.index(), ref2.index());
         EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map.getIndexByToken(token));
@@ -596,7 +601,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     public MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference) {
         Util.checkU1(refKind, "reference kind");
         reference = AbstractPoolEntry.maybeClone(this, reference);
-        int hash = AbstractPoolEntry.hash2(TAG_METHOD_HANDLE, refKind, reference.hashCode());
+        int hash = AbstractPoolEntry.hash2(TAG_METHOD_HANDLE, refKind, reference.index());
         EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map1.getIndexByToken(token));
@@ -621,7 +626,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                                             bootstrapMethodEntry.arguments());
         nameAndType = AbstractPoolEntry.maybeClone(this, nameAndType);
         int hash = AbstractPoolEntry.hash2(TAG_INVOKE_DYNAMIC,
-                bootstrapMethodEntry.hashCode(), nameAndType.hashCode());
+                bootstrapMethodEntry.bsmIndex(), nameAndType.index());
         EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map1.getIndexByToken(token));
@@ -651,7 +656,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                                             bootstrapMethodEntry.arguments());
         nameAndType = AbstractPoolEntry.maybeClone(this, nameAndType);
         int hash = AbstractPoolEntry.hash2(TAG_DYNAMIC,
-                bootstrapMethodEntry.hashCode(), nameAndType.hashCode());
+                bootstrapMethodEntry.bsmIndex(), nameAndType.index());
         EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = entryByIndex(map1.getIndexByToken(token));
@@ -720,7 +725,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             }
         }
         AbstractPoolEntry.MethodHandleEntryImpl mre = (AbstractPoolEntry.MethodHandleEntryImpl) methodReference;
-        int hash = BootstrapMethodEntryImpl.computeHashCode(mre, arguments);
+        int hash = BootstrapMethodEntryImpl.computePoolHashCode(mre, arguments);
         EntryMap map = bsmMap();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             BootstrapMethodEntryImpl e = bootstrapMethodEntry(map.getIndexByToken(token));
