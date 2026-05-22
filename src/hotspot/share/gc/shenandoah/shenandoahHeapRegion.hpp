@@ -281,7 +281,6 @@ private:
   ShenandoahSharedFlag _has_self_forwards;
 
   bool _needs_bitmap_reset;
-  bool _has_evacuation_failures;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
