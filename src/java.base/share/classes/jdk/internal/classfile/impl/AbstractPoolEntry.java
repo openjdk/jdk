@@ -523,7 +523,7 @@ public abstract sealed class AbstractPoolEntry {
         protected final T ref1;
 
         public AbstractRefEntry(ConstantPool constantPool, int tag, int index, T ref1) {
-            super(constantPool, index, hash1(tag, ref1.index()));
+            super(constantPool, index, hash1(tag, ref1.hashCode()));
             this.ref1 = ref1;
         }
 
@@ -547,7 +547,7 @@ public abstract sealed class AbstractPoolEntry {
         protected final U ref2;
 
         public AbstractRefsEntry(ConstantPool constantPool, int tag, int index, T ref1, U ref2) {
-            super(constantPool, index, hash2(tag, ref1.index(), ref2.index()));
+            super(constantPool, index, hash2(tag, ref1.hashCode(), ref2.hashCode()));
             this.ref1 = ref1;
             this.ref2 = ref2;
         }
@@ -881,6 +881,7 @@ public abstract sealed class AbstractPoolEntry {
         private final int bsmIndex;
         private BootstrapMethodEntryImpl bootstrapMethod;
         private final NameAndTypeEntryImpl nameAndType;
+        private @Stable int hash;
 
         AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                          NameAndTypeEntryImpl nameAndType) {
@@ -888,11 +889,12 @@ public abstract sealed class AbstractPoolEntry {
             this.bsmIndex = bootstrapMethod.bsmIndex();
             this.bootstrapMethod = bootstrapMethod;
             this.nameAndType = nameAndType;
+            this.hash = hash;
         }
 
-        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int hash, int bsmIndex,
+        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int bsmIndex,
                                          NameAndTypeEntryImpl nameAndType) {
-            super(cpm, index, hash);
+            super(cpm, index, 0);
             this.bsmIndex = bsmIndex;
             this.bootstrapMethod = null;
             this.nameAndType = nameAndType;
@@ -920,6 +922,15 @@ public abstract sealed class AbstractPoolEntry {
          */
         public NameAndTypeEntryImpl nameAndType() {
             return nameAndType;
+        }
+
+        @Override
+        public int hashCode() {
+            var h = this.hash;
+            if (h != 0) {
+                return h;
+            }
+            return this.hash = hash2(tag(), bootstrap().hashCode(), nameAndType.hashCode());
         }
 
         void writeTo(BufWriterImpl pool) {
@@ -957,8 +968,7 @@ public abstract sealed class AbstractPoolEntry {
 
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                    NameAndTypeEntryImpl nameAndType) {
-            super(cpm, index, hash2(TAG_INVOKE_DYNAMIC, bsmIndex, nameAndType.index()),
-                  bsmIndex, nameAndType);
+            super(cpm, index, bsmIndex, nameAndType);
         }
 
         @Override
@@ -996,8 +1006,7 @@ public abstract sealed class AbstractPoolEntry {
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                      NameAndTypeEntryImpl nameAndType) {
-            super(cpm, index, hash2(TAG_DYNAMIC, bsmIndex, nameAndType.index()),
-                  bsmIndex, nameAndType);
+            super(cpm, index, bsmIndex, nameAndType);
         }
 
         @Override
@@ -1039,7 +1048,7 @@ public abstract sealed class AbstractPoolEntry {
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
-            super(cpm, index, hash2(TAG_METHOD_HANDLE, refKind, reference.index()));
+            super(cpm, index, hash2(TAG_METHOD_HANDLE, refKind, reference.hashCode()));
             this.refKind = refKind;
             this.reference = reference;
         }
