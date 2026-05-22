@@ -80,7 +80,7 @@ public:
 
   virtual ShenandoahHeuristics* heuristics() const { return _heuristics; }
 
-  ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
+  ShenandoahReferenceProcessor* ref_processor() const { return _ref_processor; }
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
   virtual void post_initialize_heuristics();

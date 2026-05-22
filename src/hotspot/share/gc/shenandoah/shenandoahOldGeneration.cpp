@@ -346,7 +346,7 @@ void ShenandoahOldGeneration::cancel_marking() {
   ShenandoahGeneration::cancel_marking();
 }
 
-void ShenandoahOldGeneration::cancel_gc() {
+void ShenandoahOldGeneration::abandon_gc() {
   shenandoah_assert_safepoint();
   if (is_idle()) {
 #ifdef ASSERT
@@ -359,7 +359,7 @@ void ShenandoahOldGeneration::cancel_gc() {
     // Stop tracking old regions
     abandon_collection_candidates();
     // Remove old generation access to young generation mark queues
-    ShenandoahHeap::heap()->young_generation()->set_old_gen_task_queues(nullptr);
+    ShenandoahHeap::heap()->young_generation()->clear_bootstrap_configuration();
     // Transition to IDLE now.
     transition_to(ShenandoahOldGeneration::IDLE);
   }
@@ -501,8 +501,9 @@ const char* ShenandoahOldGeneration::state_name(State state) {
 
 void ShenandoahOldGeneration::transition_to(State new_state) {
   if (_state != new_state) {
-    log_debug(gc, thread)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
-    EventMark event("Old was %s, now is %s", state_name(_state), state_name(new_state));
+    FormatBuffer<> msg("Old was %s, now is %s", state_name(_state), state_name(new_state));
+    log_debug(gc, thread)("%s", msg.buffer());
+    Events::log(Thread::current(), "%s", msg.buffer());
     validate_transition(new_state);
     _state = new_state;
   }
