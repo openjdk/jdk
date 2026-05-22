@@ -266,9 +266,9 @@ public:
   address load_archive_data(StubId stub_id, address &end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN_(nullptr);
   void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
 
-  void stub_epilog(StubId stub_id);
+  void stub_epilog(StubId stub_id) NOT_CDS_RETURN;
 #ifdef ASSERT
-  void check_stored(StubId stub_id);
+  void check_stored(StubId stub_id) NOT_CDS_RETURN;
 #endif
   const AOTStubData* as_const() { return (const AOTStubData*)this; }
 };
@@ -301,7 +301,6 @@ public:
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
-  do_fun(int,   CompressedOops_shift,                   CompressedOops::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
   do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
   do_fun(CollectedHeap::Name, Universe_heap_kind,       Universe::heap()->kind()) \
@@ -377,6 +376,7 @@ protected:
 
     // Special configs that cannot be checked with macros
     address _compressedOopBase;
+    int _compressedOopShift;
 
 #if defined(X86) && !defined(ZERO)
     bool _useUnalignedLoadStores;

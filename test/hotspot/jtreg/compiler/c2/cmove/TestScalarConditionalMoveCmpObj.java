@@ -31,6 +31,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
+ * @key randomness
  * @summary Test conditional move + compare object.
  * @library /test/lib /
  * @run driver ${test.main.class}
@@ -309,7 +310,7 @@ public class TestScalarConditionalMoveCmpObj {
         for (int i = 0; i < a.length; i++) {
             b[i] = a[i];
         }
-        Random rand = new Random();
+        Random rand = Utils.getRandomInstance();
         for (int i = 0; i < SIZE; i++) {
             if (rand.nextInt(5) == 0) {
                 NotValue t = b[i];
