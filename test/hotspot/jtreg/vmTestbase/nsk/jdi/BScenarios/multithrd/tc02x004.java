@@ -204,7 +204,7 @@ public class tc02x004 {
         }
         display("\tmethod\t- " + event.location().method().name());
         display("\tline\t- " + event.location().lineNumber());
-        
+
         display("thread:\t" + event.thread().name());
         try {
             display("source:\t" + event.location().sourceName());
