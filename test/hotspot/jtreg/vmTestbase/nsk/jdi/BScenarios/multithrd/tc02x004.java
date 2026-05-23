@@ -204,7 +204,6 @@ public class tc02x004 {
         }
         display("\tmethod\t- " + event.location().method().name());
         display("\tline\t- " + event.location().lineNumber());
-
         display("thread:\t" + event.thread().name());
         try {
             display("source:\t" + event.location().sourceName());
@@ -231,7 +230,7 @@ public class tc02x004 {
         if (brkpEventCount == tc02x004a.threadCount) {
             // When done we disable the MethodEntryRequest because we don't
             // want it enabled while the debuggee exits. See JDK-8375076 and JDK-8384569.
-            //event.request().disable();
+            event.request().disable();
         }
     }
 }
