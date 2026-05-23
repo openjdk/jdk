@@ -204,6 +204,7 @@ public class tc02x004 {
         }
         display("\tmethod\t- " + event.location().method().name());
         display("\tline\t- " + event.location().lineNumber());
+        
         display("thread:\t" + event.thread().name());
         try {
             display("source:\t" + event.location().sourceName());
@@ -211,7 +212,6 @@ public class tc02x004 {
         }
         display("method:\t" + event.location().method().name());
         display("line:\t" + event.location().lineNumber());
-
         if (event.location().lineNumber() == tc02x004a.checkClassBrkpLine) {
             display("ClassBreakpoint stops on the expected line "
                         + event.location().lineNumber() + " in method "
