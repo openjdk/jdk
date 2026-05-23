@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -2012,7 +2013,81 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
+        addNoOpDMGScriptIfNeeded();
+
         return this;
+    }
+
+    private void addNoOpDMGScriptIfNeeded() {
+        if (!checkIfNoOpDMGScriptIsNeeded()) {
+            return;
+        }
+
+        String appName;
+        try {
+            appName = nameFromAppImage().orElseThrow();
+        } catch (RuntimeException ex) {
+            // nameFromAppImage() can throw if an invalid app image is provided
+            // (for example, when .jpackage.xml is missing in negative tests
+            // such as ErrorTest). Ignore the failure and fall back to other
+            // name sources. We cannot call name() directly here because it may
+            // fail for tests that intentionally use an invalid app image.
+            try {
+                appName = nameFromBasicArgs().or(this::nameFromRuntimeImage)
+                        .orElseThrow();
+            } catch (NoSuchElementException ex2) {
+                // Could not determine app name. Most likely a negative test
+                // (for example, ErrorTest).
+                return;
+            }
+
+        }
+
+        final String scriptName = appName + "-dmg-setup.scpt";
+        Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
+        if (resourceDir == null) {
+            resourceDir = TKit.createTempDirectory("resources-dir-noop-dmg-script")
+                    .toAbsolutePath();
+            setArgumentValue("--resource-dir", resourceDir);
+        } else if (!Files.isDirectory(resourceDir)) {
+            // If we have invalid resource dir, just keep it in case if test
+            // wants it.
+            return;
+        }
+
+        if (Files.exists(resourceDir.resolve(scriptName))) {
+            // We already have script provided. Do not overwrite it.
+            return;
+        }
+
+        // Create no-op DMG script
+        try {
+            Files.writeString(resourceDir.resolve(scriptName), "return\n",
+                    StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private boolean checkIfNoOpDMGScriptIsNeeded() {
+        if (!TKit.isOSX()) {
+            return false;
+        }
+
+        if (!hasArgument("--type")) {
+            return false;
+        }
+
+        if (packageType() != PackageType.MAC_DMG) {
+            return false;
+        }
+
+        // Use normal DMG script for SQE tests
+        if (TKit.getConfigProperty("SQETest") != null) {
+            return false;
+        }
+
+        return true;
     }
 
     public String getPrintableCommandLine() {
