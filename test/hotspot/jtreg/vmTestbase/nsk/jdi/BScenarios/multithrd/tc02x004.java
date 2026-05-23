@@ -213,12 +213,6 @@ public class tc02x004 {
         display("method:\t" + event.location().method().name());
         display("line:\t" + event.location().lineNumber());
 
-        // When done() is called we disable the MethodEntryRequest because we don't
-        // want it enabled while the debuggee exits. See JDK-8375076 and JDK-8384569.
-        if (event.method().name().equals("done")) {
-            return;
-        }
-
         if (event.location().lineNumber() == tc02x004a.checkClassBrkpLine) {
             display("ClassBreakpoint stops on the expected line "
                         + event.location().lineNumber() + " in method "
@@ -237,7 +231,7 @@ public class tc02x004 {
         if (brkpEventCount == tc02x004a.threadCount) {
             // When done we disable the MethodEntryRequest because we don't
             // want it enabled while the debuggee exits. See JDK-8375076 and JDK-8384569.
-            event.request().disable();
+            //event.request().disable();
         }
     }
 }
