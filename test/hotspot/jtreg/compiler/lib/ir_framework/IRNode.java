@@ -2418,6 +2418,36 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
     }
 
+    public static final String VECTOR_SLICE_B = VECTOR_PREFIX + "VECTOR_SLICE_B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_B, "VectorSlice", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_SLICE_S = VECTOR_PREFIX + "VECTOR_SLICE_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_S, "VectorSlice", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_SLICE_I = VECTOR_PREFIX + "VECTOR_SLICE_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_I, "VectorSlice", TYPE_INT);
+    }
+
+    public static final String VECTOR_SLICE_F = VECTOR_PREFIX + "VECTOR_SLICE_F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_F, "VectorSlice", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_SLICE_L = VECTOR_PREFIX + "VECTOR_SLICE_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_L, "VectorSlice", TYPE_LONG);
+    }
+
+    public static final String VECTOR_SLICE_D = VECTOR_PREFIX + "VECTOR_SLICE_D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_D, "VectorSlice", TYPE_DOUBLE);
+    }
+
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
     static {
         vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);
@@ -3160,6 +3190,26 @@ public class IRNode {
     public static final String X86_CMOVEL_IMM01UCF = PREFIX + "X86_CMOVEL_IMM01UCF" + POSTFIX;
     static {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX, "vector_slice_const_origin_16_16B_reg_avx");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, "vector_slice_const_origin_multiple4_GT16B_reg_evex");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_GT16_AND_LT48_GT16B_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_GT16_AND_LT48_GT16B_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_GT16_AND_LT48_GT16B_EVEX, "vector_slice_const_origin_GT16_AND_LT48_GT16B_reg_evex");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX, "vector_slice_const_origin_LT16_OR_GT48_GT16B_reg_evex");
     }
 
     public static final String X86_CMOVEL_IMM01UCFE = PREFIX + "X86_CMOVEL_IMM01UCFE" + POSTFIX;

@@ -1735,8 +1735,73 @@ bool LibraryCallKit::inline_vector_blend() {
   return true;
 }
 
-
 //
+//  <V extends Vector<E>,
+//   E>
+//   V sliceOp(int origin, Class<?> vClass, int laneType, int length, V v1, V v2,
+//             VectorSliceOp<V, E> defaultImpl)
+//
+bool LibraryCallKit::inline_vector_slice() {
+  const TypeInt*     origin       = gvn().type(argument(0))->isa_int();
+  const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
+  const TypeInt*     laneType     = gvn().type(argument(2))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
+
+  if (origin == nullptr || vector_klass == nullptr || laneType == nullptr || vlen == nullptr) {
+    return false; // dead code
+  }
+  if (vector_klass->const_oop() == nullptr || !laneType->is_con() || !vlen->is_con()) {
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()],
+                    NodeClassNames[argument(3)->Opcode()]);
+    return false; // not enough info for intrinsification
+  }
+
+  if (!is_klass_initialized(vector_klass)) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  VectorSupport::LaneType vltype = static_cast<VectorSupport::LaneType>(laneType->get_con());
+  if (!is_primitive_lane_type(vltype)) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(vltype));
+    return false; // should be primitive type
+  }
+
+  if (!origin->is_con()) {
+    log_if_needed("  ** vector slice from non-constant index not supported");
+    return false;
+  }
+
+  int num_elem = vlen->get_con();
+  BasicType elem_bt = get_vector_primitive_lane_type(vltype);
+
+  if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed)) {
+    log_if_needed("  ** not supported: arity=2 op=slice vlen=%d etype=%s",
+                    num_elem, type2name(elem_bt));
+    return false; // not supported
+  }
+
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+
+  Node* v1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  Node* v2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  if (v1 == nullptr || v2 == nullptr) {
+    return false; // operand unboxing failed
+  }
+
+  // Defining origin in terms of number of bytes to make it type agnostic value.
+  Node* origin_node = gvn().intcon(origin->get_con() * type2aelembytes(elem_bt));
+  const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
+  Node* operation = gvn().transform(trace_vector(new VectorSliceNode(v1, v2, origin_node, vector_type)));
+  Node* box = box_vector(operation, vbox_type, elem_bt, num_elem);
+  set_result(box);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>

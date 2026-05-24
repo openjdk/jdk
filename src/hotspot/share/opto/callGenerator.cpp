@@ -437,6 +437,39 @@ CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* cal
   return cg;
 }
 
+class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
+ protected:
+ bool _use_fallback_generator;
+ CallGenerator* _inline_cg2;
+
+ public:
+  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg, CallGenerator* inline_cg) :
+    LateInlineCallGenerator(method, intrinsic_cg) , _inline_cg2(inline_cg) {
+    _use_fallback_generator = false;
+  }
+
+  virtual CallGenerator* inline_cg() const {
+    return _use_fallback_generator ? _inline_cg2 : _inline_cg;
+  }
+  virtual bool inline_fallback() const;
+  virtual bool is_vector_late_inline() const { return true; }
+  virtual void enable_fallback_generation() {
+     _use_fallback_generator = true;
+  }
+};
+
+bool LateInlineVectorCallGenerator::inline_fallback() const {
+  switch (method()->intrinsic_id()) {
+    case vmIntrinsics::_VectorSlice: return true;
+    default : return false;
+  }
+}
+
+CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, CallGenerator* inline_cg) {
+  return new LateInlineVectorCallGenerator(m, intrinsic_cg, inline_cg);
+}
+
+
 // Allow inlining decisions to be delayed
 class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
  private:
