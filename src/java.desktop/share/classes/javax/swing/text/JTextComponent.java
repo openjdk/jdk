@@ -454,7 +454,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         repaint();
         if (accessibleContext != null) {
             model.addDocumentListener(
-                ((AccessibleJTextComponent)accessibleContext));
+                ((AccessibleJTextComponent)getAccessibleContext()));
         }
         if (inputMethodRequestsHandler != null) {
             model.addDocumentListener((DocumentListener)inputMethodRequestsHandler);
