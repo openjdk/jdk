@@ -130,8 +130,8 @@ zaddress ZBarrierSet::load_barrier_on_oop_field(volatile zpointer* p) {
 class ZBarrierSet::ZClonerOopClosure : public BasicOopIterateClosure {
   const zaddress _src;
   const zaddress _dst;
-  const size_t _size;
-  const bool _is_dst_old;
+  const size_t   _size;
+  const bool     _is_dst_old;
 
   size_t _copied_bytes;
 
@@ -175,24 +175,33 @@ public:
 
   virtual void do_oop(oop* p) {
     volatile zpointer* const src_p = (volatile zpointer*)p;
-    const size_t element_or_field_offset = (uintptr_t)src_p - untype(_src);
-    volatile zpointer* const dst_p = (volatile zpointer*)(untype(_dst) + element_or_field_offset);
+    const size_t offset = (uintptr_t)src_p - untype(_src);
+    volatile zpointer* const dst_p = (volatile zpointer*)(untype(_dst) + offset);
 
     // Copy payload up to element or field
-    copy_to(element_or_field_offset);
+    copy_to(offset);
 
-    // Clone the oop element or field
-    const zaddress element_or_field = ZBarrier::load_barrier_on_oop_field(src_p);
+    // Load source object
+    const zaddress obj = ZBarrier::load_barrier_on_oop_field(src_p);
+
+    // Store barrier
+
+    // Store barrier over null requires only rememebered-set handling
+    assert(is_null_any(*dst_p), "Must be null: " PTR_FORMAT , untype(*dst_p));
 
     if (_is_dst_old) {
-      // We avoid healing here because the store below colors the pointer store good,
-      // hence avoiding the cost of a CAS.
-      ZBarrier::store_barrier_on_heap_oop_field(dst_p, false /* heal */);
+      // "page is old" may be racy w.r.t. flip aging, but relocation handles
+      // missing rememebered-set entires via ZRelocateAddRemsetForFlipPromoted.
+      ZGeneration::young()->remember(dst_p);
     }
 
-    AtomicAccess::store(dst_p, ZAddress::store_good(element_or_field));
+    // No concurrent writes are allowed to the dst object, except potential
+    // GC barrier healing.
+    AtomicAccess::store(dst_p, ZAddress::store_good(obj));
 
     _copied_bytes += oopSize;
+
+    postcond(_copied_bytes == offset + oopSize);
   }
 
   virtual void do_oop(narrowOop* p) {
