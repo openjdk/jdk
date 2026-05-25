@@ -59,8 +59,9 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Wall-clock time in seconds from marking start to the first mixed GC,
   // excluding GC Pause time.
   TruncatedSeq _marking_start_to_mixed_time_s;
-  // Old generation allocation rate in bytes per second.
-  TruncatedSeq _old_gen_alloc_rate;
+  // Track old-generation allocations during a concurrent cycle: end of the
+  // Concurrent Mark Start to the first Mixed GC.
+  // These values are used only when G1UseAdaptiveIHOP is enabled.
   TruncatedSeq _old_non_humongous_alloc_rate;
   TruncatedSeq _peak_humongous_allocated_in_mark_cycle;
 
@@ -108,7 +109,6 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // the collection set in that first mixed gc (including waste caused by PLAB
   // allocation etc.).
   void record_mutator_period(double mutator_time_s,
-                             size_t old_gen_growth_bytes,
                              size_t expected_young_gen_size);
 
   // Update the time spent in the mutator beginning from the end of concurrent start to

@@ -34,9 +34,6 @@ class G1OldGenAllocationTracker : public CHeapObj<mtGC> {
   // Total number of bytes allocated in the old generation at the end
   // of the last gc.
   size_t _last_period_old_gen_bytes;
-  // Total growth of the old geneneration since the last gc,
-  // taking eager-reclaim into consideration.
-  size_t _last_period_old_gen_growth;
 
   // Total size of humongous objects for last gc.
   size_t _humongous_bytes_after_last_gc;
@@ -63,7 +60,6 @@ public:
   }
 
   size_t last_period_old_gen_bytes() const { return _last_period_old_gen_bytes; }
-  size_t last_period_old_gen_growth() const { return _last_period_old_gen_growth; }
 
   // Calculates and resets stats after a collection.
   G1MutatorPeriodStatsBytes end_mutator_period(size_t humongous_bytes_after_gc);

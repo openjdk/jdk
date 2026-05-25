@@ -77,7 +77,6 @@ G1IHOPControl::G1IHOPControl(double ihop_percent,
     _last_allocation_time_s(0.0),
     _predictor(predictor),
     _marking_start_to_mixed_time_s(10, 0.05),
-    _old_gen_alloc_rate(10, 0.05),
     _old_non_humongous_alloc_rate(10, 0.05),
     _peak_humongous_allocated_in_mark_cycle(10, 0.05),
     _expected_young_gen_at_first_mixed_gc(0) {
@@ -100,11 +99,8 @@ void G1IHOPControl::report_statistics(G1NewTracer* new_tracer,
 }
 
 void G1IHOPControl::record_mutator_period(double mutator_time_s,
-                                          size_t old_gen_growth_bytes,
                                           size_t expected_young_gen_size) {
   assert(mutator_time_s > 0, "Invalid allocation time: %.3f", mutator_time_s);
-  double alloc_rate = old_gen_growth_bytes / mutator_time_s;
-  _old_gen_alloc_rate.add(alloc_rate);
   _last_allocation_time_s = mutator_time_s;
   _expected_young_gen_at_first_mixed_gc = expected_young_gen_size;
 }
@@ -212,7 +208,6 @@ void G1IHOPControl::send_trace_event(G1NewTracer* tracer,
                                             effective_target_occupancy(),
                                             non_young_occupancy,
                                             _expected_young_gen_at_first_mixed_gc,
-                                            predict(&_old_gen_alloc_rate),
                                             predict(&_old_non_humongous_alloc_rate),
                                             predict(&_peak_humongous_allocated_in_mark_cycle),
                                             predict(&_marking_start_to_mixed_time_s),

@@ -965,7 +965,7 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   Pause this_pause = collector_state()->gc_pause_type(concurrent_operation_is_full_mark);
-  record_pause(this_pause, start_time_sec, end_time_sec);
+  record_pause(this_pause, start_time_sec, end_time_sec, allocation_word_size);
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
   if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
@@ -1046,9 +1046,8 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
     // prediction too small and the limit the young gen every time we get to the
     // predicted target occupancy.
     size_t young_gen_size = young_list_desired_length() * G1HeapRegion::GrainBytes;
-    size_t old_gen_alloc_bytes = _old_gen_alloc_tracker.last_period_old_gen_growth();
 
-    _ihop_control->record_mutator_period(mutator_time_s, old_gen_alloc_bytes, young_gen_size);
+    _ihop_control->record_mutator_period(mutator_time_s, young_gen_size);
     report = true;
   }
 

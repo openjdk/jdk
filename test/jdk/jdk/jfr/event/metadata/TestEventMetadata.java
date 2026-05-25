@@ -147,7 +147,7 @@ public class TestEventMetadata {
         System.out.println("Verifying name: " + name);
         Asserts.assertNotEquals(name, null, "Name not allowed to be null");
         Asserts.assertTrue(name.length() > 1, "Name must be at least two characters");
-        Asserts.assertTrue(name.length() < 32, "Name should not exceed 32 characters");
+        Asserts.assertTrue(name.length() <= 32, "Name should not exceed 32 characters");
         Asserts.assertFalse(isReservedKeyword(name),"Name must not be reserved keyword in the Java language (" + name + ")");
         char firstChar = name.charAt(0);
         Asserts.assertTrue(Character.isAlphabetic(firstChar), "Name must start with a character");

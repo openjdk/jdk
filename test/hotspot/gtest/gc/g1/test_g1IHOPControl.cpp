@@ -89,10 +89,10 @@ struct G1IHOPTestController {
                                               pause_data._gc_start_time,
                                               pause_data._gc_start_time + pause_data._gc_pause_time,
                                               period_stats);
+
     if (pause_type != G1CollectorState::Pause::Mixed &&
         pause_type != G1CollectorState::Pause::Full) {
       _ihop_control.record_mutator_period(pause_data._mutator_time_s,
-                                          _alloc_tracker.last_period_old_gen_growth(),
                                           pause_data._desired_young);
     }
   }
