@@ -23,7 +23,7 @@
 
 /*
  * @test CheckCheckCICompilerCount
- * @bug 8130858 8132525 8162881 8379396
+ * @bug 8130858 8132525 8162881 8379396 8384124
  * @summary Check that correct range of values for CICompilerCount are allowed depending on whether tiered is enabled or not
  * @library /test/lib /
  * @requires vm.flagless
@@ -204,6 +204,41 @@ public class CheckCICompilerCount {
         1,
     };
 
+    private static final String[][] ACTIVE_PROCESSOR_ARGUMENTS = {
+        {
+            "-server",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:TieredStopAtLevel=0",
+            "-XX:+PrintFlagsFinal",
+            "-version"
+        },
+        {
+            "-server",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+PrintFlagsFinal",
+            "-version"
+        },
+        {
+            "-server",
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+PrintFlagsFinal",
+            "-version"
+        },
+    };
+
+    private static final String[] ACTIVE_PROCESSOR_EXPECTED_OUTPUTS = {
+            "intx CICompilerCount                          = 0                                         {product}",
+            "intx CICompilerCount                          = 1                                         {product}",
+            "intx CICompilerCount                          = 2                                         {product}",
+    };
+
+    private static final int[] ACTIVE_PROCESSOR_EXIT = {
+        0,
+        0,
+        0,
+    };
+
     private static void verifyOptionBehavior(String[] arguments, String expected_output, int exit, boolean tiered) throws Exception {
         ProcessBuilder pb;
         OutputAnalyzer out;
@@ -232,6 +267,14 @@ public class CheckCICompilerCount {
             throw new RuntimeException("Test is set up incorrectly: length of arguments, expected outputs and exit codes in tiered mode of operation do not match.");
         }
 
+        if (INVALID_ARGUMENTS.length != INVALID_EXPECTED_OUTPUTS.length || INVALID_ARGUMENTS.length != INVALID_EXIT.length) {
+            throw new RuntimeException("Test is set up incorrectly: length of arguments, expected outputs and exit codes in invalid arguments cases do not match.");
+        }
+
+        if (ACTIVE_PROCESSOR_ARGUMENTS.length != ACTIVE_PROCESSOR_EXPECTED_OUTPUTS.length || ACTIVE_PROCESSOR_ARGUMENTS.length != ACTIVE_PROCESSOR_EXIT.length) {
+            throw new RuntimeException("Test is set up incorrectly: length of arguments, expected outputs and exit codes in ActiveProcessorCount cases do not match.");
+        }
+
         for (int i = 0; i < NON_TIERED_ARGUMENTS.length; i++) {
             verifyOptionBehavior(NON_TIERED_ARGUMENTS[i], NON_TIERED_EXPECTED_OUTPUTS[i], NON_TIERED_EXIT[i], false);
         }
@@ -242,6 +285,13 @@ public class CheckCICompilerCount {
 
         for (int i = 0; i < INVALID_ARGUMENTS.length; i++) {
             verifyOptionBehavior(INVALID_ARGUMENTS[i], INVALID_EXPECTED_OUTPUTS[i], INVALID_EXIT[i], true);
+        }
+
+        for (int i = 0; i < ACTIVE_PROCESSOR_ARGUMENTS.length; i++) {
+            verifyOptionBehavior(ACTIVE_PROCESSOR_ARGUMENTS[i],
+                                 ACTIVE_PROCESSOR_EXPECTED_OUTPUTS[i],
+                                 ACTIVE_PROCESSOR_EXIT[i],
+                                 false);
         }
     }
 }

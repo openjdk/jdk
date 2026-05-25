@@ -796,11 +796,6 @@ size_t ShenandoahOldGeneration::used() const {
   return _free_set->old_used();
 }
 
-size_t ShenandoahOldGeneration::bytes_allocated_since_gc_start() const {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
-  return 0;
-}
-
 size_t ShenandoahOldGeneration::get_affiliated_region_count() const {
   return _free_set->old_affiliated_regions();
 }
