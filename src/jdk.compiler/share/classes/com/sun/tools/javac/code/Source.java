@@ -379,8 +379,8 @@ public enum Source {
         case JDK24  -> RELEASE_24;
         case JDK25  -> RELEASE_25;
         case JDK26  -> RELEASE_26;
-        case JDK28  -> RELEASE_28;
         case JDK27  -> RELEASE_27;
+        case JDK28  -> RELEASE_28;
         default     -> null;
         };
     }

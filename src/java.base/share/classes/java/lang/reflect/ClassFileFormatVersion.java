@@ -400,9 +400,9 @@ public enum ClassFileFormatVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 28.
      *
-     *  28
+     * @since 28
      *
-     *  <a
+     * @see <a
      * href="https://docs.oracle.com/en/java/javase/28/docs/specs/jvms/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 28 Edition</cite></a>
      */

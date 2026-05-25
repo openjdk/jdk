@@ -1047,7 +1047,7 @@ public sealed interface ClassFile
     int JAVA_27_VERSION = 71;
 
     /**
-     * The class major version introduced by Java SE 28, {}.
+     * The class major version introduced by Java SE 28, {@value}.
      *
      *  ClassFileFormatVersion#RELEASE_28
      *  28
