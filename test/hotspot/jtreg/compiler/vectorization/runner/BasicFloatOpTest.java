@@ -126,7 +126,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true", "rvv", "true"},
+    @IR(applyIfPlatform = {"x64", "true"},
+        counts = {IRNode.NEG_VF, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"},
         counts = {IRNode.NEG_VF, ">0"})
     public float[] vectorNeg() {
         float[] res = new float[SIZE];
@@ -137,7 +139,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true", "rvv", "true"},
+    @IR(applyIfPlatform = {"x64", "true"},
+        counts = {IRNode.ABS_VF, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "true", "rvv", "true"},
         counts = {IRNode.ABS_VF, ">0"})
     public float[] vectorAbs() {
         float[] res = new float[SIZE];
@@ -159,7 +163,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
+    @IR(applyIfPlatform = {"x64", "true"},
+        counts = {IRNode.ADD_VF, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"},
         counts = {IRNode.ADD_VF, ">0"})
     public float[] vectorAdd() {
         float[] res = new float[SIZE];
@@ -170,7 +176,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
+    @IR(applyIfPlatform = {"x64", "true"},
+        counts = {IRNode.SUB_VF, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"},
         counts = {IRNode.SUB_VF, ">0"})
     public float[] vectorSub() {
         float[] res = new float[SIZE];
@@ -181,7 +189,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
+    @IR(applyIfPlatform = {"x64", "true"},
+        counts = {IRNode.MUL_VF, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"},
         counts = {IRNode.MUL_VF, ">0"})
     public float[] vectorMul() {
         float[] res = new float[SIZE];
@@ -192,7 +202,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
+    @IR(applyIfPlatform = {"x64", "true"},
+        counts = {IRNode.DIV_VF, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"},
         counts = {IRNode.DIV_VF, ">0"})
     public float[] vectorDiv() {
         float[] res = new float[SIZE];
