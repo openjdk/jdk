@@ -114,7 +114,7 @@ final class EventParser extends Parser {
             return null;
         }
 
-        long startTicks = input.readLong();
+        long startTicks = timeConverter.unpackStartTicks(input.readLong());
         long endTicks = startTicks;
         if (hasDuration) {
             long durationTicks = input.readLong();

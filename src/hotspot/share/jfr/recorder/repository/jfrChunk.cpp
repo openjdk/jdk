@@ -31,7 +31,7 @@
 
 static const char* const MAGIC = "FLR";
 static const u2 JFR_VERSION_MAJOR = 2;
-static const u2 JFR_VERSION_MINOR = 1;
+static const u2 JFR_VERSION_MINOR = 2;
 
 // strictly monotone
 jlong JfrChunk::nanos_now() {
@@ -104,6 +104,9 @@ u2 JfrChunk::flags() const {
   if (_final) {
     flags |= 1 << 1;
   }
+  
+  // using delta compressed event timestamps
+  flags |= 1 << 2;
   return flags;
 }
 

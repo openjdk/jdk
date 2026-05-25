@@ -42,6 +42,7 @@ public final class ChunkHeader {
     static final long METADATA_TYPE_ID = 0;
     static final byte[] FILE_MAGIC = { 'F', 'L', 'R', '\0' };
     static final int MASK_FINAL_CHUNK = 1 << 1;
+    static final int MASK_COMPRESSED_TICKS = 1 << 2;
 
     private final short major;
     private final short minor;
@@ -59,6 +60,7 @@ public final class ChunkHeader {
     private long absoluteChunkEnd;
     private boolean finished;
     private boolean finalChunk;
+    private boolean compressedTicks;
 
     public ChunkHeader(RecordingInput input) throws IOException {
         this(input, 0, 0);
@@ -161,7 +163,9 @@ public final class ChunkHeader {
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finished=" + finished);
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: fileSize=" + input.size());
                     this.finalChunk = (flagByte & MASK_FINAL_CHUNK) != 0;
+                    this.compressedTicks = (flagByte & MASK_COMPRESSED_TICKS) != 0;
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finalChunk=" + finalChunk);
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: compressedTicks=" + compressedTicks);
                     absoluteChunkEnd = absoluteChunkStart + chunkSize;
                     return;
                 } else {
@@ -208,6 +212,10 @@ public final class ChunkHeader {
 
     public boolean isFinalChunk() {
         return finalChunk;
+    }
+
+    public boolean hasCompressedTicks() {
+        return compressedTicks;
     }
 
     public boolean isFinished() throws IOException {
