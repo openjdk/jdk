@@ -30,7 +30,7 @@ import jdk.incubator.vector.*;
 
 /**
  * @test
- * @bug 8384507
+ * @bug 8384507 8385308
  * @library /test/lib /
  * @summary Incorrect vector reassociation for signed saturating addition
  * @modules jdk.incubator.vector
@@ -41,7 +41,10 @@ import jdk.incubator.vector.*;
 public class TestIncorrectVectorReassociation {
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+        TestFramework testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(10000)
+                     .addFlags("--add-modules=jdk.incubator.vector")
+                     .start();
     }
 
     /* =======================
@@ -60,6 +63,8 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
+    @IR(counts = {IRNode.SATURATING_ADD_VB, IRNode.VECTOR_SIZE_ANY, " 2 "},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test_byte_sadd(int index) {
         ByteVector.broadcast(BSP, BA)
                   .lanewise(VectorOperators.SADD,
@@ -95,6 +100,8 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
+    @IR(counts = {IRNode.SATURATING_ADD_VS, IRNode.VECTOR_SIZE_ANY, " 2 "},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test_short_sadd(int index) {
         ShortVector.broadcast(SSP, SA)
                    .lanewise(VectorOperators.SADD,
@@ -130,6 +137,8 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
+    @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test_int_sadd(int index) {
         IntVector.broadcast(ISP, IA)
                  .lanewise(VectorOperators.SADD,
@@ -165,6 +174,8 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
+    @IR(counts = {IRNode.SATURATING_ADD_VL, IRNode.VECTOR_SIZE_ANY, " 2 "},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test_long_sadd(int index) {
         LongVector.broadcast(LSP, LA)
                   .lanewise(VectorOperators.SADD,
@@ -181,6 +192,29 @@ public class TestIncorrectVectorReassociation {
         }
         for (int i = 0; i < LSP.loopBound(longIn.length); i++) {
             Verify.checkEQ(longOut[i], VectorMath.addSaturating(LA, VectorMath.addSaturating(LB, longIn[i])));
+        }
+    }
+
+    static final VectorSpecies<Integer> ISP256 = IntVector.SPECIES_256;
+
+    @Test
+    @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
+    static IntVector test_mixed_sadd_suadd() {
+        IntVector v0 = IntVector.broadcast(ISP256, 1);
+        IntVector v1 = IntVector.broadcast(ISP256, 0);
+        IntVector v2 = v0.lanewise(VectorOperators.SADD, v1);
+        return v2.lanewise(VectorOperators.SUADD, -1);
+    }
+
+    @Run(test = "test_mixed_sadd_suadd")
+    void run_mixed_sadd_suadd() {
+        IntVector result = test_mixed_sadd_suadd();
+        int expected = VectorMath.addSaturatingUnsigned(
+                           VectorMath.addSaturating(1, 0), -1);
+        int[] res = result.toArray();
+        for (int i = 0; i < res.length; i++) {
+            Verify.checkEQ(res[i], expected);
         }
     }
 }
