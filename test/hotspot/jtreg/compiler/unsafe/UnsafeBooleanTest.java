@@ -29,7 +29,7 @@ package compiler.unsafe;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
- * @run main/bootclasspath/othervm ${test.main.class}
+ * @run main/bootclasspath/othervm -Xbatch ${test.main.class}
  */
 
 import java.lang.classfile.ClassFile;
@@ -49,8 +49,26 @@ import jdk.internal.vm.annotation.Stable;
 
 public class UnsafeBooleanTest {
     static final Class<UnsafeBooleanTest> THIS_CLASS = UnsafeBooleanTest.class;
-
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    enum Mode {
+        LSB("(x & 1)"),                 // Truncate to least significant bit
+        CTZ("(byte != 0)"),             // Compare to zero
+        MIXED("(x & 1) + (byte != 0)"); // Truncate to LSB on stores, compare to zero on loads
+
+        final String desc;
+        Mode(String desc) { this.desc = desc; }
+    }
+
+    static final boolean VERBOSE = Boolean.getBoolean("VERBOSE");
+    static final boolean MEMBAR = Boolean.parseBoolean(System.getProperty("MEMBAR", Boolean.TRUE.toString()));
+
+    // Tested normalization mode
+    static final Mode MODE = Mode.valueOf(System.getProperty("MODE", Mode.LSB.toString()));
+
+    static {
+        System.out.println("MODE=" + MODE.desc);
+    }
 
     // int testPutBoolean(Unsafe unsafe, Object base, long offset, int value) {
     //   unsafe.putBoolean(base, offset, value);
@@ -79,9 +97,11 @@ public class UnsafeBooleanTest {
             0, 1,
             2, 3, 4, 5, -1,
             Byte.MIN_VALUE, Byte.MAX_VALUE,
-            Short.MIN_VALUE, Short.MAX_VALUE, Short.MIN_VALUE & ~0xFF, Short.MAX_VALUE & ~0xFF,
-            Character.MIN_VALUE , Character.MAX_VALUE, Character.MIN_VALUE & ~0xFF, Character.MAX_VALUE & ~0xFF,
-            Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE & ~0xFF, Integer.MAX_VALUE & ~0xFF };
+            Short.MIN_VALUE, Short.MAX_VALUE,
+            Character.MIN_VALUE , Character.MAX_VALUE,
+            Integer.MIN_VALUE, Integer.MAX_VALUE };
+
+    static final int[] TOGGLES = new int[] { 0, 1, 0xFF };
 
     public static void main(String[] args) throws NoSuchFieldException {
         runTestsOn("boolean[0]", new boolean[1], UNSAFE.arrayBaseOffset(boolean[].class));
@@ -101,24 +121,43 @@ public class UnsafeBooleanTest {
         runTestsOn("A.J",   UNSAFE.staticFieldBase(longField), UNSAFE.staticFieldOffset(longField));
         runTestsOn("A.J+1", UNSAFE.staticFieldBase(longField), UNSAFE.staticFieldOffset(longField) + 1);
 
-        Field booleanStableField = THIS_CLASS.getDeclaredField("stableB");
-        runTestsOn("A.stableB", UNSAFE.staticFieldBase(booleanStableField), UNSAFE.staticFieldOffset(booleanStableField));
+        runTestsForConstantsOn("A.stableB", THIS_CLASS.getDeclaredField("stableB"));
+        runTestsForConstantsOn("A.stableJ", THIS_CLASS.getDeclaredField("stableJ"));
 
-        Field longStableField = THIS_CLASS.getDeclaredField("stableJ");
-        runTestsOn("A.stableJ", UNSAFE.staticFieldBase(longStableField), UNSAFE.staticFieldOffset(longStableField));
-
-        if (!ERRORS.isEmpty()) {
+        if (!FAILURES.isEmpty()) {
             throw new AssertionError("TEST FAILED");
         }
         System.out.println("TEST PASSED");
     }
 
+    static void runTestsForConstantsOn(String name, Field staticField) {
+        Object base = UNSAFE.staticFieldBase(staticField);
+        long offset = UNSAFE.staticFieldOffset(staticField);
+
+        System.out.printf("Test: %s\n", name);
+        for (int input : INPUTS) {
+            for (int toggle : new int[] { 0, 1, 0xFF }) {
+                int value = input ^ toggle;
+                runTestsOn(prepare(name + " allBoolean", TEST_ALL_BOOLEAN_MH, base, offset), value, true);
+                runTestsOn(prepare(name + " putBoolean", TEST_PUT_BOOLEAN_MH, base, offset), value, true);
+                runTestsOn(prepare(name + " getBoolean", TEST_GET_BOOLEAN_MH, base, offset), value, false);
+            }
+        }
+    }
+
     static void runTestsOn(String name, Object base, long offset) {
-        for (int value : INPUTS) {
-            System.out.printf("Test: %s; input: 0x%08x\n", name, value);
-            runTestsOn(prepare(name + " allBoolean", TEST_ALL_BOOLEAN_MH, base, offset), value, true);
-            runTestsOn(prepare(name + " putBoolean", TEST_PUT_BOOLEAN_MH, base, offset), value, true);
-            runTestsOn(prepare(name + " getBoolean", TEST_GET_BOOLEAN_MH, base, offset), value, false);
+        Test[] getTests = prepare(name + " getBoolean", TEST_GET_BOOLEAN_MH, base, offset);
+        Test[] putTests = prepare(name + " putBoolean", TEST_PUT_BOOLEAN_MH, base, offset);
+        Test[] allTests = prepare(name + " allBoolean", TEST_ALL_BOOLEAN_MH, base, offset);
+
+        System.out.printf("Test: %s\n", name);
+        for (int input : INPUTS) {
+            for (int toggle : new int[] { 0, 1, 0xFF }) {
+                int value = input ^ toggle;
+                runTestsOn(allTests, value, true);
+                runTestsOn(putTests, value, true);
+                runTestsOn(getTests, value, false);
+            }
         }
     }
 
@@ -128,23 +167,36 @@ public class UnsafeBooleanTest {
         }
     }
 
+    static int expected(int value, boolean normalizedOnStore) {
+        byte b = (byte) value;
+        int lsb = (b & 1);
+        int ctz = (b != 0 ? 1 : 0);
+        return switch (MODE) {
+            case CTZ   -> ctz;
+            case LSB   -> lsb;
+            case MIXED -> (normalizedOnStore ? lsb : ctz);
+        };
+    }
+
     static void runTest(Test t, int value, boolean normalizedOnStore) {
-        int expected = ((byte) value) & 1;
+        int expected = expected(value, normalizedOnStore);
         for (int iter = 0; iter < 20_000; iter++) {
             try {
                 int r = t.test(value);
-                if (expected != r) {
+                if (r != expected) {
                     if (!normalizedOnStore && (((byte) value) & 0xFF) == r) {
-                        reportInterestingResult(t, value, r, expected, iter);
-                    } else if (reportError(t, value)) {
-                        System.out.printf("%s: 0x%08x: 0x%02x != %x\n",
-                                          TEST_NAMES.get(t), value, r, expected);
+                        reportInterestingResult(t, value, r, expected);
+                    } else if (reportFailure(t, value, r)) {
+                        System.out.printf("FAILED: %s: 0x%08x: 0x%02x(%x) != %x\n",
+                                          TEST_NAMES.get(t), value, r, (r & 1), expected);
                     }
+                } else if (VERBOSE) {
+                    reportInterestingResult(t, value, r, expected);
                 }
             } catch (Throwable e) {
-                if (reportError(t, value)) {
-                    System.out.printf("%s: 0x%08x: 0x%02x != %x\n",
-                            TEST_NAMES.get(t), value, e.getMessage(), expected);
+                if (reportFailure(t, value, e)) {
+                    System.out.printf("FAILED %s: 0x%08x: (throws %s) != %x\n",
+                            TEST_NAMES.get(t), value, e, expected);
                 }
             }
         }
@@ -158,45 +210,53 @@ public class UnsafeBooleanTest {
         final String name = !isBooleanGetter ? "testPutBoolean" :
                             !isBooleanSetter ? "testGetBoolean" :
                                                "testAllBoolean";
-        MethodType mt = MethodType.methodType(int.class, Unsafe.class, Object.class, long.class, int.class);
-            byte[] classFile = ClassFile.of().build(ClassDesc.of("compiler.unsafe.Helper"),
-                            // static int test(Unsafe unsafe, Object base, long offset, int value) {
-                            cb -> cb.withMethodBody(name,
-                                        mt.describeConstable().get(),
-                                        ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
-                                        mb -> {
+        MethodType mt = MethodType.methodType(int.class /*rtype*/,
+                                              Unsafe.class, Object.class, long.class, int.class);
+        byte[] classFile = ClassFile.of().build(ClassDesc.of("compiler.unsafe.Helper"),
+                        // static int test(Unsafe unsafe, Object base, long offset, int value) {
+                        cb -> cb.withMethodBody(name,
+                                    mt.describeConstable().get(),
+                                    ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                                    mb -> {
+                                        mb.aload(0);
+                                        mb.aload(1);
+                                        mb.lload(2);
+                                        mb.iload(4);
+                                        if (isBooleanSetter) {
+                                            // unsafe.putBoolean(base, offset, value);
+                                            MethodType putBooleanMT = MethodType.methodType(void.class, Object.class, long.class, boolean.class);
+                                            mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
+                                                    "putBoolean", putBooleanMT.describeConstable().get(), false);
+                                        } else {
+                                            // unsafe.putByte(base, offset, value);
+                                            MethodType putByteMT = MethodType.methodType(void.class, Object.class, long.class, byte.class);
+                                            mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
+                                                    "putByte", putByteMT.describeConstable().get(), false);
+                                        }
+                                        if (MEMBAR) {
+                                            // Issue a memory barrier to ensure no store-to-load forwarding between accesses happens.
                                             mb.aload(0);
-                                            mb.aload(1);
-                                            mb.lload(2);
-                                            mb.iload(4);
-                                            if (isBooleanSetter) {
-                                                // unsafe.putBoolean(base, offset, value);
-                                                MethodType putBooleanMT = MethodType.methodType(void.class, Object.class, long.class, boolean.class);
-                                                mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
-                                                        "putBoolean", putBooleanMT.describeConstable().get(), false);
-                                            } else {
-                                                // unsafe.putByte(base, offset, value);
-                                                MethodType putByteMT = MethodType.methodType(void.class, Object.class, long.class, byte.class);
-                                                mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
-                                                        "putByte", putByteMT.describeConstable().get(), false);
-                                            }
-                                            mb.aload(0);
-                                            mb.aload(1);
-                                            mb.lload(2);
-                                            if (isBooleanGetter) {
-                                                // boolean b = unsafe.getBoolean(base, offset);
-                                                MethodType getBooleanMT = MethodType.methodType(boolean.class, Object.class, long.class);
-                                                mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
-                                                        "getBoolean", getBooleanMT.describeConstable().get(), false);
-                                            } else {
-                                                // byte b = unsafe.getByte(base, offset);
-                                                MethodType getByteMT = MethodType.methodType(byte.class, Object.class, long.class);
-                                                mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
-                                                        "getByte", getByteMT.describeConstable().get(), false);
-                                            }
-                                            // return b;
-                                            mb.ireturn();
-                                        }));
+                                            MethodType storeFenceMT = MethodType.methodType(void.class);
+                                            mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
+                                                      "fullFence", storeFenceMT.describeConstable().get(), false);
+                                        }
+                                        mb.aload(0);
+                                        mb.aload(1);
+                                        mb.lload(2);
+                                        if (isBooleanGetter) {
+                                            // boolean b = unsafe.getBoolean(base, offset);
+                                            MethodType getBooleanMT = MethodType.methodType(boolean.class, Object.class, long.class);
+                                            mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
+                                                    "getBoolean", getBooleanMT.describeConstable().get(), false);
+                                        } else {
+                                            // byte b = unsafe.getByte(base, offset);
+                                            MethodType getByteMT = MethodType.methodType(byte.class, Object.class, long.class);
+                                            mb.invoke(Opcode.INVOKEVIRTUAL, Unsafe.class.describeConstable().get(),
+                                                    "getByte", getByteMT.describeConstable().get(), false);
+                                        }
+                                        // return b;
+                                        mb.ireturn();
+                                    }));
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(classFile, true);
             return lookup.findStatic(lookup.lookupClass(), name, mt);
@@ -205,27 +265,33 @@ public class UnsafeBooleanTest {
         }
     }
 
-    static final HashMap<Test,HashMap<Integer,String>> INTERESTING = new HashMap<>();
+    record Result(int value, Object result) {}
 
-    static void reportInterestingResult(Test t, int value, int result, int expected, int iter) {
-        var s = INTERESTING.computeIfAbsent(t, _ -> new HashMap<>());
-        boolean report = !s.containsKey(value);
+    static final HashMap<Test,HashSet<Result>> FAILURES = new HashMap<>();
+
+    static boolean reportFailure(Test t, int value, Object result) {
+        var testFailures = FAILURES.computeIfAbsent(t, _ -> new HashSet<>());
+        Result r = new Result(value, result);
+        boolean report = !testFailures.contains(r);
         if (report) {
-            var msg = String.format("%-40s: 0x%08x: 0x%02x != 0x%02x\n", TEST_NAMES.get(t), value, result, expected);
-            s.put(value, msg);
-            System.out.printf("INTERESTING: %s", msg);
-        }
-    }
-
-    static final HashMap<Test,HashSet<Integer>> ERRORS = new HashMap<>();
-
-    static boolean reportError(Test t, int i) {
-        HashSet<Integer> s = ERRORS.computeIfAbsent(t, _ -> new HashSet<>());
-        boolean report = !s.contains(i);
-        if (report) {
-            s.add(i);
+            testFailures.add(r);
         }
         return report;
+    }
+
+    static final HashMap<Test,HashMap<Result,String>> INTERESTING = new HashMap<>();
+
+    static void reportInterestingResult(Test t, int value, int result, int expected) {
+        var s = INTERESTING.computeIfAbsent(t, _ -> new HashMap<>());
+        Result r = new Result(value, result);
+        boolean report = !s.containsKey(r);
+        if (report) {
+            var msg = String.format("%-40s: 0x%08x: 0x%02x(%x) %s %x\n",
+                                    TEST_NAMES.get(t), value, result, (result & 1),
+                                    (result == expected ? "==" : "!="), expected);
+            s.put(r, msg);
+            System.out.printf("INTERESTING: %s", msg);
+        }
     }
 
     public interface Test {

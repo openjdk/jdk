@@ -2401,7 +2401,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
 
-  if (_gvn.type(base->uncast())->isa_ptr() == TypePtr::NULL_PTR) {
+  bool is_non_heap_access = (_gvn.type(base->uncast())->isa_ptr() == TypePtr::NULL_PTR);
+  if (is_non_heap_access) {
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
@@ -2413,6 +2414,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   // Can base be null? Otherwise, always on-heap access.
   bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(base));
+
+  assert(!is_non_heap_access || can_access_non_heap, "sanity"); // is_non_heap_access implies can_access_non_heap
 
   if (!can_access_non_heap) {
     decorators |= IN_HEAP;
@@ -2428,6 +2431,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Try to categorize the address.
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
+
+  assert((alias_type->index() == Compile::AliasIdxRaw) ==
+         (is_non_heap_access || (can_access_non_heap && alias_type->field() == nullptr)), "");
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
       alias_type->adr_type() == TypeAryPtr::RANGE) {
@@ -2469,10 +2475,16 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Figure out the memory ordering.
   decorators |= mo_decorator_for_access_kind(kind);
 
-  if (!is_store && type == T_OBJECT) {
-    const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
-    if (tjp != nullptr) {
-      value_type = tjp;
+  if (!is_store) {
+    if (type == T_OBJECT) {
+      const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
+      if (tjp != nullptr) {
+        value_type = tjp;
+      }
+    } else if (type == T_BOOLEAN) {
+      if (mismatched || alias_type->index() == Compile::AliasIdxRaw) {
+        value_type = TypeInt::UBYTE;
+      }
     }
   }
 
