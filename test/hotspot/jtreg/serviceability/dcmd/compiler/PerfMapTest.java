@@ -79,7 +79,7 @@ public class PerfMapTest {
             for (String entry : Files.readAllLines(path)) {
                 Matcher m = LINE_PATTERN.matcher(entry);
                 Assert.assertTrue(m.matches(), "Invalid file format: " + entry);
-                if (m.group(3).contains("StubRoutines::call_stub")) {
+                if (m.group(3).contains("StubRoutines call_stub")) {
                     sawCallStub = true;
                 }
             }
@@ -87,7 +87,7 @@ public class PerfMapTest {
             Assert.fail(e.toString());
         }
         Assert.assertTrue(sawCallStub,
-                          "Expected StubRoutines::call_stub entry in " + path);
+                          "Expected StubRoutines call_stub entry in " + path);
     }
 
     @Test
