@@ -1977,6 +1977,7 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   while (iter.next()) {
     CodeBlob *cb = iter.method();
     if (is_stub_code_blob(cb)) {
+      // Individual stub routines are dumped after the main loop.
       continue;
     }
     ResourceMark rm;
