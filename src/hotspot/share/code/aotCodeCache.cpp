@@ -1794,7 +1794,7 @@ bool AOTCodeCache::write_asm_remarks(CodeBlob& cb) {
     }
     const char* cstr = add_C_string(str);
     int id = _table->id_for_C_string((address)cstr);
-    assert(id != -1, "asm remark string '%s' not found in AOTCodeAddressTable", str);
+    assert(id != BAD_ADDRESS_ID, "asm remark string '%s' not found in AOTCodeAddressTable", str);
     n = write_bytes(&id, sizeof(int));
     if (n != sizeof(int)) {
       return false;
@@ -1836,7 +1836,7 @@ bool AOTCodeCache::write_dbg_strings(CodeBlob& cb) {
     log_trace(aot, codecache, stubs)("dbg string=%s", str);
     const char* cstr = add_C_string(str);
     int id = _table->id_for_C_string((address)cstr);
-    assert(id != -1, "db string '%s' not found in AOTCodeAddressTable", str);
+    assert(id != BAD_ADDRESS_ID, "db string '%s' not found in AOTCodeAddressTable", str);
     uint n = write_bytes(&id, sizeof(int));
     if (n != sizeof(int)) {
       return false;
