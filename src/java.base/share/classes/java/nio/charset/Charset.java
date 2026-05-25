@@ -423,9 +423,9 @@ public abstract class Charset
 
     }
 
-    /* The extended set of charsets */
-    private static final LazyConstant<List<CharsetProvider>> EXTENDED_PROVIDERS = LazyConstant.of(
-            new Supplier<>() { public List<CharsetProvider> get() { return extendedProviders0(); }});
+    private final class ExtendedProvidersHolder {
+        private static final List<CharsetProvider> EXTENDED_PROVIDERS = extendedProviders0();
+    }
 
     private static List<CharsetProvider> extendedProviders0() {
         CharsetProvider[] cps = new CharsetProvider[1];
@@ -444,7 +444,7 @@ public abstract class Charset
     private static Charset lookupExtendedCharset(String charsetName) {
         if (!VM.isBooted())  // see lookupViaProviders()
             return null;
-        for (CharsetProvider cp : EXTENDED_PROVIDERS.get()) {
+        for (CharsetProvider cp : ExtendedProvidersHolder.EXTENDED_PROVIDERS) {
             Charset cs = cp.charsetForName(charsetName);
             if (cs != null)
                 return cs;
@@ -605,7 +605,7 @@ public abstract class Charset
             new TreeMap<>(
                 String.CASE_INSENSITIVE_ORDER);
         put(standardProvider.charsets(), m);
-        for (CharsetProvider ecp : EXTENDED_PROVIDERS.get()) {
+        for (CharsetProvider ecp : ExtendedProvidersHolder.EXTENDED_PROVIDERS) {
             put(ecp.charsets(), m);
         }
         for (Iterator<CharsetProvider> i = providers(); i.hasNext();) {
@@ -615,8 +615,9 @@ public abstract class Charset
         return Collections.unmodifiableSortedMap(m);
     }
 
-    private static final LazyConstant<Charset> defaultCharset = LazyConstant.of(
-            new Supplier<>() { public Charset get() { return defaultCharset0(); }});
+    private static final class DefaultChasetHolder {
+        static final Charset defaultCharset = defaultCharset0();
+    }
 
     private static Charset defaultCharset0() {
         // do not look for providers other than the standard one
@@ -645,7 +646,7 @@ public abstract class Charset
      * @since 1.5
      */
     public static Charset defaultCharset() {
-        return defaultCharset.get();
+        return DefaultChasetHolder.defaultCharset;
     }
 
 
@@ -654,10 +655,7 @@ public abstract class Charset
     @Stable
     private final String name;
     @Stable
-    private final String[] aliases;
-    @Stable
-    private final LazyConstant<Set<String>> aliasSet = LazyConstant.of(
-            new Supplier<>() { public Set<String> get() { return Set.of(aliases); }});
+    private final Set<String> aliasSet;
 
     /**
      * Initializes a new charset with the given canonical name and alias
@@ -691,7 +689,7 @@ public abstract class Charset
             }
         }
         this.name = canonicalName;
-        this.aliases = as;
+        this.aliasSet = Set.of(as);
     }
 
     /**
@@ -709,7 +707,7 @@ public abstract class Charset
      * @return  An immutable set of this charset's aliases
      */
     public final Set<String> aliases() {
-        return aliasSet.get();
+        return aliasSet;
     }
 
     /**
