@@ -1199,6 +1199,75 @@ address MacroAssembler::call_c_using_toc(const FunctionDescriptor* fd,
 }
 #endif // ABI_ELFv2
 
+bool MacroAssembler::ic_call(Register Rmethod_toc,
+                             address target,
+                             jint method_index,
+                             bool scratch_emit,
+                             bool fixed_size) {
+  AddressLiteral target_al(target, virtual_call_Relocation::spec(pc(), method_index));
+  DEBUG_ONLY(int ic_load_offset = offset());
+
+  // Load a clear inline cache.
+  AddressLiteral empty_ic((address) Universe::non_oop_word());
+  bool success = load_const_from_method_toc(R19_inline_cache_reg, empty_ic, Rmethod_toc, fixed_size);
+  if (!success) return false;
+
+  assert(MacroAssembler::is_load_const_from_method_toc_at(addr_at(ic_load_offset)),
+         "should be load from TOC");
+
+  address call_pc = trampoline_call(target_al, Rmethod_toc, scratch_emit);
+  return call_pc != nullptr;
+}
+
+address MacroAssembler::trampoline_call(AddressLiteral target,
+                                        Register Rmethod_toc,
+                                        bool scratch_emit) {
+  // First, emit the trampoline stub
+  if (!scratch_emit) {
+    RelocationHolder rh = trampoline_stub_Relocation::spec(pc() /* of the bl below */);
+
+    // Put the target's entry point as a constant into the constant pool.
+    const address target_toc_addr = address_constant((address)target.value());
+    if (target_toc_addr == nullptr) return nullptr;
+
+    const int target_toc_offset = offset_to_method_toc(target_toc_addr);
+    address stub = start_a_stub(64);
+    if (stub == nullptr) return nullptr;
+
+    // Annotate the stub with a relocation that points to the owning call instruction.
+    relocate(rh);
+    DEBUG_ONLY(int stub_start_offset = offset());
+
+    // For java_to_interp stubs we use R11_scratch1 as scratch register
+    // and in call trampoline stubs we use R12_scratch2. This way we
+    // can distinguish them (see is_NativeCallTrampolineStub_at()).
+    Register reg_scratch = R12_scratch2;
+
+    if (Rmethod_toc == noreg) {
+      calculate_address_from_global_toc(reg_scratch, method_toc());
+      Rmethod_toc = reg_scratch;
+    }
+
+    ld_largeoffset_unchecked(reg_scratch, target_toc_offset, Rmethod_toc, false);
+    mtctr(reg_scratch);
+    bctr();
+
+    assert(target_toc_offset == NativeCallTrampolineStub_at(addr_at(stub_start_offset))->destination_toc_offset(),
+           "encoded offset into the constant pool must match");
+    assert((uint)(offset() - stub_start_offset) <= trampoline_stub_size, "should be good size");
+    assert(is_NativeCallTrampolineStub_at(addr_at(stub_start_offset)), "doesn't look like a trampoline");
+
+    // End the stub.
+    end_a_stub();
+  }
+
+  // The call will be resolved / patched later.
+  address call_pc = pc();
+  relocate(target.rspec());
+  bl(call_pc);
+  return call_pc;
+}
+
 void MacroAssembler::post_call_nop() {
   // Make inline again when loom is always enabled.
   if (!Continuations::enabled()) {
@@ -2615,50 +2684,6 @@ void MacroAssembler::tlab_allocate(
   //verify_tlab(); not implemented
 }
 
-address MacroAssembler::emit_trampoline_stub(int destination_toc_offset,
-                                             int insts_call_instruction_offset, Register Rtoc) {
-  // Start the stub.
-  address stub = start_a_stub(64);
-  if (stub == nullptr) { return nullptr; } // CodeCache full: bail out
-
-  // Create a trampoline stub relocation which relates this trampoline stub
-  // with the call instruction at insts_call_instruction_offset in the
-  // instructions code-section.
-  relocate(trampoline_stub_Relocation::spec(code()->insts()->start() + insts_call_instruction_offset));
-  const int stub_start_offset = offset();
-
-  // For java_to_interp stubs we use R11_scratch1 as scratch register
-  // and in call trampoline stubs we use R12_scratch2. This way we
-  // can distinguish them (see is_NativeCallTrampolineStub_at()).
-  Register reg_scratch = R12_scratch2;
-
-  // Now, create the trampoline stub's code:
-  // - load the TOC
-  // - load the call target from the constant pool
-  // - call
-  if (Rtoc == noreg) {
-    calculate_address_from_global_toc(reg_scratch, method_toc());
-    Rtoc = reg_scratch;
-  }
-
-  ld_largeoffset_unchecked(reg_scratch, destination_toc_offset, Rtoc, false);
-  mtctr(reg_scratch);
-  bctr();
-
-  const address stub_start_addr = addr_at(stub_start_offset);
-
-  // Assert that the encoded destination_toc_offset can be identified and that it is correct.
-  assert(destination_toc_offset == NativeCallTrampolineStub_at(stub_start_addr)->destination_toc_offset(),
-         "encoded offset into the constant pool must match");
-  // Trampoline_stub_size should be good.
-  assert((uint)(offset() - stub_start_offset) <= trampoline_stub_size, "should be good size");
-  assert(is_NativeCallTrampolineStub_at(stub_start_addr), "doesn't look like a trampoline");
-
-  // End the stub.
-  end_a_stub();
-  return stub;
-}
-
 // "The box" is the space on the stack where we copy the object mark.
 void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register obj, Register box,
                                                Register tmp1, Register tmp2, Register tmp3) {
@@ -3200,24 +3225,6 @@ void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
     li(val, 0);
   }
   stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop);
-}
-
-int MacroAssembler::instr_size_for_load_klass() {
-  static int computed_size = -1;
-
-  // Not yet computed?
-  if (computed_size == -1) {
-
-    // Determine by scratch emit.
-    ResourceMark rm;
-    int code_size = 16 * BytesPerInstWord;
-    CodeBuffer cb("load_klass scratch buffer", code_size, 0);
-    MacroAssembler* a = new MacroAssembler(&cb);
-    a->load_klass(R11_scratch1, R11_scratch1);
-    computed_size = a->offset();
-  }
-
-  return computed_size;
 }
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
