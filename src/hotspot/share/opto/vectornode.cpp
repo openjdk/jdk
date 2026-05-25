@@ -2775,7 +2775,7 @@ static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&
          n->in(1)->bottom_type()->isa_long() &&
-         n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
+         (julong)n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFUL;
 }
 
 static bool has_vector_elements_fit_uint(Node* n) {
