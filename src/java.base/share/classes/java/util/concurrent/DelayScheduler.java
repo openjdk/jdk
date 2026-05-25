@@ -43,7 +43,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * An add-on for ForkJoinPools that provides scheduling for
  * delayed and periodic tasks
  */
-@jdk.internal.vm.annotation.Contended
 final class DelayScheduler extends Thread {
 
     /*
@@ -59,10 +58,11 @@ final class DelayScheduler extends Thread {
      * processing encounters resource failures (possible when growing
      * heap or ForkJoinPool WorkQueue arrays), tasks are cancelled.
      *
-     * To reduce memory contention, the current heap size is recorded
-     * only when blocked to allow method canShutDown to conservatively
-     * check emptiness, and to report approximate current size for
-     * monitoring.
+     * To reduce memory contention, the heap is maintained solely via
+     * local variables in method loop() (forcing noticeable code
+     * sprawl), recording only the current heap size when blocked to
+     * allow method canShutDown to conservatively check emptiness, and
+     * to report approximate current size for monitoring.
      *
      * The pending queue uses a design similar to ForkJoinTask.Aux
      * queues: Incoming requests prepend (Treiber-stack-style) to the
@@ -124,20 +124,16 @@ final class DelayScheduler extends Thread {
      * be a lag setting their status).
      */
 
-    private ForkJoinPool pool;
-    private ScheduledForkJoinTask<?>[] heapArray;
-    int heapSize;
-    volatile boolean cancelDelayedTasksOnShutdown; // policy control
-    private boolean cleanedPeriodicTasks;
-
-    @jdk.internal.vm.annotation.Contended("p")
+    ForkJoinPool pool;               // read once and detached upon starting
     volatile ScheduledForkJoinTask<?> pending; // submitted adds and removes
-    @jdk.internal.vm.annotation.Contended("p")
     volatile int active;             // 0: inactive, -1: stopped, +1: running
+    int restingSize;                 // written only before parking
+    volatile int cancelDelayedTasksOnShutdown; // policy control
+    int pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+    int pad8, pad9, padA, padB, padC, padD, padE; // reduce false sharing
 
     private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
     private static final int POOL_STOPPING = 1; // must match ForkJoinPool
-    private static final long MIN_PARK = 255L; // spin vs park threshold in nanos
     static final long nanoTimeOffset = // Most negative possible time base
         Math.min(System.nanoTime(), 0L) + Long.MIN_VALUE;
 
@@ -155,7 +151,6 @@ final class DelayScheduler extends Thread {
         super(name);
         setDaemon(true);
         pool = p;
-        heapArray = new ScheduledForkJoinTask<?>[INITIAL_HEAP_CAPACITY];
     }
 
     /**
@@ -195,24 +190,21 @@ final class DelayScheduler extends Thread {
      * Returns true if (momentarily) inactive and heap is empty
      */
     final boolean canShutDown() {
-        int state = active;
-        return (state < 0 ||
-                ((state == 0 || Thread.currentThread() == this) &&
-                 pending == null && heapSize <= 0));
+        return (active <= 0 && restingSize <= 0);
     }
 
     /**
      * Returns the number of elements in heap when last idle
      */
     final int lastStableSize() {
-        return (active < 0) ? 0 : heapSize;
+        return (active < 0) ? 0 : restingSize;
     }
 
     /**
      * Turns on cancelDelayedTasksOnShutdown policy
      */
     final void  cancelDelayedTasksOnShutdown() {
-        cancelDelayedTasksOnShutdown = true;
+        cancelDelayedTasksOnShutdown = 1;
         signal();
     }
 
@@ -220,135 +212,130 @@ final class DelayScheduler extends Thread {
      * Sets up and runs scheduling loop
      */
     public final void run() {
-        active = 1;
-        loop();
-    }
-
-    /**
-     * Processes tasks until stopped
-     */
-    private void loop() {
-        try {
-            long parkTime;
-            while ((parkTime = process()) >= 0L) {
-                if (parkTime == 0L || parkTime > MIN_PARK) {
-                    active = 0;
-                    if (!Thread.interrupted() && pending == null && active == 0)
-                        U.park(false, parkTime);
-                    active= 1;
-                }
-                else {  // reduce wasteful park calls
-                    do Thread.onSpinWait(); while (--parkTime > 0L);
-                }
-            }
-        } finally {
-            heapSize = 0;
-            active = -1;
-            clearPending();
-            ForkJoinPool p = pool;
-            if (p != null)
-                p.tryStopIfShutdown(this);
-            clearPending(); // cleanup
-        }
-    }
-
-    /**
-     * 1. Take pending tasks in batches, to add or remove from heap
-     * 2. Trigger an enabled task by submitting to pool or run if immediate
-     * 3. Check for shutdown, either exiting or preparing for shutdown when empty
-     * 4. If apparently no work, return park time, else loop
-     *
-     * @return negative for terminate, 0 for unbounded, else park time in nanos
-     */
-    private long process() {
         ForkJoinPool p = pool;
-        ScheduledForkJoinTask<?>[] h = heapArray;
-        int n = heapSize;
-        if (p == null || h == null)
-            return Long.MIN_VALUE;            // only possible after stopping
-        for (;;) {
-            while (pending != null) {         // process pending tasks
-                ScheduledForkJoinTask<?> t;
-                if ((t = (ScheduledForkJoinTask<?>)
-                     U.getAndSetReference(this, PENDING, null)) != null) {
-                    for (ScheduledForkJoinTask<?> next;;) {
-                        int i; ScheduledForkJoinTask<?>[] a;
-                        if ((i = t.heapIndex) >= 0)
-                            n = replace(h, i, t, n);
-                        else if ((n = add(t, h, n)) >= h.length &&
-                                 (a = tryResize(h)) != null)
-                            h = heapArray = a;
-                        if ((next = t.nextPending) == null)
-                            break;
-                        t.nextPending = null;
-                        t = next;
-                    }
-                }
-            }
-
-            long parkTime, d; ScheduledForkJoinTask<?> f; int runStatus;
-            if (n == 0 || h.length == 0 || (f = h[0]) == null)
-                parkTime = 0L;
-            else if ((d = f.when - now()) > 0L)
-                parkTime = d;
-            else {                          // run ready task
-                parkTime = ((n = replace(h, 0, f, n)) == 0) ? 0L : -1L;
-                if (f.isImmediate)
-                    f.doExec();
-                else
-                    p.executeEnabledScheduledTask(f);
-            }
-
-            if ((runStatus = p.shutdownStatus(this)) != 0) {
-                int stop = runStatus & POOL_STOPPING;
-                if (n > 0) {
-                    if (stop != 0 || cancelDelayedTasksOnShutdown)
-                        n = cancelAll(h, n);
-                    else if (!cleanedPeriodicTasks)
-                        n = removePeriodicTasks(h, n);
-                }
-                if ((heapSize = n) == 0 &&
-                    (stop != 0 || p.tryStopIfShutdown(this)))
-                    return Long.MIN_VALUE;
-                if (!cleanedPeriodicTasks && pending == null)
-                    cleanedPeriodicTasks = true;
-            }
-
-            if (parkTime >= 0L && pending == null) {
-                heapSize = n;
-                return parkTime;
+        pool = null;   // detach
+        if (p == null) // failed initialization
+            active = -1;
+        else {
+            try {
+                loop(p);
+            } finally {
+                restingSize = 0;
+                active = -1;
+                p.tryStopIfShutdown(this);
             }
         }
     }
 
     /**
-     * Adds task t to heap unless full or cancelled
-     * @return current heap size
+     * After initialization, repeatedly:
+     * 1. If apparently no work,
+     *    if active, set tentatively inactive,
+     *    else park until next trigger time, or indefinitely if none
+     * 2. Process pending tasks in batches, to add or remove from heap
+     * 3. Check for shutdown, either exiting or preparing for shutdown when empty
+     * 4. Trigger all enabled tasks by submitting them to pool or run if immediate
      */
-    private static int add(ScheduledForkJoinTask<?> t, ScheduledForkJoinTask<?>[] h,
-                           int n) {
-        if (t != null) {
-            if (h == null || n < 0 || h.length <= n)
-                t.trySetCancelled();
-            else {
-                long d = t.when;
-                if (t.status >= 0) {
-                    ScheduledForkJoinTask<?> parent;
-                    int k = n++, pk;
-                    while (k > 0 &&
-                           (parent = h[pk = (k - 1) >>> 2]) != null &&
-                           (parent.when > d)) {
-                        parent.heapIndex = k;
-                        h[k] = parent;
-                        k = pk;
+    private void loop(ForkJoinPool p) {
+        if (p != null) {                           // currently always true
+            ScheduledForkJoinTask<?>[] h =         // heap array
+                new ScheduledForkJoinTask<?>[INITIAL_HEAP_CAPACITY];
+            int cap = h.length, n = 0, prevRunStatus = 0; // n is heap size
+            long parkTime = 0L;                    // zero for untimed park
+            for (;;) {                             // loop until stopped
+                ScheduledForkJoinTask<?> q, t; int runStatus;
+                if ((q = pending) == null) {
+                    restingSize = n;
+                    if (active != 0)               // deactivate and recheck
+                        U.compareAndSetInt(this, ACTIVE, 1, 0);
+                    else {
+                        Thread.interrupted();      // clear before park
+                        U.park(false, parkTime);
                     }
-                    t.heapIndex = k;
-                    h[k] = t;
+                    q = pending;
+                }
+
+                while (q != null &&                // process pending tasks
+                       (t = (ScheduledForkJoinTask<?>)
+                        U.getAndSetReference(this, PENDING, null)) != null) {
+                    ScheduledForkJoinTask<?> next;
+                    do {
+                        int i;
+                        if ((next = t.nextPending) != null)
+                            t.nextPending = null;
+                        if ((i = t.heapIndex) >= 0) {
+                            t.heapIndex = -1;      // remove cancelled task
+                            if (i < cap && h[i] == t)
+                                n = replace(h, i, n);
+                        }
+                        else if (n >= cap || n < 0)
+                            t.trySetCancelled();   // couldn't resize
+                        else {
+                            long d = t.when;       // add and sift up
+                            if (t.status >= 0) {
+                                ScheduledForkJoinTask<?> parent;
+                                int k = n++, pk, newCap;
+                                while (k > 0 &&
+                                       (parent = h[pk = (k - 1) >>> 2]) != null &&
+                                       (parent.when > d)) {
+                                    parent.heapIndex = k;
+                                    h[k] = parent;
+                                    k = pk;
+                                }
+                                t.heapIndex = k;
+                                h[k] = t;
+                                if (n >= cap && (newCap = cap << 1) > cap) {
+                                    ScheduledForkJoinTask<?>[] a = null;
+                                    try {          // try to resize
+                                        a = Arrays.copyOf(h, newCap);
+                                    } catch (Error | RuntimeException ex) {
+                                    }
+                                    if (a != null && a.length == newCap) {
+                                        cap = newCap;
+                                        h = a;     // else keep using old array
+                                    }
+                                }
+                            }
+                        }
+                    } while ((t = next) != null);
+                    q = pending;
+                }
+
+                if ((runStatus = p.shutdownStatus(this)) != 0) {
+                    if ((n = tryStop(p, h, n, runStatus, prevRunStatus)) < 0)
+                        break;
+                    prevRunStatus = runStatus;
+                }
+
+                parkTime = 0L;
+                if (n > 0 && h.length > 0) {    // submit enabled tasks
+                    long now = now();
+                    do {
+                        ScheduledForkJoinTask<?> f; int stat;
+                        if ((f = h[0]) != null) {
+                            long d = f.when - now;
+                            if ((stat = f.status) >= 0 && d > 0L) {
+                                parkTime = d;
+                                break;
+                            }
+                            f.heapIndex = -1;
+                            if (stat < 0)
+                                ;               // already cancelled
+                            else if (f.isImmediate)
+                                f.doExec();
+                            else {
+                                try {
+                                    p.executeEnabledScheduledTask(f);
+                                }
+                                catch (Error | RuntimeException ex) {
+                                    f.trySetCancelled();
+                                }
+                            }
+                        }
+                    } while ((n = replace(h, 0, n)) > 0);
                 }
             }
         }
-        assert checkHeap(h, n);
-        return n;
     }
 
     /**
@@ -356,10 +343,7 @@ final class DelayScheduler extends Thread {
      * cancelled nodes found while doing so.
      * @return current heap size
      */
-    private static int replace(ScheduledForkJoinTask<?>[] h, int k,
-                               ScheduledForkJoinTask<?> f, int n) {
-        if (f != null)
-            f.heapIndex = -1;
+    private static int replace(ScheduledForkJoinTask<?>[] h, int k, int n) {
         if (h != null && h.length >= n) { // hoist checks
             while (k >= 0 && n > k) {
                 int alsoReplace = -1;  // non-negative if cancelled task seen
@@ -418,19 +402,49 @@ final class DelayScheduler extends Thread {
         return n;
     }
 
-    private static ScheduledForkJoinTask<?>[] tryResize(ScheduledForkJoinTask<?>[] h) {
-        int cap, newCap;
-        ScheduledForkJoinTask<?>[] a = null;
-        if (h != null && (cap = h.length) > 0 && (newCap = cap << 1) > cap) {
-            try {
-                a = Arrays.copyOf(h, newCap);
-            } catch (Error | RuntimeException ex) {
+    /**
+     * Call only when pool run status is nonzero. Possibly cancels
+     * tasks and stops during pool shutdown and termination. If called
+     * when shutdown but not stopping, removes tasks according to
+     * policy if not already done so, and if not empty or pool not
+     * terminating, returns.  Otherwise, cancels all tasks in heap and
+     * pending queue.
+     * @return negative if stop, else current heap size.
+     */
+    private int tryStop(ForkJoinPool p, ScheduledForkJoinTask<?>[] h, int n,
+                        int runStatus, int prevRunStatus) {
+        if ((runStatus & POOL_STOPPING) == 0) {
+            if (n > 0) {
+                if (cancelDelayedTasksOnShutdown != 0) {
+                    cancelAll(h, n);
+                    n = 0;
+                }
+                else if (prevRunStatus == 0 && h != null && h.length >= n) {
+                    ScheduledForkJoinTask<?> t; int stat; // remove periodic tasks
+                    for (int i = n - 1; i >= 0; --i) {
+                        if ((t = h[i]) != null &&
+                            ((stat = t.status) < 0 || t.nextDelay != 0L)) {
+                            t.heapIndex = -1;
+                            if (stat >= 0)
+                                t.trySetCancelled();
+                            n = replace(h, i, n);
+                        }
+                    }
+                }
             }
+            if (n > 0 || p == null || !p.tryStopIfShutdown(this))
+                return n;       // check for quiescent shutdown
         }
-        return a;
+        if (n > 0)
+            cancelAll(h, n);
+        for (ScheduledForkJoinTask<?> a = (ScheduledForkJoinTask<?>)
+                 U.getAndSetReference(this, PENDING, null);
+             a != null; a = a.nextPending)
+            a.trySetCancelled(); // clear pending requests
+        return -1;
     }
 
-    private static int cancelAll(ScheduledForkJoinTask<?>[] h, int n) {
+    private static void cancelAll(ScheduledForkJoinTask<?>[] h, int n) {
         if (h != null && h.length >= n) {
             ScheduledForkJoinTask<?> t;
             for (int i = 0; i < n; ++i) {
@@ -441,38 +455,12 @@ final class DelayScheduler extends Thread {
                 }
             }
         }
-        return 0;
-    }
-
-    private static int removePeriodicTasks(ScheduledForkJoinTask<?>[] h, int n) {
-        if (h != null && h.length >= n) {
-            ScheduledForkJoinTask<?> t;
-            for (int i = n - 1; i >= 0; --i) {
-                if ((t = h[i]) != null && t.nextDelay != 0L) {
-                    n = replace(h, i, t, n);
-                    if (t.status >= 0)
-                        t.trySetCancelled();
-                }
-            }
-        }
-        return n;
-    }
-
-    private void clearPending() {
-        if (pending != null) {
-            for (ScheduledForkJoinTask<?> a = (ScheduledForkJoinTask<?>)
-                     U.getAndSetReference(this, PENDING, null);
-                 a != null; a = a.nextPending)
-                a.trySetCancelled();
-        }
     }
 
     /**
      * Invariant checks
      */
     private static boolean checkHeap(ScheduledForkJoinTask<?>[] h, int n) {
-        if (n < 0)
-            return false;
         for (int i = 0; i < h.length; ++i) {
             ScheduledForkJoinTask<?> t = h[i];
             if (t == null) {         // unused slots all null
