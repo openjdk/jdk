@@ -45,15 +45,15 @@ public class TestPreconditions {
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyIfOnly() {}
 
-    // The IR check should not be applied, since asimd is aarch64 and sse intel.
+    // The IR check should not be applied, since asimd is aarch64 and sse3 intel.
     @Test
-    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sse", "true"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sse3", "true"},
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyIfCPUFeatureOnly() {}
 
-    // The IR check should not be applied, since asimd is aarch64 and sse intel.
+    // The IR check should not be applied, since asimd is aarch64 and sse3 intel.
     @Test
-    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sse", "true"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sse3", "true"},
         applyIf = {"LoopMaxUnroll", "= 8"},
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyBoth1() {}

@@ -122,9 +122,8 @@ public class TestStressArrayCopy {
             if (containsFuzzy(cpuFeatures, "sse3")) {
                 configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=3"));
             }
-            if (containsFuzzy(cpuFeatures, "sse2")) {
-                configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=2"));
-            }
+            // On x86-64 at least SSE=2 should always be present.
+            configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=2"));
 
             // Alternate configs with other flags
             if (Platform.isX64()) {

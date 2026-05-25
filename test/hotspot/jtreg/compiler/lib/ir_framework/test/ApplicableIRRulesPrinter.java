@@ -91,8 +91,6 @@ public class ApplicableIRRulesPrinter {
         "fma",
         "f16c",
         // Intel SSE
-        "sse",
-        "sse2",
         "sse3",
         "ssse3",
         "sse4.1",

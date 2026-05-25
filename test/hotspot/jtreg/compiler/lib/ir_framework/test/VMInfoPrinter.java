@@ -51,8 +51,9 @@ public class VMInfoPrinter {
         // CPU feature dependent info
         long useAVX = 0;
         boolean useAVXIsDefault = true;
-        if (cpuFeatures.contains(" sse, ")) {
-            useAVX = WHITE_BOX.getIntVMFlag("UseAVX");
+        Long useAVXLong = WHITE_BOX.getIntVMFlag("UseAVX");
+        if (useAVXLong != null) {
+            useAVX = useAVXLong;
             useAVXIsDefault = WHITE_BOX.isDefaultVMFlag("UseAVX");
         }
         vmInfo.append("UseAVX:").append(useAVX).append(System.lineSeparator());
