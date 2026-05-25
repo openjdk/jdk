@@ -424,6 +424,7 @@ public abstract class Charset
     }
 
     private final class ExtendedProvidersHolder {
+        /* The extended set of charsets */
         private static final List<CharsetProvider> EXTENDED_PROVIDERS = extendedProviders0();
     }
 
