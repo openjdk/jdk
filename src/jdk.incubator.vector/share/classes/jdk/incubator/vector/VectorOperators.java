@@ -64,8 +64,9 @@ import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
  *
  * <li>{@code bits(x)} &mdash; a function call which produces the
  * underlying bits of the value {@code x}.  If {@code x} is a floating
- * point value, this is either {@code doubleToLongBits(x)} or
- * {@code floatToIntBits(x)}.  Otherwise, the value is just {@code x}.
+ * point value, this is {@code doubleToLongBits(x)},
+ * {@code floatToIntBits(x)}, or {@code float16ToShortBits(x)}.
+ * Otherwise, the value is just {@code x}.
  *
  * <li>{@code ESIZE} &mdash; the size in bytes of the operand type
  *

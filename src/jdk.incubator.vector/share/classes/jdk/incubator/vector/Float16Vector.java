@@ -61,6 +61,26 @@ import static java.lang.Float.*;
  * or {@code float} and values of {@code short} using the appropriate conversion
  * methods on {@code Float16} or {@code Float}.
  *
+ * <p>
+ * The specifications for operations on elements of this class are written as if
+ * {@code Float16} is a primitive floating-point type. An operation referencing a
+ * Java operator is mapped to a method on {@code Float16} that specifies that
+ * operator's semantics. For example, the semantics of the {@code +} operator,
+ * as referenced by {@link Vector#add(Vector)} and {@link VectorOperators#ADD},
+ * is mapped to the method {@link Float16#add(Float16, Float16)}.
+ * An operation referencing a method on {@link Math} is mapped to a method of the
+ * same name on {@code Float16}, if it exists. For example, {@link Math#fma} is
+ * mapped to {@link Float16#fma}, as referenced by {@link Float16Vector#fma(short, short)}
+ * and {@link VectorOperators#FMA}.
+ * Otherwise, if there is no equivalent method on {@code Float16}, the expression that is
+ * an invocation of a method on {@code Math} is mapped to an expression that converts
+ * the {@code Float16} arguments to {@code double} values or {@code float} values as
+ * required by the method's parameter types, invokes the method on {@code Math} with
+ * the converted values, and converts the resulting {@code double} or {@code float} value
+ * to a {@code Float16} value. For example, {@link Math#sin} is mapped to the expression
+ * {@code Float16.valueOf(Math.sin(a.doubleValue()))}, where {@code a} is the
+ * {@code Float16} lane value, as referenced by {@link VectorOperators#SIN}.
+ *
  * @apiNote
  * {@code Float16} is currently a value-based class and therefore cannot be optimally
  * used as the scalar element type of vector operations until it becomes a value class
@@ -2556,7 +2576,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      *
      * This is a lane-wise ternary operation which applies an operation
      * conforming to the specification of
-     * {@link Math#fma(short,short,short) Math.fma(a,b,c)}
+     * {@link Math#fma(float,float,float) Math.fma(a,b,c)}
      * to each lane.
      *
      * This method is also equivalent to the expression
@@ -2591,7 +2611,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      *
      * This is a lane-wise ternary operation which applies an operation
      * conforming to the specification of
-     * {@link Math#fma(short,short,short) Math.fma(a,b,c)}
+     * {@link Math#fma(float,float,float) Math.fma(a,b,c)}
      * to each lane.
      *
      * This method is also equivalent to the expression
