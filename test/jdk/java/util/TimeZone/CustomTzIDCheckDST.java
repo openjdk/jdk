@@ -86,7 +86,7 @@ public class CustomTzIDCheckDST {
                 3600000);
         }
 
-        if  (tz.inDaylightTime(time)) {
+        if (tz.inDaylightTime(time)) {
             // During Daylight Saving Time period:
             // - AIX (mapped timezone): Expect timezone abbreviation like "CEST"
             // - Other platforms (custom TZ): Expect GMT offset "GMT+02:00"
