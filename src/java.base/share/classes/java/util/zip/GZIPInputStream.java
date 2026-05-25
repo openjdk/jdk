@@ -39,7 +39,7 @@ import java.util.Objects;
  * <h2><a id="gzip_file_format">GZIP file format</a></h2>
  * The GZIP file format is specified by RFC 1952. The format, as specified in section 2.2 of
  * the RFC, consists of a series of "members" that appear one after another in the stream with
- * no additional information before, between, or after. Each member consists of a header,
+ * no additional information before, between, or after them. Each member consists of a header,
  * followed by data that is compressed using the {@code deflate} algorithm, and then a trailer.
  * <p>
  * A stream consisting of more than one member is commonly referred to as concatenated GZIP stream.
