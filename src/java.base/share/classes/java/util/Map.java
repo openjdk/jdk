@@ -1793,7 +1793,7 @@ public interface Map<K, V> {
      * {@linkplain Object#equals(Object) equals()},
      * {@linkplain Object#hashCode() hashCode()}, and
      * {@linkplain Object#toString() toString()} methods may trigger initialization of
-     * one or more lazy values. If initialization fails for at least one element,
+     * one or more lazy values. If initialization fails for at least one value,
      * the {@linkplain Map#hashCode()} and {@linkplain Map#toString()} methods throw
      * {@linkplain NoSuchElementException}, and the {@linkplain Map#equals(Object)}
      * <em>may</em> throw {@linkplain NoSuchElementException} depending on which
