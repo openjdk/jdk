@@ -1004,7 +1004,7 @@ void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node
             continue;
           }
           assert(mem->is_Store(), "store required");
-          macro->replace_node(mem, mem->in(MemNode::Memory));
+          igvn->replace_node(mem, mem->in(MemNode::Memory));
         }
       }
     }

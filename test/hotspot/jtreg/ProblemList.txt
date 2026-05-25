@@ -62,8 +62,6 @@ compiler/vectorization/TestVectorAlgorithms.java#noSuperWord 8376803 aix-ppc64,l
 compiler/vectorization/TestVectorAlgorithms.java#vanilla 8376803 aix-ppc64,linux-s390x
 compiler/vectorization/TestVectorAlgorithms.java#noOptimizeFill 8376803 aix-ppc64,linux-s390x
 
-compiler/vectorapi/TestVectorLongToMaskNodeIdealization.java 8384428 generic-x64
-
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/DataPatchTest.java 8331704 linux-riscv64
 compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/MaxOopMapStackOffsetTest.java 8331704 linux-riscv64
@@ -211,12 +209,10 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 compiler/c2/irTests/TestFloat16ScalarOperations.java 8377808 linux-aarch64
 compiler/codegen/TestRedundantLea.java#Spill              8361089 generic-all
 compiler/valhalla/inlinetypes/TestArrayNullMarkers.java#NVF-nAVF 8384262 generic-all
-compiler/valhalla/inlinetypes/TestMemBars.java  8384642 generic-all
-
-serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8382548 linux-aarch64
 
 vmTestbase/nsk/jdb/exclude/exclude001/exclude001.java 8375062 windows-x64
 vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.java 8375076 windows-x64
+vmTestbase/nsk/jvmti/IterateOverReachableObjects/iterreachobj002/TestDescription.java 8384882 linux-all
 
 # The following test failures DID NOT reproduce during Tier[1-8] testing
 # done for 8377828. Further analysis is being done with 8376235:

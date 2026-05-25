@@ -1654,13 +1654,11 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
   __ cmpxchg(addr, cmpval, newval, Assembler::word, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
   __ cset(rscratch1, Assembler::NE);
-  __ membar(__ AnyAny);
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
   __ cmpxchg(addr, cmpval, newval, Assembler::xword, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
   __ cset(rscratch1, Assembler::NE);
-  __ membar(__ AnyAny);
 }
 
 
@@ -3315,9 +3313,6 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
     break;
   default:
     ShouldNotReachHere();
-  }
-  if(!UseLSE) {
-    __ membar(__ AnyAny);
   }
 }
 

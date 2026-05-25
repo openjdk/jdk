@@ -617,7 +617,7 @@ void VM_PrintClassHierarchy::doit() {
   KlassHierarchy::print_class_hierarchy(_out, _print_interfaces, _print_subclasses, _classname);
 }
 
-void VM_PrintClassLayout::doit() {
-  PrintClassLayout::print_class_layout(_out, _class_name);
+void VM_ClassPrintLayout::doit() {
+  ClassPrintLayout::class_print_layout(_out, _class_name);
 }
 #endif

@@ -216,7 +216,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr load_constant(Constant* x);
   LIR_Opr load_constant(LIR_Const* constant);
 
-  bool in_conditional_code() { return _in_conditional_code; }
+  bool in_conditional_code() const { return _in_conditional_code; }
   // Given an immediate value, return an operand usable in logical ops.
   LIR_Opr load_immediate(jlong x, BasicType type);
 

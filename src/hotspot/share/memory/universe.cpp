@@ -889,7 +889,7 @@ jint universe_init() {
   ObjLayout::initialize();
 
 #ifdef _LP64
-  AOTMetaspace::adjust_heap_sizes_for_dumping();
+  AOTMetaspace::init_heap_settings();
 #endif // _LP64
 
   GCConfig::arguments()->initialize_heap_sizes();

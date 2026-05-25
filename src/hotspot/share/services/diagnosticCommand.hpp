@@ -334,11 +334,11 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class PrintClassLayoutDCmd : public DCmdWithParser {
+class ClassPrintLayoutDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _classname; // Class name whose layout should be printed.
 public:
-  PrintClassLayoutDCmd(outputStream* output, bool heap);
+  ClassPrintLayoutDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.class_print_layout";
   }

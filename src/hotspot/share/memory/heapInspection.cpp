@@ -590,7 +590,7 @@ static void print_flat_field(outputStream* st, int level, int offset, InstanceKl
   }
 }
 
-void PrintClassLayout::print_class_layout(outputStream* st, char* class_name) {
+void ClassPrintLayout::class_print_layout(outputStream* st, char* class_name) {
   KlassInfoTable cit(true);
   if (cit.allocation_failed()) {
     st->print_cr("ERROR: Ran out of C-heap; hierarchy not generated");

@@ -778,6 +778,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"CastLL")       ||
        !strcmp(_matrule->_rChild->_opType,"CastVV")       ||
        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"CastI2N")      ||
        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
        !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||
@@ -3968,7 +3969,7 @@ void MatchNode::count_commutative_op(int& count) {
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
-    "AndV", "OrV", "XorV",
+    "AndV", "OrV", "XorV", "AndVMask", "OrVMask", "XorVMask",
     "MaxVHF", "MinVHF", "MaxV", "MinV", "UMax","UMin"
   };
 

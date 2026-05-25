@@ -80,7 +80,7 @@ public:
 
   virtual bool      is_parse() const           { return true; }
   virtual JVMState* generate(JVMState* jvms);
-  int is_osr() { return _is_osr; }
+  bool              is_osr() const             { return _is_osr; }
 
 };
 

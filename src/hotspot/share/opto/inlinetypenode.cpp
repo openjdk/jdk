@@ -1456,7 +1456,8 @@ InlineTypeNode* InlineTypeNode::make_from_flat_impl(GraphKit* kit, ciInlineKlass
 InlineTypeNode* InlineTypeNode::make_from_flat_array(GraphKit* kit, ciInlineKlass* vk, Node* base, Node* idx) {
   assert(vk->maybe_flat_in_array(), "element type %s cannot be flat in array", vk->name()->as_utf8());
   PhaseGVN& gvn = kit->gvn();
-  DecoratorSet decorators = IN_HEAP | IS_ARRAY | MO_UNORDERED | C2_CONTROL_DEPENDENT_LOAD;
+  // The flat field loads are dependent on both the array layout checks as well as the range check.
+  DecoratorSet decorators = IN_HEAP | IS_ARRAY | MO_UNORDERED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD;
   kit->C->set_flat_accesses();
   InlineTypeNode* vt_nullable = nullptr;
   InlineTypeNode* vt_null_free = nullptr;

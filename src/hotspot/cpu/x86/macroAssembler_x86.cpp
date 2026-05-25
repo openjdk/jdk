@@ -2446,40 +2446,20 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg,
                                          Label& is_flat_array) {
-#ifdef _LP64
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
-#else
-  load_klass(temp_reg, oop, noreg);
-  movl(temp_reg, Address(temp_reg, Klass::layout_helper_offset()));
-  test_flat_array_layout(temp_reg, is_flat_array);
-#endif
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg,
                                              Label& is_non_flat_array) {
-#ifdef _LP64
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
-#else
-  load_klass(temp_reg, oop, noreg);
-  movl(temp_reg, Address(temp_reg, Klass::layout_helper_offset()));
-  test_non_flat_array_layout(temp_reg, is_non_flat_array);
-#endif
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label&is_null_free_array) {
-#ifdef _LP64
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
-#else
-  Unimplemented();
-#endif
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
-#ifdef _LP64
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
-#else
-  Unimplemented();
-#endif
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
@@ -6061,7 +6041,6 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
   jcc(Assembler::zero, skip);
   int call_offset = -1;
 
-#ifdef _LP64
   // The following code is similar to allocation code in TemplateTable::_new but has some slight differences,
   // e.g. object size is always not zero, sometimes it's constant; storing klass ptr after
   // allocating is not necessary if vk != nullptr, etc.
@@ -6126,7 +6105,6 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
   // tell. That runtime call will take care of preserving them
   // across a GC if there's one.
   mov(rax, rscratch1);
-#endif
 
   if (from_interpreter) {
     super_call_VM_leaf(StubRoutines::store_inline_type_fields_to_buf());

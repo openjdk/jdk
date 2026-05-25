@@ -34,3 +34,4 @@
 #############################################################################
 
 # Valhalla failures start here:
+tools/javac/platform/CanHandleClassFilesTest.java 8385328 windows-x64

@@ -1141,7 +1141,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  CompLevel comp_level
+  CompLevel comp_level,
+  Flags flags
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -1186,7 +1187,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     nmethod(method(), compiler->type(), nmethod_size, immutable_data_size, mutable_data_size,
             compile_id, entry_bci, immutable_data, offsets, orig_pc_offset,
             debug_info, dependencies, code_buffer, frame_size, oop_maps,
-            handler_table, nul_chk_table, compiler, comp_level
+            handler_table, nul_chk_table, compiler, comp_level,
+            flags
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -1240,13 +1242,9 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _is_unloading_state         = 0;
   _state                      = not_installed;
 
-  _has_unsafe_access          = 0;
-  _has_wide_vectors           = 0;
-  _has_monitors               = 0;
-  _has_scoped_access          = 0;
-  _has_flushed_dependencies   = 0;
-  _is_unlinked                = 0;
-  _load_reported              = 0; // jvmti state
+  _has_flushed_dependencies   = false;
+  _is_unlinked                = false;
+  _load_reported              = false; // jvmti state
 
   _deoptimization_status      = not_marked;
 
@@ -1401,7 +1399,8 @@ nmethod::nmethod(
 }
 
 
-nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm._header_size)
+nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm._header_size),
+  _flags(nm._flags)
 {
 
   if (nm._oop_maps != nullptr) {
@@ -1505,10 +1504,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _is_unloading_state           = nm._is_unloading_state;
   _state                        = not_installed;
 
-  _has_unsafe_access            = nm._has_unsafe_access;
-  _has_wide_vectors             = nm._has_wide_vectors;
-  _has_monitors                 = nm._has_monitors;
-  _has_scoped_access            = nm._has_scoped_access;
   _has_flushed_dependencies     = nm._has_flushed_dependencies;
   _is_unlinked                  = nm._is_unlinked;
   _load_reported                = nm._load_reported;
@@ -1706,7 +1701,8 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  CompLevel comp_level
+  CompLevel comp_level,
+  Flags flags
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -1718,7 +1714,8 @@ nmethod::nmethod(
   _deoptimization_generation(0),
   _gc_epoch(CodeCache::gc_epoch()),
   _method(method),
-  _osr_link(nullptr)
+  _osr_link(nullptr),
+  _flags(flags)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
