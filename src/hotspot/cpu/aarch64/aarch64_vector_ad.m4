@@ -908,9 +908,7 @@ instruct vnot$1_masked`'(vReg dst, vReg src, imm$1_M1 m1, pRegGov pg) %{
   match(Set dst (XorV (Binary src (Replicate m1)) pg));
   format %{ "vnot$1_masked $dst, $pg, $src" %}
   ins_encode %{
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     // Although dst and src hold the same value after movprfx, we must use src
     // (not dst) as the source of the following instruction. The movprfx
     // destination register must not appear in any source operand of the
@@ -1063,9 +1061,7 @@ instruct $1_masked(vReg dst, vReg src, pRegGov pg) %{
   format %{ "$1_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     // Although dst and src hold the same value after movprfx, we must use src
     // (not dst) as the source of the following instruction. The movprfx
     // destination register must not appear in any source operand of the
@@ -1088,9 +1084,7 @@ instruct $1_masked(vReg dst, vReg src, pRegGov pg) %{
   match(Set dst ($2 src pg));
   format %{ "$1_masked $dst, $pg, $src" %}
   ins_encode %{
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     // Although dst and src hold the same value after movprfx, we must use src
     // (not dst) as the source of the following instruction. The movprfx
     // destination register must not appear in any source operand of the
@@ -3401,9 +3395,7 @@ instruct insertI_index_lt32(vReg dst, vReg src, iRegIorL2I val, immI idx,
     __ sve_index($tmp$$FloatRegister, size, -16, 1);
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, size, ptrue,
                $tmp$$FloatRegister, (int)($idx$$constant) - 16);
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, size, $pgtmp$$PRegister, $val$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -3426,9 +3418,7 @@ instruct insertI_index_ge32(vReg dst, vReg src, iRegIorL2I val, immI idx, vReg t
     __ sve_dup($tmp2$$FloatRegister, size, (int)($idx$$constant));
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, size, ptrue,
                $tmp1$$FloatRegister, $tmp2$$FloatRegister);
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, size, $pgtmp$$PRegister, $val$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -3462,9 +3452,7 @@ instruct insertL_gt128b(vReg dst, vReg src, iRegL val, immI idx,
     __ sve_index($tmp$$FloatRegister, __ D, -16, 1);
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ D, ptrue,
                $tmp$$FloatRegister, (int)($idx$$constant) - 16);
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, __ D, $pgtmp$$PRegister, $val$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -4728,9 +4716,7 @@ instruct vpopcountL_masked(vReg dst, vReg src, pRegGov pg) %{
   match(Set dst (PopCountVL src pg));
   format %{ "vpopcountL_masked $dst, $pg, $src" %}
   ins_encode %{
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     // Although dst and src hold the same value after movprfx, we must use src
     // (not dst) as the source of the following instruction. The movprfx
     // destination register must not appear in any source operand of the
@@ -5159,9 +5145,7 @@ instruct vcountTrailingZeros_masked(vReg dst, vReg src, pRegGov pg) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     // Although dst and src hold the same value after movprfx, we must use src
     // (not dst) as the source of the following instruction. The movprfx
     // destination register must not appear in any source operand of the
@@ -5258,9 +5242,7 @@ instruct vreverseBytes_masked(vReg dst, vReg src, pRegGov pg) %{
         __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
       }
     } else {
-      if ($dst$$FloatRegister != $src$$FloatRegister) {
-        __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-      }
+      __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
       // Although dst and src hold the same value after movprfx, we must use src
       // (not dst) as the source of the following instruction. The movprfx
       // destination register must not appear in any source operand of the

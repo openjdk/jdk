@@ -1738,6 +1738,12 @@ private:
   void try_to_replace_prev_vector_copy_with_movprfx(FloatRegister dst);
 
 public:
+  void maybe_movprfx(FloatRegister dst, FloatRegister src) {
+    if (dst != src) {
+      sve_movprfx(dst, src);
+    }
+  }
+
 // Wrappers for SVE explicit destructive instructions, overriding the
 // same-signature Assembler entry points to enable movprfx fusion optimization.
 #define SVE_DESTRUCTIVE_BINARY_INS(NAME)                                       \
