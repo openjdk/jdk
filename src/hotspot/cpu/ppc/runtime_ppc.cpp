@@ -141,7 +141,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ mtlr(R4_ARG2);
   __ bctr();
 
-  masm->publish_instructions(false);
+// Code will be copied. No ICache sync required.
 
   // Set exception blob.
   return ExceptionBlob::create(&buffer, oop_maps,

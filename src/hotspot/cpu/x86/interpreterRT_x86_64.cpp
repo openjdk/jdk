@@ -295,7 +295,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
   __ lea(rax, ExternalAddress(Interpreter::result_handler(method()->result_type())));
   __ ret(0);
 
-  __ publish_instructions(false);
+// Code will be copied. No ICache sync required.
 }
 
 
