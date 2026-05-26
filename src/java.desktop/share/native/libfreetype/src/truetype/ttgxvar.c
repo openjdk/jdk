@@ -4,7 +4,7 @@
  *
  *   TrueType GX Font Variation loader
  *
- * Copyright (C) 2004-2025 by
+ * Copyright (C) 2004-2026 by
  * David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -2943,10 +2943,10 @@
       face->doblend = FALSE;
       for ( i = 0; i < num_coords; i++ )
         if ( coords[i] )
-        {
-          face->doblend = TRUE;
-          break;
-        }
+	{
+	  face->doblend = TRUE;
+	  break;
+	}
       if ( !face->doblend )
         goto Exit;
 
