@@ -140,7 +140,6 @@ protected:
 #ifndef PRODUCT
   AsmRemarks _asm_remarks;
   DbgStrings _dbg_strings;
-  bool       _was_flushed; // Track ICache::invalidate_range calls.
 #endif
 
   void print_on_impl(outputStream* st) const;
@@ -322,8 +321,6 @@ public:
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }
   DbgStrings &dbg_strings() { return _dbg_strings; }
-  bool was_flushed() const  { return _was_flushed; }
-  void set_flushed()        { _was_flushed = true; }
 
   void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
   void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
