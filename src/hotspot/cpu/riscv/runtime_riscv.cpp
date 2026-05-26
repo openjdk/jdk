@@ -246,8 +246,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Jump to interpreter
   __ ret();
 
-  // Make sure all code is generated
-  masm->publish_instructions();
+  masm->publish_instructions(false);
 
   UncommonTrapBlob* ut_blob = UncommonTrapBlob::create(&buffer, oop_maps,
                                                        SimpleRuntimeFrame::framesize >> 1);
@@ -389,8 +388,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   __ jr(t1);
 
-  // Make sure all code is generated
-  masm->publish_instructions();
+  masm->publish_instructions(false);
 
   // Set exception blob
   ExceptionBlob* ex_blob = ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
