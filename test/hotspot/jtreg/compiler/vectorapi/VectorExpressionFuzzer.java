@@ -47,7 +47,7 @@
 //       Which manifested in:
 //         compiler.lib.ir_framework.shared.TestRunException: <some method> not compilable (anymore) at level C1_FULL_PROFILE. Most likely, this is not expected, but if it is, you can use 'allowNotCompilable'.
 //
-//       It woul be good to only selectively allow some bailouts. For now, we just have to do:
+//       It would be good to only selectively allow some bailouts. For now, we just have to do:
 //         @Test(allowNotCompilable = true)
 //       But after JDK-8378943, we should list only the expected bailouts, so that we can
 //       detect and investigate any unexpected bailouts.
