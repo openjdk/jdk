@@ -86,9 +86,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/xmlstream.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 #ifdef DTRACE_ENABLED
 
@@ -144,10 +141,6 @@ struct java_nmethod_stats_struct {
   uint handler_table_size;
   uint scopes_pcs_size;
   uint scopes_data_size;
-#if INCLUDE_JVMCI
-  uint speculations_size;
-  uint jvmci_data_size;
-#endif
 
   void note_nmethod(nmethod* nm) {
     nmethod_count += 1;
@@ -165,10 +158,6 @@ struct java_nmethod_stats_struct {
     dependencies_size   += nm->dependencies_size();
     handler_table_size  += nm->handler_table_size();
     nul_chk_table_size  += nm->nul_chk_table_size();
-#if INCLUDE_JVMCI
-    speculations_size   += nm->speculations_size();
-    jvmci_data_size     += nm->jvmci_data_size();
-#endif
   }
   void print_nmethod_stats(const char* name) {
     if (nmethod_count == 0)  return;
@@ -203,11 +192,6 @@ struct java_nmethod_stats_struct {
     if (metadata_size != 0) {
       tty->print_cr("   metadata      = %u (%f%%)", metadata_size, (metadata_size * 100.0f)/total_mut_size);
     }
-#if INCLUDE_JVMCI
-    if (jvmci_data_size != 0) {
-      tty->print_cr("   JVMCI data    = %u (%f%%)", jvmci_data_size, (jvmci_data_size * 100.0f)/total_mut_size);
-    }
-#endif
     if (total_immut_size != 0) {
       tty->print_cr(" immutable data  = %u (%f%%)", total_immut_size, (total_immut_size * 100.0f)/total_size);
     }
@@ -226,11 +210,6 @@ struct java_nmethod_stats_struct {
     if (scopes_data_size != 0) {
       tty->print_cr("   scopes data   = %u (%f%%)", scopes_data_size, (scopes_data_size * 100.0f)/total_immut_size);
     }
-#if INCLUDE_JVMCI
-    if (speculations_size != 0) {
-      tty->print_cr("   speculations  = %u (%f%%)", speculations_size, (speculations_size * 100.0f)/total_immut_size);
-    }
-#endif
   }
 };
 
@@ -289,9 +268,6 @@ static java_nmethod_stats_struct c1_java_nmethod_stats;
 #ifdef COMPILER2
 static java_nmethod_stats_struct c2_java_nmethod_stats;
 #endif
-#if INCLUDE_JVMCI
-static java_nmethod_stats_struct jvmci_java_nmethod_stats;
-#endif
 static java_nmethod_stats_struct unknown_java_nmethod_stats;
 
 static native_nmethod_stats_struct native_nmethod_stats;
@@ -306,11 +282,6 @@ static void note_java_nmethod(nmethod* nm) {
 #ifdef COMPILER2
   if (nm->is_compiled_by_c2()) {
     c2_java_nmethod_stats.note_nmethod(nm);
-  } else
-#endif
-#if INCLUDE_JVMCI
-  if (nm->is_compiled_by_jvmci()) {
-    jvmci_java_nmethod_stats.note_nmethod(nm);
   } else
 #endif
   {
@@ -926,7 +897,7 @@ void nmethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all
   }
 }
 
-address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_check) {
+address nmethod::continuation_for_implicit_exception(address pc) {
   // Exception happened outside inline-cache check code => we are inside
   // an active nmethod => use cpc to determine a return address
   int exception_offset = int(pc - code_begin());
@@ -953,18 +924,7 @@ address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_c
     // Let the normal error handling report the exception
     return nullptr;
   }
-  if (cont_offset == exception_offset) {
-#if INCLUDE_JVMCI
-    Deoptimization::DeoptReason deopt_reason = for_div0_check ? Deoptimization::Reason_div0_check : Deoptimization::Reason_null_check;
-    JavaThread *thread = JavaThread::current();
-    thread->set_jvmci_implicit_exception_pc(pc);
-    thread->set_pending_deoptimization(Deoptimization::make_trap_request(deopt_reason,
-                                                                         Deoptimization::Action_reinterpret));
-    return (SharedRuntime::deopt_blob()->implicit_exception_uncommon_trap());
-#else
-    ShouldNotReachHere();
-#endif
-  }
+  guarantee(cont_offset != exception_offset, "continuation offset and exception offset must be different");
   return code_begin() + cont_offset;
 }
 
@@ -1062,11 +1022,9 @@ static void assert_no_oops_or_metadata(nmethod* nm) {
 }
 #endif
 
-static int required_mutable_data_size(CodeBuffer* code_buffer,
-                                      int jvmci_data_size = 0) {
+static int required_mutable_data_size(CodeBuffer* code_buffer) {
   return align_up(code_buffer->total_relocation_size(), oopSize) +
-         align_up(code_buffer->total_metadata_size(), oopSize) +
-         align_up(jvmci_data_size, oopSize);
+         align_up(code_buffer->total_metadata_size(), oopSize);
 }
 
 nmethod* nmethod::new_native_nmethod(const methodHandle& method,
@@ -1131,13 +1089,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   CompLevel comp_level,
-  Flags flags
-#if INCLUDE_JVMCI
-  , char* speculations,
-  int speculations_len,
-  JVMCINMethodData* jvmci_data
-#endif
-)
+  Flags flags)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   code_buffer->finalize_oop_references(method);
@@ -1150,9 +1102,6 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     + align_up((int)dependencies->size_in_bytes(), oopSize)
     + align_up(handler_table->size_in_bytes()    , oopSize)
     + align_up(nul_chk_table->size_in_bytes()    , oopSize)
-#if INCLUDE_JVMCI
-    + align_up(speculations_len                  , oopSize)
-#endif
     + align_up(debug_info->data_size()           , oopSize);
 
   // First, allocate space for immutable data in C heap.
@@ -1166,8 +1115,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     }
   }
 
-  int mutable_data_size = required_mutable_data_size(code_buffer
-    JVMCI_ONLY(COMMA (compiler->is_jvmci() ? jvmci_data->size() : 0)));
+  int mutable_data_size = required_mutable_data_size(code_buffer);
 
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1176,14 +1124,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     nmethod(method(), compiler->type(), nmethod_size, immutable_data_size, mutable_data_size,
             compile_id, entry_bci, immutable_data, offsets, orig_pc_offset,
             debug_info, dependencies, code_buffer, frame_size, oop_maps,
-            handler_table, nul_chk_table, compiler, comp_level,
-            flags
-#if INCLUDE_JVMCI
-            , speculations,
-            speculations_len,
-            jvmci_data
-#endif
-            );
+            handler_table, nul_chk_table, compiler, comp_level, flags);
 
     if (nm != nullptr) {
       // To make dependency checking during class loading fast, record
@@ -1317,7 +1258,6 @@ nmethod::nmethod(
     _unwind_handler_offset   = 0;
 
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
-    JVMCI_ONLY( _metadata_size = metadata_size; )
     assert(_mutable_data_size == _relocation_size + metadata_size,
            "wrong mutable data size: %d != %d + %d",
            _mutable_data_size, _relocation_size, metadata_size);
@@ -1329,9 +1269,6 @@ nmethod::nmethod(
     _handler_table_offset    = 0;
     _scopes_pcs_offset       = 0;
     _scopes_data_offset      = 0;
-#if INCLUDE_JVMCI
-    _speculations_offset     = 0;
-#endif
     _immutable_data_ref_count_offset = 0;
 
     code_buffer->copy_code_and_locs_to(this);
@@ -1455,16 +1392,10 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _deopt_handler_entry_offset   = nm._deopt_handler_entry_offset;
   _unwind_handler_offset        = nm._unwind_handler_offset;
   _num_stack_arg_slots          = nm._num_stack_arg_slots;
-#if INCLUDE_JVMCI
-  _metadata_size                = nm._metadata_size;
-#endif
   _nul_chk_table_offset         = nm._nul_chk_table_offset;
   _handler_table_offset         = nm._handler_table_offset;
   _scopes_pcs_offset            = nm._scopes_pcs_offset;
   _scopes_data_offset           = nm._scopes_data_offset;
-#if INCLUDE_JVMCI
-  _speculations_offset          = nm._speculations_offset;
-#endif
   _immutable_data_ref_count_offset = nm._immutable_data_ref_count_offset;
 
   // Increment number of references to immutable data to share it between nmethods
@@ -1626,12 +1557,6 @@ bool nmethod::is_relocatable() {
     return false;
   }
 
-#if INCLUDE_JVMCI
-  if (jvmci_nmethod_data() != nullptr && jvmci_nmethod_data()->has_mirror()) {
-    return false;
-  }
-#endif
-
   if (is_unloading()) {
     return false;
   }
@@ -1680,13 +1605,7 @@ nmethod::nmethod(
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   CompLevel comp_level,
-  Flags flags
-#if INCLUDE_JVMCI
-  , char* speculations,
-  int speculations_len,
-  JVMCINMethodData* jvmci_data
-#endif
-  )
+  Flags flags)
   : CodeBlob("nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, mutable_data_size),
   _deoptimization_generation(0),
@@ -1713,36 +1632,20 @@ nmethod::nmethod(
 
     set_ctable_begin(header_begin() + content_offset());
 
-#if INCLUDE_JVMCI
-    if (compiler->is_jvmci()) {
-      // JVMCI might not produce any stub sections
-      if (offsets->value(CodeOffsets::Exceptions) != -1) {
-        _exception_offset        = code_offset() + offsets->value(CodeOffsets::Exceptions);
-      } else {
-        _exception_offset        = -1;
-      }
-      if (offsets->value(CodeOffsets::Deopt) != -1) {
-        _deopt_handler_entry_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
-      } else {
-        _deopt_handler_entry_offset    = -1;
-      }
-    } else
-#endif
-    {
-      // Exception handler and deopt handler are in the stub section
-      assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
+    // Exception handler and deopt handler are in the stub section
+    assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
 
-      bool has_exception_handler = (offsets->value(CodeOffsets::Exceptions) != -1);
-      assert(has_exception_handler == (compiler->type() != compiler_c2),
-             "C2 compiler doesn't provide exception handler stub code.");
-      if (has_exception_handler) {
-        _exception_offset = _stub_offset + offsets->value(CodeOffsets::Exceptions);
-      } else {
-        _exception_offset = -1;
-      }
-
-      _deopt_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::Deopt);
+    bool has_exception_handler = (offsets->value(CodeOffsets::Exceptions) != -1);
+    assert(has_exception_handler == (compiler->type() != compiler_c2),
+           "C2 compiler doesn't provide exception handler stub code.");
+    if (has_exception_handler) {
+      _exception_offset = _stub_offset + offsets->value(CodeOffsets::Exceptions);
+    } else {
+      _exception_offset = -1;
     }
+
+    _deopt_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::Deopt);
+
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       // C1 generates UnwindHandler at the end of instructions section.
       // Calculate positive offset as distance between the start of stubs section
@@ -1754,11 +1657,9 @@ nmethod::nmethod(
     }
 
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
-    JVMCI_ONLY( _metadata_size = metadata_size; )
-    int jvmci_data_size = 0 JVMCI_ONLY( + align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize));
-    assert(_mutable_data_size == _relocation_size + metadata_size + jvmci_data_size,
-           "wrong mutable data size: %d != %d + %d + %d",
-           _mutable_data_size, _relocation_size, metadata_size, jvmci_data_size);
+    assert(_mutable_data_size == _relocation_size + metadata_size,
+           "wrong mutable data size: %d != %d + %d",
+           _mutable_data_size, _relocation_size, metadata_size);
     assert(nmethod_size == data_end() - header_begin(), "wrong nmethod size: %d != %d",
            nmethod_size, (int)(code_end() - header_begin()));
 
@@ -1775,12 +1676,7 @@ nmethod::nmethod(
     _scopes_pcs_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
     _scopes_data_offset   = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
 
-#if INCLUDE_JVMCI
-    _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    _immutable_data_ref_count_offset = _speculations_offset + align_up(speculations_len, oopSize);
-#else
     _immutable_data_ref_count_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
-#endif
     DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_ref_count_offset + ImmutableDataRefCountSize; )
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
@@ -1796,30 +1692,17 @@ nmethod::nmethod(
     // Create cache after PcDesc data is copied - it will be used to initialize cache
     _pc_desc_container = new PcDescContainer(scopes_pcs_begin());
 
-#if INCLUDE_JVMCI
-    if (compiler->is_jvmci()) {
-      // Initialize the JVMCINMethodData object inlined into nm
-      jvmci_nmethod_data()->copy(jvmci_data);
-    }
-#endif
-
     // Copy contents of ExceptionHandlerTable to nmethod
     handler_table->copy_to(this);
     nul_chk_table->copy_to(this);
 
-#if INCLUDE_JVMCI
-    // Copy speculations to nmethod
-    if (speculations_size() != 0) {
-      memcpy(speculations_begin(), speculations, speculations_len);
-    }
-#endif
     init_immutable_data_ref_count();
 
     post_init();
 
     // we use the information of entry points to find out if a method is
     // static or non static
-    assert(compiler->is_c2() || compiler->is_jvmci() ||
+    assert(compiler->is_c2() ||
            _method->is_static() == (entry_point() == verified_entry_point()),
            " entry points must be same for static methods and vice versa");
   }
@@ -1835,16 +1718,6 @@ void nmethod::log_identity(xmlStream* log) const {
   if (TieredCompilation) {
     log->print(" level='%d'", comp_level());
   }
-#if INCLUDE_JVMCI
-  if (jvmci_nmethod_data() != nullptr) {
-    const char* jvmci_name = jvmci_nmethod_data()->name();
-    if (jvmci_name != nullptr) {
-      log->print(" jvmci_mirror_name='");
-      log->text("%s", jvmci_name);
-      log->print("'");
-    }
-  }
-#endif
 }
 
 
@@ -1952,10 +1825,6 @@ void nmethod::print_nmethod(bool printmethod) {
     if (is_compiled_by_c1()) {
       tty->cr();
       tty->print_cr("============================= C1-compiled nmethod ==============================");
-    }
-    if (is_compiled_by_jvmci()) {
-      tty->cr();
-      tty->print_cr("=========================== JVMCI-compiled nmethod =============================");
     }
     tty->print_cr("----------------------------------- Assembly -----------------------------------");
     decode2(tty);
@@ -2248,13 +2117,10 @@ bool nmethod::is_maybe_on_stack() {
 }
 
 void nmethod::inc_decompile_count() {
-  if (!is_compiled_by_c2() && !is_compiled_by_jvmci()) return;
-  // Could be gated by ProfileTraps, but do not bother...
-#if INCLUDE_JVMCI
-  if (jvmci_skip_profile_deopt()) {
+  if (!is_compiled_by_c2()) {
     return;
   }
-#endif
+  // Could be gated by ProfileTraps, but do not bother...
   Method* m = method();
   if (m == nullptr)  return;
   MethodData* mdo = m->method_data();
@@ -2378,14 +2244,6 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
 
   } // leave critical region under NMethodState_lock
 
-#if INCLUDE_JVMCI
-  // Invalidate can't occur while holding the NMethodState_lock
-  JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
-  if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this, invalidation_reason);
-  }
-#endif
-
 #ifdef ASSERT
   if (is_osr_method() && method() != nullptr) {
     // Make sure osr nmethod is invalidated, i.e. not on the list
@@ -2415,16 +2273,6 @@ void nmethod::unlink() {
   if (is_osr_method()) {
     invalidate_osr_method();
   }
-
-#if INCLUDE_JVMCI
-  // Clear the link between this nmethod and a HotSpotNmethod mirror
-  JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
-  if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this, is_cold() ?
-            nmethod::InvalidationReason::UNLOADING_COLD :
-            nmethod::InvalidationReason::UNLOADING);
-  }
-#endif
 
   // Post before flushing as jmethodID is being used
   post_compiled_method_unload();
@@ -2488,7 +2336,6 @@ void nmethod::purge(bool unregister_nmethod) {
 
   CodeCache::unregister_old_nmethod(this);
 
-  JVMCI_ONLY( _metadata_size = 0; )
   CodeBlob::purge();
 }
 
@@ -3305,30 +3152,6 @@ void nmethod::verify() {
     }
   }
 
-#ifdef ASSERT
-#if INCLUDE_JVMCI
-  {
-    // Verify that implicit exceptions that deoptimize have a PcDesc and OopMap
-    ImmutableOopMapSet* oms = oop_maps();
-    ImplicitExceptionTable implicit_table(this);
-    for (uint i = 0; i < implicit_table.len(); i++) {
-      int exec_offset = (int) implicit_table.get_exec_offset(i);
-      if (implicit_table.get_exec_offset(i) == implicit_table.get_cont_offset(i)) {
-        assert(pc_desc_at(code_begin() + exec_offset) != nullptr, "missing PcDesc");
-        bool found = false;
-        for (int i = 0, imax = oms->count(); i < imax; i++) {
-          if (oms->pair_at(i)->pc_offset() == exec_offset) {
-            found = true;
-            break;
-          }
-        }
-        assert(found, "missing oopmap");
-      }
-    }
-  }
-#endif
-#endif
-
   VerifyOopsClosure voc(this);
   oops_do(&voc);
   assert(voc.ok(), "embedded oops must be OK");
@@ -3422,8 +3245,6 @@ void nmethod::print_on_impl(outputStream* st) const {
     st->print("(c1) ");
   } else if (is_compiled_by_c2()) {
     st->print("(c2) ");
-  } else if (is_compiled_by_jvmci()) {
-    st->print("(JVMCI) ");
   } else {
     st->print("(n/a) ");
   }
@@ -3469,12 +3290,6 @@ void nmethod::print_on_impl(outputStream* st) const {
                                              p2i(metadata_begin()),
                                              p2i(metadata_end()),
                                              metadata_size());
-#if INCLUDE_JVMCI
-  if (jvmci_data_size   () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(jvmci_data_begin()),
-                                             p2i(jvmci_data_end()),
-                                             jvmci_data_size());
-#endif
   if (immutable_data_size() > 0) st->print_cr(" immutable data [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(immutable_data_begin()),
                                              p2i(immutable_data_end()),
@@ -3499,12 +3314,6 @@ void nmethod::print_on_impl(outputStream* st) const {
                                              p2i(scopes_data_begin()),
                                              p2i(scopes_data_end()),
                                              scopes_data_size());
-#if INCLUDE_JVMCI
-  if (speculations_size () > 0) st->print_cr(" speculations   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(speculations_begin()),
-                                             p2i(speculations_end()),
-                                             speculations_size());
-#endif
 }
 
 void nmethod::print_code() {
@@ -4077,8 +3886,8 @@ const char* nmethod::nmethod_section_label(address pos) const {
   if (pos == consts_begin() && pos != insts_begin())                    label = "[Constants]";
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
-  if (JVMCI_ONLY(_exception_offset >= 0 &&) pos == exception_begin())          label = "[Exception Handler]";
-  if (JVMCI_ONLY(_deopt_handler_entry_offset != -1 &&) pos == deopt_handler_entry()) label = "[Deopt Handler Entry Point]";
+  if (pos == exception_begin())                                         label = "[Exception Handler]";
+  if (pos == deopt_handler_entry())                                     label = "[Deopt Handler Entry Point]";
   return label;
 }
 
@@ -4229,12 +4038,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
       const ImmutableOopMap* om = pair->get_from(oms);
       address pc = base + pair->pc_offset();
       if (pc >= begin) {
-#if INCLUDE_JVMCI
-        bool is_implicit_deopt = implicit_table.continuation_offset(pair->pc_offset()) == (uint) pair->pc_offset();
-#else
-        bool is_implicit_deopt = false;
-#endif
-        if (is_implicit_deopt ? pc == begin : pc > begin && pc <= end) {
+        if (pc > begin && pc <= end) {
           st->move_to(column, 6, 0);
           st->print("; ");
           om->print_on(st);
@@ -4429,9 +4233,6 @@ void nmethod::print_statistics() {
 #ifdef COMPILER2
   c2_java_nmethod_stats.print_nmethod_stats("C2");
 #endif
-#if INCLUDE_JVMCI
-  jvmci_java_nmethod_stats.print_nmethod_stats("JVMCI");
-#endif
   unknown_java_nmethod_stats.print_nmethod_stats("Unknown");
   DebugInformationRecorder::print_statistics();
   pc_nmethod_stats.print_pc_stats();
@@ -4441,25 +4242,3 @@ void nmethod::print_statistics() {
 }
 
 #endif // !PRODUCT
-
-#if INCLUDE_JVMCI
-void nmethod::update_speculation(JavaThread* thread) {
-  jlong speculation = thread->pending_failed_speculation();
-  if (speculation != 0) {
-    guarantee(jvmci_nmethod_data() != nullptr, "failed speculation in nmethod without failed speculation list");
-    jvmci_nmethod_data()->add_failed_speculation(this, speculation);
-    thread->set_pending_failed_speculation(0);
-  }
-}
-
-const char* nmethod::jvmci_name() {
-  if (jvmci_nmethod_data() != nullptr) {
-    return jvmci_nmethod_data()->name();
-  }
-  return nullptr;
-}
-
-bool nmethod::jvmci_skip_profile_deopt() const {
-  return jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->profile_deopt();
-}
-#endif
