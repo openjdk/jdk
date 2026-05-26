@@ -136,8 +136,9 @@ public class UnsafeBooleanTest {
 
         System.out.printf("Test: %s\n", name);
         for (int input : INPUTS) {
-            for (int toggle : new int[] { 0, 1, 0xFF }) {
+            for (int toggle : TOGGLES) {
                 int value = input ^ toggle;
+                // Prepare a dedicated test for each combination. Otherwise, constant folding would break test logic.
                 runTestsOn(prepare(name + " allBoolean", TEST_ALL_BOOLEAN_MH, base, offset), value, true);
                 runTestsOn(prepare(name + " putBoolean", TEST_PUT_BOOLEAN_MH, base, offset), value, true);
                 runTestsOn(prepare(name + " getBoolean", TEST_GET_BOOLEAN_MH, base, offset), value, false);
@@ -152,7 +153,7 @@ public class UnsafeBooleanTest {
 
         System.out.printf("Test: %s\n", name);
         for (int input : INPUTS) {
-            for (int toggle : new int[] { 0, 1, 0xFF }) {
+            for (int toggle : TOGGLES) {
                 int value = input ^ toggle;
                 runTestsOn(allTests, value, true);
                 runTestsOn(putTests, value, true);
