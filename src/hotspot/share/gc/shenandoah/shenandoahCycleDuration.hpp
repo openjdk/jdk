@@ -22,30 +22,26 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP
-#define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCYCLEDURATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHCYCLEDURATION_HPP
 
-#include "utilities/globalDefinitions.hpp"
+#include "gc/shenandoah/shenandoahWeightedSeq.hpp"
+#include "runtime/mutex.hpp"
 
-class ShenandoahHeapRegion;
+class ShenandoahCycleDuration {
+  // To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,
+  // for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
+  // allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
+  static constexpr uint GC_TIME_SAMPLE_SIZE = 15;
 
-/*
- * The purpose of this interface is to decouple the heuristics from a
- * direct dependency on the ShenandoahHeap singleton instance. This is
- * done to facilitate future unit testing of the heuristics and to support
- * future operational modes of Shenandoah in which the heap may be split
- * into generations.
- */
-class ShenandoahSpaceInfo {
+  // Written by control thread, read by regulator thread
+  Monitor _gc_times_lock;
+  ShenandoahWeightedSeq _gc_times;
+
 public:
-  virtual const char* name() const = 0;
-  virtual size_t max_capacity() const = 0;
-  virtual size_t soft_mutator_available() const = 0;
-  virtual size_t available() const = 0;
-  virtual size_t used() const = 0;
-
-  // Return true if this region belongs to this space.
-  virtual bool contains(ShenandoahHeapRegion* region) const = 0;
+  explicit ShenandoahCycleDuration(uint size = GC_TIME_SAMPLE_SIZE);
+  void record_duration(double timestamp_at_start, double duration);
+  double predict_duration(double timestamp_at_start, double margin_of_error);
 };
 
-#endif //SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCYCLEDURATION_HPP

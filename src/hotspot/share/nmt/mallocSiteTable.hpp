@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "nmt/allocationSite.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -57,9 +57,9 @@ class MallocSite : public AllocationSite {
 // Malloc site hashtable entry
 class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  private:
-  MallocSite                         _malloc_site;
-  const unsigned int                 _hash;
-  MallocSiteHashtableEntry* volatile _next;
+  MallocSite                        _malloc_site;
+  const unsigned int                _hash;
+  Atomic<MallocSiteHashtableEntry*> _next;
 
  public:
 
@@ -69,7 +69,10 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
   }
 
   inline const MallocSiteHashtableEntry* next() const {
-    return _next;
+    return _next.load_relaxed();
+  }
+  inline MallocSiteHashtableEntry* next() {
+    return _next.load_relaxed();
   }
 
   // Insert an entry atomically.
@@ -193,9 +196,9 @@ class MallocSiteTable : AllStatic {
  private:
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static MallocSiteHashtableEntry**       _table;
-  static const NativeCallStack*           _hash_entry_allocation_stack;
-  static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
+  static Atomic<MallocSiteHashtableEntry*>* _table;
+  static const NativeCallStack*             _hash_entry_allocation_stack;
+  static const MallocSiteHashtableEntry*    _hash_entry_allocation_site;
 };
 
 #endif // SHARE_NMT_MALLOCSITETABLE_HPP
