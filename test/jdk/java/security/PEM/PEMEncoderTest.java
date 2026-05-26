@@ -169,6 +169,8 @@ public class PEMEncoderTest {
             decoder.decode(e.pem())));
         System.out.println("Exact PEM String check with NoCRLF only PEM:");
         e = PEMData.ecsecp256.makeValidNoCRLF("ecsecp256ValidNoCRLF");
+        System.out.println(HexFormat.of().formatHex(e.pem().getBytes(StandardCharsets.UTF_8)));
+        System.out.println("EOL: " + HexFormat.of().formatHex(System.lineSeparator().getBytes(StandardCharsets.UTF_8)));
         PEMData.checkResultsExact(expected, encoder.encodeToString(
             decoder.decode(e.pem())));
 

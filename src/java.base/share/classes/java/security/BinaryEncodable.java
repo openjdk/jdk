@@ -35,7 +35,7 @@ import java.security.spec.X509EncodedKeySpec;
  * This interface is implemented by security API classes that contain
  * binary-encodable cryptographic material.
  *
- * This sealed interface may evolve. When using {@code switch}, always include a
+ * <p> This sealed interface may evolve. When using {@code switch}, always include a
  * {@code default} case rather than relying on the classes specified in the
  * {@code permits} clause to remain fixed.  An exhaustive {@code switch} may
  * result in a {@link MatchException}.

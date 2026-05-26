@@ -24,6 +24,7 @@
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
+import java.nio.charset.StandardCharsets;
 import java.security.BinaryEncodable;
 import java.security.KeyPair;
 import java.security.PEM;
@@ -32,7 +33,9 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.*;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -578,8 +581,8 @@ class PEMData {
                 clazz, provider, password());
         }
 
-        Entry makeCR(String name) {
-            return new Entry(name,
+        Entry makeCR(String newName) {
+            return new Entry(newName,
                 Pattern.compile(System.lineSeparator()).matcher(pem).replaceAll("\r"),
                 clazz, provider, password());
         }
@@ -591,14 +594,31 @@ class PEMData {
                 clazz, provider, password());
         }
 
-        Entry makeValidNoCRLF(String name) {
-            String p = Pattern.compile(System.lineSeparator()).matcher(pem).replaceFirst("!");
-            p = LF.matcher(CR.matcher(p).replaceAll("")).
-                replaceAll("");
-            p = Pattern.compile("!").matcher(p).replaceFirst("\n");
-            return new Entry(name, p, clazz, provider, password());
-        }
+        Entry makeValidNoCRLF(String newName) {
+            int cr = pem.indexOf('\r');
+            int lf = pem.indexOf('\n');
+            if (cr == -1 && lf == -1) {
+                throw new AssertionError("Cannot find EOL with " + newName);
+            }
 
+            Matcher eol;
+            int cut; // index right after the first EOL
+
+            if (lf - cr == 1) {
+                eol = LSDEFAULT.matcher(pem);
+                cut = lf + 1;
+            } else if (cr != -1 && cr < lf) {
+                eol = CR.matcher(pem);
+                cut = cr + 1;
+            } else {
+                eol = LF.matcher(pem);
+                cut = lf + 1;
+            }
+
+            String p = pem.substring(0, cut) +
+                eol.pattern().matcher(pem.substring(cut)).replaceAll("");
+            return new Entry(newName, p, clazz, provider, password());
+        }
     }
 
     static public Entry getEntry(String varname) {
