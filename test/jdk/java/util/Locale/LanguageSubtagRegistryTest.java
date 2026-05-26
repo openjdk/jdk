@@ -44,6 +44,8 @@ public class LanguageSubtagRegistryTest {
 
     static boolean err = false;
 
+    // ACCEPT_LANGUAGE as of 2026-05-05.
+    // Updates to the registry with a "Preferred-Value" should be added
     private static final String ACCEPT_LANGUAGE =
         "Accept-Language: aam, adp, aeb, ajs, aog, apc, ajp, aue, bcg, bic, bpp, cey, cbr, cnp, cqu, crr, csp, csx, dif, dmw, dsz, dyl, ehs, eko, ema,"
         + " en-gb-oed, gti, hnm, iba, ilw, jks, kdz, kjh, kmb, koj, kru, ksp, kwq, kxe, kzk, lgs, lii, lmm, lsb, lsc, lsn, lsv, lsw, luh, lvi, meg, mtm,"
