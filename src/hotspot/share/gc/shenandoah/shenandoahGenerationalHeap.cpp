@@ -447,7 +447,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
 #undef KELVIN_BALANCE
 #ifdef KELVIN_BALANCE
   log_info(gc)("compute_old_generation_balance(xfer_limit: %zu, old_trashed: %zu, young_trashed: %zu)",
-	       mutator_xfer_limit, old_trashed_regions, young_trashed_regions);
+               mutator_xfer_limit, old_trashed_regions, young_trashed_regions);
 #endif
   ShenandoahOldGeneration* old_gen = old_generation();
   size_t old_capacity = old_gen->max_capacity();

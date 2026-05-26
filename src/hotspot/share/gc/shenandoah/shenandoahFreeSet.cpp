@@ -2573,7 +2573,7 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
   const size_t old_evac_reserve = old_generation->get_evacuation_reserve();
   const size_t young_evac_reserve = young_generation->get_evacuation_reserve();
   log_info(gc)("prepare_to_rebuild(), reserves are old: %zu, promo: %zu, young: %zu",
-	       old_evac_reserve, promoted_reserve, young_evac_reserve);
+               old_evac_reserve, promoted_reserve, young_evac_reserve);
 #endif
 
   clear();
@@ -2598,7 +2598,7 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_
   size_t old_evac_reserve = old_generation->get_evacuation_reserve();
   size_t young_evac_reserve = young_generation->get_evacuation_reserve();
   log_info(gc)("finish_rebuild(), reserves are old: %zu, promo: %zu, young: %zu",
-	       old_evac_reserve, promoted_reserve, young_evac_reserve);
+               old_evac_reserve, promoted_reserve, young_evac_reserve);
 #endif
 
   if (_heap->mode()->is_generational()) {
@@ -2699,11 +2699,11 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
     const size_t old_evac_reserve = old_generation->get_evacuation_reserve();
     const size_t young_evac_reserve = young_generation->get_evacuation_reserve();
     log_info(gc)("compute_young_and_old_reserves(young_trashed_regions: %zu, old_trashed_regions: %zu)",
-		 young_trashed_regions, old_trashed_regions);
+                 young_trashed_regions, old_trashed_regions);
     log_info(gc)("   old_available: %zu, old_unaffiliated: %zu, young_unaffiliated: %zu",
-		 old_available, old_unaffiliated_regions, young_unaffiliated_regions);
+                 old_available, old_unaffiliated_regions, young_unaffiliated_regions);
     log_info(gc)("   reserves are old: %zu, promo: %zu, young: %zu",
-		 old_evac_reserve, promoted_reserve, young_evac_reserve);
+                 old_evac_reserve, promoted_reserve, young_evac_reserve);
   }
 #endif
 

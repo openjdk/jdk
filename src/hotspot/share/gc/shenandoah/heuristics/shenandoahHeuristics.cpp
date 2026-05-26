@@ -226,7 +226,7 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
 #undef KELVIN_PENALTY
 #ifdef KELVIN_PENALTY
   log_info(gc)("SH::adjust_penalty(%zd), _most_recent_declined_trigger_count: %zu, Penalty_Free_Declinations: %zu",
-	       step, _most_recent_declined_trigger_count, Penalty_Free_Declinations);
+               step, _most_recent_declined_trigger_count, Penalty_Free_Declinations);
 #endif
   if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
     // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following

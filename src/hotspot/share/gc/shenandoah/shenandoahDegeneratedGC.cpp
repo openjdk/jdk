@@ -296,7 +296,7 @@ void ShenandoahDegenGC::op_degenerated() {
     case _degenerated_update_refs:
       if (heap->has_forwarded_objects()) {
         op_update_refs();
-	// op_update_roots() rebuilds the freeset following completion of update refs
+        // op_update_roots() rebuilds the freeset following completion of update refs
         op_update_roots();
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
