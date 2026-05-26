@@ -35,6 +35,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -3032,6 +3033,17 @@ bool InstanceKlass::on_stack() const {
 Symbol* InstanceKlass::source_file_name() const               { return _constants->source_file_name(); }
 u2 InstanceKlass::source_file_name_index() const              { return _constants->source_file_name_index(); }
 void InstanceKlass::set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+
+Symbol* InstanceKlass::source_file_name(int version) const {
+  // Return the source file name for this version of the classfile, if redefined with RedefineClasses
+  const InstanceKlass* holder = get_klass_version(version);
+  if (holder == nullptr) {
+    // Redefined previous class has been cleaned up.
+    return nullptr;
+  } else {
+    return holder->source_file_name();
+  }
+}
 
 // minor and major version numbers of class file
 u2 InstanceKlass::minor_version() const                 { return _constants->minor_version(); }

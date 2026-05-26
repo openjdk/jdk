@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,63 +328,6 @@ inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
 
 inline bool java_lang_Module::is_instance(oop obj) {
   return obj != nullptr && obj->klass() == vmClasses::Module_klass();
-}
-
-inline int Backtrace::merge_bci_and_version(int bci, int version) {
-  // only store u2 for version, checking for overflow.
-  if (version > USHRT_MAX || version < 0) version = USHRT_MAX;
-  assert((u2)bci == bci, "bci should be short");
-  return build_int_from_shorts((u2)version, (u2)bci);
-}
-
-inline int Backtrace::merge_mid_and_cpref(int mid, int cpref) {
-  // only store u2 for mid and cpref, checking for overflow.
-  assert((u2)mid == mid, "mid should be short");
-  assert((u2)cpref == cpref, "cpref should be short");
-  return build_int_from_shorts((u2)cpref, (u2)mid);
-}
-
-inline int Backtrace::bci_at(unsigned int merged) {
-  return extract_high_short_from_int(merged);
-}
-
-inline int Backtrace::version_at(unsigned int merged) {
-  return extract_low_short_from_int(merged);
-}
-
-inline int Backtrace::mid_at(unsigned int merged) {
-  return extract_high_short_from_int(merged);
-}
-
-inline int Backtrace::cpref_at(unsigned int merged) {
-  return extract_low_short_from_int(merged);
-}
-
-inline int Backtrace::get_line_number(Method* method, int bci) {
-  int line_number = 0;
-  if (method->is_native()) {
-    // Negative value different from -1 below, enabling Java code in
-    // class java.lang.StackTraceElement to distinguish "native" from
-    // "no LineNumberTable".  JDK tests for -2.
-    line_number = -2;
-  } else {
-    // Returns -1 if no LineNumberTable, and otherwise actual line number
-    line_number = method->line_number_from_bci(bci);
-  }
-  return line_number;
-}
-
-inline Symbol* Backtrace::get_source_file_name(InstanceKlass* holder, int version) {
-  // RedefineClasses() currently permits redefine operations to
-  // happen in parallel using a "last one wins" philosophy. That
-  // spec laxness allows the constant pool entry associated with
-  // the source_file_name_index for any older constant pool version
-  // to be unstable so we shouldn't try to use it.
-  if (holder->constants()->version() != version) {
-    return nullptr;
-  } else {
-    return holder->source_file_name();
-  }
 }
 
 #endif // SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP

@@ -31,6 +31,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
