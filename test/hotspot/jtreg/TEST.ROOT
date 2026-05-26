@@ -80,6 +80,7 @@ requires.properties= \
     vm.cds \
     vm.cds.default.archive.available \
     vm.cds.nocoops.archive.available \
+    vm.cds.nocoh.archive.available \
     vm.cds.custom.loaders \
     vm.cds.supports.aot.class.linking \
     vm.cds.supports.aot.code.caching \
