@@ -336,7 +336,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       // Check if object matches.
       movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, rax_reg, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
       cmpptr(rax_reg, obj);
       jcc(Assembler::notEqual, slow_path);
 
@@ -483,7 +483,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     movptr(reg_rax, mark);
-    andptr(reg_rax, ~(int32_t)markWord::lock_mask);
+    andptr(reg_rax, ~(int32_t)markWord::lock_mask_in_place);
     orptr(mark, markWord::unlocked_value);
     lock(); cmpxchgptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     jcc(Assembler::notEqual, push_and_slow_path);

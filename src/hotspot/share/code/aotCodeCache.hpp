@@ -266,9 +266,9 @@ public:
   address load_archive_data(StubId stub_id, address &end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN_(nullptr);
   void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
 
-  void stub_epilog(StubId stub_id);
+  void stub_epilog(StubId stub_id) NOT_CDS_RETURN;
 #ifdef ASSERT
-  void check_stored(StubId stub_id);
+  void check_stored(StubId stub_id) NOT_CDS_RETURN;
 #endif
   const AOTStubData* as_const() { return (const AOTStubData*)this; }
 };
@@ -301,7 +301,6 @@ public:
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
-  do_fun(int,   CompressedOops_shift,                   CompressedOops::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
   do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
   do_fun(CollectedHeap::Name, Universe_heap_kind,       Universe::heap()->kind()) \
@@ -321,22 +320,12 @@ public:
 #define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun)
 #endif
 
-#if INCLUDE_JVMCI
-#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
-  do_var(bool,  EnableJVMCI)                            /* adapters and nmethods */ \
-  // END
-#else
-#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun)
-#endif
-
 #if defined(AARCH64) && !defined(ZERO)
 #define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
   do_var(intx,  BlockZeroingLowLimit)                   /* array fill stubs */ \
   do_var(intx,  PrefetchCopyIntervalInBytes)            /* array copy stubs */ \
   do_var(int,   SoftwarePrefetchHintDistance)           /* array fill stubs */ \
   do_var(bool,  UseBlockZeroing) \
-  do_var(bool,  UseLSE)                                 /* stubs and nmethods */ \
-  do_var(uint,  UseSVE)                                 /* stubs and nmethods */ \
   do_var(bool,  UseSecondarySupersCache) \
   do_var(bool,  UseSIMDForArrayEquals)                  /* array copy stubs and nmethods */ \
   do_var(bool,  UseSIMDForBigIntegerShiftIntrinsics) \
@@ -352,8 +341,6 @@ public:
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
   do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
   do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
-  do_var(int,   UseAVX)                                 /* array copy stubs and nmethods */ \
-  do_var(bool,  UseAPX)                                 /* nmethods and stubs */ \
   do_var(bool,  UseLibmIntrinsic) \
   do_var(bool,  UseIntPolyIntrinsics) \
   // END
@@ -364,7 +351,6 @@ public:
 #define AOTCODECACHE_CONFIGS_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
-  AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
   // END
@@ -381,6 +367,7 @@ protected:
 
     // Special configs that cannot be checked with macros
     address _compressedOopBase;
+    int _compressedOopShift;
 
 #if defined(X86) && !defined(ZERO)
     bool _useUnalignedLoadStores;

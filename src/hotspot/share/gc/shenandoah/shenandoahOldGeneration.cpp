@@ -675,9 +675,9 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
 
 void ShenandoahOldGeneration::update_card_table() {
   for_each_region([this](ShenandoahHeapRegion* region) {
-    if (region->is_regular()) {
+    if (region->is_regular_or_regular_pinned()) {
       // Humongous regions are promoted in place, remembered set maintenance is handled there
-      // Regular regions that are promoted in place have their rset maintenance handled for
+      // Regular/pinned regions that are promoted in place have their rset maintenance handled for
       // the objects in the region when it was promoted. We record TEAS for such a region
       // when the in-place-promotion is completed. Such a region may be used for additional
       // promotions in the same cycle it was itself promoted.
@@ -794,11 +794,6 @@ void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
 
 size_t ShenandoahOldGeneration::used() const {
   return _free_set->old_used();
-}
-
-size_t ShenandoahOldGeneration::bytes_allocated_since_gc_start() const {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
-  return 0;
 }
 
 size_t ShenandoahOldGeneration::get_affiliated_region_count() const {

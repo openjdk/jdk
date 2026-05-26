@@ -73,9 +73,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 #ifndef PRODUCT
 #include <signal.h>
@@ -519,19 +516,13 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                 buf, jdk_debug_level, runtime_version);
 
    // This is the long version with some default settings added
-   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s%s%s, %s, %s)",
+   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s, %s, %s)",
                  VM_Version::vm_name(),
                 (*vendor_version != '\0') ? " " : "", vendor_version,
                  jdk_debug_level,
                  VM_Version::vm_release(),
                  VM_Version::vm_info_string(),
                  TieredCompilation ? ", tiered" : "",
-#if INCLUDE_JVMCI
-                 EnableJVMCI ? ", jvmci" : "",
-                 UseJVMCICompiler ? ", jvmci compiler" : "",
-#else
-                 "", "",
-#endif
                  UseCompressedOops ? ", compressed oops" : "",
                  UseCompactObjectHeaders ? ", compact obj headers" : "",
                  GCConfig::hs_err_name(),
@@ -1936,13 +1927,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       }
     }
   }
-
-#if INCLUDE_JVMCI
-  if (JVMCI::fatal_log_filename() != nullptr) {
-    out.print_raw("#\n# The JVMCI shared library error report file is saved as:\n# ");
-    out.print_raw_cr(JVMCI::fatal_log_filename());
-  }
-#endif
 
   static bool skip_bug_url = !should_submit_bug_report(_id);
   if (!skip_bug_url) {
