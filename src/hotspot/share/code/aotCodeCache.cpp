@@ -2097,14 +2097,19 @@ void AOTCodeAddressTable::init_extrs() {
 #endif
 #if INCLUDE_SHENANDOAHGC
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_oop);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_narrow_oop);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::clone);
 #endif
 #if INCLUDE_ZGC
   ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr());
