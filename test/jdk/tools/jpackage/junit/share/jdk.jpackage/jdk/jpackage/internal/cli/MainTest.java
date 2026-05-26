@@ -37,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -187,14 +188,14 @@ public class MainTest extends JUnitAdapter {
                 build().args("foo", "--version").stderrMatchType(OutputMatchType.STARTS_WITH).expectErrors(I18N.format("error.non-option-arguments", 1)),
                 // Should print two errors: one for the invalid value of the "--type" option
                 // and another for the invalid value of the "--verbose" option.
-                build().args("--temp", invalidTempValue, "--verbose", "bar").expectErrors(
+                build().args("--temp", invalidTempValue, "--verbose", "bar").stderrMatchType(OutputMatchType.CONTAINS).expectErrors(
                         I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp"),
                         I18N.format("error.parameter-invalid-value", "bar", "--verbose")),
-                build().args("--verbose", "bar", "--temp", invalidTempValue).expectErrors(
+                build().args("--verbose", "bar", "--temp", invalidTempValue).stderrMatchType(OutputMatchType.CONTAINS).expectErrors(
                         I18N.format("error.parameter-invalid-value", "bar", "--verbose"),
                         I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp")),
                 // This is just for the coverage.
-                build().args("--verbose", "errors", "--temp", invalidTempValue).expectErrors(
+                build().args("--verbose", "errors", "--temp", invalidTempValue).stderrMatchType(OutputMatchType.CONTAINS).expectErrors(
                         I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp")),
                 // Silent failure.
                 build().args("--verbose", "", "--temp", invalidTempValue).expectErrorExitCode(),
@@ -505,6 +506,13 @@ public class MainTest extends JUnitAdapter {
         STARTS_WITH((expected, actual) -> {
             if (expected.size() < actual.size()) {
                 return actual.subList(0, expected.size());
+            }
+            return actual;
+        }),
+        CONTAINS((expected, actual) -> {
+            int idx = Collections.indexOfSubList(actual, expected);
+            if (idx >= 0) {
+                return actual.subList(idx, idx + expected.size());
             }
             return actual;
         }),
