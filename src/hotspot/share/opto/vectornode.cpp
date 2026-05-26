@@ -1161,8 +1161,8 @@ static bool is_commutative_vector_operation(int opcode) {
   }
 }
 
-bool VectorNode::is_associative_and_commutative_vector_operation() {
-  switch (Opcode()) {
+static bool is_associative_and_commutative_vector_operation(int opcode) {
+  switch (opcode) {
     case Op_AddVB:
     case Op_AddVS:
     case Op_AddVI:
@@ -1332,7 +1332,7 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
   }
 
   // Enable re-association only for associative and commutative vector operations.
-  if (!is_associative_and_commutative_vector_operation()) {
+  if (!is_associative_and_commutative_vector_operation(Opcode())) {
     return nullptr;
   }
 

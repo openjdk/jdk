@@ -146,7 +146,6 @@ class VectorNode : public TypeNode {
   static bool is_minmax_opcode(int opc);
 
   bool should_swap_inputs_to_help_global_value_numbering();
-  bool is_associative_and_commutative_vector_operation();
   Node* reassociate_vector_operation(PhaseGVN* phase);
   static Node* create_reassociated_node(Node* parent, Node* child, Node* cinput1, Node* cinput2,
                                         Node* pinput2, PhaseGVN* phase);
