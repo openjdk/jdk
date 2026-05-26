@@ -35,7 +35,6 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
 
@@ -745,10 +744,6 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
-
-  // Flush generated code
-  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
-  // NOT_PRODUCT(dest_blob->set_flushed());
 }
 
 // Move all my code into another code buffer.  Consult applicable
