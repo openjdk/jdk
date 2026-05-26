@@ -73,7 +73,9 @@ class outputStream;
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
   f(final_mark_verify,                              "  Verify")                        \
+  f(final_mark_flush_satb,                          "  Flush SATB")                    \
   f(finish_mark,                                    "  Finish Mark")                   \
+  f(final_mark_invisible,                           "  Invisible Roots")               \
   f(final_mark_propagate_gc_state,                  "  Propagate GC State")            \
   SHENANDOAH_PAR_PHASE_DO(finish_mark_,             "    FM: ", f)                     \
   f(purge,                                          "  System Purge")                  \

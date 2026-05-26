@@ -72,32 +72,14 @@ private:
   ShenandoahConcurrentMark* _cm;
   TaskTerminator*           _terminator;
   bool                      _dedup_string;
-  ThreadsClaimTokenScope    _threads_claim_token_scope; // needed for Threads::possibly_parallel_threads_do
 
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
-    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string),
-    _threads_claim_token_scope() {
-  }
+    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {}
 
   void work(uint worker_id) {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-
     ShenandoahParallelWorkerSession worker_session(worker_id);
     StringDedup::Requests requests;
-    // First drain remaining SATB buffers.
-    {
-      ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
-      ShenandoahObjToScanQueue* old_q = _cm->get_old_queue(worker_id);
-
-      ShenandoahSATBBufferClosure<GENERATION> cl(q, old_q);
-      SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
-      while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
-      assert(!heap->has_forwarded_objects(), "Not expected");
-
-      ShenandoahFlushSATB tc(satb_mq_set);
-      Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
-    }
     _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/,
                    _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
@@ -262,45 +244,53 @@ void ShenandoahConcurrentMark::finish_mark() {
 }
 
 void ShenandoahConcurrentMark::finish_mark_work() {
-  // Finally mark everything else we've got in our queues during the previous steps.
-  // It does two different things for concurrent vs. mark-compact GC:
-  // - For concurrent GC, it starts with empty task queues, drains the remaining
-  //   SATB buffers, and then completes the marking closure.
-  // - For mark-compact GC, it starts out with the task queues seeded by initial
-  //   root scan, and completes the closure, thus marking through all live objects
-  // The implementation is the same, so it's shared here.
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
-  uint nworkers = heap->workers()->active_workers();
-  task_queues()->reserve(nworkers);
-
-  TaskTerminator terminator(nworkers, task_queues());
-
-  switch (_generation->type()) {
-    case YOUNG:{
-      ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator, ShenandoahStringDedup::is_enabled());
-      heap->workers()->run_task(&task);
-      break;
-    }
-    case OLD:{
-      ShenandoahFinalMarkingTask<OLD> task(this, &terminator, ShenandoahStringDedup::is_enabled());
-      heap->workers()->run_task(&task);
-      break;
-    }
-    case GLOBAL:{
-      ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator, ShenandoahStringDedup::is_enabled());
-      heap->workers()->run_task(&task);
-      break;
-    }
-    case NON_GEN:{
-      ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
-      heap->workers()->run_task(&task);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
+  // First drain remaining SATB buffers.
+  {
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::final_mark_flush_satb, false);
+    SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
+    ShenandoahFlushSATB tc(satb_mq_set);
+    Threads::java_threads_do(&tc);
   }
+
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  // Finish the mark, if there is outstanding work in the queues.
+  // There is a very high chance we have already completed the marking.
+  if (!task_queues()->is_empty()) {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
+
+    uint nworkers = heap->workers()->active_workers();
+    task_queues()->reserve(nworkers);
+    TaskTerminator terminator(nworkers, task_queues());
+
+    switch (_generation->type()) {
+      case YOUNG:{
+        ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+        heap->workers()->run_task(&task);
+        break;
+      }
+      case OLD:{
+        ShenandoahFinalMarkingTask<OLD> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+        heap->workers()->run_task(&task);
+        break;
+      }
+      case GLOBAL:{
+        ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+        heap->workers()->run_task(&task);
+        break;
+      }
+      case NON_GEN:{
+        ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+        heap->workers()->run_task(&task);
+        break;
+      }
+      default:
+        ShouldNotReachHere();
+    }
+  }
+
   if (!generation()->is_old() && heap->is_concurrent_young_mark_in_progress()) {
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::final_mark_invisible, false);
     // Lastly, ensure all the invisible roots are marked.
     ShenandoahInvisibleRootsMarkClosure cl;
     Threads::java_threads_do(&cl);
