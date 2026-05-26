@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ public class HPKE extends CipherSpi {
                 input, inputOffset, inputLen, output, outputOffset);
     }
 
-    //@Override
+    @Override
     protected SecretKey engineExportKey(String algorithm, byte[] context, int length) {
         if (state == BEGIN) {
             throw new IllegalStateException("State: " + state);
@@ -234,7 +234,7 @@ public class HPKE extends CipherSpi {
         }
     }
 
-    //@Override
+    @Override
     protected byte[] engineExportData(byte[] context, int length) {
         if (state == BEGIN) {
             throw new IllegalStateException("State: " + state);
