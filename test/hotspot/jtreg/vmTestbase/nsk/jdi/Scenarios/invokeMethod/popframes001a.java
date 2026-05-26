@@ -39,7 +39,7 @@ public class popframes001a {
 
     public static void main(String argv[]) {
         // The following will cause intialization of a bunch of classes before we
-        // enable MethoEntry/Exit events, which would otherwise result in long test runs.
+        // enable MethodEntry/Exit events, which would otherwise result in long test runs.
         // See JDK-8375076 and JDK-8384569.
         System.getLogger("java.lang.Runtime");
 
