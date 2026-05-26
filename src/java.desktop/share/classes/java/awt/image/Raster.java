@@ -200,7 +200,7 @@ public class Raster {
      * @throws IllegalArgumentException if {@code bands} is less than 1
      * @throws IllegalArgumentException if {@code w} and {@code h} are not
      *         both > 0
-     * @throws IllegalArgumentException if the product of {@code w}
+     * @throws IllegalArgumentException if the product of {@code w},
      *         {@code h} and {@code bands} is greater than {@code Integer.MAX_VALUE}
      * @throws RasterFormatException if computing either
      *         {@code location.x + w} or
