@@ -284,8 +284,7 @@ public:
   }
 
   // Polymorphic factory method:
-  static Node* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr,
-                    const TypePtr* at, const Type* rt, BasicType bt,
+  static Node* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr, const Type* rt, BasicType bt,
                     MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
                     bool require_atomic_access = false, bool unaligned = false, bool mismatched = false, bool unsafe = false,
                     uint8_t barrier_data = 0);
@@ -677,7 +676,7 @@ public:
   // semantics, if the stored value is an object reference that might
   // point to a new object and may become externally visible.
   static StoreNode* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr,
-                         const TypePtr* at, Node* val, BasicType bt,
+                         Node* val, BasicType bt,
                          MemOrd mo, bool require_atomic_access = false);
 
   virtual uint hash() const;    // Check the type
@@ -866,7 +865,8 @@ private:
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
 #endif // ASSERT
 public:
-  LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
+  LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Type* rt, uint required );
+  virtual bool depends_only_on_test() const { return false; }
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
 
   virtual const Type *bottom_type() const { return _type; }
@@ -911,8 +911,8 @@ public:
   enum {
     ExpectedIn = MemNode::ValueIn+1 // One more input than MemNode
   };
-  CompareAndExchangeNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord, const TypePtr* at, const Type* t) :
-    LoadStoreNode(c, mem, adr, val, at, t, 5), _mem_ord(mem_ord) {
+  CompareAndExchangeNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord, const Type* t) :
+    LoadStoreNode(c, mem, adr, val, t, 5), _mem_ord(mem_ord) {
      init_req(ExpectedIn, ex );
   }
 
@@ -1009,7 +1009,7 @@ public:
 //------------------------------CompareAndExchangeBNode---------------------------
 class CompareAndExchangeBNode : public CompareAndExchangeNode {
 public:
-  CompareAndExchangeBNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeInt::BYTE) { }
+  CompareAndExchangeBNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, TypeInt::BYTE) { }
   virtual int Opcode() const;
 };
 
@@ -1017,14 +1017,14 @@ public:
 //------------------------------CompareAndExchangeSNode---------------------------
 class CompareAndExchangeSNode : public CompareAndExchangeNode {
 public:
-  CompareAndExchangeSNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeInt::SHORT) { }
+  CompareAndExchangeSNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, TypeInt::SHORT) { }
   virtual int Opcode() const;
 };
 
 //------------------------------CompareAndExchangeLNode---------------------------
 class CompareAndExchangeLNode : public CompareAndExchangeNode {
 public:
-  CompareAndExchangeLNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeLong::LONG) { }
+  CompareAndExchangeLNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, TypeLong::LONG) { }
   virtual int Opcode() const;
 };
 
@@ -1032,7 +1032,7 @@ public:
 //------------------------------CompareAndExchangeINode---------------------------
 class CompareAndExchangeINode : public CompareAndExchangeNode {
 public:
-  CompareAndExchangeINode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeInt::INT) { }
+  CompareAndExchangeINode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, TypeInt::INT) { }
   virtual int Opcode() const;
 };
 
@@ -1040,84 +1040,84 @@ public:
 //------------------------------CompareAndExchangePNode---------------------------
 class CompareAndExchangePNode : public CompareAndExchangeNode {
 public:
-  CompareAndExchangePNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, const Type* t, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, t) { }
+  CompareAndExchangePNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const Type* t, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, t) { }
   virtual int Opcode() const;
 };
 
 //------------------------------CompareAndExchangeNNode---------------------------
 class CompareAndExchangeNNode : public CompareAndExchangeNode {
 public:
-  CompareAndExchangeNNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, const Type* t, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, t) { }
+  CompareAndExchangeNNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const Type* t, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, t) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndAddBNode---------------------------
 class GetAndAddBNode : public LoadStoreNode {
 public:
-  GetAndAddBNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::BYTE, 4) { }
+  GetAndAddBNode( Node *c, Node *mem, Node *adr, Node *val) : LoadStoreNode(c, mem, adr, val, TypeInt::BYTE, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndAddSNode---------------------------
 class GetAndAddSNode : public LoadStoreNode {
 public:
-  GetAndAddSNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::SHORT, 4) { }
+  GetAndAddSNode( Node *c, Node *mem, Node *adr, Node *val) : LoadStoreNode(c, mem, adr, val, TypeInt::SHORT, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndAddINode---------------------------
 class GetAndAddINode : public LoadStoreNode {
 public:
-  GetAndAddINode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::INT, 4) { }
+  GetAndAddINode( Node *c, Node *mem, Node *adr, Node *val) : LoadStoreNode(c, mem, adr, val, TypeInt::INT, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndAddLNode---------------------------
 class GetAndAddLNode : public LoadStoreNode {
 public:
-  GetAndAddLNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeLong::LONG, 4) { }
+  GetAndAddLNode( Node *c, Node *mem, Node *adr, Node *val) : LoadStoreNode(c, mem, adr, val, TypeLong::LONG, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndSetBNode---------------------------
 class GetAndSetBNode : public LoadStoreNode {
 public:
-  GetAndSetBNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::BYTE, 4) { }
+  GetAndSetBNode( Node *c, Node *mem, Node *adr, Node *val) : LoadStoreNode(c, mem, adr, val, TypeInt::BYTE, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndSetSNode---------------------------
 class GetAndSetSNode : public LoadStoreNode {
 public:
-  GetAndSetSNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::SHORT, 4) { }
+  GetAndSetSNode( Node *c, Node *mem, Node *adr, Node *val) : LoadStoreNode(c, mem, adr, val, TypeInt::SHORT, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndSetINode---------------------------
 class GetAndSetINode : public LoadStoreNode {
 public:
-  GetAndSetINode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::INT, 4) { }
+  GetAndSetINode( Node *c, Node *mem, Node *adr, Node *val) : LoadStoreNode(c, mem, adr, val, TypeInt::INT, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndSetLNode---------------------------
 class GetAndSetLNode : public LoadStoreNode {
 public:
-  GetAndSetLNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeLong::LONG, 4) { }
+  GetAndSetLNode( Node *c, Node *mem, Node *adr, Node *val) : LoadStoreNode(c, mem, adr, val, TypeLong::LONG, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndSetPNode---------------------------
 class GetAndSetPNode : public LoadStoreNode {
 public:
-  GetAndSetPNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* t ) : LoadStoreNode(c, mem, adr, val, at, t, 4) { }
+  GetAndSetPNode( Node *c, Node *mem, Node *adr, Node *val, const Type* t ) : LoadStoreNode(c, mem, adr, val, t, 4) { }
   virtual int Opcode() const;
 };
 
 //------------------------------GetAndSetNNode---------------------------
 class GetAndSetNNode : public LoadStoreNode {
 public:
-  GetAndSetNNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* t ) : LoadStoreNode(c, mem, adr, val, at, t, 4) { }
+  GetAndSetNNode( Node *c, Node *mem, Node *adr, Node *val, const Type* t ) : LoadStoreNode(c, mem, adr, val, t, 4) { }
   virtual int Opcode() const;
 };
 

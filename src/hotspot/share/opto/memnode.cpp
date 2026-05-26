@@ -1010,10 +1010,10 @@ bool LoadNode::is_immutable_value(Node* adr) {
 
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
-Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
+Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const Type* rt, BasicType bt, MemOrd mo,
                      ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
   Compile* C = gvn.C;
-  assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
+  const TypePtr* adr_type = gvn.type(adr)->isa_ptr();
 
   // sanity check the alias category against the created node type
   assert(!(adr_type->isa_oopptr() &&
@@ -1429,7 +1429,7 @@ Node* LoadNode::convert_to_unsigned_load(PhaseGVN& gvn) {
     return gvn.C->top();
   }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                        mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
+                        rt, bt, _mo, _control_dependency,
                         false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
 }
 
@@ -1453,7 +1453,7 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
     return gvn.C->top();
   }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                        mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
+                        rt, bt, _mo, _control_dependency,
                         false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
 }
 
@@ -1485,7 +1485,7 @@ Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
     return gvn.C->top();
   }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                        mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
+                        rt, bt, _mo, _control_dependency,
                         require_atomic_access, is_unaligned_access(), is_mismatched);
 }
 
@@ -1512,7 +1512,7 @@ Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Ty
     return gvn.C->top();
   }
   StoreNode* st = StoreNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                                  mem_t->is_ptr(), val, bt, _mo, require_atomic_access);
+                                  val, bt, _mo, require_atomic_access);
 
   bool is_mismatched = is_mismatched_access();
   const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
@@ -2807,10 +2807,10 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
 //=============================================================================
 //---------------------------StoreNode::make-----------------------------------
 // Polymorphic factory method:
-StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
+StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
   assert((mo == unordered || mo == release), "unexpected");
   Compile* C = gvn.C;
-  assert(adr_type == nullptr || adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
+  const TypePtr* adr_type = gvn.type(adr)->isa_ptr();
   assert(C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
          ctl != nullptr, "raw memory operations should have control edge");
 
@@ -3453,8 +3453,6 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
   Node* first_mem   = first_store->in(MemNode::Memory);
   Node* first_adr   = first_store->in(MemNode::Address);
 
-  const TypePtr* new_adr_type = _store->adr_type();
-
   int new_memory_size = _store->memory_size() * merge_list.size();
   BasicType bt = T_ILLEGAL;
   switch (new_memory_size) {
@@ -3464,7 +3462,7 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
   }
 
   StoreNode* merged_store = StoreNode::make(*_phase, last_ctrl, first_mem, first_adr,
-                                            new_adr_type, merged_input_value, bt, MemNode::unordered);
+                                            merged_input_value, bt, MemNode::unordered);
 
   // Marking the store mismatched is sufficient to prevent reordering, since array stores
   // are all on the same slice. Hence, we need no barriers.
@@ -4037,7 +4035,7 @@ const Type* SCMemProjNode::Value(PhaseGVN* phase) const
 
 //=============================================================================
 //----------------------------------LoadStoreNode------------------------------
-LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required )
+LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Type* rt, uint required )
   : Node(required),
     _type(rt),
     _barrier_data(0)
@@ -4047,7 +4045,7 @@ LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Ty
   init_req(MemNode::Address, adr);
   init_req(MemNode::ValueIn, val);
   init_class_id(Class_LoadStore);
-  DEBUG_ONLY(_adr_type = at; adr_type();)
+  DEBUG_ONLY(_adr_type = MemNode::calculate_adr_type(adr->bottom_type()); adr_type();)
 }
 
 //------------------------------Value-----------------------------------------
@@ -4129,7 +4127,7 @@ uint LoadStoreNode::size_of() const { return sizeof(*this); }
 
 //=============================================================================
 //----------------------------------LoadStoreConditionalNode--------------------
-LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, nullptr, TypeInt::BOOL, 5) {
+LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, TypeInt::BOOL, 5) {
   init_req(ExpectedIn, ex );
 }
 
@@ -4260,8 +4258,9 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   int unit = BytesPerLong;
   if ((offset % unit) != 0) {
     Node* adr = make_address(dest, phase->MakeConX(offset), raw_base, phase);
-    const TypePtr* atp = TypeRawPtr::BOTTOM;
-    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
+    assert(phase->C->get_alias_index(phase->type(adr)->isa_ptr()) == Compile::AliasIdxRaw,
+           "Computed slice mismatch");
+    mem = StoreNode::make(*phase, ctl, mem, adr, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
     offset += BytesPerInt;
   }
@@ -4320,8 +4319,9 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   }
   if (done_offset < end_offset) { // emit the final 32-bit store
     Node* adr = make_address(dest, phase->MakeConX(done_offset), raw_base, phase);
-    const TypePtr* atp = TypeRawPtr::BOTTOM;
-    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
+    assert(phase->C->get_alias_index(phase->type(adr)->isa_ptr()) == Compile::AliasIdxRaw,
+           "Computed slice mismatch");
+    mem = StoreNode::make(*phase, ctl, mem, adr, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
     done_offset += BytesPerInt;
   }
@@ -5325,23 +5325,24 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
 
     Node* ctl = old->in(MemNode::Control);
     Node* adr = make_raw_address(offset, phase);
-    const TypePtr* atp = TypeRawPtr::BOTTOM;
 
     // One or two coalesced stores to plop down.
     Node*    st[2];
     intptr_t off[2];
     int  nst = 0;
+
+    assert(phase->C->get_alias_index(phase->type(adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
     if (!split) {
       ++new_long;
       off[nst] = offset;
-      st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
+      st[nst++] = StoreNode::make(*phase, ctl, zmem, adr,
                                   phase->longcon(con), T_LONG, MemNode::unordered);
     } else {
       // Omit either if it is a zero.
       if (con0 != 0) {
         ++new_int;
         off[nst]  = offset;
-        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
+        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr,
                                     phase->intcon(con0), T_INT, MemNode::unordered);
       }
       if (con1 != 0) {
@@ -5349,7 +5350,7 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
         offset += BytesPerInt;
         adr = make_raw_address(offset, phase);
         off[nst]  = offset;
-        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
+        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr,
                                     phase->intcon(con1), T_INT, MemNode::unordered);
       }
     }
