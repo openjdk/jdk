@@ -558,6 +558,14 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
+  {"ShenandoahAccelerationSamplePeriod",   JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahRateAccelerationSampleSize", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahMomentaryAllocationRateSpikeSampleSize", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahAdaptiveSampleFrequencyHz", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahAdaptiveSampleSizeSeconds", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahAdaptiveInitialSpikeThreshold",JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahAdaptiveDecayFactor",       JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
