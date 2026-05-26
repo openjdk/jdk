@@ -59,7 +59,12 @@ inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
     if (_num_refills > _target_num_refills) {
       const uint excess = _num_refills - _target_num_refills;
       const uint steps = MIN2(excess / 8, 4U);
-      scaled_desired_size <<= steps;
+      // Cap before shifting to avoid overflow.
+      if (scaled_desired_size > (max_size() >> steps)) {
+        scaled_desired_size = max_size();
+      } else {
+        scaled_desired_size <<= steps;
+      }
     }
   }
   size_t new_tlab_size = MIN3(available_size, scaled_desired_size + align_object_size(obj_size), max_size());

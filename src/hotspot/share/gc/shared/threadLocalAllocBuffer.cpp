@@ -90,12 +90,6 @@ void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocSta
       const size_t effective_tlab_capacity = MAX2(tlab_capacity, size_t(1));
       const float alloc_frac = (float)allocated_since_last_gc / effective_tlab_capacity;
       _allocation_fraction.sample(MIN2(alloc_frac, 1.0f));
-    } else {
-      // Use global fraction to approximate local fraction to ensure _allocation_fraction is always updated.
-      const float total_frac = ThreadLocalAllocStats::total_requested_size_fraction_avg();
-      const uint num_threads = ThreadLocalAllocStats::num_allocating_threads_avg();
-      const float alloc_frac = total_frac / num_threads;
-      _allocation_fraction.sample(alloc_frac);
     }
     stats->update_current_thread_stats(_num_refills,
                                        allocated_since_last_gc,
@@ -167,7 +161,14 @@ void ThreadLocalAllocBuffer::record_refill_waste() {
 void ThreadLocalAllocBuffer::resize() {
   assert(ResizeTLAB, "Should not call this otherwise");
   size_t capacity_in_words = Universe::heap()->tlab_capacity() / HeapWordSize;
-  size_t alloc = _allocation_fraction.average() * capacity_in_words;
+  float alloc_fraction = _allocation_fraction.average();
+  if (alloc_fraction == 0.0) {
+    // No samples, use global alloc fraction as an approximation.
+    const float total_frac = ThreadLocalAllocStats::total_requested_size_fraction_avg();
+    const uint num_threads = ThreadLocalAllocStats::num_allocating_threads_avg();
+    alloc_fraction = total_frac / num_threads;
+  }
+  size_t alloc = alloc_fraction * capacity_in_words;
   size_t new_size = alloc / _target_num_refills;
 
   new_size = clamp(new_size, min_size(), max_size());
@@ -177,7 +178,7 @@ void ThreadLocalAllocBuffer::resize() {
   log_trace(gc, tlab)("TLAB resize: thread: " PTR_FORMAT " [id: %2d]"
                       " alloc-fraction: %.3f desired_size: %zuK -> %zuK",
                       p2i(thread()), thread()->osthread()->thread_id(),
-                      _allocation_fraction.average(),
+                      alloc_fraction,
                       desired_size() * HeapWordSize/K, aligned_new_size * HeapWordSize/K);
 
   set_desired_size(aligned_new_size);
