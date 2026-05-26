@@ -533,22 +533,6 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     }
   } while (should_repeat == true);
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI && h_method->method_data() != nullptr) {
-    ResourceMark rm(current);
-    MethodData* mdo = h_method->method_data();
-
-    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-
-    ProfileData* pdata = mdo->allocate_bci_to_data(current_bci, nullptr);
-    if (pdata != nullptr && pdata->is_BitData()) {
-      BitData* bit_data = (BitData*) pdata;
-      bit_data->set_exception_seen();
-    }
-  }
-#endif
-
   // notify JVMTI of an exception throw; JVMTI will detect if this is a first
   // time throw or a stack unwinding throw and accordingly notify the debugger
   if (JvmtiExport::can_post_on_exceptions()) {
@@ -562,10 +546,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // handler in this method, or (b) after a stack overflow there is not yet
     // enough stack space available to reprotect the stack.
     continuation = Interpreter::remove_activation_entry();
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     // Count this for compilation purposes
     h_method->interpreter_throwout_increment(THREAD);
-#endif
+#endif // COMPILER2
   } else {
     // handler in this method => change bci/bcp to handler bci/bcp and continue there
     handler_pc = h_method->code_base() + handler_bci;

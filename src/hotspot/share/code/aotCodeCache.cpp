@@ -465,6 +465,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
 
   // Special configs that cannot be checked with macros
   _compressedOopBase     = CompressedOops::base();
+  _compressedOopShift    = CompressedOops::shift();
 
 #if defined(X86) && !defined(ZERO)
   _useUnalignedLoadStores = UseUnalignedLoadStores;
@@ -577,10 +578,17 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR, AOTCODECACHE_CHECK_FUN);
 
   // Special configs that cannot be checked with macros
+#define COMPRESSED_OOPS_HINT "Consider adding -XX:+AOTCompatibleOopCompression when creating the AOT cache"
 
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
     load_failure_log().print_cr("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
                                 _compressedOopBase, CompressedOops::base());
+    load_failure_log().print_cr(COMPRESSED_OOPS_HINT);
+    return false;
+  }
+
+  if (!check_config(_compressedOopShift, CompressedOops::shift(), "CompressedOops::shift()")) {
+    load_failure_log().print_cr(COMPRESSED_OOPS_HINT);
     return false;
   }
 
@@ -1009,11 +1017,6 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   if (AOTCodeEntry::is_blob(entry_kind) && !is_dumping_stub()) {
     return false;
   }
-  // we do not currently store C2 stubs because we are seeing weird
-  // memory errors when loading them -- see JDK-8357593
-  if (entry_kind == AOTCodeEntry::C2Blob) {
-    return false;
-  }
   log_debug(aot, codecache, stubs)("Writing blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
 
 #ifdef ASSERT
@@ -1282,11 +1285,6 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
     return nullptr;
   }
   if (AOTCodeEntry::is_blob(entry_kind) && !is_using_stub()) {
-    return nullptr;
-  }
-  // we do not currently load C2 stubs because we are seeing weird
-  // memory errors when loading them -- see JDK-8357593
-  if (entry_kind == AOTCodeEntry::C2Blob) {
     return nullptr;
   }
   log_debug(aot, codecache, stubs)("Reading blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
@@ -1578,10 +1576,6 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
       addresses.append(deopt_blob->unpack_with_exception());
       addresses.append(deopt_blob->unpack_with_reexecution());
       addresses.append(deopt_blob->unpack_with_exception_in_tls());
-#if INCLUDE_JVMCI
-      addresses.append(deopt_blob->uncommon_trap());
-      addresses.append(deopt_blob->implicit_exception_uncommon_trap());
-#endif // INCLUDE_JVMCI
       cache()->add_stub_entries(stub_id, start, &addresses, 0);
     }
   }
@@ -1796,7 +1790,7 @@ bool AOTCodeCache::write_asm_remarks(CodeBlob& cb) {
     }
     const char* cstr = add_C_string(str);
     int id = _table->id_for_C_string((address)cstr);
-    assert(id != -1, "asm remark string '%s' not found in AOTCodeAddressTable", str);
+    assert(id != BAD_ADDRESS_ID, "asm remark string '%s' not found in AOTCodeAddressTable", str);
     n = write_bytes(&id, sizeof(int));
     if (n != sizeof(int)) {
       return false;
@@ -1838,7 +1832,7 @@ bool AOTCodeCache::write_dbg_strings(CodeBlob& cb) {
     log_trace(aot, codecache, stubs)("dbg string=%s", str);
     const char* cstr = add_C_string(str);
     int id = _table->id_for_C_string((address)cstr);
-    assert(id != -1, "db string '%s' not found in AOTCodeAddressTable", str);
+    assert(id != BAD_ADDRESS_ID, "db string '%s' not found in AOTCodeAddressTable", str);
     uint n = write_bytes(&id, sizeof(int));
     if (n != sizeof(int)) {
       return false;
