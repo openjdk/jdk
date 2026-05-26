@@ -1220,15 +1220,25 @@ public:
 
   void atomic_add(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addw(Register prev, RegisterOrConstant incr, Register addr);
+  void atomic_addh(Register prev, RegisterOrConstant incr, Register addr);
+  void atomic_addb(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addal(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addalw(Register prev, RegisterOrConstant incr, Register addr);
+  void atomic_addalh(Register prev, RegisterOrConstant incr, Register addr);
+  void atomic_addalb(Register prev, RegisterOrConstant incr, Register addr);
 
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);
+  void atomic_xchgh(Register prev, Register newv, Register addr);
+  void atomic_xchgb(Register prev, Register newv, Register addr);
   void atomic_xchgl(Register prev, Register newv, Register addr);
   void atomic_xchglw(Register prev, Register newv, Register addr);
+  void atomic_xchglh(Register prev, Register newv, Register addr);
+  void atomic_xchglb(Register prev, Register newv, Register addr);
   void atomic_xchgal(Register prev, Register newv, Register addr);
   void atomic_xchgalw(Register prev, Register newv, Register addr);
+  void atomic_xchgalh(Register prev, Register newv, Register addr);
+  void atomic_xchgalb(Register prev, Register newv, Register addr);
 
   void orptr(Address adr, RegisterOrConstant src) {
     ldr(rscratch1, adr);

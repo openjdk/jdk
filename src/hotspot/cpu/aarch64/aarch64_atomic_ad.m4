@@ -1,5 +1,6 @@
 // Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2016, 2021, Red Hat Inc. All rights reserved.
+// Copyright 2026 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -179,31 +180,54 @@ dnl ====================== GetAndSet*
 dnl
 define(`GAS_INSN1',
 `
-instruct getAndSet$1$3(indirect mem, iReg$1 newval, iReg$1NoSp oldval) %{
-ifelse($1$3,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
-       $1$3,NAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
+instruct getAndSet$1$4(indirect mem, iReg$2 newval, iReg$2NoSp oldval) %{
+ifelse($1$4,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
+       $1$4,NAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
        $1,P,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
        $1,N,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
-       $3,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       $4,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
        `dnl')
   match(Set oldval (GetAndSet$1 mem newval));
-  ins_cost(`'ifelse($3,Acq,,2*)VOLATILE_REF_COST);
-  format %{ "atomic_xchg$2`'ifelse($3,Acq,_acq)  $oldval, $newval, [$mem]" %}
+  ins_cost(`'ifelse($4,Acq,,2*)VOLATILE_REF_COST);
+  format %{ "atomic_xchg$3`'ifelse($4,Acq,_acq)  $oldval, $newval, [$mem]" %}
   ins_encode %{
-    __ atomic_xchg`'ifelse($3,Acq,al)$2($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+    __ atomic_xchg`'ifelse($4,Acq,al)$3($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+    __ $5($oldval$$Register, $oldval$$Register);
   %}
   ins_pipe(pipe_serial);
 %}')dnl
 dnl
-GAS_INSN1(I,    w,  )
-GAS_INSN1(L,    ,   )
-GAS_INSN1(N,    w,  )
-GAS_INSN1(P,    ,   )
+define(`GAS_INSN2',
+`
+instruct getAndSet$1$4(indirect mem, iReg$2 newval, iReg$2NoSp oldval) %{
+ifelse($1$4,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
+       $1$4,NAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
+       $1,P,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
+       $1,N,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
+       $4,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       `dnl')
+  match(Set oldval (GetAndSet$1 mem newval));
+  ins_cost(`'ifelse($4,Acq,,2*)VOLATILE_REF_COST);
+  format %{ "atomic_xchg$3`'ifelse($4,Acq,_acq)  $oldval, $newval, [$mem]" %}
+  ins_encode %{
+    __ atomic_xchg`'ifelse($4,Acq,al)$3($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}')dnl
 dnl
-GAS_INSN1(I,    w,  Acq)
-GAS_INSN1(L,    ,   Acq)
-GAS_INSN1(N,    w,  Acq)
-GAS_INSN1(P,    ,   Acq)
+GAS_INSN1(B, I, b,    , sxtbw)
+GAS_INSN1(S, I, h,    , sxthw)
+GAS_INSN2(I, I, w,    )
+GAS_INSN2(L, L,  ,    )
+GAS_INSN2(N, N, w,    )
+GAS_INSN2(P, P,  ,    )
+dnl
+GAS_INSN1(B, I, b, Acq, sxtbw)
+GAS_INSN1(S, I, h, Acq, sxthw)
+GAS_INSN2(I, I, w, Acq)
+GAS_INSN2(L, L,  , Acq)
+GAS_INSN2(N, N, w, Acq)
+GAS_INSN2(P, P,  , Acq)
 dnl
 dnl
 dnl
@@ -211,36 +235,69 @@ dnl ====================== GetAndAdd*
 dnl
 define(`GAA_INSN1',
 `
-instruct getAndAdd$1$4$5$6(indirect mem, `'ifelse($5,NoRes,Universe dummy,iReg$1NoSp newval), `'ifelse($6,Const,imm$1AddSub incr,iReg$2 incr)) %{
-ifelse($4$5,AcqNoRes,INDENT(predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));),
-       $5,NoRes,INDENT(predicate(n->as_LoadStore()->result_not_used());),
-       $4,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+instruct getAndAdd$1$5$7(indirect mem, iReg$2NoSp newval, `'ifelse($7,Const,imm$3 incr,iReg$3 incr)) %{
+ifelse($5,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
        `dnl')
-  match(Set ifelse($5,NoRes,dummy,newval) (GetAndAdd$1 mem incr));
-  ins_cost(`'ifelse($4,Acq,,2*)VOLATILE_REF_COST`'ifelse($5,NoRes,,+1));
-  format %{ "get_and_add$1`'ifelse($4,Acq,_acq) `'ifelse($5,NoRes,noreg,$newval), [$mem], $incr" %}
+  match(Set newval (GetAndAdd$1 mem incr));
+  ins_cost(`'ifelse($5,Acq,,2*)VOLATILE_REF_COST+1);
+  format %{ "get_and_add$1`'ifelse($5,Acq,_acq) $newval, [$mem], $incr" %}
   ins_encode %{
-    __ atomic_add`'ifelse($4,Acq,al)$3(`'ifelse($5,NoRes,noreg,$newval$$Register), `'ifelse($6,Const,$incr$$constant,$incr$$Register), as_Register($mem$$base));
+    __ atomic_add`'ifelse($5,Acq,al)$4($newval$$Register, `'ifelse($7,Const,$incr$$constant,$incr$$Register), as_Register($mem$$base));
+    __ $6($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}')dnl
+dnl
+define(`GAA_INSN2',
+`
+instruct getAndAdd$1$5$6$7(indirect mem, `'ifelse($6,NoRes,Universe dummy,iReg$2NoSp newval), `'ifelse($7,Const,imm$3 incr,iReg$3 incr)) %{
+ifelse($5$6,AcqNoRes,INDENT(predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));),
+       $6,NoRes,INDENT(predicate(n->as_LoadStore()->result_not_used());),
+       $5,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       `dnl')
+  match(Set ifelse($6,NoRes,dummy,newval) (GetAndAdd$1 mem incr));
+  ins_cost(`'ifelse($5,Acq,,2*)VOLATILE_REF_COST`'ifelse($6,NoRes,,+1));
+  format %{ "get_and_add$1`'ifelse($5,Acq,_acq) `'ifelse($6,NoRes,noreg,$newval), [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_add`'ifelse($5,Acq,al)$4(`'ifelse($6,NoRes,noreg,$newval$$Register), `'ifelse($7,Const,$incr$$constant,$incr$$Register), as_Register($mem$$base));
   %}
   ins_pipe(pipe_serial);
 %}')dnl
 dnl
 dnl
-GAA_INSN1(I,    IorL2I,     w,  ,       ,           )
-GAA_INSN1(I,    IorL2I,     w,  Acq,    ,           )
-GAA_INSN1(I,    IorL2I,     w,  ,       NoRes,      )
-GAA_INSN1(I,    IorL2I,     w,  Acq,    NoRes,      )
-GAA_INSN1(I,    I,          w,  ,       ,       Const)
-GAA_INSN1(I,    I,          w,  Acq,    ,       Const)
-GAA_INSN1(I,    I,          w,  ,       NoRes,  Const)
-GAA_INSN1(I,    I,          w,  Acq,    NoRes,  Const)
+GAA_INSN1(B, I, IorL2I,  b,    , sxtbw,      )
+GAA_INSN1(B, I, IorL2I,  b, Acq, sxtbw,      )
+GAA_INSN2(B, I, IorL2I,  b, ,    NoRes,      )
+GAA_INSN2(B, I, IorL2I,  b, Acq, NoRes,      )
+GAA_INSN1(B, I, I8,      b,    , sxtbw, Const)
+GAA_INSN1(B, I, I8,      b, Acq, sxtbw, Const)
+GAA_INSN2(B, I, I8,      b, ,    NoRes, Const)
+GAA_INSN2(B, I, I8,      b, Acq, NoRes, Const)
 dnl
-GAA_INSN1(L,    L,          ,   ,       ,           )
-GAA_INSN1(L,    L,          ,   Acq,    ,           )
-GAA_INSN1(L,    L,          ,   ,       NoRes,      )
-GAA_INSN1(L,    L,          ,   Acq,    NoRes,      )
-GAA_INSN1(L,    L,          ,   ,       ,       Const)
-GAA_INSN1(L,    L,          ,   Acq,    ,       Const)
-GAA_INSN1(L,    L,          ,   ,       NoRes,  Const)
-GAA_INSN1(L,    L,          ,   Acq,    NoRes,  Const)
+GAA_INSN1(S, I, IorL2I,  h,    , sxthw,      )
+GAA_INSN1(S, I, IorL2I,  h, Acq, sxthw,      )
+GAA_INSN2(S, I, IorL2I,  h,    , NoRes,      )
+GAA_INSN2(S, I, IorL2I,  h, Acq, NoRes,      )
+GAA_INSN1(S, I, SAddSub, h,    , sxthw, Const)
+GAA_INSN1(S, I, SAddSub, h, Acq, sxthw, Const)
+GAA_INSN2(S, I, SAddSub, h,    , NoRes, Const)
+GAA_INSN2(S, I, SAddSub, h, Acq, NoRes, Const)
+dnl
+GAA_INSN2(I, I, IorL2I,  w,    ,      ,      )
+GAA_INSN2(I, I, IorL2I,  w, Acq,      ,      )
+GAA_INSN2(I, I, IorL2I,  w,    , NoRes,      )
+GAA_INSN2(I, I, IorL2I,  w, Acq, NoRes,      )
+GAA_INSN2(I, I, IAddSub, w,    ,      , Const)
+GAA_INSN2(I, I, IAddSub, w, Acq,      , Const)
+GAA_INSN2(I, I, IAddSub, w,    , NoRes, Const)
+GAA_INSN2(I, I, IAddSub, w, Acq, NoRes, Const)
+dnl
+GAA_INSN2(L, L, L,        ,    ,      ,      )
+GAA_INSN2(L, L, L,        , Acq,      ,      )
+GAA_INSN2(L, L, L,        ,    , NoRes,      )
+GAA_INSN2(L, L, L,        , Acq, NoRes,      )
+GAA_INSN2(L, L, LAddSub,  ,    ,      , Const)
+GAA_INSN2(L, L, LAddSub,  , Acq,      , Const)
+GAA_INSN2(L, L, LAddSub,  ,    , NoRes, Const)
+GAA_INSN2(L, L, LAddSub,  , Acq, NoRes, Const)
 dnl

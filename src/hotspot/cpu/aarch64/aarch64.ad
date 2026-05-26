@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
-// Copyright 2025 Arm Limited and/or its affiliates.
+// Copyright 2025, 2026 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1510,10 +1510,14 @@ source %{
     case Op_CompareAndSwapN:
     case Op_CompareAndSwapB:
     case Op_CompareAndSwapS:
+    case Op_GetAndSetB:
+    case Op_GetAndSetS:
     case Op_GetAndSetI:
     case Op_GetAndSetL:
     case Op_GetAndSetP:
     case Op_GetAndSetN:
+    case Op_GetAndAddB:
+    case Op_GetAndAddS:
     case Op_GetAndAddI:
     case Op_GetAndAddL:
       return true;
@@ -4368,6 +4372,17 @@ operand immHDupV()
 operand immBAddSubV()
 %{
   predicate(n->get_int() <= 255 && n->get_int() >= -255);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 16 bit integer valid for add sub immediate
+operand immSAddSub()
+%{
+  predicate(n->get_int() <= 4095 && n->get_int() >= -4095);
   match(ConI);
 
   op_cost(0);

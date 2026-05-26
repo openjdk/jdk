@@ -3580,8 +3580,12 @@ void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Regis
 
 ATOMIC_OP(add, ldxr, add, sub, ldadd, stxr, Assembler::xword)
 ATOMIC_OP(addw, ldxrw, addw, subw, ldadd, stxrw, Assembler::word)
+ATOMIC_OP(addh, ldxrh, addw, subw, ldadd, stxrh, Assembler::halfword)
+ATOMIC_OP(addb, ldxrb, addw, subw, ldadd, stxrb, Assembler::byte)
 ATOMIC_OP(addal, ldaxr, add, sub, ldaddal, stlxr, Assembler::xword)
 ATOMIC_OP(addalw, ldaxrw, addw, subw, ldaddal, stlxrw, Assembler::word)
+ATOMIC_OP(addalh, ldaxrh, addw, subw, ldaddal, stlxrh, Assembler::halfword)
+ATOMIC_OP(addalb, ldaxrb, addw, subw, ldaddal, stlxrb, Assembler::byte)
 
 #undef ATOMIC_OP
 
@@ -3608,10 +3612,16 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
 
 ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword)
 ATOMIC_XCHG(xchgw, swp, ldxrw, stxrw, Assembler::word)
+ATOMIC_XCHG(xchgh, swp, ldxrh, stxrh, Assembler::halfword)
+ATOMIC_XCHG(xchgb, swp, ldxrb, stxrb, Assembler::byte)
 ATOMIC_XCHG(xchgl, swpl, ldxr, stlxr, Assembler::xword)
 ATOMIC_XCHG(xchglw, swpl, ldxrw, stlxrw, Assembler::word)
+ATOMIC_XCHG(xchglh, swpl, ldxrh, stlxrh, Assembler::halfword)
+ATOMIC_XCHG(xchglb, swpl, ldxrb, stlxrb, Assembler::byte)
 ATOMIC_XCHG(xchgal, swpal, ldaxr, stlxr, Assembler::xword)
 ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word)
+ATOMIC_XCHG(xchgalh, swpal, ldaxrh, stlxrh, Assembler::halfword)
+ATOMIC_XCHG(xchgalb, swpal, ldaxrb, stlxrb, Assembler::byte)
 
 #undef ATOMIC_XCHG
 

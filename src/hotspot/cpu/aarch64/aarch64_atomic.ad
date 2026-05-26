@@ -1,5 +1,6 @@
 // Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2016, 2021, Red Hat Inc. All rights reserved.
+// Copyright 2026 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -650,6 +651,28 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
   ins_pipe(pipe_slow);
 %}
 
+instruct getAndSetB(indirect mem, iRegI newval, iRegINoSp oldval) %{
+  match(Set oldval (GetAndSetB mem newval));
+  ins_cost(2*VOLATILE_REF_COST);
+  format %{ "atomic_xchgb  $oldval, $newval, [$mem]" %}
+  ins_encode %{
+    __ atomic_xchgb($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+    __ sxtbw($oldval$$Register, $oldval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndSetS(indirect mem, iRegI newval, iRegINoSp oldval) %{
+  match(Set oldval (GetAndSetS mem newval));
+  ins_cost(2*VOLATILE_REF_COST);
+  format %{ "atomic_xchgh  $oldval, $newval, [$mem]" %}
+  ins_encode %{
+    __ atomic_xchgh($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+    __ sxthw($oldval$$Register, $oldval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
 instruct getAndSetI(indirect mem, iRegI newval, iRegINoSp oldval) %{
   match(Set oldval (GetAndSetI mem newval));
   ins_cost(2*VOLATILE_REF_COST);
@@ -688,6 +711,30 @@ instruct getAndSetP(indirect mem, iRegP newval, iRegPNoSp oldval) %{
   format %{ "atomic_xchg  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchg($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndSetBAcq(indirect mem, iRegI newval, iRegINoSp oldval) %{
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set oldval (GetAndSetB mem newval));
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "atomic_xchgb_acq  $oldval, $newval, [$mem]" %}
+  ins_encode %{
+    __ atomic_xchgalb($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+    __ sxtbw($oldval$$Register, $oldval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndSetSAcq(indirect mem, iRegI newval, iRegINoSp oldval) %{
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set oldval (GetAndSetS mem newval));
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "atomic_xchgh_acq  $oldval, $newval, [$mem]" %}
+  ins_encode %{
+    __ atomic_xchgalh($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+    __ sxthw($oldval$$Register, $oldval$$Register);
   %}
   ins_pipe(pipe_serial);
 %}
@@ -732,6 +779,186 @@ instruct getAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp oldval) %{
   format %{ "atomic_xchg_acq  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchgal($oldval$$Register, $newval$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddB(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
+  match(Set newval (GetAndAddB mem incr));
+  ins_cost(2*VOLATILE_REF_COST+1);
+  format %{ "get_and_addB $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addb($newval$$Register, $incr$$Register, as_Register($mem$$base));
+    __ sxtbw($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddBAcq(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set newval (GetAndAddB mem incr));
+  ins_cost(VOLATILE_REF_COST+1);
+  format %{ "get_and_addB_acq $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addalb($newval$$Register, $incr$$Register, as_Register($mem$$base));
+    __ sxtbw($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddBNoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddB mem incr));
+  ins_cost(2*VOLATILE_REF_COST);
+  format %{ "get_and_addB noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addb(noreg, $incr$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddBAcqNoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
+  predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
+  match(Set dummy (GetAndAddB mem incr));
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "get_and_addB_acq noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addalb(noreg, $incr$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddBConst(indirect mem, iRegINoSp newval, immI8 incr) %{
+  match(Set newval (GetAndAddB mem incr));
+  ins_cost(2*VOLATILE_REF_COST+1);
+  format %{ "get_and_addB $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addb($newval$$Register, $incr$$constant, as_Register($mem$$base));
+    __ sxtbw($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddBAcqConst(indirect mem, iRegINoSp newval, immI8 incr) %{
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set newval (GetAndAddB mem incr));
+  ins_cost(VOLATILE_REF_COST+1);
+  format %{ "get_and_addB_acq $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addalb($newval$$Register, $incr$$constant, as_Register($mem$$base));
+    __ sxtbw($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddBNoResConst(indirect mem, Universe dummy, immI8 incr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddB mem incr));
+  ins_cost(2*VOLATILE_REF_COST);
+  format %{ "get_and_addB noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addb(noreg, $incr$$constant, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddBAcqNoResConst(indirect mem, Universe dummy, immI8 incr) %{
+  predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
+  match(Set dummy (GetAndAddB mem incr));
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "get_and_addB_acq noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addalb(noreg, $incr$$constant, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddS(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
+  match(Set newval (GetAndAddS mem incr));
+  ins_cost(2*VOLATILE_REF_COST+1);
+  format %{ "get_and_addS $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addh($newval$$Register, $incr$$Register, as_Register($mem$$base));
+    __ sxthw($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddSAcq(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set newval (GetAndAddS mem incr));
+  ins_cost(VOLATILE_REF_COST+1);
+  format %{ "get_and_addS_acq $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addalh($newval$$Register, $incr$$Register, as_Register($mem$$base));
+    __ sxthw($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddSNoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddS mem incr));
+  ins_cost(2*VOLATILE_REF_COST);
+  format %{ "get_and_addS noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addh(noreg, $incr$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddSAcqNoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
+  predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
+  match(Set dummy (GetAndAddS mem incr));
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "get_and_addS_acq noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addalh(noreg, $incr$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddSConst(indirect mem, iRegINoSp newval, immSAddSub incr) %{
+  match(Set newval (GetAndAddS mem incr));
+  ins_cost(2*VOLATILE_REF_COST+1);
+  format %{ "get_and_addS $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addh($newval$$Register, $incr$$constant, as_Register($mem$$base));
+    __ sxthw($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddSAcqConst(indirect mem, iRegINoSp newval, immSAddSub incr) %{
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set newval (GetAndAddS mem incr));
+  ins_cost(VOLATILE_REF_COST+1);
+  format %{ "get_and_addS_acq $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addalh($newval$$Register, $incr$$constant, as_Register($mem$$base));
+    __ sxthw($newval$$Register, $newval$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddSNoResConst(indirect mem, Universe dummy, immSAddSub incr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddS mem incr));
+  ins_cost(2*VOLATILE_REF_COST);
+  format %{ "get_and_addS noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addh(noreg, $incr$$constant, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddSAcqNoResConst(indirect mem, Universe dummy, immSAddSub incr) %{
+  predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
+  match(Set dummy (GetAndAddS mem incr));
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "get_and_addS_acq noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addalh(noreg, $incr$$constant, as_Register($mem$$base));
   %}
   ins_pipe(pipe_serial);
 %}
