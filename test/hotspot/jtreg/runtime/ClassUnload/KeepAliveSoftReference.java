@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,26 +55,27 @@ public class KeepAliveSoftReference {
     {
         boolean isAlive = wb.isClassAlive(className);
         System.out.println("testSoftReference (1) alive: " + isAlive);
-        boolean cleared = (sr.get() == null);
+        boolean cleared = sr.refersTo(null);
         boolean shouldBeAlive = !cleared;
         ClassUnloadCommon.failIf(isAlive != shouldBeAlive, "" + isAlive + " != " + shouldBeAlive);
     }
 
+    // This version of triggerUnloading calls a WhiteBox Full GC, which clears soft references, but
+    // may not unload the class yet.
     ClassUnloadCommon.triggerUnloading();
-
     {
         boolean isAlive = wb.isClassAlive(className);
         System.out.println("testSoftReference (2) alive: " + isAlive);
-        boolean cleared = (sr.get() == null);
-        boolean shouldBeAlive = !cleared;
-        ClassUnloadCommon.failIf(isAlive != shouldBeAlive, "" + isAlive + " != " + shouldBeAlive);
+        boolean cleared = sr.refersTo(null);
+        ClassUnloadCommon.failIf(!cleared, "should be cleared " + cleared);
     }
+
     sr.clear();
     ClassUnloadCommon.triggerUnloading(List.of(className));
     {
         boolean isAlive = wb.isClassAlive(className);
         System.out.println("testSoftReference (3) alive: " + isAlive);
-        boolean cleared = (sr.get() == null);
+        boolean cleared = sr.refersTo(null);
         boolean shouldBeAlive = !cleared;
         ClassUnloadCommon.failIf(isAlive != shouldBeAlive, "" + isAlive + " != " + shouldBeAlive);
     }

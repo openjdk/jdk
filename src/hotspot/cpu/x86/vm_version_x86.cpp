@@ -1871,13 +1871,16 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
       FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
-  // CopyAVX3Threshold is the threshold at which 64-byte instructions are used
-  // for implementing the array copy and clear operations.
-  // The Intel platforms that supports the serialize instruction
-  // have improved implementation of 64-byte load/stores and so the default
-  // threshold is set to 0 for these platforms.
+  // CopyAVX3Threshold is the threshold at which 64-byte vector instructions
+  // are used for implementing the array copy, fill and clear operations.
+  // The Intel platforms that support the serialize instruction and the AMD
+  // platforms with native 512-bit datapath have improved implementation of
+  // 64-byte load/stores and so the default threshold is set to 0 for these
+  // platforms.
   if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
     if (is_intel() && is_intel_server_family() && supports_serialize()) {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
+    } else if (is_amd() && is_amd_avx512_datapath_server_family()) {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
     } else {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
