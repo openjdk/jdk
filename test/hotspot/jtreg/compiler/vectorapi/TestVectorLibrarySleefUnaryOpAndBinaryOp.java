@@ -53,7 +53,7 @@ import static jdk.incubator.vector.VectorOperators.TAN;
  * @requires (os.arch == "aarch64" & vm.cpu.features ~= ".*asimd.*") |
  *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @summary VectorAPI: SLEEF unary and binary math library operations should be intrinsified.
- *          This test would be run on SVML/SLEEF supported platforms only.
+ *          This test is run on SVML/SLEEF supported platforms only.
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.TestVectorLibrarySleefUnaryOpAndBinaryOp
