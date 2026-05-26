@@ -853,20 +853,12 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
 void ShenandoahOldHeuristics::record_success_concurrent(bool abbreviated) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-#undef KELVIN_CONC
-#ifdef KELVIN_CONC
-  log_info(gc)("SOH::record_success_concurrent(%s), handing off to SH::record_success_concurrent()", abbreviated? "true": "false");
-#endif
   this->ShenandoahHeuristics::record_success_concurrent(abbreviated);
 }
 
 void ShenandoahOldHeuristics::record_degenerated(bool abbreviated) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-#undef KELVIN_DEGEN
-#ifdef KELVIN_DEGEN
-  log_info(gc)("SOH::record_degenerated(%s), handing off to SH::record_degenerated()", abbreviated? "true": "false");
-#endif
   this->ShenandoahHeuristics::record_degenerated(abbreviated);
 }
 

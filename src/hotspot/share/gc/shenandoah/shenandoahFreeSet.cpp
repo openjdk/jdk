@@ -2565,17 +2565,6 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
   rebuild_lock()->lock(false);
   // This resets all state information, removing all regions from all sets.
 
-#undef KELVIN_REBUILD
-#ifdef KELVIN_REBUILD
-  const ShenandoahOldGeneration* old_generation = _heap->old_generation();
-  const ShenandoahYoungGeneration* young_generation = _heap->young_generation();
-  const size_t promoted_reserve = old_generation->get_promoted_reserve();
-  const size_t old_evac_reserve = old_generation->get_evacuation_reserve();
-  const size_t young_evac_reserve = young_generation->get_evacuation_reserve();
-  log_info(gc)("prepare_to_rebuild(), reserves are old: %zu, promo: %zu, young: %zu",
-               old_evac_reserve, promoted_reserve, young_evac_reserve);
-#endif
-
   clear();
   log_debug(gc, free)("Rebuilding FreeSet");
 
@@ -2591,31 +2580,12 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_
   shenandoah_assert_heaplocked();
   size_t young_reserve(0), old_reserve(0);
 
-#ifdef KELVIN_REBUILD
-  const ShenandoahOldGeneration* old_generation = _heap->old_generation();
-  const ShenandoahYoungGeneration* young_generation = _heap->young_generation();
-  size_t promoted_reserve = old_generation->get_promoted_reserve();
-  size_t old_evac_reserve = old_generation->get_evacuation_reserve();
-  size_t young_evac_reserve = young_generation->get_evacuation_reserve();
-  log_info(gc)("finish_rebuild(), reserves are old: %zu, promo: %zu, young: %zu",
-               old_evac_reserve, promoted_reserve, young_evac_reserve);
-#endif
-
   if (_heap->mode()->is_generational()) {
     compute_young_and_old_reserves(young_trashed_regions, old_trashed_regions, young_reserve, old_reserve);
   } else {
     young_reserve = (_heap->max_capacity() / 100) * ShenandoahEvacReserve;
     old_reserve = 0;
   }
-
-#ifdef KELVIN_REBUILD
-  promoted_reserve = old_generation->get_promoted_reserve();
-  old_evac_reserve = old_generation->get_evacuation_reserve();
-  young_evac_reserve = young_generation->get_evacuation_reserve();
-  log_info(gc)("finish_rebuild() preparing to reserve_regions, reserves are old: %zu, promo: %zu, young: %zu",
-               old_evac_reserve, promoted_reserve, young_evac_reserve);
-#endif
-
 
   // Move some of the mutator regions into the Collector and OldCollector partitions in order to satisfy
   // young_reserve and old_reserve.
@@ -2692,20 +2662,6 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
   ShenandoahYoungGeneration* const young_generation = _heap->young_generation();
   size_t young_capacity = young_generation->max_capacity();
   size_t young_unaffiliated_regions = young_generation->free_unaffiliated_regions();
-
-#ifdef KELVIN_REBUILD
-  {
-    const size_t promoted_reserve = old_generation->get_promoted_reserve();
-    const size_t old_evac_reserve = old_generation->get_evacuation_reserve();
-    const size_t young_evac_reserve = young_generation->get_evacuation_reserve();
-    log_info(gc)("compute_young_and_old_reserves(young_trashed_regions: %zu, old_trashed_regions: %zu)",
-                 young_trashed_regions, old_trashed_regions);
-    log_info(gc)("   old_available: %zu, old_unaffiliated: %zu, young_unaffiliated: %zu",
-                 old_available, old_unaffiliated_regions, young_unaffiliated_regions);
-    log_info(gc)("   reserves are old: %zu, promo: %zu, young: %zu",
-                 old_evac_reserve, promoted_reserve, young_evac_reserve);
-  }
-#endif
 
   // Add in the regions we anticipate to be freed by evacuation of the collection set
   old_unaffiliated_regions += old_trashed_regions;

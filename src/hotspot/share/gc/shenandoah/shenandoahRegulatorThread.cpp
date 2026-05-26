@@ -57,37 +57,10 @@ void ShenandoahRegulatorThread::run_service() {
   log_debug(gc)("%s: Done.", name());
 }
 
-#undef KELVIN_REGULATE
-#ifdef KELVIN_REGULATE
-const char* gc_mode_name(ShenandoahGenerationalControlThread::GCMode mode) {
-  switch (mode) {
-  case ShenandoahGenerationalControlThread::none:
-    return "none";
-  case ShenandoahGenerationalControlThread::concurrent_normal:
-    return "concurrent_normal";
-  case ShenandoahGenerationalControlThread::stw_degenerated:
-    return "stw_degenerated";
-  case ShenandoahGenerationalControlThread::stw_full:
-    return "stw_full";
-  case ShenandoahGenerationalControlThread::bootstrapping_old:
-    return "bootstrapping_old";
-  case ShenandoahGenerationalControlThread::servicing_old:
-    return "servicing_old";
-  case ShenandoahGenerationalControlThread::stopped:
-    return "stopped";
-  default:
-    return "unexpected";
-  }
-}
-#endif
-
 void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
   while (!should_terminate()) {
     SuspendibleThreadSetJoiner joiner;
     ShenandoahGenerationalControlThread::GCMode mode = _control_thread->gc_mode();
-#ifdef KELVIN_REGULATE
-    log_info(gc)("regulate_young_and_old_cycles(), mode is: %s", gc_mode_name(mode));
-#endif
     if (mode == ShenandoahGenerationalControlThread::none) {
       if (should_start_metaspace_gc()) {
         if (request_concurrent_gc(_heap->global_generation())) {
