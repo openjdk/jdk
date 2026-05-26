@@ -71,7 +71,7 @@ public class TestFullGCCount {
         // Check the increments:
         //   Old gen collectors should increase by one,
         //   New collectors may or may not increase.
-        //   Any increase >=2 is unexpected (except G1 Concurrent GC: each concurrent
+        //   Any increase > 1 is unexpected (except G1 Concurrent GC: each concurrent
         //   STW pause increments that bean, so two pauses in one cycle are normal).
         for (String collector : counts.keySet()) {
             int maxAllowedIncrement = 1;
