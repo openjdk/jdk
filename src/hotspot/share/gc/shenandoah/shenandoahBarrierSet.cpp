@@ -100,7 +100,7 @@ bool ShenandoahBarrierSet::need_card_barrier(DecoratorSet decorators, BasicType 
 }
 
 void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (ReduceInitialCardMarks && ShenandoahCardBarrier && !ShenandoahHeap::heap()->is_in_young(new_obj)) {
     log_debug(gc)("Newly allocated object (" PTR_FORMAT ") is not in the young generation", p2i(new_obj));
     // This can happen when an object is newly allocated, but we come to a safepoint before returning
@@ -114,7 +114,7 @@ void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop n
       cast_from_oop<HeapWord*>(new_obj), new_obj->size()
     );
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {

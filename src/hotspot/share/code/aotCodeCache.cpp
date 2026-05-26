@@ -1576,10 +1576,6 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
       addresses.append(deopt_blob->unpack_with_exception());
       addresses.append(deopt_blob->unpack_with_reexecution());
       addresses.append(deopt_blob->unpack_with_exception_in_tls());
-#if INCLUDE_JVMCI
-      addresses.append(deopt_blob->uncommon_trap());
-      addresses.append(deopt_blob->implicit_exception_uncommon_trap());
-#endif // INCLUDE_JVMCI
       cache()->add_stub_entries(stub_id, start, &addresses, 0);
     }
   }
