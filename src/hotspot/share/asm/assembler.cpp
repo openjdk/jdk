@@ -105,16 +105,14 @@ void AbstractAssembler::end_a_const(CodeSection* cs) {
   set_code_section(cs);
 }
 
-void AbstractAssembler::publish_instructions(bool invalidate) {
-  if (invalidate) {
-    ICache::invalidate_range(addr_at(0), offset());
+void AbstractAssembler::publish_instructions() {
+  ICache::invalidate_range(addr_at(0), offset());
 #ifndef PRODUCT
-    auto blob = CodeCache::find_blob(addr_at(0));
-    if (blob != nullptr) {
-      blob->set_flushed();
-    }
-#endif
+  auto blob = CodeCache::find_blob(addr_at(0));
+  if (blob != nullptr) {
+    blob->set_flushed();
   }
+#endif
 }
 
 void AbstractAssembler::bind(Label& L) {
