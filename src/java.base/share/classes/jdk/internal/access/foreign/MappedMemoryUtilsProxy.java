@@ -28,7 +28,7 @@ package jdk.internal.access.foreign;
 import java.io.FileDescriptor;
 
 /**
- * This proxy interface is required to allow access to @{code MappedMemoryUtils} methods from {@code ScopedMemoryAccess}.
+ * This proxy interface is required to allow access to {@code MappedMemoryUtils} methods from {@code ScopedMemoryAccess}.
  * This allows to avoid pesky initialization issues in the middle of memory mapped scoped methods.
  */
 public interface MappedMemoryUtilsProxy {
