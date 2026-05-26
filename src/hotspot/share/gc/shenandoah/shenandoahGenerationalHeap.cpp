@@ -444,6 +444,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   // We have to be careful in the event that SOEP is set to 100 by the user.
   assert(ShenandoahOldEvacPercent <= 100, "Error");
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+
   ShenandoahOldGeneration* old_gen = old_generation();
   size_t old_capacity = old_gen->max_capacity();
   size_t old_usage = old_gen->used(); // includes humongous waste
@@ -500,9 +501,6 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     // best of the situation by using this fragmented memory for both promotions and evacuations.
 
     proposed_max_old = old_fragmented_available;
-#ifdef KELVIN_BALANCE
-    log_info(gc)(" proposed_max_old limited by old_fragmented_available: %zu", proposed_max_old);
-#endif
   }
   // Otherwise: old_fragmented_available <= proposed_max_old. Do not shrink proposed_max_old from the original computation.
 
