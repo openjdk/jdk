@@ -1768,7 +1768,7 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
     // Negative sign preserved when available (e.g., min(+0, -0) -> -0)
     __ vpor(dst, a, b, Assembler::AVX_128bit);
   } else {
-    // Positive sign preserved when available (e.g., min(+0, -0) -> +0)
+    // Positive sign preserved when available (e.g., max(+0, -0) -> +0)
     __ vpand(dst, a, b, Assembler::AVX_128bit);
   }
   __ jmp(done);
