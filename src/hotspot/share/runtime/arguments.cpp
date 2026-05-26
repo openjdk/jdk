@@ -35,7 +35,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
-#include "gc/shared/genArguments.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "jvm.h"
@@ -535,6 +534,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "InitiatingHeapOccupancyPercent", JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
+  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
@@ -556,6 +557,14 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseXMMForArrayCopy",           JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+
+  {"ShenandoahAccelerationSamplePeriod",   JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahRateAccelerationSampleSize", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahMomentaryAllocationRateSpikeSampleSize", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahAdaptiveSampleFrequencyHz", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahAdaptiveSampleSizeSeconds", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahAdaptiveInitialSpikeThreshold",JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  {"ShenandoahAdaptiveDecayFactor",       JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -583,6 +592,7 @@ typedef struct {
 
 static AliasedFlag const aliased_jvm_flags[] = {
   { "CreateMinidumpOnCrash",    "CreateCoredumpOnCrash" },
+  G1GC_ONLY({"InitiatingHeapOccupancyPercent" COMMA "G1IHOP" } COMMA)
   { nullptr, nullptr}
 };
 
@@ -1489,138 +1499,6 @@ jint Arguments::set_ergonomics_flags() {
   return JNI_OK;
 }
 
-size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
-  size_t fraction = MaxVirtMemFraction * GCConfig::arguments()->heap_virtual_to_physical_ratio();
-  size_t max_allocatable = os::commit_memory_limit();
-
-  return MIN2(limit, max_allocatable / fraction);
-}
-
-// Use static initialization to get the default before parsing
-static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
-
-static size_t clamp_by_size_t_max(uint64_t value) {
-  return (size_t)MIN2(value, (uint64_t)std::numeric_limits<size_t>::max());
-}
-
-void Arguments::set_heap_size() {
-  // Check if the user has configured any limit on the amount of RAM we may use.
-  bool has_ram_limit = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(MinRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(InitialRAMPercentage);
-
-  const physical_memory_size_type avail_mem = os::physical_memory();
-
-  // If the maximum heap size has not been set with -Xmx, then set it as
-  // fraction of the size of physical memory, respecting the maximum and
-  // minimum sizes of the heap.
-  if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    uint64_t min_memory = (uint64_t)(((double)avail_mem * MinRAMPercentage) / 100);
-    uint64_t max_memory = (uint64_t)(((double)avail_mem * MaxRAMPercentage) / 100);
-
-    const size_t reasonable_min = clamp_by_size_t_max(min_memory);
-    size_t reasonable_max = clamp_by_size_t_max(max_memory);
-
-    if (reasonable_min < MaxHeapSize) {
-      // Small physical memory, so use a minimum fraction of it for the heap
-      reasonable_max = reasonable_min;
-    } else {
-      // Not-small physical memory, so require a heap at least
-      // as large as MaxHeapSize
-      reasonable_max = MAX2(reasonable_max, MaxHeapSize);
-    }
-
-    if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit != 0) {
-      // Limit the heap size to ErgoHeapSizeLimit
-      reasonable_max = MIN2(reasonable_max, ErgoHeapSizeLimit);
-    }
-
-    reasonable_max = limit_heap_by_allocatable_memory(reasonable_max);
-
-    if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
-      // An initial heap size was specified on the command line,
-      // so be sure that the maximum size is consistent.  Done
-      // after call to limit_heap_by_allocatable_memory because that
-      // method might reduce the allocation size.
-      reasonable_max = MAX2(reasonable_max, InitialHeapSize);
-    } else if (!FLAG_IS_DEFAULT(MinHeapSize)) {
-      reasonable_max = MAX2(reasonable_max, MinHeapSize);
-    }
-
-#ifdef _LP64
-    if (UseCompressedOops) {
-      // HeapBaseMinAddress can be greater than default but not less than.
-      if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
-        if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
-          // matches compressed oops printing flags
-          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least %zu "
-                                     "(%zuG) which is greater than value given %zu",
-                                     DefaultHeapBaseMinAddress,
-                                     DefaultHeapBaseMinAddress/G,
-                                     HeapBaseMinAddress);
-          FLAG_SET_ERGO(HeapBaseMinAddress, DefaultHeapBaseMinAddress);
-        }
-      }
-
-      uintptr_t heap_end = HeapBaseMinAddress + MaxHeapSize;
-      uintptr_t max_coop_heap = max_heap_for_compressed_oops();
-
-      // Limit the heap size to the maximum possible when using compressed oops
-      if (heap_end < max_coop_heap) {
-        // Heap should be above HeapBaseMinAddress to get zero based compressed
-        // oops but it should be not less than default MaxHeapSize.
-        max_coop_heap -= HeapBaseMinAddress;
-      }
-
-      // If the user has configured any limit on the amount of RAM we may use,
-      // then disable compressed oops if the calculated max exceeds max_coop_heap
-      // and UseCompressedOops was not specified.
-      if (reasonable_max > max_coop_heap) {
-        if (FLAG_IS_ERGO(UseCompressedOops) && has_ram_limit) {
-          log_debug(gc, heap, coops)("UseCompressedOops disabled due to "
-                                     "max heap %zu > compressed oop heap %zu. "
-                                     "Please check the setting of MaxRAMPercentage %5.2f.",
-                                     reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
-          FLAG_SET_ERGO(UseCompressedOops, false);
-        } else {
-          reasonable_max = max_coop_heap;
-        }
-      }
-    }
-#endif // _LP64
-
-    log_trace(gc, heap)("  Maximum heap size %zu", reasonable_max);
-    FLAG_SET_ERGO(MaxHeapSize, reasonable_max);
-  }
-
-  // If the minimum or initial heap_size have not been set or requested to be set
-  // ergonomically, set them accordingly.
-  if (InitialHeapSize == 0 || MinHeapSize == 0) {
-    size_t reasonable_minimum = clamp_by_size_t_max((uint64_t)OldSize + (uint64_t)NewSize);
-    reasonable_minimum = MIN2(reasonable_minimum, MaxHeapSize);
-    reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
-
-    if (InitialHeapSize == 0) {
-      uint64_t initial_memory = (uint64_t)(((double)avail_mem * InitialRAMPercentage) / 100);
-      size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
-      reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
-
-      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize);
-      reasonable_initial = MIN2(reasonable_initial, MaxHeapSize);
-
-      FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
-      log_trace(gc, heap)("  Initial heap size %zu", InitialHeapSize);
-    }
-
-    // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
-    // synchronize with InitialHeapSize to avoid errors with the default value.
-    if (MinHeapSize == 0) {
-      FLAG_SET_ERGO(MinHeapSize, MIN2(reasonable_minimum, InitialHeapSize));
-      log_trace(gc, heap)("  Minimum heap size %zu", MinHeapSize);
-    }
-  }
-}
-
 // This must be called after ergonomics.
 void Arguments::set_bytecode_flags() {
   if (!RewriteBytecodes) {
@@ -2485,14 +2363,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         if (FLAG_SET_CMDLINE(BytecodeVerificationRemote, true) != JVMFlag::SUCCESS) {
           return JNI_EINVAL;
         }
-      } else if (strcmp(tail, ":none") == 0) {
-        if (FLAG_SET_CMDLINE(BytecodeVerificationLocal, false) != JVMFlag::SUCCESS) {
-          return JNI_EINVAL;
-        }
-        if (FLAG_SET_CMDLINE(BytecodeVerificationRemote, false) != JVMFlag::SUCCESS) {
-          return JNI_EINVAL;
-        }
-        warning("Options -Xverify:none and -noverify were deprecated in JDK 13 and will likely be removed in a future release.");
       } else if (is_bad_option(option, args->ignoreUnrecognized, "verification")) {
         return JNI_EINVAL;
       }
@@ -2857,6 +2727,10 @@ jint Arguments::finalize_vm_init_args() {
   if (!CompilationModeFlag::initialize()) {
     return JNI_ERR;
   }
+
+  // Called after ClassLoader::lookup_vm_options() but before class loading begins.
+  // TODO: Obtain and pass correct preview mode flag value here.
+  ClassLoader::set_preview_mode(false);
 
   if (!check_vm_args_consistency()) {
     return JNI_ERR;
@@ -3656,17 +3530,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 void Arguments::set_compact_headers_flags() {
 #ifdef _LP64
   if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
-    if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
-      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-
-      // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
-    } else if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-      // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
-    } else {
-      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
+      warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
     }
+    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
   }
 #endif
 }
@@ -3677,7 +3544,7 @@ jint Arguments::apply_ergo() {
   if (result != JNI_OK) return result;
 
   // Set heap size based on available physical memory
-  set_heap_size();
+  GCConfig::arguments()->set_heap_size();
 
   GCConfig::arguments()->initialize();
 
