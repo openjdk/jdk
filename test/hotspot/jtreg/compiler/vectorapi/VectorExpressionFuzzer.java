@@ -42,7 +42,7 @@
 //       A trick to extend this to other platforms: create a new run block, so you have full
 //       freedom to restrict it as necessary for platform and vector features.
 //
-// TODO: Some compile bailouts are to be expected, for example, we've encountered this before:
+// TODO: Some compilation bailouts are to be expected, for example, we've encountered this before:
 //         COMPILE SKIPPED: out of virtual registers in LIR generator (retry at different tier)
 //       Which manifested in:
 //         compiler.lib.ir_framework.shared.TestRunException: <some method> not compilable (anymore) at level C1_FULL_PROFILE. Most likely, this is not expected, but if it is, you can use 'allowNotCompilable'.
