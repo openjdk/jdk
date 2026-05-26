@@ -186,12 +186,12 @@ public:
 
     // Store barrier
 
-    // Store barrier over null requires only rememebered-set handling
-    assert(is_null_any(*dst_p), "Must be null: " PTR_FORMAT , untype(*dst_p));
+    // Store barrier over null requires only remembered-set handling
+    assert(is_null_any(*dst_p), "Must be null: " PTR_FORMAT, untype(*dst_p));
 
     if (_is_dst_old) {
       // "page is old" may be racy w.r.t. flip aging, but relocation handles
-      // missing rememebered-set entires via ZRelocateAddRemsetForFlipPromoted.
+      // missing remembered-set entries via ZRelocateAddRemsetForFlipPromoted.
       ZGeneration::young()->remember(dst_p);
     }
 
