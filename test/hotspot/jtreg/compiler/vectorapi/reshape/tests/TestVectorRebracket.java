@@ -24,6 +24,7 @@
 package compiler.vectorapi.reshape.tests;
 
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
 
@@ -41,7 +42,8 @@ import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
  */
 public class TestVectorRebracket {
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_S, IRNode.VECTOR_SIZE_4, "1"})
     public static void testB64toS64(byte[] input, short[] output) {
         vectorRebracket(BSPEC64, SSPEC64, input, output);
     }
@@ -52,7 +54,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_I, IRNode.VECTOR_SIZE_2, "1"})
     public static void testB64toI64(byte[] input, int[] output) {
         vectorRebracket(BSPEC64, ISPEC64, input, output);
     }
@@ -74,7 +77,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_F, IRNode.VECTOR_SIZE_2,"1"})
     public static void testB64toF64(byte[] input, float[] output) {
         vectorRebracket(BSPEC64, FSPEC64, input, output);
     }
@@ -96,7 +100,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_8, "1"})
     public static void testS64toB64(short[] input, byte[] output) {
         vectorRebracket(SSPEC64, BSPEC64, input, output);
     }
@@ -107,7 +112,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_I, IRNode.VECTOR_SIZE_2, "1"})
     public static void testS64toI64(short[] input, int[] output) {
         vectorRebracket(SSPEC64, ISPEC64, input, output);
     }
@@ -129,7 +135,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_F, IRNode.VECTOR_SIZE_2, "1"})
     public static void testS64toF64(short[] input, float[] output) {
         vectorRebracket(SSPEC64, FSPEC64, input, output);
     }
@@ -151,7 +158,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_8, "1"})
     public static void testI64toB64(int[] input, byte[] output) {
         vectorRebracket(ISPEC64, BSPEC64, input, output);
     }
@@ -162,7 +170,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_S, IRNode.VECTOR_SIZE_4, "1"})
     public static void testI64toS64(int[] input, short[] output) {
         vectorRebracket(ISPEC64, SSPEC64, input, output);
     }
@@ -184,7 +193,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_F, IRNode.VECTOR_SIZE_2, "1"})
     public static void testI64toF64(int[] input, float[] output) {
         vectorRebracket(ISPEC64, FSPEC64, input, output);
     }
@@ -261,7 +271,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_8, "1"})
     public static void testF64toB64(float[] input, byte[] output) {
         vectorRebracket(FSPEC64, BSPEC64, input, output);
     }
@@ -272,7 +283,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_S, IRNode.VECTOR_SIZE_4, "1"})
     public static void testF64toS64(float[] input, short[] output) {
         vectorRebracket(FSPEC64, SSPEC64, input, output);
     }
@@ -283,7 +295,8 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "1"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_I, IRNode.VECTOR_SIZE_2, "1"})
     public static void testF64toI64(float[] input, int[] output) {
         vectorRebracket(FSPEC64, ISPEC64, input, output);
     }
@@ -371,7 +384,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testB128toS128(byte[] input, short[] output) {
         vectorRebracket(BSPEC128, SSPEC128, input, output);
     }
@@ -382,7 +395,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testB128toI128(byte[] input, int[] output) {
         vectorRebracket(BSPEC128, ISPEC128, input, output);
     }
@@ -404,7 +417,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testB128toF128(byte[] input, float[] output) {
         vectorRebracket(BSPEC128, FSPEC128, input, output);
     }
@@ -426,7 +439,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testS128toB128(short[] input, byte[] output) {
         vectorRebracket(SSPEC128, BSPEC128, input, output);
     }
@@ -437,7 +450,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testS128toI128(short[] input, int[] output) {
         vectorRebracket(SSPEC128, ISPEC128, input, output);
     }
@@ -459,7 +472,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testS128toF128(short[] input, float[] output) {
         vectorRebracket(SSPEC128, FSPEC128, input, output);
     }
@@ -481,7 +494,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testI128toB128(int[] input, byte[] output) {
         vectorRebracket(ISPEC128, BSPEC128, input, output);
     }
@@ -492,7 +505,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testI128toS128(int[] input, short[] output) {
         vectorRebracket(ISPEC128, SSPEC128, input, output);
     }
@@ -514,7 +527,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testI128toF128(int[] input, float[] output) {
         vectorRebracket(ISPEC128, FSPEC128, input, output);
     }
@@ -591,7 +604,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testF128toB128(float[] input, byte[] output) {
         vectorRebracket(FSPEC128, BSPEC128, input, output);
     }
@@ -602,7 +615,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testF128toS128(float[] input, short[] output) {
         vectorRebracket(FSPEC128, SSPEC128, input, output);
     }
@@ -613,7 +626,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testF128toI128(float[] input, int[] output) {
         vectorRebracket(FSPEC128, ISPEC128, input, output);
     }

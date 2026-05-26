@@ -24,6 +24,7 @@
 package compiler.vectorapi.reshape.tests;
 
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
 import java.lang.foreign.MemorySegment;
@@ -38,7 +39,7 @@ import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
  */
 public class TestVectorDoubleExpandShrink {
     @Test
-    @IR(failOn = REINTERPRET_NODE)
+    @IR(failOn = IRNode.VECTOR_REINTERPRET_B)
     public static void testB64toB128(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC64, BSPEC128, input, output);
     }
@@ -71,7 +72,10 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "2"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_8,  "1",
+                  IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_16, "1"},
+        applyIf = {"MaxVectorSize", ">= 16"})
     public static void testB128toB64(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC128, BSPEC64, input, output);
     }
