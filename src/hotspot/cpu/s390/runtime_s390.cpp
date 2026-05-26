@@ -143,7 +143,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ z_br(handle_exception);
 
   // Make sure all code is generated.
-// Code will be copied. No ICache sync required.
+  // Code will be copied. No ICache sync required.
 
   // Set exception blob.
   OopMapSet *oop_maps = nullptr;
