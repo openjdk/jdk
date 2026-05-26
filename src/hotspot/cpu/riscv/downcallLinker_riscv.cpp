@@ -383,5 +383,5 @@ void DowncallLinker::StubGenerator::generate() {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ publish_instructions(false);
+// Code will be copied. No ICache sync required.
 }

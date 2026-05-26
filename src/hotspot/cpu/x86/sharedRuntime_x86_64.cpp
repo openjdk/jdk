@@ -1743,7 +1743,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
-    __ publish_instructions(false);
+// Code will be copied. No ICache sync required.
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
@@ -1772,7 +1772,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                          in_sig_bt,
                          in_regs);
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-    __ publish_instructions(false);
+// Code will be copied. No ICache sync required.
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
     return nmethod::new_native_nmethod(method,
                                        compile_id,
@@ -2441,7 +2441,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 
 
-  __ publish_instructions(false);
+// Code will be copied. No ICache sync required.
 
   nmethod *nm = nmethod::new_native_nmethod(method,
                                             compile_id,
@@ -2844,7 +2844,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Jump to interpreter
   __ ret(0);
 
-  masm->publish_instructions(false);
+// Code will be copied. No ICache sync required.
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
@@ -3033,7 +3033,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
   __ stop("Attempting to adjust pc to skip safepoint poll but the return point is not what we expected");
 #endif
 
-  masm->publish_instructions(false);
+// Code will be copied. No ICache sync required.
 
   // Fill-out other meta info
   SafepointBlob* sp_blob = SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
@@ -3124,7 +3124,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
   __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
-  masm->publish_instructions(false);
+// Code will be copied. No ICache sync required.
 
   // return the  blob
   // frame_size_words or bytes??

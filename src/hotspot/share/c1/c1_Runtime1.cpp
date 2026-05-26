@@ -224,7 +224,6 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, StubId id, const char
   sasm->align(BytesPerWord);
 
   // Code will be copied. No ICache sync required.
-  sasm->publish_instructions(false);
 
   frame_size = sasm->frame_size();
   must_gc_arguments = sasm->must_gc_arguments();
