@@ -714,7 +714,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testB256toS256(byte[] input, short[] output) {
         vectorRebracket(BSPEC256, SSPEC256, input, output);
     }
@@ -725,7 +725,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testB256toI256(byte[] input, int[] output) {
         vectorRebracket(BSPEC256, ISPEC256, input, output);
     }
@@ -736,7 +736,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testB256toL256(byte[] input, long[] output) {
         vectorRebracket(BSPEC256, LSPEC256, input, output);
     }
@@ -747,7 +747,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testB256toF256(byte[] input, float[] output) {
         vectorRebracket(BSPEC256, FSPEC256, input, output);
     }
@@ -758,7 +758,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testB256toD256(byte[] input, double[] output) {
         vectorRebracket(BSPEC256, DSPEC256, input, output);
     }
@@ -769,7 +769,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testS256toB256(short[] input, byte[] output) {
         vectorRebracket(SSPEC256, BSPEC256, input, output);
     }
@@ -780,7 +780,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testS256toI256(short[] input, int[] output) {
         vectorRebracket(SSPEC256, ISPEC256, input, output);
     }
@@ -791,7 +791,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testS256toL256(short[] input, long[] output) {
         vectorRebracket(SSPEC256, LSPEC256, input, output);
     }
@@ -802,7 +802,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testS256toF256(short[] input, float[] output) {
         vectorRebracket(SSPEC256, FSPEC256, input, output);
     }
@@ -813,7 +813,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testS256toD256(short[] input, double[] output) {
         vectorRebracket(SSPEC256, DSPEC256, input, output);
     }
@@ -824,7 +824,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testI256toB256(int[] input, byte[] output) {
         vectorRebracket(ISPEC256, BSPEC256, input, output);
     }
@@ -835,7 +835,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testI256toS256(int[] input, short[] output) {
         vectorRebracket(ISPEC256, SSPEC256, input, output);
     }
@@ -846,7 +846,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testI256toL256(int[] input, long[] output) {
         vectorRebracket(ISPEC256, LSPEC256, input, output);
     }
@@ -857,7 +857,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testI256toF256(int[] input, float[] output) {
         vectorRebracket(ISPEC256, FSPEC256, input, output);
     }
@@ -868,7 +868,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testI256toD256(int[] input, double[] output) {
         vectorRebracket(ISPEC256, DSPEC256, input, output);
     }
@@ -879,7 +879,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testL256toB256(long[] input, byte[] output) {
         vectorRebracket(LSPEC256, BSPEC256, input, output);
     }
@@ -890,7 +890,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testL256toS256(long[] input, short[] output) {
         vectorRebracket(LSPEC256, SSPEC256, input, output);
     }
@@ -901,7 +901,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testL256toI256(long[] input, int[] output) {
         vectorRebracket(LSPEC256, ISPEC256, input, output);
     }
@@ -912,7 +912,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testL256toF256(long[] input, float[] output) {
         vectorRebracket(LSPEC256, FSPEC256, input, output);
     }
@@ -923,7 +923,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testL256toD256(long[] input, double[] output) {
         vectorRebracket(LSPEC256, DSPEC256, input, output);
     }
@@ -934,7 +934,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testF256toB256(float[] input, byte[] output) {
         vectorRebracket(FSPEC256, BSPEC256, input, output);
     }
@@ -945,7 +945,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testF256toS256(float[] input, short[] output) {
         vectorRebracket(FSPEC256, SSPEC256, input, output);
     }
@@ -956,7 +956,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testF256toI256(float[] input, int[] output) {
         vectorRebracket(FSPEC256, ISPEC256, input, output);
     }
@@ -967,7 +967,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testF256toL256(float[] input, long[] output) {
         vectorRebracket(FSPEC256, LSPEC256, input, output);
     }
@@ -978,7 +978,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testF256toD256(float[] input, double[] output) {
         vectorRebracket(FSPEC256, DSPEC256, input, output);
     }
@@ -989,7 +989,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testD256toB256(double[] input, byte[] output) {
         vectorRebracket(DSPEC256, BSPEC256, input, output);
     }
@@ -1000,7 +1000,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testD256toS256(double[] input, short[] output) {
         vectorRebracket(DSPEC256, SSPEC256, input, output);
     }
@@ -1011,7 +1011,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testD256toI256(double[] input, int[] output) {
         vectorRebracket(DSPEC256, ISPEC256, input, output);
     }
@@ -1022,7 +1022,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testD256toL256(double[] input, long[] output) {
         vectorRebracket(DSPEC256, LSPEC256, input, output);
     }
@@ -1033,7 +1033,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testD256toF256(double[] input, float[] output) {
         vectorRebracket(DSPEC256, FSPEC256, input, output);
     }
@@ -1044,7 +1044,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testB512toS512(byte[] input, short[] output) {
         vectorRebracket(BSPEC512, SSPEC512, input, output);
     }
@@ -1055,7 +1055,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testB512toI512(byte[] input, int[] output) {
         vectorRebracket(BSPEC512, ISPEC512, input, output);
     }
@@ -1066,7 +1066,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testB512toL512(byte[] input, long[] output) {
         vectorRebracket(BSPEC512, LSPEC512, input, output);
     }
@@ -1077,7 +1077,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testB512toF512(byte[] input, float[] output) {
         vectorRebracket(BSPEC512, FSPEC512, input, output);
     }
@@ -1088,7 +1088,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testB512toD512(byte[] input, double[] output) {
         vectorRebracket(BSPEC512, DSPEC512, input, output);
     }
@@ -1099,7 +1099,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testS512toB512(short[] input, byte[] output) {
         vectorRebracket(SSPEC512, BSPEC512, input, output);
     }
@@ -1110,7 +1110,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testS512toI512(short[] input, int[] output) {
         vectorRebracket(SSPEC512, ISPEC512, input, output);
     }
@@ -1121,7 +1121,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testS512toL512(short[] input, long[] output) {
         vectorRebracket(SSPEC512, LSPEC512, input, output);
     }
@@ -1132,7 +1132,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testS512toF512(short[] input, float[] output) {
         vectorRebracket(SSPEC512, FSPEC512, input, output);
     }
@@ -1143,7 +1143,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testS512toD512(short[] input, double[] output) {
         vectorRebracket(SSPEC512, DSPEC512, input, output);
     }
@@ -1154,7 +1154,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testI512toB512(int[] input, byte[] output) {
         vectorRebracket(ISPEC512, BSPEC512, input, output);
     }
@@ -1165,7 +1165,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testI512toS512(int[] input, short[] output) {
         vectorRebracket(ISPEC512, SSPEC512, input, output);
     }
@@ -1176,7 +1176,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testI512toL512(int[] input, long[] output) {
         vectorRebracket(ISPEC512, LSPEC512, input, output);
     }
@@ -1187,7 +1187,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testI512toF512(int[] input, float[] output) {
         vectorRebracket(ISPEC512, FSPEC512, input, output);
     }
@@ -1198,7 +1198,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testI512toD512(int[] input, double[] output) {
         vectorRebracket(ISPEC512, DSPEC512, input, output);
     }
@@ -1209,7 +1209,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testL512toB512(long[] input, byte[] output) {
         vectorRebracket(LSPEC512, BSPEC512, input, output);
     }
@@ -1220,7 +1220,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testL512toS512(long[] input, short[] output) {
         vectorRebracket(LSPEC512, SSPEC512, input, output);
     }
@@ -1231,7 +1231,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testL512toI512(long[] input, int[] output) {
         vectorRebracket(LSPEC512, ISPEC512, input, output);
     }
@@ -1242,7 +1242,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testL512toF512(long[] input, float[] output) {
         vectorRebracket(LSPEC512, FSPEC512, input, output);
     }
@@ -1253,7 +1253,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testL512toD512(long[] input, double[] output) {
         vectorRebracket(LSPEC512, DSPEC512, input, output);
     }
@@ -1264,7 +1264,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testF512toB512(float[] input, byte[] output) {
         vectorRebracket(FSPEC512, BSPEC512, input, output);
     }
@@ -1275,7 +1275,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testF512toS512(float[] input, short[] output) {
         vectorRebracket(FSPEC512, SSPEC512, input, output);
     }
@@ -1286,7 +1286,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testF512toI512(float[] input, int[] output) {
         vectorRebracket(FSPEC512, ISPEC512, input, output);
     }
@@ -1297,7 +1297,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testF512toL512(float[] input, long[] output) {
         vectorRebracket(FSPEC512, LSPEC512, input, output);
     }
@@ -1308,7 +1308,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testF512toD512(float[] input, double[] output) {
         vectorRebracket(FSPEC512, DSPEC512, input, output);
     }
@@ -1319,7 +1319,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, "1"})
     public static void testD512toB512(double[] input, byte[] output) {
         vectorRebracket(DSPEC512, BSPEC512, input, output);
     }
@@ -1330,7 +1330,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_S, "1"})
     public static void testD512toS512(double[] input, short[] output) {
         vectorRebracket(DSPEC512, SSPEC512, input, output);
     }
@@ -1341,7 +1341,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_I, "1"})
     public static void testD512toI512(double[] input, int[] output) {
         vectorRebracket(DSPEC512, ISPEC512, input, output);
     }
@@ -1352,7 +1352,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testD512toL512(double[] input, long[] output) {
         vectorRebracket(DSPEC512, LSPEC512, input, output);
     }
@@ -1363,7 +1363,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_F, "1"})
     public static void testD512toF512(double[] input, float[] output) {
         vectorRebracket(DSPEC512, FSPEC512, input, output);
     }
