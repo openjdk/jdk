@@ -42,19 +42,14 @@ import java.util.Objects;
  * no additional information before, between, or after them. Each member consists of a header,
  * followed by data that is compressed using the {@code deflate} algorithm, and then a trailer.
  * <p>
- * A stream consisting of more than one member is commonly referred to as concatenated GZIP stream.
- * This class is capable of reading a concatenated GZIP stream.
+ * This class is capable of reading a stream consisting of a series of members.
  * <p>
- * For concatenated GZIP streams, each invocation of {@link #read(byte[], int, int)} yields
- * decompressed data from at most one member; data from multiple members is not combined
- * in a single read operation.
- * <p>
- * When {@linkplain #read(byte[], int, int) processing the GZIP stream}, this class may read
- * ahead in the underlying stream while completing a member or determining whether another
- * member follows. Consequently, an unspecified number of bytes beyond a member’s trailer
- * may be consumed. If the bytes read ahead do not constitute a valid header for a
- * subsequent member, the stream is considered to have reached end-of-stream, and the read
- * method returns {@code -1}.
+ * Reading from the stream may read and buffer bytes from the underlying stream.
+ * This includes bytes that follow a member's trailer. If the bytes read ahead do not constitute
+ * a GZIP member header, the stream is considered to have reached end-of-stream, and the read
+ * methods return {@code -1}. Whether or not the additional bytes have been read past
+ * a member's trailer, the read methods on this class yield decompressed data from at most one
+ * member; data from multiple members is not combined in a single read operation.
  *
  * <h2><a id="thread_safety">Thread safety</a></h2>
  * {@code GZIPInputStream} is not safe for use by multiple concurrent threads. Any multithreaded
