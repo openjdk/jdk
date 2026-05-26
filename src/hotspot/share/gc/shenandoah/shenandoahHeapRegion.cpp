@@ -884,16 +884,28 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
 }
 
 struct ShenandoahClearSelfForwarded : ObjectClosure {
+  explicit ShenandoahClearSelfForwarded(ShenandoahScanRemembered* cards) : _cards(cards) {}
+
   void do_object(oop obj) override {
-    if (obj->is_self_forwarded()) {
-      obj->unset_self_forwarded();
+    if (obj->is_forwarded()) {
+      if (obj->is_self_forwarded()) {
+        obj->unset_self_forwarded();
+      } else if (_cards != nullptr) {
+        HeapWord* p = cast_from_oop<HeapWord*>(obj);
+        CollectedHeap::fill_with_object(p, ShenandoahForwarding::size(obj));
+        _cards->register_object_without_lock(p);
+      }
     }
   }
+private:
+  ShenandoahScanRemembered* _cards;
 };
 
 void ShenandoahHeapRegion::clear_self_forwarded_mark_words() {
+  assert(has_self_forwards(), "Region %zu must have self forwarded objects", index());
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahClearSelfForwarded clear_self_forwarded;
+  ShenandoahScanRemembered* cards = is_old() ? heap->old_generation()->card_scan() : nullptr;
+  ShenandoahClearSelfForwarded clear_self_forwarded(cards);
   heap->marked_object_iterate(this, &clear_self_forwarded);
 }
 

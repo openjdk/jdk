@@ -1516,8 +1516,8 @@ void ShenandoahHeap::trash_cset_regions() {
   while ((r = set->next()) != nullptr) {
     if (r->has_self_forwards()) {
       r->make_regular_allocation(r->affiliation());
-      r->clear_has_self_forwards();
       r->clear_self_forwarded_mark_words();
+      r->clear_has_self_forwards();
       free_bytes_in_evac_failed_regions += r->free();
     } else {
       r->make_trash();
