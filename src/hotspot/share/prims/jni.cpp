@@ -3849,6 +3849,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   if (!os::create_attached_thread(thread)) {
     thread->unregister_thread_stack_with_NMT();
+    thread->disable_alternate_signal_stack();
     thread->smr_delete();
     return JNI_ERR;
   }
@@ -3999,6 +4000,7 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   // maintenance work?)
   thread->exit(false, JavaThread::jni_detach);
   thread->unregister_thread_stack_with_NMT();
+  thread->disable_alternate_signal_stack();
   thread->smr_delete();
 
   // Go to the execute mode, the initial state of the thread on creation.

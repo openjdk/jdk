@@ -629,6 +629,17 @@ protected:
     return cur != nullptr && cur->in_asgct();
   }
 
+ // Support for UseAltSigStacks
+ private:
+  address _altsigstack;
+ public:
+  void enable_alternate_signal_stack();
+  void disable_alternate_signal_stack();
+  bool is_in_alternate_stack(address adr) const;
+  bool is_in_primary_or_alternate_stack(address adr) const {
+    return is_in_full_stack(adr) || is_in_alternate_stack(adr);
+  }
+
  private:
   VMErrorCallback* _vm_error_callbacks;
 };

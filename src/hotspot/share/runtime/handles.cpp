@@ -60,7 +60,8 @@ name##Handle::name##Handle(const name##Handle &h) {                    \
     } else {                                                           \
       _thread = Thread::current();                                     \
     }                                                                  \
-    assert(_thread->is_in_live_stack((address)this), "not on stack?"); \
+    assert(_thread->is_in_primary_or_alternate_stack(address(this)),   \
+           "not on stack?");                                           \
     _thread->metadata_handles()->push((Metadata*)_value);              \
   } else {                                                             \
     _thread = nullptr;                                                 \
@@ -77,7 +78,8 @@ name##Handle& name##Handle::operator=(const name##Handle &s) {         \
     } else {                                                           \
       _thread = Thread::current();                                     \
     }                                                                  \
-    assert(_thread->is_in_live_stack((address)this), "not on stack?"); \
+    assert(_thread->is_in_primary_or_alternate_stack(address(this)),   \
+           "not on stack?");                                           \
     _thread->metadata_handles()->push((Metadata*)_value);              \
   } else {                                                             \
     _thread = nullptr;                                                 \

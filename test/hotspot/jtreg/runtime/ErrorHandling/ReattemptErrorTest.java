@@ -63,6 +63,7 @@ public class ReattemptErrorTest {
             "-XX:-CreateCoredumpOnCrash",
             "-XX:ErrorHandlerTest=15",
             "-XX:TestCrashInErrorHandler=15",
+            "-XX:-UseAltSigStacks",
             "-XX:ErrorLogTimeout=" + ERROR_LOG_TIMEOUT,
             "-version");
 

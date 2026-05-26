@@ -68,7 +68,7 @@ inline name##Handle::name##Handle(Thread* thread, type* obj) : _value(obj), _thr
   if (obj != nullptr) {                                                   \
     assert(((Metadata*)obj)->is_valid(), "obj is valid");              \
     assert(_thread == Thread::current(), "thread must be current");    \
-    assert(_thread->is_in_live_stack((address)this), "not on stack?"); \
+    assert(_thread->is_in_primary_or_alternate_stack((address)this), "not on stack?"); \
     _thread->metadata_handles()->push((Metadata*)obj);                 \
   }                                                                    \
 }                                                                      \

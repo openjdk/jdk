@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ ifeq ($(call isTargetOs, windows), true)
 
   HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c \
       libCompleteExit.c libMonitorWithDeadObjectTest.c libTestPsig.c \
-      exeGetCreatedJavaVMs.c libTestUnloadedClass.cpp
+      exeGetCreatedJavaVMs.c libTestUnloadedClass.cpp libNativeStackOverflow.c
 else
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeGetCreatedJavaVMs := java.base:libjvm
 

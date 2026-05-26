@@ -882,6 +882,9 @@ int PosixSignals::install_sigaction_signal_handler(struct sigaction* sigAct,
   remove_error_signals_from_set(&sigAct->sa_mask);
   sigAct->sa_sigaction = handler;
   sigAct->sa_flags = SA_SIGINFO|SA_RESTART;
+  if (UseAltSigStacks && (sig == SIGSEGV || sig == SIGBUS)) {
+    sigAct->sa_flags = sigAct->sa_flags | SA_ONSTACK;
+  }
 #if defined(__APPLE__)
   // Needed for main thread as XNU (Mac OS X kernel) will only deliver SIGSEGV
   // (which starts as SIGBUS) on main thread with faulting address inside "stack+guard pages"
@@ -1628,6 +1631,9 @@ void PosixSignals::hotspot_sigmask(Thread* thread) {
       pthread_sigmask(SIG_BLOCK, vm_signals(), nullptr);
     }
   }
+
+  // Also enable alternative signal stack, if needed
+  thread->enable_alternate_signal_stack();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -942,6 +942,9 @@ address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_c
     stringStream ss;
     ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print_on(&ss);
+    // nmethod::continuation_for_implicit_exception runs in a signal handler, and
+    // Method::print_codes_on implicitly assumes (see methodHandle::methodHandle)
+    // that we run on the same stack as the faulting code.
     // Buffering to a stringStream, disable internal buffering so it's not done twice.
     method()->print_codes_on(&ss, 0, false);
     print_code_on(&ss);
