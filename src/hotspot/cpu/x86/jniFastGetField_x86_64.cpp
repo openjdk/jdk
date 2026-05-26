@@ -120,7 +120,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   // tail call
   __ jump (RuntimeAddress(slow_case_addr), rscratch1);
 
-  __ publish_instructions ();
+  __ publish_instructions();
 
   return fast_entry;
 }
@@ -208,7 +208,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   // tail call
   __ jump (RuntimeAddress(slow_case_addr), rscratch1);
 
-  __ publish_instructions ();
+  __ publish_instructions();
 
   return fast_entry;
 }

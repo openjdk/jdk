@@ -388,7 +388,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   __ jr(t1);
 
-// Code will be copied. No ICache sync required.
+  // Code will be copied. No ICache sync required.
 
   // Set exception blob
   ExceptionBlob* ex_blob = ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
