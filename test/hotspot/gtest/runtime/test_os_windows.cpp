@@ -922,6 +922,38 @@ TEST_VM(os_windows, numa_placeholder_reserve_commit) {
   os::release_memory(result, size);
 }
 
+TEST_VM_FATAL_ERROR_MSG(os, double_convert, ".*Failed to convert placeholder.*") {
+  if (!os::win32::VirtualAlloc2) {
+    GTEST_SKIP() << "VirtualAlloc2 not available pre-Windows version 1803";
+  }
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  // Double convert
+  char* reserved = os::convert_to_reserved(region);
+  ASSERT_EQ(reserved, region.base());
+  reserved = os::convert_to_reserved(region);
+}
+
+TEST_VM(os, commit_before_convert) {
+  if (!os::win32::VirtualAlloc2) {
+    GTEST_SKIP() << "VirtualAlloc2 not available pre-Windows version 1803";
+  }
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  ASSERT_FALSE(os::commit_memory(region.base(), size, false));
+  os::release_placeholder_memory(region);
+}
+
 TEST_VM(os_windows, SafeFetchN_with_page_guard_protection) {
   const DWORD page_size = (DWORD)os::vm_page_size();
 

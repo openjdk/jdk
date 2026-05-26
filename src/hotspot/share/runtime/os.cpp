@@ -1964,6 +1964,7 @@ char* os::reserve_memory(size_t bytes, MemTag mem_tag, bool executable) {
 
 os::PlaceholderRegion os::reserve_placeholder_memory(size_t bytes, MemTag mem_tag, bool executable, char* addr) {
   assert(bytes > 0, "Size must be a value greater than 0");
+  assert(is_aligned(bytes, os::vm_allocation_granularity()), "Requested size, bytes, should be aligned to allocation granularity.");
   PlaceholderRegion result = pd_reserve_placeholder_memory(bytes, executable, addr);
   if (!result.is_empty()) {
     MemTracker::record_virtual_memory_reserve(result.base(), result.size(), CALLER_PC, mem_tag);
@@ -2368,6 +2369,15 @@ void os::release_memory(char* addr, size_t bytes) {
     fatal("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
+}
+
+void os::release_placeholder_memory(PlaceholderRegion region) {
+  assert_nonempty_range(region.base(), region.size());
+  MemTracker::record_virtual_memory_release(region.base(), region.size());
+  if (!pd_release_memory(region.base(), region.size())) {
+    fatal("Failed to release placeholder " RANGEFMT, RANGEFMTARGS(region.base(), region.size()));
+  }
+  log_debug(os, map)("Released placeholder " RANGEFMT, RANGEFMTARGS(region.base(), region.size()));
 }
 
 // Prints all mappings

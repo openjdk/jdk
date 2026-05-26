@@ -1347,6 +1347,52 @@ TEST_VM(os, split_consumes_nothing) {
   os::release_memory(addr, region_size);
 }
 
+#if !defined(_WIN32)
+TEST_VM(os, double_convert) {
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  // Double convert
+  // This should be fine on posix, although it is discouraged.
+  char* reserved = os::convert_to_reserved(region);
+  ASSERT_EQ(reserved, region.base());
+  reserved = os::convert_to_reserved(region);
+  ASSERT_EQ(reserved, region.base());
+
+  os::release_memory(reserved, size);
+}
+
+TEST_VM(os, commit_before_convert) {
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  // This should be fine on posix, although it is discouraged.
+  ASSERT_TRUE(os::commit_memory(region.base(), size, false));
+  os::release_memory(region.base(), size);
+}
+#endif
+
+TEST_VM(os, release_before_convert) {
+  SKIP_IF_SPLITTABLE_NOT_SUPPORTED;
+
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  os::release_placeholder_memory(region);
+}
+
 // --- Aligned allocation tests ---
 
 TEST_VM(os, reserve_memory_aligned_basic) {

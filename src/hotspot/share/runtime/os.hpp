@@ -549,6 +549,7 @@ class os: AllStatic {
   // The returned region must be converted via convert_to_reserved() before committing.
   // If the returned PlaceholderRegion is empty, the reservation failed.
   // If addr is non-null, attempts to place the reservation at that address.
+  // This should only be called after os::init_2() has completed, otherwise the Windows API may not be initialized.
   static PlaceholderRegion reserve_placeholder_memory(size_t bytes, MemTag mem_tag, bool executable = false, char* addr = nullptr);
 
   // Split 'orig' at 'offset'. Returns left and right placeholder pieces as a PlaceholderRegionPair.
@@ -563,6 +564,9 @@ class os: AllStatic {
   // After conversion the Placeholder region should no longer be used.
   // This should not fail. If unsuccessful, this function fails fatally.
   static char* convert_to_reserved(PlaceholderRegion region);
+
+  // After releasing, the Placeholder region should no longer be used.
+  static void release_placeholder_memory(PlaceholderRegion region);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
   static char*  reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool executable = false);
