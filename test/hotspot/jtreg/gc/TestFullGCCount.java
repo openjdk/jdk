@@ -79,7 +79,7 @@ public class TestFullGCCount {
                 // G1ConcGCMonitoringScope is used in each STW pause, Remark
                 // and Cleanup, during a concurrent cycle, so the count may
                 // increase up to 2 per concurrent cycle.
-                maxIncrement  = 3;
+                maxIncrement = 3;
             }
             System.out.println("Checking: " + collector);
 
