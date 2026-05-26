@@ -54,7 +54,8 @@ extern uint explicit_null_checks_inserted,
 void Parse::array_load(BasicType bt) {
   const Type* elemtype = Type::TOP;
   bool big_val = bt == T_DOUBLE || bt == T_LONG;
-  Node* adr = array_addressing(bt, 0, elemtype);
+  bool rc_constant_folded = false;
+  Node* adr = array_addressing(bt, 0, elemtype, rc_constant_folded);
   if (stopped())  return;     // guaranteed null or range check
 
   pop();                      // index (already used)
@@ -66,7 +67,7 @@ void Parse::array_load(BasicType bt) {
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
 
   Node* ld = access_load_at(array, adr, adr_type, elemtype, bt,
-                            IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD);
+                            IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD|(rc_constant_folded ? C2_RC_CONSTANT_FOLDED : 0));
   if (big_val) {
     push_pair(ld);
   } else {
@@ -79,7 +80,8 @@ void Parse::array_load(BasicType bt) {
 void Parse::array_store(BasicType bt) {
   const Type* elemtype = Type::TOP;
   bool big_val = bt == T_DOUBLE || bt == T_LONG;
-  Node* adr = array_addressing(bt, big_val ? 2 : 1, elemtype);
+  bool rc_constant_folded = false;
+  Node* adr = array_addressing(bt, big_val ? 2 : 1, elemtype, rc_constant_folded);
   if (stopped())  return;     // guaranteed null or range check
   if (bt == T_OBJECT) {
     array_store_check();
@@ -101,13 +103,13 @@ void Parse::array_store(BasicType bt) {
   }
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
 
-  access_store_at(array, adr, adr_type, val, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY);
+  access_store_at(array, adr, adr_type, val, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY | (rc_constant_folded ? C2_RC_CONSTANT_FOLDED : 0));
 }
 
 
 //------------------------------array_addressing-------------------------------
 // Pull array and index from the stack.  Compute pointer-to-element.
-Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
+Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype, bool& rc_constant_folded) {
   Node *idx   = peek(0+vals);   // Get from stack without popping
   Node *ary   = peek(1+vals);   // in case of exception
 
@@ -154,6 +156,8 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
     return top();
   }
 
+  rc_constant_folded = !need_range_check;
+
   // Do the range check
   if (need_range_check) {
     Node* tst;
@@ -182,6 +186,8 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
     {
       PreserveJVMState pjvms(this);
       set_control(_gvn.transform(new IfFalseNode(rc)));
+      assert(!rc_constant_folded, "");
+      rc_constant_folded = stopped();
       if (C->allow_range_check_smearing()) {
         // Do not use builtin_throw, since range checks are sometimes
         // made more stringent by an optimistic transformation.

@@ -985,16 +985,16 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     // When using byte array, we need to load as byte then reinterpret the value. Otherwise, do a simple vector load.
     Node* vload = nullptr;
     if (mismatched_ms) {
-      vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt)));
+      vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt, LoadNode::UnknownControl)));
       const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem);
       vload = gvn().transform(new VectorReinterpretNode(vload, vload->bottom_type()->is_vect(), to_vect_type));
     } else {
       // Special handle for masks
       if (is_mask) {
-        vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, num_elem, T_BOOLEAN)));
+        vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, num_elem, T_BOOLEAN, LoadNode::UnknownControl)));
         vload = gvn().transform(new VectorLoadMaskNode(vload, TypeVect::makemask(elem_bt, num_elem)));
       } else {
-        vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, num_elem, elem_bt)));
+        vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, num_elem, elem_bt, LoadNode::UnknownControl)));
       }
     }
     Node* box = box_vector(vload, vbox_type, elem_bt, num_elem);
@@ -1207,12 +1207,12 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     if (supports_predicate) {
       // Generate masked load vector node if predicate feature is supported.
       const TypeVect* vt = TypeVect::make(mem_elem_bt, mem_num_elem);
-      vload = gvn().transform(trace_vector(new LoadVectorMaskedNode(control(), memory(addr), addr, addr_type, vt, mask)));
+      vload = gvn().transform(trace_vector(new LoadVectorMaskedNode(control(), memory(addr), addr, addr_type, vt, mask, LoadNode::UnknownControl)));
     } else {
       // Use the vector blend to implement the masked load vector. The biased elements are zeros.
       Node* zero = gvn().transform(gvn().zerocon(mem_elem_bt));
       zero = gvn().transform(VectorNode::scalar2vector(zero, mem_num_elem, mem_elem_bt));
-      vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt)));
+      vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt, LoadNode::UnknownControl)));
       vload = gvn().transform(trace_vector(new VectorBlendNode(zero, vload, mask)));
     }
 
@@ -1427,9 +1427,9 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   } else {
     Node* vload = nullptr;
     if (mask != nullptr) {
-      vload = gvn().transform(trace_vector(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, indexes, mask)));
+      vload = gvn().transform(trace_vector(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, indexes, mask, LoadNode::UnknownControl)));
     } else {
-      vload = gvn().transform(trace_vector(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, indexes)));
+      vload = gvn().transform(trace_vector(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, indexes, LoadNode::UnknownControl)));
     }
     Node* box = box_vector(vload, vbox_type, elem_bt, num_elem);
     set_result(box);
