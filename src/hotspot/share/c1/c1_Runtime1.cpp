@@ -223,6 +223,7 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, StubId id, const char
   // align so printing shows nop's instead of random code at the end (SimpleStubs are aligned)
   sasm->align(BytesPerWord);
 
+  // Code will be copied. No ICache sync required.
   sasm->publish_instructions(false);
 
   frame_size = sasm->frame_size();
