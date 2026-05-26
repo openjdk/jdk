@@ -665,7 +665,7 @@ nav.toc a {
     overflow: hidden;
     text-overflow: ellipsis;
     text-wrap: balance;
-    text-indent: 0.9em hanging;
+    text-indent: 0.5em hanging;
     line-height: 1.35;
 }
 nav.toc ol.toc-list ol.toc-list a {
