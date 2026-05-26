@@ -2613,7 +2613,7 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_
   old_evac_reserve = old_generation->get_evacuation_reserve();
   young_evac_reserve = young_generation->get_evacuation_reserve();
   log_info(gc)("finish_rebuild() preparing to reserve_regions, reserves are old: %zu, promo: %zu, young: %zu",
-	       old_evac_reserve, promoted_reserve, young_evac_reserve);
+               old_evac_reserve, promoted_reserve, young_evac_reserve);
 #endif
 
 
