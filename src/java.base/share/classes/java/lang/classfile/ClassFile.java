@@ -1049,8 +1049,8 @@ public sealed interface ClassFile
     /**
      * The class major version introduced by Java SE 28, {@value}.
      *
-     *  ClassFileFormatVersion#RELEASE_28
-     *  28
+     * @see ClassFileFormatVersion#RELEASE_28
+     * @since 28
      */
     int JAVA_28_VERSION = 72;
 
