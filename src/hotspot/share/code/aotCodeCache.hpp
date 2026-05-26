@@ -320,14 +320,6 @@ public:
 #define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun)
 #endif
 
-#if INCLUDE_JVMCI
-#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
-  do_var(bool,  EnableJVMCI)                            /* adapters and nmethods */ \
-  // END
-#else
-#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun)
-#endif
-
 #if defined(AARCH64) && !defined(ZERO)
 #define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
   do_var(intx,  BlockZeroingLowLimit)                   /* array fill stubs */ \
@@ -359,7 +351,6 @@ public:
 #define AOTCODECACHE_CONFIGS_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
-  AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
   // END
