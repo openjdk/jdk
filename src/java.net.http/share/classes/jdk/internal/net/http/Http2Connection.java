@@ -1615,6 +1615,8 @@ class Http2Connection implements Closeable {
     // by the sendlock (see `sendFrame()`).
     private ByteBuffer cachedHeaderBuffer;
 
+    // `getCachedHeaderBuffer()` is used only by tests and it should not be
+    // called in source code without also holding `sendlock`.
     ByteBuffer getCachedHeaderBuffer() {
         return cachedHeaderBuffer;
     }
@@ -1624,7 +1626,9 @@ class Http2Connection implements Closeable {
 
         if (cachedHeaderBuffer == null || cachedHeaderBuffer.capacity() < size) {
             cachedHeaderBuffer = ByteBuffer.allocate(size);
+            return cachedHeaderBuffer;
         }
+
         cachedHeaderBuffer.clear();
         cachedHeaderBuffer.limit(size);
         return cachedHeaderBuffer;
