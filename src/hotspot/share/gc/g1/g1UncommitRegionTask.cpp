@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,9 @@ void G1UncommitRegionTask::enqueue() {
 
   G1UncommitRegionTask* uncommit_task = instance();
   if (!uncommit_task->is_active()) {
-    // Change state to active and schedule using UncommitInitialDelayMs.
+    // Change state to active and schedule using G1UncommitDelay.
     uncommit_task->set_active(true);
-    G1CollectedHeap::heap()->service_thread()->schedule_task(uncommit_task, UncommitInitialDelayMs);
+    G1CollectedHeap::heap()->service_thread()->schedule_task(uncommit_task, G1UncommitInitialDelay);
   }
 }
 

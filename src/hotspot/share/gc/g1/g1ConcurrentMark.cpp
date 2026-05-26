@@ -714,6 +714,11 @@ private:
     }
 
     HeapWord* region_clear_limit(G1HeapRegion* r) {
+      // A garbage collection might have made the region unavailable after a yield during
+      // clearing. Just return bottom as the limit, causing the clearing for this region to end.
+      if (G1CollectedHeap::heap()->region_at_or_null(r->hrm_index()) == nullptr) {
+        return r->bottom();
+      }
       // During a Concurrent Undo Mark cycle, the per region top_at_mark_start and
       // live_words data are current wrt to the _mark_bitmap. We use this information
       // to only clear ranges of the bitmap that require clearing.
@@ -743,7 +748,7 @@ private:
       }
 
       HeapWord* cur = r->bottom();
-      HeapWord* const end = region_clear_limit(r);
+      HeapWord* end = region_clear_limit(r);
 
       size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
 
@@ -761,8 +766,12 @@ private:
         assert(!suspendible() || _cm->is_in_reset_for_next_cycle(), "invariant");
 
         // Abort iteration if necessary.
-        if (has_aborted()) {
-          return true;
+        if (suspendible() && _cm->do_yield_check()) {
+          if (_cm->has_aborted()) {
+            return true;
+          }
+          // Re-read end. The region might have been uncommitted.
+          end = region_clear_limit(r);
         }
       }
       assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
