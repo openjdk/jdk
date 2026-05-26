@@ -406,7 +406,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_L, "1"})
     public static void testB128toL128(byte[] input, long[] output) {
         vectorRebracket(BSPEC128, LSPEC128, input, output);
     }
@@ -428,7 +428,7 @@ public class TestVectorRebracket {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_D, "1"})
     public static void testB128toD128(byte[] input, double[] output) {
         vectorRebracket(BSPEC128, DSPEC128, input, output);
     }
