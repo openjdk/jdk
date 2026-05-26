@@ -125,8 +125,6 @@ void ShenandoahControlThread::run_service() {
 
       heuristics->cancel_trigger_request();
 
-      heap->reset_bytes_allocated_since_gc_start();
-
       MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
       // If GC was requested, we are sampling the counters even without actual triggers

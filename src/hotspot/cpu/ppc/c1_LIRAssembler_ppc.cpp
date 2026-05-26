@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -609,67 +609,25 @@ void LIR_Assembler::align_call(LIR_Code) {
   // do nothing since all instructions are word aligned on ppc
 }
 
-
-bool LIR_Assembler::emit_trampoline_stub_for_call(address target, Register Rtoc) {
-  int start_offset = __ offset();
-  // Put the entry point as a constant into the constant pool.
-  const address entry_point_toc_addr   = __ address_constant(target, RelocationHolder::none);
-  if (entry_point_toc_addr == nullptr) {
-    bailout("const section overflow");
-    return false;
-  }
-  const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-
-  // Emit the trampoline stub which will be related to the branch-and-link below.
-  address stub = __ emit_trampoline_stub(entry_point_toc_offset, start_offset, Rtoc);
-  if (!stub) {
-    bailout("no space for trampoline stub");
-    return false;
-  }
-  return true;
-}
-
-
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   assert(rtype==relocInfo::opt_virtual_call_type || rtype==relocInfo::static_call_type, "unexpected rtype");
 
-  bool success = emit_trampoline_stub_for_call(op->addr());
-  if (!success) { return; }
-
-  __ relocate(rtype);
-  // Note: At this point we do not have the address of the trampoline
-  // stub, and the entry point might be too far away for bl, so __ pc()
-  // serves as dummy and the bl will be patched later.
-  __ code()->set_insts_mark();
-  __ bl(__ pc());
+  address call_pc = __ trampoline_call(AddressLiteral(op->addr(), rtype));
+  if (call_pc == nullptr) {
+    bailout("const/stub overflow in call with trampoline");
+    return;
+  }
   add_call_info(code_offset(), op->info());
   __ post_call_nop();
 }
 
-
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   __ calculate_address_from_global_toc(R2_TOC, __ method_toc());
-
-  // Virtual call relocation will point to ic load.
-  address virtual_call_meta_addr = __ pc();
-  // Load a clear inline cache.
-  AddressLiteral empty_ic((address) Universe::non_oop_word());
-  bool success = __ load_const_from_method_toc(R19_inline_cache_reg, empty_ic, R2_TOC);
+  bool success = __ ic_call(R2_TOC, op->addr());
   if (!success) {
-    bailout("const section overflow");
+    bailout("const/stub overflow in ic_call with trampoline");
     return;
   }
-  // Call to fixup routine. Fixup routine uses ScopeDesc info
-  // to determine who we intended to call.
-  __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
-
-  success = emit_trampoline_stub_for_call(op->addr(), R2_TOC);
-  if (!success) { return; }
-
-  // Note: At this point we do not have the address of the trampoline
-  // stub, and the entry point might be too far away for bl, so __ pc()
-  // serves as dummy and the bl will be patched later.
-  __ bl(__ pc());
   add_call_info(code_offset(), op->info());
   __ post_call_nop();
 }

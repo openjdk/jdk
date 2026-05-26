@@ -44,7 +44,6 @@ class ThreadLocalAllocStats;
 // trip the return and sample the allocation.
 class ThreadLocalAllocBuffer: public CHeapObj<mtThread> {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 private:
   HeapWord* _start;                              // address of TLAB
   HeapWord* _top;                                // address after last allocation

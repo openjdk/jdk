@@ -253,9 +253,14 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
-    public Map<String, String> getSettings() {
+    Map<String, String> getSettings() {
+        assert Thread.holdsLock(recorder) : "Must have recorder lock when accessing recorder.settings";
+        return settings;
+    }
+
+    public Map<String, String> getSettingsCopy() {
         synchronized (recorder) {
-            return settings;
+            return new LinkedHashMap<>(settings);
         }
     }
 
@@ -371,7 +376,7 @@ public final class PlatformRecording implements AutoCloseable {
             clone.setStartTime(getStartTime());
         }
         if (pathToGcRoots == null) {
-            clone.setSettings(getSettings()); // needed for old object sample
+            clone.setSettings(getSettingsCopy()); // needed for old object sample
             clone.stop(reason); // dumps to destination path here
         } else {
             // Risk of violating lock order here, since

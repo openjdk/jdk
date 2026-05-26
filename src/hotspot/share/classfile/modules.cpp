@@ -453,7 +453,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     ClassLoader::add_to_exploded_build_list(THREAD, module_symbol);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Special handling of jdk.incubator.vector
   if (strcmp(module_name, "jdk.incubator.vector") == 0) {
     if (FLAG_IS_DEFAULT(EnableVectorSupport)) {
@@ -469,7 +469,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
     log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

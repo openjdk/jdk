@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -798,11 +798,6 @@ int
 isThreadExpected(jvmtiEnv *jvmti, jthread thread) {
   static const char *vm_jfr_buffer_thread_name = "VM JFR Buffer Thread";
   static const char *jfr_request_timer_thread_name = "JFR request timer";
-  static const char *graal_management_bean_registration_thread_name =
-                        "HotSpotGraalManagement Bean Registration";
-  static const char *graal_compiler_thread_name_prefix = "JVMCI CompilerThread";
-  static const size_t graal_prefix_length = strlen(graal_compiler_thread_name_prefix);
-
   static const char *unparker_thread_name_prefix = "VirtualThread-unparker";
   static const size_t unparker_prefix_length = strlen(unparker_thread_name_prefix);
 
@@ -816,13 +811,6 @@ isThreadExpected(jvmtiEnv *jvmti, jthread thread) {
     return 0;
   }
   if (strcmp(threadinfo.name, jfr_request_timer_thread_name) == 0) {
-    return 0;
-  }
-  if (strcmp(threadinfo.name, graal_management_bean_registration_thread_name) == 0)
-    return 0;
-
-  if ((strlen(threadinfo.name) > graal_prefix_length) &&
-      strncmp(threadinfo.name, graal_compiler_thread_name_prefix, graal_prefix_length) == 0) {
     return 0;
   }
   if (strncmp(threadinfo.name, unparker_thread_name_prefix, unparker_prefix_length) == 0) {
