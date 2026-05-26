@@ -74,7 +74,7 @@ public class TestFullGCCount {
         //   Any increase >=2 is unexpected (except G1 Concurrent GC: each concurrent
         //   STW pause increments that bean, so two pauses in one cycle are normal).
         for (String collector : counts.keySet()) {
-            int maxIncrement  = 2;
+            int maxIncrement = 2;
             if ("G1 Concurrent GC".equals(collector)) {
                 // G1ConcGCMonitoringScope is used in each STW pause, Remark
                 // and Cleanup, during a concurrent cycle, so the count may
