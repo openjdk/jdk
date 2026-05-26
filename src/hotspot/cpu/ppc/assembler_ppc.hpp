@@ -1358,8 +1358,8 @@ class Assembler : public AbstractAssembler {
     return (0 == addr % a);
   }
 
-  void publish_instructions(bool invalidate = true) {
-    AbstractAssembler::publish_instructions(invalidate);
+  void publish_instructions() {
+    AbstractAssembler::publish_instructions();
   }
 
   inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32

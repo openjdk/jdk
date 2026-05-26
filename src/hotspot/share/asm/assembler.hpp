@@ -312,7 +312,7 @@ class AbstractAssembler : public ResourceObj  {
   AbstractAssembler(CodeBuffer* code);
 
   // ensure buf contains all code (call this before using/copying the code)
-  void publish_instructions(bool invalidate = true);
+  void publish_instructions();
 
   void emit_int8(       int x1)                                     { code_section()->emit_int8(narrow_cast<uint8_t>(x1)); }
 
