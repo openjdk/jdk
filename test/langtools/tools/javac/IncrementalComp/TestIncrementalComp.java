@@ -30,6 +30,8 @@
 
 import jdk.test.lib.util.FileUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -40,6 +42,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,26 +57,31 @@ class TestIncrementalComp {
     static final ToolProvider JAVAC = ToolProvider.findFirst("javac")
             .orElseThrow();
 
-    @Test
-    public void testSingleModule() throws Throwable {
-        Path workDir = Path.of("testSingleModule");
+    record TestCase(String srcDir, Set<String> modules, String mainModule) {}
+
+    @ParameterizedTest
+    @MethodSource("cases")
+    public void test(TestCase testCase) throws Throwable {
+        Path workDir = Path.of(testCase.srcDir());
         // set up test sources
         Path localTestModules = workDir.resolve("test_modules");
         Path outDir = workDir.resolve("mods");
         Files.createDirectories(localTestModules);
-        FileUtils.copyDirectory(TEST_MODULES_DIR.resolve("single"), localTestModules);
+        FileUtils.copyDirectory(TEST_MODULES_DIR.resolve(testCase.srcDir()), localTestModules);
 
         Path libPath = localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java");
         Files.createDirectories(libPath.getParent());
         Files.copy(ALTS_DIR.resolve("Lib_int.java"), libPath);
 
+        String modulesArg = String.join(",", testCase.modules());
         // compile both modules
         compile(
                 "-d", outDir.toString(),
                 "--module-source-path=" + localTestModules,
-                "--module=org.moda");
+                "--module", modulesArg);
 
-        invokeMainMethod(outDir, "org.moda", "org.moda.app.Main");
+        String mainClass = testCase.mainModule() + ".app.Main";
+        invokeMainMethod(outDir, testCase.mainModule(), mainClass);
 
         // modify sources. Dep is not modified
         Files.copy(ALTS_DIR.resolve("Lib_long.java"), libPath, REPLACE_EXISTING);
@@ -81,45 +90,18 @@ class TestIncrementalComp {
         compile(
                 "-d", outDir.toString(),
                 "--module-source-path=" + localTestModules,
-                "--module=org.moda");
+                "--module", modulesArg);
 
         // should work
-        invokeMainMethod(outDir, "org.moda", "org.moda.app.Main");
+        invokeMainMethod(outDir, testCase.mainModule(), mainClass);
     }
 
-    @Test
-    public void testMultiModule() throws Throwable {
-        Path workDir = Path.of("testMultiModule");
-        // set up test sources
-        Path localTestModules = workDir.resolve("test_modules");
-        Path outDir = workDir.resolve("mods");
-        Files.createDirectories(localTestModules);
-        FileUtils.copyDirectory(TEST_MODULES_DIR.resolve("multi"), localTestModules);
-
-        Path libPath = localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java");
-        Files.createDirectories(libPath.getParent());
-        Files.copy(ALTS_DIR.resolve("Lib_int.java"), libPath);
-
-        // compile both modules explicitly
-        compile(
-                "-d", outDir.toString(),
-                "--module-source-path=" + localTestModules,
-                "--module=org.moda,org.modb");
-
-        invokeMainMethod(outDir, "org.modb", "org.modb.app.Main");
-
-        // modify sources
-        Files.copy(ALTS_DIR.resolve("Lib_long.java"), libPath, REPLACE_EXISTING);
-
-        // compile both modules again
-        // only moda was out of date, but modb should be recompiled as well
-        compile(
-                "-d", outDir.toString(),
-                "--module-source-path=" + localTestModules,
-                "--module=org.moda,org.modb");
-
-        // should work
-        invokeMainMethod(outDir, "org.modb", "org.modb.app.Main");
+    static Stream<TestCase> cases() {
+        return Stream.of(
+            new TestCase("single", Set.of("org.moda"), "org.moda"),
+            new TestCase("multi", Set.of("org.moda", "org.modb"), "org.modb"),
+            new TestCase("transitive", Set.of("org.moda", "org.modb", "org.modc"), "org.modc")
+        );
     }
 
     private static void invokeMainMethod(Path modulePath, String moduleName, String mainClassName, String... args)
