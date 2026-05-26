@@ -119,9 +119,9 @@ public class MultiPixelPackedSampleModel extends SampleModel
                                                " height="+h+") are too large");
         }
 
-        if (dataType < DataBuffer.TYPE_BYTE ||
-            (dataType > DataBuffer.TYPE_DOUBLE &&
-             dataType != DataBuffer.TYPE_UNDEFINED))
+        if (dataType != DataBuffer.TYPE_BYTE &&
+            dataType != DataBuffer.TYPE_USHORT &&
+            dataType != DataBuffer.TYPE_INT)
         {
             throw new IllegalArgumentException("Unsupported dataType: "+
                                                dataType);
@@ -130,14 +130,8 @@ public class MultiPixelPackedSampleModel extends SampleModel
                         DataBuffer.getDataTypeSize(dataType));
         if (sls < 0) {
             throw new RasterFormatException("Pixels do not fit");
-        };
-        this(dataType, w, h, numberOfBits, sls, 0);
-        if (dataType != DataBuffer.TYPE_BYTE &&
-            dataType != DataBuffer.TYPE_USHORT &&
-            dataType != DataBuffer.TYPE_INT) {
-            throw new IllegalArgumentException("Unsupported data type "+
-                                               dataType);
         }
+        this(dataType, w, h, numberOfBits, sls, 0);
     }
 
     /**
