@@ -1264,7 +1264,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
-    __ publish_instructions();
+    __ publish_instructions(false);
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
@@ -1302,7 +1302,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                          in_sig_bt,
                          in_regs);
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-    __ publish_instructions();
+    __ publish_instructions(false);
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
     return nmethod::new_native_nmethod(method,
                                        compile_id,
@@ -1961,7 +1961,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
   }
 
-  __ publish_instructions();
+  __ publish_instructions(false);
 
   nmethod *nm = nmethod::new_native_nmethod(method,
                                             compile_id,
@@ -2348,8 +2348,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Jump to interpreter
   __ ret();
 
-  // Make sure all code is generated
-  masm->publish_instructions();
+  masm->publish_instructions(false);
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   assert(_deopt_blob != nullptr, "create deoptimization blob fail!");
@@ -2493,8 +2492,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
   __ stop("Attempting to adjust pc to skip safepoint poll but the return point is not what we expected");
 #endif
 
-  // Make sure all code is generated
-  masm->publish_instructions();
+  masm->publish_instructions(false);
 
   // Fill-out other meta info
   return SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
@@ -2581,9 +2579,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   __ ld(x10, Address(xthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
-  // -------------
-  // make sure all code is generated
-  masm->publish_instructions();
+  masm->publish_instructions(false);
 
   // return the  blob
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
