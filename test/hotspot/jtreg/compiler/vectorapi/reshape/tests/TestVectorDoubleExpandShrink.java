@@ -73,7 +73,7 @@ public class TestVectorDoubleExpandShrink {
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
-        counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_8,  "1",
+        counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_8, "1",
                   IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_16, "1"},
         applyIf = {"MaxVectorSize", ">= 16"})
     public static void testB128toB64(MemorySegment input, MemorySegment output) {
