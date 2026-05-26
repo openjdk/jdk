@@ -1464,6 +1464,7 @@ public:
       Assembler::evpsllvd(dst, mask, nds, src, merge, vector_len);
     }
   }
+  using Assembler::evpsllq;
   void evpsllq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsllq(dst, mask, nds, src, merge, vector_len);
