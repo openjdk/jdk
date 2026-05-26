@@ -38,7 +38,7 @@
  * @requires (os.family != "windows")
  * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm -Xmx64m -Djdk.lang.Process.launchMechanism=FORK InvalidWorkDir
+ * @run main/othervm -Xmx64m -Djdk.lang.Process.launchMechanism=POSIX_SPAWN InvalidWorkDir
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

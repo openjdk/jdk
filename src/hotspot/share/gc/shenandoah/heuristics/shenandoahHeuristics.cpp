@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,6 +26,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -62,7 +63,6 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _gc_cycle_time_history(new TruncatedSeq(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor)),
   _metaspace_oom()
 {
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
@@ -181,6 +181,12 @@ void ShenandoahHeuristics::record_cycle_start() {
 
 void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->mode()->is_generational()) {
+    const size_t available = _space_info->soft_mutator_available();
+    heap->alloc_rate().update_minimum_sample_size(available);
+  }
 }
 
 bool ShenandoahHeuristics::should_start_gc() {
@@ -263,16 +269,7 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
 }
 
 void ShenandoahHeuristics::record_success_concurrent(bool abbreviated) {
-
-#undef KELVIN_CONC
-#ifdef KELVIN_CONC
-  log_info(gc)("SH::record_success_concurrent(%s) adding GC time (%.3f) to gc_cycle_time_history",
-	       abbreviated? "true": "false", elapsed_cycle_time());
-#endif
-
-  _gc_cycle_time_history->add(elapsed_cycle_time());
   _gc_times_learned++;
-
   adjust_penalty(Concurrent_Adjust);
 }
 

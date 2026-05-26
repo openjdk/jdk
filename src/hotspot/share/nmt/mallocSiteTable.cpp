@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "utilities/permitForbiddenFunctions.hpp"
 
 // Malloc site hashtable buckets
-MallocSiteHashtableEntry**  MallocSiteTable::_table = nullptr;
+Atomic<MallocSiteHashtableEntry*>*  MallocSiteTable::_table = nullptr;
 const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = nullptr;
 const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = nullptr;
 
@@ -42,9 +42,12 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = n
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
-  _table = (MallocSiteHashtableEntry**)permit_forbidden_function::calloc(table_size, sizeof(MallocSiteHashtableEntry*));
+  _table = (Atomic<MallocSiteHashtableEntry*>*)permit_forbidden_function::malloc(table_size * sizeof(Atomic<MallocSiteHashtableEntry*>));
   if (_table == nullptr) {
     return false;
+  }
+  for (int i = 0; i < table_size; i++) {
+    new (&_table[i]) Atomic<MallocSiteHashtableEntry*>(nullptr);
   }
 
   // Fake the call stack for hashtable entry allocation
@@ -78,7 +81,7 @@ bool MallocSiteTable::initialize() {
 
   // Add the allocation site to hashtable.
   int index = hash_to_index(entry.hash());
-  _table[index] = const_cast<MallocSiteHashtableEntry*>(&entry);
+  _table[index].store_relaxed(const_cast<MallocSiteHashtableEntry*>(&entry));
 
   return true;
 }
@@ -88,12 +91,12 @@ bool MallocSiteTable::initialize() {
 bool MallocSiteTable::walk(MallocSiteWalker* walker) {
   MallocSiteHashtableEntry* head;
   for (int index = 0; index < table_size; index ++) {
-    head = _table[index];
+    head = _table[index].load_relaxed();
     while (head != nullptr) {
       if (!walker->do_malloc_site(head->peek())) {
         return false;
       }
-      head = (MallocSiteHashtableEntry*)head->next();
+      head = head->next();
     }
   }
   return true;
@@ -117,13 +120,13 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
   *marker = 0;
 
   // First entry for this hash bucket
-  if (_table[index] == nullptr) {
+  if (_table[index].load_relaxed() == nullptr) {
     MallocSiteHashtableEntry* entry = new_entry(key, mem_tag);
     // OOM check
     if (entry == nullptr) return nullptr;
 
     // swap in the head
-    if (AtomicAccess::replace_if_null(&_table[index], entry)) {
+    if (_table[index].compare_set(nullptr, entry)) {
       *marker = build_marker(index, 0);
       return entry->data();
     }
@@ -132,7 +135,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
   }
 
   unsigned pos_idx = 0;
-  MallocSiteHashtableEntry* head = _table[index];
+  MallocSiteHashtableEntry* head = _table[index].load_relaxed();
   while (head != nullptr && pos_idx < MAX_BUCKET_LENGTH) {
     if (head->hash() == hash) {
       MallocSite* site = head->data();
@@ -154,7 +157,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
       // contended, other thread won
       delete entry;
     }
-    head = (MallocSiteHashtableEntry*)head->next();
+    head = head->next();
     pos_idx ++;
   }
   return nullptr;
@@ -167,10 +170,10 @@ MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
     return nullptr;
   }
   const uint16_t pos_idx = pos_idx_from_marker(marker);
-  MallocSiteHashtableEntry* head = _table[bucket_idx];
+  MallocSiteHashtableEntry* head = _table[bucket_idx].load_relaxed();
   for (size_t index = 0;
        index < pos_idx && head != nullptr;
-       index++, head = (MallocSiteHashtableEntry*)head->next()) {}
+       index++, head = head->next()) {}
   if (head == nullptr) {
     return nullptr;
   }
@@ -213,7 +216,7 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
 
   for (int i = 0; i < table_size; i ++) {
     int this_chain_length = 0;
-    const MallocSiteHashtableEntry* head = _table[i];
+    const MallocSiteHashtableEntry* head = _table[i].load_relaxed();
     if (head == nullptr) {
       unused_buckets ++;
     }
@@ -254,5 +257,5 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
 }
 
 bool MallocSiteHashtableEntry::atomic_insert(MallocSiteHashtableEntry* entry) {
-  return AtomicAccess::replace_if_null(&_next, entry);
+  return _next.compare_set(nullptr, entry);
 }

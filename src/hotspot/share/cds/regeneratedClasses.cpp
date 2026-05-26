@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "cds/archiveBuilder.hpp"
 #include "cds/regeneratedClasses.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
@@ -84,11 +85,34 @@ bool RegeneratedClasses::has_been_regenerated(address orig_obj) {
   }
 }
 
-address RegeneratedClasses::get_regenerated_object(address orig_obj) {
-  assert(_regenerated_objs != nullptr, "must be");
-  address* p =_regenerated_objs->get(orig_obj);
-  assert(p != nullptr, "must be");
-  return *p;
+// If the metadata pointed to by orig_obj has been regenerated, return the
+// regenerated version; otherwise return orig_obj,
+address RegeneratedClasses::maybe_get_regenerated_object(address orig_obj) {
+  precond(orig_obj != nullptr);
+  if (_regenerated_objs != nullptr) {
+    address* p = _regenerated_objs->get(orig_obj);
+    if (p != nullptr) {
+      precond(*p != nullptr);
+      return *p;
+    }
+  }
+  return orig_obj;
+}
+
+// If the Klass for orig_java_mirror has been regenerated, return the mirror of
+// the regenerated version; otherwise return orig_java_mirror,
+oop RegeneratedClasses::maybe_get_regenerated_mirror(oop orig_java_mirror) {
+  precond(java_lang_Class::is_instance(orig_java_mirror));
+  Klass* k = java_lang_Class::as_Klass(orig_java_mirror);
+  // Note: the primitive mirrors do not have an injected klass pointer, as primitive
+  // types such as "int" do not have a C++ Klass representation.
+  if (k != nullptr) {
+    Klass* regenerated_k = maybe_get_regenerated_object(k);
+    if (k != regenerated_k) {
+      return regenerated_k->java_mirror();
+    }
+  }
+  return orig_java_mirror;
 }
 
 bool RegeneratedClasses::is_regenerated_object(address regen_obj) {
@@ -127,5 +151,6 @@ void RegeneratedClasses::cleanup() {
   }
   if (_regenerated_objs != nullptr) {
     delete _regenerated_objs;
+    _regenerated_objs = nullptr;
   }
 }
