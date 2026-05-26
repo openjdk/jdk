@@ -54,29 +54,29 @@ public class FpMinMaxIntrinsics {
         c2 = COUNT - (s2 = step());
 
         for (int i = 0; i < COUNT; i++) {
-            final int mapped_index = i % 100;
+            final int mappedIndex = i % 100;
 
-            if (mapped_index >= 0 && mapped_index < 10) {
+            if (mappedIndex >= 0 && mappedIndex < 10) {
                 // NaN
                 floats[i] = Float.NaN;
                 doubles[i] = Double.NaN;
-            } else if (mapped_index >= 20 && mapped_index < 30) {
+            } else if (mappedIndex >= 20 && mappedIndex < 30) {
                 // Equal (+0.0)
                 floats[i] = +0.0f;
                 doubles[i] = +0.0;
-            } else if (mapped_index >= 40 && mapped_index < 50) {
+            } else if (mappedIndex >= 40 && mappedIndex < 50) {
                 // Equal (-0.0)
                 floats[i] = -0.0f;
                 doubles[i] = -0.0;
-            } else if (mapped_index >= 60 && mapped_index < 70) {
+            } else if (mappedIndex >= 60 && mappedIndex < 70) {
                 // Descending
                 floats[i] = (float) (COUNT - i);
                 doubles[i] = (double) (COUNT - i);
-            } else if (mapped_index >= 80 && mapped_index < 90) {
+            } else if (mappedIndex >= 80 && mappedIndex < 90) {
                 // Ascending
                 floats[i] = (float) i;
                 doubles[i] = (double) i;
-            } else if (mapped_index >= 90 && mapped_index < 100) {
+            } else if (mappedIndex >= 90 && mappedIndex < 100) {
                 // Random (negative)
                 floats[i] = -r.nextFloat();
                 doubles[i] = -r.nextDouble();
