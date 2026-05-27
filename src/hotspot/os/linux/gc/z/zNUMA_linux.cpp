@@ -33,6 +33,15 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
+// Converts between ZGC NUMA ids and Linux NUMA node ids.
+//
+// A ZGC NUMA id is a dense zero-based index over the NUMA nodes that ZGC can
+// allocate from. For example, with two available NUMA nodes, ids 0 and 1 are
+// tracked.
+//
+// A Linux NUMA node id is the number used by native Linux NUMA APIs. These node
+// ids usually reflect the hardware configuration, can be sparse, and do not
+// have to start at 0.
 class ZNUMAConverter {
 private:
   bool      _initialized = false;
