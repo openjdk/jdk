@@ -57,6 +57,7 @@ import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.StringConcatFactory;
+import java.lang.invoke.TypeDescriptor;
 import java.util.List;
 import java.util.function.Function;
 
@@ -68,11 +69,13 @@ import static java.lang.constant.ConstantDescs.CD_CallSite;
 import static java.lang.constant.ConstantDescs.CD_Collection;
 import static java.lang.constant.ConstantDescs.CD_Exception;
 import static java.lang.constant.ConstantDescs.CD_MethodHandle;
+import static java.lang.constant.ConstantDescs.CD_MethodHandles_Lookup;
 import static java.lang.constant.ConstantDescs.CD_MethodType;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_boolean;
 import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 import static java.lang.constant.ConstantDescs.FALSE;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
@@ -151,5 +154,15 @@ class PoolEntryHashCodeTest {
         for (int i = 0; i < 10; i++) {
             pool.utf8Entry("ignore: " + i);
         }
+
+        pool.bsmEntry(
+                MethodHandleDesc.ofMethod(
+                        DirectMethodHandleDesc.Kind.STATIC,
+                        ClassDesc.of(DEFAULT_NAME),
+                        DEFAULT_NAME,
+                        MethodTypeDesc.of(CD_Object, CD_MethodHandles_Lookup, CD_String, ClassDesc.of(TypeDescriptor.class.getName()))
+                ),
+                List.of()
+        );
     }
 }
