@@ -427,6 +427,7 @@ public final class PEMDecoder {
         if (tClass == PEM.class) {
             return tClass.cast(pem);
         } else if (tClass == BinaryEncodable.class) {
+            pem.clear();
             throw new ClassCastException("BinaryEncodable is not a PEM type");
         }
 
