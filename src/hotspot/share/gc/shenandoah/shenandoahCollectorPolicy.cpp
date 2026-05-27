@@ -212,8 +212,8 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
 
   size_t completed_gcs = _success_full_gcs + _success_degenerated_gcs + _success_concurrent_gcs + _success_old_gcs;
   size_t cancelled_gcs = gc_attempts - completed_gcs;
-  out->print_cr("%5zu GC attempts. %zu Completed GCs (%.2f%%). %zu Cancelled GCs (%.2f%%)",
-    gc_attempts, completed_gcs, percent_of(completed_gcs, gc_attempts), cancelled_gcs, percent_of(cancelled_gcs, gc_attempts));
+  out->print_cr("%5zu GC attempts. %zu Completed GCs (%.2f%%).",
+    gc_attempts, completed_gcs, percent_of(completed_gcs, gc_attempts));
 
   size_t explicit_requests = 0;
   size_t implicit_requests = 0;
