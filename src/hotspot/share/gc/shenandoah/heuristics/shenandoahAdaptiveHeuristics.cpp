@@ -183,14 +183,20 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
   if (abbreviated) {
     // We add adjusted gc time for abbreviated cycles only if we are still learning.
     const size_t max_learn = ShenandoahLearningSteps;
-    if (_gc_times_learned <= max_learn) {
-      // Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
-      // All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
-      // synchronization than marking, so we expect this approximation is conservative.
-      gc_time += gc_time;
+    // Assume a regular cycle takes twice as long as mark-only cycle. All the memory marked must be either evacuated or
+    // updated.  Evacuation and updating normally require less synchronization than marking, so we expect this approximation
+    // is conservative.
+    gc_time += gc_time;
+
+    // Only add adjusted abbreviated cycle times if we are still learning or if the new adjusted measurements is below the
+    // most current prediction. Workloads that have a large number of abbreviated cycles are vulnerable to overly conservative
+    // linear prediction of execution time based on learning cycles alone. This happens because any small error in the
+    // linear prediction model is amplified as the time between learning cycles and current prediction event increases.
+    if ((_gc_times_learned <= max_learn) || (gc_time < _cycles.predict_duration(_cycle_start, _margin_of_error_sd))) {
       add_sample = true;
     }
   } else {
+    // Always add non-abbreviated GC cycles times into linear prediction history.
     add_sample = true;
   }
 
