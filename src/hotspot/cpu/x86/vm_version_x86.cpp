@@ -1110,7 +1110,7 @@ void VM_Version::amd_config() {
     // platforms with native 512-bit datapath have improved implementation of
     // 64-byte load/stores and so the default threshold is set to 0 for these
     // platforms.
-    if (is_amd_avx512_datapath_server_family()) {
+    if (FLAG_IS_DEFAULT(CopyAVX3Threshold) && is_amd_avx512_datapath_server_family()) {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
     }
   }
@@ -1606,9 +1606,6 @@ void VM_Version::get_processor_features() {
     _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
   }
 
-  // in 64 bit the use of SSE2 is the minimum
-  if (UseSSE < 2) UseSSE = 2;
-
   if (UseSSE < 4) {
     clear_feature(CPU_SSE4_1);
     clear_feature(CPU_SSE4_2);
@@ -1813,7 +1810,8 @@ void VM_Version::get_processor_features() {
 }
 
 void VM_Version::log_additional_cpu_info() {
-  if (log_is_enabled(Debug, os, cpu)) {
+#ifndef PRODUCT
+  if (log_is_enabled(Info, os, cpu)) {
     LogStream ls(Log(os, cpu)::info());
     outputStream* log = &ls;
     log->print_cr("Logical CPUs per core: %u",
@@ -1863,6 +1861,7 @@ void VM_Version::log_additional_cpu_info() {
       log->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
     }
   }
+#endif // !PRODUCT
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
