@@ -1244,6 +1244,10 @@ public final class TKit {
         return System.getProperty(getConfigPropertyName(propertyName));
     }
 
+    static Optional<Boolean> getConfigBooleanProperty(String propertyName) {
+        return Optional.ofNullable(getConfigProperty(propertyName)).map(Boolean::valueOf);
+    }
+
     static String getConfigPropertyName(String propertyName) {
         return "jpackage.test." + propertyName;
     }

@@ -2023,27 +2023,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return;
         }
 
-        String appName;
-        try {
-            appName = nameFromAppImage().orElseThrow();
-        } catch (RuntimeException ex) {
-            // nameFromAppImage() can throw if an invalid app image is provided
-            // (for example, when .jpackage.xml is missing in negative tests
-            // such as ErrorTest). Ignore the failure and fall back to other
-            // name sources. We cannot call name() directly here because it may
-            // fail for tests that intentionally use an invalid app image.
-            try {
-                appName = nameFromBasicArgs().or(this::nameFromRuntimeImage)
-                        .orElseThrow();
-            } catch (NoSuchElementException ex2) {
-                // Could not determine app name. Most likely a negative test
-                // (for example, ErrorTest).
-                return;
-            }
-
-        }
-
-        final String scriptName = appName + "-dmg-setup.scpt";
         Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
         if (resourceDir == null) {
             resourceDir = TKit.createTempDirectory("resources-dir-noop-dmg-script")
@@ -2055,6 +2034,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return;
         }
 
+        final String baseName;
+        try {
+            baseName = installerName();
+        } catch (RuntimeException _) {
+            return;
+        }
+
+        final String scriptName = baseName + "-dmg-setup.scpt";
         if (Files.exists(resourceDir.resolve(scriptName))) {
             // We already have script provided. Do not overwrite it.
             return;
@@ -2082,12 +2069,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return false;
         }
 
-        // Use normal DMG script for SQE tests
-        if (TKit.getConfigProperty("SQETest") != null) {
-            return false;
-        }
-
-        return true;
+        return !ENABLE_DEFAULT_DMG_OSASCRIPT;
     }
 
     public String getPrintableCommandLine() {
@@ -2368,6 +2350,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     );
 
     public static final String DEFAULT_VERSION = "1.0";
+
+    private final static boolean ENABLE_DEFAULT_DMG_OSASCRIPT = TKit.getConfigBooleanProperty("enable-default-dmg-osascript").orElseGet(() -> {
+        return TKit.getConfigBooleanProperty("SQETest").orElse(false);
+    });
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(
