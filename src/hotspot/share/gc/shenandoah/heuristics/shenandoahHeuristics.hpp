@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -83,7 +83,7 @@ private:
   double _most_recent_planned_sleep_interval;
 
 protected:
-  static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
+  static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
   bool _start_gc_is_pending;              // True denotes that GC has been triggered, so no need to trigger again.
   size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
@@ -181,7 +181,6 @@ protected:
 
   size_t _gc_times_learned;
   intx _gc_time_penalties;
-  TruncatedSeq* _gc_cycle_time_history;
 
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
@@ -228,6 +227,10 @@ public:
   virtual void start_idle_span();
   virtual void compute_headroom_adjustment() {
     // Default implementation does nothing.
+  }
+
+  double cycle_start_time_seconds() const {
+    return _cycle_start;
   }
 
   virtual void record_cycle_start();
@@ -277,11 +280,6 @@ public:
 
   double elapsed_cycle_time() const;
   double elapsed_degenerated_cycle_time() const;
-
-  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) {
-    // do nothing
-    return 0;
-  }
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);

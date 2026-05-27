@@ -466,6 +466,17 @@ void ShenandoahAsserts::assert_not_in_cset_loc(void* interior_loc, const char* f
   }
 }
 
+void ShenandoahAsserts::assert_in_young(void* interior_loc, oop obj, const char* file, int line) {
+  assert_correct(interior_loc, obj, file, line);
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->heap_region_containing(obj)->is_young()) {
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_in_young failed",
+                  "Object should be in young region",
+                  file, line);
+  }
+}
+
 void ShenandoahAsserts::print_rp_failure(const char *label, BoolObjectClosure* actual,
                                          const char *file, int line) {
   ShenandoahMessageBuffer msg("%s\n", label);
