@@ -101,6 +101,7 @@ public:
   }
 
   uint32_t count() const {
+    precond(_initialized);
     return _id_to_node_size;
   }
 
