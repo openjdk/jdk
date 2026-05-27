@@ -26,8 +26,8 @@
 #include "jni.h"
 #include "AlphaMath.h"
 
-JNIEXPORT unsigned char mul8table[256][256];
-JNIEXPORT unsigned char div8table[256][256];
+JNIEXPORT unsigned char mul8table[256][256] = { { 0 } };
+JNIEXPORT unsigned char div8table[256][256] = { { 0 } };
 
 void initAlphaTables()
 {
