@@ -79,9 +79,9 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
         // Keep bootstrap method table lookup independent of recursive content hash computation
         int argumentsHash = 1;
         for (LoadableConstantEntry argument : arguments) {
-            argumentsHash = 31 * argumentsHash + argument.index();
+            argumentsHash = 31 * argumentsHash + ((AbstractPoolEntry) argument).poolHash();
         }
-        return (31 * handle.index() + argumentsHash) | AbstractPoolEntry.NON_ZERO;
+        return (31 * handle.poolHash() + argumentsHash) | AbstractPoolEntry.NON_ZERO;
     }
 
     private static int computeContentHashCode(MethodHandleEntryImpl handle,
