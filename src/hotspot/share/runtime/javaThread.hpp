@@ -788,10 +788,6 @@ public:
     return _is_in_vthread_transition || _is_disable_suspend || _is_in_java_upcall || _jvmti_events_disabled != 0;
   }
 
-  bool should_defer_self_suspend() const {
-    return _is_disable_suspend || _is_vthread_transition_disabler || jni_deferred_suspension();
-  }
-
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
 
