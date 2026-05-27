@@ -2183,6 +2183,10 @@ void os::print_os_info(outputStream* st) {
     st->cr();
   }
 
+  if (os::Linux::print_numa_info(st)) {
+    st->cr();
+  }
+
   VM_Version::print_platform_virtualization_info(st);
 
   os::Linux::print_steal_info(st);
@@ -2620,6 +2624,82 @@ bool os::Linux::print_container_info(outputStream* st) {
   }
 
   return true;
+}
+
+#define SYS_DEVICES_NODE "/sys/devices/system/node"
+
+static size_t read_sysfs_file(const char *path, char *buf, size_t sz) {
+  FILE* f = os::fopen(path, "r");
+  if (f == nullptr) return 0;
+  size_t n = fread(buf, 1, sz - 1, f);
+  fclose(f);
+  buf[n] = '\0';
+  while (n > 0 && (buf[n-1] == '\n' || buf[n-1] == '\r')) buf[--n] = '\0';
+  return n;
+}
+
+static void print_numa_memory_info(outputStream* st, int node) {
+  char path[256], line[256];
+  long long mem_total = -1, mem_free = -1;
+  os::snprintf_checked(path, sizeof(path), SYS_DEVICES_NODE "/node%d/meminfo", node);
+  FILE* f = os::fopen(path, "r");
+  if (f == nullptr) {
+    return;
+  }
+
+  while (fgets(line, sizeof(line), f)) {
+    long long mval;
+    if (sscanf(line, "Node %*d MemTotal: %lld kB", &mval) == 1) mem_total = mval;
+    if (sscanf(line, "Node %*d MemFree: %lld kB",  &mval) == 1) mem_free  = mval;
+  }
+  fclose(f);
+
+  if (mem_total >= 0) { st->print_cr("  mem size: %lld kB", mem_total); }
+  if (mem_free >= 0) { st->print_cr("  mem free: %lld kB", mem_free); }
+}
+
+static void print_numa_cpu_list(outputStream* st, int node) {
+  char path[256], buf[1024];
+  os::snprintf_checked(path, sizeof(path), SYS_DEVICES_NODE "/node%d/cpulist", node);
+  if (read_sysfs_file(path, buf, sizeof(buf)) > 0) {
+    st->print_cr("  cpus: %s", buf);
+  } else {
+    st->print_cr("  cpus: (unavailable)");
+  }
+}
+
+bool os::Linux::print_numa_info(outputStream* st) {
+  if (UseNUMA) {
+    DIR* dirp = os::opendir(SYS_DEVICES_NODE);
+    int node_count = 0;
+    struct dirent *e;
+    bool first = true;
+
+    if (dirp == nullptr) {
+      return false;
+    }
+
+    while ((e = os::readdir(dirp)) != nullptr) {
+      // must be 'node<digit>'
+      if (strncmp(e->d_name, "node", 4) != 0 || !isdigit((unsigned char)e->d_name[4])) continue;
+      int node = atoi(e->d_name + 4);
+      if (first) {
+        st->print_cr(""); first = false;
+      }
+      st->print_cr("NUMA node %d", node);
+      print_numa_cpu_list(st, node);
+      print_numa_memory_info(st, node);
+      node_count++;
+    }
+    os::closedir(dirp);
+
+    if (node_count == 0) {
+      return false;
+    }
+    st->print_cr("Total NUMA node count: %d", node_count);
+    return true;
+  }
+  return false;
 }
 
 void os::Linux::print_steal_info(outputStream* st) {
