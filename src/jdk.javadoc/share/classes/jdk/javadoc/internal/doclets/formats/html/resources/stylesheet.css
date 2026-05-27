@@ -210,7 +210,7 @@
         --hairline-border-color: #888888;
     }
     :root[data-theme="theme-dark"] {
-        --hairline-border-color: #808080;
+        --hairline-border-color: #6c6c6c;
     }
 }
 /*
@@ -1175,7 +1175,7 @@ div.block {
 }
 .block {
     display:block;
-    margin:0 10px 10px 0;
+    margin:0 10px 5px 0;
     color:var(--block-text-color);
 }
 .deprecated-label, .description-from-type-label, .implementation-label, .member-name-link,
