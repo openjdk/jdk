@@ -1681,7 +1681,7 @@ public class Float16Vector128Tests extends AbstractVectorTest {
 
     static short scalar_neg(short a) {
         Float16 at = shortBitsToFloat16(a);
-        return float16ToRawShortBits(Float16.valueOf(-at.floatValue()));
+        return float16ToRawShortBits(Float16.negate(at));
     }
 
     static short scalar_sin(short a) {

@@ -2251,7 +2251,7 @@ relativeError));
 
     static $type$ scalar_neg($type$ a) {
         Float16 at = shortBitsToFloat16(a);
-        return float16ToRawShortBits(Float16.valueOf(-at.floatValue()));
+        return float16ToRawShortBits(Float16.negate(at));
     }
 
     static $type$ scalar_sin($type$ a) {

@@ -822,7 +822,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     private static UnaryOperation<Float16Vector, VectorMask<Float16>> unaryOperations(int opc_) {
         switch (opc_) {
             case VECTOR_OP_NEG: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> (float) -a);
+                    v0.uOp(m, (i, a) -> Float16.negate(Float16.valueOf(a)).floatValue());
             case VECTOR_OP_ABS: return (v0, m) ->
                     v0.uOp(m, (i, a) -> (float) Math.abs(a));
             case VECTOR_OP_SIN: return (v0, m) ->

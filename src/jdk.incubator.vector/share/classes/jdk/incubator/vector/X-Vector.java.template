@@ -914,8 +914,13 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
 
     private static UnaryOperation<$abstractvectortype$, VectorMask<$Boxtype$>> unaryOperations(int opc_) {
         switch (opc_) {
+#if[FP16]
+            case VECTOR_OP_NEG: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> Float16.negate(Float16.valueOf(a)).floatValue());
+#else[FP16]
             case VECTOR_OP_NEG: return (v0, m) ->
                     v0.uOp(m, (i, a) -> ($fallbacktype$) -a);
+#end[FP16]
             case VECTOR_OP_ABS: return (v0, m) ->
                     v0.uOp(m, (i, a) -> ($fallbacktype$) Math.abs(a));
 #if[!FP]
