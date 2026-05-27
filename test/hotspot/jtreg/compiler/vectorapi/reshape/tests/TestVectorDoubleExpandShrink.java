@@ -50,7 +50,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(failOn = REINTERPRET_NODE)
+    @IR(failOn = IRNode.VECTOR_REINTERPRET_B)
     public static void testB64toB256(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC64, BSPEC256, input, output);
     }
@@ -61,7 +61,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(failOn = REINTERPRET_NODE)
+    @IR(failOn = IRNode.VECTOR_REINTERPRET_B)
     public static void testB64toB512(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC64, BSPEC512, input, output);
     }
@@ -85,7 +85,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(failOn = REINTERPRET_NODE)
+    @IR(failOn = IRNode.VECTOR_REINTERPRET_B)
     public static void testB128toB256(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC128, BSPEC256, input, output);
     }
@@ -96,7 +96,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(failOn = REINTERPRET_NODE)
+    @IR(failOn = IRNode.VECTOR_REINTERPRET_B)
     public static void testB128toB512(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC128, BSPEC512, input, output);
     }
@@ -107,7 +107,8 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "2"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_8, "1",
+                  IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_32, "1"})
     public static void testB256toB64(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC256, BSPEC64, input, output);
     }
@@ -118,7 +119,8 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "2"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_16, "1",
+                  IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_32, "1"})
     public static void testB256toB128(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC256, BSPEC128, input, output);
     }
@@ -129,7 +131,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(failOn = REINTERPRET_NODE)
+    @IR(failOn = IRNode.VECTOR_REINTERPRET_B)
     public static void testB256toB512(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC256, BSPEC512, input, output);
     }
@@ -140,7 +142,8 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "2"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_8, "1",
+                  IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_64, "1"})
     public static void testB512toB64(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC512, BSPEC64, input, output);
     }
@@ -151,7 +154,8 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "2"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_16, "1",
+                  IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_64, "1"})
     public static void testB512toB128(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC512, BSPEC128, input, output);
     }
@@ -162,7 +166,8 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "2"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_32, "1",
+                  IRNode.VECTOR_REINTERPRET_B, IRNode.VECTOR_SIZE_64, "1"})
     public static void testB512toB256(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC512, BSPEC256, input, output);
     }
