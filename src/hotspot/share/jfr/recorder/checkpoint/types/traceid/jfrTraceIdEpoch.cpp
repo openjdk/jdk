@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrOopTraceId.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -64,4 +67,19 @@ void JfrTraceIdEpoch::reset_method_tracer_tag_state() {
 
 bool JfrTraceIdEpoch::has_method_tracer_changed_tag_state() {
   return AtomicAccess::load_acquire(&_method_tracer_state);
+}
+
+#ifdef ASSERT
+static void assert_epoch_supported_type(oop obj) {
+  assert(obj != nullptr, "invariant");
+  assert(obj->is_instance(), "invariant");
+  const InstanceKlass* const ik = InstanceKlass::cast(obj->klass());
+  assert(ik != nullptr, "invariant");
+  assert(vmSymbols::find_sid(ik->name()) == vmSymbolID::java_lang_reflect_Field_enum, "invariant");
+}
+#endif
+
+bool JfrTraceIdEpoch::try_update(oop obj) {
+  DEBUG_ONLY(assert_epoch_supported_type(obj);)
+  return JfrOopTraceId<java_lang_reflect_Field>::cas_epoch(obj);
 }
