@@ -58,6 +58,7 @@ class CheckedExceptionElement;
 class LocalVariableTableElement;
 class AdapterHandlerEntry;
 class MethodData;
+class MethodDataEntry;
 class MethodCounters;
 class MethodTrainingData;
 class ConstMethod;
@@ -344,7 +345,12 @@ class Method : public Metadata {
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
+private:
+  static MethodData* create_profiling_method_data(const methodHandle& method, TRAPS);
+
+public:
   static void build_profiling_method_data(const methodHandle& method, TRAPS);
+  static void build_specialized_profiling_method_data(const methodHandle& method, MethodDataEntry* md_entry, TRAPS);
   static bool install_training_method_data(const methodHandle& method);
   static MethodCounters* build_method_counters(Thread* current, Method* m);
 
