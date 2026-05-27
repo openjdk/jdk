@@ -85,7 +85,8 @@ class PoolEntryHashCodeTest {
         ConstantPoolBuilder pool1 = ConstantPoolBuilder.of();
         ConstantPoolBuilder pool2 = ConstantPoolBuilder.of();
 
-        // Prefill the pools with some rubbish entries to make
+        // Prefill the pools with some rubbish entries to offset
+        // the indices so that the index-based hash codes differ
         prefillWithGarbage(pool1);
 
         testEntry(Utf8Entry.class, pool1, pool2, pool -> pool.utf8Entry("Test Utf8Entry"));
