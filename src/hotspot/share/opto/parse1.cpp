@@ -422,6 +422,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // Init some variables
   _caller = caller;
   _method = parse_method;
+  _method_data = ciEnv::current()->specialized_method_data(parse_method, caller);
   _expected_uses = expected_uses;
   _depth = 1 + (caller->has_method() ? caller->depth() : 0);
   _wrote_final = false;
@@ -485,7 +486,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   // Accumulate deoptimization counts.
   // (The range_check and store_check counts are checked elsewhere.)
-  ciMethodData* md = method()->method_data();
+  ciMethodData* md = method_data();
   for (uint reason = 0; reason < md->trap_reason_limit(); reason++) {
     uint md_count = md->trap_count(reason);
     if (md_count != 0) {
@@ -1576,7 +1577,7 @@ void Parse::do_one_block() {
   iter().reset_to_bci(block()->start());
 
   if (ProfileExceptionHandlers && block()->is_handler()) {
-    ciMethodData* methodData = method()->method_data();
+    ciMethodData* methodData = method_data();
     if (methodData->is_mature()) {
       ciBitData data = methodData->exception_handler_bci_to_data(block()->start());
       if (!data.exception_handler_entered() || StressPrunedExceptionHandlers) {

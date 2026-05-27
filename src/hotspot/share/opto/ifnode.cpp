@@ -887,10 +887,10 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
       // will be changed and the state of the dominating If will be
       // used. Checked that we didn't apply this transformation in a
       // previous compilation and it didn't cause too many traps
-      ciMethod* dom_method = dom_unc->jvms()->method();
+      ciMethodData* dom_md = dom_unc->jvms()->method_data();
       int dom_bci = dom_unc->jvms()->bci();
-      if (!igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_unstable_fused_if) &&
-          !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check) &&
+      if (!igvn->C->too_many_traps(dom_md, dom_bci, Deoptimization::Reason_unstable_fused_if) &&
+          !igvn->C->too_many_traps(dom_md, dom_bci, Deoptimization::Reason_range_check) &&
           // Return true if c2 manages to reconcile with UnstableIf optimization. See the comments for it.
           igvn->C->remove_unstable_if_trap(dom_unc, true/*yield*/)) {
         success = unc_proj->as_IfProj();
@@ -1307,7 +1307,7 @@ bool IfNode::is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) cons
       int trap_request = unc->uncommon_trap_request();
       Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
 
-      if (igvn->C->too_many_traps(dom_unc->jvms()->method(), dom_unc->jvms()->bci(), reason)) {
+      if (igvn->C->too_many_traps(dom_unc->jvms()->method_data(), dom_unc->jvms()->bci(), reason)) {
         return false;
       }
 

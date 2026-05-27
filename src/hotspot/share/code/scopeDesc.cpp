@@ -72,6 +72,7 @@ void ScopeDesc::decode_body() {
     // approximate queries.  Decode a reasonable frame.
     _sender_decode_offset = DebugInformationRecorder::serialized_null;
     _method = _code->method();
+    _specialized_method_data = nullptr;
     _bci = InvocationEntryBci;
     _locals_decode_offset = DebugInformationRecorder::serialized_null;
     _expressions_decode_offset = DebugInformationRecorder::serialized_null;
@@ -82,6 +83,7 @@ void ScopeDesc::decode_body() {
 
     _sender_decode_offset = stream->read_int();
     _method = stream->read_method();
+    _specialized_method_data = stream->read_method_data();
     _bci    = stream->read_bci();
 
     // decode offsets for body and sender

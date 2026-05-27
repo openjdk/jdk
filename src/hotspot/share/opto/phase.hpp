@@ -33,6 +33,7 @@ class Node;
 class PhaseGVN;
 class Compile;
 class ciMethod;
+class ciMethodData;
 
 //------------------------------Phase------------------------------------------
 // Most optimizations are done in Phases.  Creating a phase does any long
@@ -156,7 +157,7 @@ protected:
   // Object; if you wish to check an Object you need to load the Object's
   // class prior to coming here.
   // Used in GraphKit and PhaseMacroExpand
-  static Node* gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn, ciMethod* method, int bci);
+  static Node* gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn, ciMethod* method, ciMethodData* md, int bci);
 
 public:
   Compile * C;

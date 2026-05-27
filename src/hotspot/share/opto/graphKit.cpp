@@ -128,6 +128,7 @@ bool GraphKit::jvms_in_sync() const {
     return true;
   }
   if (jvms()->method() != parse->method())    return false;
+  if (jvms()->method_data() != parse->method_data())    return false;
   if (jvms()->bci()    != parse->bci())       return false;
   int jvms_sp = jvms()->sp();
   if (jvms_sp          != parse->sp())        return false;
@@ -633,7 +634,7 @@ bool GraphKit::is_builtin_throw_hot(Deoptimization::DeoptReason reason) {
     // Also, if there is a local exception handler, treat all throws
     // as hot if there has been at least one in this method.
     if (C->trap_count(reason) != 0 &&
-        method()->method_data()->trap_count(reason) != 0 &&
+        method_data()->trap_count(reason) != 0 &&
         has_exception_handler()) {
       return true;
     }
@@ -648,7 +649,7 @@ bool GraphKit::builtin_throw_too_many_traps(Deoptimization::DeoptReason reason,
       return false; // no traps; throws preallocated exception instead
     }
     ciMethod* m = Deoptimization::reason_is_speculate(reason) ? C->method() : nullptr;
-    if (method()->method_data()->trap_recompiled_at(bci(), m) ||
+    if (method_data()->trap_recompiled_at(bci(), m) ||
         C->too_many_traps(reason)) {
       return true;
     }
@@ -1452,7 +1453,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
   } else if (!assert_null &&
              (ImplicitNullCheckThreshold > 0) &&
              method() != nullptr &&
-             (method()->method_data()->trap_count(reason)
+             (method_data()->trap_count(reason)
               >= (uint)ImplicitNullCheckThreshold)) {
     ok_prob =  PROB_LIKELY_MAG(3);
   }
@@ -2390,8 +2391,8 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
   if ((java_bc() == Bytecodes::_checkcast ||
        java_bc() == Bytecodes::_instanceof ||
        java_bc() == Bytecodes::_aastore) &&
-      method()->method_data()->is_mature()) {
-    ciProfileData* data = method()->method_data()->bci_to_data(bci());
+      method_data()->is_mature()) {
+    ciProfileData* data = method_data()->bci_to_data(bci());
     if (data != nullptr) {
       if (!data->as_BitData()->null_seen()) {
         ptr_kind = ProfileNeverNull;
@@ -2433,7 +2434,7 @@ void GraphKit::record_profiled_arguments_for_speculation(ciMethod* dest_method, 
     if (is_reference_type(targ->basic_type())) {
       ProfilePtrKind ptr_kind = ProfileMaybeNull;
       ciKlass* better_type = nullptr;
-      if (method()->argument_profiled_type(bci(), i, better_type, ptr_kind)) {
+      if (method()->argument_profiled_type(bci(), i, method_data(), better_type, ptr_kind)) {
         record_profile_for_speculation(argument(j), better_type, ptr_kind);
       }
       i++;
@@ -2453,7 +2454,7 @@ void GraphKit::record_profiled_parameters_for_speculation() {
     if (_gvn.type(local(i))->isa_oopptr()) {
       ProfilePtrKind ptr_kind = ProfileMaybeNull;
       ciKlass* better_type = nullptr;
-      if (method()->parameter_profiled_type(j, better_type, ptr_kind)) {
+      if (method()->parameter_profiled_type(j, method_data(), better_type, ptr_kind)) {
         record_profile_for_speculation(local(i), better_type, ptr_kind);
       }
       j++;
@@ -2471,7 +2472,7 @@ void GraphKit::record_profiled_return_for_speculation() {
   }
   ProfilePtrKind ptr_kind = ProfileMaybeNull;
   ciKlass* better_type = nullptr;
-  if (method()->return_profiled_type(bci(), better_type, ptr_kind)) {
+  if (method()->return_profiled_type(bci(), method_data(), better_type, ptr_kind)) {
     // If profiling reports a single type for the return value,
     // feed it to the type system so it can propagate it as a
     // speculative type
@@ -2762,7 +2763,7 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
 // Object; if you wish to check an Object you need to load the Object's class
 // prior to coming here.
 Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn,
-                               ciMethod* method, int bci) {
+                               ciMethod* method, ciMethodData* md, int bci) {
   Compile* C = gvn.C;
   if ((*ctrl)->is_top()) {
     return C->top();
@@ -2868,7 +2869,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // If we might perform an expensive check, first try to take advantage of profile data that was attached to the
   // SubTypeCheck node
   if (might_be_cache && method != nullptr && VM_Version::profile_all_receivers_at_type_check()) {
-    ciCallProfile profile = method->call_profile_at_bci(bci);
+    ciCallProfile profile = method->call_profile_at_bci(bci, md);
     float total_prob = 0;
     for (int i = 0; profile.has_receiver(i); ++i) {
       float prob = profile.receiver_prob(i);
@@ -2983,12 +2984,12 @@ Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
       subklass = load_object_klass(obj_or_subklass);
     }
 
-    Node* n = Phase::gen_subtype_check(subklass, superklass, &ctrl, mem, _gvn, method(), bci());
+    Node* n = Phase::gen_subtype_check(subklass, superklass, &ctrl, mem, _gvn, method(), method_data(), bci());
     set_control(ctrl);
     return n;
   }
 
-  Node* check = _gvn.transform(new SubTypeCheckNode(C, obj_or_subklass, superklass, method(), bci()));
+  Node* check = _gvn.transform(new SubTypeCheckNode(C, obj_or_subklass, superklass, method(), method_data(), bci()));
   Node* bol = _gvn.transform(new BoolNode(check, BoolTest::eq));
   IfNode* iff = create_and_xform_if(control(), bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
   set_control(_gvn.transform(new IfTrueNode(iff)));
@@ -3251,7 +3252,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 
   ciProfileData* data = nullptr;
   if (java_bc() == Bytecodes::_instanceof) {  // Only for the bytecode
-    data = method()->method_data()->bci_to_data(bci());
+    data = method_data()->bci_to_data(bci());
   }
   bool speculative_not_null = false;
   bool never_see_null = (ProfileDynamicTypes  // aggressive use of profile
@@ -3384,7 +3385,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
     assert(java_bc() == Bytecodes::_aastore ||
            java_bc() == Bytecodes::_checkcast,
            "interpreter profiles type checks only for these BCs");
-    data = method()->method_data()->bci_to_data(bci());
+    data = method_data()->bci_to_data(bci());
     safe_for_replace = true;
   }
 

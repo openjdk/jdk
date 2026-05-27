@@ -461,13 +461,13 @@ int ciMethod::check_overflow(int c, Bytecodes::Code code) {
 // ------------------------------------------------------------------
 // ciMethod::call_profile_at_bci
 //
-// Get the ciCallProfile for the invocation of this method.
+// Get the ciCallProfile for the invocation of this method from provided method data.
 // Also reports receiver types for non-call type checks (if TypeProfileCasts).
-ciCallProfile ciMethod::call_profile_at_bci(int bci) {
+ciCallProfile ciMethod::call_profile_at_bci(int bci, ciMethodData* md) {
   ResourceMark rm;
   ciCallProfile result;
-  if (method_data() != nullptr && method_data()->is_mature()) {
-    ciProfileData* data = method_data()->bci_to_data(bci);
+  if (md != nullptr && md->is_mature()) {
+    ciProfileData* data = md->bci_to_data(bci);
     if (data != nullptr && data->is_CounterData()) {
       // Every profiled call site has a counter.
       int count = check_overflow(data->as_CounterData()->count(), java_code_at_bci(bci));
@@ -573,14 +573,15 @@ void ciMethod::assert_call_type_ok(int bci) {
  *
  * @param [in]bci         bci of the call
  * @param [in]i           argument number
+ * @param [in]md          method data of this method
  * @param [out]type       profiled type of argument, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind) {
-  if (MethodData::profile_parameters() && method_data() != nullptr && method_data()->is_mature()) {
-    ciProfileData* data = method_data()->bci_to_data(bci);
+bool ciMethod::argument_profiled_type(int bci, int i, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind) {
+  if (MethodData::profile_parameters() && md != nullptr && md->is_mature()) {
+    ciProfileData* data = md->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_VirtualCallTypeData()) {
         assert_virtual_call_type_ok(bci);
@@ -611,14 +612,15 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtr
  * the call at bci bci
  *
  * @param [in]bci         bci of the call
+ * @param [in]md          method data of this method
  * @param [out]type       profiled type of argument, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind) {
-  if (MethodData::profile_return() && method_data() != nullptr && method_data()->is_mature()) {
-    ciProfileData* data = method_data()->bci_to_data(bci);
+bool ciMethod::return_profiled_type(int bci, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind) {
+  if (MethodData::profile_return() && md != nullptr && md->is_mature()) {
+    ciProfileData* data = md->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_VirtualCallTypeData()) {
         assert_virtual_call_type_ok(bci);
@@ -646,14 +648,15 @@ bool ciMethod::return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr
  * Check whether profiling provides a type for the parameter i
  *
  * @param [in]i           parameter number
+ * @param [in]md          method data of this method
  * @param [out]type       profiled type of parameter, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind) {
-  if (MethodData::profile_parameters() && method_data() != nullptr && method_data()->is_mature()) {
-    ciParametersTypeData* parameters = method_data()->parameters_type_data();
+bool ciMethod::parameter_profiled_type(int i, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind) {
+  if (MethodData::profile_parameters() && md != nullptr && md->is_mature()) {
+    ciParametersTypeData* parameters = md->parameters_type_data();
     if (parameters != nullptr && i < parameters->number_of_parameters()) {
       type = parameters->valid_parameter_type(i);
       ptr_kind = parameters->parameter_ptr_kind(i);

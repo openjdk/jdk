@@ -65,6 +65,7 @@ class GraphKit : public Phase {
   SafePointNode*    _exceptions;// Parser map(s) for exception state(s)
   int               _bci;       // JVM Bytecode Pointer
   ciMethod*         _method;    // JVM Current Method
+  ciMethodData*     _method_data;    // JVM Current Method Data (Specialized if exists)
   BarrierSetC2*     _barrier_set;
 
  private:
@@ -139,12 +140,14 @@ class GraphKit : public Phase {
   int                bci()      const { return _bci; }
   Bytecodes::Code    java_bc()  const;
   ciMethod*          method()   const { return _method; }
+  ciMethodData*          method_data()   const { return _method_data; }
 
   void set_jvms(JVMState* jvms)       { set_map(jvms->map());
                                         assert(jvms == this->jvms(), "sanity");
                                         _sp = jvms->sp();
                                         _bci = jvms->bci();
-                                        _method = jvms->has_method() ? jvms->method() : nullptr; }
+                                        _method = jvms->has_method() ? jvms->method() : nullptr;
+                                        _method_data = jvms->has_method() ? jvms->method_data() : nullptr; }
   void set_map(SafePointNode* m)      { _map = m; DEBUG_ONLY(verify_map()); }
   void set_sp(int sp)                 { assert(sp >= 0, "sp must be non-negative: %d", sp); _sp = sp; }
   void clean_stack(int from_sp); // clear garbage beyond from_sp to top
@@ -427,7 +430,7 @@ class GraphKit : public Phase {
 
   // Check for unique class for receiver at call
   ciKlass* profile_has_unique_klass() {
-    ciCallProfile profile = method()->call_profile_at_bci(bci());
+    ciCallProfile profile = method()->call_profile_at_bci(bci(), method_data());
     if (profile.count() >= 0 &&         // no cast failures here
         profile.has_receiver(0) &&
         profile.morphism() == 1) {
@@ -751,16 +754,16 @@ class GraphKit : public Phase {
   // Report if a trap was recorded, and/or PerMethodTrapLimit was exceeded.
   // If there is no MDO at all, report no trap unless told to assume it.
   bool too_many_traps(Deoptimization::DeoptReason reason) {
-    return C->too_many_traps(method(), bci(), reason);
+    return C->too_many_traps(method_data(), bci(), reason);
   }
 
   // Report if there were too many recompiles at the current method and bci.
   bool too_many_recompiles(Deoptimization::DeoptReason reason) {
-    return C->too_many_recompiles(method(), bci(), reason);
+    return C->too_many_recompiles(method_data(), bci(), reason);
   }
 
   bool too_many_traps_or_recompiles(Deoptimization::DeoptReason reason) {
-      return C->too_many_traps_or_recompiles(method(), bci(), reason);
+      return C->too_many_traps_or_recompiles(method_data(), bci(), reason);
   }
 
   // Returns the object (if any) which was created the moment before.

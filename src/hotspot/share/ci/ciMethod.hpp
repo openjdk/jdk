@@ -269,12 +269,12 @@ class ciMethod : public ciMetadata {
 
   ciTypeFlow*   get_flow_analysis();
   ciTypeFlow*   get_osr_flow_analysis(int osr_bci);  // alternate entry point
-  ciCallProfile call_profile_at_bci(int bci);
+  ciCallProfile call_profile_at_bci(int bci, ciMethodData* md);
 
   // Does type profiling provide any useful information at this point?
-  bool          argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
-  bool          parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
-  bool          return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind);
+  bool          argument_profiled_type(int bci, int i, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind);
+  bool          parameter_profiled_type(int i, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind);
+  bool          return_profiled_type(int bci, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind);
 
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);

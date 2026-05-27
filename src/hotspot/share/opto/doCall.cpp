@@ -94,6 +94,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   assert(callee != nullptr, "failed method resolution");
 
   ciMethod*       caller      = jvms->method();
+  ciMethodData*       caller_md      = jvms->method_data();
   int             bci         = jvms->bci();
   Bytecodes::Code bytecode    = caller->java_code_at_bci(bci);
   ciMethod*       orig_callee = caller->get_method_at_bci(bci);
@@ -112,7 +113,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Note: When we get profiling during stage-1 compiles, we want to pull
   // from more specific profile data which pertains to this inlining.
   // Right now, ignore the information in jvms->caller(), and do method[bci].
-  ciCallProfile profile = caller->call_profile_at_bci(bci);
+  ciCallProfile profile = caller->call_profile_at_bci(bci, caller_md);
 
   // See how many times this site has been invoked.
   int site_count = profile.count();
@@ -235,7 +236,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
       int morphism = profile.morphism();
       if (speculative_receiver_type != nullptr) {
-        if (!too_many_traps_or_recompiles(caller, bci, Deoptimization::Reason_speculate_class_check)) {
+        if (!too_many_traps_or_recompiles(caller_md, bci, Deoptimization::Reason_speculate_class_check)) {
           // We have a speculative type, we should be able to resolve
           // the call. We do that before looking at the profiling at
           // this invoke because it may lead to bimorphic inlining which
@@ -291,7 +292,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
                                                ? Deoptimization::Reason_bimorphic
                                                : Deoptimization::reason_class_check(speculative_receiver_type != nullptr));
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != nullptr)) &&
-              !too_many_traps_or_recompiles(caller, bci, reason)
+              !too_many_traps_or_recompiles(caller_md, bci, reason)
              ) {
             // Generate uncommon trap for class check failure path
             // in case of monomorphic or bimorphic virtual call site.

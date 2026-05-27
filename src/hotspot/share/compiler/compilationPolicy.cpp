@@ -777,7 +777,9 @@ void CompilationPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
     if (PrintTieredEvents) {
       print_event(REPROFILE, sd->method(), sd->method(), InvocationEntryBci, CompLevel_none);
     }
-    MethodData* mdo = sd->method()->method_data();
+    MethodData* mdo = sd->specialized_method_data() != nullptr ?
+      sd->specialized_method_data() :
+      sd->method()->method_data();
     if (mdo != nullptr) {
       mdo->reset_start_counters();
     }
