@@ -176,7 +176,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   __ mov(SP, FP);
   __ pop(RegisterSet(FP) | RegisterSet(PC));
 
-  masm->publish_instructions();
+  masm->invalidate_icache();
   return UncommonTrapBlob::create(&buffer, nullptr, 2 /* LR+FP */);
 }
 
@@ -280,7 +280,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // -------------
   // make sure all code is generated
-  masm->publish_instructions();
+  masm->invalidate_icache();
 
   return ExceptionBlob::create(&buffer, oop_maps, framesize_in_words);
 }

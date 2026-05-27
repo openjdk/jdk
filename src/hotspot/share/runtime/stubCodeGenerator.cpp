@@ -291,7 +291,7 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubId stub_id) : StubCodeMa
 }
 
 StubCodeMark::~StubCodeMark() {
-  _cgen->assembler()->publish_instructions();
+  _cgen->assembler()->invalidate_icache();
   _cdesc->set_end(_cgen->assembler()->pc());
   assert(StubCodeDesc::_list == _cdesc, "expected order on list");
 #ifndef PRODUCT

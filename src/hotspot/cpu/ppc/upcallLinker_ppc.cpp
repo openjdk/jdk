@@ -243,7 +243,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  _masm->publish_instructions();
+  _masm->invalidate_icache();
 
 #ifndef PRODUCT
   stringStream ss;

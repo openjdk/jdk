@@ -374,5 +374,5 @@ void DowncallLinker::StubGenerator::generate() {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ publish_instructions();
+  __ invalidate_icache();
 }
