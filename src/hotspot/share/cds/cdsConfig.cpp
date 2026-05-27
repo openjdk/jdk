@@ -139,10 +139,10 @@ const char* CDSConfig::default_archive_path() {
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
     }
-    if (UseCompactObjectHeaders) {
-      // Note that generation of xxx_coh.jsa variants require
-      // --enable-cds-archive-coh at build time
-      tmp.print_raw("_coh");
+    if (!UseCompactObjectHeaders) {
+      // Note that generation of xxx_nocoh.jsa variants require
+      // --enable-cds-archive-nocoh at build time
+      tmp.print_raw("_nocoh");
     }
 #endif
     tmp.print_raw(".jsa");
