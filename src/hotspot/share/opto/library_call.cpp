@@ -1129,7 +1129,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg2 = argument(1);
 
   const TypeAryPtr* mtype = (ae == StrIntrinsicNode::UU) ? TypeAryPtr::CHARS : TypeAryPtr::BYTES;
-  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
+  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), mtype, arg1, arg2, ae)));
   clear_upper_avx();
 
   return true;
@@ -4311,7 +4311,7 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
-    *obj = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
+    *obj = _gvn.transform(new CheckCastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
   }
   return ctrl;
 }
@@ -6138,11 +6138,14 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   // 'src_start' points to src array + scaled offset
   // 'dst_start' points to dst array + scaled offset
 
-  const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length, ascii);
+  // See GraphKit::compress_string
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  Node* enc = new EncodeISOArrayNode(control(), mem, adr_type, src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
-  set_memory(res_mem, mtype);
+  memory_effect(res_mem, src_type, dst_type);
+
   set_result(enc);
   clear_upper_avx();
 
@@ -6621,7 +6624,8 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   // Resolve address of first element
   Node* array_start = array_element_address(array, offset, bt);
 
-  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+  const TypeAryPtr* in_adr_type = TypeAryPtr::get_array_body_type(bt);
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(in_adr_type), in_adr_type,
     array_start, length, initialValue, basic_type)));
   clear_upper_avx();
 
@@ -6932,7 +6936,8 @@ bool LibraryCallKit::inline_reference_get0() {
 
   DecoratorSet decorators = IN_HEAP | ON_WEAK_OOP_REF;
   Node* result = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
-                                        decorators, /*is_static*/ false, nullptr);
+                                        decorators, /*is_static*/ false,
+                                        env()->Reference_klass());
   if (result == nullptr) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -6955,7 +6960,8 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
   DecoratorSet decorators = IN_HEAP | AS_NO_KEEPALIVE;
   decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
   Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
-                                          decorators, /*is_static*/ false, nullptr);
+                                          decorators, /*is_static*/ false,
+                                          env()->Reference_klass());
   if (referent == nullptr) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -7042,8 +7048,6 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
     assert(tinst != nullptr, "obj is null");
     assert(tinst->is_loaded(), "obj is not loaded");
     fromKls = tinst->instance_klass();
-  } else {
-    assert(is_static, "only for static field access");
   }
   ciField* field = fromKls->get_field_by_name(ciSymbol::make(fieldName),
                                               ciSymbol::make(fieldTypeString),

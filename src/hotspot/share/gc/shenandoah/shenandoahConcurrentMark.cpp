@@ -58,7 +58,7 @@ public:
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
-    ShenandoahSuspendibleThreadSetJoiner stsj;
+    SuspendibleThreadSetJoiner stsj;
     StringDedup::Requests requests;
     _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/,
                    ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
@@ -300,7 +300,11 @@ void ShenandoahConcurrentMark::finish_mark_work() {
     default:
       ShouldNotReachHere();
   }
-
+  if (!generation()->is_old() && heap->is_concurrent_young_mark_in_progress()) {
+    // Lastly, ensure all the invisible roots are marked.
+    ShenandoahInvisibleRootsMarkClosure cl;
+    Threads::java_threads_do(&cl);
+  }
 
   assert(task_queues()->is_empty(), "Should be empty");
 }

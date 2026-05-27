@@ -3155,13 +3155,7 @@ void IdealLoopTree::adjust_loop_exit_prob(PhaseIdealLoop *phase) {
              (bol->in(1)->Opcode() == Op_CompareAndSwapI) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapL) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapP) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapN) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeP) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndExchangeN) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapP) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahWeakCompareAndSwapN) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapP) ||
-             (bol->in(1)->Opcode() == Op_ShenandoahCompareAndSwapN)))
+             (bol->in(1)->Opcode() == Op_CompareAndSwapN)))
           return;               // Allocation loops RARELY take backedge
         // Find the OTHER exit path from the IF
         Node* ex = iff->proj_out(1-test_con);
@@ -4145,7 +4139,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   call->init_req(TypeFunc::Control,   head->init_control());
   call->init_req(TypeFunc::I_O,       C->top());       // Does no I/O.
   call->init_req(TypeFunc::Memory,    mem_phi->in(LoopNode::EntryControl));
-  call->init_req(TypeFunc::ReturnAdr, C->start()->proj_out_or_null(TypeFunc::ReturnAdr));
+  call->init_req(TypeFunc::ReturnAdr, C->top());
   Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
   _igvn.register_new_node_with_optimizer(frame);
   call->init_req(TypeFunc::FramePtr,  frame);

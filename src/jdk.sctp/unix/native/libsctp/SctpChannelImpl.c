@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,7 +389,7 @@ void handleMessage
   (JNIEnv* env, jobject resultContainerObj, struct msghdr* msg,int read,
    jboolean isEOR, struct sockaddr* sap) {
     jobject isa, resultObj;
-    struct controlData cdata[1];
+    struct controlData cdata[1] = {0};
 
     if (read == 0) {
         /* we reached EOF */

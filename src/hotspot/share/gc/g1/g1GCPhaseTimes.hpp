@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     UpdateDerivedPointers,
-#endif
+#endif // COMPILER2
     EagerlyReclaimHumongousObjects,
     ResetPartialArrayStateManager,
     ProcessEvacuationFailedRegions,
@@ -175,7 +175,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_collection_nmethod_list_cleanup_time_ms;
 
   double _cur_merge_heap_roots_time_ms;
-  // Merge refinement table time. Note that this time is included in _cur_merge_heap_roots_time_ms.
   double _cur_merge_refinement_table_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
 
@@ -190,10 +189,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_resize_heap_time_ms;
   double _cur_ref_proc_time_ms;
 
-  // Not included in _gc_pause_time_ms
   double _root_region_scan_time_ms;
-
-  double _external_accounted_time_ms;
 
   double _recorded_prepare_heap_roots_time_ms;
 
@@ -210,7 +206,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_region_register_time;
 
-  // Not included in _gc_pause_time_ms
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
 
@@ -298,7 +293,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   }
 
   void record_merge_heap_roots_time(double ms) {
-    _cur_merge_heap_roots_time_ms += ms;
+    _cur_merge_heap_roots_time_ms = ms;
   }
 
   void record_merge_refinement_table_time(double ms) {
@@ -371,10 +366,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_verify_after_time_ms(double time_ms) {
     _cur_verify_after_time_ms = time_ms;
-  }
-
-  void inc_external_accounted_time_ms(double time_ms) {
-    _external_accounted_time_ms += time_ms;
   }
 
   void record_prepare_heap_roots_time_ms(double recorded_prepare_heap_roots_time_ms) {

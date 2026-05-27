@@ -411,7 +411,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
-  resolve_oop_handle(result); // Load resolved references array itself.
+  resolve_oop_handle(result, Z_R0_scratch, Z_R1_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
@@ -2002,14 +2002,10 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
   // entry/exit events are sent for that thread to track stack
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
-  if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
-    Label jvmti_post_done;
-    MacroAssembler::load_and_test_int(Z_R0, Address(Z_thread, JavaThread::interp_only_mode_offset()));
-    z_bre(jvmti_post_done);
+  if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
     if (!native_method) push(state); // see frame::interpreter_frame_result()
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     if (!native_method) pop(state);
-    bind(jvmti_post_done);
   }
 }
 

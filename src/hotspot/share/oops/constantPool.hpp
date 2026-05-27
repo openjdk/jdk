@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/bsmAttribute.inline.hpp"
+#include "oops/bsmAttribute.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopHandle.hpp"
@@ -80,7 +80,6 @@ public:
 
 class ConstantPool : public Metadata {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
   friend class AOTConstantPoolResolver;

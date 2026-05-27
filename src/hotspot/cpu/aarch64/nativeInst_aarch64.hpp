@@ -30,9 +30,6 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciExceptions.hpp"
-#endif
 
 
 // We have interfaces for the following instructions:
@@ -97,7 +94,7 @@ protected:
 #define MACOS_WX_WRITE MACOS_AARCH64_ONLY(os::thread_wx_enable_write())
   void set_char_at(int offset, char c)     { MACOS_WX_WRITE;  *addr_at(offset) = (u_char)c; }
   void set_int_at(int offset, jint i)      { MACOS_WX_WRITE;  *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint i)     { MACOS_WX_WRITE;  *(juint*)addr_at(offset) = i; }
+  void set_uint_at(int offset, juint i)    { MACOS_WX_WRITE;  *(juint*)addr_at(offset) = i; }
   void set_ptr_at(int offset, address ptr) { MACOS_WX_WRITE;  *(address*)addr_at(offset) = ptr; }
   void set_oop_at(int offset, oop o)       { MACOS_WX_WRITE;  *(oop*)addr_at(offset) = o; }
 #undef MACOS_WX_WRITE
@@ -178,13 +175,11 @@ public:
   address destination() const;
 
   void set_destination(address dest) {
-    int offset = dest - instruction_address();
-    unsigned int insn = 0b100101 << 26;
+    int64_t offset = dest - instruction_address();
+    juint insn = 0b100101u << 26u;
     assert((offset & 3) == 0, "should be");
-    offset >>= 2;
-    offset &= (1 << 26) - 1; // mask off insn part
-    insn |= offset;
-    set_int_at(displacement_offset, insn);
+    Instruction_aarch64::spatch(reinterpret_cast<address>(&insn), 25, 0, offset >> 2);
+    set_uint_at(displacement_offset, insn);
   }
 
   void verify_alignment() { ; }
@@ -217,9 +212,6 @@ public:
   void set_destination_mt_safe(address dest);
 
   address get_trampoline();
-#if INCLUDE_JVMCI
-  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
-#endif
 };
 
 inline NativeCall* nativeCall_at(address address) {

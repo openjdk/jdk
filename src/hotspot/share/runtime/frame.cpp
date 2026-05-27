@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,17 +366,23 @@ void frame::deoptimize(JavaThread* thread) {
 
 #ifdef ASSERT
   if (thread != nullptr) {
-    frame check = thread->last_frame();
-    if (is_older(check.id())) {
-      RegisterMap map(thread,
-                      RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::include,
-                      RegisterMap::WalkContinuation::skip);
-      while (id() != check.id()) {
-        check = check.sender(&map);
+    frame fr = thread->last_frame();
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    !is_heap_frame() ? RegisterMap::WalkContinuation::skip : RegisterMap::WalkContinuation::include);
+    intptr_t* fr_id = fr.id();
+    while (id() != fr_id) {
+      fr = fr.sender(&map);
+      if (fr.is_heap_frame()) {
+        assert(is_heap_frame(), "");
+        frame derel_fr = map.stack_chunk()->derelativize(fr);
+        fr_id = derel_fr.id();
+      } else {
+        fr_id = fr.id();
       }
-      assert(check.is_deoptimized_frame(), "missed deopt");
     }
+    assert(fr.is_deoptimized_frame(), "missed deopt");
   }
 #endif // ASSERT
 }
@@ -706,12 +712,6 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         }
         st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
-#if INCLUDE_JVMCI
-        const char* jvmciName = nm->jvmci_name();
-        if (jvmciName != nullptr) {
-          st->print(" (%s)", jvmciName);
-        }
-#endif
       } else {
         st->print("J  " PTR_FORMAT, p2i(pc()));
       }
@@ -1133,22 +1133,6 @@ void frame::oops_upcall_do(OopClosure* f, const RegisterMap* map) const {
   _cb->as_upcall_stub()->oops_do(f, *this);
 }
 
-bool frame::is_deoptimized_frame() const {
-  assert(_deopt_state != unknown, "not answerable");
-  if (_deopt_state == is_deoptimized) {
-    return true;
-  }
-
-  /* This method only checks if the frame is deoptimized
-   * as in return address being patched.
-   * It doesn't care if the OP that we return to is a
-   * deopt instruction */
-  /*if (_cb != nullptr && _cb->is_nmethod()) {
-    return NativeDeoptInstruction::is_deopt_at(_pc);
-  }*/
-  return false;
-}
-
 void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
                              DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                              const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
@@ -1204,9 +1188,9 @@ void frame::verify(const RegisterMap* map) const {
       // make sure we have the right receiver type
     }
   }
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_empty(), "must be empty before verify");
-#endif
+#endif // COMPILER2
 
   if (map->update_map()) { // The map has to be up-to-date for the current frame
     oops_do_internal(&VerifyOopClosure::verify_oop, nullptr, nullptr, DerivedPointerIterationMode::_ignore, map, false);
@@ -1286,7 +1270,7 @@ public:
   }
 
   bool is_good(oop* p) {
-    return *p == nullptr || (dbg_is_safe(*p, -1) && dbg_is_safe((*p)->klass(), -1) && oopDesc::is_oop_or_null(*p));
+    return *p == nullptr || (dbg_is_safe(*p, -1) && dbg_is_safe((*p)->klass_without_asserts(), -1) && oopDesc::is_oop_or_null(*p));
   }
   void describe(FrameValues& values, int frame_no) {
     for (int i = 0; i < _oops->length(); i++) {

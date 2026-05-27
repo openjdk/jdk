@@ -223,7 +223,9 @@ ShenandoahFreeSetPartitionId ShenandoahFreeSet::prepare_to_promote_in_place(size
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
-  return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
+  const auto state = r->state();
+  return ShenandoahHeapRegion::is_empty_state(state)
+      || (ShenandoahHeapRegion::is_trash(state) && !_heap->is_concurrent_weak_root_in_progress());
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(size_t idx) const {
@@ -285,32 +287,6 @@ void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
     }
   }
   // else, old generation is already appropriately sized
-}
-
-
-void ShenandoahFreeSet::reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated) {
-  shenandoah_assert_heaplocked();
-  // Future inquiries of get_total_bytes_allocated() will return the sum of
-  //    _total_bytes_previously_allocated and _mutator_bytes_allocated_since_gc_start.
-  // Since _mutator_bytes_allocated_since_gc_start does not start at zero, we subtract initial_bytes_allocated so as
-  // to not double count these allocated bytes.
-  size_t original_mutator_bytes_allocated_since_gc_start = _mutator_bytes_allocated_since_gc_start;
-
-  // Setting _mutator_bytes_allocated_since_gc_start before _total_bytes_previously_allocated reduces the damage
-  // in the case that the control or regulator thread queries get_bytes_allocated_since_previous_sample() between
-  // the two assignments.
-  //
-  // These are not declared as volatile so the compiler or hardware may reorder the assignments.  The implementation of
-  // get_bytes_allocated_since_previous_cycle() is robust to this possibility, as are triggering heuristics.  The current
-  // implementation assumes we are better off to tolerate the very rare race rather than impose a synchronization penalty
-  // on every update and fetch.  (Perhaps it would be better to make the opposite tradeoff for improved maintainability.)
-  _mutator_bytes_allocated_since_gc_start = initial_bytes_allocated;
-  _total_bytes_previously_allocated += original_mutator_bytes_allocated_since_gc_start - initial_bytes_allocated;
-}
-
-void ShenandoahFreeSet::increase_bytes_allocated(size_t bytes) {
-  shenandoah_assert_heaplocked();
-  _mutator_bytes_allocated_since_gc_start += bytes;
 }
 
 inline idx_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId which_partition) const {
@@ -666,7 +642,7 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
 #ifdef ASSERT
     ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(idx);
     assert (in_free_set(partition, idx), "Must be in partition to remove from partition");
-    assert(r->is_empty() || r->is_trash(), "Region must be empty or trash");
+    assert(r->is_empty_or_trash(), "Region must be empty or trash");
 #endif
     _membership[int(partition)].clear_bit(idx);
   }
@@ -1227,8 +1203,6 @@ inline void ShenandoahRegionPartitions::assert_bounds_sanity() {
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
-  _total_bytes_previously_allocated(0),
-  _mutator_bytes_at_last_sample(0),
   _total_humongous_waste(0),
   _alloc_bias_weight(0),
   _total_young_used(0),
@@ -1240,8 +1214,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _young_unaffiliated_regions(0),
   _global_unaffiliated_regions(0),
   _total_young_regions(0),
-  _total_global_regions(0),
-  _mutator_bytes_allocated_since_gc_start(0)
+  _total_global_regions(0)
 {
   clear_internal();
 }
@@ -1569,7 +1542,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   // We must call try_recycle_under_lock() even if !r->is_trash().  The reason is that if r is being recycled at this
   // moment by a GC worker thread, it may appear to be not trash even though it has not yet been fully recycled.  If
   // we proceed without waiting for the worker to finish recycling the region, the worker thread may overwrite the
-  // region's affiliation with FREE after we set the region's affiliation to req.afiliation() below
+  // region's affiliation with FREE after we set the region's affiliation to req.affiliation() below
   r->try_recycle_under_lock();
   in_new_region = r->is_empty();
   if (in_new_region) {
@@ -1585,7 +1558,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
       // coalesce-and-fill processing.
       r->end_preemptible_coalesce_and_fill();
-      _heap->old_generation()->clear_cards_for(r);
     }
 #ifdef ASSERT
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
@@ -1659,7 +1631,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     if (req.is_mutator_alloc()) {
       assert(req.is_young(), "Mutator allocations always come from young generation.");
       _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
-      increase_bytes_allocated(req.actual_size() * HeapWordSize);
     } else {
       assert(req.is_gc_alloc(), "Should be gc_alloc since req wasn't mutator alloc");
 
@@ -1698,7 +1669,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     size_t waste_bytes = _partitions.retire_from_partition(orig_partition, idx, r->used());
     DEBUG_ONLY(boundary_changed = true;)
     if (req.is_mutator_alloc() && (waste_bytes > 0)) {
-      increase_bytes_allocated(waste_bytes);
+      req.set_waste(waste_bytes / HeapWordSize);
     }
   }
 
@@ -1870,15 +1841,9 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
       }
     }
     _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator, num);
-    if (waste_bytes > 0) {
-      // For humongous allocations, waste_bytes are included in total_used.  Since this is not humongous,
-      // we need to account separately for the waste_bytes.
-      increase_bytes_allocated(waste_bytes);
-    }
   }
 
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
-  increase_bytes_allocated(total_used);
   req.set_actual_size(words_size);
   // If !is_humongous, the "waste" is made availabe for new allocation
   if (waste_bytes > 0) {
@@ -2679,8 +2644,11 @@ void ShenandoahFreeSet::reduce_young_reserve(size_t adjusted_young_reserve, size
  *  1. Memory currently available within old and young
  *  2. Trashed regions currently residing in young and old, which will become available momentarily
  *  3. The value of old_generation->get_region_balance() which represents the number of regions that we plan
- *     to transfer from old generation to young generation.  Prior to each invocation of compute_young_and_old_reserves(),
- *     this value should computed by ShenandoahGenerationalHeap::compute_old_generation_balance().
+ *     to transfer from old generation to young generation. At the end of each GC cycle, we reset region_balance
+ *     to zero. As we prepare to rebuild free set at the end of update-refs, we call
+ *     ShenandoahGenerationalHeap::compute_old_generation_balance() to compute a new value of region_balance.
+ *     This allows us to expand or shrink the size of the Old Collector reserves based on anticipated needs of
+ *     the next GC cycle.
  */
 void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regions, size_t old_trashed_regions,
                                                        size_t& young_reserve_result, size_t& old_reserve_result) const {
@@ -2820,7 +2788,7 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
         // be collected in the near future.
         if (r->is_trash() || !r->is_affiliated()) {
           // OLD regions that have available memory are already in the old_collector free set.
-          assert(r->is_empty() || r->is_trash(), "Not affiliated implies region %zu is empty", r->index());
+          assert(r->is_empty_or_trash(), "Not affiliated implies region %zu is empty", r->index());
           if (idx < old_collector_low_idx) {
             old_collector_low_idx = idx;
           }
@@ -3049,25 +3017,27 @@ void ShenandoahFreeSet::log_status_under_lock() {
 }
 
 void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls) {
-  size_t max = 0;
-  size_t total_free = 0;
-  size_t total_used = 0;
+  size_t max_free_in_single_region = 0;
+  size_t freeset_free = 0;
+  size_t freeset_total_used = 0;
 
   for (idx_t idx = _partitions.leftmost(partition_id);
         idx <= _partitions.rightmost(partition_id); idx++) {
     if (_partitions.in_free_set(partition_id, idx)) {
       ShenandoahHeapRegion *r = _heap->get_region(idx);
       size_t free = alloc_capacity(r);
-      max = MAX2(max, free);
-      total_free += free;
-      total_used += r->used();
+      max_free_in_single_region = MAX2(max_free_in_single_region, free);
+      freeset_free += free;
+      freeset_total_used += ShenandoahHeapRegion::region_size_bytes() - free;
     }
   }
 
-  ls.print(" %s freeset stats: Partition count: %zu, Reserved: " PROPERFMT ", Max free available in a single region: " PROPERFMT ";",
-            partition_name(partition_id),
-            _partitions.count(partition_id),
-            PROPERFMTARGS(total_free), PROPERFMTARGS(max)
+  ls.print_cr("  %s partition stats: regions in capacity: %zu, regions in freeset: %zu. "
+          "Used size including retired regions: " PROPERFMT ", used size in freeset: " PROPERFMT
+          ". Free available size: " PROPERFMT ". Max free available in a single region: " PROPERFMT ".",
+          partition_name(partition_id), _partitions.get_capacity_region_count(partition_id), _partitions.count(partition_id),
+          PROPERFMTARGS(_partitions.get_used(partition_id)), PROPERFMTARGS(freeset_total_used),
+          PROPERFMTARGS(freeset_free), PROPERFMTARGS(max_free_in_single_region)
           );
 }
 
@@ -3149,12 +3119,10 @@ void ShenandoahFreeSet::log_status() {
 
     {
       idx_t last_idx = 0;
-      size_t max = 0;
       size_t max_contig = 0;
       size_t empty_contig = 0;
 
-      size_t total_used = 0;
-      size_t total_free = 0;
+      size_t total_used_in_freeset = 0;
       size_t total_free_ext = 0;
 
       for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
@@ -3162,9 +3130,8 @@ void ShenandoahFreeSet::log_status() {
         if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
           ShenandoahHeapRegion *r = _heap->get_region(idx);
           size_t free = alloc_capacity(r);
-          max = MAX2(max, free);
           size_t used_in_region = r->used();
-          if (r->is_empty() || r->is_trash()) {
+          if (r->is_empty_or_trash()) {
             used_in_region = 0;
             total_free_ext += free;
             if (last_idx + 1 == idx) {
@@ -3175,42 +3142,35 @@ void ShenandoahFreeSet::log_status() {
           } else {
             empty_contig = 0;
           }
-          total_used += used_in_region;
-          total_free += free;
+          total_used_in_freeset += used_in_region;
           max_contig = MAX2(max_contig, empty_contig);
           last_idx = idx;
         }
       }
 
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
-      // capacity() is capacity of mutator
-      // used() is used of mutator
-      size_t free = capacity_holding_lock() - used_holding_lock();
-      // Since certain regions that belonged to the Mutator free partition at the time of most recent rebuild may have been
-      // retired, the sum of used and capacities within regions that are still in the Mutator free partition may not match
-      // my internally tracked values of used() and free().
-      assert(free == total_free, "Free memory (%zu) should match calculated memory (%zu)", free, total_free);
-      ls.print("Whole heap stats: Total free: " PROPERFMT ", Total used: " PROPERFMT ", Max free in a single region: " PROPERFMT
-               ", Max humongous: " PROPERFMT "; ",
-               PROPERFMTARGS(total_free), PROPERFMTARGS(total_used), PROPERFMTARGS(max), PROPERFMTARGS(max_humongous));
 
-      ls.print("Frag stats: ");
-      size_t frag_ext;
+      size_t total_free = available_locked() + collector_available_locked();
+      total_free += old_collector_available_locked();
+      ls.print("Whole heap stats: Total free: " PROPERFMT ", Total used: " PROPERFMT
+               ", Max humongous allocatable: " PROPERFMT "; ",
+               PROPERFMTARGS(total_free), PROPERFMTARGS(global_used()), PROPERFMTARGS(max_humongous));
+
+      double frag_ext;
       if (total_free_ext > 0) {
-        frag_ext = 100 - (100 * max_humongous / total_free_ext);
+        frag_ext = 100 - (100.0 * max_humongous / total_free_ext);
       } else {
         frag_ext = 0;
       }
-      ls.print("External: %zu%%, ", frag_ext);
+      ls.print("External fragmentation: %.2f%%; ", frag_ext);
 
-      size_t frag_int;
-      if (_partitions.count(ShenandoahFreeSetPartitionId::Mutator) > 0) {
-        frag_int = (100 * (total_used / _partitions.count(ShenandoahFreeSetPartitionId::Mutator))
-                    / ShenandoahHeapRegion::region_size_bytes());
-      } else {
-        frag_int = 0;
+      double mutator_filling_percentage = 0;
+      size_t mutator_partition = _partitions.count(ShenandoahFreeSetPartitionId::Mutator);
+      if (mutator_partition > 0) {
+        mutator_filling_percentage = 100 * (1.0 * total_used_in_freeset / mutator_partition)
+                    / ShenandoahHeapRegion::region_size_bytes();
       }
-      ls.print("Internal: %zu%%; ", frag_int);
+      ls.print_cr("Mutator freeset filling percentage: %.2f%%", mutator_filling_percentage);
     }
 
     log_freeset_stats(ShenandoahFreeSetPartitionId::Mutator, ls);

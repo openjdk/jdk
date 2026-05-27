@@ -1073,7 +1073,7 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
   log_info(gc)("Verify %s, Level %zd (%zu reachable, %zu marked)",
                label, ShenandoahVerifyLevel, count_reachable, count_marked);
 
-  FREE_C_HEAP_ARRAY(ShenandoahLivenessData, ld);
+  FREE_C_HEAP_ARRAY(ld);
 }
 
 void ShenandoahVerifier::verify_generic(ShenandoahGeneration* generation, VerifyOption vo) {
@@ -1180,14 +1180,14 @@ void ShenandoahVerifier::verify_before_update_refs(ShenandoahGeneration* generat
   );
 }
 
-// We have not yet cleanup (reclaimed) the collection set
+// We have not yet cleaned up (reclaimed) the collection set
 void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generation) {
   verify_at_safepoint(
           generation,
           "After Updating References",
           _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_none,      // no forwarded references
-          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
+          _verify_marked_disable,      // no need to check unreachable objects, end of cycle
           _verify_cset_none,           // no cset references, all updated
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
@@ -1197,13 +1197,30 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
   );
 }
 
+// We have not yet cleaned up (reclaimed) the collection set
+void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
+  verify_at_safepoint(
+          generation,
+          "After GC",
+          _verify_remembered_disable,  // do not verify remembered set
+          _verify_forwarded_none,      // no forwarded references
+          _verify_marked_disable,      // no need to check unreachable objects, end of cycle
+          _verify_cset_none,           // no cset references, all updated
+          _verify_liveness_disable,    // no reliable liveness data anymore
+          _verify_regions_nocset,      // no cset regions, trash regions have appeared
+                                       // expect generation and heap sizes to match exactly, including trash
+          _verify_size_exact_including_trash,
+          _verify_gcstate_stable       // GC state was turned off
+  );
+}
+
 void ShenandoahVerifier::verify_after_degenerated(ShenandoahGeneration* generation) {
   verify_at_safepoint(
           generation,
           "After Degenerated GC",
           _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_complete,     // all objects are marked in complete bitmap
+          _verify_marked_disable,      // no need to check unreachable objects, end of cycle
           _verify_cset_none,           // no cset references
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash, no cset
@@ -1231,14 +1248,14 @@ void ShenandoahVerifier::verify_after_fullgc(ShenandoahGeneration* generation) {
   verify_at_safepoint(
           generation,
           "After Full GC",
-          _verify_remembered_after_full_gc,  // verify read-write remembered set
-          _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_incomplete,   // all objects are marked in incomplete bitmap
-          _verify_cset_none,           // no cset references
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash_nocset, // no trash, no cset
-          _verify_size_exact,           // expect generation and heap sizes to match exactly
-          _verify_gcstate_stable        // full gc cleaned up everything
+          _verify_remembered_after_full_gc, // verify read-write remembered set
+          _verify_forwarded_none,           // all objects are non-forwarded
+          _verify_marked_disable,           // no need to check unreachable objects, end of cycle
+          _verify_cset_none,                // no cset references
+          _verify_liveness_disable,         // no reliable liveness data anymore
+          _verify_regions_notrash_nocset,   // no trash, no cset
+          _verify_size_exact,               // expect generation and heap sizes to match exactly
+          _verify_gcstate_stable            // full gc cleaned up everything
   );
 }
 
