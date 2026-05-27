@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,6 @@ public:
 // As a CodeBlob, an nmethod references [mutable data] allocated on the C heap:
 //  - CodeBlob relocation data
 //  - Metainfo
-//  - JVMCI data
 //
 // An nmethod references [immutable data] allocated on C heap:
 //  - Dependency assertions data
@@ -157,19 +156,11 @@ public:
 //  - Debugging information:
 //    - Scopes data array
 //    - Scopes pcs array
-//  - JVMCI speculations array
 //  - Nmethod reference counter
-
-#if INCLUDE_JVMCI
-class FailedSpeculation;
-class JVMCINMethodData;
-#endif
 
 class nmethod : public CodeBlob {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class CodeCache;  // scavengable oops
-  friend class JVMCINMethodData;
   friend class DeoptimizationScope;
 
   #define ImmutableDataRefCountSize ((int)sizeof(int))
@@ -240,21 +231,12 @@ class nmethod : public CodeBlob {
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
 
-#if INCLUDE_JVMCI
-  // _metadata_size is not specific to JVMCI. In the non-JVMCI case, it can be derived as:
-  // _metadata_size = mutable_data_size - relocation_size
-  int _metadata_size;
-#endif
-
   // Offset in immutable data section
   // _dependencies_offset == 0
   uint16_t _nul_chk_table_offset;
   uint16_t _handler_table_offset; // This table could be big in C1 code
   int      _scopes_pcs_offset;
   int      _scopes_data_offset;
-#if INCLUDE_JVMCI
-  int      _speculations_offset;
-#endif
   int      _immutable_data_ref_count_offset;
 
   // location in frame (offset for sp) that deopt can store the original
@@ -272,32 +254,45 @@ class nmethod : public CodeBlob {
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
 public:
-  union Flags {
-    uint8_t _raw;
-    struct {
-      bool _has_unsafe_access:1;   // May fault due to unsafe access.
-      bool _has_wide_vectors:1;    // Preserve wide vectors at safepoints
-      bool _has_monitors:1;        // Fastpath monitor detection for continuations
-      bool _has_scoped_access:1;   // Used by shared scope closure (scopedMemoryAccess.cpp)
-      bool _has_clinit_barriers:1; // AOT preload code has clinit barriers
+  struct Flags {
+    uint8_t const _bits;
+
+    enum : uint8_t {
+      UNSAFE_ACCESS = 1 << 0,
+      WIDE_VECTORS  = 1 << 1,
+      MONITORS      = 1 << 2,
+      SCOPED_ACCESS = 1 << 3,
+      CLINIT_BARRIERS = 1 << 4
     };
-    Flags() {
-      _raw = 0;
-    }
+
+    Flags() : _bits(0) {}
     Flags(bool has_unsafe_access,
           bool has_wide_vectors,
           bool has_monitors,
           bool has_scoped_access,
-          bool has_clinit_barriers) : Flags() {
-      _has_unsafe_access   = has_unsafe_access;
-      _has_wide_vectors    = has_wide_vectors;
-      _has_monitors        = has_monitors;
-      _has_scoped_access   = has_scoped_access;
-      _has_clinit_barriers = has_clinit_barriers;
-    }
-  };
+          bool has_clinit_barriers) :
+      _bits((has_unsafe_access ? UNSAFE_ACCESS : 0) |
+            (has_wide_vectors  ? WIDE_VECTORS  : 0) |
+            (has_monitors      ? MONITORS      : 0) |
+            (has_scoped_access ? SCOPED_ACCESS : 0) |
+            (has_clinit_barriers ? CLINIT_BARRIERS : 0))
+    {}
 
-  static_assert(sizeof(Flags) == sizeof(uint8_t), "Must fit exactly");
+    // May fault due to unsafe access
+    bool has_unsafe_access() const { return (_bits & UNSAFE_ACCESS) != 0; }
+
+    // Preserve wide vectors at safepoints
+    bool has_wide_vectors()  const { return (_bits & WIDE_VECTORS)  != 0; }
+
+    // Fastpath monitor detection for continuations
+    bool has_monitors()      const { return (_bits & MONITORS)      != 0; }
+
+    // Used by shared scope closure (scopedMemoryAccess.cpp)
+    bool has_scoped_access() const { return (_bits & SCOPED_ACCESS) != 0; }
+
+    // AOT preload code has clinit barriers
+    bool has_clinit_barriers() const {  return (_bits & CLINIT_BARRIERS) != 0; }
+  };
 
 private:
   // Persistent bits, set once during construction.
@@ -367,13 +362,7 @@ private:
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
           CompLevel comp_level,
-          Flags flags
-#if INCLUDE_JVMCI
-          , char* speculations = nullptr,
-          int speculations_len = 0,
-          JVMCINMethodData* jvmci_data = nullptr
-#endif
-          );
+          Flags flags);
 
   nmethod(const nmethod &nm);
 
@@ -527,8 +516,6 @@ public:
                               AOTCodeReader* aot_code_reader);
 #endif
 public:
-  // If you change anything in this enum please patch
-  // vmStructs_jvmci.cpp accordingly.
   enum class InvalidationReason : s1 {
     NOT_INVALIDATED = -1,
     C1_CODEPATCH,
@@ -538,10 +525,6 @@ public:
     CI_REPLAY,
     UNLOADING,
     UNLOADING_COLD,
-    JVMCI_INVALIDATE,
-    JVMCI_MATERIALIZE_VIRTUAL_OBJECT,
-    JVMCI_REPLACED_WITH_NEW_CODE,
-    JVMCI_REPROFILE,
     MARKED_FOR_DEOPTIMIZATION,
     MISSING_EXCEPTION_HANDLER,
     NOT_USED,
@@ -569,14 +552,6 @@ public:
         return "C1 predicate failed trap";
       case InvalidationReason::CI_REPLAY:
         return "CI replay";
-      case InvalidationReason::JVMCI_INVALIDATE:
-        return "JVMCI invalidate";
-      case InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT:
-        return "JVMCI materialize virtual object";
-      case InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE:
-        return "JVMCI replaced with new code";
-      case InvalidationReason::JVMCI_REPROFILE:
-        return "JVMCI reprofile";
       case InvalidationReason::MARKED_FOR_DEOPTIMIZATION:
         return "marked for deoptimization";
       case InvalidationReason::MISSING_EXCEPTION_HANDLER:
@@ -621,13 +596,7 @@ public:
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
                               CompLevel comp_level,
-                              Flags flags
-#if INCLUDE_JVMCI
-                              , char* speculations = nullptr,
-                              int speculations_len = 0,
-                              JVMCINMethodData* jvmci_data = nullptr
-#endif
-  );
+                              Flags flags);
 
   // Relocate the nmethod to the code heap identified by code_blob_type.
   // Returns nullptr if the code heap does not have enough space, the
@@ -666,7 +635,6 @@ public:
 
   inline bool  is_compiled_by_c1   () const { return _compiler_type == compiler_c1; }
   inline bool  is_compiled_by_c2   () const { return _compiler_type == compiler_c2; }
-  inline bool  is_compiled_by_jvmci() const { return _compiler_type == compiler_jvmci; }
   CompilerType compiler_type       () const { return _compiler_type; }
   const char*  compiler_name       () const;
 
@@ -685,13 +653,7 @@ public:
 
   // mutable data
   Metadata** metadata_begin     () const { return (Metadata**) (mutable_data_begin() + _relocation_size); }
-#if INCLUDE_JVMCI
-  Metadata** metadata_end       () const { return (Metadata**) (mutable_data_begin() + _relocation_size + _metadata_size); }
-  address jvmci_data_begin      () const { return               mutable_data_begin() + _relocation_size + _metadata_size; }
-  address jvmci_data_end        () const { return               mutable_data_end(); }
-#else
   Metadata** metadata_end       () const { return (Metadata**)  mutable_data_end(); }
-#endif
 
   // immutable data
   address immutable_data_begin  () const { return           _immutable_data; }
@@ -706,13 +668,7 @@ public:
   PcDesc* scopes_pcs_end        () const { return (PcDesc*)(_immutable_data + _scopes_data_offset) ; }
   address scopes_data_begin     () const { return           _immutable_data + _scopes_data_offset  ; }
 
-#if INCLUDE_JVMCI
-  address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
-#else
   address scopes_data_end       () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
-#endif
   address immutable_data_ref_count_begin () const { return  _immutable_data + _immutable_data_ref_count_offset ; }
 
   void set_immutable_data(address data) { _immutable_data = data; }
@@ -729,10 +685,6 @@ public:
   int dependencies_size  () const { return int(          dependencies_end () -           dependencies_begin ()); }
   int handler_table_size () const { return int(          handler_table_end() -           handler_table_begin()); }
   int nul_chk_table_size () const { return int(          nul_chk_table_end() -           nul_chk_table_begin()); }
-#if INCLUDE_JVMCI
-  int speculations_size  () const { return int(          speculations_end () -           speculations_begin ()); }
-  int jvmci_data_size    () const { return int(          jvmci_data_end   () -           jvmci_data_begin   ()); }
-#endif
 
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
   int metadata_count() const { assert(metadata_size() % wordSize == 0, ""); return (metadata_size() / wordSize) + 1; }
@@ -814,11 +766,11 @@ public:
   template<typename T>
   void set_gc_data(T* gc_data)                    { _gc_data = reinterpret_cast<void*>(gc_data); }
 
-  bool  has_unsafe_access() const                 { return _flags._has_unsafe_access; }
-  bool  has_monitors() const                      { return _flags._has_monitors; }
-  bool  has_scoped_access() const                 { return _flags._has_scoped_access; }
-  bool  has_wide_vectors() const                  { return _flags._has_wide_vectors; }
-  bool  has_clinit_barriers() const               { return _flags._has_clinit_barriers; }
+  bool  has_unsafe_access() const                 { return _flags.has_unsafe_access(); }
+  bool  has_monitors() const                      { return _flags.has_monitors(); }
+  bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
+  bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
+  bool  has_clinit_barriers() const               { return _flags.has_clinit_barriers(); }
 
   bool  preloaded() const                         { return _preloaded; }
   void  set_preloaded(bool z)                     { _preloaded = z; }
@@ -913,14 +865,11 @@ public:
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f);
 
   // implicit exceptions support
-  address continuation_for_implicit_div0_exception(address pc) { return continuation_for_implicit_exception(pc, true); }
-  address continuation_for_implicit_null_exception(address pc) { return continuation_for_implicit_exception(pc, false); }
+  address continuation_for_implicit_exception(address pc);
 
   // Inline cache support for class unloading and nmethod unloading
  private:
   void cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all);
-
-  address continuation_for_implicit_exception(address pc, bool for_div0_check);
 
  public:
   // Serial version used by whitebox test
@@ -971,26 +920,6 @@ public:
 
   // Evolution support. We make old (discarded) compiled methods point to new Method*s.
   void set_method(Method* method) { _method = method; }
-
-#if INCLUDE_JVMCI
-  // Gets the JVMCI name of this nmethod.
-  const char* jvmci_name();
-
-  // Records the pending failed speculation in the
-  // JVMCI speculation log associated with this nmethod.
-  void update_speculation(JavaThread* thread);
-
-  // Gets the data specific to a JVMCI compiled method.
-  // This returns a non-nullptr value iff this nmethod was
-  // compiled by the JVMCI compiler.
-  JVMCINMethodData* jvmci_nmethod_data() const {
-    return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
-  }
-
-  // Returns true if the runtime should NOT collect deoptimization profile for a JVMCI
-  // compiled method
-  bool jvmci_skip_profile_deopt() const;
-#endif
 
   void oops_do(OopClosure* f);
 

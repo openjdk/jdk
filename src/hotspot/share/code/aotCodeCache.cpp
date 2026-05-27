@@ -104,9 +104,6 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrIntrinsics.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
@@ -2012,10 +2009,6 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
       addresses.append(deopt_blob->unpack_with_exception());
       addresses.append(deopt_blob->unpack_with_reexecution());
       addresses.append(deopt_blob->unpack_with_exception_in_tls());
-#if INCLUDE_JVMCI
-      addresses.append(deopt_blob->uncommon_trap());
-      addresses.append(deopt_blob->implicit_exception_uncommon_trap());
-#endif // INCLUDE_JVMCI
       cache()->add_stub_entries(stub_id, start, &addresses, 0);
     }
   }
@@ -3303,7 +3296,7 @@ bool AOTCodeCache::write_asm_remarks(AsmRemarks& asm_remarks, bool use_string_ta
     if (use_string_table) {
       const char* cstr = add_C_string(str);
       int id = _table->id_for_C_string((address)cstr);
-      assert(id != -1, "asm remark string '%s' not found in AOTCodeAddressTable", str);
+      assert(id != BAD_ADDRESS_ID, "asm remark string '%s' not found in AOTCodeAddressTable", str);
       n = write_bytes(&id, sizeof(int));
       if (n != sizeof(int)) {
         return false;
@@ -3359,7 +3352,7 @@ bool AOTCodeCache::write_dbg_strings(DbgStrings& dbg_strings, bool use_string_ta
     if (use_string_table) {
       const char* cstr = add_C_string(str);
       int id = _table->id_for_C_string((address)cstr);
-      assert(id != -1, "db string '%s' not found in AOTCodeAddressTable", str);
+      assert(id != BAD_ADDRESS_ID, "db string '%s' not found in AOTCodeAddressTable", str);
       uint n = write_bytes(&id, sizeof(int));
       if (n != sizeof(int)) {
         return false;
@@ -3652,15 +3645,19 @@ void AOTCodeAddressTable::init_extrs() {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre);
+    ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre_narrow);
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong);
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow);
+    ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow_narrow);
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak);
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow);
+    ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow_narrow);
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom);
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+    ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow_narrow);
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_oop);
     ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_narrow_oop);
-    ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::clone_barrier);
+    ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::clone);
   }
 #endif
 #if INCLUDE_ZGC

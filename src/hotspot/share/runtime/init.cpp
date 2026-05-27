@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 // Initialization done by VM thread in vm_init_globals()
 void check_ThreadShadow();
@@ -200,11 +197,6 @@ jint init_globals2() {
   if (!compileBroker_init()) {
     return JNI_EINVAL;
   }
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    JVMCI::initialize_globals();
-  }
-#endif
 
   TrainingData::initialize();
 

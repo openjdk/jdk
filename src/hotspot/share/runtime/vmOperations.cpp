@@ -509,20 +509,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
       if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
         num_active++;
         if (thr->is_Compiler_thread()) {
-#if INCLUDE_JVMCI
-          CompilerThread* ct = (CompilerThread*) thr;
-          if (ct->compiler() == nullptr || !ct->compiler()->is_jvmci()) {
-            num_active_compiler_thread++;
-          } else {
-            // A JVMCI compiler thread never accesses VM data structures
-            // while in _thread_in_native state so there's no need to wait
-            // for it and potentially add a 300 millisecond delay to VM
-            // shutdown.
-            num_active--;
-          }
-#else
           num_active_compiler_thread++;
-#endif
         }
       }
     }

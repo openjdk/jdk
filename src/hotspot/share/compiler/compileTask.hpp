@@ -38,8 +38,6 @@ class CompileQueue;
 class CompileTrainingData;
 class DirectiveSet;
 
-JVMCI_ONLY(class JVMCICompileState;)
-
 enum class InliningResult { SUCCESS, FAILURE };
 
 inline InliningResult inlining_result_of(bool success) {
@@ -53,7 +51,6 @@ inline InliningResult inlining_result_of(bool success) {
 
 class CompileTask : public CHeapObj<mtCompiler> {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
  public:
   // Different reasons for a compilation
@@ -66,7 +63,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Replay,           // ciReplay
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
-      Reason_Bootstrap,        // JVMCI bootstrap
       Reason_AOTLoad,          // load AOT code
       Reason_AOTPreload,       // pre-load AOT code
       Reason_AOTCompile,
@@ -113,11 +109,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   AbstractCompiler*    _compiler;
   AOTCodeEntry*        _aot_code_entry;
   CompilerDirectiveMatcher _comp_directive_matcher;
-#if INCLUDE_JVMCI
-  bool                 _has_waiter;
-  // Compilation state for a blocking JVMCI compilation
-  JVMCICompileState*   _blocking_jvmci_compile_state;
-#endif
   int                  _num_inlined_bytecodes;
   CompileTask*         _next;
   CompileTask*         _prev;
@@ -174,26 +165,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
         return false;
     }
   }
-#if INCLUDE_JVMCI
-  bool         should_wait_for_compilation() const {
-    // Wait for blocking compilation to finish.
-    switch (_compile_reason) {
-        case Reason_Replay:
-        case Reason_Whitebox:
-        case Reason_Bootstrap:
-          return _is_blocking;
-        default:
-          return false;
-    }
-  }
-
-  bool         has_waiter() const                { return _has_waiter; }
-  void         clear_waiter()                    { _has_waiter = false; }
-  JVMCICompileState* blocking_jvmci_compile_state() const { return _blocking_jvmci_compile_state; }
-  void         set_blocking_jvmci_compile_state(JVMCICompileState* state) {
-    _blocking_jvmci_compile_state = state;
-  }
-#endif
 
   bool is_aot_compile() {
     return reason_is_aot_compile(compile_reason());
