@@ -134,26 +134,33 @@ public class TestRedact {
            System.out.println();
        }
 
-        void assertRedactedArgument(String argument) throws Exception {
-            checkArgument("JVM arguments", jvmArgs, argument);
-            checkArgument("Java arguments", javaArgs, argument);
-            checkArgument("Flags", jvmFlags, argument);
-            checkArgument("sun.java.command", systemProperties.get("sun.java.command"), argument);
-        }
+       boolean hasCapitalizedLetter(String text) {
+           return text.chars().anyMatch(Character::isUpperCase);
+       }
 
-        private void checkArgument(String kind, String arguments, String argument) throws Exception {
-            if (arguments != null && arguments.contains(argument)) {
-                System.out.println("ARGS: " + arguments);
-                throw new Exception("Found '" + argument + "' in " + kind + ". Should have been [REDACTED]");
-            }
-        }
+       void assertRedactedArgument(String argument) throws Exception {
+           if (!hasCapitalizedLetter(argument)) {
+               throw new IllegalArgumentException("Redacted arguments in test must have at least one capitalized letter to avoid clash with random UUID in temporary filenames.");
+           }
+           checkArgument("JVM arguments", jvmArgs, argument);
+           checkArgument("Java arguments", javaArgs, argument);
+           checkArgument("Flags", jvmFlags, argument);
+           checkArgument("sun.java.command", systemProperties.get("sun.java.command"), argument);
+       }
 
-        public void print() {
-            printCommandLine();
-            printEnvironment();
-            printSystemProperties();
-            printStringFlags();
-        }
+       private void checkArgument(String kind, String arguments, String argument) throws Exception {
+           if (arguments != null && arguments.contains(argument)) {
+               System.out.println("ARGS: " + arguments);
+               throw new Exception("Found '" + argument + "' in " + kind + ". Should have been [REDACTED]");
+           }
+       }
+
+       public void print() {
+           printCommandLine();
+           printEnvironment();
+           printSystemProperties();
+           printStringFlags();
+       }
     }
 
     public static void main(String... args) throws Exception {
@@ -171,55 +178,55 @@ public class TestRedact {
     private static void testRedactionOfRedacted() throws Exception {
         Execution e = run(
             "-XX:FlightRecorderOptions:" +
-            "maxchunksize=1MB,redact-argument=zebra," +
+            "maxchunksize=1MB,redact-argument=Zebra," +
             "old-object-queue-size=256," +
             "redact-key=tiger",
-            "zebra",
-            "tiger"
+            "Zebra",
+            "Tiger"
         );
-        e.assertRedactedArgument("zebra");
-        e.assertRedactedArgument("redact-argument=zebra");
-        e.assertUnredacted("tiger");
+        e.assertRedactedArgument("Zebra");
+        e.assertRedactedArgument("redact-argument=Zebra");
+        e.assertUnredacted("Tiger");
     }
 
     private static void testAppendable() throws Exception {
         Execution e = run(
              Map.of(
-                "secret", "thing",  // For default filter
-                "cat", "bird"       // For user-defined filter
+                "Secret", "Thing",  // For default filter
+                "Cat", "Bird"       // For user-defined filter
             ),
             Map.of(
-                "secret", "stuff",  // For default filter
-                "cat", "dog"        // For user-defined filter
+                "Secret", "Stuff",  // For default filter
+                "Cat", "Dog"        // For user-defined filter
             ),
-            "-XX:FlightRecorderOptions:redact-argument=+foo;bar,redact-key=+cat",
-            "foo",                  // For user-defined
-            "bar",                  // For user-defined
-            "secret");              // For default filter
-        e.assertRedactedArgument("foo");    // Matched by user-defined filter
-        e.assertRedactedArgument("bar");    // Matched by user-defined filter
-        e.assertRedactedKey("cat");         // Matched by user-defined filter
-        e.assertRedactedArgument("secret"); // Matched by default filter *secret*
-        e.assertRedactedKey("secret");      // Matched by default filter *secret*
+            "-XX:FlightRecorderOptions:redact-argument=+Foo;Bar,redact-key=+Cat",
+            "Foo",                  // For user-defined
+            "Bar",                  // For user-defined
+            "Secret");              // For default filter
+        e.assertRedactedArgument("Foo");    // Matched by user-defined filter
+        e.assertRedactedArgument("Bar");    // Matched by user-defined filter
+        e.assertRedactedKey("Cat");         // Matched by user-defined filter
+        e.assertRedactedArgument("Secret"); // Matched by default filter *secret*
+        e.assertRedactedKey("Secret");      // Matched by default filter *secret*
     }
 
     private static void testWildcards() throws Exception {
         Execution e = run(
-           "-XX:FlightRecorderOptions:redact-argument=*pple;oran*;c*he*ry;?2?4?;a?c*?f",
-           "apple", "orange", "cherry", "12345", "abcdef", "4711"
+           "-XX:FlightRecorderOptions:redact-argument=*PPLE;ORAN*;C*HE*RY;N?2?4?;A?C*?F",
+           "APPLE", "ORANGE", "CHERRY", "N12345", "ABCDEF", "N4711"
         );
-        e.assertRedactedArgument("apple");
-        e.assertRedactedArgument("orange");
-        e.assertRedactedArgument("cherry");
-        e.assertRedactedArgument("12345");
-        e.assertRedactedArgument("abcdef");
-        e.assertUnredacted("4711");
+        e.assertRedactedArgument("APPLE");
+        e.assertRedactedArgument("ORANGE");
+        e.assertRedactedArgument("CHERRY");
+        e.assertRedactedArgument("N12345");
+        e.assertRedactedArgument("ABCDEF");
+        e.assertUnredacted("N4711");
         // Tests that only fully matched filters are redacted
         Execution f = run(
-            "-XX:FlightRecorderOptions:redact-argument=-*tiger* *",
-            "--tiger"
+            "-XX:FlightRecorderOptions:redact-argument=-*TIGER* *",
+            "--TIGER"
          );
-        f.assertUnredacted("--tiger");
+        f.assertUnredacted("--TIGER");
     }
 
     private static void testBinary() throws Exception {
@@ -276,31 +283,31 @@ public class TestRedact {
 
     private static void testRedactFile() throws Exception {
         Execution e1 = run(
-            Map.of("stuff1", "snake"),
-            Map.of("stuff2", "snake"),
+            Map.of("stuff1", "Snake"),
+            Map.of("stuff2", "Snake"),
             "-XX:FlightRecorderOptions:redact-argument=@" + FILE_REDACTED_ARGUMENTS,
-            "https://john:smith@www.example.com/myresource",
-            "-conf-key=chicken",
-            "/foo/dog",
-            "-header", "Authorization:Bearer", "banana",
-            "apple");
-        e1.assertRedactedArgument("https://john:smith@www.example.com/myresource");
-        e1.assertRedactedArgument("conf-key=chicken");
-        e1.assertRedactedArgument("/foo/dog");
-        e1.assertRedactedArgument("-header");
+            "https://John:Smith@www.example.com/myresource",
+            "-conf-Key=chicken",
+            "/Foo/Dog",
+            "-Header", "Authorization:Bearer", "Banana",
+            "Apple");
+        e1.assertRedactedArgument("https://John:Smith@www.example.com/myresource");
+        e1.assertRedactedArgument("conf-Key=chicken");
+        e1.assertRedactedArgument("/Foo/Dog");
+        e1.assertRedactedArgument("-Header");
         e1.assertRedactedArgument("Authorization:Bearer");
-        e1.assertRedactedArgument("banana");
-        e1.assertRedactedArgument("apple");
-        e1.assertUnredacted("snake");
+        e1.assertRedactedArgument("Banana");
+        e1.assertRedactedArgument("Apple");
+        e1.assertUnredacted("Snake");
 
         Execution e2 = run(
             Map.of("confidential", "apple"),
             Map.of("very-sensitive", "banana"),
             "-XX:FlightRecorderOptions:redact-key=@" + FILE_REDACTED_KEYS,
-            "snake");
+            "Snake");
         e2.assertRedactedKey("confidential");
         e2.assertRedactedKey("very-sensitive");
-        e2.assertUnredacted("snake");
+        e2.assertUnredacted("Snake");
     }
 
     private static void testDefaults() throws Exception {
@@ -308,11 +315,11 @@ public class TestRedact {
            Map.of("apiKey","thing"),
            Map.of("apiKey", "stuff"),
            "-DapiKey=stuff",
-           "secret",
-           "-password=foo"
+           "Secret",
+           "-password=Foo"
         );
-        e.assertRedactedArgument("secret");
-        e.assertRedactedArgument("-password=foo");
+        e.assertRedactedArgument("Secret");
+        e.assertRedactedArgument("-password=Foo");
         e.assertRedactedKey("apiKey");
     }
 
@@ -320,41 +327,41 @@ public class TestRedact {
         Execution e = run(
             "-XX:FlightRecorderOptions:redact-argument=" +
             // FILTERS
-            "plain;" +
+            "Plain;" +
             "--option *;" +
             "--pass-phrase *;" +
             "--login * *;" +
             "--colon-based:*;" +
             "https://*:*@*",
             // SENSITIVE INFORMATION
-            "plain",
-            "--option", "option-value",
-            "--pass-phrase", "cant-be-whitespace-outage",
-            "--login", "john", "4711",
-            "--colon-based:hello",
-            "https://smith:abc123@example.com/path",
+            "Plain",
+            "--option", "Option-value",
+            "--pass-phrase", "Cant-be-whitespace-outage",
+            "--login", "John", "N4711",
+            "--colon-based:Hello",
+            "https://Smith:abc123@example.com/path",
             // UNSENSITIVE INFORMATION
-            "banana"
+            "Banana"
         );
-        e.assertRedactedArgument("plain");
-        e.assertRedactedArgument("option-value");
-        e.assertRedactedArgument("cant-be-whitespace-outage");
-        e.assertRedactedArgument("hello");
-        e.assertRedactedArgument("john");
-        e.assertRedactedArgument("4711");
-        e.assertRedactedArgument("smith:abc123");
-        e.assertUnredacted("banana");
+        e.assertRedactedArgument("Plain");
+        e.assertRedactedArgument("Option-value");
+        e.assertRedactedArgument("Cant-be-whitespace-outage");
+        e.assertRedactedArgument("Hello");
+        e.assertRedactedArgument("John");
+        e.assertRedactedArgument("N4711");
+        e.assertRedactedArgument("Smith:abc123");
+        e.assertUnredacted("Banana");
     }
 
     private static void testRedactMultiple() throws Exception {
         Execution e = run(
                 Map.of("foo", "bird", "bar, ", "orange"),
                 Map.of("foo", "tiger", "bar", "banana"),
-                "-XX:FlightRecorderOptions:redact-key=foo;bar,redact-argument=baz;quz", "baz", "quz");
+                "-XX:FlightRecorderOptions:redact-key=foo;bar,redact-argument=Baz;Quz", "Baz", "Quz");
         e.assertRedactedKey("foo");
         e.assertRedactedKey("bar");
-        e.assertRedactedArgument("baz");
-        e.assertRedactedArgument("quz");
+        e.assertRedactedArgument("Baz");
+        e.assertRedactedArgument("Quz");
     }
 
     private static void testRedactKey() throws Exception {
