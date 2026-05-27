@@ -252,10 +252,13 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
 
   // First drain all remaining SATB buffers and put them to SATB MQ.
+  // Also, while we are iterating threads, mark the invisible roots.
   {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::final_mark_flush_satb);
-    ShenandoahFlushSATB tc(satb_mq_set);
-    Threads::threads_do(&tc);
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::final_mark_flush_satb_roots);
+    ShenandoahInvisibleRootsMarkClosure invisible_cl;
+    ShenandoahFlushSATB flush_cl(satb_mq_set);
+    ShenandoahMultiThreadClosure mux(flush_cl, invisible_cl);
+    Threads::threads_do(&mux);
   }
 
   // There is a very high chance we have already completed the marking.
@@ -291,13 +294,6 @@ void ShenandoahConcurrentMark::finish_mark_work() {
       default:
         ShouldNotReachHere();
     }
-  }
-
-  // Lastly, mark the invisible roots.
-  if (!generation()->is_old() && heap->is_concurrent_young_mark_in_progress()) {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::final_mark_invisible);
-    ShenandoahInvisibleRootsMarkClosure cl;
-    Threads::java_threads_do(&cl);
   }
 
   assert(task_queues()->is_empty(), "Should be empty");
