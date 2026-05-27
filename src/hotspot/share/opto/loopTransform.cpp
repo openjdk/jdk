@@ -2937,6 +2937,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
           TemplateAssertionPredicateCreator template_assertion_predicate_creator(cl, scale_con , int_offset, int_limit,
                                                                                  this);
           loop_entry = template_assertion_predicate_creator.create(loop_entry);
+          // Make sure to rewire data dependencies on the removed check to the Template Assertion Predicate in order
+          // to update them correctly when further splitting the main loop later.
           ctrl_target_for_data_rewire = loop_entry;
 
           // Initialized Assertion Predicate for the value of the initial main-loop.

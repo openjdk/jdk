@@ -1472,16 +1472,16 @@ public class TestAssertionPredicates {
             //    - Pins the previously pinned LoadP for the fooArr access to the zero-trip-guard of the main loop.
             //    - Adds a Template Assertion Predicate for the eliminated range check.
             // 3) Loop is unrolled once. We now have two LoadP for both fooArr accesses at the zero-trip-guard:
-            //    - LoadP 1: fooArr[i * 10^8]
-            //    - LoadP 2: fooArr[(i+1) * 10^8 = i * 10^8 + 10^8]
+            //    - LoadP 1: fooArr[i * 10^7]
+            //    - LoadP 2: fooArr[(i+1) * 10^7 = i * 10^7 + 10^7]
             // 7) After peeling the main-loop, we have 4 Load nodes: Two for the peeled iteration and two for
             //    the remaining loop. Both are pinned at the zero-trip-guard for the main-loop. Here is the bug:
             //    We should actually update the 2 LoadP pins belonging to the remaining loop to only get executed
             //    when the zero-trip-guard is true and we are actually enter the remaining loop but forget to do that!
-            //    - LoadP 1: fooArr[i * 10^8]
-            //    - LoadP 2: fooArr[(i+1) * 10^8 = i * 10^8 + 10^8]
-            //    - LoadP 3: fooArr[(i+2) * 10^8 = i * 10^8 + 2*10^8]
-            //    - LoadP 4: fooArr[(i+3) * 10^8 = i * 10^8 + 3*10^8]
+            //    - LoadP 1: fooArr[i * 10^7]
+            //    - LoadP 2: fooArr[(i+1) * 10^7 = i * 10^7 + 10^7]
+            //    - LoadP 3: fooArr[(i+2) * 10^7 = i * 10^7 + 2*10^7]
+            //    - LoadP 4: fooArr[(i+3) * 10^7 = i * 10^7 + 3*10^7]
             // 8) During runtime, we have:
             //    - flagTrue = true
             //    - limit = 4
@@ -1489,9 +1489,9 @@ public class TestAssertionPredicates {
             //    We enter the main-loop with i = 1. We execute the peeled iteration but we do not enter the remaining loop
             //    because i = 3 and we only require one more iteration but the remaining loop ill perform two iterations.
             //    So, the zero-trip-guard for the remaining loop fails.
-            //    But all LoadP nodes are pinned at the zero-trip-gaurd for the main-loop. When using -XX:+StressGCM, we could
+            //    But all LoadP nodes are pinned at the zero-trip-guard for the main-loop. When using -XX:+StressGCM, we could
             //    schedule LoadP 4 before actually checking the zero-trip-guard and we crash with an out-of-bounds-access:
-            //    - LoadP 4: fooArr[(i+3) * 10^8 = i * 10^8 + 3*10^8 = 4*10^8 > 3*10^8 (max-index)] -> crash!
+            //    - LoadP 4: fooArr[(i+3) * 10^7 = i * 10^7 + 3*10^7 = 4*10^7 > 3*10^7 (max-index)] -> crash!
             fooArr[i * 10_000_000].iFld += 34;
         }
     }
