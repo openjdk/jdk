@@ -3336,8 +3336,7 @@ void os::Linux::build_numa_affinity_masks() {
 
   _numa_affinity_masks->at_grow(highest_node_number, nullptr);
 
-  for (int i = 0; i < nindex_to_node()->length(); i++) {
-    const int node = nindex_to_node()->at(i);
+  for (int node : *nindex_to_node()) {
     struct bitmask* affinity_mask = _numa_allocate_cpumask();
 
     // Fill the affinity mask with all CPUs belonging to the OS NUMA node id.
