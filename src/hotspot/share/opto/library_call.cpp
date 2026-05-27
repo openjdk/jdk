@@ -8481,14 +8481,17 @@ bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
          (id == vmIntrinsics::_quad_keccak && callee()->signature()->size() == 4),
           "double_keccak wrong number of parameters");
 
+  int parmCnt = 0;
   switch (id) {
     case vmIntrinsics::_double_keccak:
       stubAddr = StubRoutines::double_keccak();
       stubName = "double_keccak";
+      parmCnt = 2;
       break;
     case vmIntrinsics::_quad_keccak:
       stubAddr = StubRoutines::quad_keccak();
       stubName = "quad_keccak";
+      parmCnt = 4;
       break;
     default:
       ShouldNotReachHere();
@@ -8497,24 +8500,10 @@ bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
   if (!stubAddr) return false;
 
   Node* state[4];
-  switch (id) { // INTENTIONALLY missing break statements
-    case vmIntrinsics::_quad_keccak:
-      state[2] = must_be_not_null(argument(2), true);
-      state[2] = array_element_address(state[2], intcon(0), T_LONG);
-      assert(state[2], "state[2] is null");
-      state[3] = must_be_not_null(argument(3), true);
-      state[3] = array_element_address(state[3], intcon(0), T_LONG);
-      assert(state[3], "state[3] is null");
-    case vmIntrinsics::_double_keccak:
-      state[0] = must_be_not_null(argument(0), true);
-      state[0] = array_element_address(state[0], intcon(0), T_LONG);
-      assert(state[0], "state[0] is null");
-      state[1] = must_be_not_null(argument(1), true);
-      state[1] = array_element_address(state[1], intcon(0), T_LONG);
-      assert(state[1], "state[1] is null");
-      break;
-    default:
-      assert(false, "dont call");
+  for (int i = 0; i<parmCnt; i++) {
+      state[i] = must_be_not_null(argument(i), true);
+      state[i] = array_element_address(state[i], intcon(0), T_LONG);
+      assert(state[i], "state[%d] is null", i);
   }
 
   Node* keccak;
@@ -8532,7 +8521,7 @@ bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
                                   state[0], state[1], state[2], state[3]);
       break;
     default:
-      assert(false, "dont call");
+      ShouldNotReachHere();
   }
 
   // return an int
