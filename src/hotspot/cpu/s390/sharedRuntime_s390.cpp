@@ -2957,7 +2957,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
 
   __ z_br(Z_R14);
 
-  // Make sure all code is generated
   // Code will be copied. No ICache sync required.
 
   // Fill-out other meta info
@@ -3040,7 +3039,6 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   __ z_br(Z_R1_scratch);
 
   // -------------
-  // make sure all code is generated
   // Code will be copied. No ICache sync required.
 
   // return the blob

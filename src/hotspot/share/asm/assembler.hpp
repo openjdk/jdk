@@ -311,7 +311,7 @@ class AbstractAssembler : public ResourceObj  {
   // Creation
   AbstractAssembler(CodeBuffer* code);
 
-  // ensure buf contains all code (call this before using/copying the code)
+  // Invalidate ICache after writing code to its final location.
   void publish_instructions();
 
   void emit_int8(       int x1)                                     { code_section()->emit_int8(narrow_cast<uint8_t>(x1)); }
