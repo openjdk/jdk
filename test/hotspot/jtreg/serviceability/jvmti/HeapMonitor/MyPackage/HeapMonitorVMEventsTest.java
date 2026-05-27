@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,12 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
-// Graal is not tested here due to Graal not supporting DisableIntrinsic.
 /**
  * @test
  * @summary Verifies that when the VM event is sent, sampled events are also collected.
  * @requires vm.jvmti
- * @requires !vm.graal.enabled
  * @build Frame HeapMonitor
  * @compile HeapMonitorVMEventsTest.java
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions
@@ -45,7 +43,6 @@ import java.util.concurrent.ThreadFactory;
  * @test
  * @summary Verifies that when the VM event is sent, sampled events are also collected.
  * @requires vm.jvmti
- * @requires !vm.graal.enabled
  * @build Frame HeapMonitor
  * @compile HeapMonitorVMEventsTest.java
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions

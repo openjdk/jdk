@@ -1337,7 +1337,7 @@ int ConstantTable::calculate_table_base_offset() const {
 
 bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
 void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  iRegPdstOper *op_dst = new iRegPdstOper();
+  iRegLdstOper *op_dst = new iRegLdstOper();
   MachNode *m1 = new loadToc_hiNode();
   MachNode *m2 = new loadToc_loNode();
 
@@ -2543,7 +2543,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // operands for new nodes
     m1->_opnds[0] = new iRegLdstOper(); // dst
     m1->_opnds[1] = immSrc;             // src
-    m1->_opnds[2] = new iRegPdstOper(); // toc
+    m1->_opnds[2] = new iRegLdstOper(); // toc
     m2->_opnds[0] = new iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;             // src
     m2->_opnds[2] = new iRegLdstOper(); // base
@@ -2574,7 +2574,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // operands for new nodes
     m2->_opnds[0] = new iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;             // src
-    m2->_opnds[2] = new iRegPdstOper(); // toc
+    m2->_opnds[2] = new iRegLdstOper(); // toc
 
     // Initialize ins_attrib instruction offset.
     m2->_cbuf_insts_offset = -1;
@@ -2625,7 +2625,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     // operands for new nodes
     m1->_opnds[0] = new  iRegLdstOper(); // dst
     m1->_opnds[1] = immSrc;              // src
-    m1->_opnds[2] = new  iRegPdstOper(); // toc
+    m1->_opnds[2] = new  iRegLdstOper(); // toc
 
     m2->_opnds[0] = new  iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;              // src
@@ -2671,7 +2671,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     // operands for new nodes
     m2->_opnds[0] = new  iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;              // src
-    m2->_opnds[2] = new  iRegPdstOper(); // toc
+    m2->_opnds[2] = new  iRegLdstOper(); // toc
 
     m3->_opnds[0] = new  vecXOper();     // dst
     m3->_opnds[1] = new  iRegLdstOper(); // src
@@ -2799,6 +2799,11 @@ encode %{
       loadConP_hiNode *m1 = new loadConP_hiNode();
       loadConP_loNode *m2 = new loadConP_loNode();
 
+      // If this is an oop, both m1 and m2 must be consider oops so postalloc scheduling does not
+      // put a safepoint between them
+      m1->_bottom_type = bottom_type();
+      m2->_bottom_type = bottom_type();
+
       // inputs for new nodes
       m1->add_req(nullptr, n_toc);
       m2->add_req(nullptr, m1);
@@ -2806,7 +2811,8 @@ encode %{
       // operands for new nodes
       m1->_opnds[0] = new iRegPdstOper(); // dst
       m1->_opnds[1] = op_src;             // src
-      m1->_opnds[2] = new iRegPdstOper(); // toc
+      m1->_opnds[2] = new iRegLdstOper(); // toc
+
       m2->_opnds[0] = new iRegPdstOper(); // dst
       m2->_opnds[1] = op_src;             // src
       m2->_opnds[2] = new iRegLdstOper(); // base
@@ -2831,7 +2837,7 @@ encode %{
       // operands for new nodes
       m2->_opnds[0] = new iRegPdstOper(); // dst
       m2->_opnds[1] = op_src;             // src
-      m2->_opnds[2] = new iRegPdstOper(); // toc
+      m2->_opnds[2] = new iRegLdstOper(); // toc
 
       // Register allocation for new nodes.
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2858,7 +2864,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2882,7 +2888,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -5731,6 +5737,9 @@ instruct loadConN_Ex(iRegNdst dst, immN src) %{
     MachNode *m1 = new loadConN_hiNode();
     MachNode *m2 = new loadConN_loNode();
     MachNode *m3 = new clearMs32bNode();
+    m1->_bottom_type = bottom_type();
+    m2->_bottom_type = bottom_type();
+    m3->_bottom_type = bottom_type();
     m1->add_req(nullptr);
     m2->add_req(nullptr, m1);
     m3->add_req(nullptr, m2);
@@ -5809,6 +5818,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
   postalloc_expand %{
     // Load high bits into register. Sign extended.
     MachNode *m1 = new loadConNKlass_hiNode();
+    m1->_bottom_type = bottom_type();
     m1->add_req(nullptr);
     m1->_opnds[0] = op_dst;
     m1->_opnds[1] = op_src;
@@ -5819,6 +5829,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     if (!Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass *)op_src->constant()), 31)) {
       // Value might be 1-extended. Mask out these bits.
       m2 = new loadConNKlass_maskNode();
+      m2->_bottom_type = bottom_type();
       m2->add_req(nullptr, m1);
       m2->_opnds[0] = op_dst;
       m2->_opnds[1] = op_src;
@@ -5828,6 +5839,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     }
 
     MachNode *m3 = new loadConNKlass_loNode();
+    m3->_bottom_type = bottom_type();
     m3->add_req(nullptr, m2);
     m3->_opnds[0] = op_dst;
     m3->_opnds[1] = op_src;
