@@ -560,10 +560,8 @@ void ShenandoahConcurrentGC::entry_cleanup_early() {
   heap->try_inject_alloc_failure();
   op_cleanup_early();
   if (!heap->is_evacuation_in_progress()) {
-    // This is an abbreviated cycle.  Rebuild the freeset in order to establish reserves for the next GC cycle.  Doing
-    // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that we will degenerate
-    // during promote-in-place processing.
-    heap->rebuild_free_set(true /*concurrent*/);
+    // This is an abbreviated cycle.  Start the idle span.
+    _generation->heuristics()->start_idle_span();
   }
 }
 
