@@ -37,6 +37,9 @@ on:
       runs-on:
         required: true
         type: string
+      architecture:
+        required: false
+        type: string
       xcode-toolset-version:
         required: false
         type: string
@@ -132,6 +135,8 @@ jobs:
 
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
+        with:
+          architecture: ${{ inputs.architecture }}
         if: runner.os == 'Windows'
 
       - name: 'Get the BootJDK'

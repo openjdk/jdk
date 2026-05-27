@@ -101,9 +101,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 GrowableArray<Method*>* collected_profiled_methods;
 
@@ -284,16 +281,6 @@ void print_statistics() {
     IndexSet::print_statistics();
   }
 #endif // ASSERT
-#else // COMPILER2
-#if INCLUDE_JVMCI
-#ifndef COMPILER1
-  if ((TraceDeoptimization || LogVMOutput || LogCompilation) && UseCompiler) {
-    FlagSetting fs(DisplayVMOutput, DisplayVMOutput && TraceDeoptimization);
-    Deoptimization::print_statistics();
-    SharedRuntime::print_statistics();
-  }
-#endif // COMPILER1
-#endif // INCLUDE_JVMCI
 #endif // COMPILER2
 
   if (PrintNMethodStatistics) {
@@ -447,12 +434,6 @@ void before_exit(JavaThread* thread, bool halt) {
 #endif
 
   // Actual shutdown logic begins here.
-
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    JVMCI::shutdown(thread);
-  }
-#endif
 
 #if INCLUDE_CDS
   ClassListWriter::write_resolved_constants();

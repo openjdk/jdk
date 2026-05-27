@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,12 +77,6 @@ class Deoptimization : AllStatic {
     Reason_many = -1,             // indicates presence of several reasons
     Reason_none = 0,              // indicates absence of a relevant deopt.
     // Next 8 reasons are recorded per bytecode in DataLayout::trap_bits.
-    // This is more complicated for JVMCI as JVMCI may deoptimize to *some* bytecode before the
-    // bytecode that actually caused the deopt (with inlining, JVMCI may even deoptimize to a
-    // bytecode in another method):
-    //  - bytecode y in method b() causes deopt
-    //  - JVMCI deoptimizes to bytecode x in method a()
-    // -> the deopt reason will be recorded for method a() at bytecode x
     Reason_null_check,            // saw unexpected null or zero divisor (@bci)
     Reason_null_assert,           // saw unexpected non-null or non-zero (@bci)
     Reason_range_check,           // saw unexpected array index (@bci)
@@ -90,12 +84,6 @@ class Deoptimization : AllStatic {
     Reason_array_check,           // saw unexpected array class (aastore @bci)
     Reason_intrinsic,             // saw unexpected operand to intrinsic (@bci)
     Reason_bimorphic,             // saw unexpected object class in bimorphic inlining (@bci)
-
-#if INCLUDE_JVMCI
-    Reason_unreached0             = Reason_null_assert,
-    Reason_type_checked_inlining  = Reason_intrinsic,
-    Reason_optimized_type_check   = Reason_bimorphic,
-#endif
 
     Reason_profile_predicate,     // compiler generated predicate moved from frequent branch in a loop failed
     Reason_auto_vectorization_check, // compiler generated (speculative) auto vectorization checks failed
@@ -119,12 +107,6 @@ class Deoptimization : AllStatic {
     Reason_receiver_constraint,   // receiver subtype check failed
     Reason_not_compiled_exception_handler, // missing compiled exception handler
     Reason_short_running_long_loop,    // profile reports loop runs for small number of iterations
-#if INCLUDE_JVMCI
-    Reason_aliasing = Reason_short_running_long_loop, // optimistic assumption about aliasing failed
-    Reason_transfer_to_interpreter, // explicit transferToInterpreter()
-    Reason_unresolved,
-    Reason_jsr_mismatch,
-#endif
 
     // Used to define MethodData::_trap_hist_limit where Reason_tenured isn't included
     Reason_TRAP_HISTORY_LENGTH,
@@ -154,10 +136,8 @@ class Deoptimization : AllStatic {
   enum {
     _action_bits = 3,
     _reason_bits = 5,
-    _debug_id_bits = 23,
     _action_shift = 0,
     _reason_shift = _action_shift+_action_bits,
-    _debug_id_shift = _reason_shift+_reason_bits,
     BC_CASE_LIMIT = PRODUCT_ONLY(1) NOT_PRODUCT(4) // for _deoptimization_hist
   };
 
@@ -170,11 +150,6 @@ class Deoptimization : AllStatic {
     Unpack_LIMIT                = 5
   };
 
-#if INCLUDE_JVMCI
-  // Can reconstruct virtualized unsafe large accesses to byte arrays.
-  static const int _support_large_access_byte_array_virtualization = 1;
-#endif
-
   // Make all nmethods that are marked_for_deoptimization not_entrant and deoptimize any live
   // activations using those nmethods. Scan of the code cache is done to
   // find all marked nmethods and they are made not_entrant.
@@ -185,15 +160,12 @@ class Deoptimization : AllStatic {
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
 
   static address deoptimize_for_missing_exception_handler(nmethod* nm, bool make_not_entrant);
-#if INCLUDE_JVMCI
-  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS);
-#endif
 
   private:
   // Does the actual work for deoptimizing a single frame
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Deoptimize objects, that is reallocate and relock them, just before they
   // escape through JVMTI.  The given vframes cover one physical frame.
   static bool deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk,
@@ -205,11 +177,11 @@ class Deoptimization : AllStatic {
   static bool realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS);
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
-  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
+  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures);
   static bool relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*>* monitors,
                              JavaThread* deoptee_thread, frame& fr, int exec_mode, bool realloc_failures);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   public:
   static vframeArray* create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures);
@@ -220,7 +192,6 @@ class Deoptimization : AllStatic {
   // This is only a CheapObj to ease debugging after a deopt failure
   class UnrollBlock : public CHeapObj<mtCompiler> {
     friend class VMStructs;
-    friend class JVMCIVMStructs;
    private:
     int       _size_of_deoptimized_frame; // Size, in bytes, of current deoptimized frame
     int       _caller_adjustment;         // Adjustment, in bytes, to caller's SP by initial interpreted frame
@@ -353,14 +324,6 @@ class Deoptimization : AllStatic {
       // standard action for unloaded CP entry
       return _unloaded_action;
   }
-  static int trap_request_debug_id(int trap_request) {
-    if (trap_request < 0) {
-      return (~(trap_request) >> _debug_id_shift) & right_n_bits<int>(_debug_id_bits);
-    } else {
-      // standard action for unloaded CP entry
-      return 0;
-    }
-  }
   static int trap_request_index(int trap_request) {
     if (trap_request < 0)
       return -1;
@@ -467,10 +430,6 @@ class Deoptimization : AllStatic {
   static ProfileData* query_update_method_data(MethodData* trap_mdo,
                                                int trap_bci,
                                                DeoptReason reason,
-                                               bool update_total_trap_count,
-#if INCLUDE_JVMCI
-                                               bool is_osr,
-#endif
                                                Method* compiled_method,
                                                //outputs:
                                                uint& ret_this_trap_count,

@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test the various CPU-specific reservation schemes
- * @requires vm.bits == 64 & !vm.graal.enabled & vm.debug == true
+ * @requires vm.bits == 64 & vm.debug == true
  * @requires vm.flagless
  * @requires vm.cds
  * @requires vm.cds.default.archive.available

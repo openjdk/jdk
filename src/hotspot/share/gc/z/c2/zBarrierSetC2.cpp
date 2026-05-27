@@ -473,7 +473,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
 
 #undef XTOP
 
-void ZBarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
+void ZBarrierSetC2::elide_dominated_barrier(MachNode* mach, MachNode* dominator) const {
   mach->set_barrier_data(ZBarrierElided);
 }
 
