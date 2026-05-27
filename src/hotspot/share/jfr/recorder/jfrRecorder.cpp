@@ -471,7 +471,6 @@ void JfrRecorder::destroy_components() {
   }
   JfrEventThrottler::destroy();
   JfrThreadGroupManager::destroy();
-  JfrRedactedEvents::destroy();
   destroy_symbol_table();
 }
 

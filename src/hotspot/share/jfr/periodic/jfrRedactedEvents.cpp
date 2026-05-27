@@ -68,40 +68,6 @@ StringArray* JfrRedactedEvents::_key_filters = nullptr;
 
 bool JfrRedactedEvents::_initialized = false;
 
-void JfrRedactedEvents::destroy() {
-  delete _redacted_java_command_line;
-  _redacted_java_command_line = nullptr;
-
-  delete _redacted_jvm_command_line;
-  _redacted_jvm_command_line = nullptr;
-
-  delete _redacted_flags_command_line;
-  _redacted_flags_command_line = nullptr;
-
-  delete _redacted_flight_recorder_options;
-  _redacted_flight_recorder_options = nullptr;
-
-  delete _redacted_arguments;
-  _redacted_arguments = nullptr;
-
-  delete _argument_filters;
-  _argument_filters = nullptr;
-
-  delete _key_filters;
-  _key_filters = nullptr;
-
-  destroy_array(_initial_system_properties);
-  _initial_system_properties = nullptr;
-
-  destroy_array(_initial_environment_variables);
-  _initial_environment_variables = nullptr;
-
-  destroy_array(_string_flags);
-  _string_flags = nullptr;
-
-  _initialized = false;
-}
-
 bool JfrRedactedEvents::set_argument_filter(const char* filters) {
   assert (_argument_filters == nullptr, "invariant");
   assert (filters != nullptr, "invariant");

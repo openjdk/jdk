@@ -50,8 +50,6 @@ class JfrRedactedEvents: public AllStatic {
   static void emit_initial_system_properties(bool log = false);
   static void emit_jvm_information(bool log = false);
   static void emit_string_flags(bool log = false);
-  // Called at shutdown
-  static void destroy();
 
   template<typename T> static GrowableArray<T>* make_array(int size) {
     return new (mtTracing) GrowableArray<T>(size, mtTracing);
