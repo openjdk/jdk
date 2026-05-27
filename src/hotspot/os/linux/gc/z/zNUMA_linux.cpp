@@ -32,6 +32,7 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/integerCast.hpp"
 
 // Converts between ZGC NUMA ids and Linux NUMA node ids.
 //
@@ -67,7 +68,7 @@ private:
     assert(available_nodes <= (size_t)configured_nodes_limit,
            "Too many NUMA nodes: %zu <= %d", available_nodes, configured_nodes_limit);
 
-    _id_to_node_size = checked_cast<uint32_t>(MIN2(available_nodes, (size_t)configured_nodes_limit));
+    _id_to_node_size = integer_cast<uint32_t>(MIN2(available_nodes, (size_t)configured_nodes_limit));
   }
 
   void populate_node_mappings() {
