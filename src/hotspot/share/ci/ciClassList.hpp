@@ -58,6 +58,7 @@ class   ciMetadata;
 class   ciMethod;
 class   ciMethodData;
 class     ciReceiverTypeData;  // part of ciMethodData
+class     ciMethodDataEntry;  // part of ciMethodData
 class   ciType;
 class    ciReturnAddress;
 class    ciKlass;
@@ -100,6 +101,7 @@ friend class ciMethod;                 \
 friend class ciMethodData;             \
 friend class ciMethodHandle;           \
 friend class ciMethodType;             \
+friend class ciMethodDataEntry;        \
 friend class ciReceiverTypeData;       \
 friend class ciTypeEntries;            \
 friend class ciSpeculativeTrapData;    \
