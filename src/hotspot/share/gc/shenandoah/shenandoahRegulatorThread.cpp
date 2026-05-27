@@ -66,6 +66,7 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
         if (request_concurrent_gc(_heap->global_generation())) {
           // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
           _global_heuristics->log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
+          _global_heuristics->accept_trigger();
           _global_heuristics->cancel_trigger_request();
         }
       } else {

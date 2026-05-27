@@ -79,6 +79,8 @@ void ShenandoahControlThread::run_service() {
     if (alloc_failure_pending) {
       // Allocation failure takes precedence: we have to deal with it first thing
       heuristics->log_trigger("Handle Allocation Failure");
+      heuristics->accept_trigger();
+      heuristics->cancel_trigger_request();
 
       cause = GCCause::_allocation_failure;
 
@@ -99,6 +101,8 @@ void ShenandoahControlThread::run_service() {
       cause = requested_gc_cause;
       heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
+      heuristics->accept_trigger();
+      heuristics->cancel_trigger_request();
 
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
         mode = stw_full;

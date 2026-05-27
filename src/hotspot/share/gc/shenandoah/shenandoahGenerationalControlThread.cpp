@@ -166,6 +166,10 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   bool old_gen_evacuation_failed = _heap->old_generation()->clear_failed_evacuation();
 
   heuristics->log_trigger("Handle Allocation Failure");
+  if (_degen_point == ShenandoahGC::_degenerated_outside_cycle) {
+    heuristics->accept_trigger();
+    heuristics->cancel_trigger_request();
+  }
 
   // Do not bother with degenerated cycle if old generation evacuation failed or if humongous allocation failed
   if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() &&
@@ -185,7 +189,9 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
   request.generation = _heap->global_generation();
   global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
+  global_heuristics->accept_trigger();
   global_heuristics->record_requested_gc();
+ global_heuristics->cancel_trigger_request();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
     return stw_full;
