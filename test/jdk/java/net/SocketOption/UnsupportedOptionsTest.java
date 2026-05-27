@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import jdk.test.lib.net.IPSupport;
  * @library /test/lib
  * @summary Test checks that UnsupportedOperationException for unsupported
  *          SOCKET_OPTIONS is thrown by both getOption() and setOption() methods.
- * @requires !vm.graal.enabled
  * @run main UnsupportedOptionsTest
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnsupportedOptionsTest
  * @run main/othervm --limit-modules=java.base UnsupportedOptionsTest

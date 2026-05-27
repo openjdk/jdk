@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,23 +35,19 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 static int slow_path_size(nmethod* nm) {
   // The slow path code is out of line with C2.
-  // Leave a jal to the stub in the fast path.
-  return nm->is_compiled_by_c2() ? 1 : 8;
+  return nm->is_compiled_by_c2() ? 0 : 4;
 }
 
 static int entry_barrier_offset(nmethod* nm) {
   BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
   switch (bs_asm->nmethod_patching_type()) {
     case NMethodPatchingType::stw_instruction_and_data_patch:
-      return -4 * (4 + slow_path_size(nm));
+      return -4 * (5 + slow_path_size(nm));
     case NMethodPatchingType::conc_instruction_and_data_patch:
-      return -4 * (15 + slow_path_size(nm));
+      return -4 * ((UseZtso ? 14 : 16) + slow_path_size(nm));
   }
   ShouldNotReachHere();
   return 0;
@@ -75,34 +71,26 @@ class NativeNMethodBarrier {
 
 public:
   NativeNMethodBarrier(nmethod* nm): _nm(nm) {
-#if INCLUDE_JVMCI
-    if (nm->is_compiled_by_jvmci()) {
-      address pc = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
-      RelocIterator iter(nm, pc, pc + 4);
-      guarantee(iter.next(), "missing relocs");
-      guarantee(iter.type() == relocInfo::section_word_type, "unexpected reloc");
-
-      _guard_addr = (int*) iter.section_word_reloc()->target();
-      _instruction_address = pc;
-    } else
-#endif
-      {
-        _instruction_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
-        if (nm->is_compiled_by_c2()) {
-          // With c2 compiled code, the guard is out-of-line in a stub
-          // We find it using the RelocIterator.
-          RelocIterator iter(nm);
-          while (iter.next()) {
-            if (iter.type() == relocInfo::entry_guard_type) {
-              entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
-              _guard_addr = reinterpret_cast<int*>(reloc->addr());
-              return;
-            }
-          }
-          ShouldNotReachHere();
+    _instruction_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
+    if (nm->is_compiled_by_c2()) {
+      // With c2 compiled code, the guard is out-of-line in a stub
+      // We find it using the RelocIterator.
+      RelocIterator iter(nm);
+      while (iter.next()) {
+        if (iter.type() == relocInfo::entry_guard_type) {
+          entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
+          _guard_addr = reinterpret_cast<int*>(reloc->addr());
+          return;
         }
-        _guard_addr = reinterpret_cast<int*>(instruction_address() + local_guard_offset(nm));
       }
+
+      ShouldNotReachHere();
+    }
+    _guard_addr = reinterpret_cast<int*>(instruction_address() + local_guard_offset(nm));
+
+    // Perform the checking as verification.
+    err_msg msg("%s", "");
+    assert(check_barrier(msg), "%s", msg.buffer());
   }
 
   int get_value() {
@@ -128,10 +116,6 @@ public:
   }
 
   bool check_barrier(err_msg& msg) const;
-  void verify() const {
-    err_msg msg("%s", "");
-    assert(check_barrier(msg), "%s", msg.buffer());
-  }
 };
 
 // Store the instruction bitmask, bits and name for checking the barrier.
@@ -142,8 +126,8 @@ struct CheckInsn {
 };
 
 static const struct CheckInsn barrierInsn[] = {
-  { 0x00000fff, 0x00000297, "auipc  t0, 0                     "},
-  { 0x000fffff, 0x0002e283, "lwu    t0, guard_offset(t0)      "},
+  { 0x00000fff, 0x00000297, "auipc  t0, 0               " },
+  { 0x000fffff, 0x0002e283, "lwu    t0, guard_offset(t0)" },
   /* ...... */
   /* ...... */
   /* guard: */
@@ -155,10 +139,11 @@ static const struct CheckInsn barrierInsn[] = {
 // register numbers and immediate values in the encoding.
 bool NativeNMethodBarrier::check_barrier(err_msg& msg) const {
   address addr = instruction_address();
-  for(unsigned int i = 0; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
+  for (unsigned int i = 0; i < sizeof(barrierInsn) / sizeof(struct CheckInsn); i++) {
     uint32_t inst = Assembler::ld_instr(addr);
     if ((inst & barrierInsn[i].mask) != barrierInsn[i].bits) {
-      msg.print("Addr: " INTPTR_FORMAT " Code: 0x%x not an %s instruction", p2i(addr), inst, barrierInsn[i].name);
+      msg.print("Nmethod entry barrier did not start with auipc & lwu as expected. "
+                "Addr: " INTPTR_FORMAT " Code: 0x%x not an %s instruction.", p2i(addr), inst, barrierInsn[i].name);
       return false;
     }
     addr += 4;
@@ -234,10 +219,3 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
   NativeNMethodBarrier barrier(nm);
   return barrier.get_value();
 }
-
-#if INCLUDE_JVMCI
-bool BarrierSetNMethod::verify_barrier(nmethod* nm, err_msg& msg) {
-  NativeNMethodBarrier barrier(nm);
-  return barrier.check_barrier(msg);
-}
-#endif

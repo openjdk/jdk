@@ -269,6 +269,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_getEventWriter();
   bool inline_native_jvm_commit();
   void extend_setCurrentThread(Node* jt, Node* thread);
+  bool inline_native_try_update_epoch();
 #endif
   bool inline_native_Class_query(vmIntrinsics::ID id);
   bool inline_native_subtype_check();

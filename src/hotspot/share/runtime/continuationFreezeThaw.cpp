@@ -166,8 +166,6 @@ Address |   |                            |    |   Caller is still in the chunk.
 
 ************************************************/
 
-static const bool TEST_THAW_ONE_CHUNK_FRAME = false; // force thawing frames one-at-a-time for testing
-
 #define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation performance debugging only
 #if CONT_JFR
   #define CONT_JFR_ONLY(code) code
@@ -2306,7 +2304,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   intptr_t* const chunk_sp = chunk->start_address() + chunk->sp();
 
   bool partial, empty;
-  if (LIKELY(!TEST_THAW_ONE_CHUNK_FRAME && (full_chunk_size < threshold))) {
+  if (LIKELY(!ForceSingleFrameThaw && (full_chunk_size < threshold))) {
     prefetch_chunk_pd(chunk->start_address(), full_chunk_size); // prefetch anticipating memcpy starting at highest address
 
     partial = false;

@@ -123,10 +123,6 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #endif // INCLUDE_ZGC
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciEnv.hpp"
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 #ifdef LINUX
 #include "cgroupSubsystem_linux.hpp"
 #include "os_linux.hpp"
@@ -412,24 +408,6 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSupported(JNIEnv* env, jobject o, jint name))
   return GCConfig::is_gc_supported((CollectedHeap::Name)name);
-WB_END
-
-WB_ENTRY(jboolean, WB_HasLibgraal(JNIEnv* env, jobject o))
-#if INCLUDE_JVMCI
-  return JVMCI::shared_library_exists();
-#endif
-  return false;
-WB_END
-
-WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint name))
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    // Enter the JVMCI env that will be used by the CompileBroker.
-    JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
-    return jvmciEnv.init_error() == JNI_OK && jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
-  }
-#endif
-  return false;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSelected(JNIEnv* env, jobject o, jint name))
@@ -872,11 +850,11 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   return !code->is_marked_for_deoptimization();
 WB_END
 
-static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
+static bool is_excluded_for_compiler(AbstractCompiler* comp, int comp_level, methodHandle& mh) {
   if (comp == nullptr) {
     return true;
   }
-  CompilerDirectiveMatcher matcher(mh, comp);
+  CompilerDirectiveMatcher matcher(mh, comp_level);
   return matcher.directive_set()->ExcludeOption;
 }
 
@@ -902,8 +880,10 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
   // to exclude a compilation of 'method'.
   if (comp_level == CompLevel_any) {
     // Both compilers could have ExcludeOption set. Check all combinations.
-    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), mh);
-    bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), mh);
+    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_simple, mh)
+                    && is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_limited_profile, mh)
+                    && is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_full_profile, mh);
+    bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), CompLevel_full_optimization, mh);
     if (excluded_c1 && excluded_c2) {
       // Compilation of 'method' excluded by both compilers.
       return false;
@@ -914,9 +894,11 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
       return can_be_compiled_at_level(mh, is_osr, CompLevel_full_optimization);
     } else if (excluded_c2) {
       // C2 only has ExcludeOption set: Check if compilable with C1.
-      return can_be_compiled_at_level(mh, is_osr, CompLevel_simple);
+      return can_be_compiled_at_level(mh, is_osr, CompLevel_simple)
+          || can_be_compiled_at_level(mh, is_osr, CompLevel_limited_profile)
+          || can_be_compiled_at_level(mh, is_osr, CompLevel_full_profile);
     }
-  } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((int)comp_level), mh)) {
+  } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((int)comp_level), comp_level, mh)) {
     // Compilation of 'method' excluded by compiler used for 'comp_level'.
     return false;
   }
@@ -952,7 +934,7 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
     methodHandle cch(THREAD, Method::checked_resolve_jmethod_id(compilation_context_id));
-    CompilerDirectiveMatcher matcher(cch, comp);
+    CompilerDirectiveMatcher matcher(cch, compLevel);
     return comp->is_intrinsic_available(mh, matcher.directive_set());
   } else {
     // Calling with null matches default directive
@@ -1132,7 +1114,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
 
   // Check if compilation is blocking
   methodHandle mh(THREAD, method);
-  CompilerDirectiveMatcher matcher(mh, comp);
+  CompilerDirectiveMatcher matcher(mh, comp_level);
   bool is_blocking = !matcher.directive_set()->BackgroundCompilationOption;
 
   // Compile method and check result
@@ -1151,7 +1133,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != nullptr) {
     return true;
   }
-  tty->print("WB error: failed to %s compile at level %d method ", is_blocking ? "blocking" : "", comp_level);
+  tty->print("WB error: failed to%s compile at level %d method ", is_blocking ? " blocking" : "", comp_level);
   mh->print_short_name(tty);
   tty->cr();
   if (is_blocking && is_queued) {
@@ -1184,7 +1166,7 @@ WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompilerDirectiveMatcher matcher(mh, CompileBroker::compiler(comp_level));
+  CompilerDirectiveMatcher matcher(mh, comp_level);
   return matcher.directive_set()->PrintAssemblyOption;
 WB_END
 
@@ -2235,22 +2217,6 @@ WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
 #endif // INCLUDE_CDS
 WB_END
 
-WB_ENTRY(jboolean, WB_isC2OrJVMCIIncluded(JNIEnv* env))
-#if COMPILER2_OR_JVMCI
-  return true;
-#else
-  return false;
-#endif
-WB_END
-
-WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
-#if INCLUDE_JVMCI
-  return JVMCIGlobals::gc_supports_jvmci();
-#else
-  return false;
-#endif
-WB_END
-
 static bool canWriteJavaHeapArchive() {
   return !CDSConfig::are_vm_options_incompatible_with_dumping_heap();
 }
@@ -3041,9 +3007,6 @@ static JNINativeMethod methods[] = {
   {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
   {CC"isDTraceIncluded",                  CC"()Z",    (void*)&WB_IsDTraceIncluded },
-  {CC"hasLibgraal",                       CC"()Z",    (void*)&WB_HasLibgraal },
-  {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
-  {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },
   {CC"canWriteMappedJavaHeapArchive",     CC"()Z",    (void*)&WB_CanWriteMappedJavaHeapArchive },
   {CC"canWriteStreamedJavaHeapArchive",   CC"()Z",    (void*)&WB_CanWriteStreamedJavaHeapArchive },
@@ -3060,7 +3023,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",           (void*)&WB_RemoveCompilerDirective },
   {CC"isGCSupported",             CC"(I)Z",           (void*)&WB_IsGCSupported},
-  {CC"isGCSupportedByJVMCICompiler", CC"(I)Z",        (void*)&WB_IsGCSupportedByJVMCICompiler},
   {CC"isGCSelected",              CC"(I)Z",           (void*)&WB_IsGCSelected},
   {CC"isGCSelectedErgonomically", CC"()Z",            (void*)&WB_IsGCSelectedErgonomically},
   {CC"supportsConcurrentGCBreakpoints", CC"()Z",      (void*)&WB_SupportsConcurrentGCBreakpoints},

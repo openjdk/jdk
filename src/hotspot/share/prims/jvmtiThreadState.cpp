@@ -30,6 +30,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -61,6 +62,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;
   _hide_level           = 0;
+  _frame_pop_cnt        = 0;
   _pending_step_for_popframe = false;
   _class_being_redefined = nullptr;
   _class_load_kind = jvmti_class_load_kind_load;
@@ -470,21 +472,19 @@ void JvmtiThreadState::process_pending_step_for_popframe() {
 // Called by: PopFrame
 //
 void JvmtiThreadState::update_for_pop_top_frame() {
-  if (is_interp_only_mode()) {
-    // remove any frame pop notification request for the top frame
-    // in any environment
-    int popframe_number = cur_stack_depth();
-    {
-      JvmtiEnvThreadStateIterator it(this);
-      for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
-        if (ets->is_frame_pop(popframe_number)) {
-          ets->clear_frame_pop(popframe_number);
-        }
+  // remove any frame pop notification request for the top frame
+  // in any environment
+  int popframe_number = cur_stack_depth();
+  {
+    JvmtiEnvThreadStateIterator it(this);
+    for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
+      if (ets->is_frame_pop(popframe_number)) {
+        ets->clear_frame_pop(popframe_number);
       }
     }
-    // force stack depth to be recalculated
-    invalidate_cur_stack_depth();
   }
+  // force stack depth to be recalculated
+  invalidate_cur_stack_depth();
 }
 
 

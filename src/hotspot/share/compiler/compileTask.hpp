@@ -35,8 +35,6 @@
 
 class CompileTrainingData;
 
-JVMCI_ONLY(class JVMCICompileState;)
-
 enum class InliningResult { SUCCESS, FAILURE };
 
 inline InliningResult inlining_result_of(bool success) {
@@ -50,7 +48,6 @@ inline InliningResult inlining_result_of(bool success) {
 
 class CompileTask : public CHeapObj<mtCompiler> {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
  public:
   // Different reasons for a compilation
@@ -63,7 +60,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Replay,           // ciReplay
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
-      Reason_Bootstrap,        // JVMCI bootstrap
       Reason_Count
   };
 
@@ -96,11 +92,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int                  _comp_level;
   AbstractCompiler*    _compiler;
   CompilerDirectiveMatcher _comp_directive_matcher;
-#if INCLUDE_JVMCI
-  bool                 _has_waiter;
-  // Compilation state for a blocking JVMCI compilation
-  JVMCICompileState*   _blocking_jvmci_compile_state;
-#endif
   int                  _num_inlined_bytecodes;
   CompileTask*         _next;
   CompileTask*         _prev;
@@ -131,6 +122,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_blocking() const               { return _is_blocking; }
   bool         is_success() const                { return _is_success; }
   DirectiveSet* directive() const                { return _comp_directive_matcher.directive_set(); }
+  void         transfer_directive(CompilerDirectiveMatcher& matcher) { _comp_directive_matcher.transfer_from(matcher); }
   CompileReason compile_reason() const           { return _compile_reason; }
   CodeSection::csize_t nm_content_size() { return _nm_content_size; }
   void         set_nm_content_size(CodeSection::csize_t size) { _nm_content_size = size; }
@@ -148,26 +140,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
         return false;
     }
   }
-#if INCLUDE_JVMCI
-  bool         should_wait_for_compilation() const {
-    // Wait for blocking compilation to finish.
-    switch (_compile_reason) {
-        case Reason_Replay:
-        case Reason_Whitebox:
-        case Reason_Bootstrap:
-          return _is_blocking;
-        default:
-          return false;
-    }
-  }
-
-  bool         has_waiter() const                { return _has_waiter; }
-  void         clear_waiter()                    { _has_waiter = false; }
-  JVMCICompileState* blocking_jvmci_compile_state() const { return _blocking_jvmci_compile_state; }
-  void         set_blocking_jvmci_compile_state(JVMCICompileState* state) {
-    _blocking_jvmci_compile_state = state;
-  }
-#endif
 
   void         mark_complete()                   { _is_complete = true; }
   void         mark_success()                    { _is_success = true; }

@@ -55,6 +55,9 @@ public:
 
   void post_initialize() override;
 
+  void record_cycle_end() override;
+
+protected:
   // Wraps budget computation, subclass region selection, budget adjustment, and tracing.
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                              RegionData* data, size_t data_size,
