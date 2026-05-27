@@ -582,30 +582,8 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         return false;
       }
 
-      bool is_trivial_control = use->in(0) == nullptr || use->in(0) == n->in(0);
-      if (!is_trivial_control) {
-        // If it's not a trivial control then we check if we can reduce the
-        // CmpP/N used by the If controlling the cast.
-        if (use->in(0)->is_IfTrue() || use->in(0)->is_IfFalse()) {
-          Node* iff = use->in(0)->in(0);
-          // We may have an OpaqueConstantBool node between If and Bool nodes. But we could also have a sub class of IfNode,
-          // for example, an OuterStripMinedLoopEnd or a Parse Predicate. Bail out in all these cases.
-          bool can_reduce = (iff->Opcode() == Op_If) && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp();
-          if (can_reduce) {
-            Node* iff_cmp = iff->in(1)->in(1);
-            int opc = iff_cmp->Opcode();
-            can_reduce = (opc == Op_CmpP || opc == Op_CmpN) && can_reduce_cmp(n, iff_cmp);
-          }
-          if (!can_reduce) {
-#ifndef PRODUCT
-            if (TraceReduceAllocationMerges) {
-              tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
-              n->dump(5);
-            }
-#endif
-            return false;
-          }
-        }
+      if (!can_reduce_phi_at_castpp(n, use)) {
+        return false;
       }
 
       if (!can_reduce_check_users(use, nesting+1)) {
@@ -623,6 +601,38 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
   }
 
   return true;
+}
+
+// Returns true if the CastPP's control is simple enough to reduce the Phi:
+//  1) no control,
+//  2) control is the same Region as the Phi, or
+//  3) an IfTrue/IfFalse coming from an CmpP/N between the phi and a constant.
+bool ConnectionGraph::can_reduce_phi_at_castpp(Node* phi, Node* castpp, bool trace) const {
+  if (castpp->in(0) == nullptr || castpp->in(0) == phi->in(0)) {
+    return true;
+  }
+  // If it's not a trivial control then we check if we can reduce the
+  // CmpP/N used by the If controlling the cast.
+  if (castpp->in(0)->is_IfTrue() || castpp->in(0)->is_IfFalse()) {
+    Node* iff = castpp->in(0)->in(0);
+    // We may have an OpaqueConstantBool node between If and Bool nodes. But we could also have a sub class of IfNode,
+    // for example, an OuterStripMinedLoopEnd or a Parse Predicate. Bail out in all these cases.
+    if (iff->Opcode() == Op_If && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
+      Node* iff_cmp  = iff->in(1)->in(1);
+      int opc = iff_cmp->Opcode();
+      if ((opc == Op_CmpP || opc == Op_CmpN) && can_reduce_cmp(phi, iff_cmp)) {
+        return true;
+      }
+    }
+  }
+
+#ifdef ASSERT
+  if (TraceReduceAllocationMerges && trace) {
+    tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", phi->_idx, _invocation, castpp->_idx);
+    phi->dump(5);
+  }
+#endif
+  return false;
 }
 
 // Returns true if: 1) It's profitable to reduce the merge, and 2) The Phi is
@@ -881,6 +891,7 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, GrowableArray<Node*> &alloc_worklist) {
   Node* ophi = curr_castpp->in(1);
   assert(ophi->is_Phi(), "Expected this to be a Phi node.");
+  precond(can_reduce_phi_at_castpp(ophi, curr_castpp, false));
 
   // Identify which base should be used for AddP->Load later when spliting the
   // CastPP->Loads through ophi. Three kind of values may be stored in this
