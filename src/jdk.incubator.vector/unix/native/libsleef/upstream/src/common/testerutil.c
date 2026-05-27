@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2023.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -38,7 +38,7 @@
 #define POSITIVE_INFINITYf ((float)INFINITY)
 #define NEGATIVE_INFINITYf (-(float)INFINITY)
 
-int isnumber(double x) { return !isinf(x) && !isnan(x); }
+int xisnumber(double x) { return !isinf(x) && !isnan(x); }
 int isPlusZero(double x) { return x == 0 && copysign(1, x) == 1; }
 int isMinusZero(double x) { return x == 0 && copysign(1, x) == -1; }
 double sign(double d) { return d < 0 ? -1 : 1; }
@@ -83,20 +83,37 @@ int readln(int fd, char *buf, int cnt) {
 static uint64_t xseed;
 
 uint64_t xrand() {
+  uint64_t u = xseed;
   xseed = xseed * UINT64_C(6364136223846793005) + 1;
-  return xseed;
+  u = (u & ((~UINT64_C(0)) << 32)) | (xseed >> 32);
+  xseed = xseed * UINT64_C(6364136223846793005) + 1;
+  return u;
+}
+
+void xsrand(uint64_t s) {
+  xseed = s;
+  xrand();
+  xrand();
+  xrand();
 }
 
 // Fill memory with random bits
 void memrand(void *p, int size) {
-  uint64_t *q = (uint64_t *)p;
+  uint8_t *q = (uint8_t *)p;
   int i;
-  for(i=0;i<size/8;i++) *q++ = xrand();
-  uint8_t *r = (uint8_t *)q;
-  for(i *= 8;i<size;i++) *r++ = xrand() & 0xff;
+  for(i=0;i<(size & ~7);i+=8) {
+    uint64_t u = xrand();
+    *q++ = (uint8_t)(u & 0xff); u >>= 8;
+    *q++ = (uint8_t)(u & 0xff); u >>= 8;
+    *q++ = (uint8_t)(u & 0xff); u >>= 8;
+    *q++ = (uint8_t)(u & 0xff); u >>= 8;
+    *q++ = (uint8_t)(u & 0xff); u >>= 8;
+    *q++ = (uint8_t)(u & 0xff); u >>= 8;
+    *q++ = (uint8_t)(u & 0xff); u >>= 8;
+    *q++ = (uint8_t)(u & 0xff); u >>= 8;
+  }
+  for(;i<size;i++) *q++ = xrand() & 0xff;
 }
-
-void xsrand(uint64_t s) { xseed = s; }
 
 //
 

@@ -1,10 +1,14 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 #ifndef __VECTORTYPE_H__
 #define __VECTORTYPE_H__
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
 
 #include <math.h>
 #include "sleef.h"
@@ -55,10 +59,6 @@
 
 #ifdef ENABLE_VXE2
 #include "helpers390x_128.h"
-#endif
-
-#ifdef ENABLE_VECEXT
-#include "helpervecext.h"
 #endif
 
 #ifdef ENABLE_PUREC

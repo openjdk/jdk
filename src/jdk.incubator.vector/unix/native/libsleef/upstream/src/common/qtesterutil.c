@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -22,6 +22,10 @@
 #include <mpfr.h>
 #endif
 
+#ifdef ENABLEFLOAT128
+#include <quadmath.h>
+#endif
+
 #if defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER)
 #define STDIN_FILENO 0
 #else
@@ -39,33 +43,6 @@
 
 #include "misc.h"
 #include "qtesterutil.h"
-
-//
-
-int readln(int fd, char *buf, int cnt) {
-  int i, rcnt = 0;
-
-  if (cnt < 1) return -1;
-
-  while(cnt >= 2) {
-    i = read(fd, buf, 1);
-    if (i != 1) return i;
-
-    if (*buf == '\n') break;
-
-    rcnt++;
-    buf++;
-    cnt--;
-  }
-
-  *++buf = '\0';
-  rcnt++;
-  return rcnt;
-}
-
-int startsWith(char *str, char *prefix) {
-  return strncmp(str, prefix, strlen(prefix)) == 0;
-}
 
 //
 
@@ -149,31 +126,6 @@ int isnanf128(Sleef_quad a) {
 }
 
 //
-
-static uint64_t xseed;
-
-uint64_t xrand() {
-  uint64_t u = xseed;
-  xseed = xseed * UINT64_C(6364136223846793005) + 1;
-  u = (u & ((~UINT64_C(0)) << 32)) | (xseed >> 32);
-  xseed = xseed * UINT64_C(6364136223846793005) + 1;
-  return u;
-}
-
-void xsrand(uint64_t s) {
-  xseed = s;
-  xrand();
-  xrand();
-  xrand();
-}
-
-void memrand(void *p, int size) {
-  uint64_t *q = (uint64_t *)p;
-  int i;
-  for(i=0;i<size;i+=8) *q++ = xrand();
-  uint8_t *r = (uint8_t *)q;
-  for(;i<size;i++) *r++ = xrand() & 0xff;
-}
 
 Sleef_quad rndf128(Sleef_quad min, Sleef_quad max, int setSignRandomly) {
   cnv_t cmin = { .q = min }, cmax = { .q = max }, c;
@@ -580,6 +532,14 @@ char *sprintf128(Sleef_quad q) {
   free(f);
   return ret;
 }
+
+#ifdef QUADMATH_H
+void printf128(Sleef_quad f) {
+  char s[128];
+  quadmath_snprintf(s, 120, "%.50Qg", f);
+  printf("%s", s);
+}
+#endif
 
 double cast_d_q(Sleef_quad q) {
   mpfr_t fr;
