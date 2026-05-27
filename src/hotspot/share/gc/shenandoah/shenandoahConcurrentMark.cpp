@@ -63,6 +63,10 @@ public:
     _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/,
                    ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
+    // Normal concurrent marking loop flushes the Java thread buffers with a handshake.
+    // Now is a good time to flush the GC worker SATB buffers.
+    SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
+    satb_mq_set.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
   }
 };
 
