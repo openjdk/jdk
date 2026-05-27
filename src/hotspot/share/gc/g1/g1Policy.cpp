@@ -965,7 +965,10 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   Pause this_pause = collector_state()->gc_pause_type(concurrent_operation_is_full_mark);
-  record_pause(this_pause, start_time_sec, end_time_sec, allocation_word_size);
+  size_t humongous_allocation_bytes = G1CollectedHeap::is_humongous(allocation_word_size) ?
+                                      G1CollectedHeap::allocation_used_bytes(allocation_word_size) : 0;
+
+  record_pause(this_pause, start_time_sec, end_time_sec, humongous_allocation_bytes);
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
   if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
