@@ -80,7 +80,7 @@ ATTRIBUTE_ALIGNED(64) static const uint64_t avx2_round_consts[] = {
 
 ATTRIBUTE_ALIGNED(64) static const uint64_t avx2_rotate_consts[] = {
   //  X0      X0     X1  X3  X1  X3     X2  X4   X2  X4
-                     1, 28,  1, 28,    62, 27,  62, 27,   //    A0_,   A1A3,   A2A4
+                     1, 28,  1, 28,    62, 27,  62, 27,   //           A1A3,   A2A4
  36, 41, 36, 41,    44, 55, 44, 55,     6, 20,   6, 20,   //  A5A15,   A6A8,   A7A9
   3, 18,  3, 18,    10, 25, 10, 25,    43, 39,  43, 39,   // A10A20, A11A13, A12A14
                     45, 21, 45, 21,    15,  8,  15,  8,   //         A16A18, A17A19
@@ -1052,13 +1052,12 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
       __ jcc(Assembler::notEqual, block168);
       __ movq(T0, Address(buf, 5 * 8));   //b5
       __ movq(T1, Address(buf, 15 * 8));  //b15
-      __ vshufpd(T0, T0/*b5*/, T1/*b15*/, 0b0000, vector_len); //b5A15
+      __ vshufpd(T0, T0/*b5*/, T1/*b15*/, 0b0000, vector_len); //b5b15
       __ vpxor(A5A15, A5A15, T0, vector_len);
       buf_even_odd(1, A6A8, A7A9);
       buf_even_odd(2, A11A13, A12A14);
       __ movq(T0, Address(buf, 10 * 8));  //b10
-      __ vpxor(T0, T0, A10A20, vector_len);
-      __ vshufpd(A10A20, T0/*A10*/, A10A20, 0b1010, vector_len); //b10A20
+      __ vpxor(A10A20, T0, A10A20, vector_len);
 
       __ vshufpd(T0, A16A18, A17A19, 0b0000, vector_len); //A16A17
       __ vpxor(T0, T0, Address(buf, 16 * 8), vector_len); //b16b17
