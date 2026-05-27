@@ -203,8 +203,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // we will not age young-gen objects in the case that we skip evacuation.
   entry_cleanup_early();
 
-  heap->free_set()->log_status_under_lock();
-
   // Processing strong roots
   // This may be skipped if there is nothing to update/evacuate.
   // If so, strong_root_in_progress would be unset.
