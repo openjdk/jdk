@@ -183,7 +183,6 @@ public class CLDRConverter {
         }
     }
 
-    static boolean USE_UTF8 = false;
     private static boolean verbose;
 
     private CLDRConverter() {
@@ -230,10 +229,6 @@ public class CLDRConverter {
                     case "-o":
                         // output directory
                         DESTINATION_DIR = args[++i];
-                        break;
-
-                    case "-utf8":
-                        USE_UTF8 = true;
                         break;
 
                     case "-verbose":
@@ -336,7 +331,6 @@ public class CLDRConverter {
                 + "\t-year year     copyright year in output%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
                 + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
-                + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n"
                 + "\t-jdk-header-template <file>%n"
                 + "\t\t       override default GPL header with contents of file%n");
     }
@@ -612,31 +606,31 @@ public class CLDRConverter {
             if (bundleTypes.contains(Bundle.Type.LOCALENAMES)) {
                 Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, id);
                 if (!localeNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "LocaleNames", id, true, localeNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "LocaleNames", id, localeNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CURRENCYNAMES)) {
                 Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, id, bundle.getCurrencies());
                 if (!currencyNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CurrencyNames", id, true, currencyNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "CurrencyNames", id, currencyNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.TIMEZONENAMES)) {
                 Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, id);
                 if (!zoneNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "TimeZoneNames", id, true, zoneNamesMap, BundleType.TIMEZONE);
+                    bundleGenerator.generateBundle("util", "TimeZoneNames", id, zoneNamesMap, BundleType.TIMEZONE);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CALENDARDATA)) {
                 Map<String, Object> calendarDataMap = extractCalendarData(targetMap, id);
                 if (!calendarDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CalendarData", id, true, calendarDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("util", "CalendarData", id, calendarDataMap, BundleType.PLAIN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.FORMATDATA)) {
                 Map<String, Object> formatDataMap = extractFormatData(targetMap, id);
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("text", "FormatData", id, true, formatDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("text", "FormatData", id, formatDataMap, BundleType.PLAIN);
                 }
             }
 
@@ -821,6 +815,13 @@ public class CLDRConverter {
                 data = map.get(TIMEZONE_ID_PREFIX + tzLink);
             }
 
+            String meta = handlerMetaZones.get(tzKey);
+            if (meta == null && tzLink != null) {
+                // Check for tzLink
+                meta = handlerMetaZones.get(tzLink);
+            }
+            String metaKey = meta != null ? METAZONE_ID_PREFIX + meta : null;
+
             if (data instanceof String[] tznames) {
                 // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
                 if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
@@ -832,24 +833,14 @@ public class CLDRConverter {
                     tznames = Arrays.copyOf(tznames, tznames.length);
                     fillTZDBShortNames(tzKey, tznames);
                     names.put(tzid, tznames);
+                    if (meta != null && map.get(metaKey) instanceof String[] metaNames) {
+                        recordMetazone(names, meta, tzKey, metaNames);
+                    }
                 }
             } else {
-                String meta = handlerMetaZones.get(tzKey);
-                if (meta == null && tzLink != null) {
-                    // Check for tzLink
-                    meta = handlerMetaZones.get(tzLink);
-                }
                 if (meta != null) {
-                    String metaKey = METAZONE_ID_PREFIX + meta;
-                    data = map.get(metaKey);
-                    if (data instanceof String[] tznames) {
-                        if (isDefaultZone(meta, tzKey)) {
-                            // Record the metazone names only from the default
-                            // (001) zone, with short names filled from TZDB
-                            tznames = Arrays.copyOf(tznames, tznames.length);
-                            fillTZDBShortNames(tzKey, tznames);
-                            names.put(metaKey, tznames);
-                        }
+                    if (map.get(metaKey) instanceof String[] metaNames) {
+                        recordMetazone(names, meta, tzKey, metaNames);
                         names.put(tzid, meta);
                         if (tzLink != null && availableIds.contains(tzLink)) {
                             names.put(tzLink, meta);
@@ -1053,27 +1044,14 @@ public class CLDRConverter {
         }
     }
 
-    // --- code below here is adapted from java.util.Properties ---
-    private static final String specialSaveCharsJava = "\"";
-    private static final String specialSaveCharsProperties = "=: \t\r\n\f#!";
-
     /*
-     * Converts unicodes to encoded &#92;uxxxx
-     * and writes out any of the characters in specialSaveChars
-     * with a preceding slash
+     * Escapes control codes to ASCII escapes or encoded &#92;uxxxx
+     * and writes out ASCII quotation marks with a preceding slash
      */
-    static String saveConvert(String theString, boolean useJava) {
+    static String escape(String theString) {
         if (theString == null) {
             return "";
         }
-
-        String specialSaveChars;
-        if (useJava) {
-            specialSaveChars = specialSaveCharsJava;
-        } else {
-            specialSaveChars = specialSaveCharsProperties;
-        }
-        boolean escapeSpace = false;
 
         int len = theString.length();
         StringBuilder outBuffer = new StringBuilder(len * 2);
@@ -1083,14 +1061,14 @@ public class CLDRConverter {
             char aChar = theString.charAt(x);
             switch (aChar) {
             case ' ':
-                if (x == 0 || escapeSpace) {
+                if (x == 0) {
                     outBuffer.append('\\');
                 }
                 outBuffer.append(' ');
                 break;
-            case '\\':
+            case '\\', '"':
                 outBuffer.append('\\');
-                outBuffer.append('\\');
+                outBuffer.append(aChar);
                 break;
             case '\t':
                 outBuffer.append('\\');
@@ -1109,12 +1087,9 @@ public class CLDRConverter {
                 outBuffer.append('f');
                 break;
             default:
-                if (aChar < 0x0020 || (!USE_UTF8 && aChar > 0x007e)) {
+                if (aChar < 0x0020) {
                     formatter.format("\\u%04x", (int)aChar);
                 } else {
-                    if (specialSaveChars.indexOf(aChar) != -1) {
-                        outBuffer.append('\\');
-                    }
                     outBuffer.append(aChar);
                 }
             }
@@ -1253,7 +1228,7 @@ public class CLDRConverter {
                     String zone001 = handlerMetaZones.zidMap().get(meta);
                     return zone001 == null ? "" :
                             String.format("        \"%s\", \"%s\", \"%s\",",
-                                            id, meta, zone001);
+                                escape(id), escape(meta), escape(zone001));
                 })
                 .filter(s -> !s.isEmpty())
                 .sorted();
@@ -1530,11 +1505,18 @@ public class CLDRConverter {
         }
     }
 
-    private static boolean isDefaultZone(String meta, String tzid) {
+    private static void recordMetazone(Map<String, Object> names, String meta, String tzid, String[] tznames) {
         String zone001 = handlerMetaZones.zidMap().get(meta);
         var tzLink = getTZDBLink(tzid);
-        return canonicalTZMap.getOrDefault(tzid, tzid).equals(zone001) ||
-            tzLink != null && canonicalTZMap.getOrDefault(tzLink, tzLink).equals(zone001);
+
+        // Record the metazone names only from the default
+        // (001) zone, with short names filled from TZDB
+        if (canonicalTZMap.getOrDefault(tzid, tzid).equals(zone001) ||
+            tzLink != null && canonicalTZMap.getOrDefault(tzLink, tzLink).equals(zone001)) {
+            tznames = Arrays.copyOf(tznames, tznames.length);
+            fillTZDBShortNames(tzid, tznames);
+            names.put(METAZONE_ID_PREFIX + meta, tznames);
+        }
     }
 
     private static String getTZDBLink(String tzid) {

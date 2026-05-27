@@ -68,7 +68,7 @@ void ShenandoahControlThread::run_service() {
 
     // Figure out if we have pending requests.
     const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause);
-    const bool is_gc_requested = _gc_requested.is_set();
+    const bool is_gc_requested = _gc_requested.try_unset();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause;
 
     // Choose which GC mode to run in. The block below should select a single mode.
@@ -137,11 +137,6 @@ void ShenandoahControlThread::run_service() {
       GCIdMark gc_id_mark;
 
       heuristics->cancel_trigger_request();
-
-      if (mode != stw_degenerated) {
-        // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
-        heap->reset_bytes_allocated_since_gc_start();
-      }
 
       MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
@@ -346,7 +341,8 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCSession session(cause, heap->global_generation());
+  ShenandoahGCSession session(cause, heap->global_generation(), true,
+                              point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
 
   heap->increment_total_collections(false);
 
@@ -405,7 +401,6 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::notify_gc_waiters() {
-  _gc_requested.unset();
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
 }

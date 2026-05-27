@@ -24,7 +24,6 @@
 /**
  *
  * @test
- * @requires !vm.graal.enabled
  * @summary Tests that the -javaagent option adds the java.instrument into
  * the module graph
  * @library /test/lib

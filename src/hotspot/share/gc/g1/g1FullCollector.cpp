@@ -48,21 +48,21 @@
 #include "utilities/debug.hpp"
 
 static void clear_and_activate_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 }
 
 static void deactivate_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::set_active(false);
-#endif
+#endif // COMPILER2
 }
 
 static void update_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
 }
 
 G1CMBitMap* G1FullCollector::mark_bitmap() {
@@ -167,10 +167,10 @@ G1FullCollector::~G1FullCollector() {
 
   delete _partial_array_state_manager;
 
-  FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
-  FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
-  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _compaction_tops);
-  FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
+  FREE_C_HEAP_ARRAY(_markers);
+  FREE_C_HEAP_ARRAY(_compaction_points);
+  FREE_C_HEAP_ARRAY(_compaction_tops);
+  FREE_C_HEAP_ARRAY(_live_stats);
 }
 
 class PrepareRegionsClosure : public G1HeapRegionClosure {
@@ -542,9 +542,9 @@ void G1FullCollector::verify_after_marking() {
     return;
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTableDeactivate dpt_deact;
-#endif
+#endif // COMPILER2
   _heap->prepare_for_verify();
   // Note: we can verify only the heap here. When an object is
   // marked, the previous value of the mark word (including

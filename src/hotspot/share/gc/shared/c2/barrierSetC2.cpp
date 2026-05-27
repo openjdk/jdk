@@ -129,6 +129,12 @@ void BarrierStubC2::dont_preserve(Register r) {
   } while (vm_reg->is_Register() && !vm_reg->is_concrete());
 }
 
+bool BarrierStubC2::is_preserved(Register r) const {
+  const VMReg vm_reg = r->as_VMReg();
+  assert(vm_reg->is_Register(), "r must be a general-purpose register");
+  return _preserve.member(OptoReg::as_OptoReg(vm_reg));
+}
+
 const RegMask& BarrierStubC2::preserve_set() const {
   return _preserve;
 }
@@ -395,16 +401,10 @@ MemNode::MemOrd C2Access::mem_node_mo() const {
 
 void C2Access::fixup_decorators() {
   bool default_mo = (_decorators & MO_DECORATOR_MASK) == 0;
-  bool is_unordered = (_decorators & MO_UNORDERED) != 0 || default_mo;
   bool anonymous = (_decorators & C2_UNSAFE_ACCESS) != 0;
 
   bool is_read = (_decorators & C2_READ_ACCESS) != 0;
   bool is_write = (_decorators & C2_WRITE_ACCESS) != 0;
-
-  if (AlwaysAtomicAccesses && is_unordered) {
-    _decorators &= ~MO_DECORATOR_MASK; // clear the MO bits
-    _decorators |= MO_RELAXED; // Force the MO_RELAXED decorator with AlwaysAtomicAccess
-  }
 
   _decorators = AccessInternal::decorator_fixup(_decorators, _type);
 
@@ -1117,7 +1117,7 @@ void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& acce
       if (access_block == mem_block) {
         // Earlier accesses in the same block
         if (mem_index < access_index && !block_has_safepoint(mem_block, mem_index + 1, access_index)) {
-          elide_dominated_barrier(access);
+          elide_dominated_barrier(access, mem->is_Mach() ? mem->as_Mach() : nullptr);
         }
       } else if (mem_block->dominates(access_block)) {
         // Dominating block? Look around for safepoints
@@ -1147,7 +1147,7 @@ void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& acce
         }
 
         if (!safepoint_found) {
-          elide_dominated_barrier(access);
+          elide_dominated_barrier(access, mem->is_Mach() ? mem->as_Mach() : nullptr);
         }
       }
     }

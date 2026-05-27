@@ -33,6 +33,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
@@ -167,7 +168,7 @@ class MacroAssembler: public Assembler {
 
   void bind(Label& L) {
     Assembler::bind(L);
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
     code()->set_last_label(pc());
   }
 
@@ -692,7 +693,6 @@ public:
 #endif
 
   static int patch_oop(address insn_addr, address o);
-  static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
   // Return whether code is emitted to a scratch blob.
   virtual bool in_scratch_emit_size() {
@@ -718,6 +718,9 @@ public:
 
   // Support for sign-extension (hi:lo = extend_sign(lo))
   void extend_sign(Register hi, Register lo);
+
+  // Clean up a subword typed value to the representation in compliance with JVMS §2.3
+  void narrow_subword_type(Register reg, BasicType bt);
 
   // Load and store values by size and signed-ness
   void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
@@ -1622,6 +1625,10 @@ public:
   void cc20_set_qr_registers(FloatRegister (&vectorSet)[4],
           const FloatRegister (&stateVectors)[16], int idx1, int idx2,
           int idx3, int idx4);
+
+  // Rotate using ORR (for identity) or USHR + SLI.
+  void neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
+                          FloatRegister src, int shift_amount);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();

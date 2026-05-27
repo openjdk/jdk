@@ -27,7 +27,6 @@
  * @summary Test Instrumentation tracing is enabled with a system property
  * @library /test/lib
  * @build TraceUsageAgent
- * @run shell MakeJAR3.sh TraceUsageAgent 'Agent-Class: TraceUsageAgent' 'Can-Retransform-Classes: true'
  * @run driver jdk.test.lib.util.JavaAgentBuilder TraceUsageAgent TraceUsageAgent.jar Can-Retransform-Classes:true
  */
 

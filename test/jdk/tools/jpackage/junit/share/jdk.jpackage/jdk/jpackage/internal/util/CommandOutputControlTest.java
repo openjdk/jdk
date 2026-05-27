@@ -22,6 +22,8 @@
  */
 package jdk.jpackage.internal.util;
 
+import jdk.jpackage.test.WindowsHelper;
+
 import static java.util.stream.Collectors.joining;
 import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
@@ -259,6 +261,20 @@ public class CommandOutputControlTest {
         assertEquals("Unexpected exit code 3 from executing the command <unknown>", ex.getMessage());
     }
 
+    @Test
+    public void test_Result_expectExitCode_unavailable() {
+        var result = CommandOutputControl.Result.build().noExitCode().create();
+
+        var ex = assertThrowsExactly(CommandOutputControl.UnavailableExitCodeException.class, () -> {
+            result.expectExitCode(0);
+        });
+
+        assertNull(ex.getCause());
+        assertSame(result, ex.getResult());
+        assertEquals(String.format("Exit code unavailable from executing the command %s",
+                result.execAttrs().printableCommandLine()), ex.getMessage());
+    }
+
     @ParameterizedTest
     @MethodSource
     public void test_Result_toCharacterResult(ToCharacterResultTestSpec spec) throws IOException, InterruptedException {
@@ -349,6 +365,13 @@ public class CommandOutputControlTest {
 
         var getExitCodeEx = assertThrowsExactly(IllegalStateException.class, result::getExitCode);
         assertEquals(("Exit code is unavailable for timed-out command"), getExitCodeEx.getMessage());
+
+        // Verify UnavailableExitCodeException
+        var expectExitCodeEx = assertThrowsExactly(CommandOutputControl.UnavailableExitCodeException.class, () -> {
+            result.expectExitCode(0);
+        });
+        assertEquals(String.format("Exit code unavailable from executing the command %s",
+                result.execAttrs().printableCommandLine()), expectExitCodeEx.getMessage());
 
         // We want to check that the saved output contains only the text emitted before the "sleep" action.
         // It works for a subprocess, but in the case of a ToolProvider, sometimes the timing is such
@@ -1004,7 +1027,7 @@ public class CommandOutputControlTest {
                     commandSeparator = " && ";
                 }
                 case POWERSHELL -> {
-                    commandline.addAll(List.of("powershell", "-NoProfile", "-Command"));
+                    commandline.addAll(List.of(WindowsHelper.PowerShellPath(), "-NoProfile", "-Command"));
                     commandSeparator = "; ";
                 }
                 default -> {
@@ -1176,7 +1199,7 @@ public class CommandOutputControlTest {
                     // It sends packets every second.
                     // To wait N seconds, it should send N+1 packets.
                     // The "timeout" command works only in a console.
-                    return String.format("(ping -n %d localhost > nul)", sleep.seconds() + 1);
+                    return String.format("(%%SystemRoot%%\\System32\\ping.exe -n %d localhost > nul)", sleep.seconds() + 1);
                 }
                 case POWERSHELL -> {
                     return "Start-Sleep -Seconds " + sleep.seconds();
@@ -1248,7 +1271,7 @@ public class CommandOutputControlTest {
 
         static <T extends CommandOutputControlMutator> Function<T, Set<T>> addToSet(Set<T> set) {
             return m -> {
-                return new SetBuilder<T>().add(set).add(m).create();
+                return SetBuilder.build(set).add(m).create();
             };
         }
     }
