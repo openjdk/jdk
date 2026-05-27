@@ -168,7 +168,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
   __ movptr(x10, ExternalAddress(Interpreter::result_handler(method()->result_type())));
   __ ret();
 
-  __ publish_instructions();
+  __ invalidate_icache();
 }
 
 

@@ -127,7 +127,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
   __ load_const(R3_RET, AbstractInterpreter::result_handler(method()->result_type()));
   __ blr();
 
-  __ publish_instructions();
+  __ invalidate_icache();
 }
 
 #undef __

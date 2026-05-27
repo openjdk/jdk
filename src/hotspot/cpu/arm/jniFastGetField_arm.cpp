@@ -210,7 +210,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   __ bind_literal(safepoint_counter_addr);
 
-  __ publish_instructions();
+  __ invalidate_icache();
 
   guarantee((__ pc() - fast_entry) <= BUFFER_SIZE, "BUFFER_SIZE too small");
 

@@ -124,7 +124,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ mtctr(R12_scratch2);
   __ bctr();
 
-  masm->publish_instructions();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
@@ -224,7 +224,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ mtctr(R11_scratch1);
   __ bctr();
 
-  masm->publish_instructions();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;

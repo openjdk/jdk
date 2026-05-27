@@ -105,7 +105,7 @@ CodeletMark::~CodeletMark() {
   // Align so printing shows nop's instead of random code at the end (Codelets are aligned).
   (*_masm)->align(wordSize);
   // Make sure all code is in code buffer.
-  (*_masm)->publish_instructions();
+  (*_masm)->invalidate_icache();
 
   // Commit Codelet.
   int committed_code_size = (*_masm)->code()->pure_insts_size();

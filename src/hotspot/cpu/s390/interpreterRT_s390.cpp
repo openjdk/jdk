@@ -140,7 +140,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
   iterate(fingerprint);
   __ load_const_optimized(Z_RET, AbstractInterpreter::result_handler(method()->result_type()));
   __ z_br(Z_R14);
-  __ publish_instructions();
+  __ invalidate_icache();
 }
 
 #undef  __

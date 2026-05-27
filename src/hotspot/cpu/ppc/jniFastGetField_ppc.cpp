@@ -153,7 +153,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ load_const_optimized(R12, slow_case_addr, R0);
   __ call_c_and_return_to_caller(R12); // tail call
 
-  __ publish_instructions();
+  __ invalidate_icache();
 
   return fast_entry;
 }

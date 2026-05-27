@@ -1114,7 +1114,7 @@ void VM_Version::determine_features() {
   a->z_br(Z_R14);
 
   address code_end = a->pc();
-  a->publish_instructions();
+  a->invalidate_icache();
 
   cbuf.insts()->set_end(code_end);
 

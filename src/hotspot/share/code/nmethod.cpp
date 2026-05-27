@@ -1596,7 +1596,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
-
       methodHandle mh(Thread::current(), nm_copy->method());
       nm_copy->method()->set_code(mh, nm_copy);
 

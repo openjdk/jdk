@@ -1157,7 +1157,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
   __ blr();
 
-  __ publish_instructions();
+  __ invalidate_icache();
 
   return entry;
 }
@@ -1174,7 +1174,7 @@ address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
   __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
   __ blr();
 
-  __ publish_instructions();
+  __ invalidate_icache();
 
   return entry;
 }
@@ -1195,7 +1195,7 @@ address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
   __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
   __ blr();
 
-  __ publish_instructions();
+  __ invalidate_icache();
 
   return entry;
 }

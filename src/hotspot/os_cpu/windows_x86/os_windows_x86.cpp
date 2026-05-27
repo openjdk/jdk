@@ -134,7 +134,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   pDCD = (pDynamicCodeData) masm->pc();
 
   masm->jump(RuntimeAddress((address)&HandleExceptionFromCodeCache), rscratch1);
-  masm->publish_instructions();
+  masm->invalidate_icache();
 
   // Create an Unwind Structure specifying no unwind info
   // other than an Exception Handler

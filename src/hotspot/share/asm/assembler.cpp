@@ -104,7 +104,7 @@ void AbstractAssembler::end_a_const(CodeSection* cs) {
   set_code_section(cs);
 }
 
-void AbstractAssembler::publish_instructions() {
+void AbstractAssembler::invalidate_icache() {
   ICache::invalidate_range(addr_at(0), offset());
 }
 

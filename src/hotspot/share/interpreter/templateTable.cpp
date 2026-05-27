@@ -59,7 +59,7 @@ void Template::generate(InterpreterMacroAssembler* masm) {
   TemplateTable::_masm = masm;
   // code generation
   _gen(_arg);
-  masm->publish_instructions();
+  masm->invalidate_icache();
 }
 
 

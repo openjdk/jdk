@@ -110,7 +110,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address ame_addr = __ pc();
   __ ldr(PC, Address(Rmethod, Method::from_compiled_offset()));
 
-  masm->publish_instructions();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
@@ -205,7 +205,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(SharedRuntime::get_handle_wrong_method_stub() != nullptr, "check initialization order");
   __ jump(SharedRuntime::get_handle_wrong_method_stub(), relocInfo::runtime_call_type, Rtemp);
 
-  masm->publish_instructions();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;
