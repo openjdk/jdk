@@ -195,14 +195,12 @@ public class TestIncorrectVectorReassociation {
         }
     }
 
-    static final VectorSpecies<Integer> ISP256 = IntVector.SPECIES_256;
-
     @Test
     @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static IntVector test_mixed_sadd_suadd() {
-        IntVector v0 = IntVector.broadcast(ISP256, 1);
-        IntVector v1 = IntVector.broadcast(ISP256, 0);
+        IntVector v0 = IntVector.broadcast(ISP, 1);
+        IntVector v1 = IntVector.broadcast(ISP, 0);
         IntVector v2 = v0.lanewise(VectorOperators.SADD, v1);
         return v2.lanewise(VectorOperators.SUADD, -1);
     }
