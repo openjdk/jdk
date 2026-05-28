@@ -1745,15 +1745,20 @@ public:
 
 // Wrappers for SVE explicit destructive instructions, overriding the
 // same-signature Assembler entry points to enable movprfx fusion optimization.
+//
+// Implicit destructive instructions (e.g. predicated unary ops like sve_abs/
+// sve_neg/sve_not, whose ISA encoding allows Zd != Zn but whose use as a Java
+// Vector API masked operation requires pass-through of the first source) are
+// not covered here. For those, the .ad file is responsible for emitting
+// movprfx explicitly via maybe_movprfx() before the destructive op.
 #define SVE_DESTRUCTIVE_BINARY_INS(NAME)                                       \
   using Assembler::NAME;                                                       \
-                                                                               \
-  template<typename OpType>                                                    \
-  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, OpType op2) {   \
-    if (!std::is_same<FloatRegister, OpType>::value || Zd != op2) {            \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
+            FloatRegister Zm) {                                                \
+    if (Zd != Zm) {                                                            \
       try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
     }                                                                          \
-    Assembler::NAME(Zd, T, Pg, op2);                                           \
+    Assembler::NAME(Zd, T, Pg, Zm);                                            \
   }
 
 #define SVE_DESTRUCTIVE_BINARY_5(I1, I2, I3, I4, I5)                           \
@@ -1770,24 +1775,34 @@ public:
 #undef SVE_DESTRUCTIVE_BINARY_INS
 #undef SVE_DESTRUCTIVE_BINARY_5
 
-#define SVE_DESTRUCTIVE_UNPRED_IMM_INS(NAME)                                   \
-  template<typename OpType>                                                    \
-  void NAME(FloatRegister Zd, SIMD_RegVariant T, OpType op) {                  \
+#define SVE_DESTRUCTIVE_SHIFT_IMM_INS(NAME)                                    \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int shift) {    \
     try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
-    Assembler::NAME(Zd, T, op);                                                \
+    Assembler::NAME(Zd, T, Pg, shift);                                         \
   }
 
-  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_add);
-  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_sub);
-  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_and);
-  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_eor);
-  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_orr);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_asr);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsl);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsr);
+
+#undef SVE_DESTRUCTIVE_SHIFT_IMM_INS
+
+#define SVE_DESTRUCTIVE_UNPRED_IMM_INS(NAME, IMM_TYPE)                         \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, IMM_TYPE imm) {               \
+    try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
+    Assembler::NAME(Zd, T, imm);                                               \
+  }
+
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_add, unsigned);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_sub, unsigned);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_and, uint64_t);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_eor, uint64_t);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_orr, uint64_t);
 
 #undef SVE_DESTRUCTIVE_UNPRED_IMM_INS
 
 #define SVE_DESTRUCTIVE_TERNARY_INS(NAME)                                      \
   using Assembler::NAME;                                                       \
-                                                                               \
   void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
             FloatRegister Zn, FloatRegister Zm) {                              \
     if (Zd != Zn && Zd != Zm) {                                                \
@@ -1809,6 +1824,7 @@ public:
 
 #undef SVE_DESTRUCTIVE_TERNARY_INS
 
+  using Assembler::sve_eor3;
   void sve_eor3(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {
     if (Zd != Zm && Zd != Zk) {
       try_to_replace_prev_vector_copy_with_movprfx(Zd);
