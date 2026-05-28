@@ -1137,7 +1137,8 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
     }
 
     // Go to runtime and handle the rest there.
-    __ call(RuntimeAddress(keepalive_runtime_entry_addr()));
+    // Use rax as scratch, as it will be saved if live.
+    __ call(RuntimeAddress(keepalive_runtime_entry_addr()), rax);
   }
   if (L_done != nullptr) {
     __ jmp(*L_done);
@@ -1260,7 +1261,8 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     }
 
     // Go to runtime and handle the rest there.
-    __ call(RuntimeAddress(lrb_runtime_entry_addr()));
+    // Use rax as scratch, as it will be clobbered by result anyway.
+    __ call(RuntimeAddress(lrb_runtime_entry_addr()), rax);
 
     // Save the result where needed.
     if (_narrow) {
