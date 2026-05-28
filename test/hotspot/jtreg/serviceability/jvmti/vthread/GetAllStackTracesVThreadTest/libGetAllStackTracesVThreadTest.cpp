@@ -33,7 +33,7 @@ static const jint MAX_FRAME_COUNT = 32;
 extern "C" {
 
 JNIEXPORT jboolean JNICALL
-Java_GetAllStackTracesTest_checkGetAllStackTraces(JNIEnv* jni, jclass clazz,
+Java_GetAllStackTracesVThreadTest_checkGetAllStackTraces(JNIEnv* jni, jclass clazz,
                                                    jobjectArray vthreads, jint count) {
     jvmtiStackInfo* stack_info = nullptr;
     jint thread_count = 0;
@@ -42,6 +42,17 @@ Java_GetAllStackTracesTest_checkGetAllStackTraces(JNIEnv* jni, jclass clazz,
     check_jvmti_status(jni, err, "checkGetAllStackTraces: error in JVMTI GetAllStackTraces");
 
     LOG("GetAllStackTraces returned %d threads\n", thread_count);
+
+    for (int k = 0; k < thread_count; k++) {
+        jvmtiThreadInfo tinfo;
+        err = jvmti->GetThreadInfo(stack_info[k].thread, &tinfo);
+        if (err == JVMTI_ERROR_NONE) {
+            jboolean isVirtual = jni->IsVirtualThread(stack_info[k].thread);
+            LOG("  [%d] %s (frames: %d, state: %x, virtual: %d)\n",
+                k, tinfo.name, stack_info[k].frame_count, stack_info[k].state, isVirtual);
+            jvmti->Deallocate((unsigned char*)tinfo.name);
+        }
+    }
 
     int found = 0;
     for (int i = 0; i < count; i++) {
