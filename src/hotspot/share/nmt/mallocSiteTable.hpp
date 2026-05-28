@@ -196,7 +196,7 @@ class MallocSiteTable : AllStatic {
  private:
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static Atomic<int>                        _entry_count;
+  static Atomic<size_t>                     _entry_count;
   static Atomic<MallocSiteHashtableEntry*>* _table;
   static const NativeCallStack*             _hash_entry_allocation_stack;
   static const MallocSiteHashtableEntry*    _hash_entry_allocation_site;
