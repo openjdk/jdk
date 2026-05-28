@@ -41,10 +41,6 @@ bool G1IHOPControl::have_enough_data_for_prediction() const {
          ((size_t)_old_non_humongous_alloc_rate.num() >= G1AdaptiveIHOPNumInitialSamples);
 }
 
-double G1IHOPControl::last_marking_start_to_mixed_time_s() const {
-  return _marking_start_to_mixed_time_s.last();
-}
-
 size_t G1IHOPControl::effective_target_occupancy() const {
   assert(_is_adaptive, "precondition");
 
@@ -95,7 +91,7 @@ void G1IHOPControl::report_statistics(G1NewTracer* new_tracer, size_t non_young_
   send_trace_event(new_tracer, non_young_occupancy);
 }
 
-void G1IHOPControl::record_mutator_period(size_t expected_young_gen_size) {
+void G1IHOPControl::record_expected_young_gen_size(size_t expected_young_gen_size) {
   _expected_young_gen_at_first_mixed_gc = expected_young_gen_size;
 }
 

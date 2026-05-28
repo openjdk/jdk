@@ -75,7 +75,6 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   double predict(const TruncatedSeq* seq) const;
 
   bool have_enough_data_for_prediction() const;
-  double last_marking_start_to_mixed_time_s() const;
 
   // The "effective" target occupancy the algorithm wants to keep until the start
   // of Mixed GCs. This is typically lower than the target occupancy, as the
@@ -95,18 +94,11 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Adjust target occupancy.
   void update_target_occupancy(size_t new_target_occupancy);
 
-  // Update allocation rate information and current expected young gen size for the
-  // first mixed gc needed for the predictor. Allocation rate is given as the
-  // separately passed in allocation increment and the time passed (mutator time)
-  // for the latest allocation increment here. Allocation size is the memory needed
-  // during the mutator before and the first mixed gc pause itself.
+  // Updates expected young gen size for the first mixed gc needed for the predictor.
   // Contents include young gen at that point, and the memory required for evacuating
   // the collection set in that first mixed gc (including waste caused by PLAB
   // allocation etc.).
-  void record_mutator_period(size_t expected_young_gen_size);
-
-  // Update the time spent in the mutator beginning from the end of concurrent start to
-  // the first mixed gc.
+  void record_expected_young_gen_size(size_t expected_young_gen_size);
 
   void record_concurrent_cycle(double marking_start_to_mixed_time_s,
                                size_t non_humongous_bytes,

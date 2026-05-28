@@ -1038,10 +1038,8 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
     }
   }
 
-  // As an approximation for the young gc promotion rates during marking we use
-  // all of them. In many applications there are only a few if any young gcs during
-  // marking, which makes any prediction useless. This increases the accuracy of the
-  // prediction.
+  // The second clause prevents skewing the IHOP prediction with (typically) degenerate
+  // back-to-back young-gen-size samples.
   if (this_gc_was_young_only && mutator_time_s > min_valid_time) {
     // IHOP control wants to know the expected young gen length if it were not
     // restrained by the heap reserve. Using the actual length would make the
@@ -1049,7 +1047,7 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
     // predicted target occupancy.
     size_t young_gen_size = young_list_desired_length() * G1HeapRegion::GrainBytes;
 
-    _ihop_control->record_mutator_period(young_gen_size);
+    _ihop_control->record_expected_young_gen_size(young_gen_size);
     report = true;
   }
 
