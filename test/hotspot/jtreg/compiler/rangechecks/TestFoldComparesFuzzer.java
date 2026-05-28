@@ -526,6 +526,8 @@ public class TestFoldComparesFuzzer {
                 // both CmpI are generated. Further, it assumes that both of the "or" branches
                 // (fail1 and fail2) end up "in the same place": either at the same region, or
                 // both in an uncommon trap. With profiling, the following cases are possible:
+                // - The first if is constant folded to fail1, and we have no CmpI nor CmpU
+                //   in the graph.
                 // - The first if always leads to fail1, and away from the second if, and so we
                 //   only have a single CmpI in the graph after parsing.
                 // - The first if always leads towards the second if, and away from fail1. And
@@ -536,7 +538,7 @@ public class TestFoldComparesFuzzer {
                 // but we would need to control warmup, and generate corresponding inputs that
                 // ensure the right paths are compiled or not compiled.
                 if (withWarmup) {
-                    cmpIParse = "> 0"; cmpUParse = "= 0"; cmpIFinal = "<= 2"; cmpUFinal = "< 2";
+                    cmpIParse = "<= 2"; cmpUParse = "= 0"; cmpIFinal = "<= 2"; cmpUFinal = "< 2";
                     comment = "with warmup: unstable-if makes precise counting hard.";
                 }
 
