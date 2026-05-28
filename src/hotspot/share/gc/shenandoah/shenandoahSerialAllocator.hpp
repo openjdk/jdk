@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSERIALALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSERIALALLOCATOR_HPP
 
-#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 
 class ShenandoahFreeSet;
 class ShenandoahHeap;

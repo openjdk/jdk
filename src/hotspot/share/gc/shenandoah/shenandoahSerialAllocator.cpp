@@ -24,13 +24,13 @@
 
 #include "gc/shenandoah/shenandoahSerialAllocator.hpp"
 
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/plab.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "gc/shared/plab.hpp"
 #include "logging/log.hpp"
 
 using idx_t = ShenandoahSimpleBitMap::idx_t;
