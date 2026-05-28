@@ -48,6 +48,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1215,6 +1216,12 @@ public final class MacHelper {
         final var expectedContentsItems = cmd.isRuntime() ? RUNTIME_BUNDLE_CONTENTS : APP_BUNDLE_CONTENTS;
 
         var contentsVerifier = TKit.assertDirectoryContent(contentsDir);
+        // See JDK-8384250. macOS can create ".BC.*" temp file which is transient
+        // Finder metadata. Ignore it.
+        Collection<Path> removePaths = contentsVerifier.items().stream()
+                .filter(path -> path.getFileName().startsWith(".BC."))
+                .collect(toSet());
+        contentsVerifier = contentsVerifier.removeAll(removePaths);
         if (!cmd.hasArgument("--app-content")) {
             contentsVerifier.match(expectedContentsItems);
         } else {
