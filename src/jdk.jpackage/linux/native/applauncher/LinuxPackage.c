@@ -277,10 +277,11 @@ static int execCommand(
     int devNull = -1;
     int savedStderr = -1;
     int savedErrno = 0;
+    bool callbackSuccess = false;
     bool childReady = false;
     int waitpidStatus = -1;
 
-    if (!logCommandLine("execCommand: (%s)", argv)) {
+    if (!logCommandLine("execCommand: cmdline: [%s]", argv)) {
         return -1;
     }
 
@@ -358,7 +359,11 @@ cleanupChild:
     }
     pipefd[0] = -1;
 
-    invokeCallback(stream, callback, callbackData);
+    callbackSuccess = invokeCallback(stream, callback, callbackData);
+    if (!callbackSuccess) {
+        JP_LOG_TRACE("Callback failed");
+        goto cleanup;
+    }
 
 cleanup:
     if (stream) {
@@ -377,7 +382,12 @@ cleanup:
         }
     }
 
-    JP_LOG_TRACE("execCommand: exit: %d", exitCode);
+    JP_LOG_TRACE("execCommand: child exit code: %d", exitCode);
+
+    if (exitCode == 0 && !callbackSuccess) {
+        exitCode = 1;
+    }
+
     return exitCode;
 }
 
@@ -523,6 +533,10 @@ JvmLauncherDesc* getJvmLauncherDesc(void) {
         if (execCommand(pkgQueryCmd, findLauncherLib, &launcherLibPath)) {
             goto cleanup;
         }
+    }
+
+    if (!launcherLibPath) {
+        goto cleanup;
     }
 
     result = createJvmLauncherDesc();
