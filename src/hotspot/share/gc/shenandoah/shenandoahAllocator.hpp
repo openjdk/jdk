@@ -44,6 +44,9 @@ public:
   // Allocate memory for the given request. Returns nullptr on failure.
   // Sets in_new_region to true if allocation consumes a previously empty region.
   virtual HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) = 0;
+
+  // Called during free-set rebuild to invalidate any cached allocation state.
+  virtual void clear_retained_regions() = 0;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP

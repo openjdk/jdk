@@ -25,58 +25,27 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSERIALALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSERIALALLOCATOR_HPP
 
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAllocator.hpp"
-
-class ShenandoahFreeSet;
-class ShenandoahHeap;
-class ShenandoahHeapRegion;
-class ShenandoahRegionPartitions;
+#include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 
 // ShenandoahSerialAllocator performs all allocations serially under the heap lock.
-// It selects regions from the partitioned free set:
-//  - Mutator allocations: from Mutator partition with left/right bias alternation
-//  - Collector allocations: from Collector/OldCollector partition with affiliation preference
-//  - Overflow: collector may steal empty regions from Mutator partition
+// It dispatches requests to per-partition allocators based on request type:
+//  - Mutator allocations: routed to the Mutator partition allocator
+//  - Collector allocations: routed to Collector or OldCollector partition allocator
 //  - Humongous: delegated to ShenandoahFreeSet::allocate_contiguous()
 class ShenandoahSerialAllocator : public ShenandoahAllocator {
 private:
-  ShenandoahHeap* const _heap;
-
-  // Allocation direction alternates to avoid repeatedly skipping the same uncollected regions.
-  ssize_t _alloc_bias_weight;
-  static const ssize_t INITIAL_ALLOC_BIAS_WEIGHT = 256;
-
-  // Attempt allocation within a single region. Handles LAB sizing, PLAB card-alignment,
-  // affiliation checks, and updates partition accounting via ShenandoahFreeSet.
-  // Retires the region if remaining capacity falls below PLAB::min_size().
-  HeapWord* try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region);
-
-  HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
-  HeapWord* allocate_for_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
-  HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
-
-  // Steal an empty region from Mutator partition for collector use.
-  HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
-
-  // Re-evaluate left-to-right vs right-to-left bias for mutator allocations.
-  void update_allocation_bias();
-
-  // Scan regions using the given iterator, attempt allocation in each.
-  template<typename Iter>
-  HeapWord* allocate_from_regions(Iter& iterator, ShenandoahAllocRequest& req, bool& in_new_region);
-
-  // For collector: prefer regions matching the requested affiliation, fall back to FREE regions.
-  template<typename Iter>
-  HeapWord* allocate_with_affiliation(Iter& iterator,
-                                      ShenandoahAffiliation affiliation,
-                                      ShenandoahAllocRequest& req,
-                                      bool& in_new_region);
+  ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Mutator>      _mutator_alloc;
+  ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Collector>    _collector_alloc;
+  ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::OldCollector> _old_collector_alloc;
 
 public:
   ShenandoahSerialAllocator(ShenandoahFreeSet* free_set);
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) override;
+
+  // Called during free-set rebuild to invalidate retained regions.
+  void clear_retained_regions() override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSERIALALLOCATOR_HPP

@@ -26,6 +26,7 @@
 
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
@@ -2604,6 +2605,8 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
   shenandoah_assert_heaplocked();
   assert(rebuild_lock() != nullptr, "sanity");
   rebuild_lock()->lock(false);
+  // Invalidate any retained regions in the allocator before clearing partition state.
+  _heap->allocator()->clear_retained_regions();
   // This resets all state information, removing all regions from all sets.
   clear();
   log_debug(gc, free)("Rebuilding FreeSet");

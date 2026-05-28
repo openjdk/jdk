@@ -441,6 +441,7 @@ public:
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
   friend class ShenandoahAllocator;
   friend class ShenandoahSerialAllocator;
+  template<ShenandoahFreeSetPartitionId> friend class ShenandoahPartitionAllocator;
 
 using idx_t = ShenandoahSimpleBitMap::idx_t;
 private:
