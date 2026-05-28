@@ -24,14 +24,12 @@ package compiler.c2.aarch64;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.*;
 
 /*
  * @test
  * @summary Calls to c2i interface stubs should be generated with near branches
- * for segmented code cache up to 250MB
+ * for segmented code cache up to 128MB
  * @library /test/lib /
  *
  * @requires vm.flagless
@@ -78,7 +76,7 @@ public class TestStaticCallStub {
         List<String> extractedOpcodes = extractOpcodesN(itr, nearStaticCallOpcodeSeq.length);
 
         if (!Arrays.asList(nearStaticCallOpcodeSeq).equals(extractedOpcodes)) {
-            throw new RuntimeException("for code cache < 250MB the static call stub is expected to be implemented using near branch");
+            throw new RuntimeException("for code cache < 128MB the static call stub is expected to be implemented using near branch");
         }
 
         return;
@@ -88,7 +86,7 @@ public class TestStaticCallStub {
         List<String> extractedOpcodes = extractOpcodesN(itr, farStaticCallOpcodeSeq.length);
 
         if (!Arrays.asList(farStaticCallOpcodeSeq).equals(extractedOpcodes)) {
-            throw new RuntimeException("for code cache > 250MB the static call stub is expected to be implemented using far branch");
+            throw new RuntimeException("for code cache > 128MB the static call stub is expected to be implemented using far branch");
         }
 
         return;
@@ -102,15 +100,22 @@ public class TestStaticCallStub {
             "-Xbatch",
             "-XX:+TieredCompilation",
             "-XX:+SegmentedCodeCache",
-            "-XX:ReservedCodeCacheSize=" + (bigCodeCache ? "256M" : "200M"),
+            "-XX:ReservedCodeCacheSize=" + (bigCodeCache ? "129M" : "128M"),
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:CompileCommand=option," + className + "::main,bool,PrintAssembly,true",
-            className};
+            className,
+            "argument#1"
+        };
 
 
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         List<String> lines = output.asLines();
+
+        if (lines.stream().anyMatch(l -> l.contains("Loading hsdis library failed"))) {
+            System.out.println("NOTE: hsdis not available, skipping assembly verification");
+            return;
+        }
 
         ListIterator<String> itr = lines.listIterator();
         while (itr.hasNext()) {
