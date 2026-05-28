@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <sys/wait.h>
 #include "JvmLauncher.h"
 #include "LinuxPackage.h"
@@ -58,19 +59,9 @@ static char* getModulePath(void) {
 }
 
 
-# define PACKAGE_TYPE_UNKNOWN 0
-# define PACKAGE_TYPE_RPM 1
-# define PACKAGE_TYPE_DEB 2
-
-typedef struct {
-    char* name;
-    int type;
-} PackageDesc;
-
-
 static void freePackageDesc(PackageDesc* desc) {
     if (desc) {
-        free(desc->name);
+        free((void*)desc->name);
         free(desc);
     }
 }
@@ -93,32 +84,82 @@ cleanup:
 }
 
 
-static PackageDesc* initPackageDesc(PackageDesc* desc, const char* str,
-                                                                int type) {
+static bool initPackageDesc(PackageDesc* desc, const char* str, int type) {
     char *newStr = strdup(str);
     if (!newStr) {
         JP_LOG_ERRNO;
-        return 0;
+        return false;
     }
 
-    free(desc->name);
+    free((void*)desc->name);
     desc->name = newStr;
     desc->type = type;
-    return desc;
+    return true;
 }
 
 
-#define EXEC_CALLBACK_USE 1
-#define EXEC_CALLBACK_IGNORE 0
+static JvmLauncherDesc* createJvmLauncherDesc(void) {
+    JvmLauncherDesc* result = 0;
 
-typedef int (*execCallbackType)(void*, char*);
+    result = malloc(sizeof(JvmLauncherDesc));
+    if (!result) {
+        JP_LOG_ERRNO;
+        goto cleanup;
+    }
 
-static int logCommandLine(const char* format, const char* const argv[]) {
+    result->packageType = PACKAGE_TYPE_UNKNOWN;
+    result->packageName = NULL;
+    result->jvmLauncherLibPath = NULL;
+
+cleanup:
+    return result;
+}
+
+
+static bool initJvmLauncherDesc(
+        JvmLauncherDesc*    desc,
+        const PackageDesc*  packageDesc,
+        const char*         jvmLauncherLibPath) {
+
+    char* newJvmLauncherLibPath = NULL;
+    char* newPackageName = NULL;
+
+    newJvmLauncherLibPath = strdup(jvmLauncherLibPath);
+    if (!newJvmLauncherLibPath) {
+        JP_LOG_ERRNO;
+        return false;
+    }
+
+    if (packageDesc && packageDesc->name) {
+        newPackageName = strdup(packageDesc->name);
+        if (!newPackageName) {
+            JP_LOG_ERRNO;
+            free(newJvmLauncherLibPath);
+            return false;
+        }
+    }
+
+    free((void*)desc->packageName);
+    free((void*)desc->jvmLauncherLibPath);
+
+    desc->packageName = newPackageName;
+    if (packageDesc) {
+        desc->packageType = packageDesc->type;
+    } else {
+        desc->packageType = PACKAGE_TYPE_UNKNOWN;
+    }
+    desc->jvmLauncherLibPath = newJvmLauncherLibPath;
+
+    return true;
+}
+
+
+static bool logCommandLine(const char* format, const char* const argv[]) {
     char* formattedCommandLine = NULL;
     int formattedCommandLineLength = 0;
     const char* arg;
     int i;
-    int status = -1;
+    bool success = false;
 
     for (i = 0; (arg = argv[i]) != NULL; i++) {
         /* Count trailing whitespace */
@@ -152,16 +193,22 @@ static int logCommandLine(const char* format, const char* const argv[]) {
 
     JP_LOG_TRACE(format, formattedCommandLine);
 
-    status = 0;
+    success = true;
 
 cleanup:
     free(formattedCommandLine);
 
-    return status;
+    return success;
 }
 
-static int invokeCallback(FILE* stream, execCallbackType callback,
-                                                        void* callbackData) {
+#define EXEC_CALLBACK_USE 1
+#define EXEC_CALLBACK_IGNORE 0
+
+typedef int (*execCallbackType)(void*, char*);
+
+static bool invokeCallback(
+        FILE* stream, execCallbackType callback, void* callbackData) {
+
     char* strBufBegin = 0;
     char* strBufEnd = 0;
     char* strBufNextChar = 0;
@@ -170,7 +217,7 @@ static int invokeCallback(FILE* stream, execCallbackType callback,
     int callbackMode = EXEC_CALLBACK_USE;
     int c;
     ptrdiff_t char_offset;
-    int status = -1;
+    int success = false;
 
     for (;;) {
         c = fgetc(stream);
@@ -208,18 +255,21 @@ static int invokeCallback(FILE* stream, execCallbackType callback,
         *strBufNextChar++ = (char)c;
     }
 
-    status  = 0;
+    success = true;
 
 cleanup:
     if (strBufBegin) {
         free(strBufBegin);
     }
 
-    return status;
+    return success;
 }
 
-static int execCommand(const char* const argv[],
-                            execCallbackType callback, void* callbackData) {
+static int execCommand(
+        const char* const   argv[],
+        execCallbackType    callback,
+        void*               callbackData) {
+
     int pipefd[] = { -1, -1 };
     pid_t cpid = -1;
     FILE* stream = NULL;
@@ -227,10 +277,10 @@ static int execCommand(const char* const argv[],
     int devNull = -1;
     int savedStderr = -1;
     int savedErrno = 0;
-    int childReady = -1;
+    bool childReady = false;
     int waitpidStatus = -1;
 
-    if (logCommandLine("execCommand: (%s)", argv) == -1) {
+    if (!logCommandLine("execCommand: (%s)", argv)) {
         return -1;
     }
 
@@ -270,7 +320,7 @@ static int execCommand(const char* const argv[],
             goto cleanupChild;
         }
 
-        childReady = 0;
+        childReady = true;
 
 cleanupChild:
         if (devNull != -1) {
@@ -279,7 +329,7 @@ cleanupChild:
 
         closePipeEnd(pipefd, 0);
 
-        if (childReady != -1) {
+        if (childReady) {
             execvp(argv[0], (char* const*)argv);
 
             /*
@@ -423,15 +473,25 @@ static PackageDesc* findOwnerOfFile(const char* path) {
 }
 
 
-char* getJvmLauncherLibPath(void) {
+void freeJvmLauncherDesc(JvmLauncherDesc* desc) {
+    if (desc) {
+        free((void*)desc->packageName);
+        free((void*)desc->jvmLauncherLibPath);
+        free(desc);
+    }
+}
+
+
+JvmLauncherDesc* getJvmLauncherDesc(void) {
     char* modulePath = 0;
     char* appImageDir = 0;
     char* launcherLibPath = 0;
     const char* pkgQueryCmd[] = {
         NULL, NULL, NULL, NULL
     };
-    int execStatus = -1;
     PackageDesc* pkg = 0;
+    JvmLauncherDesc* result = 0;
+    bool resultReady = false;
 
     modulePath = getModulePath();
     if (!modulePath) {
@@ -460,20 +520,30 @@ char* getJvmLauncherLibPath(void) {
             goto cleanup;
         }
 
-        execStatus = execCommand(pkgQueryCmd, findLauncherLib,
-                                                            &launcherLibPath);
-        if (execStatus) {
-            free(launcherLibPath);
-            launcherLibPath = NULL;
+        if (execCommand(pkgQueryCmd, findLauncherLib, &launcherLibPath)) {
             goto cleanup;
         }
+    }
+
+    result = createJvmLauncherDesc();
+    if (result && initJvmLauncherDesc(result, pkg, launcherLibPath)) {
+        JP_LOG_TRACE("JvmLauncherDesc(type=%d, name=%s, llib=%s)",
+                result->packageType,
+                result->packageName,
+                result->jvmLauncherLibPath);
+        resultReady = true;
     }
 
 cleanup:
     free(modulePath);
     freePackageDesc(pkg);
+    if (!resultReady) {
+        freeJvmLauncherDesc(result);
+        result = NULL;
+    }
+    free(launcherLibPath);
 
-    return launcherLibPath;
+    return result;
 }
 
 

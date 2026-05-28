@@ -30,7 +30,24 @@
 extern "C" {
 #endif
 
-char* getJvmLauncherLibPath(void);
+#define PACKAGE_TYPE_UNKNOWN 0
+#define PACKAGE_TYPE_RPM 1
+#define PACKAGE_TYPE_DEB 2
+
+typedef struct {
+    const char* name;
+    int type;
+} PackageDesc;
+
+typedef struct {
+    const char* packageName;
+    int packageType;
+    const char* jvmLauncherLibPath;
+} JvmLauncherDesc;
+
+void freeJvmLauncherDesc(JvmLauncherDesc* desc);
+
+JvmLauncherDesc* getJvmLauncherDesc(void);
 
 void closePipeEnd(int* pipefd, int idx);
 

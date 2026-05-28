@@ -45,11 +45,12 @@ size_t hash(const std::string& str) {
 }
 
 Jvm* jvmLauncher;
+PackageDesc pkgDesc = {};
 
 void launchApp() {
     const tstring launcherPath = SysInfo::getProcessModulePath();
 
-    const Package ownerPackage = Package::findOwnerOfFile(launcherPath);
+    const Package ownerPackage = Package(pkgDesc);
 
     AppLauncher appLauncher;
     appLauncher.addJvmLibName(_T("lib/libjli.so"));
@@ -133,10 +134,15 @@ void launchApp() {
 
 extern "C" {
 
-JNIEXPORT JvmlLauncherHandle jvmLauncherCreate(int argc, char *argv[]) {
+JNIEXPORT JvmlLauncherHandle jvmLauncherCreate(
+        const PackageDesc*  pkg,
+        int                 argc,
+        char*               argv[]) {
+
     SysInfo::argc = argc;
     SysInfo::argv = argv;
     jvmLauncher = 0;
+    pkgDesc = *pkg;
     app::launch(std::nothrow, launchApp);
 
     JvmlLauncherHandle jlh = 0;

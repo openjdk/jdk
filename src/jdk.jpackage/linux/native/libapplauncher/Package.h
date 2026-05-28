@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 
 #include "tstrings.h"
+#include "LinuxPackage.h"
 
 
 class AppLauncher;
@@ -37,16 +38,20 @@ class Package {
 public:
     Package();
 
+    Package(const PackageDesc& desc);
+
     std::string name() const {
         return theName;
     }
 
     void initAppLauncher(AppLauncher& appLauncher) const;
 
-    static Package findOwnerOfFile(const std::string& path);
-
 private:
-    enum Type { Unknown, RPM, DEB };
+    enum Type {
+        Unknown = PACKAGE_TYPE_UNKNOWN,
+        RPM = PACKAGE_TYPE_RPM,
+        DEB = PACKAGE_TYPE_DEB
+    };
 
     Type type;
     std::string theName;
