@@ -242,7 +242,7 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
   st->print_cr("Malloc allocation site table:");
 #ifdef ASSERT
   // This is solely for testing
-  st->print_cr("\tExpected entry count: %d", _entry_count.load_relaxed());
+  st->print_cr("\tExpected entry count: %lu", _entry_count.load_relaxed());
 #endif
   st->print_cr("\tTotal entries: %d", total_entries);
   st->print_cr("\tEmpty entries (no outstanding mallocs): %d (%2.2f%%)",
