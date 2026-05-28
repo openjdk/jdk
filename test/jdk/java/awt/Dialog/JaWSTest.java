@@ -123,17 +123,17 @@ public class JaWSTest implements ActionListener, Runnable {
         System.err.println("Running");
         try {
            Thread.sleep(1000);
-       } catch (InterruptedException ie) {
-           ie.printStackTrace();
-       }
-       System.err.println("Before Hiding 1");
-       dummyDialog.setVisible(false);
-       System.err.println("Before Synchronized");
-       synchronized (signalObject) {
-           System.err.println("In Synchronized");
-           signalObject.notify();
-           System.err.println("After Notify");
-       }
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
+        }
+        System.err.println("Before Hiding 1");
+        dummyDialog.setVisible(false);
+        System.err.println("Before Synchronized");
+        synchronized (signalObject) {
+            System.err.println("In Synchronized");
+            signalObject.notify();
+            System.err.println("After Notify");
+        }
         System.err.println("Stop Running");
     }
 }
