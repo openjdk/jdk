@@ -84,7 +84,7 @@ import static java.lang.Float.*;
  * @apiNote
  * {@code Float16} is currently a value-based class and therefore cannot be optimally
  * used as the scalar element type of vector operations until it becomes a value class
- * that behaves similarly to the primitive type {@code short} and arrays of.
+ * that behaves similarly to the primitive type {@code short} and to arrays of {@code short}.
  * For example, accessing {@code Float16} vectors using arrays requires those arrays be
  * {@code short[]} arrays. Accessing vectors using memory segments requires, naturally,
  * that consecutive 16-bits of memory hold 16-bit data values in the IEEE 754 binary16
@@ -4017,10 +4017,10 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     }
 
     /**
-     * Finds a species for an element type of {@code short} and shape.
+     * Finds a species for a carrier type of {@code short} and shape.
      *
      * @param s the shape
-     * @return a species for an element type of {@code short} and shape
+     * @return a species for a carrier type of {@code short} and shape
      * @throws IllegalArgumentException if no such species exists for the shape
      */
     static Float16Species species(VectorShape s) {
