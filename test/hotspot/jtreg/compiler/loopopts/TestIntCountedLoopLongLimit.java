@@ -45,16 +45,15 @@ import static compiler.lib.generators.Generators.*;
  * @test
  * @bug 8336759
  * @summary test long limits in int counted loops are speculatively converted to int for counted loop
- *         optimizations
+ * optimizations
  * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
- *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   ${test.main.class} testIr
+ * ${test.main.class} testIr
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation
- *                   ${test.main.class} testDeoptimizations
+ * ${test.main.class} testDeoptimizations
  */
 public class TestIntCountedLoopLongLimit {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
@@ -182,10 +181,11 @@ public class TestIntCountedLoopLongLimit {
 
     // Test counted loop deoptimizes if the long limit falls outside int range.
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP })
-    public static int testCountedLoopWithOverflow(long limit) {
+    @IR(counts = { IRNode.COUNTED_LOOP, "2" })
+    @IR(failOn = { IRNode.LOOP })
+    public static int testCountedLoopWithOverflow(int init, long limit) {
         int sum = 0;
-        for (int i = 0; i < limit; i += LARGE_STRIDE) {
+        for (int i = init; i < limit; i += LARGE_STRIDE) {
             sum += LARGE_STRIDE;
 
             if (i < 0) {
@@ -196,10 +196,11 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP })
-    public static int testCountedLoopWithUnderflow(long limit) {
+    @IR(counts = { IRNode.COUNTED_LOOP, "2" })
+    @IR(failOn = { IRNode.LOOP })
+    public static int testCountedLoopWithUnderflow(int init, long limit) {
         int sum = 0;
-        for (int i = 0; i > limit; i -= LARGE_STRIDE) {
+        for (int i = init; i > limit; i -= LARGE_STRIDE) {
             sum -= LARGE_STRIDE;
 
             if (i > 0) {
@@ -213,8 +214,8 @@ public class TestIntCountedLoopLongLimit {
     public static void runTestCountedLoopWithOverflow() {
         long limit = SMALL_UNIFORMS.next() * LARGE_STRIDE; // within int range, no over/underflow
 
-        Asserts.assertEQ((int) limit, testCountedLoopWithOverflow(limit));
-        Asserts.assertEQ((int) -limit, testCountedLoopWithUnderflow(-limit));
+        Asserts.assertEQ((int) limit, testCountedLoopWithOverflow(0, limit));
+        Asserts.assertEQ((int) -limit, testCountedLoopWithUnderflow(0, -limit));
 
         // See testDeoptimizations for traps on slow path with over/underflows
     }
@@ -294,36 +295,41 @@ public class TestIntCountedLoopLongLimit {
     // Compile the method with a known "good" value that doesn't trap, then invoke it with a "bad" value that should
     // cause a deoptimization and trap. Assert the method is deoptimized after the trap.
     // Note: -XX:-BackgroundCompilation is required
-    private static void assertShouldTrap(Method method, long compileArg, long trappingArg) throws Exception {
+    private static void assertShouldTrap(Method method, Object[] compilingArgs, Object[] trappingArgs, int expectedCompilingResult, int expectedTrappingResult) throws Exception {
         Class<?> c = newClassLoader().loadClass(TestIntCountedLoopLongLimit.class.getName());
         Method m = c.getDeclaredMethod(method.getName(), method.getParameterTypes());
+        int observed;
 
         // compile for the fast path
         assertIsNotCompiled(m); // COMP_LEVEL_NONE, interpreter
-        m.invoke(null, compileArg); // run once so all classes are loaded, COMP_LEVEL_FULL_PROFILE, C1
+        observed = (int) m.invoke(null, compilingArgs); // run once so all classes are loaded, COMP_LEVEL_FULL_PROFILE, C1
+        Asserts.assertEQ(expectedCompilingResult, observed);
         compile(m); // COMP_LEVEL_FULL_OPTIMIZATION, C2
 
         // observe de-optimization with trapping value
-        m.invoke(null, trappingArg); // trapped, COMP_LEVEL_FULL_PROFILE, C1
+        observed = (int) m.invoke(null, trappingArgs); // trapped, COMP_LEVEL_FULL_PROFILE, C1
+        Asserts.assertEQ(expectedTrappingResult, observed);
         assertIsNotCompiled(m); // should deoptimize
 
         // compile and invoke again to make sure trap was properly recorded
         compile(m); // COMP_LEVEL_FULL_OPTIMIZATION, C2
-        m.invoke(null, trappingArg); // should not trap this time
+        observed = (int) m.invoke(null, trappingArgs); // should not trap this time
+        Asserts.assertEQ(expectedTrappingResult, observed);
         assertIsCompiled(m); // no de-opt
     }
 
     private static void testDeoptimizations() throws Exception {
         long compileArg = SMALL_UNIFORMS.next() * LARGE_STRIDE; // compile with a known "good" value that doesn't trap
 
-        Method testCountedLoopWithOverflow = TestIntCountedLoopLongLimit.class.getDeclaredMethod("testCountedLoopWithOverflow", long.class);
-        assertShouldTrap(testCountedLoopWithOverflow, compileArg, (long) Integer.MAX_VALUE);
-        assertShouldTrap(testCountedLoopWithOverflow, compileArg, (long) Integer.MAX_VALUE + 1L);
-        assertShouldTrap(testCountedLoopWithOverflow, compileArg, (long) Integer.MAX_VALUE + compileArg);
+        Method testCountedLoopWithOverflow = TestIntCountedLoopLongLimit.class.getDeclaredMethod("testCountedLoopWithOverflow", int.class, long.class);
+        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ 0, compileArg }, new Object[]{ 0, (long) Integer.MAX_VALUE }, (int) compileArg, -1);
+        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ 0, compileArg }, new Object[]{ 0, (long) Integer.MAX_VALUE + 1L }, (int) compileArg, -1);
+        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ 0, compileArg }, new Object[]{ 0, (long) Integer.MAX_VALUE + compileArg }, (int) compileArg, -1);
 
-        Method testCountedLoopWithUnderflow = TestIntCountedLoopLongLimit.class.getDeclaredMethod("testCountedLoopWithUnderflow", long.class);
-        assertShouldTrap(testCountedLoopWithUnderflow, -compileArg, (long) Integer.MIN_VALUE);
-        assertShouldTrap(testCountedLoopWithUnderflow, -compileArg, (long) Integer.MIN_VALUE - 1L);
-        assertShouldTrap(testCountedLoopWithUnderflow, -compileArg, (long) Integer.MIN_VALUE - compileArg);
+        Method testCountedLoopWithUnderflow = TestIntCountedLoopLongLimit.class.getDeclaredMethod("testCountedLoopWithUnderflow", int.class, long.class);
+        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ 0, -compileArg }, new Object[]{ 0, (long) Integer.MIN_VALUE }, (int) -compileArg, 1);
+        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ 0, -compileArg }, new Object[]{ 0, (long) Integer.MIN_VALUE - 1L }, (int) -compileArg, 1);
+        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ 0, -compileArg }, new Object[]{ 0, (long) Integer.MIN_VALUE - compileArg }, (int) -compileArg, 1);
+
     }
 }
