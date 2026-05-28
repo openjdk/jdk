@@ -1444,6 +1444,15 @@ public:
 
     bool can_speculatively_narrow_limit() {
       assert(!is_valid_with_bt(T_INT), "must not be a valid int loop");
+
+      // long->int->long conversion is redundant, so skip long->int loop conversion when StressLongCountedLoop is set.
+      #ifdef ASSERT
+      if (StressLongCountedLoop) {
+        _should_speculatively_narrow_limit = false;
+        return false;
+      }
+      #endif
+
       // pattern must be: (long) i < some_long (with any comparison operator)
       _should_speculatively_narrow_limit = is_valid_with_bt(T_LONG) && _incr->Opcode() == Op_ConvI2L;
       return _should_speculatively_narrow_limit;
