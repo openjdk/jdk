@@ -49,7 +49,7 @@ static JvmlLauncherData* initJvmlLauncherData(int* size) {
     char* launcherLibPath = 0;
     void* jvmLauncherLibHandle = 0;
     JvmlLauncherAPI_GetAPIFunc getApi = 0;
-    JvmlLauncherAPI_CreateFunType createJvmlLauncher = 0;
+    JvmlLauncherAPI_CreateFunType createJvmLauncher = 0;
     JvmlLauncherAPI* api = 0;
     JvmlLauncherHandle jvmLauncherHandle = 0;
     JvmlLauncherData* result = 0;
@@ -77,13 +77,13 @@ static JvmlLauncherData* initJvmlLauncherData(int* size) {
         goto cleanup;
     }
 
-    createJvmlLauncher = dlsym(jvmLauncherLibHandle, "jvmLauncherCreate");
-    if (!createJvmlLauncher) {
+    createJvmLauncher = dlsym(jvmLauncherLibHandle, "jvmLauncherCreate");
+    if (!createJvmLauncher) {
         JP_LOG_ERRMSG(dlerror());
         goto cleanup;
     }
 
-    jvmLauncherHandle = (*createJvmlLauncher)(appArgc, appArgv);
+    jvmLauncherHandle = (*createJvmLauncher)(appArgc, appArgv);
     if (!jvmLauncherHandle) {
         goto cleanup;
     }
