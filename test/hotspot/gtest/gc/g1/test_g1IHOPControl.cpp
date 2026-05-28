@@ -92,8 +92,7 @@ struct G1IHOPTestController {
 
     if (pause_type != G1CollectorState::Pause::Mixed &&
         pause_type != G1CollectorState::Pause::Full) {
-      _ihop_control.record_mutator_period(pause_data._mutator_time_s,
-                                          pause_data._desired_young);
+      _ihop_control.record_mutator_period(pause_data._desired_young);
     }
   }
 

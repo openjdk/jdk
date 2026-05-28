@@ -52,15 +52,12 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Percentage of free heap that should be considered as waste.
   const size_t _heap_waste_percent;
 
-  // Most recent complete mutator allocation period in seconds.
-  double _last_allocation_time_s;
-
   const G1Predictions* _predictor;
   // Wall-clock time in seconds from marking start to the first mixed GC,
   // excluding GC Pause time.
   TruncatedSeq _marking_start_to_mixed_time_s;
   // Track old-generation allocations during a concurrent cycle: end of the
-  // Concurrent Mark Start to the first Mixed GC.
+  // Concurrent Start to the first Mixed GC.
   // These values are used only when G1UseAdaptiveIHOP is enabled.
   TruncatedSeq _old_non_humongous_alloc_rate;
   TruncatedSeq _peak_humongous_allocated_in_mark_cycle;
@@ -85,8 +82,8 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // algorithm needs to consider restrictions by the environment.
   size_t effective_target_occupancy() const;
 
-  void print_log(size_t non_young_occupancy, size_t last_period_old_gen_bytes);
-  void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy, size_t last_period_old_gen_bytes);
+  void print_log(size_t non_young_occupancy);
+  void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
 
  public:
   G1IHOPControl(double ihop_percent,
@@ -98,8 +95,6 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Adjust target occupancy.
   void update_target_occupancy(size_t new_target_occupancy);
 
-  void update_target_after_marking_phase();
-
   // Update allocation rate information and current expected young gen size for the
   // first mixed gc needed for the predictor. Allocation rate is given as the
   // separately passed in allocation increment and the time passed (mutator time)
@@ -108,8 +103,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Contents include young gen at that point, and the memory required for evacuating
   // the collection set in that first mixed gc (including waste caused by PLAB
   // allocation etc.).
-  void record_mutator_period(double mutator_time_s,
-                             size_t expected_young_gen_size);
+  void record_mutator_period(size_t expected_young_gen_size);
 
   // Update the time spent in the mutator beginning from the end of concurrent start to
   // the first mixed gc.
@@ -121,7 +115,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Get the current non-young occupancy at which concurrent marking should start.
   size_t old_gen_threshold_for_conc_mark_start() const;
 
-  void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy, size_t last_period_old_gen_bytes);
+  void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy);
 };
 
 #endif // SHARE_GC_G1_G1IHOPCONTROL_HPP

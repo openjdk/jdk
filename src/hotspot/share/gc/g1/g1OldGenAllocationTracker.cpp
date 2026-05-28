@@ -26,7 +26,6 @@
 #include "logging/log.hpp"
 
 G1OldGenAllocationTracker::G1OldGenAllocationTracker() :
-  _last_period_old_gen_bytes(0),
   _humongous_bytes_after_last_gc(0),
   _allocated_bytes_since_last_gc(0),
   _allocated_humongous_bytes_since_last_gc(0) {
@@ -43,9 +42,6 @@ G1MutatorPeriodStatsBytes G1OldGenAllocationTracker::end_mutator_period(size_t h
   }
 
   size_t last_period_old_gen_growth = _allocated_bytes_since_last_gc + last_period_humongous_increase;
-
-  // Calculate and record needed values.
-  _last_period_old_gen_bytes = _allocated_bytes_since_last_gc + _allocated_humongous_bytes_since_last_gc;
 
   G1MutatorPeriodStatsBytes period_stats{
     _allocated_bytes_since_last_gc,

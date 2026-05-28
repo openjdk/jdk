@@ -976,8 +976,7 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
 
     if (update_ihop_prediction(app_time_ms / 1000.0, is_young_only_pause)) {
       _ihop_control->report_statistics(_g1h->gc_tracer_stw(),
-                                       _g1h->non_young_occupancy_after_allocation(allocation_word_size),
-                                       _old_gen_alloc_tracker.last_period_old_gen_bytes());
+                                       _g1h->non_young_occupancy_after_allocation(allocation_word_size));
     }
   }
 
@@ -1050,7 +1049,7 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
     // predicted target occupancy.
     size_t young_gen_size = young_list_desired_length() * G1HeapRegion::GrainBytes;
 
-    _ihop_control->record_mutator_period(mutator_time_s, young_gen_size);
+    _ihop_control->record_mutator_period(young_gen_size);
     report = true;
   }
 
