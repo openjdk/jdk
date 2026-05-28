@@ -126,12 +126,12 @@ public class MultiPixelPackedSampleModel extends SampleModel
             throw new IllegalArgumentException("Unsupported dataType: "+
                                                dataType);
         }
-        int sls = (int)(((long)w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
-                        DataBuffer.getDataTypeSize(dataType));
-        if (sls < 0) {
+        long sls = ((long)w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
+                        DataBuffer.getDataTypeSize(dataType);
+        if (sls > Integer.MAX_VALUE) {
             throw new RasterFormatException("Pixels do not fit");
         }
-        this(dataType, w, h, numberOfBits, sls, 0);
+        this(dataType, w, h, numberOfBits, (int)sls, 0);
     }
 
     /**

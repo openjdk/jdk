@@ -70,6 +70,7 @@ public class MultiPixelPackedSampleModelConstructor {
         new Args4(TYPE_BYTE, 0, 1, 4, IllegalArgumentException.class),
         new Args4(TYPE_BYTE, 1<<29, 1, 4, null),
         new Args4(TYPE_BYTE, 1<<30, 1, 16, RasterFormatException.class),
+        new Args4(TYPE_BYTE, 32, 1, 1<<30, RasterFormatException.class),
         new Args4(99, 8, 1, 1, IllegalArgumentException.class),
     };
 
