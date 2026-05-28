@@ -41,12 +41,8 @@ import static javax.lang.model.SourceVersion.*;
  * call {@link #defaultAction defaultAction}, passing their arguments
  * to {@code defaultAction}'s corresponding parameters.
  *
- * @apiNote
- * Methods in this class may be overridden subject to their general
- * contract.
- *
- * <p id=note_for_subclasses><strong>WARNING:</strong> The {@code
- * TypeVisitor} interface implemented by this class may have methods
+ * @note [id=note_for_subclasses header=Warning: kind=bordered]
+ * The {@code TypeVisitor} interface implemented by this class may have methods
  * added to it or the {@link TypeKind TypeKind enum} used in this
  * class may have constants added to it in the future to accommodate
  * new, currently unknown, language structures added to future
@@ -54,7 +50,7 @@ import static javax.lang.model.SourceVersion.*;
  * methods whose names begin with {@code "visit"} may be added to this
  * class in the future; to avoid incompatibilities, classes and
  * subclasses which extend this class should not declare any instance
- * methods with names beginning with {@code "visit"}.</p>
+ * methods with names beginning with {@code "visit"}.
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to directly or indirectly call
@@ -64,6 +60,10 @@ import static javax.lang.model.SourceVersion.*;
  * for the visit method in question.  When a new visitor is
  * introduced, portions of this visitor class may be deprecated,
  * including its constructors.
+ *
+ * @apiNote
+ * Methods in this class may be overridden subject to their general
+ * contract.
  *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.

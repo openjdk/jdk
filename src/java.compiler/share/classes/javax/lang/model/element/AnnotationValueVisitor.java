@@ -48,8 +48,8 @@ import javax.lang.model.util.*;
  * is {@code null}; see documentation of the implementing class for
  * details.
  *
- * @apiNote
- * <strong>WARNING:</strong> It is possible that methods will be added
+ * @note [header=Warning: kind=bordered]
+ * It is possible that methods will be added
  * to this interface to accommodate new, currently unknown, language
  * structures added to future versions of the Java programming
  * language.
@@ -75,7 +75,7 @@ import javax.lang.model.util.*;
  * visitors supporting the source version with the new language
  * construct.
  *
- * <p>There are several families of classes implementing this visitor
+ * @apiNote There are several families of classes implementing this visitor
  * interface in the {@linkplain javax.lang.model.util util
  * package}. The families follow a naming pattern along the lines of
  * {@code FooVisitor}<i>N</i> where <i>N</i> indicates the

@@ -160,8 +160,7 @@ public interface AnnotatedConstruct {
      * Similarly, attempting to read a {@code Class[]}-valued element
      * will result in a {@link MirroredTypesException}.
      *
-     * <blockquote>
-     * <i>Note:</i> This method is unlike others in this and related
+     * {@note This method is unlike others in this and related
      * interfaces.  It operates on runtime reflective information &mdash;
      * representations of annotation interfaces currently loaded into the
      * VM &mdash; rather than on the representations defined by and used
@@ -170,8 +169,7 @@ public interface AnnotatedConstruct {
      * that can be thrown when calling methods on an annotation object
      * returned by core reflection.  This method is intended for
      * callers that are written to operate on a known, fixed set of
-     * annotation interfaces.
-     * </blockquote>
+     * annotation interfaces.}
      *
      * @param <A>  the annotation interface
      * @param annotationType  the {@code Class} object corresponding to
@@ -218,8 +216,7 @@ public interface AnnotatedConstruct {
      * Similarly, attempting to read a {@code Class[]}-valued element
      * will result in a {@link MirroredTypesException}.
      *
-     * <blockquote>
-     * <i>Note:</i> This method is unlike others in this and related
+     * {@note This method is unlike others in this and related
      * interfaces.  It operates on runtime reflective information &mdash;
      * representations of annotation interfaces currently loaded into the
      * VM &mdash; rather than on the representations defined by and used
@@ -228,8 +225,7 @@ public interface AnnotatedConstruct {
      * that can be thrown when calling methods on an annotation object
      * returned by core reflection.  This method is intended for
      * callers that are written to operate on a known, fixed set of
-     * annotation interfaces.
-     * </blockquote>
+     * annotation interfaces.}
      *
      * @param <A>  the annotation interface
      * @param annotationType  the {@code Class} object corresponding to
