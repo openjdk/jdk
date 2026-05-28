@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.security.SecurityUtils;
@@ -55,8 +56,7 @@ public class DisabledCipherSuitesNotNegotiated {
     private static volatile Exception serverException = null;
 
     private static final CountDownLatch waitForServer = new CountDownLatch(1);
-    private static final int WAIT_FOR_SERVER_SECS = 5 *
-            Integer.getInteger("test.timeout.factor", 1);
+    private static final int WAIT_FOR_SERVER_SECS = (int)Utils.adjustTimeout(5);
 
     private static final String DISABLED_CIPHERSUITE = "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384";
     private static final String DISABLED_CIPHER_WILDCARD = "TLS_ECDH*WITH_AES_256_GCM_*";
