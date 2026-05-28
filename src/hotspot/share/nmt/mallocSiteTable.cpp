@@ -32,7 +32,7 @@
 Atomic<MallocSiteHashtableEntry*>*  MallocSiteTable::_table = nullptr;
 const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = nullptr;
 const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = nullptr;
-Atomic<int> MallocSiteTable::_entry_count(0);
+Atomic<size_t> MallocSiteTable::_entry_count(0);
 
 /*
  * Initialize malloc site table.
