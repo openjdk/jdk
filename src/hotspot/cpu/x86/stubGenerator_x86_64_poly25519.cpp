@@ -185,14 +185,6 @@ void square_25519_scalar(const Register aLimbs, const Register rLimbs, Register 
   for (int i = 0; i < 5; i++) {
     __ movq(Address(rLimbs, i * 8), c[i]);
   }
-
-/*
-  __ movq(Address(rLimbs, 0), c[0]);
-  __ movq(Address(rLimbs, 8), c[1]);
-  __ movq(Address(rLimbs, 16), c[2]);
-  __ movq(Address(rLimbs, 24), c[3]);
-  __ movq(Address(rLimbs, 32), c[4]);
-*/
 }
 
 address StubGenerator::generate_intpoly_mult_25519() {
