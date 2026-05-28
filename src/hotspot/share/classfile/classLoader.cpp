@@ -1476,20 +1476,6 @@ void ClassLoader::set_preview_mode(bool enable_preview) {
   Preview_mode = enable_preview ? PREVIEW_MODE_ENABLE_PREVIEW : PREVIEW_MODE_DEFAULT;
 }
 
-bool ClassLoader::is_module_observable(const char* module_name) {
-  assert(JImageOpen != nullptr, "jimage library should have been opened");
-  if (!jimage_is_open()) {
-    struct stat st;
-    const char *path = get_exploded_module_path(module_name, true);
-    bool res = os::stat(path, &st) == 0;
-    FREE_C_HEAP_ARRAY(path);
-    return res;
-  }
-  // We don't expect preview mode (i.e. --enable-preview) to affect module visibility.
-  jlong size;
-  return jimage_find_resource(module_name, "module-info.class", /* is_preview */ false, &size) != 0;
-}
-
 jlong ClassLoader::classloader_time_ms() {
   return UsePerfData ?
     Management::ticks_to_ms(_perf_accumulated_time->get_value()) : -1;

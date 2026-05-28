@@ -75,31 +75,32 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   cl->set_weak(weak);
 
   if (task->is_not_chunked()) {
-    if (obj->is_instance()) {
+    Klass* klass = obj->klass();
+    if (klass->is_instance_klass()) {
       // Case 1: Normal oop, process as usual.
-      if (obj->is_stackChunk()) {
+      if (klass->is_stack_chunk_instance_klass()) {
         // Loom doesn't support mixing of weak marking and strong marking of stack chunks.
         cl->set_weak(false);
       }
 
       obj->oop_iterate(cl);
       dedup_string<STRING_DEDUP>(obj, req);
-    } else if (obj->is_objArray()) {
+    } else if (klass->is_objArray_klass()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
-      do_chunked_array_start<T>(q, cl, obj, weak);
+      do_chunked_array_start<T>(q, cl, obj, klass, weak);
     } else {
       // Case 3: Primitive array. Do nothing, no oops there. We use the same
       // performance tweak TypeArrayKlass::oop_oop_iterate_impl is using:
       // We skip iterating over the klass pointer since we know that
       // Universe::TypeArrayKlass never moves.
-      assert (obj->is_typeArray(), "should be type array");
+      assert(klass->is_typeArray_klass(), "should be type array");
     }
     // Count liveness the last: push the outstanding work to the queues first
     // Avoid double-counting objects that are visited twice due to upgrade
     // from final- to strong mark.
     if (task->count_liveness()) {
-      count_liveness<GENERATION>(live_data, obj, worker_id);
+      count_liveness<GENERATION>(live_data, obj, klass, worker_id);
     }
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
@@ -108,11 +109,11 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 }
 
 template <ShenandoahGenerationType GENERATION>
-inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, uint worker_id) {
+inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klass* klass, uint worker_id) {
   const ShenandoahHeap* const heap = ShenandoahHeap::heap();
   const size_t region_idx = heap->heap_region_index_containing(obj);
   ShenandoahHeapRegion* const region = heap->get_region(region_idx);
-  const size_t size = obj->size();
+  const size_t size = obj->size_given_klass(klass);
 
   // Age census for objects in the young generation
   if (GENERATION == YOUNG || (GENERATION == GLOBAL && region->is_young())) {
@@ -152,14 +153,14 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
 }
 
 template <class T>
-inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, bool weak) {
+inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, bool weak) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
   int len = array->length();
 
   // Mark objArray klass metadata
   if (Devirtualizer::do_metadata(cl)) {
-    Devirtualizer::do_klass(cl, array->klass());
+    Devirtualizer::do_klass(cl, klass);
   }
 
   if (len <= (int) ObjArrayMarkingStride*2) {

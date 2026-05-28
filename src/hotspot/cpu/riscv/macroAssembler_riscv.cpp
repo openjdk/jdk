@@ -4117,7 +4117,7 @@ void MacroAssembler::membar(uint32_t order_constraint) {
   }
 
   address prev = pc() - MacroAssembler::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
 
   if (last != nullptr && is_membar(last) && prev == last) {
     // We are merging two memory barrier instructions.  On RISCV we
@@ -4127,7 +4127,7 @@ void MacroAssembler::membar(uint32_t order_constraint) {
     return;
   }
 
-  code()->set_last_insn(pc());
+  code()->set_last_merge_candidate(pc());
   uint32_t predecessor = 0;
   uint32_t successor = 0;
   membar_mask_to_pred_succ(order_constraint, predecessor, successor);
