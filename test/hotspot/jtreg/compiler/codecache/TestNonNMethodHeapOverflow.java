@@ -59,14 +59,14 @@ import java.lang.reflect.Method;
 
 public class TestNonNMethodHeapOverflow {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final int HeapBlockHeaderSize = 8;
+    private static final int HEAP_BLOCK_HEADER_SIZE = 8;
 
     public static void main(String[] args) throws Exception {
         WB.lockCompilation();
 
         BlobType blobType;
-        int blobSize = 128;
-        int allocSize = blobSize - HeapBlockHeaderSize;
+        int blobSize = 1024;
+        int allocSize = blobSize - HEAP_BLOCK_HEADER_SIZE;
         // fill the NonNMethod heap
         do {
             long addr = WB.allocateCodeBlob(allocSize, BlobType.NonNMethod.id);
