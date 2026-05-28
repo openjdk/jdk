@@ -170,13 +170,6 @@ static ssize_t writeFully(const int fd, const void* buf, const size_t len) {
     return (ssize_t)nWritten;
 }
 
-static void closePipeEnd(int* pipefd, int idx) {
-    if (pipefd[idx] >= 0) {
-        close(pipefd[idx]);
-        pipefd[idx] = -1;
-    }
-}
-
 
 static void initJvmlLauncherDataPointers(void* baseAddress,
                                         JvmlLauncherData* jvmLauncherData) {

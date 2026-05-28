@@ -31,6 +31,8 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 #include "JvmLauncher.h"
 #include "LinuxPackage.h"
 
@@ -106,59 +108,77 @@ static PackageDesc* initPackageDesc(PackageDesc* desc, const char* str,
 }
 
 
-#define POPEN_CALLBACK_USE 1
-#define POPEN_CALLBACK_IGNORE 0
+#define EXEC_CALLBACK_USE 1
+#define EXEC_CALLBACK_IGNORE 0
 
-typedef int (*popenCallbackType)(void*, char*);
+typedef int (*execCallbackType)(void*, char*);
 
-static int popenCommand(const char* cmdlineFormat, const char* arg,
-                            popenCallbackType callback, void* callbackData) {
-    char* cmdline = 0;
-    FILE *stream = 0;
-    const size_t cmdlineLenth = strlen(cmdlineFormat) + strlen(arg);
+static int logCommandLine(const char* format, const char* const argv[]) {
+    char* formattedCommandLine = NULL;
+    int formattedCommandLineLength = 0;
+    const char* arg;
+    int i;
+    int status = -1;
+
+    for (i = 0; (arg = argv[i]) != NULL; i++) {
+        /* Count trailing whitespace */
+        formattedCommandLineLength += strlen(arg) + 1;
+        if (strchr(arg, ' ') != NULL) {
+            /* Enclose the argument into single quotes */
+            formattedCommandLineLength += 2;
+        }
+    }
+
+    formattedCommandLine = malloc(formattedCommandLineLength + 1 /* \0 */);
+    if (!formattedCommandLine) {
+        JP_LOG_ERRNO;
+        goto cleanup;
+    }
+
+    formattedCommandLine[0] = '\0';
+    for (i = 0; (arg = argv[i]) != NULL; i++) {
+        if (strchr(arg, ' ') != NULL) {
+            strcat(formattedCommandLine, "'");
+            strcat(formattedCommandLine, arg);
+            strcat(formattedCommandLine, "'");
+        } else {
+            strcat(formattedCommandLine, arg);
+        }
+        strcat(formattedCommandLine, " ");
+    }
+
+    /* Trim trailing whitespace */
+    formattedCommandLine[formattedCommandLineLength - 1] = '\0';
+
+    JP_LOG_TRACE(format, formattedCommandLine);
+
+    status = 0;
+
+cleanup:
+    free(formattedCommandLine);
+
+    return status;
+}
+
+static int invokeCallback(FILE* stream, execCallbackType callback,
+                                                        void* callbackData) {
     char* strBufBegin = 0;
     char* strBufEnd = 0;
     char* strBufNextChar = 0;
     char* strNewBufBegin = 0;
     size_t strBufCapacity = 0;
-    int callbackMode = POPEN_CALLBACK_USE;
-    int exitCode = -1;
+    int callbackMode = EXEC_CALLBACK_USE;
     int c;
     ptrdiff_t char_offset;
-
-    cmdline = malloc(cmdlineLenth + 1 /* \0 */);
-    if (!cmdline) {
-        JP_LOG_ERRNO;
-        goto cleanup;
-    }
-
-#if defined(__GNUC__) && __GNUC__ >= 5
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-    if (0 > snprintf(cmdline, cmdlineLenth, cmdlineFormat, arg)) {
-        JP_LOG_ERRNO;
-        goto cleanup;
-    }
-#if defined(__GNUC__) && __GNUC__ >= 5
-#pragma GCC diagnostic pop
-#endif
-
-    JP_LOG_TRACE("popen: (%s)", cmdline);
-
-    stream = popen(cmdline, "r");
-    if (!stream) {
-        JP_LOG_ERRNO;
-        goto cleanup;
-    }
+    int status = -1;
 
     for (;;) {
         c = fgetc(stream);
         if((EOF == c || '\n' == c)) {
-            if (POPEN_CALLBACK_USE == callbackMode
+            if (EXEC_CALLBACK_USE == callbackMode
                                             && strBufBegin != strBufNextChar) {
                 *strBufNextChar = 0;
-                JP_LOG_TRACE("popen: [%s]", strBufBegin);
+                JP_LOG_TRACE("execCommand: [%s]", strBufBegin);
                 callbackMode = (*callback)(callbackData, strBufBegin);
                 strBufNextChar = strBufBegin;
             }
@@ -188,18 +208,126 @@ static int popenCommand(const char* cmdlineFormat, const char* arg,
         *strBufNextChar++ = (char)c;
     }
 
-cleanup:
-    if (stream) {
-        exitCode = pclose(stream);
-    }
+    status  = 0;
 
+cleanup:
     if (strBufBegin) {
         free(strBufBegin);
     }
 
-    free(cmdline);
+    return status;
+}
 
-    JP_LOG_TRACE("popen: exit: %d", exitCode);
+static int execCommand(const char* const argv[],
+                            execCallbackType callback, void* callbackData) {
+    int pipefd[] = { -1, -1 };
+    pid_t cpid = -1;
+    FILE* stream = NULL;
+    int exitCode = -1;
+    int devNull = -1;
+    int savedStderr = -1;
+    int savedErrno = 0;
+    int childReady = -1;
+    int waitpidStatus = -1;
+
+    if (logCommandLine("execCommand: (%s)", argv) == -1) {
+        return -1;
+    }
+
+    if (pipe(pipefd) == -1) {
+        JP_LOG_ERRNO;
+        goto cleanup;
+    }
+
+    cpid = fork();
+    if (cpid == -1) {
+        JP_LOG_ERRNO;
+    } else if (cpid == 0) /* Child process */ {
+        /* Close unused read end */
+        closePipeEnd(pipefd, 0);
+
+        /* Save original stderr */
+        if ((savedStderr = dup(STDERR_FILENO)) == -1) {
+            JP_LOG_ERRNO;
+            goto cleanupChild;
+        }
+
+        /* Redirect stdout of the child process into the pipe's end */
+        if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+            JP_LOG_ERRNO;
+            goto cleanupChild;
+        }
+
+        devNull = open("/dev/null", O_WRONLY);
+        if (devNull == -1) {
+            JP_LOG_ERRNO;
+            goto cleanupChild;
+        }
+
+        /* Silence stderr in the child process */
+        if (dup2(devNull, STDERR_FILENO) == -1) {
+            JP_LOG_ERRNO;
+            goto cleanupChild;
+        }
+
+        childReady = 0;
+
+cleanupChild:
+        if (devNull != -1) {
+            close(devNull);
+        }
+
+        closePipeEnd(pipefd, 0);
+
+        if (childReady != -1) {
+            execvp(argv[0], (char* const*)argv);
+
+            /*
+              Normally, execvp() doesn't return.
+              If control flow reaches this point, execvp() failed.
+              Restore stderr to make JP_LOG_ERRNO macro work and report error.
+            */
+            savedErrno = errno;
+            dup2(savedStderr, STDERR_FILENO);
+            errno = savedErrno;
+            JP_LOG_ERRNO;
+
+            close(savedStderr);
+        }
+
+        _exit(127); /* Command not found */
+    }
+
+    /* Close unused write end */
+    closePipeEnd(pipefd, 1);
+
+    stream = fdopen(pipefd[0], "r");
+    if (!stream) {
+        JP_LOG_ERRNO;
+        goto cleanup;
+    }
+    pipefd[0] = -1;
+
+    invokeCallback(stream, callback, callbackData);
+
+cleanup:
+    if (stream) {
+        fclose(stream);
+    }
+
+    closePipeEnd(pipefd, 0);
+    closePipeEnd(pipefd, 1);
+
+    if (cpid > 0) {
+        while (waitpid(cpid, &waitpidStatus, 0) == -1 && errno == EINTR) {
+        }
+
+        if (WIFEXITED(waitpidStatus)) {
+            exitCode = WEXITSTATUS(waitpidStatus);
+        }
+    }
+
+    JP_LOG_TRACE("execCommand: exit: %d", exitCode);
     return exitCode;
 }
 
@@ -222,7 +350,7 @@ static char* concat(const char *x, const char *y) {
 
 static int initRpmPackage(void* desc, char* str) {
     initPackageDesc((PackageDesc*)desc, str, PACKAGE_TYPE_RPM);
-    return POPEN_CALLBACK_IGNORE;
+    return EXEC_CALLBACK_IGNORE;
 }
 
 
@@ -232,7 +360,7 @@ static int initDebPackage(void* desc, char* str) {
         *colonChrPos = 0;
     }
     initPackageDesc((PackageDesc*)desc, str, PACKAGE_TYPE_DEB);
-    return POPEN_CALLBACK_IGNORE;
+    return EXEC_CALLBACK_IGNORE;
 }
 
 
@@ -251,31 +379,34 @@ static int findLauncherLib(void* launcherLibPath, char* str) {
         } else {
             *(char**)launcherLibPath = buf;
         }
-        return POPEN_CALLBACK_IGNORE;
+        return EXEC_CALLBACK_IGNORE;
     }
-    return POPEN_CALLBACK_USE;
+    return EXEC_CALLBACK_USE;
 }
 
 
 static PackageDesc* findOwnerOfFile(const char* path) {
-    int popenStatus = -1;
+    int execStatus = -1;
     PackageDesc* pkg = 0;
+    const char* rpmOwner[] = {
+        "rpm", "--queryformat", "%{NAME}", "-qf", path, NULL
+    };
+    const char* debOwner[] = {
+        "dpkg", "-S", path, NULL
+    };
 
     pkg = createPackageDesc();
     if (!pkg) {
         return 0;
     }
 
-    popenStatus = popenCommand(
-            "rpm --queryformat '%{NAME}' -qf '%s' 2>/dev/null", path,
-            initRpmPackage, pkg);
-    if (popenStatus) {
+    execStatus = execCommand(rpmOwner, initRpmPackage, pkg);
+    if (execStatus) {
         pkg->type = PACKAGE_TYPE_UNKNOWN;
-        popenStatus = popenCommand("dpkg -S '%s' 2>/dev/null", path,
-                                                        initDebPackage, pkg);
+        execStatus = execCommand(debOwner, initDebPackage, pkg);
     }
 
-    if (popenStatus) {
+    if (execStatus) {
         pkg->type = PACKAGE_TYPE_UNKNOWN;
     }
 
@@ -296,8 +427,10 @@ char* getJvmLauncherLibPath(void) {
     char* modulePath = 0;
     char* appImageDir = 0;
     char* launcherLibPath = 0;
-    const char* pkgQueryCmd = 0;
-    int popenStatus = -1;
+    const char* pkgQueryCmd[] = {
+        NULL, NULL, NULL, NULL
+    };
+    int execStatus = -1;
     PackageDesc* pkg = 0;
 
     modulePath = getModulePath();
@@ -314,18 +447,22 @@ char* getJvmLauncherLibPath(void) {
         launcherLibPath = concat(appImageDir, "/lib" LAUNCHER_LIB_NAME);
     } else {
         if (PACKAGE_TYPE_RPM == pkg->type) {
-            pkgQueryCmd = "rpm -ql '%s' 2>/dev/null";
+            pkgQueryCmd[0] = "rpm";
+            pkgQueryCmd[1] = "-ql";
+            pkgQueryCmd[2] = pkg->name;
         } else if (PACKAGE_TYPE_DEB == pkg->type) {
-            pkgQueryCmd = "dpkg -L '%s' 2>/dev/null";
+            pkgQueryCmd[0] = "dpkg";
+            pkgQueryCmd[1] = "-L";
+            pkgQueryCmd[2] = pkg->name;
         } else {
             /* Should never happen */
             JP_LOG_ERRMSG("Internal error");
             goto cleanup;
         }
 
-        popenStatus = popenCommand(pkgQueryCmd, pkg->name, findLauncherLib,
-                                                        &launcherLibPath);
-        if (popenStatus) {
+        execStatus = execCommand(pkgQueryCmd, findLauncherLib,
+                                                            &launcherLibPath);
+        if (execStatus) {
             free(launcherLibPath);
             launcherLibPath = NULL;
             goto cleanup;
@@ -337,4 +474,12 @@ cleanup:
     freePackageDesc(pkg);
 
     return launcherLibPath;
+}
+
+
+void closePipeEnd(int* pipefd, int idx) {
+    if (pipefd[idx] >= 0) {
+        close(pipefd[idx]);
+        pipefd[idx] = -1;
+    }
 }
