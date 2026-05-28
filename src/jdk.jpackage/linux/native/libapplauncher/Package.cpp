@@ -34,7 +34,8 @@ Package::Package(): type(Unknown) {
 
 
 Package::Package(const PackageDesc& desc):
-        type(static_cast<Type>(desc.type)), theName(desc.name ? desc.name : "") {
+        type(static_cast<Type>(desc.type)),
+        theName(desc.name ? desc.name : "") {
 }
 
 
@@ -77,10 +78,10 @@ void Package::initAppLauncher(AppLauncher& appLauncher) const {
     int exitCode = -1;
     if (type == RPM) {
         exitCode = executeCommandLineAndReadStdout(
-                "rpm -ql \'" + theName + "\'", consumer);
+                { "rpm", "-ql", theName }, consumer);
     } else if (type == DEB) {
         exitCode = executeCommandLineAndReadStdout(
-                "dpkg -L \'" + theName + "\'", consumer);
+                { "dpkg", "-L", theName }, consumer);
     }
 
     if (exitCode == 0) {

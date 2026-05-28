@@ -49,8 +49,6 @@ void freeJvmLauncherDesc(JvmLauncherDesc* desc);
 
 JvmLauncherDesc* getJvmLauncherDesc(void);
 
-void closePipeEnd(int* pipefd, int idx);
-
 #ifdef __cplusplus
 }
 #endif

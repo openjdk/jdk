@@ -35,6 +35,7 @@
 #include <libgen.h>
 #include "JvmLauncher.h"
 #include "LinuxPackage.h"
+#include "ExecCommand.h"
 
 
 #define STATUS_FAILURE 1
