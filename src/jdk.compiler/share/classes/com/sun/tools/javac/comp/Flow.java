@@ -703,7 +703,7 @@ public class Flow {
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
                 if (!tree.isExhaustive) {
-                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(attrEnv, tree.selector, tree.cases);
 
                     tree.isExhaustive = exhaustivenessResult.exhaustive();
 
@@ -750,7 +750,7 @@ public class Flow {
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 tree.isExhaustive = true;
             } else {
-                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(attrEnv, tree.selector, tree.cases);
 
                 tree.isExhaustive = exhaustivenessResult.exhaustive();
 

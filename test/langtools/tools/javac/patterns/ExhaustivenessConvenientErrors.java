@@ -530,6 +530,127 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "Test.Pair(Test.Pair(Test.Pair _,Test.Base _),Test.Pair(Test.Pair(Test.Pair _,Test.Base _),Test.Base _))");
     }
 
+    @Test
+    public void testInaccessiblePermittedType1(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private record Inaccessible() implements Base {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+                           //Inaccessible missing, but cannot be used here.
+                       };
+                   }
+               }
+               """,
+               "Lib.Base _");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType2(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private sealed interface Intermediate1 extends Base {}
+                   private sealed interface Intermediate2 extends Intermediate1 {}
+                   record Rec() implements Intermediate2 {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+//                           case Lib.Inaccessible _ -> 0;
+                       };
+                   }
+               }
+               """,
+               "Lib.Rec _");
+    }
+
+
+    @Test
+    public void testInaccessiblePermittedType3(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private record Inaccessible() implements Base {}
+               }
+               public class Test {
+                   int t(Box b) {
+                       return switch (b) {
+                           case Box(Lib.NoOp _) -> 0;
+                           //Box(Inaccessible) missing, but cannot be used here.
+                       };
+                   }
+                   record Box(Lib.Base base) {}
+               }
+               """,
+               "Test.Box(Lib.Base _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType4(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private sealed interface Intermediate1 extends Base {}
+                   private sealed interface Intermediate2 extends Intermediate1 {}
+                   record Rec() implements Intermediate2 {}
+               }
+               public class Test {
+                   int t(Box b) {
+                       return switch (b) {
+                           case Box(Lib.NoOp _) -> 0;
+//                           case Box(Lib.Rec _) -> 0;
+                       };
+                   }
+                   record Box(Lib.Base base) {}
+               }
+               """,
+               "Test.Box(Lib.Rec _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType5(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private sealed interface Intermediate1 extends Base {}
+                   private sealed interface Intermediate2 extends Intermediate1 {}
+                   sealed interface Intermediate3 extends Intermediate2 {}
+                   private record Inaccessible() implements Intermediate3 {}
+               }
+               public class Test {
+                   int t(Box b) {
+                       return switch (b) {
+                           case Box(Lib.NoOp _) -> 0;
+//                           case Box(Lib.Intermediate3 _) -> 0;
+                       };
+                   }
+                   record Box(Lib.Base base) {}
+               }
+               """,
+               "Test.Box(Lib.Intermediate3 _)");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
