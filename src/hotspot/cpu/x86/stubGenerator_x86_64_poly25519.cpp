@@ -221,6 +221,7 @@ address StubGenerator::generate_intpoly_mult_25519() {
 
   multiply_25519_scalar(aLimbs, bLimbs, rLimbs, c, bArg, d, b, mask, _masm);
 
+  // __ pop_ppx(rdx); // restored in the helper already
   __ pop_ppx(r15);
   __ pop_ppx(r14);
   __ pop_ppx(r13);
@@ -269,6 +270,7 @@ address StubGenerator::generate_intpoly_square_25519() {
 
   square_25519_scalar(aLimbs, rLimbs, c, aArg, d, carry, mask, _masm);
 
+  // __ pop_ppx(rdx); // restored in the helper already
   __ pop_ppx(r15);
   __ pop_ppx(r14);
   __ pop_ppx(r13);
