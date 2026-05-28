@@ -43,6 +43,7 @@
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
+#include "gc/shenandoah/shenandoahSerialAllocator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
@@ -436,6 +437,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     _free_set = new ShenandoahFreeSet(this, _num_regions);
+    _allocator = new ShenandoahSerialAllocator(_free_set);
     initialize_generations();
 
     // We are initializing free set.  We ignore cset region tallies.
@@ -576,6 +578,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
   _free_set(nullptr),
+  _allocator(nullptr),
   _verifier(nullptr),
   _phase_timings(nullptr),
   _monitoring_support(nullptr),
@@ -1030,7 +1033,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 
   // If TLAB request size is greater than available, allocate() will attempt to downsize request to fit within available
   // memory.
-  HeapWord* result = _free_set->allocate(req, in_new_region);
+  HeapWord* result = _allocator->allocate(req, in_new_region);
 
   // Record the plab configuration for this result and register the object.
   if (result != nullptr && req.is_old()) {
