@@ -612,9 +612,19 @@ void AwtWin32GraphicsDevice::Release()
 }
 
 /**
- * Links this native object with its java Win32GraphicsDevice.
- * Need this link because the colorModel of the java device
- * may be updated from native code.
+ * Links this native object with its java Win32GraphicsDevice peer.
+ *
+ * The link is needed for upcalls to the java peer, such as invalidate()
+ * and dynamic color model updates.
+ *
+ * Passing NULL intentionally clears the link.
+ * Clearing it here prevents stale peer links and releases
+ * the old JNI weak global ref.
+ *
+ * During display changes, the native device array is recreated,
+ * changed or removed devices invalidate their java peers.
+ * Unchanged monitors transfer the existing weak ref to
+ * the new native device by TransferJavaDevice().
  */
 void AwtWin32GraphicsDevice::SetJavaDevice(JNIEnv *env, jobject objPtr)
 {
