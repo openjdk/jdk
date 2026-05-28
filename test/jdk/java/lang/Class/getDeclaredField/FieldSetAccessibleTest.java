@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -267,64 +265,12 @@ public class FieldSetAccessibleTest {
             }
         }
 
-        /*
-         * Filter JVMCI module and its transitive dependences
-         */
         static Set<String> systemModules() {
-            // Build module graph and inverse dependences
-            Set<String> modules = new HashSet<>();
-            Map<String, Set<String>> moduleToDeps = new HashMap<>();
-            Map<String, Set<String>> inverseDeps = new HashMap<>();
-            for (ModuleReference mref : ModuleFinder.ofSystem().findAll()) {
-                var md = mref.descriptor();
-                modules.add(md.name());
-                Set<String> deps = md.requires().stream().map(ModuleDescriptor.Requires::name)
-                                                .collect(Collectors.toSet());
-                moduleToDeps.put(md.name(), deps);
-                inverseDeps.put(md.name(), new HashSet<>());
-            }
-
-            // reverse edges
-            moduleToDeps.keySet().forEach(u -> {
-                moduleToDeps.get(u)
-                            .forEach(v -> inverseDeps.get(v)
-                                                     .add(u));
-            });
-
-            Set<String> mods = Set.of(
-                    // All JVMCI packages other than jdk.vm.ci.services are dynamically
-                    // exported to Graal
-                    "jdk.graal.compiler", "jdk.graal.compiler.management"
-            );
-            // Filters all modules that directly or indirectly require Graal modules
-            // as these are upgradeable and also provide APIs to add qualified exports dynamically
-            Set<String> filters = mods.stream().flatMap(mn -> findDeps(mn, inverseDeps).stream())
-                                      .collect(Collectors.toSet());
-            System.out.println("Filtered modules: " + filters);
-            return modules.stream()
-                          .filter(mn -> !filters.contains(mn))
-                          .collect(Collectors.toSet());
-        }
-
-        /*
-         * Traverse the graph to find all the dependences from the given name.
-         */
-        static Set<String> findDeps(String name, Map<String, Set<String>> graph) {
-            Set<String> visited = new HashSet<>();
-            Deque<String> deque = new LinkedList<>();
-            deque.add(name);
-            String node;
-            while (!deque.isEmpty()) {
-                node = deque.pop();
-                if (visited.contains(node))
-                    continue;
-
-                visited.add(node);
-                Set<String> deps = graph.get(node);
-                if (deps != null)
-                    deque.addAll(deps);
-            }
-            return visited;
+            return ModuleFinder.ofSystem()
+                .findAll()
+                .stream()
+                .map(mref -> mref.descriptor().name())
+                .collect(Collectors.toSet());
         }
     }
 }

@@ -63,6 +63,7 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #endif
 #if INCLUDE_ZGC
@@ -464,6 +465,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
 
   // Special configs that cannot be checked with macros
   _compressedOopBase     = CompressedOops::base();
+  _compressedOopShift    = CompressedOops::shift();
 
 #if defined(X86) && !defined(ZERO)
   _useUnalignedLoadStores = UseUnalignedLoadStores;
@@ -576,10 +578,17 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR, AOTCODECACHE_CHECK_FUN);
 
   // Special configs that cannot be checked with macros
+#define COMPRESSED_OOPS_HINT "Consider adding -XX:+AOTCompatibleOopCompression when creating the AOT cache"
 
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
     load_failure_log().print_cr("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
                                 _compressedOopBase, CompressedOops::base());
+    load_failure_log().print_cr(COMPRESSED_OOPS_HINT);
+    return false;
+  }
+
+  if (!check_config(_compressedOopShift, CompressedOops::shift(), "CompressedOops::shift()")) {
+    load_failure_log().print_cr(COMPRESSED_OOPS_HINT);
     return false;
   }
 
@@ -1008,11 +1017,6 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   if (AOTCodeEntry::is_blob(entry_kind) && !is_dumping_stub()) {
     return false;
   }
-  // we do not currently store C2 stubs because we are seeing weird
-  // memory errors when loading them -- see JDK-8357593
-  if (entry_kind == AOTCodeEntry::C2Blob) {
-    return false;
-  }
   log_debug(aot, codecache, stubs)("Writing blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
 
 #ifdef ASSERT
@@ -1281,11 +1285,6 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
     return nullptr;
   }
   if (AOTCodeEntry::is_blob(entry_kind) && !is_using_stub()) {
-    return nullptr;
-  }
-  // we do not currently load C2 stubs because we are seeing weird
-  // memory errors when loading them -- see JDK-8357593
-  if (entry_kind == AOTCodeEntry::C2Blob) {
     return nullptr;
   }
   log_debug(aot, codecache, stubs)("Reading blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
@@ -1577,10 +1576,6 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
       addresses.append(deopt_blob->unpack_with_exception());
       addresses.append(deopt_blob->unpack_with_reexecution());
       addresses.append(deopt_blob->unpack_with_exception_in_tls());
-#if INCLUDE_JVMCI
-      addresses.append(deopt_blob->uncommon_trap());
-      addresses.append(deopt_blob->implicit_exception_uncommon_trap());
-#endif // INCLUDE_JVMCI
       cache()->add_stub_entries(stub_id, start, &addresses, 0);
     }
   }
@@ -1795,7 +1790,7 @@ bool AOTCodeCache::write_asm_remarks(CodeBlob& cb) {
     }
     const char* cstr = add_C_string(str);
     int id = _table->id_for_C_string((address)cstr);
-    assert(id != -1, "asm remark string '%s' not found in AOTCodeAddressTable", str);
+    assert(id != BAD_ADDRESS_ID, "asm remark string '%s' not found in AOTCodeAddressTable", str);
     n = write_bytes(&id, sizeof(int));
     if (n != sizeof(int)) {
       return false;
@@ -1837,7 +1832,7 @@ bool AOTCodeCache::write_dbg_strings(CodeBlob& cb) {
     log_trace(aot, codecache, stubs)("dbg string=%s", str);
     const char* cstr = add_C_string(str);
     int id = _table->id_for_C_string((address)cstr);
-    assert(id != -1, "db string '%s' not found in AOTCodeAddressTable", str);
+    assert(id != BAD_ADDRESS_ID, "db string '%s' not found in AOTCodeAddressTable", str);
     uint n = write_bytes(&id, sizeof(int));
     if (n != sizeof(int)) {
       return false;
@@ -2102,14 +2097,19 @@ void AOTCodeAddressTable::init_extrs() {
 #endif
 #if INCLUDE_SHENANDOAHGC
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_oop);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_narrow_oop);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::clone);
 #endif
 #if INCLUDE_ZGC
   ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr());
@@ -2399,10 +2399,6 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (addr == (address)-1) { // Static call stub has jump to itself
     return id;
   }
-  // Check card_table_base address first since it can point to any address
-  BarrierSet* bs = BarrierSet::barrier_set();
-  bool is_const_card_table_base = !UseG1GC && !UseShenandoahGC && bs->is_a(BarrierSet::CardTableBarrierSet);
-  guarantee(!is_const_card_table_base || addr != ci_card_table_address_const(), "sanity");
   // fast path for stubs and external addresses
   if (_hash_table != nullptr) {
     int *result = _hash_table->get(addr);
@@ -2476,6 +2472,7 @@ void AOTRuntimeConstants::initialize_from_runtime() {
   BarrierSet* bs = BarrierSet::barrier_set();
   address card_table_base = nullptr;
   uint grain_shift = 0;
+  address cset_base = nullptr;
 #if INCLUDE_G1GC
   if (bs->is_a(BarrierSet::G1BarrierSet)) {
     grain_shift = G1HeapRegion::LogOfHRGrainBytes;
@@ -2483,7 +2480,8 @@ void AOTRuntimeConstants::initialize_from_runtime() {
 #endif
 #if INCLUDE_SHENANDOAHGC
   if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
-    grain_shift = 0;
+    grain_shift = ShenandoahHeapRegion::region_size_bytes_shift_jint();
+    cset_base = ShenandoahHeap::in_cset_fast_test_addr();
   } else
 #endif
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
@@ -2495,11 +2493,13 @@ void AOTRuntimeConstants::initialize_from_runtime() {
   }
   _aot_runtime_constants._card_table_base = card_table_base;
   _aot_runtime_constants._grain_shift = grain_shift;
+  _aot_runtime_constants._cset_base = cset_base;
 }
 
 address AOTRuntimeConstants::_field_addresses_list[] = {
   ((address)&_aot_runtime_constants._card_table_base),
   ((address)&_aot_runtime_constants._grain_shift),
+  ((address)&_aot_runtime_constants._cset_base),
   nullptr
 };
 
@@ -2610,10 +2610,6 @@ address AOTStubData::load_archive_data(StubId stub_id, address& end, GrowableArr
   StubAddrRange &range = _ranges[idx];
   int base = range.start_index();
   if (base < 0) {
-#ifdef DEBUG
-    // reset index so we can idenitfy which ones we failed to find
-    range.init_entry(-2, 0);
-#endif
     return nullptr;
   }
   int count = range.count();
@@ -2690,3 +2686,23 @@ void AOTStubData::store_archive_data(StubId stub_id, address start, address end,
   }
   range.init_entry(base, _address_array.length() - base);
 }
+
+void AOTStubData::stub_epilog(StubId stub_id) {
+  DEBUG_ONLY(check_stored(stub_id));
+}
+
+#ifdef ASSERT
+void AOTStubData::check_stored(StubId stub_id) {
+  // Only need to check if we are dumping
+  //
+  // This excludes cases where the cache got closed because of error
+  // plus the pre-universe stubs we can never store because they are
+  // generated prior to cache opening.
+  if (is_dumping()) {
+    int idx = StubInfo::stubgen_offset_in_blob(_blob_id, stub_id);
+    assert(idx >= 0 && idx < _stub_cnt, "invalid index %d for stub count %d", idx, _stub_cnt);
+    StubAddrRange& range = _ranges[idx];
+    assert(range.start_index() != -1, "missing store_archive_data for generated stub %s", StubInfo::name(stub_id));
+  }
+}
+#endif

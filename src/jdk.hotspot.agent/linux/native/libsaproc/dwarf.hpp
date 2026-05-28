@@ -63,7 +63,8 @@ class DwarfParser {
   private:
     const lib_info *_lib;
     unsigned char *_buf;
-    unsigned char _encoding;
+    bool _has_augmentation;
+    unsigned char _fde_ptr_encoding;
     unsigned int _code_factor;
     int _data_factor;
 
@@ -76,7 +77,7 @@ class DwarfParser {
     uint64_t get_entry_length();
     bool process_cie(unsigned char *start_of_entry, uint32_t id);
     void parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end);
-    uint32_t get_decoded_value();
+    uint32_t get_decoded_value(unsigned char enc);
     unsigned int get_pc_range();
 
   public:

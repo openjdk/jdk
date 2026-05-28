@@ -44,10 +44,33 @@
 
 class ShenandoahThreadLocalData {
 private:
+  // Thread-local mirror for global GC state
   char _gc_state;
-  // Evacuation OOM state
-  uint8_t                 _oom_scope_nesting_level;
-  bool                    _oom_during_evac;
+
+  // Quickened version of GC state.
+  // This allows all architectures to quickly check the group of states by using a single byte load.
+  enum FastGCState {
+    FORWARDED               = ShenandoahHeap::HAS_FORWARDED,
+    MARKING                 = ShenandoahHeap::MARKING,
+    WEAK                    = ShenandoahHeap::WEAK_ROOTS,
+    FORWARDED_MARKING       = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING,
+    FORWARDED_WEAK          = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::WEAK_ROOTS,
+    MARKING_WEAK            = ShenandoahHeap::MARKING       | ShenandoahHeap::WEAK_ROOTS,
+    FORWARDED_MARKING_WEAK  = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING    | ShenandoahHeap::WEAK_ROOTS
+  };
+
+  enum FastGCStatePos {
+    POS_FORWARDED               = 0,
+    POS_MARKING                 = 1,
+    POS_WEAK                    = 2,
+    POS_FORWARDED_MARKING       = 3,
+    POS_FORWARDED_WEAK          = 4,
+    POS_MARKING_WEAK            = 5,
+    POS_FORWARDED_MARKING_WEAK  = 6,
+    POS_MAX
+  };
+
+  char _gc_state_fast_array[POS_MAX];
 
   SATBMarkQueue           _satb_mark_queue;
 
@@ -95,8 +118,28 @@ public:
     return data(thread)->_satb_mark_queue;
   }
 
+  static char gc_state_to_fast_array_index(char gc_state) {
+    if (gc_state == FORWARDED)              return POS_FORWARDED;
+    if (gc_state == MARKING)                return POS_MARKING;
+    if (gc_state == WEAK)                   return POS_WEAK;
+    if (gc_state == FORWARDED_MARKING)      return POS_FORWARDED_MARKING;
+    if (gc_state == FORWARDED_WEAK)         return POS_FORWARDED_WEAK;
+    if (gc_state == MARKING_WEAK)           return POS_MARKING_WEAK;
+    if (gc_state == FORWARDED_MARKING_WEAK) return POS_FORWARDED_MARKING_WEAK;
+    ShouldNotReachHere();
+    return 0;
+  }
+
   static void set_gc_state(Thread* thread, char gc_state) {
-    data(thread)->_gc_state = gc_state;
+    ShenandoahThreadLocalData* d = data(thread);
+    d->_gc_state = gc_state;
+    d->_gc_state_fast_array[POS_FORWARDED]              = (gc_state & FORWARDED) != 0;
+    d->_gc_state_fast_array[POS_MARKING]                = (gc_state & MARKING) != 0;
+    d->_gc_state_fast_array[POS_WEAK]                   = (gc_state & WEAK) != 0;
+    d->_gc_state_fast_array[POS_FORWARDED_MARKING]      = (gc_state & FORWARDED_MARKING) != 0;
+    d->_gc_state_fast_array[POS_FORWARDED_WEAK]         = (gc_state & FORWARDED_WEAK) != 0;
+    d->_gc_state_fast_array[POS_MARKING_WEAK]           = (gc_state & MARKING_WEAK) != 0;
+    d->_gc_state_fast_array[POS_FORWARDED_MARKING_WEAK] = (gc_state & FORWARDED_MARKING_WEAK) != 0;
   }
 
   static char gc_state(Thread* thread) {
@@ -160,39 +203,6 @@ public:
     return data(thread)->_shenandoah_plab;
   }
 
-  // Evacuation OOM handling
-  static bool is_oom_during_evac(Thread* thread) {
-    return data(thread)->_oom_during_evac;
-  }
-
-  static void set_oom_during_evac(Thread* thread, bool oom) {
-    data(thread)->_oom_during_evac = oom;
-  }
-
-  static uint8_t evac_oom_scope_level(Thread* thread) {
-    return data(thread)->_oom_scope_nesting_level;
-  }
-
-  // Push the scope one level deeper, return previous level
-  static uint8_t push_evac_oom_scope(Thread* thread) {
-    uint8_t level = evac_oom_scope_level(thread);
-    assert(level < 254, "Overflow nesting level"); // UINT8_MAX = 255
-    data(thread)->_oom_scope_nesting_level = level + 1;
-    return level;
-  }
-
-  // Pop the scope by one level, return previous level
-  static uint8_t pop_evac_oom_scope(Thread* thread) {
-    uint8_t level = evac_oom_scope_level(thread);
-    assert(level > 0, "Underflow nesting level");
-    data(thread)->_oom_scope_nesting_level = level - 1;
-    return level;
-  }
-
-  static bool is_evac_allowed(Thread* thread) {
-    return evac_oom_scope_level(thread) > 0;
-  }
-
   // Offsets
   static ByteSize satb_mark_queue_index_offset() {
     return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index();
@@ -204,6 +214,10 @@ public:
 
   static ByteSize gc_state_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state);
+  }
+
+  static ByteSize gc_state_fast_array_offset(char gc_state) {
+    return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state_fast_array) + in_ByteSize(gc_state_to_fast_array_index(gc_state));
   }
 
   static ByteSize card_table_offset() {
