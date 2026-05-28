@@ -83,7 +83,7 @@ bool MallocSiteTable::initialize() {
   // Add the allocation site to hashtable.
   int index = hash_to_index(entry.hash());
   _table[index].store_relaxed(const_cast<MallocSiteHashtableEntry*>(&entry));
-  _entry_count.add_then_fetch(1, memory_order_relaxed);
+  _entry_count.add_then_fetch(1ul, memory_order_relaxed);
 
   return true;
 }
@@ -129,7 +129,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 
     // swap in the head
     if (_table[index].compare_set(nullptr, entry)) {
-      _entry_count.add_then_fetch(1, memory_order_relaxed);
+      _entry_count.add_then_fetch(1ul, memory_order_relaxed);
       *marker = build_marker(index, 0);
       return entry->data();
     }
@@ -155,7 +155,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
       if (head->atomic_insert(entry)) {
         pos_idx ++;
         *marker = build_marker(index, pos_idx);
-        _entry_count.add_then_fetch(1, memory_order_relaxed);
+        _entry_count.add_then_fetch(1ul, memory_order_relaxed);
         return entry->data();
       }
       // contended, other thread won
