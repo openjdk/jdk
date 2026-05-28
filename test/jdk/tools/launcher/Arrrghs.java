@@ -497,7 +497,16 @@ public class Arrrghs extends TestHelper {
         TestResult tr = doExec(javaCmd, "-jar", elp.getAbsolutePath());
         tr.checkPositive();
         tr.contains("Hello from ELP");
+        if (!tr.testStatus) {
+            throw new RuntimeException("testLongPathJarFile failed:\n" + tr.status);
+        }
     }
+
+    /*
+     * Tests -jar command where the path to the jar file is shorter than
+     * `MAX_PATH` (260 characters) but the absolute path to the file is longer
+     * than `MAX_PATH`
+     */
 
     @Test
     void testLongResolvedPathJarFile() throws IOException {
@@ -532,9 +541,13 @@ public class Arrrghs extends TestHelper {
         File elp = jarPath.toFile();
         createJar(elp, new File("Foo"), "public static void main(String[] args){ System.out.println(\"Hello from ELP\"); }");
 
+        System.out.println("execute " + elp.getAbsolutePath());
         TestResult tr = doExec(javaCmd, "-jar", jarPath.toString());
         tr.checkPositive();
         tr.contains("Hello from ELP");
+        if (!tr.testStatus) {
+            throw new RuntimeException("testLongResolvedPathJarFile failed:\n" + tr.status);
+        }
     }
 
     /*
