@@ -23,6 +23,7 @@
 
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zSyscall_windows.hpp"
+#include "os_windows.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 
@@ -33,31 +34,9 @@ ZSyscall::VirtualFreeExFn ZSyscall::VirtualFreeEx;
 ZSyscall::MapViewOfFile3Fn ZSyscall::MapViewOfFile3;
 ZSyscall::UnmapViewOfFile2Fn ZSyscall::UnmapViewOfFile2;
 
-static void* lookup_kernelbase_library() {
-  const char* const name = "KernelBase";
-  char ebuf[1024];
-  void* const handle = os::dll_load(name, ebuf, sizeof(ebuf));
-  if (handle == nullptr) {
-    log_error_p(gc)("Failed to load library: %s", name);
-  }
-  return handle;
-}
-
-static void* lookup_kernelbase_symbol(const char* name) {
-  static void* const handle = lookup_kernelbase_library();
-  if (handle == nullptr) {
-    return nullptr;
-  }
-  return os::dll_lookup(handle, name);
-}
-
-static bool has_kernelbase_symbol(const char* name) {
-  return lookup_kernelbase_symbol(name) != nullptr;
-}
-
 template <typename Fn>
 static void install_kernelbase_symbol(Fn*& fn, const char* name) {
-  fn = reinterpret_cast<Fn*>(lookup_kernelbase_symbol(name));
+  fn = reinterpret_cast<Fn*>(os::win32::lookup_kernelbase_symbol(name));
 }
 
 template <typename Fn>
@@ -83,10 +62,10 @@ void ZSyscall::initialize() {
 
 bool ZSyscall::is_supported() {
   // Available in Windows version 1803 and later
-  return has_kernelbase_symbol("VirtualAlloc2");
+  return os::win32::lookup_kernelbase_symbol("VirtualAlloc2") != nullptr;
 }
 
 bool ZSyscall::is_large_pages_supported() {
   // Available in Windows version 1809 and later
-  return has_kernelbase_symbol("CreateFileMapping2");
+  return os::win32::lookup_kernelbase_symbol("CreateFileMapping2") != nullptr;
 }
