@@ -28,31 +28,11 @@
 
 #define __ _masm->
 
-void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const Register rLimbs, MacroAssembler* _masm) {
-  Register c0    = r9;
-  Register c1    = r10;
-  Register c2    = r11;
-  Register c3    = r12;
-  Register c4    = r13;
-  Register c[]   = {c0, c1, c2, c3, c4};
-  Register bArg  = r14;
-  Register d     = r15;
-  Register b     = rbp;
-  Register mask  = rbx;
+void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const Register rLimbs, Register c[], Register bArg, Register d, Register b, Register mask, MacroAssembler* _masm) {
 
-  __ push(rbp);
-  __ push(rbx);
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-  __ push(rdx);
-
-  __ xorq(c0, c0);
-  __ xorq(c1, c1);
-  __ xorq(c2, c2);
-  __ xorq(c3, c3);
-  __ xorq(c4, c4);
+  for (int i = 0; i < 5; i++) {
+    __ xorq(c[i], c[i]);
+  }
   __ mov64(mask, 0x7FFFFFFFFFFFF);
   __ movq(bArg, bLimbs);
 
@@ -81,8 +61,10 @@ void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const R
 
   // Carry-add with reduction from high limb
   Register carry = bArg;
+  __ mov64(mask, 0x4000000000000);
+  __ movq(carry, mask);
+
   // Limb 3
-  __ mov64(carry, 0x4000000000000);
   __ addq(carry, c[3]);
   __ sarq(carry, 51);
   __ addq(c[4], carry);
@@ -90,7 +72,7 @@ void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const R
   __ subq(c[3], carry);
 
   // Limb 4
-  __ mov64(carry, 0x4000000000000);
+  __ movq(carry, mask);
   __ addq(carry, c[4]);
   __ sarq(carry, 51);
 
@@ -104,7 +86,7 @@ void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const R
 
   // Limbs 0 - 3
   for (int i = 0; i < 4; i++) {
-    __ mov64(carry, 0x4000000000000);
+    __ movq(carry, mask);
     __ addq(carry, c[i]);
     __ sarq(carry, 51);
     __ addq(c[i + 1], carry);
@@ -112,47 +94,18 @@ void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const R
     __ subq(c[i], carry);
   }
 
-  __ pop(rdx);
+  __ pop_ppx(rdx);
 
-  __ movq(Address(rLimbs, 0), c[0]);
-  __ movq(Address(rLimbs, 8), c[1]);
-  __ movq(Address(rLimbs, 16), c[2]);
-  __ movq(Address(rLimbs, 24), c[3]);
-  __ movq(Address(rLimbs, 32), c[4]);
-
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
-  __ pop(rbx);
-  __ pop(rbp);
+  for (int i = 0; i < 5; i++) {
+    __ movq(Address(rLimbs, i * 8), c[i]);
+  }
 }
 
-void square_25519_scalar(const Register aLimbs, const Register rLimbs, MacroAssembler* _masm) {
-  Register c0    = r9;
-  Register c1    = r10;
-  Register c2    = r11;
-  Register c3    = r12;
-  Register c4    = r13;
-  Register c[]   = {c0, c1, c2, c3, c4};
-  Register aArg  = r14;
-  Register d     = r15;
-  Register carry = rbp;
-  Register mask  = rbx;
+void square_25519_scalar(const Register aLimbs, const Register rLimbs, Register c[], Register aArg, Register d, Register carry, Register mask, MacroAssembler* _masm) {
 
-  __ push(rbp);
-  __ push(rbx);
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-  __ push(rdx);
-
-  __ xorq(c0, c0);
-  __ xorq(c1, c1);
-  __ xorq(c2, c2);
-  __ xorq(c3, c3);
-  __ xorq(c4, c4);
+  for (int i = 0; i < 5; i++) {
+    __ xorq(c[i], c[i]);
+  }
   __ mov64(mask, 0x7FFFFFFFFFFFF);
 
   // Perform high/low multiplication with signed 5x51 bit limbs
@@ -196,7 +149,8 @@ void square_25519_scalar(const Register aLimbs, const Register rLimbs, MacroAsse
 
   // Carry-add with reduction from high limb
   // Limb 3
-  __ mov64(carry, 0x4000000000000);
+  __ mov64(mask, 0x4000000000000);
+  __ movq(carry, mask);
   __ addq(carry, c[3]);
   __ sarq(carry, 51);
   __ addq(c[4], carry);
@@ -204,7 +158,7 @@ void square_25519_scalar(const Register aLimbs, const Register rLimbs, MacroAsse
   __ subq(c[3], carry);
 
   // Limb 4
-  __ mov64(carry, 0x4000000000000);
+  __ movq(carry, mask);
   __ addq(carry, c[4]);
   __ sarq(carry, 51);
 
@@ -218,7 +172,7 @@ void square_25519_scalar(const Register aLimbs, const Register rLimbs, MacroAsse
 
   // Limbs 0 - 3
   for (int i = 0; i < 4; i++) {
-    __ mov64(carry, 0x4000000000000);
+    __ movq(carry, mask);
     __ addq(carry, c[i]);
     __ sarq(carry, 51);
     __ addq(c[i + 1], carry);
@@ -226,20 +180,19 @@ void square_25519_scalar(const Register aLimbs, const Register rLimbs, MacroAsse
     __ subq(c[i], carry);
   }
 
-  __ pop(rdx);
+  __ pop_ppx(rdx);
 
+  for (int i = 0; i < 5; i++) {
+    __ movq(Address(rLimbs, i * 8), c[i]);
+  }
+
+/*
   __ movq(Address(rLimbs, 0), c[0]);
   __ movq(Address(rLimbs, 8), c[1]);
   __ movq(Address(rLimbs, 16), c[2]);
   __ movq(Address(rLimbs, 24), c[3]);
   __ movq(Address(rLimbs, 32), c[4]);
-
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
-  __ pop(rbx);
-  __ pop(rbp);
+*/
 }
 
 address StubGenerator::generate_intpoly_mult_25519() {
@@ -260,7 +213,28 @@ address StubGenerator::generate_intpoly_mult_25519() {
   const Register bLimbs  = c_rarg1; // rsi | rdx
   const Register rLimbs  = c_rarg2; // rdx | r8
 
-  multiply_25519_scalar(aLimbs, bLimbs, rLimbs, _masm);
+  Register c[]   = {r9, r10, r11, r12, r13};
+  Register bArg  = r14;
+  Register d     = r15;
+  Register b     = rbp;
+  Register mask  = rbx;
+
+  __ push_ppx(rbp);
+  __ push_ppx(rbx);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
+  __ push_ppx(rdx);
+
+  multiply_25519_scalar(aLimbs, bLimbs, rLimbs, c, bArg, d, b, mask, _masm);
+
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
+  __ pop_ppx(rbx);
+  __ pop_ppx(rbp);
 
   __ leave();
   __ ret(0);
@@ -287,8 +261,28 @@ address StubGenerator::generate_intpoly_square_25519() {
   // Register Map
   const Register aLimbs  = c_rarg0; // rdi | rcx
   const Register rLimbs  = c_rarg1; // rsi | rdx
+  Register c[]   = {r9, r10, r11, r12, r13};
+  Register aArg  = r14;
+  Register d     = r15;
+  Register carry = rbp;
+  Register mask  = rbx;
 
-  square_25519_scalar(aLimbs, rLimbs, _masm);
+  __ push_ppx(rbp);
+  __ push_ppx(rbx);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
+  __ push_ppx(rdx);
+
+  square_25519_scalar(aLimbs, rLimbs, c, aArg, d, carry, mask, _masm);
+
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
+  __ pop_ppx(rbx);
+  __ pop_ppx(rbp);
 
   __ leave();
   __ ret(0);
