@@ -29,27 +29,27 @@
 #include "unittest.hpp"
 
 struct GCPauseData {
-  double _gc_start_time = 0;
-  double _gc_pause_time = 0;
-  size_t _desired_young = 0;
+  double _gc_start_time_s = 0;
+  double _gc_pause_duration_s = 0;
+  size_t _desired_young_bytes = 0;
   size_t _non_hum_alloc_bytes = 0;
   size_t _hum_alloc_bytes = 0;
-  size_t _total_hum_after_gc = 0;
+  size_t _total_hum_after_gc_bytes = 0;
   size_t _gc_trigger_hum_bytes = 0;
 
-  GCPauseData(double gc_start_time,
-              double gc_pause_time,
-              size_t desired_young,
+  GCPauseData(double gc_start_time_s,
+              double gc_pause_duration_s,
+              size_t desired_young_bytes,
               size_t non_hum_alloc_bytes,
               size_t hum_alloc_bytes,
-              size_t total_hum_after_gc,
+              size_t total_hum_after_gc_bytes,
               size_t gc_trigger_hum_bytes = 0)
-      : _gc_start_time(gc_start_time),
-        _gc_pause_time(gc_pause_time),
-        _desired_young(desired_young),
+      : _gc_start_time_s(gc_start_time_s),
+        _gc_pause_duration_s(gc_pause_duration_s),
+        _desired_young_bytes(desired_young_bytes),
         _non_hum_alloc_bytes(non_hum_alloc_bytes),
         _hum_alloc_bytes(hum_alloc_bytes),
-        _total_hum_after_gc(total_hum_after_gc),
+        _total_hum_after_gc_bytes(total_hum_after_gc_bytes),
         _gc_trigger_hum_bytes(gc_trigger_hum_bytes) {}
 };
 
@@ -73,7 +73,7 @@ struct G1IHOPTestController {
     _alloc_tracker.add_allocated_bytes_since_last_gc(pause_data._non_hum_alloc_bytes);
     _alloc_tracker.add_allocated_humongous_bytes_since_last_gc(pause_data._hum_alloc_bytes);
 
-    G1MutatorPeriodStatsBytes period_stats = _alloc_tracker.end_mutator_period(pause_data._total_hum_after_gc);
+    G1MutatorPeriodStatsBytes period_stats = _alloc_tracker.end_mutator_period(pause_data._total_hum_after_gc_bytes);
 
     if (pause_data._gc_trigger_hum_bytes > 0) {
       // Mirror G1Policy::record_pause() and the successful allocation tracking
@@ -83,13 +83,13 @@ struct G1IHOPTestController {
 
     _conc_cycle_tracker.record_mutator_period(pause_type,
                                               false /* is_periodic_gc */,
-                                              pause_data._gc_start_time,
-                                              pause_data._gc_start_time + pause_data._gc_pause_time,
+                                              pause_data._gc_start_time_s,
+                                              pause_data._gc_start_time_s + pause_data._gc_pause_duration_s,
                                               period_stats);
 
     if (pause_type != G1CollectorState::Pause::Mixed &&
         pause_type != G1CollectorState::Pause::Full) {
-      _ihop_control.record_expected_young_gen_size(pause_data._desired_young);
+      _ihop_control.record_expected_young_gen_size(pause_data._desired_young_bytes);
     }
   }
 
@@ -118,57 +118,57 @@ struct G1IHOPTestController {
 };
 
 static void add_multiple_samples(G1IHOPTestController* ctrl,
-                                 double mutator_time_s,
-                                 double gc_pause_time,
+                                 double mutator_duration_s,
+                                 double gc_pause_duration_s,
                                  size_t young_reserve_bytes,
                                  size_t non_hum_bytes,
                                  size_t hum_alloc_bytes,
                                  size_t num_samples) {
-  double gc_start_time = mutator_time_s;
+  double gc_start_time_s = mutator_duration_s;
 
   for (size_t i = 0; i < num_samples; i++) {
     ctrl->mutator_phase_end_with_conc_start({
-      gc_start_time,
-      gc_pause_time,
+      gc_start_time_s,
+      gc_pause_duration_s,
       young_reserve_bytes,
       non_hum_bytes,
       hum_alloc_bytes,
-      hum_alloc_bytes  /* _total_hum_after_gc */
+      hum_alloc_bytes  /* _total_hum_after_gc_bytes */
     });
 
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
 
     ctrl->mutator_phase_end_with_normal_gc({
-      gc_start_time,
-      gc_pause_time,
+      gc_start_time_s,
+      gc_pause_duration_s,
       young_reserve_bytes,
       non_hum_bytes,
       hum_alloc_bytes,
-      hum_alloc_bytes  /* _total_hum_after_gc */
+      hum_alloc_bytes  /* _total_hum_after_gc_bytes */
     });
 
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
 
     ctrl->mutator_phase_end_with_mixed_gc({
-      gc_start_time,
-      gc_pause_time,
+      gc_start_time_s,
+      gc_pause_duration_s,
       young_reserve_bytes,
       non_hum_bytes,
       hum_alloc_bytes,
-      hum_alloc_bytes  /* _total_hum_after_gc */
+      hum_alloc_bytes  /* _total_hum_after_gc_bytes */
     });
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
   }
 }
 
-static size_t old_gen_threshold(size_t target_occupancy,
-                                size_t young_reserve,
+static size_t old_gen_threshold(size_t target_occupancy_bytes,
+                                size_t young_reserve_bytes,
                                 size_t non_hum_bytes,
                                 size_t hum_bytes,
                                 double cycle_duration_s) {
-  size_t needed_during_cycle = young_reserve + non_hum_bytes * cycle_duration_s + hum_bytes;
-  return needed_during_cycle < target_occupancy ?
-         target_occupancy - needed_during_cycle : 0;
+  size_t needed_during_cycle = young_reserve_bytes + non_hum_bytes * cycle_duration_s + hum_bytes;
+  return needed_during_cycle < target_occupancy_bytes ?
+         target_occupancy_bytes - needed_during_cycle : 0;
 }
 
 TEST_VM(G1IHOPControl, allocation_tracker_incr) {
@@ -179,40 +179,40 @@ TEST_VM(G1IHOPControl, allocation_tracker_incr) {
 
   size_t initial_ihop = InitiatingHeapOccupancyPercent;
   G1IHOPTestController ctrl(false /* adaptive */, initial_ihop, 100 /* target_occupancy */);
-  double const time_step = 1.0;
-  double gc_start_time = time_step;
-  double gc_pause_time = 1.0;
+  double const time_step_s = 1.0;
+  double gc_start_time_s = time_step_s;
+  double gc_pause_duration_s = 1.0;
   ctrl.mutator_phase_end_with_conc_start({
-    gc_start_time,
-    gc_pause_time,
-    10  /* _desired_young */,
+    gc_start_time_s,
+    gc_pause_duration_s,
+    10  /* _desired_young_bytes */,
     0   /* _non_hum_alloc_bytes */,
     0   /* _hum_alloc_bytes */,
-    0   /* _total_hum_after_gc */
+    0   /* _total_hum_after_gc_bytes */
   });
 
-  gc_start_time += (gc_pause_time + time_step);
+  gc_start_time_s += (gc_pause_duration_s + time_step_s);
 
   ctrl.mutator_phase_end_with_normal_gc({
-    gc_start_time,
-    gc_pause_time,
-    10  /* _desired_young */,
+    gc_start_time_s,
+    gc_pause_duration_s,
+    10  /* _desired_young_bytes */,
     20  /* _non_hum_alloc_bytes */,
     30  /* _hum_alloc_bytes */,
-    25  /* _total_hum_after_gc */
+    25  /* _total_hum_after_gc_bytes */
   });
 
   EXPECT_EQ(20u, ctrl._conc_cycle_tracker.non_hum_bytes_allocated());
   EXPECT_EQ(30u, ctrl._conc_cycle_tracker.peak_extra_humongous_reserve_bytes());
 
-  gc_start_time += (gc_pause_time + time_step);
+  gc_start_time_s += (gc_pause_duration_s + time_step_s);
   ctrl.mutator_phase_end_with_normal_gc({
-    gc_start_time,
-    gc_pause_time,
-    10  /* _desired_young */,
+    gc_start_time_s,
+    gc_pause_duration_s,
+    10  /* _desired_young_bytes */,
     5   /* _non_hum_alloc_bytes */,
     10  /* _hum_alloc_bytes */,
-    10  /* _total_hum_after_gc */
+    10  /* _total_hum_after_gc_bytes */
   });
 
   // Peak Humongous should be:
@@ -232,8 +232,8 @@ TEST_VM(G1IHOPControl, non_adaptive_ihop) {
   G1IHOPTestController ctrl(false /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        20  /* non_hum_bytes */,
                        0   /* hum_alloc_bytes */,
@@ -253,8 +253,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_not_enough_samples) {
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        20  /* non_hum_bytes */,
                        0   /* hum_alloc_bytes */,
@@ -277,10 +277,10 @@ TEST_VM(G1IHOPControl, adaptive_ihop_non_humongous_only) {
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   // We run 2 mutator periods for each concurrent cycle
-  double total_cycle_time = 2;
+  double total_cycle_duration_s = 2;
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        20  /* non_hum_bytes */,
                        0   /* hum_alloc_bytes */,
@@ -290,7 +290,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_non_humongous_only) {
                                                 10  /* young_reserve */,
                                                 20  /* non_hum_bytes */,
                                                 0   /* hum_bytes */,
-                                                total_cycle_time );
+                                                total_cycle_duration_s);
 
   EXPECT_EQ(expected_threshold, ctrl._ihop_control.old_gen_threshold_for_conc_mark_start());
 }
@@ -309,19 +309,19 @@ TEST_VM(G1IHOPControl, adaptive_ihop_peak_humongous_only) {
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        0   /* non_hum_bytes */,
                        30  /* hum_alloc_bytes */,
                        num_samples);
 
-  double total_cycle_time = 2;
-  size_t expected_threshold = old_gen_threshold(100 /* target_occupancy */,
-                                                10  /* young_reserve */,
-                                                0  /* non_hum_bytes */,
-                                                30 /* hum_bytes */,
-                                                total_cycle_time);
+  double total_cycle_duration_s = 2;
+  size_t expected_threshold = old_gen_threshold(100 /* target_occupancy_bytes */,
+                                                10  /* young_reserve_bytes */,
+                                                0   /* non_hum_bytes */,
+                                                30  /* hum_alloc_bytes */,
+                                                total_cycle_duration_s);
 
   EXPECT_EQ(expected_threshold, ctrl._ihop_control.old_gen_threshold_for_conc_mark_start());
 }
@@ -340,19 +340,19 @@ TEST_VM(G1IHOPControl, adaptive_ihop_combined) {
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        20  /* non_hum_bytes */,
                        30  /* hum_alloc_bytes */,
                        num_samples);
 
-  double total_cycle_time = 2;
+  double total_cycle_duration_s = 2;
   size_t expected_threshold = old_gen_threshold(100 /* target_occupancy */,
                                                 10  /* young_reserve */,
                                                 20  /* non_hum_bytes */,
-                                                30   /* hum_bytes */,
-                                                total_cycle_time);
+                                                30  /* hum_bytes */,
+                                                total_cycle_duration_s);
 
   EXPECT_EQ(expected_threshold, ctrl._ihop_control.old_gen_threshold_for_conc_mark_start());
 }
@@ -371,8 +371,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_high_alloc_pressure) {
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s     */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        70  /* non_hum_bytes */,
                        35  /* hum_alloc_bytes */,
@@ -397,25 +397,25 @@ TEST_VM(G1IHOPControl, adaptive_ihop_young_reserve) {
   G1IHOPTestController ctrl_small(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl_small,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        20  /* non_hum_bytes */,
                        30  /* hum_alloc_bytes */,
                        num_samples);
 
-  double total_cycle_time = 2;
+  double total_cycle_duration_s = 2;
   size_t expected_small_young = old_gen_threshold(100 /* target_occupancy */,
                                                   10  /* young_reserve */,
                                                   20  /* non_hum_bytes */,
                                                   30  /* hum_bytes */,
-                                                  total_cycle_time);
+                                                  total_cycle_duration_s);
 
   G1IHOPTestController ctrl_large(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl_large,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        25  /* young_reserve */,
                        20  /* non_hum_bytes */,
                        30  /* hum_alloc_bytes */,
@@ -425,7 +425,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_young_reserve) {
                                                   25  /* young_reserve */,
                                                   20  /* non_hum_bytes */,
                                                   30  /* hum_bytes */,
-                                                  total_cycle_time);
+                                                  total_cycle_duration_s);
 
   EXPECT_EQ(expected_small_young, ctrl_small._ihop_control.old_gen_threshold_for_conc_mark_start());
   EXPECT_EQ(expected_large_young, ctrl_large._ihop_control.old_gen_threshold_for_conc_mark_start());
@@ -446,8 +446,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_recovers_after_spike) {
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        20  /* non_hum_bytes */,
                        10  /* hum_alloc_bytes */,
@@ -456,8 +456,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_recovers_after_spike) {
   size_t before_spike = ctrl._ihop_control.old_gen_threshold_for_conc_mark_start();
 
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        40  /* non_hum_bytes */,
                        30  /* hum_alloc_bytes */,
@@ -466,8 +466,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_recovers_after_spike) {
   size_t during_spike = ctrl._ihop_control.old_gen_threshold_for_conc_mark_start();
 
   add_multiple_samples(&ctrl,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        20  /* non_hum_bytes */,
                        5   /* hum_alloc_bytes */,
@@ -492,31 +492,31 @@ TEST_VM(G1IHOPControl, adaptive_ihop_reuse_eagerly_reclaimed) {
 
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, target_occupancy);
 
-  double mutator_time_s = 1.0;
-  double gc_pause_time = 1.0;
-  double gc_start_time = mutator_time_s;
+  double mutator_duration_s = 1.0;
+  double gc_pause_duration_s = 1.0;
+  double gc_start_time_s = mutator_duration_s;
   size_t h_t0 = 100;
   ctrl.mutator_phase_end_with_conc_start({
-      gc_start_time,
-      gc_pause_time,
+      gc_start_time_s,
+      gc_pause_duration_s,
       10    /* young_reserve_bytes */,
       10    /* non_hum_bytes */,
       h_t0  /* hum_alloc_bytes */,
-      h_t0  /* total_hum_after_gc */
+      h_t0  /* total_hum_after_gc_bytes */
     });
 
   // First mutator phase:
   // No new humongous allocations in this phase.
   // h_t1 < h_t0 (eager reclaim)
-  gc_start_time += (gc_pause_time + mutator_time_s);
+  gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
   size_t h_t1 = 60;
   ctrl.mutator_phase_end_with_normal_gc({
-      gc_start_time,
-      gc_pause_time,
+      gc_start_time_s,
+      gc_pause_duration_s,
       10   /* young_reserve_bytes */,
       0    /* non_hum_bytes */,
       0    /* hum_alloc_bytes */,
-      h_t1 /* total_hum_after_gc */
+      h_t1 /* total_hum_after_gc_bytes */
     });
 
   EXPECT_EQ(0ul, ctrl._conc_cycle_tracker.peak_extra_humongous_reserve_bytes());
@@ -524,14 +524,14 @@ TEST_VM(G1IHOPControl, adaptive_ihop_reuse_eagerly_reclaimed) {
   // Second mutator phase:
   size_t hum_alloc_bytes = 50;
   size_t h_t2 = 60;
-  gc_start_time += (gc_pause_time + mutator_time_s);
+  gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
   ctrl.mutator_phase_end_with_normal_gc({
-      gc_start_time,
-      gc_pause_time,
+      gc_start_time_s,
+      gc_pause_duration_s,
       10   /* young_reserve_bytes */,
       0    /* non_hum_bytes */,
       hum_alloc_bytes,
-      h_t2 /* total_hum_after_gc */
+      h_t2 /* total_hum_after_gc_bytes */
     });
   // Expected:
   // delta_after_previous_gc = 60 - 100 = -40
@@ -553,35 +553,35 @@ TEST_VM(G1IHOPControl, adaptive_ihop_eager_reclaim_reduces_extra_humongous_reser
 
   size_t target_occupancy = 100;
   size_t young_reserve    = 10;
-  double mutator_time_s = 1.0;
-  double gc_pause_time = 1.0;
-  double gc_start_time = mutator_time_s;
+  double mutator_duration_s = 1.0;
+  double gc_pause_duration_s = 1.0;
+  double gc_start_time_s = mutator_duration_s;
 
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, target_occupancy);
 
   for (size_t i = 0; i < num_samples; i++) {
     size_t h_t0 = 100;
     ctrl.mutator_phase_end_with_conc_start({
-        gc_start_time,
-        gc_pause_time,
+        gc_start_time_s,
+        gc_pause_duration_s,
         young_reserve,
         10   /* non_hum_bytes */,
         h_t0 /* hum_alloc_bytes */,
-        h_t0 /* total_hum_after_gc */
+        h_t0 /* total_hum_after_gc_bytes */
       });
 
     // First mutator phase:
     // No new humongous allocations in this phase.
     // h_t1 < h_t0 (eager reclaim)
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
     size_t h_t1 = 60;
     ctrl.mutator_phase_end_with_normal_gc({
-        gc_start_time,
-        gc_pause_time,
+        gc_start_time_s,
+        gc_pause_duration_s,
         young_reserve,
         20   /* non_hum_bytes */,
         0    /* hum_alloc_bytes */,
-        h_t1 /* total_hum_after_gc */
+        h_t1 /* total_hum_after_gc_bytes */
       });
 
     EXPECT_EQ(0ul, ctrl._conc_cycle_tracker.peak_extra_humongous_reserve_bytes());
@@ -589,17 +589,17 @@ TEST_VM(G1IHOPControl, adaptive_ihop_eager_reclaim_reduces_extra_humongous_reser
     // Second mutator phase:
     size_t hum_alloc_bytes = 50;
     size_t h_t2 = 60;
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
     ctrl.mutator_phase_end_with_mixed_gc({
-        gc_start_time,
-        gc_pause_time,
+        gc_start_time_s,
+        gc_pause_duration_s,
         10   /* young_reserve_bytes */,
         0    /* non_hum_bytes */,
         hum_alloc_bytes,
-        h_t2 /* total_hum_after_gc */
+        h_t2 /* total_hum_after_gc_bytes */
       });
 
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
   }
 
   // Expected:
@@ -625,16 +625,16 @@ TEST_VM(G1IHOPControl, adaptive_ihop_cycle_duration) {
   G1IHOPTestController ctrl_b(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
   add_multiple_samples(&ctrl_a,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        40  /* non_hum_bytes */,
                        30  /* hum_bytes */,
                        num_samples);
 
   add_multiple_samples(&ctrl_b,
-                       1.0 /* mutator_time_s */,
-                       2.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       2.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        40  /* non_hum_bytes */,
                        30  /* hum_bytes */,
@@ -659,21 +659,21 @@ TEST_VM(G1IHOPControl, adaptive_ihop_cycle_duration_scales) {
   G1IHOPTestController ctrl_short(true /* adaptive */, initial_ihop, target_occupancy);
   G1IHOPTestController ctrl_long(true /* adaptive */, initial_ihop, target_occupancy);
 
-  double mutator_time_s = 1.0;
-  double short_cycle_time = mutator_time_s * 2;
+  double mutator_duration_s = 1.0;
+  double short_cycle_duration_s = mutator_duration_s * 2;
   add_multiple_samples(&ctrl_short,
-                       1.0 /* mutator_time_s */,
-                       1.0 /* gc_pause_time_s */,
+                       1.0 /* mutator_duration_s */,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        40  /* non_hum_bytes */,
                        30  /* hum_bytes */,
                        num_samples);
 
-  double long_mutator_time_s = 4.0;
-  double long_cycle_time = long_mutator_time_s * 2;
+  double long_mutator_duration_s = 4.0;
+  double long_cycle_duration_s = long_mutator_duration_s * 2;
   add_multiple_samples(&ctrl_long,
-                       long_mutator_time_s,
-                       1.0 /* gc_pause_time_s */,
+                       long_mutator_duration_s,
+                       1.0 /* gc_pause_duration_s */,
                        10  /* young_reserve */,
                        80  /* non_hum_bytes */,
                        30  /* hum_bytes */,
@@ -683,13 +683,13 @@ TEST_VM(G1IHOPControl, adaptive_ihop_cycle_duration_scales) {
                                             10  /* young_reserve */,
                                             40  /* non_hum_bytes */,
                                             30  /* hum_bytes */,
-                                            short_cycle_time);
+                                            short_cycle_duration_s);
 
   size_t expected_long = old_gen_threshold(200 /* target_occupancy */,
                                            10  /* young_reserve */,
-                                           (80 / long_mutator_time_s)  /* non_hum_bytes */,
+                                           (80 / long_mutator_duration_s)  /* non_hum_bytes */,
                                            30  /* hum_bytes */,
-                                           long_cycle_time);
+                                           long_cycle_duration_s);
 
   EXPECT_EQ(ctrl_short._ihop_control.old_gen_threshold_for_conc_mark_start(), expected_short);
 
@@ -711,55 +711,55 @@ TEST_VM(G1IHOPControl, adaptive_ihop_gc_humongous_allocation) {
   // small samples.
   size_t num_samples = 5;
 
-  size_t target_occupancy = 100;
-  size_t young_reserve    = 10;
+  size_t target_occupancy_bytes = 100;
+  size_t young_reserve_bytes    = 10;
   size_t trigger_hum_bytes = 30;
 
-  double mutator_time_s = 1.0;
-  double gc_pause_time = 1.0;
-  double gc_start_time = mutator_time_s;
+  double mutator_duration_s = 1.0;
+  double gc_pause_duration_s = 1.0;
+  double gc_start_time_s = mutator_duration_s;
 
-  G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, target_occupancy);
+  G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, target_occupancy_bytes);
 
   for (size_t i = 0; i < num_samples; i++) {
     ctrl.mutator_phase_end_with_conc_start({
-        gc_start_time,
-        gc_pause_time,
-        young_reserve,
+        gc_start_time_s,
+        gc_pause_duration_s,
+        young_reserve_bytes,
         10 /* non_hum_bytes */,
         0  /* hum_alloc_bytes */,
-        0  /* total_hum_after_gc */
+        0  /* total_hum_after_gc_bytes */
       });
 
     // First mutator phase:
     // No new humongous allocations in this phase.
     // h_t1 < h_t0 (eager reclaim)
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
     size_t h_t1 = 60;
     ctrl.mutator_phase_end_with_normal_gc({
-        gc_start_time,
-        gc_pause_time,
-        young_reserve,
+        gc_start_time_s,
+        gc_pause_duration_s,
+        young_reserve_bytes,
         20 /* non_hum_bytes */,
         0  /* hum_alloc_bytes */,
-        0  /* total_hum_after_gc */,
+        0  /* total_hum_after_gc_bytes */,
         trigger_hum_bytes
       });
 
     EXPECT_EQ(trigger_hum_bytes, ctrl._conc_cycle_tracker.peak_extra_humongous_reserve_bytes());
 
     // Second mutator phase:
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
     ctrl.mutator_phase_end_with_mixed_gc({
-        gc_start_time,
-        gc_pause_time,
+        gc_start_time_s,
+        gc_pause_duration_s,
         10   /* young_reserve_bytes */,
         10   /* non_hum_bytes */,
         0,   /* hum_alloc_bytes */
-        trigger_hum_bytes /* total_hum_after_gc */
+        trigger_hum_bytes /* total_hum_after_gc_bytes */
       });
 
-    gc_start_time += (gc_pause_time + mutator_time_s);
+    gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
   }
 
   // Expected:
@@ -785,32 +785,32 @@ TEST_VM(G1IHOPControl, adaptive_ihop_humongous_allocation_causes_conc_start) {
 
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, target_occupancy);
 
-  double mutator_time_s = 1.0;
-  double gc_pause_time = 1.0;
-  double gc_start_time = mutator_time_s;
+  double mutator_duration_s = 1.0;
+  double gc_pause_duration_s = 1.0;
+  double gc_start_time_s = mutator_duration_s;
   size_t h_t0 = 100;
   ctrl.mutator_phase_end_with_conc_start({
-      gc_start_time,
-      gc_pause_time,
+      gc_start_time_s,
+      gc_pause_duration_s,
       10    /* young_reserve_bytes */,
       10    /* non_hum_bytes */,
       0     /* hum_alloc_bytes */,
-      0     /* total_hum_after_gc */,
+      0     /* total_hum_after_gc_bytes */,
       h_t0  /* gc_trigger_hum_bytes */
     });
 
   // No new humongous allocations in this phase.
   // h_t1 == h_t0 (no humongous allocation, no eager reclaim, keep the same)
   size_t h_t1 = h_t0;
-  gc_start_time += (gc_pause_time + mutator_time_s);
+  gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
 
   ctrl.mutator_phase_end_with_normal_gc({
-      gc_start_time,
-      gc_pause_time,
+      gc_start_time_s,
+      gc_pause_duration_s,
       10   /* young_reserve_bytes */,
       0    /* non_hum_bytes */,
       0    /* hum_alloc_bytes */,
-      h_t1 /* total_hum_after_gc */
+      h_t1 /* total_hum_after_gc_bytes */
     });
 
   EXPECT_EQ(0ul, ctrl._conc_cycle_tracker.peak_extra_humongous_reserve_bytes());
