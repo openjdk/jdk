@@ -96,9 +96,6 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 #include <math.h>
 
@@ -280,7 +277,6 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   assert(beg_region <= _region_count, "beg_region out of range");
   assert(end_region <= _region_count, "end_region out of range");
 
-  const size_t region_cnt = end_region - beg_region;
   for (size_t i = beg_region; i < end_region; i++) {
     ::new (&_region_data[i]) RegionData{};
   }
@@ -702,9 +698,9 @@ void PSParallelCompact::post_compact()
 
   heap->prune_scavengable_nmethods();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
 
   // Signal that we have completed a visit to all live objects.
   Universe::heap()->record_whole_heap_examined_timestamp();
@@ -978,9 +974,9 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 
     ref_processor()->start_discovery(clear_all_soft_refs);
 
@@ -988,10 +984,10 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
 
     summary_phase(should_do_max_compaction);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     assert(DerivedPointerTable::is_active(), "Sanity");
     DerivedPointerTable::set_active(false);
-#endif
+#endif // COMPILER2
 
     forward_to_new_addr();
 
@@ -1172,14 +1168,6 @@ public:
     _klass_cleaning_task() {}
 
   void work(uint worker_id) {
-#if INCLUDE_JVMCI
-    if (EnableJVMCI && worker_id == 0) {
-      // Serial work; only first worker.
-      // Clean JVMCI metadata handles.
-      JVMCI::do_unloading(_unloading_occurred);
-    }
-#endif
-
     // Do first pass of code cache cleaning.
     _code_cache_task.work(worker_id);
 
@@ -1378,11 +1366,9 @@ public:
     _weak_proc_task(nworkers),
     _oop_storage_iter(),
     _nworkers(nworkers),
-    _code_cache_claimed(false) {
+    _code_cache_claimed(false),
+    _claim_counters{} {
 
-    for (unsigned int i = PSParallelCompact::old_space_id; i < PSParallelCompact::last_space_id; ++i) {
-      ::new (&_claim_counters[i]) Atomic<uint>{};
-    }
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
   }
 

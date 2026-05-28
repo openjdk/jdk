@@ -107,9 +107,7 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
          senderDwarf = createDwarfParser(linuxDbg(), senderPC.addOffsetTo(-1));
          fallback = true;
        } catch (DebuggerException _) {
-         // DWARF processing should succeed when the frame is native
-         // but it might fail if Common Information Entry (CIE) has language
-         // personality routine and/or Language Specific Data Area (LSDA).
+         // We cannot unwind anymore without appropriate DWARF.
          return null;
        }
      }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -42,6 +42,7 @@
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -100,9 +101,6 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -557,6 +555,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _active_generation(nullptr),
   _initial_size(0),
   _committed(0),
+  _alloc_rate_decay(&_alloc_rate),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),
   _safepoint_workers(nullptr),
@@ -701,6 +700,11 @@ void ShenandoahHeap::post_initialize() {
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
 
+  // Periodically decay allocation rate to compensate for not being updated when allocation rate
+  // is low. Heuristics are evaluated unconditionally from a dedicated thread so it will continue
+  // to see the last (possibly stale) allocation rate if the allocation rate is low.
+  _alloc_rate_decay.enroll();
+
   MutexLocker ml(Threads_lock);
 
   ShenandoahInitWorkerGCLABClosure init_gclabs;
@@ -822,8 +826,7 @@ bool ShenandoahHeap::check_soft_max_changed() {
   size_t new_soft_max = AtomicAccess::load(&SoftMaxHeapSize);
   size_t old_soft_max = soft_max_capacity();
   if (new_soft_max != old_soft_max) {
-    new_soft_max = MAX2(min_capacity(), new_soft_max);
-    new_soft_max = MIN2(max_capacity(), new_soft_max);
+    new_soft_max = clamp(new_soft_max, min_capacity(), max_capacity());
     if (new_soft_max != old_soft_max) {
       log_info(gc)("Soft Max Heap Size: %zu%s -> %zu%s",
                    byte_size_in_proper_unit(old_soft_max), proper_unit_for_byte_size(old_soft_max),
@@ -1033,35 +1036,41 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   HeapWord* result = _free_set->allocate(req, in_new_region);
 
   // Record the plab configuration for this result and register the object.
-  if (result != nullptr && req.is_old()) {
-    if (req.is_lab_alloc()) {
-      old_generation()->configure_plab_for_current_thread(req);
-    } else {
-      // Register the newly allocated object while we're holding the global lock since there's no synchronization
-      // built in to the implementation of register_object().  There are potential races when multiple independent
-      // threads are allocating objects, some of which might span the same card region.  For example, consider
-      // a card table's memory region within which three objects are being allocated by three different threads:
-      //
-      // objects being "concurrently" allocated:
-      //    [-----a------][-----b-----][--------------c------------------]
-      //            [---- card table memory range --------------]
-      //
-      // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
-      // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
-      // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
-      // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
-      // card region.
-      //
-      // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
-      // last-start representing object b while first-start represents object c.  This is why we need to require all
-      // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-      old_generation()->card_scan()->register_object(result);
+  if (result != nullptr) {
+    if (req.is_mutator_alloc()) {
+      _alloc_rate.allocated((req.actual_size() + req.waste()) * HeapWordSize);
+    }
 
-      if (req.is_promotion()) {
-        // Shared promotion.
-        const size_t actual_size = req.actual_size() * HeapWordSize;
-        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
-        old_generation()->expend_promoted(actual_size);
+    if (req.is_old()) {
+      if (req.is_lab_alloc()) {
+        old_generation()->configure_plab_for_current_thread(req);
+      } else {
+        // Register the newly allocated object while we're holding the global lock since there's no synchronization
+        // built in to the implementation of register_object().  There are potential races when multiple independent
+        // threads are allocating objects, some of which might span the same card region.  For example, consider
+        // a card table's memory region within which three objects are being allocated by three different threads:
+        //
+        // objects being "concurrently" allocated:
+        //    [-----a------][-----b-----][--------------c------------------]
+        //            [---- card table memory range --------------]
+        //
+        // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
+        // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
+        // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
+        // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
+        // card region.
+        //
+        // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
+        // last-start representing object b while first-start represents object c.  This is why we need to require all
+        // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
+        old_generation()->card_scan()->register_object(result);
+
+        if (req.is_promotion()) {
+          // Shared promotion.
+          const size_t actual_size = req.actual_size() * HeapWordSize;
+          log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
+          old_generation()->expend_promoted(actual_size);
+        }
       }
     }
   }
@@ -2309,10 +2318,13 @@ void ShenandoahHeap::stop() {
   // Step 1. Stop reporting on gc thread cpu utilization
   mmu_tracker()->stop();
 
-  // Step 2. Wait until GC worker exits normally (this will cancel any ongoing GC).
+  // Step 2. Stop decaying allocation rate.
+  _alloc_rate_decay.disenroll();
+
+  // Step 3. Wait until GC worker exits normally (this will cancel any ongoing GC).
   control_thread()->stop();
 
-  // Stop 4. Shutdown uncommit thread.
+  // Step 4. Shutdown uncommit thread.
   if (_uncommit_thread != nullptr) {
     _uncommit_thread->stop();
   }
@@ -2335,9 +2347,6 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       ShenandoahGCPhase gc_phase(phase);
       ShenandoahGCWorkerPhase worker_phase(phase);
       bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
-
-      // Clean JVMCI metadata handles.
-      JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
 
       ShenandoahClassUnloadingTask unlink_task(phase, unloading_occurred);
       _workers->run_task(&unlink_task);
@@ -2421,27 +2430,6 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->collection_set() != nullptr, "Sanity");
   return (address) heap->collection_set()->biased_map_address();
-}
-
-void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
-  // Note that we obtain heap lock to prevent additional allocations between sampling bytes_allocated_since_gc_start()
-  // and reset_bytes_allocated_since_gc_start()
-  {
-    ShenandoahHeapLocker locker(lock());
-    // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
-    // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
-    // bytes are allocated after the start of subsequent gc.
-    size_t unaccounted_bytes;
-    size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
-    if (mode()->is_generational()) {
-      unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
-    } else {
-      // Single-gen Shenandoah uses global heuristics.
-      unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
-    }
-    _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
-  }
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {

@@ -827,7 +827,7 @@ public final class ML_KEM {
     private short[][][] generateA(byte[] rho, Boolean transposed) {
         short[][][] a = new short[mlKem_k][mlKem_k][];
 
-        int nrPar = 2;
+        int nrPar = 4;
         int rhoLen = rho.length;
         byte[] seedBuf = new byte[XOF_BLOCK_LEN];
         System.arraycopy(rho, 0, seedBuf, 0, rho.length);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package gc.arguments;
  * @test TestTargetSurvivorRatioFlag
  * @summary Verify that option TargetSurvivorRatio affects survivor space occupancy after minor GC.
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @requires vm.opt.UseJVMCICompiler != true
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
  * @library /

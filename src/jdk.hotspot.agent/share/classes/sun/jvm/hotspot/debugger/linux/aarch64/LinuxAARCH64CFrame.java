@@ -184,9 +184,7 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
             return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf);
           }
 
-          // DWARF processing should succeed when the frame is native
-          // but it might fail if Common Information Entry (CIE) has language
-          // personality routine and/or Language Specific Data Area (LSDA).
+          // We cannot unwind anymore without appropriate DWARF.
           return null;
         }
       }

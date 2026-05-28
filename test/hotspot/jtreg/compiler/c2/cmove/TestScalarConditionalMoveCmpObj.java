@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Rivos Inc. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
+ * @key randomness
  * @summary Test conditional move + compare object.
  * @library /test/lib /
  * @run driver ${test.main.class}
@@ -300,7 +302,7 @@ public class TestScalarConditionalMoveCmpObj {
         for (int i = 0; i < a.length; i++) {
             b[i] = a[i];
         }
-        Random rand = new Random();
+        Random rand = Utils.getRandomInstance();
         for (int i = 0; i < SIZE; i++) {
             if (rand.nextInt(5) == 0) {
                 Object t = b[i];

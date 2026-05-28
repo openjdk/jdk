@@ -366,10 +366,6 @@ class ClassLoader: AllStatic {
   // JImage resource lookups or access will fail.
   static void set_preview_mode(bool enable_preview);
 
-  // Determines if the named module is present in the
-  // modules jimage file or in the exploded modules directory.
-  static bool is_module_observable(const char* module_name);
-
   static void  trace_class_path(const char* msg, const char* name = nullptr);
 
   // VM monitoring and management support

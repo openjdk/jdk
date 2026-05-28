@@ -526,9 +526,12 @@ class methodHandle;
                                                                                                                         \
   /* support for sun.security.provider.SHAKE128Parallel */                                                              \
   do_class(sun_security_provider_sha3_parallel,                "sun/security/provider/SHA3Parallel")                    \
-   do_intrinsic(_double_keccak, sun_security_provider_sha3_parallel, double_keccak_name, double_keccak_signature, F_S)   \
+   do_intrinsic(_double_keccak, sun_security_provider_sha3_parallel, double_keccak_name, double_keccak_signature, F_S)  \
    do_name(     double_keccak_name,                                 "doubleKeccak")                                     \
    do_signature(double_keccak_signature,                            "([J[J)I")                                          \
+   do_intrinsic(_quad_keccak, sun_security_provider_sha3_parallel, quad_keccak_name, quad_keccak_signature, F_S)        \
+   do_name(     quad_keccak_name,                                 "quadKeccak")                                         \
+   do_signature(quad_keccak_signature,                            "([J[J[J[J)I")                                        \
                                                                                                                         \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
