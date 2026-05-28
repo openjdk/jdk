@@ -2841,6 +2841,10 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   // clflush_size is size in quadwords (8 bytes).
   guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == ICache::line_size/8, "clflush size is not supported");
 
+  // sse and sse2 are guaranteed to be present
+  vm_features.set_feature(CPU_SSE);
+  vm_features.set_feature(CPU_SSE2);
+
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
     vm_features.set_feature(CPU_CX8);
   if (std_cpuid1_edx.bits.cmov != 0)
