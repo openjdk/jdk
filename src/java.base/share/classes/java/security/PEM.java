@@ -71,7 +71,7 @@ import java.util.Objects;
  * @see PEMDecoder
  * @see PEMEncoder
  *
- * @since 27
+ * @since 26
  */
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEM implements BinaryEncodable {
@@ -132,6 +132,8 @@ public final class PEM implements BinaryEncodable {
      * @throws IllegalArgumentException if {@code type} contains PEM
      *         encapsulation syntax
      * @throws NullPointerException if any parameter is {@code null}
+     *
+     * @since 27
      */
     public PEM(String type, byte[] base64Content, byte[] leadingData) {
         this(type, base64Content);
@@ -150,6 +152,8 @@ public final class PEM implements BinaryEncodable {
      * @throws IllegalArgumentException if {@code type} contains PEM
      *         encapsulation syntax
      * @throws NullPointerException if any parameter is {@code null}
+     *
+     * @since 27
      */
     public PEM(String type, byte[] base64Content) {
         Objects.requireNonNull(type, "type cannot be null");
@@ -193,6 +197,8 @@ public final class PEM implements BinaryEncodable {
      * Returns the Base64-encoded content.
      *
      * @return a newly-allocated byte array containing the Base64 content
+     *
+     * @since 27
      */
     public byte[] content() {
         return content.clone();

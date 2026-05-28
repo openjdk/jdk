@@ -169,6 +169,8 @@ public final class PEMEncoder {
      * @throws NullPointerException if {@code be} is {@code null}
      * @throws CryptoException if an error occurs during encryption
      * @see #withEncryption(char[])
+     *
+     * @since 27
      */
     public String encodeToString(BinaryEncodable be) {
         Objects.requireNonNull(be);
@@ -194,6 +196,8 @@ public final class PEMEncoder {
      * @throws NullPointerException if {@code be} is {@code null}
      * @throws CryptoException if an error occurs during encryption
      * @see #withEncryption(char[])
+     *
+     * @since 27
      */
     public byte[] encode(BinaryEncodable be) {
         return switch (be) {

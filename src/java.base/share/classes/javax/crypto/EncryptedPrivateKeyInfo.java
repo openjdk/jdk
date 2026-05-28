@@ -548,7 +548,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @throws InvalidKeyException if an error occurs during parsing,
      *         decryption, or key generation
      *
-     * @since 25
+     * @since 27
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public PrivateKey getKey(Key decryptKey)

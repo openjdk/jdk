@@ -172,6 +172,8 @@ public final class PEMDecoder {
      * Returns the default {@code PEMDecoder} instance.
      *
      * @return the default {@code PEMDecoder}
+     *
+     * @since 25
      */
     public static PEMDecoder of() {
         return PEM_DECODER;
@@ -291,6 +293,8 @@ public final class PEMDecoder {
      * @throws IllegalArgumentException if decoding fails or no PEM data is found
      * @throws NullPointerException if {@code str} is {@code null}
      * @throws CryptoException if an error occurs during decryption
+     *
+     * @since 27
      */
     public BinaryEncodable decode(String str) {
         Objects.requireNonNull(str);
@@ -330,6 +334,8 @@ public final class PEMDecoder {
      * @throws IllegalArgumentException if decoding fails
      * @throws NullPointerException when {@code InputStream} is {@code null}
      * @throws CryptoException if an error occurs during decryption
+     *
+     * @since 27
      */
     public BinaryEncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
@@ -372,6 +378,8 @@ public final class PEMDecoder {
      * @throws ClassCastException if {@code tClass} does not represent the PEM type
      * @throws NullPointerException when any input values are {@code null}
      * @throws CryptoException if an error occurs during decryption
+     *
+     * @since 27
      */
     public <S extends BinaryEncodable> S decode(String str, Class<S> tClass) {
         Objects.requireNonNull(str);
@@ -419,6 +427,8 @@ public final class PEMDecoder {
      *
      * @see #decode(InputStream)
      * @see #decode(String, Class)
+     *
+     * @since 27
      */
     public <S extends BinaryEncodable> S decode(InputStream is, Class<S> tClass)
         throws IOException {
