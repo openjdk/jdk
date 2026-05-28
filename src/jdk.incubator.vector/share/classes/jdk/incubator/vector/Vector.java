@@ -200,11 +200,11 @@ import java.util.Arrays;
  * element type (such as access to element values in lanes, logical operations
  * on values of integral elements types, or transcendental operations on values
  * of floating point element types).
- * There are six abstract subclasses of Vector corresponding to the supported set
+ * There are seven abstract subclasses of Vector corresponding to the supported set
  * of element types, {@link ByteVector}, {@link ShortVector},
- * {@link IntVector}, {@link LongVector}, {@link FloatVector}, and
- * {@link DoubleVector}. Along with type-specific operations these classes
- * support creation of vector values (instances of Vector).
+ * {@link IntVector}, {@link LongVector}, {@link FloatVector},
+ * {@link DoubleVector}, and {@link Float16Vector}. Along with type-specific
+ * operations these classes support creation of vector values (instances of Vector).
  * They expose static constants corresponding to the supported species,
  * and static methods on these types generally take a species as a parameter.
  * For example,

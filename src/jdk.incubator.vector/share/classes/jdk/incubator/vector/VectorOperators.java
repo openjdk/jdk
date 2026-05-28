@@ -328,13 +328,13 @@ public final class VectorOperators {
      */
     public sealed interface Conversion<E,F> extends Operator {
         /**
-         * The domain of this conversion, a primitive type.
+         * The domain of this conversion, a supported lane type.
          * @return the domain of this conversion
          */
         Class<E> domainType();
 
         /**
-         * The range of this conversion, a primitive type.
+         * The range of this conversion, a supported lane type.
          * @return the range of this conversion
          */
         @Override
