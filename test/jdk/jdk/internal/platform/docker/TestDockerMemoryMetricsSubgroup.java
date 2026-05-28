@@ -41,6 +41,7 @@ import jtreg.SkippedException;
  * @summary Cgroup v1 subsystem fails to set subsystem path
  * @requires container.support
  * @requires !vm.asan
+ * @requires !vm.ubsan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsMemoryTester

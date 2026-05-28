@@ -34,19 +34,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
 
 public final class Codesign {
 
     public static final class CodesignException extends Exception {
 
-        CodesignException(UnexpectedExitCodeException cause) {
+        CodesignException(UnexpectedResultException cause) {
             super(Objects.requireNonNull(cause));
         }
 
         @Override
-        public UnexpectedExitCodeException getCause() {
-            return (UnexpectedExitCodeException)super.getCause();
+        public UnexpectedResultException getCause() {
+            return (UnexpectedResultException)super.getCause();
         }
 
         private static final long serialVersionUID = 1L;
@@ -97,7 +97,7 @@ public final class Codesign {
 
         try {
             exec.execute().expectExitCode(0);
-        } catch (UnexpectedExitCodeException ex) {
+        } catch (UnexpectedResultException ex) {
             throw new CodesignException(ex);
         }
     }

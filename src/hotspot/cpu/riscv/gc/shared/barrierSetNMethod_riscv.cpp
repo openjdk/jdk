@@ -35,9 +35,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 static int slow_path_size(nmethod* nm) {
   // The slow path code is out of line with C2.
@@ -74,38 +71,26 @@ class NativeNMethodBarrier {
 
 public:
   NativeNMethodBarrier(nmethod* nm): _nm(nm) {
-#if INCLUDE_JVMCI
-    if (nm->is_compiled_by_jvmci()) {
-      address pc = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
-      RelocIterator iter(nm, pc, pc + 4);
-      guarantee(iter.next(), "missing relocs");
-      guarantee(iter.type() == relocInfo::section_word_type, "unexpected reloc");
-
-      _guard_addr = (int*) iter.section_word_reloc()->target();
-      _instruction_address = pc;
-    } else
-#endif
-      {
-        _instruction_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
-        if (nm->is_compiled_by_c2()) {
-          // With c2 compiled code, the guard is out-of-line in a stub
-          // We find it using the RelocIterator.
-          RelocIterator iter(nm);
-          while (iter.next()) {
-            if (iter.type() == relocInfo::entry_guard_type) {
-              entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
-              _guard_addr = reinterpret_cast<int*>(reloc->addr());
-              return;
-            }
-          }
-          ShouldNotReachHere();
+    _instruction_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
+    if (nm->is_compiled_by_c2()) {
+      // With c2 compiled code, the guard is out-of-line in a stub
+      // We find it using the RelocIterator.
+      RelocIterator iter(nm);
+      while (iter.next()) {
+        if (iter.type() == relocInfo::entry_guard_type) {
+          entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
+          _guard_addr = reinterpret_cast<int*>(reloc->addr());
+          return;
         }
-        _guard_addr = reinterpret_cast<int*>(instruction_address() + local_guard_offset(nm));
       }
 
-      // Perform the checking as verification.
-      err_msg msg("%s", "");
-      assert(check_barrier(msg), "%s", msg.buffer());
+      ShouldNotReachHere();
+    }
+    _guard_addr = reinterpret_cast<int*>(instruction_address() + local_guard_offset(nm));
+
+    // Perform the checking as verification.
+    err_msg msg("%s", "");
+    assert(check_barrier(msg), "%s", msg.buffer());
   }
 
   int get_value() {
@@ -234,10 +219,3 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
   NativeNMethodBarrier barrier(nm);
   return barrier.get_value();
 }
-
-#if INCLUDE_JVMCI
-bool BarrierSetNMethod::verify_barrier(nmethod* nm, err_msg& msg) {
-  NativeNMethodBarrier barrier(nm);
-  return barrier.check_barrier(msg);
-}
-#endif
