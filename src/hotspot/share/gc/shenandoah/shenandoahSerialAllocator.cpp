@@ -359,7 +359,6 @@ HeapWord* ShenandoahSerialAllocator::try_allocate_in(ShenandoahHeapRegion* r, Sh
     if (req.is_mutator_alloc()) {
       assert(req.is_young(), "Mutator allocations always come from young generation.");
       _free_set->_partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
-      _free_set->increase_bytes_allocated(req.actual_size() * HeapWordSize);
     } else {
       assert(req.is_gc_alloc(), "Should be gc_alloc since req wasn't mutator alloc");
       // GC allocations set update_watermark so relocated objects aren't re-updated during update-refs.
@@ -393,7 +392,7 @@ HeapWord* ShenandoahSerialAllocator::try_allocate_in(ShenandoahHeapRegion* r, Sh
     size_t waste_bytes = _free_set->_partitions.retire_from_partition(orig_partition, idx, r->used());
     DEBUG_ONLY(boundary_changed = true;)
     if (req.is_mutator_alloc() && (waste_bytes > 0)) {
-      _free_set->increase_bytes_allocated(waste_bytes);
+      req.set_waste(waste_bytes / HeapWordSize);
     }
   }
 

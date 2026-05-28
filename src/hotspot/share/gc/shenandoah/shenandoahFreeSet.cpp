@@ -289,11 +289,6 @@ void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
   // else, old generation is already appropriately sized
 }
 
-void ShenandoahFreeSet::increase_bytes_allocated(size_t bytes) {
-  shenandoah_assert_heaplocked();
-  _mutator_bytes_allocated_since_gc_start += bytes;
-}
-
 void ShenandoahFreeSet::notify_allocation(ShenandoahFreeSetPartitionId partition, bool in_new_region) {
   switch (partition) {
   case ShenandoahFreeSetPartitionId::Mutator:

@@ -669,8 +669,6 @@ public:
     return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
   }
 
-  void increase_bytes_allocated(size_t bytes);
-
   // Called by ShenandoahAllocator after a successful allocation to update used/affiliated totals.
   void notify_allocation(ShenandoahFreeSetPartitionId partition, bool in_new_region);
 
