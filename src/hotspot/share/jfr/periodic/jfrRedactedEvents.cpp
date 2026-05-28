@@ -131,7 +131,19 @@ void JfrRedactedEvents::add_default_filters(StringArray* target, bool argument) 
 }
 
 bool JfrRedactedEvents::append_filters(StringArray* target, bool argument, const char* filters) {
-  if (strlen(filters) == 0 || strcmp(filters, "none") == 0) {
+  const char* option_name = argument ? "redact-argument": "redact-key";
+
+  if (filters == nullptr) {
+    log_warning(jfr, redact)("Missing value for option -XX:FlightRecorderOptions:%s", option_name);
+    return false;
+  }
+  if (filters[0] == '\0') {
+    LogMessage(jfr, redact) msg;
+    msg.warning("Default redaction filters are replaced. Specify:");
+    msg.warning("-XX:FlightRecorderOptions:%s=none to disable filters without a warning.", option_name);
+    return true;
+  }
+  if (strcmp(filters, "none") == 0) {
     return true;
   }
   if (filters[0] == '+') {
@@ -139,7 +151,6 @@ bool JfrRedactedEvents::append_filters(StringArray* target, bool argument, const
     add_default_filters(target, argument);
   } else {
     if (strncmp(filters, "none;", 5) != 0) {
-      const char* option_name = argument ? "redact-argument": "redact-key";
       LogMessage(jfr, redact) msg;
       msg.warning("Default redaction filters are replaced. Prepend with '+' to add filters to the");
       msg.warning("defaults, or specify -XX:FlightRecorderOptions:'%s=none;<filters>'", option_name);

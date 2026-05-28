@@ -52,7 +52,7 @@ import jdk.test.lib.process.ProcessTools;
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @build jdk.jfr.startupargs.Application
- * @run main jdk.jfr.startupargs.TestRedact
+ * @run main/timeout=900 jdk.jfr.startupargs.TestRedact
  */
 public class TestRedact {
     private static Path TEST_DIRECTORY = Path.of(System.getProperty("test.src", ".")).toAbsolutePath();
@@ -66,7 +66,8 @@ public class TestRedact {
        String javaArgs,
        Map<String, String> environment,
        Map<String, String> systemProperties,
-       Map<String, String> stringFlags
+       Map<String, String> stringFlags,
+       OutputAnalyzer output
     ) {
 
         void assertUnredacted(String text) throws Exception {
@@ -172,6 +173,7 @@ public class TestRedact {
         testDefaults();
         testRedactFile();
         testAppendable();
+        testEmpty();
         testBinary();
     }
 
@@ -310,6 +312,30 @@ public class TestRedact {
         e2.assertUnredacted("Snake");
     }
 
+    private static void testEmpty() throws Exception {
+        var environment = Map.of("API_TOKEN", "Zebra1");
+        var properties = Map.of("API_KEY", "Zebra2");
+        Execution e1 = run(environment, properties,
+           "-XX:FlightRecorderOptions:redact-key=,redact-argument=", "Zebra3"
+        );
+        e1.output().shouldContain("Default redaction filters are replaced.");
+        e1.output().shouldContain("redact-key=none to disable filters without a warning");
+        e1.output().shouldContain("redact-argument=none to disable filters without a warning");
+        e1.assertUnredacted("Zebra1");
+        e1.assertUnredacted("Zebra2");
+        e1.assertUnredacted("Zebra3");
+
+        Execution e2 = run(environment, properties,
+           "-XX:FlightRecorderOptions:redact-argument=none,redact-key=none",  "Zebra3"
+        );
+        e2.output().shouldNotContain("Default redaction filters are replaced.");
+        e2.output().shouldNotContain("redact-key=none to disable filters without a warning");
+        e2.output().shouldNotContain("redact-argument=none to disable filters without a warning");
+        e2.assertUnredacted("Zebra1");
+        e2.assertUnredacted("Zebra2");
+        e2.assertUnredacted("Zebra3");
+    }
+
     private static void testDefaults() throws Exception {
         Execution e = run(
            Map.of("apiKey","thing"),
@@ -425,6 +451,6 @@ public class TestRedact {
         }
         return new Execution(file,
           jvmArgs.get(), jvmFlags.get(), javaArgs.get(),
-          environmentVariables, systemProperties, stringFlags);
+          environmentVariables, systemProperties, stringFlags, output);
     }
 }
