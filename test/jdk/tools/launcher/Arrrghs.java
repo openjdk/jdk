@@ -541,7 +541,6 @@ public class Arrrghs extends TestHelper {
         File elp = jarPath.toFile();
         createJar(elp, new File("Foo"), "public static void main(String[] args){ System.out.println(\"Hello from ELP\"); }");
 
-        System.out.println("execute " + elp.getAbsolutePath());
         TestResult tr = doExec(javaCmd, "-jar", jarPath.toString());
         tr.checkPositive();
         tr.contains("Hello from ELP");
