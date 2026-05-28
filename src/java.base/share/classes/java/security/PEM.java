@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.javac.PreviewFeature;
+
 import jdk.internal.ref.CleanerFactory;
 import sun.security.util.KeyUtil;
 import sun.security.util.Pem;
@@ -71,7 +73,7 @@ import java.util.Objects;
  *
  * @since 27
  */
-
+@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEM implements BinaryEncodable {
 
     private final String type;

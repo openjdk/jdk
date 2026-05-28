@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.javac.PreviewFeature;
+
 import jdk.internal.ref.CleanerFactory;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
@@ -144,7 +146,7 @@ import java.util.Objects;
  *
  * @since 27
  */
-
+@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMDecoder {
     private final Provider factory;
     private final PBEKeySpec keySpec;

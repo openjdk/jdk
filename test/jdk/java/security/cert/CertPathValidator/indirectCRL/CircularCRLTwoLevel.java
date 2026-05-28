@@ -33,6 +33,7 @@
  * @bug 6720721
  * @summary CRL check with circular depency support needed
  * @run main/othervm CircularCRLTwoLevel
+ * @enablePreview
  * @author Xuelei Fan
  */
 

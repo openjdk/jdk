@@ -32,6 +32,7 @@
  * @bug 6383095
  * @summary CRL revoked certificate failures masked by OCSP failures
  * @run main/othervm FailoverToCRL
+ * @enablePreview
  * @author Xuelei Fan
  */
 

@@ -34,6 +34,7 @@
  *      PEMEncoderTest PBEWithHmacSHA512AndAES_256
  * @run main/othervm -Djava.security.properties=${test.src}/java.security-emptyAlgo
  *      PEMEncoderTest PBEWithHmacSHA256AndAES_128
+ * @enablePreview
  */
 
 import sun.security.util.Pem;

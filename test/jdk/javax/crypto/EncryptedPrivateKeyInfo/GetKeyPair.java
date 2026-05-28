@@ -29,6 +29,7 @@
  * @library /test/lib
  * @summary Testing getKeyPair using ML-KEM
  * @modules java.base/sun.security.util
+ * @enablePreview
  */
 
 import jdk.test.lib.Asserts;

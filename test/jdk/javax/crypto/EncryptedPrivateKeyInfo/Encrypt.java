@@ -29,6 +29,7 @@
  * @modules java.base/sun.security.util
  * @bug 8298420
  * @summary Testing encryptKey
+ * @enablePreview
  */
 
 import sun.security.util.Pem;

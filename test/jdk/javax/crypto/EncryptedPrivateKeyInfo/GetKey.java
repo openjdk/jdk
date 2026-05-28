@@ -27,6 +27,7 @@
  * @test
  * @bug 8298420
  * @summary Testing getKey
+ * @enablePreview
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;

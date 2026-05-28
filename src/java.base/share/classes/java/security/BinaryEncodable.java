@@ -31,6 +31,8 @@ import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * This interface is implemented by security API classes that contain
  * binary-encodable cryptographic material.
@@ -52,6 +54,7 @@ import java.security.spec.X509EncodedKeySpec;
  * @since 27
  */
 
+@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public sealed interface BinaryEncodable permits AsymmetricKey, KeyPair,
     PKCS8EncodedKeySpec, X509EncodedKeySpec, EncryptedPrivateKeyInfo,
     X509Certificate, X509CRL, PEM {

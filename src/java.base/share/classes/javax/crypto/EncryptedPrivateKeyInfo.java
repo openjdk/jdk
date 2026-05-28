@@ -25,6 +25,8 @@
 
 package javax.crypto;
 
+import jdk.internal.javac.PreviewFeature;
+
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.*;
@@ -368,7 +370,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
-
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable be,
         char[] password, String algorithm, AlgorithmParameterSpec params,
         Provider provider) {
@@ -411,6 +413,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable be,
         char[] password) {
         return encrypt(be, password, Pem.DEFAULT_ALGO, null,
@@ -449,6 +452,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable be,
         Key encryptKey, String algorithm, AlgorithmParameterSpec params,
         Provider provider, SecureRandom random) {
@@ -516,8 +520,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @throws InvalidKeyException if an error occurs during parsing,
      *         decryption, or key generation
      *
-     * @since 27
+     * @since 25
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public PrivateKey getKey(char[] password)
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(password, "a password must be specified");
@@ -543,8 +548,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @throws InvalidKeyException if an error occurs during parsing,
      *         decryption, or key generation
      *
-     * @since 27
+     * @since 25
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public PrivateKey getKey(Key decryptKey)
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(decryptKey,"a decryptKey must be specified");
@@ -570,8 +576,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @throws InvalidKeyException if the encoded data lacks a public key, or if
      *         an error occurs during parsing, decryption, or key generation
      *
-     * @since 27
+     * @since 26
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public KeyPair getKeyPair(char[] password)
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(password, "a password must be specified");
@@ -609,6 +616,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public KeyPair getKeyPair(Key decryptKey)
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(decryptKey,"a decryptKey must be specified");

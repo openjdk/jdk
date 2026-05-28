@@ -36,6 +36,7 @@
  * @run main/othervm StatusLoopDependency subca
  * @run main/othervm StatusLoopDependency subci
  * @run main/othervm StatusLoopDependency alice
+ * @enablePreview
  */
 
 import java.security.BinaryEncodable;

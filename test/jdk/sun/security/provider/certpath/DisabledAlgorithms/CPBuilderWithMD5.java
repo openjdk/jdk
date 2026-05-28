@@ -46,6 +46,7 @@
  * @run main/othervm CPBuilderWithMD5 endentiry_MD5withRSA_1024_512  2 false
  *
  * @author Xuelei Fan
+ * @enablePreview
  */
 
 /*

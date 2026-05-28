@@ -36,6 +36,7 @@
  * @run main/othervm -Djava.security.debug=certpath KeyUsageMatters subca
  * @run main/othervm -Djava.security.debug=certpath KeyUsageMatters subci
  * @run main/othervm -Djava.security.debug=certpath KeyUsageMatters alice
+ * @enablePreview
  * @author Xuelei Fan
  */
 

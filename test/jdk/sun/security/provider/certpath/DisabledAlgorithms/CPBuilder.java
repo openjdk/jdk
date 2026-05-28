@@ -46,6 +46,7 @@
  * @run main/othervm CPBuilder endentiry_MD2withRSA_1024_512  2 false
  *
  * @author Xuelei Fan
+ * @enablePreview
  */
 
 import java.security.BinaryEncodable;
