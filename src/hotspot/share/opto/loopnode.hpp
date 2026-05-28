@@ -875,7 +875,6 @@ public:
 class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
   friend class SuperWord;
-  friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
   Arena _arena; // For data whose lifetime is a single pass of loop optimizations

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -226,7 +226,7 @@ const char* blobTypeName[] = {"noType"
                              ,                                                                 "buffer blob"
                              ,                                                                      "lastType"
                              };
-const char* compTypeName[] = { "none", "c1", "c2", "jvmci" };
+const char* compTypeName[] = { "none", "c1", "c2" };
 
 // Be prepared for ten different CodeHeap segments. Should be enough for a few years.
 const  unsigned int        nSizeDistElements = 31;  // logarithmic range growth, max size: 2**32
@@ -734,16 +734,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             } else {
               blob_name = os::strdup(cb->name());
             }
-#if INCLUDE_JVMCI
-            const char* jvmci_name = nm->jvmci_name();
-            if (jvmci_name != nullptr) {
-              size_t size = ::strlen(blob_name) + ::strlen(" jvmci_name=") + ::strlen(jvmci_name) + 1;
-              char* new_blob_name = (char*)os::malloc(size, mtInternal);
-              os::snprintf_checked(new_blob_name, size, "%s jvmci_name=%s", blob_name, jvmci_name);
-              os::free((void*)blob_name);
-              blob_name = new_blob_name;
-            }
-#endif
             nm_size    = nm->total_size();
             compile_id = nm->compile_id();
             comp_lvl   = (CompLevel)(nm->comp_level());
@@ -752,9 +742,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             }
             if (nm->is_compiled_by_c2()) {
               cType = c2;
-            }
-            if (nm->is_compiled_by_jvmci()) {
-              cType = jvmci;
             }
             switch (cbType) {
               case nMethod_inuse: { // only for executable methods!!!
@@ -2192,12 +2179,6 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
             ast->print("%s.", classNameS);
             ast->print("%s", methNameS);
             ast->print("%s", methSigS);
-#if INCLUDE_JVMCI
-            const char* jvmci_name = nm->jvmci_name();
-            if (jvmci_name != nullptr) {
-              ast->print(" jvmci_name=%s", jvmci_name);
-            }
-#endif
           } else {
             ast->print("%s", blob_name);
           }

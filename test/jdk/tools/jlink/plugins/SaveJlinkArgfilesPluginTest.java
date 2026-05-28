@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Test --save-jlink-argfiles plugin
- * @requires vm.jvmci
  * @library ../../lib
  * @library /test/lib
  * @modules java.base/jdk.internal.jimage
@@ -58,13 +57,13 @@ public class SaveJlinkArgfilesPluginTest {
         Path argfile1 = Path.of("argfile1");
         Path argfile2 = Path.of("argfile2");
 
-        Files.writeString(argfile1, "--add-modules jdk.internal.vm.ci --add-options=-Dfoo=xyzzy");
+        Files.writeString(argfile1, "--add-modules jdk.internal.ed --add-options=-Dfoo=xyzzy");
         Files.writeString(argfile2, "--vendor-version=\"XyzzyVM 3.14.15\" --vendor-bug-url=https://bugs.xyzzy.com/");
 
         var module = "base";
         helper.generateDefaultJModule(module);
         var image = helper.generateDefaultImage(new String[] {
-                "--add-modules", "jdk.jlink,jdk.jdeps,jdk.internal.opt,jdk.compiler,java.compiler,jdk.zipfs,jdk.internal.vm.ci",
+                "--add-modules", "jdk.jlink,jdk.jdeps,jdk.internal.opt,jdk.compiler,java.compiler,jdk.zipfs,jdk.internal.ed",
                 "--keep-packaged-modules", "images/base.image/jmods",
                 "--save-jlink-argfiles", argfile1 + File.pathSeparator + argfile2
             }, module)
@@ -104,7 +103,7 @@ public class SaveJlinkArgfilesPluginTest {
 
         // Ensure the saved `--add-modules` option
         // was applied when creating the secondary image.
-        oa = ProcessTools.executeProcess(launcher.toString(), "-d", "jdk.internal.vm.ci");
+        oa = ProcessTools.executeProcess(launcher.toString(), "-d", "jdk.internal.ed");
         oa.shouldHaveExitValue(0);
     }
 }
