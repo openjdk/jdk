@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,23 @@
 
 package com.sun.rowset.internal;
 
+import java.net.URL;
 import java.sql.*;
 import javax.sql.*;
 import java.io.*;
 
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
+
+import javax.xml.XMLConstants;
 import javax.xml.parsers.*;
 
 import com.sun.rowset.*;
 import java.text.MessageFormat;
 import javax.sql.rowset.*;
 import javax.sql.rowset.spi.*;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 
 /**
  * An implementation of the <code>XmlReader</code> interface, which
@@ -45,7 +50,9 @@ import javax.sql.rowset.spi.*;
  * as its parser.
  */
 public class WebRowSetXmlReader implements XmlReader, Serializable {
-
+    // standard schema
+    static final String WEBROWSET_XSD = "webrowset.xsd";
+    private static final String VALIDATION_PROPERTY = "jdk.sql.rowset.webrowsetValidation";
 
     private JdbcRowSetResourceBundle resBundle;
 
@@ -81,56 +88,7 @@ public class WebRowSetXmlReader implements XmlReader, Serializable {
      * @see XmlReaderContentHandler
      */
     public void readXML(WebRowSet caller, java.io.Reader reader) throws SQLException {
-        try {
-            // Crimson Parser(as in J2SE 1.4.1 is NOT able to handle
-            // Reader(s)(FileReader).
-            //
-            // But getting the file as a Stream works fine. So we are going to take
-            // the reader but send it as a InputStream to the parser. Note that this
-            // functionality needs to work against any parser
-            // Crimson(J2SE 1.4.x) / Xerces(J2SE 1.5.x).
-            InputSource is = new InputSource(reader);
-            DefaultHandler dh = new XmlErrorHandler();
-            XmlReaderContentHandler hndr = new XmlReaderContentHandler((RowSet)caller);
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setValidating(true);
-            SAXParser parser = factory.newSAXParser() ;
-
-            parser.setProperty(
-                               "http://java.sun.com/xml/jaxp/properties/schemaLanguage", "http://www.w3.org/2001/XMLSchema");
-
-            XMLReader reader1 = parser.getXMLReader() ;
-            reader1.setEntityResolver(new XmlResolver());
-            reader1.setContentHandler(hndr);
-
-            reader1.setErrorHandler(dh);
-
-            reader1.parse(is);
-
-        } catch (SAXParseException err) {
-            System.out.println (MessageFormat.format(resBundle.handleGetObject("wrsxmlreader.parseerr").toString(), new Object[]{ err.getMessage (), err.getLineNumber(), err.getSystemId()}));
-            err.printStackTrace();
-            throw new SQLException(err.getMessage());
-
-        } catch (SAXException e) {
-            Exception   x = e;
-            if (e.getException () != null)
-                x = e.getException();
-            x.printStackTrace ();
-            throw new SQLException(x.getMessage());
-
-        }
-
-        // Will be here if trying to write beyond the RowSet limits
-
-         catch (ArrayIndexOutOfBoundsException aie) {
-              throw new SQLException(resBundle.handleGetObject("wrsxmlreader.invalidcp").toString());
-        }
-        catch (Throwable e) {
-            throw new SQLException(MessageFormat.format(resBundle.handleGetObject("wrsxmlreader.readxml").toString() , e.getMessage()));
-        }
-
+        readXml(caller, new InputSource(reader));
     }
 
 
@@ -160,52 +118,76 @@ public class WebRowSetXmlReader implements XmlReader, Serializable {
      * @see XmlReaderContentHandler
      */
     public void readXML(WebRowSet caller, java.io.InputStream iStream) throws SQLException {
+        readXml(caller, new InputSource(iStream));
+    }
+
+    /**
+     * Parses the supplied XML input into the given {@code WebRowSet}.
+     *
+     * The parser validates the XML against the standard WebRowSet schema by default.
+     * Validation can be disabled by setting {@systemProperty jdk.sql.rowset.webrowsetValidation}
+     * to {@code false} so that the parser can read legacy WebRowSet XML.
+     *
+     * @param caller the rowset to populate
+     * @param is the SAX input source to parse
+     * @throws SQLException if parsing or rowset population fails
+     */
+    private void readXml(WebRowSet caller, InputSource is) throws SQLException {
         try {
-            InputSource is = new InputSource(iStream);
-            DefaultHandler dh = new XmlErrorHandler();
+            boolean validating = validationEnabled();
 
-            XmlReaderContentHandler hndr = new XmlReaderContentHandler((RowSet)caller);
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setValidating(true);
+            SAXParserFactory spf = SAXParserFactory.newDefaultNSInstance();
+            spf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            if (validating) {
+                spf.setSchema(getSchema());
+            }
 
-            SAXParser parser = factory.newSAXParser() ;
+            XMLReader reader = spf.newSAXParser().getXMLReader();
+            reader.setEntityResolver(new XmlResolver());
+            reader.setContentHandler(new XmlReaderContentHandler(caller, validating));
+            reader.setErrorHandler(new XmlErrorHandler());
+            reader.parse(is);
+        } catch (SAXException | ParserConfigurationException | IOException err) {
+            throw new SQLException(MessageFormat.format(resBundle.handleGetObject("wrsxmlreader.readxml").toString(),
+                err.getMessage()), err);
+        }
+    }
 
-            parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage",
-                     "http://www.w3.org/2001/XMLSchema");
-
-            XMLReader reader1 = parser.getXMLReader() ;
-            reader1.setEntityResolver(new XmlResolver());
-            reader1.setContentHandler(hndr);
-
-            reader1.setErrorHandler(dh);
-
-            reader1.parse(is);
-
-        } catch (SAXParseException err) {
-            System.out.println (MessageFormat.format(resBundle.handleGetObject("wrsxmlreader.parseerr").toString(), new Object[]{err.getLineNumber(), err.getSystemId() }));
-            System.out.println("   " + err.getMessage ());
-            err.printStackTrace();
-            throw new SQLException(err.getMessage());
-
-        } catch (SAXException e) {
-            Exception   x = e;
-            if (e.getException () != null)
-                x = e.getException();
-            x.printStackTrace ();
-            throw new SQLException(x.getMessage());
-
+    /**
+     * Returns the standard WebRowSet schema bundled in the
+     * {@code java.sql.rowset} module.
+     *
+     * A new schema is created for each call so parser instances do not share
+     * validator implementation state. This can be revisited once the bundled
+     * schema implementation is safe to share.
+     *
+     * @return the WebRowSet schema
+     * @throws SAXException if the schema cannot be located or parsed
+     */
+    private Schema getSchema() throws SAXException {
+        URL stdSchema = WebRowSet.class.getResource(WEBROWSET_XSD);
+        if (stdSchema == null) {
+            throw new SAXException(MessageFormat.format(resBundle.handleGetObject(
+                    "wrsxmlreader.stdschema").toString(), WEBROWSET_XSD));
         }
 
-        // Will be here if trying to write beyond the RowSet limits
+        SchemaFactory sf = SchemaFactory.newDefaultInstance();
+        sf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        return sf.newSchema(stdSchema);
+    }
 
-         catch (ArrayIndexOutOfBoundsException aie) {
-              throw new SQLException(resBundle.handleGetObject("wrsxmlreader.invalidcp").toString());
-        }
-
-        catch (Throwable e) {
-            throw new SQLException(MessageFormat.format(resBundle.handleGetObject("wrsxmlreader.readxml").toString() , e.getMessage()));
-        }
+    /**
+     * Returns whether WebRowSet XML validation is enabled.
+     *
+     * Validation is enabled by default. It is disabled only when the
+     * {@systemProperty jdk.sql.rowset.webrowsetValidation} is set to
+     * {@code false}, case-insensitive.
+     *
+     * @return {@code true} if XML should be schema-validated
+     */
+    private static boolean validationEnabled() {
+        return !"false".equalsIgnoreCase(
+                System.getProperty(VALIDATION_PROPERTY, "true").trim());
     }
 
     /**

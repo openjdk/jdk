@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,40 @@
 
 package com.sun.rowset.internal;
 
+import com.sun.rowset.JdbcRowSetResourceBundle;
 import org.xml.sax.*;
 
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 
+import javax.sql.rowset.WebRowSet;
+import java.io.IOException;
+import java.io.StringReader;
+import java.text.MessageFormat;
+
 /**
  * An implementation of the <code>EntityResolver</code> interface, which
  * reads and parses an XML formatted <code>WebRowSet</code> object.
  * This is an implementation of org.xml.sax
- *
  */
 public class XmlResolver implements EntityResolver {
+    //The standard WebRowSet XML Schema as defined in WebRowSet
+    public static final String STD_SCHEMA_ID = "http://xmlns.jcp.org/xml/ns//jdbc/webrowset.xsd";
 
-        public InputSource resolveEntity(String publicId, String systemId) {
-           String schemaName = systemId.substring(systemId.lastIndexOf('/'));
+    @Override
+    public InputSource resolveEntity(String publicId, String systemId)
+        throws SAXException, IOException {
 
-           if(systemId.startsWith("http://java.sun.com/xml/ns/jdbc")) {
-               return new InputSource(this.getClass().getResourceAsStream(schemaName));
+        // accepts the standard schema without resolving it
+        // the schema is explicitly provided via the validation API
+        if (WebRowSet.SCHEMA_SYSTEM_ID.equals(systemId) ||
+            STD_SCHEMA_ID.equals(systemId)) {
+            return new InputSource(new StringReader(""));
+        }
 
-           } else {
-              // use the default behaviour
-              return null;
-           }
-
-
-
-
-       }
+        // reports error upon any external entity other than the standard schema
+        throw new SAXException(MessageFormat.format(
+            JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle().handleGetObject(
+                "wrsxmlreader.entity").toString(), systemId));
+    }
 }
