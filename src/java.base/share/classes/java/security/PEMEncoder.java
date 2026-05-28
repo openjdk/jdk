@@ -37,7 +37,6 @@ import javax.crypto.spec.PBEKeySpec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Objects;
@@ -118,7 +117,7 @@ import java.util.Objects;
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
- * @since 27
+ * @since 25
  */
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMEncoder {

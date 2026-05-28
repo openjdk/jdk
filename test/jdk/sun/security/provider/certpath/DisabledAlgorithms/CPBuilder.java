@@ -29,6 +29,7 @@
  *
  * @bug 6861062
  * @summary Disable MD2 support
+ * @enablePreview
  *
  * @run main/othervm CPBuilder trustAnchor_SHA1withRSA_1024 0 true
  * @run main/othervm CPBuilder trustAnchor_SHA1withRSA_512  0 true
@@ -46,7 +47,6 @@
  * @run main/othervm CPBuilder endentiry_MD2withRSA_1024_512  2 false
  *
  * @author Xuelei Fan
- * @enablePreview
  */
 
 import java.security.BinaryEncodable;

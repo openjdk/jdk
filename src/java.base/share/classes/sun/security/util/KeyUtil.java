@@ -574,9 +574,9 @@ public final class KeyUtil {
      * Executes {@code op} with {@code encoding} and then zeroes {@code encoding}
      * in a {@code finally} block before returning or propagating an exception.
      *
-     * <p>{@code encoding} is temporary sensitive data and is always wiped.
+     * @code encoding} is temporary sensitive data and is always wiped.
      *
-     * <p>Usage constraint: {@code op} must not return {@code encoding} itself, or
+     * Usage constraint: {@code op} must not return {@code encoding} itself, or
      * any value backed by the same array. Otherwise, the returned data will already
      * be zeroed when this method returns.
      */

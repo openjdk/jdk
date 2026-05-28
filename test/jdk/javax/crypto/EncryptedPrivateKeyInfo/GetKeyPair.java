@@ -28,8 +28,8 @@
  * @bug 8360563
  * @library /test/lib
  * @summary Testing getKeyPair using ML-KEM
- * @modules java.base/sun.security.util
  * @enablePreview
+ * @modules java.base/sun.security.util
  */
 
 import jdk.test.lib.Asserts;

@@ -144,7 +144,7 @@ import java.util.Objects;
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
- * @since 27
+ * @since 25
  */
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMDecoder {
@@ -532,6 +532,8 @@ public final class PEMDecoder {
      * @param provider the factory {@code Provider}
      * @return a new {@code PEMDecoder} instance configured with the {@code Provider}
      * @throws NullPointerException if {@code provider} is {@code null}
+     *
+     * @since 27
      */
     public PEMDecoder withFactoriesOf(Provider provider) {
         Objects.requireNonNull(provider);
