@@ -212,6 +212,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_strong_roots();
   }
 
+  // Roots processing is complete, put the weak roots/ref flags down.
+  entry_final_roots();
+
   // Continue the cycle with evacuation and optional update-refs.
   // This may be skipped if there is nothing to evacuate.
   // If so, evac_in_progress would be unset by collection set preparation code.
@@ -250,9 +253,18 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_cleanup_complete();
   } else {
     _abbreviated = true;
-    if (!entry_final_roots()) {
-      assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
-      return false;
+
+    if (heap->mode()->is_generational()) {
+      entry_complete_abbreviated_cycle();
+
+      // If the promote-in-place operation was cancelled, we can have the degenerated
+      // cycle complete the operation. It will see that no evacuations are in progress,
+      // and that there are regions wanting promotion. The risk with not handling the
+      // cancellation would be failing to restore top for these regions and leaving
+      // them unable to serve allocations for the old generation.
+      if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+        return false;
+      }
     }
 
     // In normal cycle, final-update-refs would verify at the end of the cycle.
@@ -276,34 +288,36 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   return true;
 }
 
-bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
+void ShenandoahConcurrentGC::entry_complete_abbreviated_cycle() {
   shenandoah_assert_generational();
 
   ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
 
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  static const char* msg = "Concurrent complete abbreviated cycle";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::complete_abbreviated);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
+                              "complete abbreviated");
+
   // We chose not to evacuate because we found sufficient immediate garbage.
   // However, there may still be regions to promote in place, so do that now.
   if (heap->old_generation()->has_in_place_promotions()) {
-    entry_promote_in_place();
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::complete_abbreviated_promote_in_place);
+    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::complete_abbreviated_promote_in_place);
 
-    // If the promote-in-place operation was cancelled, we can have the degenerated
-    // cycle complete the operation. It will see that no evacuations are in progress,
-    // and that there are regions wanting promotion. The risk with not handling the
-    // cancellation would be failing to restore top for these regions and leaving
-    // them unable to serve allocations for the old generation.This will leave the weak
-    // roots flag set (the degenerated cycle will unset it).
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
-      return false;
-    }
+    heap->promote_regions_in_place(_generation, true);
   }
 
   // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
   // the control thread will detect it on its next iteration and run a degenerated young cycle.
-  if (!_generation->is_old()) {
+  if (!heap->cancelled_gc() && !_generation->is_old()) {
+    ShenandoahTimingsTracker tracker(ShenandoahPhaseTimings::complete_abbreviated_update_region_ages);
+    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::complete_abbreviated_update_region_ages);
     heap->update_region_ages(_generation->complete_marking_context());
   }
-
-  return true;
 }
 
 void ShenandoahConcurrentGC::vmop_entry_init_mark() {
@@ -581,16 +595,6 @@ void ShenandoahConcurrentGC::entry_evacuate() {
 
   heap->try_inject_alloc_failure();
   op_evacuate();
-}
-
-void ShenandoahConcurrentGC::entry_promote_in_place() const {
-  shenandoah_assert_generational();
-
-  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::promote_in_place);
-  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::promote_in_place);
-  EventMark em("%s", "Promote in place");
-
-  ShenandoahGenerationalHeap::heap()->promote_regions_in_place(_generation, true);
 }
 
 void ShenandoahConcurrentGC::entry_update_thread_roots() {
@@ -1235,26 +1239,14 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 }
 
-bool ShenandoahConcurrentGC::entry_final_roots() {
+void ShenandoahConcurrentGC::entry_final_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-
   const char* msg = conc_final_roots_event_message();
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_final_roots);
   EventMark em("%s", msg);
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
-                              msg);
-
-  if (heap->mode()->is_generational()) {
-    if (!complete_abbreviated_cycle()) {
-      return false;
-    }
-  }
 
   heap->concurrent_final_roots();
-  return true;
 }
 
 void ShenandoahConcurrentGC::op_verify_final() {
@@ -1355,9 +1347,9 @@ const char* ShenandoahConcurrentGC::verify_final_event_message() const {
 
 const char* ShenandoahConcurrentGC::conc_final_roots_event_message() const {
   if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", " (unload classes)");
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent final roots", " (unload classes)");
   } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", "");
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent final roots", "");
   }
 }
 

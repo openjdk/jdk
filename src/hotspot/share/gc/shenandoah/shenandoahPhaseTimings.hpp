@@ -108,10 +108,12 @@ class outputStream;
   f(conc_class_unload_purge_ec,                     "    Exception Caches")            \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
+  f(conc_final_roots,                               "Concurrent Final Roots")          \
   f(conc_evac,                                      "Concurrent Evacuation")           \
   f(conc_update_card_table,                         "Concurrent Update Cards")         \
-  f(conc_final_roots,                               "Concurrent Final Roots")          \
-  f(promote_in_place,                               "  Promote Regions")               \
+  f(complete_abbreviated,                           "Complete Abbreviated")            \
+  f(complete_abbreviated_promote_in_place,          "  Promote Regions")               \
+  f(complete_abbreviated_update_region_ages,        "  Update Region Ages")            \
   f(final_verify_gross,                             "Pause Final Verify (G)")          \
   f(final_verify,                                   "Pause Final Verify (N)")          \
                                                                                        \
