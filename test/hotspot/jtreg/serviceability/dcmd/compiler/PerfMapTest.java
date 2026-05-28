@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -74,14 +74,20 @@ public class PerfMapTest {
         }
 
         // Sanity check the file contents
+        boolean sawCallStub = false;
         try {
             for (String entry : Files.readAllLines(path)) {
                 Matcher m = LINE_PATTERN.matcher(entry);
                 Assert.assertTrue(m.matches(), "Invalid file format: " + entry);
+                if (m.group(3).contains("StubRoutines call_stub")) {
+                    sawCallStub = true;
+                }
             }
         } catch (IOException e) {
             Assert.fail(e.toString());
         }
+        Assert.assertTrue(sawCallStub,
+                          "Expected StubRoutines call_stub entry in " + path);
     }
 
     @Test

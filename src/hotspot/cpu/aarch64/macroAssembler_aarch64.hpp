@@ -168,7 +168,7 @@ class MacroAssembler: public Assembler {
 
   void bind(Label& L) {
     Assembler::bind(L);
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
     code()->set_last_label(pc());
   }
 
@@ -693,7 +693,6 @@ public:
 #endif
 
   static int patch_oop(address insn_addr, address o);
-  static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
   // Return whether code is emitted to a scratch blob.
   virtual bool in_scratch_emit_size() {

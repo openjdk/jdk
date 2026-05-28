@@ -1787,34 +1787,20 @@ public abstract class SunToolkit extends Toolkit
 
     public void dismissPopupOnFocusLostIfNeededCleanUp(Window invoker) {}
 
-
-    private static final Object DEACTIVATION_TIMES_MAP_KEY = new Object();
+    private static WeakHashMap<Window, Long> activationMap = null;
 
     public synchronized void setWindowDeactivationTime(Window w, long time) {
-        AppContext ctx = getAppContext(w);
-        if (ctx == null) {
-            return;
+        if (activationMap == null) {
+            activationMap = new WeakHashMap<Window, Long>();
         }
-        @SuppressWarnings("unchecked")
-        WeakHashMap<Window, Long> map = (WeakHashMap<Window, Long>)ctx.get(DEACTIVATION_TIMES_MAP_KEY);
-        if (map == null) {
-            map = new WeakHashMap<Window, Long>();
-            ctx.put(DEACTIVATION_TIMES_MAP_KEY, map);
-        }
-        map.put(w, time);
+        activationMap.put(w, time);
     }
 
     public synchronized long getWindowDeactivationTime(Window w) {
-        AppContext ctx = getAppContext(w);
-        if (ctx == null) {
+        if (activationMap == null) {
             return -1;
         }
-        @SuppressWarnings("unchecked")
-        WeakHashMap<Window, Long> map = (WeakHashMap<Window, Long>)ctx.get(DEACTIVATION_TIMES_MAP_KEY);
-        if (map == null) {
-            return -1;
-        }
-        Long time = map.get(w);
+        Long time = activationMap.get(w);
         return time == null ? -1 : time;
     }
 
