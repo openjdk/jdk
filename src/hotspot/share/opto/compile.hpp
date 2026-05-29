@@ -323,6 +323,7 @@ class Compile : public Phase {
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
+  bool                  _post_vector_phase;     // Vector macro nodes elimination is finished.
 
   /* If major progress is set:
    *   Marks that the loop tree information (get_ctrl, idom, get_loop, etc.) could be invalid, and we need to rebuild the loop tree.
@@ -794,6 +795,9 @@ public:
 
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
+
+  bool post_vector_phase() const { return _post_vector_phase; }
+  void set_post_vector_phase(bool v) { _post_vector_phase = v; }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);

@@ -1863,6 +1863,8 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     //
     // Probably we have two options: kill the hash, or
     // properly make the hash commutation friendly.
+    // Then we can change the condition to:
+    // if (n->is_Vector() && !C->post_vector_phase()) { return; }
     //
     // Found with:
     //   compiler/vectorapi/TestMaskedMacroLogicVector.java
@@ -2094,6 +2096,15 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     // Not investigated yet.
     case Op_AbsI:
       return;
+
+    // ShenandoahLoadReferenceBarrierNode::Identity
+    // Not investigated yet.
+    //
+    // Found with:
+    //   gc/shenandoah/mxbeans/TestChurnNotifications.java#aggressive
+    //   -ea -esa -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
+    case Op_ShenandoahLoadReferenceBarrier:
+      return;
   }
 
   if (n->is_Load()) {
@@ -2121,14 +2132,13 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     return;
   }
 
-  if (n->is_Vector()) {
-    // Found with tier1-3. Not investigated yet.
-    // The observed issue was with AndVNode::Identity and
-    // VectorStoreMaskNode::Identity (see JDK-8370863).
-    //
-    // Found with:
-    //   compiler/vectorapi/VectorStoreMaskIdentityTest.java
-    //   -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
+  if (n->is_Vector() && !C->post_vector_phase()) {
+    // Since the generation of nodes in incremental inlining is unordered, and
+    // vector nodes are often wrapped in box nodes. Some Identity patterns may
+    // not match yet (e.g., VectorStoreMask (VectorMaskCast* (VectorLoadMask x))
+    // => x). So skip verification until PhaseVector has eliminated
+    // VectorBox/VectorUnbox. Note that identity optimization may still miss
+    // after PhaseVector, but this should be rare and we should fix it.
     return;
   }
 
@@ -2531,7 +2541,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  uint use_op = use->Opcode();
+  int use_op = use->Opcode();
   if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
     if (use->outcnt() > 0) {
@@ -2795,6 +2805,21 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // to fold constant masks.
   if (use_op == Op_VectorStoreMask) {
     add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorMaskToLong; });
+  }
+
+  // (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => (x)
+  if (use_op == Op_VectorMaskCast) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorStoreMask; });
+  }
+
+  // (AndV/OrV (AndV/OrV src1 src2) src1) => (AndV/OrV src1 src2)
+  if (use_op == Op_AndV || use_op == Op_OrV) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) { return u->Opcode() == use_op; });
+  }
+
+  // Vector shift by zero, see ShiftVNode::Identity
+  if (use_op == Op_LShiftCntV || use_op == Op_RShiftCntV) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->is_ShiftV(); });
   }
 
   // From CastX2PNode::Ideal
