@@ -1146,7 +1146,7 @@ public class ML_DSA {
             a[i] = new int[mlDsa_l][];
         }
 
-        int nrPar = 2;
+        int nrPar = 4;
         int rhoLen = seed.length;
         byte[] seedBuf = new byte[SHAKE128_BLOCK_SIZE];
         System.arraycopy(seed, 0, seedBuf, 0, seed.length);
