@@ -58,7 +58,7 @@ public:
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
     SuspendibleThreadSetJoiner stsj;
-    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/, StringDedup::is_enabled());
+    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/);
   }
 };
 
@@ -92,7 +92,7 @@ public:
       ShenandoahFlushSATB tc(satb_mq_set);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
-    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/, StringDedup::is_enabled());
+    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };

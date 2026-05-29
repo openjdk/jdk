@@ -51,7 +51,8 @@ void ShenandoahMark::end_mark() {
 ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation) :
   _generation(generation),
   _task_queues(generation->task_queues()),
-  _old_gen_task_queues(generation->old_gen_task_queues()) {
+  _old_gen_task_queues(generation->old_gen_task_queues()),
+  _string_dedup(StringDedup::is_enabled()) {
 }
 
 template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
@@ -102,8 +103,8 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator,
 }
 
 void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                               bool cancellable, bool string_dedup) {
-  if (string_dedup) {
+                               bool cancellable) {
+  if (_string_dedup) {
     StringDedup::Requests req;
     if (cancellable) {
       mark_loop<true, true>(worker_id, terminator, generation_type, &req);

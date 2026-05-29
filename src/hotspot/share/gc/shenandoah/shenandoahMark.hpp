@@ -44,6 +44,7 @@ protected:
   ShenandoahGeneration* const _generation;
   ShenandoahObjToScanQueueSet* const _task_queues;
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
+  bool const _string_dedup;
 
 protected:
   ShenandoahMark(ShenandoahGeneration* generation);
@@ -105,7 +106,7 @@ protected:
                 StringDedup::Requests* const req);
 
   void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                 bool cancellable, bool string_dedup);
+                 bool cancellable);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
