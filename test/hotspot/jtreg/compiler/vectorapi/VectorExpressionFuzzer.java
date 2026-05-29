@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../compiler/lib/verify/Verify.java
- * @run driver ${test.main.class} -XX:UseAVX=2
+ * @run driver ${test.main.class} -XX:UseAVX=3
  */
 
 // TODO: remove the x64 and linux restriction above. I added that for now so we are not flooded
@@ -172,7 +172,7 @@ public class VectorExpressionFuzzer {
         // - Input values are delivered via fields or array loads.
         // - The final vector is written into an array, and that array is returned.
         var template2Body = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> scope(
-            let("elementType", ((VectorType.Vector)expression.returnType).elementType),
+            let("elementType", ((VectorType.Vector)expression.returnType).elementType.cname()),
             """
             try {
             #elementType[] out = new #elementType[1000];
@@ -211,10 +211,11 @@ public class VectorExpressionFuzzer {
                     }
                     case 1 -> {
                         // Create the constant outside, and pass it.
+                        String typeName = (argumentType instanceof PrimitiveType pt) ? pt.cname() : argumentType.name();
                         arguments.add(new TestArgument(
-                            List.of(argumentType.name(), " ", name, " = ", argumentType.con(), ";\n"),
+                            List.of(typeName, " ", name, " = ", argumentType.con(), ";\n"),
                             name,
-                            List.of(argumentType.name(), " ", name),
+                            List.of(typeName, " ", name),
                             name
                         ));
                     }
@@ -225,18 +226,19 @@ public class VectorExpressionFuzzer {
                             // so we get the same value for both test and reference. If we called LibraryRNG
                             // for "use", we would get separate values, which is not helpful.
                             arguments.add(new TestArgument(
-                                List.of(t.name(), " ", name, " = ", t.callLibraryRNG(), ";\n"),
+                                List.of(t.cname(), " ", name, " = ", t.callLibraryRNG(), ";\n"),
                                 name,
-                                List.of(t.name(), " ", name),
+                                List.of(t.cname(), " ", name),
                                 name
                             ));
                         } else if (argumentType instanceof VectorType.Vector t) {
                             PrimitiveType et = t.elementType;
+                            String fillMethod = et.name().equals("float16") ? "fill_float16" : "fill";
                             arguments.add(new TestArgument(
-                                List.of(et.name(), "[] ", name, " = new ", et.name(), "[1000];\n",
-                                        "LibraryRNG.fill(", name,");\n"),
+                                List.of(et.cname(), "[] ", name, " = new ", et.cname(), "[1000];\n",
+                                        "LibraryRNG.", fillMethod, "(", name,");\n"),
                                 name,
-                                List.of(et.name(), "[] ", name),
+                                List.of(et.cname(), "[] ", name),
                                 List.of(t.name(), ".fromArray(", t.speciesName, ", ", name, ", 0)")
                             ));
                         } else if (argumentType instanceof VectorType.Mask t) {

@@ -33,6 +33,7 @@ import static compiler.lib.template_framework.library.PrimitiveType.CHARS;
 import static compiler.lib.template_framework.library.PrimitiveType.INTS;
 import static compiler.lib.template_framework.library.PrimitiveType.LONGS;
 import static compiler.lib.template_framework.library.PrimitiveType.FLOATS;
+import static compiler.lib.template_framework.library.PrimitiveType.FLOAT16S;
 import static compiler.lib.template_framework.library.PrimitiveType.DOUBLES;
 import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
 import static compiler.lib.template_framework.library.Float16Type.FLOAT16;
@@ -106,11 +107,17 @@ public final class Operations {
         });
 
         CodeGenerationDataNameType.FLOATING_TYPES.stream().forEach(type -> {
+            // float16 uses short as its carrier type; Java promotes short arithmetic
+            // results to int, so all arithmetic expressions need an explicit (short) cast.
+            boolean needsCast = (type == FLOAT16S);
+            String cb = needsCast ? "((short)(" : "(";
+            String ce = needsCast ? "))" : ")";
+
             // Arithmetic operators
-            ops.add(Expression.make(type, "(-(", type, "))"));
-            ops.add(Expression.make(type, "(", type, " + ", type, ")"));
-            ops.add(Expression.make(type, "(", type, " - ", type, ")"));
-            ops.add(Expression.make(type, "(", type, " * ", type, ")"));
+            ops.add(Expression.make(type, cb + "-(", type, ")" + ce));
+            ops.add(Expression.make(type, cb, type, " + ", type, ce));
+            ops.add(Expression.make(type, cb, type, " - ", type, ce));
+            ops.add(Expression.make(type, cb, type, " * ", type, ce));
             // Because of subtyping, we can sample an expression like `(float)((int)(3) / (int)(0))`. Floating point
             // division and modulo do not throw an ArithmeticException on division by zero, integer division and modulo
             // do. In the expression above, the division has an integer on both sides, so it is executed as an integer
@@ -118,10 +125,14 @@ public final class Operations {
             // To prevent this issue, we provide two versions of floating point division operations: one that casts
             // its operands and one that expects that an ArithmeticException might be thrown when we get unlucky when
             // sampling subtypes.
-            ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") / (" + type.name() +")(", type, "))"));
-            ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") % (" + type.name() +")(", type, "))"));
-            ops.add(Expression.make(type, "(", type, " / ", type, ")", WITH_ARITHMETIC_EXCEPTION));
-            ops.add(Expression.make(type, "(", type, " % ", type, ")", WITH_ARITHMETIC_EXCEPTION));
+            // Per-operand casts don't help float16 since its carrier type (short) always
+            // uses integer division regardless of casts.
+            if (!needsCast) {
+                ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") / (" + type.name() +")(", type, "))"));
+                ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") % (" + type.name() +")(", type, "))"));
+            }
+            ops.add(Expression.make(type, cb, type, " / ", type, ce, WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, cb, type, " % ", type, ce, WITH_ARITHMETIC_EXCEPTION));
 
             // Relational / Comparison Operators
             ops.add(Expression.make(BOOLEANS, "(", type, " == ", type, ")"));
@@ -472,14 +483,14 @@ public final class Operations {
                                                 "((" + type.name() + ")",
                                                 type2,
                                                 ".convert(VectorOperators.Conversion.ofCast("
-                                                    + type2.elementType.name() +  ".class, "
-                                                    + type.elementType.name() + ".class), 0))"));
+                                                    + type2.elementType.className() +  ".class, "
+                                                    + type.elementType.className() + ".class), 0))"));
                     ops.add(Expression.make(type,
                                                 "((" + type.name() + ")",
                                                 type2,
                                                 ".convert(VectorOperators.Conversion.ofCast("
-                                                    + type2.elementType.name() +  ".class, "
-                                                    + type.elementType.name() + ".class),",
+                                                    + type2.elementType.className() +  ".class, "
+                                                    + type.elementType.className() + ".class),",
                                                 INTS, // part
                                                 "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
                 }
@@ -494,14 +505,14 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class), 0))", reinterpretInfo));
+                                                + type2.elementType.className() +  ".class, "
+                                                + type.elementType.className() + ".class), 0))", reinterpretInfo));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class),",
+                                                + type2.elementType.className() +  ".class, "
+                                                + type.elementType.className() + ".class),",
                                             INTS, // part
                                             "))", reinterpretInfo.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
                     if (type.elementType == BYTES) {
@@ -518,6 +529,9 @@ public final class Operations {
                     }
                     if (type.elementType == FLOATS) {
                         ops.add(Expression.make(type, "", type2, ".reinterpretAsFloats()", reinterpretInfo));
+                    }
+                    if (type.elementType == FLOAT16S) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsFloat16s()", reinterpretInfo));
                     }
                     if (type.elementType == DOUBLES) {
                         ops.add(Expression.make(type, "", type2, ".reinterpretAsDoubles()", reinterpretInfo));
@@ -554,8 +568,8 @@ public final class Operations {
                                         "((" + type.name() + ")",
                                         type2,
                                         ".convertShape(VectorOperators.Conversion.ofCast("
-                                            + type2.elementType.name() +  ".class, "
-                                            + type.elementType.name() + ".class), "
+                                            + type2.elementType.className() +  ".class, "
+                                            + type.elementType.className() + ".class), "
                                         + type.speciesName + ", ",
                                         INTS, // part
                                         "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
@@ -563,8 +577,8 @@ public final class Operations {
                                         "((" + type.name() + ")",
                                         type2,
                                         ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                            + type2.elementType.name() +  ".class, "
-                                            + type.elementType.name() + ".class), "
+                                            + type2.elementType.className() +  ".class, "
+                                            + type.elementType.className() + ".class), "
                                         + type.speciesName + ", ",
                                         INTS, // part
                                         "))", reinterpretInfo.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
@@ -581,16 +595,16 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class), "
+                                                + type2.elementType.className() +  ".class, "
+                                                + type.elementType.className() + ".class), "
                                             + type.speciesName + ", ",
                                             INTS, " & " + partMask + "))"));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class), "
+                                                + type2.elementType.className() +  ".class, "
+                                                + type.elementType.className() + ".class), "
                                             + type.speciesName + ", ",
                                             INTS, " & " + partMask + "))", reinterpretInfo));
                 } else {
@@ -600,16 +614,16 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class), "
+                                                + type2.elementType.className() +  ".class, "
+                                                + type.elementType.className() + ".class), "
                                             + type.speciesName + ", "
                                             + "-(", INTS, " & " + partMask + ")))"));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class), "
+                                                + type2.elementType.className() +  ".class, "
+                                                + type.elementType.className() + ".class), "
                                             + type.speciesName + ", "
                                             + "-(", INTS, " & " + partMask + ")))", reinterpretInfo));
                 }

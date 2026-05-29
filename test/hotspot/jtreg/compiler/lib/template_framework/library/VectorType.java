@@ -36,6 +36,7 @@ import static compiler.lib.template_framework.library.PrimitiveType.LONGS;
 import static compiler.lib.template_framework.library.PrimitiveType.FLOATS;
 import static compiler.lib.template_framework.library.PrimitiveType.DOUBLES;
 import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
+import static compiler.lib.template_framework.library.PrimitiveType.FLOAT16S;
 
 /**
  * The {@link VectorType} models the Vector API types.
@@ -73,6 +74,11 @@ public abstract class VectorType implements CodeGenerationDataNameType {
     public static final VectorType.Vector DOUBLE_256 = new VectorType.Vector(DOUBLES, 4);
     public static final VectorType.Vector DOUBLE_512 = new VectorType.Vector(DOUBLES, 8);
 
+    public static final VectorType.Vector FLOAT16_64  = new VectorType.Vector(FLOAT16S, 4);
+    public static final VectorType.Vector FLOAT16_128 = new VectorType.Vector(FLOAT16S, 8);
+    public static final VectorType.Vector FLOAT16_256 = new VectorType.Vector(FLOAT16S, 16);
+    public static final VectorType.Vector FLOAT16_512 = new VectorType.Vector(FLOAT16S, 32);
+
     private final String vectorTypeName;
 
     private VectorType(String vectorTypeName) {
@@ -104,6 +110,7 @@ public abstract class VectorType implements CodeGenerationDataNameType {
             case "long"   -> "LongVector";
             case "float"  -> "FloatVector";
             case "double" -> "DoubleVector";
+            case "float16" -> "Float16Vector";
             default       -> throw new UnsupportedOperationException("Not supported: " + elementType.name());
         };
     }
@@ -132,7 +139,7 @@ public abstract class VectorType implements CodeGenerationDataNameType {
                 return List.of(name(), ".zero(", speciesName, ")");
             } else if (r <= 8) {
                 return List.of(
-                    name(), ".fromArray(", speciesName, ", new ", elementType.name(), "[] {",
+                    name(), ".fromArray(", speciesName, ", new ", elementType.cname(), "[] {",
                     elementType.con(),
                     Stream.generate(() ->
                         List.of(", ", elementType.con())

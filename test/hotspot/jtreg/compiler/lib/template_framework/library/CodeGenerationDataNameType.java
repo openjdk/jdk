@@ -59,6 +59,13 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     static PrimitiveType shorts()   { return PrimitiveType.SHORTS; }
 
     /**
+     * The short {@link PrimitiveType}.
+     *
+     * @return The short {@link PrimitiveType}.
+     */
+    static PrimitiveType float16s()   { return PrimitiveType.FLOAT16S; }
+
+    /**
      * The char {@link PrimitiveType}.
      *
      * @return The char {@link PrimitiveType}.
@@ -114,6 +121,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         bytes(),
         chars(),
         shorts(),
+        float16s(),
         ints(),
         longs(),
         floats(),
@@ -153,6 +161,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
      * List of all floating {@link PrimitiveType}s (float, double).
      */
     List<PrimitiveType> FLOATING_TYPES = List.of(
+        float16s(),
         floats(),
         doubles()
     );
@@ -199,6 +208,13 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         VectorType.SHORT_512
     );
 
+    List<VectorType.Vector> VECTOR_FLOAT16_VECTOR_TYPES = List.of(
+        VectorType.FLOAT16_64,
+        VectorType.FLOAT16_128,
+        VectorType.FLOAT16_256,
+        VectorType.FLOAT16_512
+    );
+
     List<VectorType.Vector> VECTOR_INT_VECTOR_TYPES = List.of(
         VectorType.INT_64,
         VectorType.INT_128,
@@ -230,6 +246,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     List<VectorType.Vector> VECTOR_VECTOR_TYPES = Utils.concat(
         VECTOR_BYTE_VECTOR_TYPES,
         VECTOR_SHORT_VECTOR_TYPES,
+        VECTOR_FLOAT16_VECTOR_TYPES,
         VECTOR_INT_VECTOR_TYPES,
         VECTOR_LONG_VECTOR_TYPES,
         VECTOR_FLOAT_VECTOR_TYPES,

@@ -335,13 +335,26 @@ public class ExpressionFuzzer {
             );
         });
 
+        // Filter out expressions involving the float16 PrimitiveType, which is a vector-lane
+        // carrier (short-backed) and not a valid Java scalar type keyword.
+        java.util.function.Predicate<Expression> noFloat16 = e ->
+            !e.returnType.name().equals("float16") &&
+            e.argumentTypes.stream().noneMatch(t -> t.name().equals("float16"));
+
+        List<Expression> primitiveOps = Operations.PRIMITIVE_OPERATIONS.stream()
+            .filter(noFloat16).toList();
+        List<Expression> scalarNumericOps = Operations.SCALAR_NUMERIC_OPERATIONS.stream()
+            .filter(noFloat16).toList();
+
         // Generate expressions with the primitive types.
         for (PrimitiveType type : PRIMITIVE_TYPES) {
-            // Prmitive expressions are most important, so let's create many expressions per output type.
+            // Skip the float16 PrimitiveType: it is a vector-lane carrier, not a true scalar.
+            if (type.name().equals("float16")) continue;
+            // Primitive expressions are most important, so let's create many expressions per output type.
             for (int i = 0; i < 10; i++) {
                 // The depth determines roughly how many operations are going to be used in the expression.
                 int depth = RANDOM.nextInt(1, 20);
-                Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, depth, Nesting.EXACT);
+                Expression expression = Expression.nestRandomly(type, primitiveOps, depth, Nesting.EXACT);
                 tests.add(testTemplate.asToken(expression));
             }
         }
@@ -356,7 +369,7 @@ public class ExpressionFuzzer {
             for (int i = 0; i < 2; i++) {
                 // The depth determines roughly how many operations are going to be used in the expression.
                 int depth = RANDOM.nextInt(1, 20);
-                Expression expression = Expression.nestRandomly(type, Operations.SCALAR_NUMERIC_OPERATIONS, depth, Nesting.EXACT);
+                Expression expression = Expression.nestRandomly(type, scalarNumericOps, depth, Nesting.EXACT);
                 tests.add(testTemplate.asToken(expression));
             }
         }
