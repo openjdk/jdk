@@ -79,6 +79,7 @@ public class ExhaustivenessComputer {
     private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new LinkedHashMap<>();
     private final long maxBaseChecks;
     private long baseChecks = NO_BASE_CHECKS_COUNTING;
+    private Env<AttrContext> env;
 
     public static ExhaustivenessComputer instance(Context context) {
         ExhaustivenessComputer instance = context.get(exhaustivenessKey);
@@ -111,70 +112,75 @@ public class ExhaustivenessComputer {
     }
 
     public ExhaustivenessResult exhausts(Env<AttrContext> env, JCExpression selector, List<JCCase> cases) {
-        Set<PatternDescription> patternSet = new LinkedHashSet<>();
-        Map<Symbol, Set<Symbol>> enum2Constants = new LinkedHashMap<>();
-        Set<Object> booleanLiterals = new LinkedHashSet<>(Set.of(0, 1));
-        for (JCCase c : cases) {
-            if (!TreeInfo.unguardedCase(c))
-                continue;
+        this.env = env;
+        try {
+            Set<PatternDescription> patternSet = new LinkedHashSet<>();
+            Map<Symbol, Set<Symbol>> enum2Constants = new LinkedHashMap<>();
+            Set<Object> booleanLiterals = new LinkedHashSet<>(Set.of(0, 1));
+            for (JCCase c : cases) {
+                if (!TreeInfo.unguardedCase(c))
+                    continue;
 
-            for (var l : c.labels) {
-                if (l instanceof JCPatternCaseLabel patternLabel) {
-                    for (Type component : components(selector.type)) {
-                        patternSet.add(makePatternDescription(component, patternLabel.pat));
-                    }
-                } else if (l instanceof JCConstantCaseLabel constantLabel) {
-                    if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
-                        Object value = ((JCLiteral) constantLabel.expr).value;
-                        booleanLiterals.remove(value);
-                    } else {
-                        Symbol s = TreeInfo.symbol(constantLabel.expr);
-                        if (s != null && s.isEnum()) {
-                            enum2Constants.computeIfAbsent(s.owner, x -> {
-                                Set<Symbol> result = new LinkedHashSet<>();
-                                s.owner.members()
-                                        .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
-                                        .forEach(result::add);
-                                return result;
-                            }).remove(s);
+                for (var l : c.labels) {
+                    if (l instanceof JCPatternCaseLabel patternLabel) {
+                        for (Type component : components(selector.type)) {
+                            patternSet.add(makePatternDescription(component, patternLabel.pat));
+                        }
+                    } else if (l instanceof JCConstantCaseLabel constantLabel) {
+                        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
+                            Object value = ((JCLiteral) constantLabel.expr).value;
+                            booleanLiterals.remove(value);
+                        } else {
+                            Symbol s = TreeInfo.symbol(constantLabel.expr);
+                            if (s != null && s.isEnum()) {
+                                enum2Constants.computeIfAbsent(s.owner, x -> {
+                                    Set<Symbol> result = new LinkedHashSet<>();
+                                    s.owner.members()
+                                            .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
+                                            .forEach(result::add);
+                                    return result;
+                                }).remove(s);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
-            return ExhaustivenessResult.ofExhaustive();
-        }
-
-        for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
-            if (e.getValue().isEmpty()) {
-                patternSet.add(new BindingPattern(e.getKey().type));
-            }
-        }
-        try {
-            CoverageResult coveredResult = computeCoverage(selector.type, patternSet, PatternEquivalence.STRICT);
-            if (coveredResult.covered()) {
+            if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
                 return ExhaustivenessResult.ofExhaustive();
             }
 
-            Set<PatternDescription> details =
-                    this.computeMissingPatternDescriptions(env, selector.type, coveredResult.incompletePatterns())
-                        .stream()
-                        .flatMap(pd -> {
-                            if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
-                                Symbol enumType = bp.type.tsym;
-                                return enum2Constants.get(enumType).stream().map(c -> new EnumConstantPattern(bp.type, c.name));
-                            } else {
-                                return Stream.of(pd);
-                            }
-                        })
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
+            for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
+                if (e.getValue().isEmpty()) {
+                    patternSet.add(new BindingPattern(e.getKey().type));
+                }
+            }
+            try {
+                CoverageResult coveredResult = computeCoverage(selector.type, patternSet, PatternEquivalence.STRICT);
+                if (coveredResult.covered()) {
+                    return ExhaustivenessResult.ofExhaustive();
+                }
 
-            return ExhaustivenessResult.ofDetails(details);
-        } catch (CompletionFailure cf) {
-            chk.completionError(selector.pos(), cf);
-            return ExhaustivenessResult.ofExhaustive(); //error recovery
+                Set<PatternDescription> details =
+                        this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
+                            .stream()
+                            .flatMap(pd -> {
+                                if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
+                                    Symbol enumType = bp.type.tsym;
+                                    return enum2Constants.get(enumType).stream().map(c -> new EnumConstantPattern(bp.type, c.name));
+                                } else {
+                                    return Stream.of(pd);
+                                }
+                            })
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+
+                return ExhaustivenessResult.ofDetails(details);
+            } catch (CompletionFailure cf) {
+                chk.completionError(selector.pos(), cf);
+                return ExhaustivenessResult.ofExhaustive(); //error recovery
+            }
+        } finally {
+            this.env = null;
         }
     }
 
@@ -424,18 +430,18 @@ public class ExhaustivenessComputer {
         return permitted;
     }
 
-    private Set<ClassSymbol> leafAccessiblePermittedSubTypes(Env<AttrContext> env, TypeSymbol root, Predicate<TypeSymbol> accept) {
+    private Set<ClassSymbol> leafAccessiblePermittedSubTypes(TypeSymbol root, Predicate<TypeSymbol> accept) {
         Set<ClassSymbol> permitted = new LinkedHashSet<>();
 
         for (ClassSymbol base : baseClasses(root)) {
             if (base.isSealed()) {
-                Set<ClassSymbol> direct = closesAccessiblePermittedSubtypes(env, accept, base);
+                Set<ClassSymbol> direct = closesAccessiblePermittedSubtypes(accept, base);
 
                 if (direct == null) {
                     permitted.add(base);
                 } else {
                     for (ClassSymbol permittedSubtype : direct) {
-                        permitted.addAll(leafAccessiblePermittedSubTypes(env, permittedSubtype, accept));
+                        permitted.addAll(leafAccessiblePermittedSubTypes(permittedSubtype, accept));
                     }
                 }
             } else {
@@ -880,8 +886,7 @@ public class ExhaustivenessComputer {
     }
 
     //computation of missing patterns:
-    protected Set<PatternDescription> computeMissingPatternDescriptions(Env<AttrContext> env,
-                                                                        Type selectorType,
+    protected Set<PatternDescription> computeMissingPatternDescriptions(Type selectorType,
                                                                         Set<PatternDescription> incompletePatterns) {
         if (maxBaseChecks == 0) {
             return Set.of();
@@ -889,8 +894,7 @@ public class ExhaustivenessComputer {
         try {
             baseChecks = 0;
             PatternDescription defaultPattern = new BindingPattern(selectorType);
-            return expandMissingPatternDescriptions(env,
-                                                    selectorType,
+            return expandMissingPatternDescriptions(selectorType,
                                                     selectorType,
                                                     defaultPattern,
                                                     incompletePatterns,
@@ -902,14 +906,13 @@ public class ExhaustivenessComputer {
         }
     }
 
-    private Set<PatternDescription> expandMissingPatternDescriptions(Env<AttrContext> env,
-                                                                     Type selectorType,
+    private Set<PatternDescription> expandMissingPatternDescriptions(Type selectorType,
                                                                      Type targetType,
                                                                      PatternDescription toExpand,
                                                                      Set<? extends PatternDescription> basePatterns,
                                                                      Set<PatternDescription> inMissingPatterns) {
         try {
-            return doExpandMissingPatternDescriptions(env, selectorType, targetType,
+            return doExpandMissingPatternDescriptions(selectorType, targetType,
                                                       toExpand, basePatterns,
                                                       inMissingPatterns);
         } catch (TooManyChecksException ex) {
@@ -920,8 +923,7 @@ public class ExhaustivenessComputer {
         }
     }
 
-    private Set<PatternDescription> doExpandMissingPatternDescriptions(Env<AttrContext> env,
-                                                                       Type selectorType,
+    private Set<PatternDescription> doExpandMissingPatternDescriptions(Type selectorType,
                                                                        Type targetType,
                                                                        PatternDescription toExpand,
                                                                        Set<? extends PatternDescription> basePatterns,
@@ -929,7 +931,7 @@ public class ExhaustivenessComputer {
         if (toExpand instanceof BindingPattern bp) {
             if (bp.type.tsym.isSealed()) {
                 //try to replace binding patterns for sealed types with all their immediate permitted applicable types:
-                Set<ClassSymbol> closesAccessiblePermittedSubtypes = closesAccessiblePermittedSubtypes(env,  isApplicableSubtypePredicate(bp.type), (ClassSymbol) bp.type.tsym);
+                Set<ClassSymbol> closesAccessiblePermittedSubtypes = closesAccessiblePermittedSubtypes(isApplicableSubtypePredicate(bp.type), (ClassSymbol) bp.type.tsym);
 
                 if (closesAccessiblePermittedSubtypes == null) {
                     return inMissingPatterns;
@@ -955,7 +957,7 @@ public class ExhaustivenessComputer {
 
                 //try to recursively expand on each viable pattern:
                 for (PatternDescription viable : applicableDirectPermittedPatterns) {
-                    currentMissingPatterns = expandMissingPatternDescriptions(env, selectorType, targetType,
+                    currentMissingPatterns = expandMissingPatternDescriptions(selectorType, targetType,
                                                                               viable, basePatterns,
                                                                               currentMissingPatterns);
                 }
@@ -976,7 +978,7 @@ public class ExhaustivenessComputer {
 
                     if (componentType.tsym.isSealed()) {
                         applicableLeafPermittedSubtypes =
-                                leafAccessiblePermittedSubTypes(env, componentType.tsym,
+                                leafAccessiblePermittedSubTypes(componentType.tsym,
                                                       isApplicableSubtypePredicate(componentType))
                                     .stream()
                                     .map(csym -> instantiatePatternType(componentType, csym))
@@ -1018,7 +1020,7 @@ public class ExhaustivenessComputer {
                 //this is particularly important for the case where the sealed supertype only has one permitted type, the record
                 //the base type could be used instead of the record otherwise, which would produce less specific missing pattern:
                 Set<PatternDescription> sortedCandidates =
-                        partialSortPattern(env, combinatorialPatterns, basePatterns, replace(inMissingPatterns, toExpand, combinatorialPatterns));
+                        partialSortPattern(combinatorialPatterns, basePatterns, replace(inMissingPatterns, toExpand, combinatorialPatterns));
 
                 removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, sortedCandidates);
 
@@ -1028,8 +1030,7 @@ public class ExhaustivenessComputer {
                 for (PatternDescription addedPattern : sortedCandidates) {
                     if (addedPattern instanceof RecordPattern addedRP) {
                         for (int c = 0; c < addedRP.nested.length; c++) {
-                            currentMissingPatterns = expandMissingPatternDescriptions(env, 
-                                                                                      selectorType,
+                            currentMissingPatterns = expandMissingPatternDescriptions(selectorType,
                                                                                       addedRP.fullComponentTypes[c],
                                                                                       addedRP.nested[c],
                                                                                       basePatterns,
@@ -1044,7 +1045,7 @@ public class ExhaustivenessComputer {
         return inMissingPatterns;
     }
 
-    private Set<ClassSymbol> closesAccessiblePermittedSubtypes(Env<AttrContext> env, Predicate<TypeSymbol> filter, ClassSymbol forClass) {
+    private Set<ClassSymbol> closesAccessiblePermittedSubtypes(Predicate<TypeSymbol> filter, ClassSymbol forClass) {
         if (!forClass.isSealed()) {
             return null;
         }
@@ -1060,7 +1061,7 @@ public class ExhaustivenessComputer {
             if (rs.isAccessible(env, candidate)) {
                 applicableDirectPermittedPatterns.add((ClassSymbol) candidate.tsym);
             } else {
-                Set<ClassSymbol> nextLevel = closesAccessiblePermittedSubtypes(env, filter, (ClassSymbol) candidate.tsym);
+                Set<ClassSymbol> nextLevel = closesAccessiblePermittedSubtypes(filter, (ClassSymbol) candidate.tsym);
 
                 if (nextLevel == null) {
                     return null;
@@ -1151,7 +1152,7 @@ public class ExhaustivenessComputer {
      * Sort patterns so that those that are preferred for removal are in front
      * of those that are preferred to remain (when there's a choice).
      */
-    private SequencedSet<PatternDescription> partialSortPattern(Env<AttrContext> env, Set<PatternDescription> candidates,
+    private SequencedSet<PatternDescription> partialSortPattern(Set<PatternDescription> candidates,
                                                                 Set<? extends PatternDescription> basePatterns,
                                                                 Set<PatternDescription> missingPatterns) {
         SequencedSet<PatternDescription> sortedCandidates = new LinkedHashSet<>();
@@ -1160,7 +1161,7 @@ public class ExhaustivenessComputer {
             PatternDescription mostSpecific = null;
             for (PatternDescription current : candidates) {
                 if (mostSpecific == null ||
-                    shouldAppearBefore(env, current, mostSpecific, basePatterns, missingPatterns)) {
+                    shouldAppearBefore(current, mostSpecific, basePatterns, missingPatterns)) {
                     mostSpecific = current;
                 }
             }
@@ -1172,15 +1173,13 @@ public class ExhaustivenessComputer {
     //where:
         //true iff pd1 should appear before pd2
         //false otherwise
-        private boolean shouldAppearBefore(Env<AttrContext> env,
-                                           PatternDescription pd1,
+        private boolean shouldAppearBefore(PatternDescription pd1,
                                            PatternDescription pd2,
                                            Set<? extends PatternDescription> basePatterns,
                                            Set<? extends PatternDescription> missingPatterns) {
             if (pd1 instanceof RecordPattern rp1 && pd2 instanceof RecordPattern rp2) {
                 for (int c = 0; c < rp1.nested.length; c++) {
-                    if (shouldAppearBefore(env,
-                                           (BindingPattern) rp1.nested[c],
+                    if (shouldAppearBefore((BindingPattern) rp1.nested[c],
                                            (BindingPattern) rp2.nested[c],
                                            basePatterns,
                                            missingPatterns)) {
