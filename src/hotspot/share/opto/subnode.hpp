@@ -334,8 +334,11 @@ struct BoolTest {
   static mask negate_mask(mask btm) { return mask(btm ^ 4); }
   static mask unsigned_mask(mask btm);
   bool is_canonical( ) const { return (_test == BoolTest::ne || _test == BoolTest::lt || _test == BoolTest::le || _test == BoolTest::overflow); }
-  bool is_less( )  const { return _test == BoolTest::lt || _test == BoolTest::le; }
-  bool is_greater( ) const { return _test == BoolTest::gt || _test == BoolTest::ge; }
+  bool is_less( )  const { return is_less(_test); }
+  bool is_greater( ) const { return is_greater(_test); }
+  static bool is_less(mask btm) { return btm == BoolTest::lt || btm == BoolTest::le; }
+  static bool is_greater(mask btm) { return btm == BoolTest::gt || btm == BoolTest::ge; }
+
   void dump_on(outputStream *st) const;
   mask merge(BoolTest other) const;
 };
