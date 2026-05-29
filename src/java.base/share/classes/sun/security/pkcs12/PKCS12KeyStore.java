@@ -175,6 +175,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private int certPbeIterationCount = -1;
     private String macAlgorithm = null;
     private int macIterationCount = -1;
+    private int macKeyLength = -1;
 
     // the source of randomness
     private SecureRandom random;
@@ -1260,7 +1261,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
         if (password != null && !macAlgorithm.equalsIgnoreCase("NONE")) {
             byte[] macData = MacData.generateMac(password, authenticatedSafe,
-                    macAlgorithm, macIterationCount, getSalt());
+                    macAlgorithm, macIterationCount, getSalt(), macKeyLength);
             pfx.write(macData);
         }
         // write PFX to output stream
@@ -2090,6 +2091,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
                     // Store MAC algorithm of keystore that was just loaded.
                     macAlgorithm = macData.getMacAlgorithm();
+                    macKeyLength = macData.getKeyLength();
                     macIterationCount = ic;
                     RetryWithZero.run(pass -> {
                         macData.verifyMac(pass, authSafeData);

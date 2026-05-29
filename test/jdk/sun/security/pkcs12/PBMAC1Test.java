@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8343232
+ * @bug 8343232 8366979
  * @summary Verify correctness of the structure of PKCS12 PBMAC1
  *          keystores created with various property values.
  *          Verify that keystores load correctly from an input stream.
@@ -141,7 +141,7 @@ public class PBMAC1Test {
         der = loadAndStore(sha2p12);
         DerUtils.checkAlg(der, "20010130", KnownOIDs.HmacSHA256);
         DerUtils.checkAlg(der, "200110", KnownOIDs.HmacSHA256);
-        DerUtils.checkInt(der, "2001012", 32); // key length changed to 32
+        DerUtils.checkInt(der, "2001012", 8); // key length remains 8
     }
 
     static void overflow() throws Exception {

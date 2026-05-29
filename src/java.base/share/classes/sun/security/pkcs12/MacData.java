@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,8 @@ class MacData {
      * @return the computed MAC as a byte array
      */
     static byte[] generateMac(char[] passwd, byte[] data,
-            String macAlgorithm, int macIterationCount, byte[] salt)
+            String macAlgorithm, int macIterationCount, byte[] salt,
+            int macKeyLength)
             throws IOException, NoSuchAlgorithmException {
         final PBEParameterSpec params;
         String algName;
@@ -276,13 +277,13 @@ class MacData {
 
         params = new PBEParameterSpec(salt, macIterationCount);
 
+        int len = macKeyLength == -1 ?
+                Mac.getInstance(hmac).getMacLength()*8 : macKeyLength;
         try {
             byte[] macResult = calculateMac(macAlgorithm, passwd, params, data,
-                    kdfHmac, hmac, -1);
-
+                    kdfHmac, hmac, len);
             DerOutputStream bytes = new DerOutputStream();
-            bytes.write(encode(algName, macResult, params, kdfHmac, hmac,
-                    macResult.length));
+            bytes.write(encode(algName, macResult, params, kdfHmac, hmac, len));
             return bytes.toByteArray();
         } catch (InvalidKeySpecException | InvalidKeyException |
                     InvalidAlgorithmParameterException e) {
@@ -298,6 +299,10 @@ class MacData {
         return this.iterations;
     }
 
+    int getKeyLength() {
+        return this.keyLength;
+    }
+
     /**
      * Returns the ASN.1 encoding.
      * @return the ASN.1 encoding
@@ -306,7 +311,7 @@ class MacData {
      */
     static byte[] encode(String algName, byte[] digest, PBEParameterSpec p,
             String kdfHmac, String hmac, int keyLength)
-            throws IOException, NoSuchAlgorithmException {
+            throws NoSuchAlgorithmException {
 
         final int iterations = p.getIterationCount();
         final byte[] macSalt = p.getSalt();
@@ -321,7 +326,7 @@ class MacData {
             // id-PBMAC1 OBJECT IDENTIFIER ::= { pkcs-5 14 }
             tmp2.putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1));
             tmp2.writeBytes(PBMAC1Parameters.encode(macSalt, iterations,
-                    keyLength, kdfHmac, hmac));
+                    keyLength/8, kdfHmac, hmac));
 
             tmp1.write(DerValue.tag_Sequence, tmp2);
             tmp1.putOctetString(digest);
