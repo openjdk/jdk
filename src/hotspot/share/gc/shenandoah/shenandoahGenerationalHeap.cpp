@@ -672,7 +672,7 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 
     void work(uint worker_id) override {
       ShenandoahWorkerTimingsTracker timer(_phase,
-                                           ShenandoahPhaseTimings::ScanClusters,
+                                           ShenandoahPhaseTimings::Work,
                                            worker_id, true);
       ShenandoahHeapRegion* region;
       while ((region = _regions.next()) != nullptr) {

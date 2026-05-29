@@ -46,7 +46,7 @@ ShenandoahVMWeakRoots<CONCURRENT>::ShenandoahVMWeakRoots(ShenandoahPhaseTimings:
 template <bool CONCURRENT>
 template <typename T>
 void ShenandoahVMWeakRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeaks, worker_id);
   _weak_roots.oops_do(cl);
 }
 
@@ -54,7 +54,7 @@ template <bool CONCURRENT>
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahVMWeakRoots<CONCURRENT>::weak_oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint worker_id) {
   ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive> cl(is_alive, keep_alive);
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeaks, worker_id);
   _weak_roots.oops_do(&cl);
 }
 
@@ -71,7 +71,7 @@ ShenandoahVMRoots<CONCURRENT>::ShenandoahVMRoots(ShenandoahPhaseTimings::Phase p
 template <bool CONCURRENT>
 template <typename T>
 void ShenandoahVMRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMStrongRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMStrongs, worker_id);
   _strong_roots.oops_do(cl);
 }
 
@@ -104,12 +104,12 @@ template <bool CONCURRENT>
 void ShenandoahClassLoaderDataRoots<CONCURRENT>::cld_do_impl(CldDo f, CLDClosure* clds, uint worker_id) {
   if (CONCURRENT) {
     if (_semaphore.try_acquire()) {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Classes, worker_id);
       f(clds);
       _semaphore.claim_all();
     }
   } else {
-    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Classes, worker_id);
     f(clds);
   }
 }
