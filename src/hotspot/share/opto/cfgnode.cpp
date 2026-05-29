@@ -159,6 +159,30 @@ PhiNode* RegionNode::has_unique_phi() const {
   return only_phi;
 }
 
+PhiNode* RegionNode::find_memory_phi(const TypePtr* adr_type) const {
+  PhiNode* res = nullptr;
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* use = fast_out(i);
+    if(use->is_memory_phi() && use->as_Phi()->adr_type() == adr_type) {
+#ifdef ASSERT
+      if (VerifyAmbiguousMemPhi) {
+        if (res != nullptr) {
+          res->dump();
+          use->dump();
+          assert(false, "ambiguous choice of memory phi");
+        }
+        res = use->as_Phi();
+      } else {
+        return use->as_Phi();
+      }
+#else // ASSERT
+      return use->as_Phi();
+#endif // ASSERT
+    }
+  }
+  return res;
+}
+
 
 //------------------------------check_phi_clipping-----------------------------
 // Helper function for RegionNode's identification of FP clipping
@@ -2623,11 +2647,28 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
         PhaseIterGVN* igvn = phase->is_IterGVN();
         assert(igvn != nullptr, "sanity check");
+        uint nodes_size = phase->C->unique();
         PhiNode* new_base = (PhiNode*) clone();
         // Must eagerly register phis, since they participate in loops.
         igvn->register_new_node_with_optimizer(new_base);
 
-        MergeMemNode* result = MergeMemNode::make(new_base);
+        MergeMemNode* result = MergeMemNode::make(phase->C->top());
+        result->set_memory_at(phase->C->get_alias_index(this->adr_type()), new_base);
+
+        // Check if there exists a phi for a given slice already. If yes,
+        // we should use it. We are moving the MergeMem down in the CFG,
+        // and the memory input for this slice should reflect its state
+        // at that stage. There might have been memory writes for this
+        // slice in-between, and we should make sure that they are not missed.
+        for (DUIterator_Fast imax, j = region()->fast_outs(imax); j < imax; j++) {
+          Node* use = region()->fast_out(j);
+          if (PhiNode* phi = use->isa_Phi(); phi != nullptr) {
+            if (phi->type() == Type::MEMORY && phi->adr_type() != adr_type()) {
+              result->set_memory_at(phase->C->get_alias_index(phi->adr_type()), phi);
+            }
+          }
+        }
+
         for (uint i = 1; i < req(); ++i) {
           Node *ii = in(i);
           if (ii->is_MergeMem()) {
@@ -2641,9 +2682,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
                 igvn->register_new_node_with_optimizer(new_phi);
                 mms.set_memory(new_phi);
               }
+
+              // We must only do the wiring if the phi was created here (it is already correct otherwise)
               Node* phi = mms.memory();
-              assert(made_new_phi || phi->in(i) == n, "replace the i-th merge by a slice");
-              phi->set_req_X(i, mms.memory2(), phase);
+              if (phi->_idx >= nodes_size) {
+                assert(made_new_phi || phi->in(i) == n, "replace the i-th merge by a slice");
+                phi->set_req_X(i, mms.memory2(), phase);
+              }
             }
           }
         }
