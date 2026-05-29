@@ -184,8 +184,6 @@ public:
 
   ShenandoahHeuristics* heuristics();
 
-  bool is_forwarded(oop oop) const;
-
   // ---------- Initialization, termination, identification, printing routines
 //
 public:
@@ -824,7 +822,6 @@ public:
   // by this thread, or by some other thread. On allocation failure, installs the
   // self-forwarded bit on src, flags src's region, and returns src.
   virtual oop evacuate_object(oop src, Thread* thread);
-  inline bool should_evacuate_object(oop obj) const;
 
   // Parallel scan of flagged cset regions to clear self-forwarded bits on live
   // objects. Must be called at a safepoint; intended for the degenerated and

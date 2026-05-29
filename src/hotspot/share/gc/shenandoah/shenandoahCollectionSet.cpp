@@ -118,18 +118,6 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   r->make_cset();
 }
 
-void ShenandoahCollectionSet::remove_region(ShenandoahHeapRegion* r) {
-  assert(r->has_self_forwards(), "Can only remove regions with evacuation failures");
-  auto const previous_value = AtomicAccess::cmpxchg(_cset_map + r->index(), char(1), char(0));
-  if (previous_value == 1) {
-    log_info(gc)("Removed region %zu from collection set", r->index());
-    // TODO: All of the accounting and meta data for this collection set
-    _region_count--;
-    ShenandoahHeapLocker locker(_heap->lock());
-    r->make_regular_allocation(r->affiliation());
-  }
-}
-
 void ShenandoahCollectionSet::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
 

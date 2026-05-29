@@ -104,15 +104,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   return result;
 }
 
-inline bool ShenandoahHeap::should_evacuate_object(oop obj) const {
-  if (has_self_forwarded_objects()) {
-    // Stop evacuating from this region, it will not be recycled. Threads should use
-    // their remaining LABs on regions that might still be completely evacuated.
-    return !heap_region_containing(obj)->has_self_forwards();
-  }
-  return true;
-}
-
 template <class T>
 inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);

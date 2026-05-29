@@ -78,10 +78,6 @@ public:
   // Add region to collection set
   void add_region(ShenandoahHeapRegion* r);
 
-  // Remove a region from the collection set. This will happen if an evacuation fails,
-  // and we leave a self-forwarded object in the region. The region cannot be trashed.
-  void remove_region(ShenandoahHeapRegion* r);
-
   // MT version
   ShenandoahHeapRegion* claim_next();
 
