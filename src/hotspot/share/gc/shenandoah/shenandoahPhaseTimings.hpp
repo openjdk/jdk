@@ -70,6 +70,7 @@ class outputStream;
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_gross,                                "Pause Final Mark (G)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark,                                      "Pause Final Mark (N)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_verify,                               "  Verify")                        \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_flush_satb_roots,                     "  Flush SATB and Roots")          \
   SHENANDOAH_WORKER_PHASE_DEF(f, finish_mark,                                     "  Finish Mark",                   \
                                                                                   "    FM: ")                        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_propagate_gc_state,                   "  Propagate GC State")            \
