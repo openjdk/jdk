@@ -46,12 +46,8 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
 
   size_t req_byte = req.size() * HeapWordSize;
   log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
-  request_gc(cause);
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
-}
-
-void ShenandoahController::handle_alloc_failure_evac(size_t words) {
-  log_info(gc)("Failed to allocate " PROPERFMT " for evacuation", PROPERFMTARGS(words * HeapWordSize));
+  request_gc(cause);
 }
 
 void ShenandoahController::notify_alloc_failure_waiters() {

@@ -70,10 +70,6 @@ public:
   // until another cycle completes successfully.
   void handle_alloc_failure(const ShenandoahAllocRequest &req);
 
-  // Invoked for allocation failures during evacuation. This cancels
-  // the collection cycle without blocking.
-  void handle_alloc_failure_evac(size_t words);
-
   // Notify threads waiting for GC to complete.
   void notify_alloc_failure_waiters();
 

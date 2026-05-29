@@ -1365,9 +1365,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
 #endif
 
   if (copy == nullptr) {
-    // control_thread()->handle_alloc_failure_evac(size);
-    // _oom_evac_handler.handle_out_of_memory_during_evacuation();
-
     // Install the self-forwarded bit on p so other evacuators/LRBs see
     // the object as "already handled, do not try to evacuate". The CAS
     // may fail if another thread concurrently installed a real forwardee

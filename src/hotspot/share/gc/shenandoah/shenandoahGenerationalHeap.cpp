@@ -338,11 +338,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       }
     }
 
-    // Do not notify control thread - we aren't going to cancel this GC and we aren't
-    // going to enter the out-of-memory protocol. Instead, we will forward this object
-    // to itself and try to carry on with the evacuation.
-    // control_thread()->handle_alloc_failure_evac(size);
-
     // Install the self-forwarded bit so other evacuators/LRBs see the
     // object as "already handled, do not try to evacuate". The CAS may
     // fail if another thread concurrently installed a real forwardee or
