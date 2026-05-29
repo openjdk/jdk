@@ -56,10 +56,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline bool ShenandoahHeap::is_forwarded(oop oop) const {
-  return oop != nullptr && oop->is_forwarded();
-}
-
 inline ShenandoahHeap* ShenandoahHeap::heap() {
   return named_heap<ShenandoahHeap>(CollectedHeap::Shenandoah);
 }
