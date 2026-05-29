@@ -25,8 +25,10 @@ package jdk.test.lib.security;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jtreg.SkippedException;
@@ -58,13 +60,42 @@ public class OpensslArtifactFetcher {
             System.out.println("Using OpenSSL from system property.");
             return path;
         }
-
         path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
-            System.out.println("Using OpenSSL from system.");
+            System.out.println("Using OpenSSL from System Installed Library: "+path);
             return path;
         }
+        path = getArtifactsFromArtifactory();
+        if (path == null) {
+           throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
+                OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
+        }
+        System.out.println("Artifacts Path is: "+path);
+        return path;
+    }
 
+    public static String getOpensslPathWithProviderPathPresent() {
+        String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
+        if (path != null) {
+            System.out.println("Using OpenSSL from system property.");
+            return path;
+        }
+        path = getDefaultSystemOpensslPathWithProviderPathPresent(OPENSSL_BUNDLE_VERSION);
+        if (path != null) {
+            System.out.println("Using OpenSSL from System Installed Library: "+path);
+            return path;
+        }
+        path = getArtifactsFromArtifactory();
+        if (path == null) {
+           throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
+                OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
+        }
+        System.out.println("Artifacts Path is: "+path);
+        return path;
+    }
+
+    private static String getArtifactsFromArtifactory() {
+        String returnValue = null;
         if (Platform.isX64()) {
             if (Platform.isLinux()) {
                 return fetchOpenssl(LINUX_X64.class);
@@ -81,9 +112,7 @@ public class OpensslArtifactFetcher {
                 return fetchOpenssl(MACOSX_AARCH64.class);
             }
         }
-
-        throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
-                OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
+        return returnValue;
     }
 
     private static String getOpensslFromSystemProp(String version) {
@@ -96,18 +125,58 @@ public class OpensslArtifactFetcher {
     }
 
     private static String getDefaultSystemOpensslPath(String version) {
-        if (verifyOpensslVersion("openssl", version)) {
-            return "openssl";
-        } else if (verifyOpensslVersion("/usr/local/bin/openssl", version)) {
-            return "/usr/local/bin/openssl";
+        System.out.println("Expected Openssl version is: "+version);
+        if (Platform.isWindows()) {
+            String output = null;
+            String windowsPath = null;
+            String cygwinPath = null;
+            try {
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess("openssl","version","-d");
+            output = outputAnalyzer.getOutput();
+            cygwinPath = output.split(":")[1].trim().replace("\"", "");
+            System.out.println("cygwinPath: "+cygwinPath);
+            OutputAnalyzer windowsOutput = ProcessTools.executeProcess("cygpath", "-w", cygwinPath);
+            System.out.println("windowsPath: "+windowsPath);
+           } catch(Throwable t) {
+             t.printStackTrace();
+           }
+           return windowsPath;
+        } else {
+           String absolutePath = getOpenSslAbsolutePath();
+           if (verifyOpensslVersion(absolutePath, version)) {
+               return absolutePath;
+           }
         }
         return null;
+    }
+
+    private static String getDefaultSystemOpensslPathWithProviderPathPresent(String version) {
+        String absolutePath = getDefaultSystemOpensslPath(version);
+        if (absolutePath != null && isProviderPathPresent(absolutePath) != null) {
+          return absolutePath;
+        }
+        return null;
+    }
+
+    private static String getOpenSslAbsolutePath() {
+        String absolutePath = null;
+        try {
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess("which","openssl");
+            absolutePath = outputAnalyzer.getOutput();
+        } catch(Throwable t) {
+            t.printStackTrace();
+        } finally {
+            System.out.println("absolutePath: "+absolutePath);
+            System.err.println("absolutePath: "+absolutePath);
+        }
+        return absolutePath;
     }
 
     private static boolean verifyOpensslVersion(String path, String version) {
         if (path != null) {
             try {
-                ProcessTools.executeCommand(path, "version")
+                System.out.println("path is: "+path+"version is: "+version);
+                ProcessTools.executeCommand(path.trim(),"version")
                         .shouldHaveExitValue(0)
                         .shouldContain(version);
                 return true;
@@ -136,6 +205,15 @@ public class OpensslArtifactFetcher {
             libDir = "lib64";
         }
         return openSslRootPath.resolve(libDir, "ossl-modules");
+    }
+
+    private static Path isProviderPathPresent(String opensslAbsolutePath) {
+        Path osslModulesPath = getProviderPath(opensslAbsolutePath);
+        if (Files.exists(osslModulesPath)) {
+             return osslModulesPath;
+        } else {
+             return null;
+        }
     }
 
     public static String getTestOpensslBundleVersion() {
