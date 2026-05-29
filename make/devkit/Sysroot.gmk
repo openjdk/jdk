@@ -133,8 +133,6 @@ $(DOWNLOAD_RPMS_MARKER):
 	  echo $(RPM_LIST) | \
 	      xargs dnf download $(DNF_DOWNLOAD_FLAGS) --destdir $(DOWNLOAD_RPMS)
         endif
-	ls $(DOWNLOAD_RPMS)/*.rpm > /dev/null 2>&1 || \
-	    { echo "Failed to download rpms"; exit 1; }
 	touch $@
 
 ################################################################################
@@ -150,18 +148,18 @@ CPIO_EXCLUDES := \
     #
 
 $(RPMS_UNPACKED_MARKER): $(DOWNLOAD_RPMS_MARKER)
-	$(info Unpacking target rpms and libraries)
-	mkdir -p $(SYSROOT)
+	if [ -d $(SYSROOT) ]; then echo "WARNING: Sysroot directory ($(SYSROOT)) already exists, proceeding anyway..."; fi
+	@mkdir -p $(SYSROOT)
         # The -e test below is needed to skip unmatched glob patterns
 	( \
-	    cd $(SYSROOT); \
-	    for rpm in $(RPM_PATTERNS); do \
-	        if [ ! -e "$$rpm" ]; then continue; fi; \
-	        echo Extracting $$rpm...; \
-	        rpm2cpio $$rpm | \
-	            cpio --extract --make-directories -f $(CPIO_EXCLUDES) \
+	  cd $(SYSROOT); \
+	  for rpm in $(RPM_PATTERNS); do \
+	    if [ ! -e "$$rpm" ]; then continue; fi; \
+	    echo Extracting $$rpm...; \
+	    rpm2cpio $$rpm | \
+	        cpio --extract --make-directories -f $(CPIO_EXCLUDES) \
 	            || exit 1; \
-	    done \
+	  done \
 	)
 	touch $@
 
@@ -189,12 +187,14 @@ LD_SCRIPT_PATCHES := \
 
 $(PATCHED_SYSROOT_MARKER): $(UNPATCHED_SYSROOT_MARKER)
 	@echo Patching GNU ld scripts
-	@(for f in $$(find $(SYSROOT) -name "*.so" -type f 2>/dev/null); do \
+	@( \
+	  for f in $$(find $(SYSROOT) -name "*.so" -type f 2>/dev/null); do \
 	    if grep -Iq 'GNU ld script' "$$f"; then \
-	        sed $(LD_SCRIPT_PATCHES) "$$f" > "$$f.tmp" && \
-	        mv "$$f.tmp" "$$f"; \
+	      sed $(LD_SCRIPT_PATCHES) "$$f" > "$$f.tmp" && \
+	      mv "$$f.tmp" "$$f"; \
 	    fi; \
-	done)
+	  done \
+	)
 	@mkdir -p $(SYSROOT)/usr/lib
 	@touch $@
 

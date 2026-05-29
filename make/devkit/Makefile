@@ -99,7 +99,7 @@ $(HOST_PLATFORMS):
 	  $(MAKE) -f Tools.gmk all $(SUBMAKEVARS) \
               TARGET=$$p PREFIX=$(RESULT)/$@-to-$$p && \
 	  $(MAKE) -f Tools.gmk ccache $(SUBMAKEVARS) \
-              TARGET=$@ PREFIX=$(RESULT)/$@-to-$$p || exit 1 ; \
+              TARGET=$@ PREFIX=$(RESULT)/$@-to-$$p || exit 1; \
 	done
 	@echo 'All done'
 

@@ -143,8 +143,8 @@ define DownloadVerify
 	mkdir -p $$(SRCDIR)
 	tar -C $$(SRCDIR) -xf $$<
 	$$(foreach p,$$(abspath $$(wildcard patches/$$(ARCH)-$$(notdir $$($(1)_DIR)).patch)), \
-	    echo PATCHING $$(p) ; \
-	    patch -d $$($(1)_DIR) -p1 -i $$(p) ; \
+	  echo PATCHING $$(p); \
+	  patch -d $$($(1)_DIR) -p1 -i $$(p); \
 	)
 	touch $$@
 
@@ -153,10 +153,10 @@ define DownloadVerify
 	wget -O - $$($(1)_URL) > $$@.tmp
 	sha512_actual="$$$$(sha512sum $$@.tmp | awk '{ print $$$$1; }')"; \
 	if [ x"$$$${sha512_actual}" != x"$$($(1)_SHA512)" ]; then \
-	    echo "Checksum mismatch for $$@.tmp"; \
-	    echo "    Expected: $$($(1)_SHA512)"; \
-	    echo "    Actual:   $$$${sha512_actual}"; \
-	    exit 1; \
+	  echo "Checksum mismatch for $$@.tmp"; \
+	  echo "    Expected: $$($(1)_SHA512)"; \
+	  echo "    Actual:   $$$${sha512_actual}"; \
+	  exit 1; \
 	fi
 	mv $$@.tmp $$@
 endef
@@ -173,7 +173,8 @@ $(foreach dep,$(DEPENDENCIES),$(eval $(dep) = $(TARGETDIR)/$($(dep)_VER).done))
 CONFIG = \
     --target=$(TARGET) \
     --host=$(HOST) --build=$(BUILD) \
-    --prefix=$(PREFIX)
+    --prefix=$(PREFIX) \
+    #
 
 CMAKE_CONFIG = -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 
@@ -266,17 +267,17 @@ $(BUILDDIR)/$(BINUTILS_VER)/Makefile: $(BINUTILS_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
 	( \
-	    cd $(@D) ; \
-	    $(PATHPRE) $(ENVS) CFLAGS="-O2 $(CFLAGS)" \
-	        $(BINUTILS_CFG) \
-	        $(CONFIG) \
-	        $(LINKER_CONFIG_ENABLE_GOLD) \
-	        --with-sysroot=$(SYSROOT) \
-	        --disable-nls \
-	        --program-prefix=$(TARGET)- \
-	        $(ENABLE_MULTILIB) \
-	        --enable-threads \
-	        --enable-plugins \
+	  cd $(@D); \
+	  $(PATHPRE) $(ENVS) CFLAGS="-O2 $(CFLAGS)" \
+	      $(BINUTILS_CFG) \
+	      $(CONFIG) \
+	      $(LINKER_CONFIG_ENABLE_GOLD) \
+	      --with-sysroot=$(SYSROOT) \
+	      --disable-nls \
+	      --program-prefix=$(TARGET)- \
+	      $(ENABLE_MULTILIB) \
+	      --enable-threads \
+	      --enable-plugins \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -284,13 +285,13 @@ $(BUILDDIR)/$(MPFR_VER)/Makefile: $(MPFR_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
 	( \
-	    cd $(@D) ; \
-	    $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
-	        $(MPFR_CFG) \
-	        $(CONFIG) \
-	        --program-prefix=$(TARGET)- \
-	        --enable-shared=no \
-	        --with-gmp=$(PREFIX) \
+	  cd $(@D); \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	      $(MPFR_CFG) \
+	      $(CONFIG) \
+	      --program-prefix=$(TARGET)- \
+	      --enable-shared=no \
+	      --with-gmp=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -298,15 +299,15 @@ $(BUILDDIR)/$(GMP_VER)/Makefile: $(GMP_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
 	( \
-	    cd $(@D) ; \
-	    $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
-	        $(GMP_CFG) \
-	        --host=$(HOST) --build=$(BUILD) \
-	        --prefix=$(PREFIX) \
-	        --disable-nls \
-	        --program-prefix=$(TARGET)- \
-	        --enable-shared=no \
-	        --with-mpfr=$(PREFIX) \
+	  cd $(@D); \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	      $(GMP_CFG) \
+	      --host=$(HOST) --build=$(BUILD) \
+	      --prefix=$(PREFIX) \
+	      --disable-nls \
+	      --program-prefix=$(TARGET)- \
+	      --enable-shared=no \
+	      --with-mpfr=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -314,14 +315,14 @@ $(BUILDDIR)/$(MPC_VER)/Makefile: $(MPC_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
 	( \
-	    cd $(@D) ; \
-	    $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
-	        $(MPC_CFG) \
-	        $(CONFIG) \
-	        --program-prefix=$(TARGET)- \
-	        --enable-shared=no \
-	        --with-mpfr=$(PREFIX) \
-	        --with-gmp=$(PREFIX) \
+	  cd $(@D); \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	      $(MPC_CFG) \
+	      $(CONFIG) \
+	      --program-prefix=$(TARGET)- \
+	      --enable-shared=no \
+	      --with-mpfr=$(PREFIX) \
+	      --with-gmp=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -355,19 +356,19 @@ $(BUILDDIR)/$(GCC_VER)/Makefile: $(GCC_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	mkdir -p $(@D)
 	( \
-	    cd $(@D) ; \
-	    $(PATHPRE) $(ENVS) $(GCC_CFG) $(EXTRA_CFLAGS) \
-	        $(CONFIG) \
-	        --with-sysroot=$(SYSROOT) \
-	        --with-debug-prefix-map=$(OUTPUT_ROOT)=devkit \
-	        --enable-languages=c,c++ \
-	        --enable-shared \
-	        --disable-nls \
-	        --with-gnu-as \
-	        --with-gnu-ld \
-	        --with-mpfr=$(PREFIX) \
-	        --with-gmp=$(PREFIX) \
-	        --with-mpc=$(PREFIX) \
+	  cd $(@D); \
+	  $(PATHPRE) $(ENVS) $(GCC_CFG) $(EXTRA_CFLAGS) \
+	      $(CONFIG) \
+	      --with-sysroot=$(SYSROOT) \
+	      --with-debug-prefix-map=$(OUTPUT_ROOT)=devkit \
+	      --enable-languages=c,c++ \
+	      --enable-shared \
+	      --disable-nls \
+	      --with-gnu-as \
+	      --with-gnu-ld \
+	      --with-mpfr=$(PREFIX) \
+	      --with-gmp=$(PREFIX) \
+	      --with-mpc=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -386,12 +387,12 @@ ifeq ($(HOST), $(TARGET))
 	$(info Configuring $@. Log in $(@D)/log.config)
 	mkdir -p $(@D)
 	( \
-	    cd $(@D) ; \
-	    $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" $(GDB_CFG) \
-	        $(CONFIG) \
-	        --with-sysroot=$(SYSROOT) \
-	        --with-mpfr=$(PREFIX) \
-	        --with-gmp=$(PREFIX) \
+	  cd $(@D); \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" $(GDB_CFG) \
+	      $(CONFIG) \
+	      --with-sysroot=$(SYSROOT) \
+	      --with-mpfr=$(PREFIX) \
+	      --with-gmp=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -410,9 +411,8 @@ $(BUILDDIR)/$(CCACHE_VER)/Makefile: $(CCACHE_SRC_MARKER)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
 	@( \
-	    cd $(@D) ; \
-	    $(PATHPRE) $(ENVS) $(CCACHE_CFG) \
-	        $(CCACHE_CONFIG) \
+	  cd $(@D); \
+	  $(PATHPRE) $(ENVS) $(CCACHE_CFG) $(CCACHE_CONFIG) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -424,11 +424,10 @@ ifeq ($(HOST),$(TARGET))
   $(GCC_PATCHED): $(LINK_LIBS_MARKER)
 	@echo -n 'Creating compiler symlinks...'
 	@for f in cpp; do \
-	    if [ ! -e $(PREFIX)/bin/$(TARGET)-$$f ]; \
-	    then \
-	        cd $(PREFIX)/bin && \
-	        ln -fs $$f $(TARGET)-$$f ; \
-	    fi \
+	  if [ ! -e $(PREFIX)/bin/$(TARGET)-$$f ]; then \
+	    cd $(PREFIX)/bin && \
+	    ln -fs $$f $(TARGET)-$$f; \
+	  fi \
 	done
 	@touch $@
 	@echo 'done'
@@ -440,13 +439,13 @@ ifeq ($(HOST),$(TARGET))
   $(LINK_LIBS_MARKER): $(GCC)
 	@echo -n 'Creating library symlinks...'
 	@for l in $(LIBDIRS); do \
-	    for f in `cd $(PREFIX)/$$l && ls`; do \
-	        if [ ! -e $(TARGETDIR)/$$l/$$f ]; then \
-	            mkdir -p $(TARGETDIR)/$$l && \
-	            cd $(TARGETDIR)/$$l/ && \
-	            ln -fs ../../$$l/$$f $$f; \
-	        fi \
-	    done; \
+	  for f in `cd $(PREFIX)/$$l && ls`; do \
+	    if [ ! -e $(TARGETDIR)/$$l/$$f ]; then \
+	      mkdir -p $(TARGETDIR)/$$l && \
+	      cd $(TARGETDIR)/$$l/ && \
+	      ln -fs ../../$$l/$$f $$f; \
+	    fi \
+	  done \
 	done
 	@touch $@
 	@echo 'done'
