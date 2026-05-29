@@ -3568,6 +3568,7 @@ int java_lang_reflect_Field::_modifiers_offset;
 int java_lang_reflect_Field::_trusted_final_offset;
 int java_lang_reflect_Field::_signature_offset;
 int java_lang_reflect_Field::_annotations_offset;
+JFR_ONLY(int java_lang_reflect_Field::_jfr_epoch_offset;)
 
 #define FIELD_FIELDS_DO(macro) \
   macro(_clazz_offset,     k, vmSymbols::clazz_name(),     class_signature,  false); \
@@ -3582,11 +3583,13 @@ int java_lang_reflect_Field::_annotations_offset;
 void java_lang_reflect_Field::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_Field_klass();
   FIELD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  JFR_ONLY(FIELD_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);)
 }
 
 #if INCLUDE_CDS
 void java_lang_reflect_Field::serialize_offsets(SerializeClosure* f) {
   FIELD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  JFR_ONLY(FIELD_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);)
 }
 #endif
 
@@ -3651,6 +3654,12 @@ void java_lang_reflect_Field::set_signature(oop field, oop value) {
 void java_lang_reflect_Field::set_annotations(oop field, oop value) {
   field->obj_field_put(_annotations_offset, value);
 }
+
+#if INCLUDE_JFR
+u2 java_lang_reflect_Field::epoch(oop ref) {
+  return static_cast<u2>(ref->int_field(_jfr_epoch_offset));
+}
+#endif // INCLUDE_JFR
 
 oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordComponent* component, TRAPS) {
   // Allocate java.lang.reflect.RecordComponent instance

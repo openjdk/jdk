@@ -36,7 +36,6 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
@@ -57,16 +56,9 @@ public:
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
     SuspendibleThreadSetJoiner stsj;
-    StringDedup::Requests requests;
-    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/,
-                   ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
-                   &requests);
-    // Concurrent marking loop flushes Java thread buffers, coordinating with a handshake.
-    // Here, a GC worker has completed marking work, so it is a good time to flush its SATB buffers too.
-    SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
-    satb_mq_set.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
+    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/);
   }
 };
 
@@ -75,18 +67,14 @@ class ShenandoahFinalMarkingTask : public WorkerTask {
 private:
   ShenandoahConcurrentMark* _cm;
   TaskTerminator*           _terminator;
-  bool                      _dedup_string;
 
 public:
-  ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
-    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {}
+  ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator) :
+    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator) {}
 
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    StringDedup::Requests requests;
-    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/,
-                   _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
-                   &requests);
+    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };
@@ -272,22 +260,22 @@ void ShenandoahConcurrentMark::finish_mark_work() {
 
     switch (_generation->type()) {
       case YOUNG:{
-        ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+        ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator);
         heap->workers()->run_task(&task);
         break;
       }
       case OLD:{
-        ShenandoahFinalMarkingTask<OLD> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+        ShenandoahFinalMarkingTask<OLD> task(this, &terminator);
         heap->workers()->run_task(&task);
         break;
       }
       case GLOBAL:{
-        ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+        ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator);
         heap->workers()->run_task(&task);
         break;
       }
       case NON_GEN:{
-        ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+        ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator);
         heap->workers()->run_task(&task);
         break;
       }

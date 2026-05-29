@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
+/**
+ * @test
+ * @bug 8383605
+ * @summary test some out of bounds parameters for createInterleavedRaster()
+ */
 
-#include "gc/shared/stringdedup/stringDedup.hpp"
+import java.awt.image.DataBuffer;
+import java.awt.image.Raster;
 
-class ShenandoahStringDedup : public StringDedup {
-public:
-  static inline bool is_string_candidate(oop obj);
-  static inline bool is_candidate(oop obj);
-  static inline bool dedup_requested(oop obj);
-};
+public class InterleavedRasterTest {
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
+    public static void main(String[] args) {
+
+        int w = 1;
+        int h = 1;
+        int b = -1;
+        test(w, h, b);
+
+        w = 100_000;
+        h = 1;
+        b = 100_000;
+        test(w, h, b);
+
+        w = 10_000;
+        h = 10_000;
+        b = 10_000;
+        test(w, h, b);
+    }
+
+    static void test(int w, int h, int b) {
+        try {
+            Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, b, null);
+            throw new RuntimeException("No IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+}
