@@ -125,7 +125,6 @@ public class TrayIcon {
         if (!SystemTray.isSupported()) {
             throw new UnsupportedOperationException();
         }
-        SunToolkit.insertTargetMapping(this);
     }
 
     /**

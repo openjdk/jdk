@@ -183,6 +183,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(CMAKE_C_FLAGS "${ORG_CMAKE_C_FLAGS} ${SLEEF_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${ORG_CMAKE_C_FLAGS} ${SLEEF_C_FLAGS}")
 
 # --------------------------------------------------------------------
 # sleef.h
@@ -448,7 +449,7 @@ foreach(SIMD ${SLEEF_SUPPORTED_LIBM_EXTENSIONS})
       sleef_concat_files(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/include/alias_${SIMDLC}.h
         SOURCES ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_sp.h.tmp ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_dp.h.tmp
-        )
+               )
       add_custom_target(alias_${SIMDLC}.h_generated SOURCES ${CMAKE_CURRENT_BINARY_DIR}/include/alias_${SIMDLC}.h)
       add_dependencies(${OBJECT_${SIMD}} alias_${SIMDLC}.h_generated)
       add_dependencies(${OBJECTDET_${SIMD}} alias_${SIMDLC}.h_generated)
@@ -504,6 +505,8 @@ if(SLEEF_BUILD_INLINE_HEADERS)
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/)
   set(INLINE_HEADER_FILES_GENERATED "")
 
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sleefinline_header.h.org.in ${CMAKE_CURRENT_BINARY_DIR}/sleefinline_header.h.org)
+
   if (SED_COMMAND)
     foreach(SIMD ${SLEEF_SUPPORTED_LIBM_EXTENSIONS} CUDA)
       if(COMPILER_SUPPORTS_${SIMD} OR ${SIMD} STREQUAL "CUDA")
@@ -521,10 +524,10 @@ if(SLEEF_BUILD_INLINE_HEADERS)
           set(INLINE_HEADER_ORG ${CMAKE_CURRENT_SOURCE_DIR}/sleefinline_cuda_header.h.org)
           # Remove redundant __device__
           set(TARGET_REPLACEMENTS -e "s/__device__ __device__/__device__/g" -e "s/__device__ __device__/__device__/g")
-          set(TARGET_ADDSUFFIX_KEYWORDS double2 double3 float2)
+          set(TARGET_ADDSUFFIX_KEYWORDS)
         else()
           set(TARGET_ADDSUFFIX_KEYWORDS Sleef_rempitabdp Sleef_rempitabsp)
-          set(INLINE_HEADER_ORG ${CMAKE_CURRENT_SOURCE_DIR}/sleefinline_header.h.org)
+          set(INLINE_HEADER_ORG ${CMAKE_CURRENT_BINARY_DIR}/sleefinline_header.h.org)
         endif()
 
         set(INLINE_HEADER_FILE ${PROJECT_BINARY_DIR}/include/sleefinline_${SIMDLC}.h)
@@ -833,12 +836,6 @@ if (SLEEF_ARCH_S390X)
   add_dependencies(disps390x_128_obj disps390x_128.c_generated renamedsp128.h_generated ${TARGET_HEADERS})
   target_sources(${TARGET_LIBSLEEF} PRIVATE $<TARGET_OBJECTS:disps390x_128_obj>)
 
-  if(COMPILER_SUPPORTS_VXE2)
-    add_library(tryvxe2_obj OBJECT tryvxe2.c)
-    target_compile_options(tryvxe2_obj PRIVATE ${FLAGS_ENABLE_VXE2})
-    set_target_properties(tryvxe2_obj PROPERTIES ${COMMON_TARGET_PROPERTIES})
-    target_sources(${TARGET_LIBSLEEF} PRIVATE $<TARGET_OBJECTS:tryvxe2_obj>)
-  endif()
 endif(SLEEF_ARCH_S390X)
 
 # --------------------------------------------------------------------
