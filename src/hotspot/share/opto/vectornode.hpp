@@ -174,6 +174,7 @@ class VectorNode : public TypeNode {
   static bool is_muladds2i(const Node* n);
   static bool is_vector_long_mul_or_muladdsub(const Node* n);
   static bool is_vector_long_multiply_addsub(const Node* n);
+  static bool phi_has_vector_long_mul_or_muladdsub_input(Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);

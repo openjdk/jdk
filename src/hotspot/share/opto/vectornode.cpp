@@ -480,6 +480,20 @@ bool VectorNode::is_vector_long_mul_or_muladdsub(const Node* n) {
   return is_vector_long_multiply_addsub(n) || n->Opcode() == Op_MulVL;
 }
 
+bool VectorNode::phi_has_vector_long_mul_or_muladdsub_input(Node* n) {
+  if (!n->is_Phi()) {
+    return false;
+  }
+
+  for (uint i = 1; i < n->req(); i++) {
+    if (VectorNode::is_vector_long_mul_or_muladdsub(n->in(i))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 bool VectorNode::is_vector_long_multiply_addsub(const Node* n) {
   if (n->Opcode() != Op_SubVL && n->Opcode() != Op_AddVL) {
     return false;

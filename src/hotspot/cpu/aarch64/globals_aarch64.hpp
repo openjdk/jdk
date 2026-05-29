@@ -99,7 +99,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use SIMD SHA3 instructions for SHA3 intrinsic")              \
   product(bool, AvoidUnalignedAccesses, false,                          \
           "Avoid generating unaligned memory accesses")                 \
-  product(bool, AvoidMLAChain, false,                                   \
+  product(bool, AvoidMLAChain, false, DIAGNOSTIC,                       \
           "Avoid long dependency chains formed by MLA instructions")    \
   product(bool, UseLSE, false,                                          \
           "Use LSE instructions")                                       \

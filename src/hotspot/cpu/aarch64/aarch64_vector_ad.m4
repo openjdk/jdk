@@ -434,19 +434,9 @@ source %{
     }
 
     // If an input is a Phi, check whether *its* incoming values are long-mul patterns.
-    if (in1->is_Phi()) {
-      for (uint i = 1 ; i < in1->req(); i++) {
-        if (VectorNode::is_vector_long_mul_or_muladdsub(in1->in(i))) {
-          return false;
-        }
-      }
-    }
-    if (in2->is_Phi()) {
-      for (uint i = 1 ; i < in2->req(); i++) {
-        if (VectorNode::is_vector_long_mul_or_muladdsub(in2->in(i))) {
-          return false;
-        }
-      }
+    if (VectorNode::phi_has_vector_long_mul_or_muladdsub_input(in1) ||
+        VectorNode::phi_has_vector_long_mul_or_muladdsub_input(in2)) {
+      return false;
     }
 
     return true;

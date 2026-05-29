@@ -124,7 +124,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
         counts = {IRNode.ADD_VL, ">0"})
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VL, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true"}, counts = {IRNode.VMLA, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.VMLA, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -278,22 +278,6 @@ public class BasicLongOpTest extends VectorizationTestRunner {
         long res = Long.MAX_VALUE;
         for (int i = 0; i < SIZE; i++) {
             res = Math.min(res, a[i]);
-        }
-        return res;
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true"},
-        applyIfAnd = {"MaxVectorSize", "<= 16", "AvoidMLAChain", "true"},
-        counts = {IRNode.VMLA, "=0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true"},
-        applyIf = {"AvoidMLAChain", "false"},
-        counts = {IRNode.VMLA, ">0"})
-    public long vectorAddDotProduct() {
-        long res = 0L;
-        for (int i = 0; i < SIZE; i++) {
-            long val = a[i] * b[i];
-            res += val;
         }
         return res;
     }

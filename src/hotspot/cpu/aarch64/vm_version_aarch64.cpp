@@ -279,6 +279,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
       FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
     }
+    // Avoiding fused multiply-add instruction chains and generating
+    // separate SVE multiply and add instructions can improve
+    // instruction-level parallelism and overall performance.
     if (FLAG_IS_DEFAULT(AvoidMLAChain)) {
       FLAG_SET_DEFAULT(AvoidMLAChain, true);
     }

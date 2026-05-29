@@ -338,7 +338,6 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
-
   // Determine whether the given node is a valid vector MLA/MLS candidate.
   static bool is_multiply_accumulate_candidate(const Node* n);
 

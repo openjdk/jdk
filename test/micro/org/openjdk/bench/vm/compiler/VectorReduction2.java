@@ -1114,6 +1114,16 @@ public abstract class VectorReduction2 {
     }
 
     @Benchmark
+    public void longAddDotProductShared(Blackhole bh) {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] * in2L[i];
+            acc += val + val * in3L[i];
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
     public void longMulDotProduct(Blackhole bh) {
         long acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
