@@ -1463,7 +1463,7 @@ void  os::dll_unload(void *lib) {
 
 void* os::dll_lookup(void *lib, const char *name) {
   ::SetLastError(0); // Clear old pending errors
-  void* ret = ::GetProcAddress((HMODULE)lib, name);
+  void* ret = CAST_FROM_FN_PTR(void*, ::GetProcAddress((HMODULE)lib, name));
   if (ret == nullptr) {
     char buf[512];
     if (os::lasterror(buf, sizeof(buf)) > 0) {
@@ -1474,7 +1474,7 @@ void* os::dll_lookup(void *lib, const char *name) {
 }
 
 void* os::lookup_function(const char* name) {
-  return ::GetProcAddress(nullptr, name);
+  return CAST_FROM_FN_PTR(void*, ::GetProcAddress(nullptr, name));
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
