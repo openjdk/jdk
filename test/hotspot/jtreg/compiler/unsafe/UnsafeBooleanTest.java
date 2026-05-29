@@ -29,7 +29,8 @@ package compiler.unsafe;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
- * @run main/bootclasspath/othervm -Xbatch ${test.main.class}
+ * @run main/bootclasspath/othervm -Xbatch -DMODE=LSB -DMEMBAR=false ${test.main.class}
+ * @run main/bootclasspath/othervm -Xbatch -DMODE=LSB -DMEMBAR=true  ${test.main.class}
  */
 
 import java.lang.classfile.ClassFile;
@@ -51,6 +52,8 @@ public class UnsafeBooleanTest {
     static final Class<UnsafeBooleanTest> THIS_CLASS = UnsafeBooleanTest.class;
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
+    // The regression test uses only mode LSB.
+    // See attached log files on JDK-8385119 for sample outputs from other modes.
     enum Mode {
         LSB("(x & 1)"),                 // Truncate to least significant bit
         CTZ("(byte != 0)"),             // Compare to zero
@@ -61,6 +64,9 @@ public class UnsafeBooleanTest {
     }
 
     static final boolean VERBOSE = Boolean.getBoolean("VERBOSE");
+
+    // The memory barrier, if present, disrupts certain optimizations like store-to-load chaining.
+    // There must be no errors reported in either setting, but the "interesting" anomalies might change.
     static final boolean MEMBAR = Boolean.parseBoolean(System.getProperty("MEMBAR", Boolean.TRUE.toString()));
 
     // Tested normalization mode
@@ -70,23 +76,40 @@ public class UnsafeBooleanTest {
         System.out.println("MODE=" + MODE.desc);
     }
 
+    // int testAllBoolean(Unsafe unsafe, Object base, long offset, int value) {
+    //   unsafe.putBoolean(base, offset, value);
+    //   if (MEMBAR) { unsafe.fullFence(); }
+    //   return unsafe.getBoolean(base, offset);
+    // }
+    // That is, write a normalized 0/1 byte, then normalize again on read. This is the safest route.
+    static final MethodHandle TEST_ALL_BOOLEAN_MH = generateTestMethod(true, true);
+
     // int testPutBoolean(Unsafe unsafe, Object base, long offset, int value) {
     //   unsafe.putBoolean(base, offset, value);
+    //   if (MEMBAR) { unsafe.fullFence(); }
     //   return unsafe.getByte(base, offset);
     // }
+    //
+    // That is, write a normalized 0/1, then read whatever byte appeared in memory.
+    // This should behave perfectly, even if the incoming boolean was "dirty".
     static final MethodHandle TEST_PUT_BOOLEAN_MH = generateTestMethod(false, true);
 
     // int testGetBoolean(Unsafe unsafe, Object base, long offset, int value) {
     //   unsafe.putByte(base, offset, value);
+    //   if (MEMBAR) { unsafe.fullFence(); }
     //   return unsafe.getBoolean(base, offset);
     // }
+    //
+    // That is, smash an arbitrary byte into memory (even if typed as a boolean),
+    // then read as a boolean, normalizing the read byte to 0/1.
+    // This models catastrophically poor use of unsafe, and is allowed to return
+    // non-normalized values (not 0 or 1), due to JIT optimizations of
+    // getBoolean. These optimizations assume (for Java heap booleans)
+    // that `x&1` can be optimized to just x because the loaded x is strongly
+    // typed (in the Java heap) as a boolean and must therefore be 0 or 1.
+    // This unit test detects a subversion of this invariant and reports,
+    // not an error, but an "interesting" case.
     static final MethodHandle TEST_GET_BOOLEAN_MH = generateTestMethod(true, false);
-
-    // int testAllBoolean(Unsafe unsafe, Object base, long offset, int value) {
-    //   unsafe.putBoolean(base, offset, value);
-    //   return unsafe.getBoolean(base, offset);
-    // }
-    static final MethodHandle TEST_ALL_BOOLEAN_MH = generateTestMethod(true, true);
 
     static boolean B;
     static long J;
@@ -168,6 +191,12 @@ public class UnsafeBooleanTest {
         }
     }
 
+    // Model what we expect the interpreter and/or JIT to do when accessing a boolean in memory.
+    // The `x!=0` behavior is historical, while `x&1` (truncation) is current. Note that
+    // JIT sometimes omit the normalization step, if the boolean in question is being READ from
+    // a Java heap variable that is strongly typed as a boolean. (Not an unsafely generated address,
+    // not off-heap.) When WRITING booleans to the Java heap, the interpreter and JIT both make sure
+    // to normalize as `x&1`, so the Java heap is never polluted (unless non-boolean accessor is used).
     static int expected(int value, boolean normalizedOnStore) {
         byte b = (byte) value;
         int lsb = (b & 1);
@@ -280,6 +309,18 @@ public class UnsafeBooleanTest {
         return report;
     }
 
+    // The "interesting" thing is an anomaly where a bad heap byte (poked in by Unsafe::putByte) comes back as a bad
+    // boolean (unsigned byte, no sign extension). When the anomaly is absent, the `x&1` normalization was applied
+    // by the interpreter or by the compiled code. When present, the compiler has optimized away the &1 in
+    // x&1, on the grounds that it clearly sees a load from a Java-heap boolean variable (field or array element),
+    // which can never ever be anything other than 0 or 1. Unless some buffoon called Unsafe::putByte to poke in
+    // something else. We are emulating such buffoons, to make sure their damage would be somewhat limited.
+    //
+    // This anomaly only occurs for a typed or constant reference to a container (instance or array) and a strongly-typed
+    // variable in that container (boolean field or element). Thus, if the container is off-heap, or the reference
+    // is not strongly typed, or if it is typed but the poked byte is in a non-boolean variable (a "mismatch"),
+    // then the x&1 normalization is retained in the compiled code. We test the strongly-typed case by
+    // binding the container object (instance or array) as a constant into the test loop (using insertArguments).
     static final HashMap<Test,HashMap<Result,String>> INTERESTING = new HashMap<>();
 
     static void reportInterestingResult(Test t, int value, int result, int expected) {

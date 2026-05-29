@@ -5373,7 +5373,9 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
 #endif // !PRODUCT
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
-  if (type != nullptr && phase->type(value)->higher_equal(type)) {
+  precond(type != nullptr);
+
+  if (phase->type(value)->higher_equal(type)) {
     return value;
   }
   Node* result = nullptr;
@@ -5381,7 +5383,9 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
     result = phase->transform(new LShiftINode(value, phase->intcon(24)));
     result = new RShiftINode(result, phase->intcon(24));
   } else if (bt == T_BOOLEAN) {
-    result = new AndINode(value, phase->intcon(1));
+    assert(type == TypeInt::BOOL || type == TypeInt::UBYTE, "unexpected boolean type: %s", Type::str(type));
+    Node* mask = phase->intcon(type == TypeInt::BOOL ? 1 : 0xFF);
+    result = new AndINode(value, mask);
   } else if (bt == T_CHAR) {
     result = new AndINode(value,phase->intcon(0xFFFF));
   } else {
