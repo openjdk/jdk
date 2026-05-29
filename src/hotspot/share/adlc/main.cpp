@@ -298,6 +298,8 @@ int main(int argc, char *argv[])
   AD.buildMachNodeGenerator(AD._CPP_GEN_file._fp);// .cpp
   // define methods for machine dependent instruction matching
   AD.buildInstructMatchCheck(AD._CPP_file._fp);  // .cpp
+  // helper for identical vector constant values deduplication
+  AD.buildVectorIsSameConstValue(AD._CPP_file._fp); // .cpp
   // define methods for machine dependent frame management
   AD.buildFrameMethods(AD._CPP_file._fp);         // .cpp
   AD.generate_needs_deep_clone_jvms(AD._CPP_file._fp);
