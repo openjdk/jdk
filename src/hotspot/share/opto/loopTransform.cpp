@@ -2742,28 +2742,29 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
   // Need to find the main-loop zero-trip guard
   Node* const zero_trip_guard_success_proj = cl->skip_assertion_predicates_with_halt();
+  DEBUG_ONLY(ensure_zero_trip_guard_proj(zero_trip_guard_success_proj, true));
   Node* const zero_trip_guard = zero_trip_guard_success_proj->in(0);
-  Node* opqzm = zero_trip_guard->in(1)->in(1)->in(2);
-  assert(opqzm->in(1) == main_limit, "do not understand situation");
+  Node* const opaque_zero_trip_guard = zero_trip_guard->in(1)->in(1)->in(2);
+  assert(opaque_zero_trip_guard->in(1) == main_limit, "unexpected limit node: %s", opaque_zero_trip_guard->in(1)->Name());
 
   // Find the pre-loop limit; we will expand its iterations to
   // not ever trip low tests.
-  Node* p_f = zero_trip_guard->in(0);
+  Node* pre_loop_exit_proj = zero_trip_guard->in(0);
   // pre loop may have been optimized out
-  if (p_f->Opcode() != Op_IfFalse) {
+  if (!pre_loop_exit_proj->is_IfFalse()) {
     return;
   }
-  CountedLoopEndNode *pre_end = p_f->in(0)->as_CountedLoopEnd();
-  assert(pre_end->loopnode()->is_pre_loop(), "");
-  Node *pre_opaq1 = pre_end->limit();
+  CountedLoopEndNode* pre_end = pre_loop_exit_proj->in(0)->as_CountedLoopEnd();
+  assert(pre_end->loopnode()->is_pre_loop(), "not a pre loop");
+  Node* pre_loop_limit = pre_end->limit();
   // Occasionally it's possible for a pre-loop Opaque1 node to be
   // optimized away and then another round of loop opts attempted.
   // We can not optimize this particular loop in that case.
-  if (pre_opaq1->Opcode() != Op_Opaque1) {
+  if (pre_loop_limit->Opcode() != Op_Opaque1) {
     return;
   }
-  Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
-  Node *pre_limit = pre_opaq->in(1);
+  Opaque1Node* pre_loop_limit_opaque = pre_loop_limit->as_Opaque1();
+  Node* pre_limit = pre_loop_limit_opaque->in(1);
   Node* pre_limit_ctrl = get_ctrl(pre_limit);
 
   // Where do we put new limit calculations
@@ -2777,7 +2778,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
-  Node *orig_limit = pre_opaq->original_loop_limit();
+  Node *orig_limit = pre_loop_limit_opaque->original_loop_limit();
   if (orig_limit == nullptr || _igvn.type(orig_limit) == Type::TOP) {
     return;
   }
@@ -2999,9 +3000,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       // Find loads off the surviving projection; remove their control edge
       for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
         Node* cd = dp->fast_out(i); // Control-dependent node
-        if (cd->is_Load() && cd->depends_only_on_test()) {   // Loads can now float around in the loop
-          // Allow the load to float around in the loop, or before it (either after Template Assertion Predicates
-          // or when absent after zero trip guard)
+        if (cd->is_Load() && cd->depends_only_on_test()) {
+          // Allow a load to float around in the loop, or before it but after this loop's Template Assertion Predicates
+          // or when absent after the loop's zero trip guard.
           _igvn.replace_input_of(cd, 0, ctrl_target_for_data_rewire);
           --i;
           --imax;
@@ -3023,13 +3024,13 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
   }
   // new pre_limit can push Bool/Cmp/Opaque nodes down (when one of the eliminated condition has parameters that are not
   // loop invariant in the pre loop.
-  set_ctrl(pre_opaq, new_limit_ctrl);
+  set_ctrl(pre_loop_limit_opaque, new_limit_ctrl);
   // Can't use new_limit_ctrl for Bool/Cmp because it can be out of loop while they are loop variant. Conservatively set
   // control to latest possible one.
   set_ctrl(pre_end->cmp_node(), pre_end->in(0));
   set_ctrl(pre_end->in(1), pre_end->in(0));
 
-  _igvn.replace_input_of(pre_opaq, 1, pre_limit);
+  _igvn.replace_input_of(pre_loop_limit_opaque, 1, pre_limit);
 
   // Note:: we are making the main loop limit no longer precise;
   // need to round up based on stride.
@@ -3065,11 +3066,11 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
     _igvn.replace_node(final_iv_placeholder, final_iv);
   }
   // The OpaqueNode is unshared by design
-  assert(opqzm->outcnt() == 1, "cannot hack shared node");
-  _igvn.replace_input_of(opqzm, 1, main_limit);
+  assert(opaque_zero_trip_guard->outcnt() == 1, "cannot hack shared node");
+  _igvn.replace_input_of(opaque_zero_trip_guard, 1, main_limit);
   // new main_limit can push opaque node for zero trip guard down (when one of the eliminated condition has parameters
   // that are not loop invariant in the pre loop).
-  set_ctrl(opqzm, new_limit_ctrl);
+  set_ctrl(opaque_zero_trip_guard, new_limit_ctrl);
   // Bool/Cmp nodes for zero trip guard should have been assigned control between the main and pre loop (because zero
   // trip guard depends on induction variable value out of pre loop) so shouldn't need to be adjusted
   assert(is_dominator(new_limit_ctrl, get_ctrl(zero_trip_guard->in(1)->in(1))), "control of cmp should be below control of updated input");
