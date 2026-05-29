@@ -890,10 +890,18 @@ struct ShenandoahClearSelfForwarded : ObjectClosure {
     if (obj->is_forwarded()) {
       if (obj->is_self_forwarded()) {
         obj->unset_self_forwarded();
-      } else if (_cards != nullptr) {
+      } else {
+        // We may also have regularly forwarded objects left in this region.
+        // We must clear them for old before they are walked for the remembered
+        // set scan. We clear objects in young region for hygiene purposes. These
+        // regions could be walked for a heap dump or something else and the
+        // forwarding pointer is not maintained (and the mark word is not usable
+        // in this state when compact object headers are enabled).
         HeapWord* p = cast_from_oop<HeapWord*>(obj);
         CollectedHeap::fill_with_object(p, ShenandoahForwarding::size(obj));
-        _cards->register_object_without_lock(p);
+        if (_cards != nullptr) {
+          _cards->register_object_without_lock(p);
+        }
       }
     }
   }
