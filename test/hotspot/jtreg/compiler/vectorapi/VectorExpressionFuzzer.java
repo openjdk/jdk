@@ -33,6 +33,16 @@
  * @run driver ${test.main.class}
  */
 
+// TODO: Some compilation bailouts are to be expected, for example, we've encountered this before:
+//         COMPILE SKIPPED: out of virtual registers in LIR generator (retry at different tier)
+//       Which manifested in:
+//         compiler.lib.ir_framework.shared.TestRunException: <some method> not compilable (anymore) at level C1_FULL_PROFILE. Most likely, this is not expected, but if it is, you can use 'allowNotCompilable'.
+//
+//       It would be good to only selectively allow some bailouts. For now, we just have to do:
+//         @Test(allowNotCompilable = true)
+//       But after JDK-8378943, we should list only the expected bailouts, so that we can
+//       detect and investigate any unexpected bailouts.
+
 package compiler.vectorapi;
 
 import java.util.List;
@@ -118,7 +128,7 @@ public class VectorExpressionFuzzer {
 
                 static final Object $GOLD = $test();
 
-                @Test
+                @Test(allowNotCompilable = true)
                 public static Object $test() {
                     try {
                 """,
@@ -287,7 +297,7 @@ public class VectorExpressionFuzzer {
                 """
                 }
 
-                @Test
+                @Test(allowNotCompilable = true)
                 public static Object $test(
                 """,
                 receiveArguments,

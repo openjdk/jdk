@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/filemap.hpp"
@@ -149,11 +150,16 @@ private:
   class ExclusionCheckCandidates;
   static DumpTimeSharedClassTable* _dumptime_table;
 
-  static ArchiveInfo _static_archive;
-  static ArchiveInfo _dynamic_archive;
+  static ArchiveInfo _info_for_static_archive;
+  static ArchiveInfo _info_for_dynamic_archive;
+  static ArchiveInfo _info_for_dumping;
 
-  static ArchiveInfo* get_archive(bool is_static_archive) {
-    return is_static_archive ? &_static_archive : &_dynamic_archive;
+  static ArchiveInfo* get_archive(bool is_static_archive, bool is_dumping) {
+    if (is_dumping) {
+      return &_info_for_dumping;
+    } else {
+      return is_static_archive ? &_info_for_static_archive : &_info_for_dynamic_archive;
+    }
   }
 
   static InstanceKlass* load_shared_class_for_builtin_loader(
@@ -312,7 +318,7 @@ public:
 
   template <typename T>
   static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
-    assert(MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr), "must be");
+    assert(AOTMetaspace::in_aot_cache(ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
     uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
     return primitive_hash<uintx>(offset);
