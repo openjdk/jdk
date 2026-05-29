@@ -1135,6 +1135,594 @@ public class VectorMaskCompareNotTest {
         verifyResultsDouble(D_SPECIES, VectorOperators.LT, da, db);
     }
 
+    // Cast variants of the byte, short and int tests above. These cases use
+    // mask compares whose result feeds into a VectorMaskCast (and either an
+    // explicit .not()/xor or an all-true mask xor).
+    //
+    // The IR expectation depends on whether the platform requires partial
+    // vector operations (see Matcher::vector_needs_partial_operations):
+    //   * On SVE, a sub-register vector compare is lowered via
+    //     ideal_partial_operations(), which generates an all-true predicate
+    //     with VectorMaskGen and attaches it to the VectorMaskCmp. The
+    //     compare becomes predicated, so after JDK-8382532 the
+    //     XorV-VectorMaskCmp optimization does not fire and one not node
+    //     (XorVMask) remains.
+    //   * On all other supported platforms (ASIMD-only, AVX2/AVX-512, RVV),
+    //     vector_needs_partial_operations() returns false, the
+    //     VectorMaskCmp stays unpredicated, the optimization fires and the
+    //     not nodes are folded into negated VectorMaskCmps. No XorV/XorVMask
+    //     remains.
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareEQMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.EQ, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.EQ);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareNEMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.NE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.NE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareLTMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.LT, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.LT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareGTMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.GT, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.GT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareLEMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.LE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.LE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareGEMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.GE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.GE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareULTMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.ULT, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.ULT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareUGTMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.UGT, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.UGT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareULEMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.ULE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.ULE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "sve", "true" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 1" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareUGEMaskNotByteCast() {
+        testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.UGE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
+        verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.UGE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareEQMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.EQ, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.EQ);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.EQ, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.EQ);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareNEMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.NE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.NE);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.NE, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.NE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareLTMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.LT, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.LT);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.LT, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.LT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareGTMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.GT, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.GT);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.GT, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.GT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareLEMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.LE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.LE);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.LE, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.LE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareGEMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.GE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.GE);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.GE, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.GE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareULTMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.ULT, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.ULT);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.ULT, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.ULT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareUGTMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.UGT, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.UGT);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.UGT, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.UGT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareULEMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.ULE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.ULE);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.ULE, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.ULE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareUGEMaskNotShortCast() {
+        testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.UGE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
+        verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.UGE);
+        testCompareMaskNotShort(ShortVector.SPECIES_128, VectorOperators.UGE, (m) -> { return m.cast(ByteVector.SPECIES_64).not(); });
+        verifyResultsShort(ShortVector.SPECIES_128, VectorOperators.UGE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareEQMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.EQ, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.EQ);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.EQ, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.EQ);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareNEMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.NE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.NE);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.NE, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.NE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareLTMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.LT, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.LT);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.LT, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.LT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareGTMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.GT, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.GT);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.GT, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.GT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareLEMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.LE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.LE);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.LE, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.LE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareGEMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.GE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.GE);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.GE, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.GE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareULTMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.ULT, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.ULT);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.ULT, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.ULT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareUGTMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.UGT, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.UGT);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.UGT, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.UGT);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareULEMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.ULE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.ULE);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.ULE, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.ULE);
+    }
+
+    @Test
+    @IR(counts = { IRNode.XOR_V_MASK, "= 1",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "sve", "true" },
+        applyIf = { "MaxVectorSize", "= 16" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+    @IR(counts = { IRNode.XOR_V_MASK, "= 0",
+                   IRNode.XOR_V, "= 0",
+                   IRNode.VECTOR_MASK_CMP, "= 2" },
+        applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
+    public static void testCompareUGEMaskNotIntCast() {
+        testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.UGE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
+        verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.UGE);
+        testCompareMaskNotInt(IntVector.SPECIES_128, VectorOperators.UGE, (m) -> { return m.cast(ShortVector.SPECIES_64).not(); });
+        verifyResultsInt(IntVector.SPECIES_128, VectorOperators.UGE);
+    }
+
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
