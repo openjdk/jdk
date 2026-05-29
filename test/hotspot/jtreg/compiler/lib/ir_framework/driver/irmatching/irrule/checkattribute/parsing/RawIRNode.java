@@ -53,6 +53,11 @@ public class RawIRNode {
         return IRNode.getIRNodeAccessString(node);
     }
 
+    public String nodeIdentifier() {
+        return irNodePlaceholder() +
+            (userPostfix.isValid() ? ":" + userPostfix.value() : "");
+    }
+
     public CompilePhase defaultCompilePhase() {
         return IRNode.getDefaultPhase(node);
     }
