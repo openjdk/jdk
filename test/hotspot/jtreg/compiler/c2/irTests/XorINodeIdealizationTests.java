@@ -31,7 +31,7 @@ import static java.lang.Integer.MIN_VALUE;
 
 /*
  * @test
- * @bug 8281453 8347645 8261008 8267332
+ * @bug 8281453 8347645 8261008 8267332 8317521
  * @summary Test correctness of optimizations of xor
  * @library /test/lib /
  * @run driver compiler.c2.irTests.XorINodeIdealizationTests
@@ -51,7 +51,8 @@ public class XorINodeIdealizationTests {
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
                  "test16", "test17",
-                 "testConstXor", "testXorSelf"
+                 "testConstXor", "testXorSelf",
+                 "testXorMin"
     })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -89,6 +90,7 @@ public class XorINodeIdealizationTests {
         Asserts.assertEQ(-2023 - a          , test17(a));
         Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
         Asserts.assertEQ(0                  , testXorSelf(a));
+        Asserts.assertEQ(a + MIN_VALUE      , testXorMin(a));
     }
 
     @Test
@@ -244,6 +246,14 @@ public class XorINodeIdealizationTests {
     // Checks (x ^ x)  => c (constant folded)
     public int testXorSelf(int x) {
         return x ^ x;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR_I})
+    @IR(counts = {IRNode.ADD_I, "1"})
+    // Checks x ^ MIN_VALUE => x + MIN_VALUE
+    public int testXorMin(int x) {
+        return x ^ MIN_VALUE;
     }
 
     private static final boolean CONST_BOOL_1 = RunInfo.getRandom().nextBoolean();

@@ -25,9 +25,11 @@ package compiler.c2.irTests;
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 
+import static compiler.lib.ir_framework.IRNode.*;
+
 /*
  * @test
- * @bug 8267265
+ * @bug 8267265 8317521
  * @summary Test that Ideal transformations of AddINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.AddINodeIdealizationTests
@@ -45,7 +47,8 @@ public class AddINodeIdealizationTests {
                  "test14", "test15", "test16",
                  "test17", "test18", "test19",
                  "test20", "test21", "test22",
-                 "test23", "test24", "test25"})
+                 "test23", "test24", "test25",
+                 "testAddMin"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -90,6 +93,7 @@ public class AddINodeIdealizationTests {
         Asserts.assertEQ((a - b) + 190                  , test23(a, b));
         Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test24(a, b));
         Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test25(a, b));
+        Asserts.assertEQ(a + Integer.MIN_VALUE          , testAddMin(a));
     }
 
     @Test
@@ -310,5 +314,13 @@ public class AddINodeIdealizationTests {
     // Checks Math.min(a, b) + Math.max(a, b) => a + b
     public int test25(int a, int b) {
         return Math.min(a, b) + Math.max(a, b);
+    }
+
+    @Test
+    @IR(counts = {ADD_I, "1"})
+    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_I_REG_MIN, "1"})
+    // Checks x + MIN_VALUE is matched by addI_reg_min on AArch64
+    public int testAddMin(int x) {
+        return x + Integer.MIN_VALUE;
     }
 }

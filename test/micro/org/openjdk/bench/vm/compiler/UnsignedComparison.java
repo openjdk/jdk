@@ -57,9 +57,16 @@ public class UnsignedComparison {
     }
 
     @Benchmark
-    public void intVarDirect(Blackhole bh) {
+    public void intVarDirectUsingAdd(Blackhole bh) {
         for (int i = 0; i < ITERATIONS; i++) {
             bh.consume(arg0 + INT_MIN < arg1 + INT_MIN);
+        }
+    }
+
+    @Benchmark
+    public void intVarDirectUsingXor(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume((arg0 ^ INT_MIN) < (arg1 ^ INT_MIN));
         }
     }
 
@@ -78,9 +85,16 @@ public class UnsignedComparison {
     }
 
     @Benchmark
-    public void intConDirect(Blackhole bh) {
+    public void intConDirectUsingAdd(Blackhole bh) {
         for (int i = 0; i < ITERATIONS; i++) {
             bh.consume(arg0 + INT_MIN < CONST_OPERAND + INT_MIN);
+        }
+    }
+
+    @Benchmark
+    public void intConDirectUsingXor(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume((arg0 ^ INT_MIN) < (CONST_OPERAND ^ INT_MIN));
         }
     }
 
@@ -99,9 +113,16 @@ public class UnsignedComparison {
     }
 
     @Benchmark
-    public void longVarDirect(Blackhole bh) {
+    public void longVarDirectUsingAdd(Blackhole bh) {
         for (int i = 0; i < ITERATIONS; i++) {
             bh.consume(arg0 + LONG_MIN < arg1 + LONG_MIN);
+        }
+    }
+
+    @Benchmark
+    public void longVarDirectUsingXor(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume((arg0 ^ LONG_MIN) < (arg1 ^ LONG_MIN));
         }
     }
 
@@ -120,9 +141,16 @@ public class UnsignedComparison {
     }
 
     @Benchmark
-    public void longConDirect(Blackhole bh) {
+    public void longConDirectUsingAdd(Blackhole bh) {
         for (int i = 0; i < ITERATIONS; i++) {
             bh.consume(arg0 + LONG_MIN < CONST_OPERAND + LONG_MIN);
+        }
+    }
+
+    @Benchmark
+    public void longConDirectUsingXor(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            bh.consume((arg0 ^ LONG_MIN) < (CONST_OPERAND ^ LONG_MIN));
         }
     }
 

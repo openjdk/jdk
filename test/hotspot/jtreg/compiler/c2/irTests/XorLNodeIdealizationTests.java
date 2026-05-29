@@ -31,7 +31,7 @@ import static java.lang.Long.MIN_VALUE;
 
 /*
  * @test
- * @bug 8281453 8347645 8261008 8267332
+ * @bug 8281453 8347645 8261008 8267332 8317521
  * @summary Test correctness of optimizations of xor
  * @library /test/lib /
  * @run driver compiler.c2.irTests.XorLNodeIdealizationTests
@@ -52,6 +52,7 @@ public class XorLNodeIdealizationTests {
                  "test13", "test14", "test15",
                  "test16", "test17",
                  "testConstXor", "testXorSelf",
+                 "testXorMin"
     })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
@@ -89,6 +90,7 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(-2023 - a          , test17(a));
         Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
         Asserts.assertEQ(0L                 , testXorSelf(a));
+        Asserts.assertEQ(a + MIN_VALUE      , testXorMin(a));
     }
 
     @Test
@@ -244,6 +246,14 @@ public class XorLNodeIdealizationTests {
     // Checks (x ^ x)  => c (constant folded)
     public long testXorSelf(long x) {
         return x ^ x;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR_L})
+    @IR(counts = {IRNode.ADD_L, "1"})
+    // Checks x ^ MIN_VALUE => x + MIN_VALUE
+    public long testXorMin(long x) {
+        return x ^ MIN_VALUE;
     }
 
     @Run(test = {
