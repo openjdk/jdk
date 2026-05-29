@@ -551,8 +551,7 @@ import java.util.function.Consumer;
  * upcall is typically executed in the context of a downcall method handle invocation.
  *
  * @implSpec
- * Implementations of this interface are immutable, thread-safe and
- * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ * Implementations of this interface are immutable, thread-safe.
  *
  * @since 22
  */

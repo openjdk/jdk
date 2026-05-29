@@ -65,8 +65,6 @@ address VM_Version::_cpuinfo_cont_addr_apx = nullptr;
 static BufferBlob* stub_blob;
 static const int stub_size = 2550;
 
-int VM_Version::VM_Features::_features_bitmap_size = sizeof(VM_Version::VM_Features::_features_bitmap) / BytesPerLong;
-
 VM_Version::VM_Features VM_Version::_features;
 VM_Version::VM_Features VM_Version::_cpu_features;
 
@@ -1325,7 +1323,8 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (UseSHA && supports_evex() && supports_avx512bw()) {
+  if (UseSHA && ((supports_evex() && supports_avx512vlbw()) ||
+      (EnableX86ECoreOpts && !supports_hybrid()))) {
     if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
     }
@@ -1336,7 +1335,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   int max_vector_size = 0;
   if (UseAVX == 0 || !os_supports_avx_vectors()) {
     // 16 byte vectors (in XMM) are supported with SSE2+
@@ -1369,7 +1368,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
   }
 
-#if defined(COMPILER2) && defined(ASSERT)
+#ifdef ASSERT
   if (MaxVectorSize > 0) {
     if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {
       tty->print_cr("State of YMM registers after signal handle:");
@@ -1384,7 +1383,7 @@ void VM_Version::get_processor_features() {
       }
     }
   }
-#endif // COMPILER2 && ASSERT
+#endif // ASSERT
 
   if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma())  {
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
@@ -1423,7 +1422,7 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     UseMontgomerySquareIntrinsic = true;
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   // On new cpus instructions which update whole XMM register should be used
   // to prevent partial register stall due to dependencies on high half.
@@ -1871,13 +1870,16 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
       FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
-  // CopyAVX3Threshold is the threshold at which 64-byte instructions are used
-  // for implementing the array copy and clear operations.
-  // The Intel platforms that supports the serialize instruction
-  // have improved implementation of 64-byte load/stores and so the default
-  // threshold is set to 0 for these platforms.
+  // CopyAVX3Threshold is the threshold at which 64-byte vector instructions
+  // are used for implementing the array copy, fill and clear operations.
+  // The Intel platforms that support the serialize instruction and the AMD
+  // platforms with native 512-bit datapath have improved implementation of
+  // 64-byte load/stores and so the default threshold is set to 0 for these
+  // platforms.
   if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
     if (is_intel() && is_intel_server_family() && supports_serialize()) {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
+    } else if (is_amd() && is_amd_avx512_datapath_server_family()) {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
     } else {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
@@ -2839,6 +2841,10 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
   // clflush_size is size in quadwords (8 bytes).
   guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == ICache::line_size/8, "clflush size is not supported");
+
+  // sse and sse2 are guaranteed to be present
+  vm_features.set_feature(CPU_SSE);
+  vm_features.set_feature(CPU_SSE2);
 
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
     vm_features.set_feature(CPU_CX8);

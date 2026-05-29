@@ -585,7 +585,7 @@ public final class PlatformRecorder {
         boolean register = !isDestroyed() && r.getState() != RecordingState.CLOSED;
         Recording newRec = access.newRecording(register);
         PlatformRecording copy = access.getPlatformRecording(newRec);
-        copy.setSettings(r.getSettings());
+        copy.setSettings(r.getSettingsCopy());
         copy.setMaxAge(r.getMaxAge());
         copy.setMaxSize(r.getMaxSize());
         copy.setDumpOnExit(r.getDumpOnExit());

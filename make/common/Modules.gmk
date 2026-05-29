@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,6 @@ include $(TOPDIR)/make/conf/build-module-sets.conf
 # Some platforms don't have the serviceability agent
 ifeq ($(INCLUDE_SA), false)
   MODULES_FILTER += jdk.hotspot.agent
-endif
-
-# Filter out jvmci specific modules if jvmci is disabled
-ifeq ($(INCLUDE_JVMCI), false)
-  MODULES_FILTER += jdk.internal.vm.ci
-  MODULES_FILTER += jdk.graal.compiler
-  MODULES_FILTER += jdk.graal.compiler.management
 endif
 
 # jpackage is only on windows, macosx, and linux
