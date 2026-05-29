@@ -642,7 +642,7 @@ private:
     const zaddress to_addr = _forwarding->insert(from_addr, allocated_addr, &cursor);
     if (to_addr != allocated_addr) {
       // Already relocated, undo allocation
-      _allocator->undo_alloc_object(to_page, to_addr, size);
+      _allocator->undo_alloc_object(to_page, allocated_addr, size);
       increase_other_forwarded(size);
     }
 
