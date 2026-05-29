@@ -24,6 +24,7 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -103,15 +104,13 @@ class GZIPInputStreamRead {
         }
         final int numCompressedBytes = gzipCompressedPlusExtra.size();
         // past the GZIP trailer, write some additional bytes that doesn't represent a GZIP member
-        final int numBytesPastTrailer = random.nextInt(1, 42);
-        final byte[] arbitraryExtra = new byte[numBytesPastTrailer];
-        // in theory, the random could generate a valid GZIP member, but in practice the chances
-        // of that happening are certainly(?) never
-        random.nextBytes(arbitraryExtra);
-        gzipCompressedPlusExtra.write(arbitraryExtra);
-        assertEquals(numCompressedBytes + numBytesPastTrailer, gzipCompressedPlusExtra.size(),
+        final byte[] notGZIPMagic = ByteBuffer.allocate(Integer.BYTES).
+                putInt(GZIPInputStream.GZIP_MAGIC + 42)
+                .array();
+        gzipCompressedPlusExtra.write(notGZIPMagic);
+        assertEquals(numCompressedBytes + notGZIPMagic.length, gzipCompressedPlusExtra.size(),
                 "unexpected number of compressed + extra bytes");
-        // now use GZIPInputStream to decompress the compressed plus extra extra and verify
+        // now use GZIPInputStream to decompress the compressed plus extra bytes and verify
         // that the extra bytes don't cause unexpected decompressed output
         final ByteArrayOutputStream decompressedBaos = new ByteArrayOutputStream();
         int n = 0;
