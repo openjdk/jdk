@@ -403,34 +403,7 @@ public class ExhaustivenessComputer {
                         .filter(isApplicableSubtypePredicate(type));
     }
 
-    private Set<ClassSymbol> leafPermittedSubTypes(TypeSymbol root, Predicate<ClassSymbol> accept) {
-        Set<ClassSymbol> permitted = new LinkedHashSet<>();
-        List<ClassSymbol> permittedSubtypesClosure = baseClasses(root);
-
-        while (permittedSubtypesClosure.nonEmpty()) {
-            ClassSymbol current = permittedSubtypesClosure.head;
-
-            permittedSubtypesClosure = permittedSubtypesClosure.tail;
-
-            current.complete();
-
-            if (current.isSealed() && current.isAbstract()) {
-                for (Type t : current.getPermittedSubclasses()) {
-                    ClassSymbol csym = (ClassSymbol) t.tsym;
-
-                    if (accept.test(csym)) {
-                        permittedSubtypesClosure = permittedSubtypesClosure.prepend(csym);
-                    }
-                }
-            } else {
-                permitted.add(current);
-            }
-        }
-
-        return permitted;
-    }
-
-    private Set<ClassSymbol> leafAccessiblePermittedSubTypes(TypeSymbol root, Predicate<TypeSymbol> accept) {
+    private Set<ClassSymbol> accessibleLeafPermittedSubTypes(TypeSymbol root, Predicate<TypeSymbol> accept) {
         Set<ClassSymbol> permitted = new LinkedHashSet<>();
 
         for (ClassSymbol base : baseClasses(root)) {
@@ -441,7 +414,7 @@ public class ExhaustivenessComputer {
                     permitted.add(base);
                 } else {
                     for (ClassSymbol permittedSubtype : direct) {
-                        permitted.addAll(leafAccessiblePermittedSubTypes(permittedSubtype, accept));
+                        permitted.addAll(accessibleLeafPermittedSubTypes(permittedSubtype, accept));
                     }
                 }
             } else {
@@ -929,14 +902,10 @@ public class ExhaustivenessComputer {
                                                                        Set<? extends PatternDescription> basePatterns,
                                                                        Set<PatternDescription> inMissingPatterns) {
         if (toExpand instanceof BindingPattern bp) {
-            if (bp.type.tsym.isSealed()) {
+            if (bp.type.tsym.isSealed() &&
+                closesAccessiblePermittedSubtypes(isApplicableSubtypePredicate(bp.type),
+                                                  (ClassSymbol) bp.type.tsym) instanceof Set<ClassSymbol> closesAccessiblePermittedSubtypes) {
                 //try to replace binding patterns for sealed types with all their immediate permitted applicable types:
-                Set<ClassSymbol> closesAccessiblePermittedSubtypes = closesAccessiblePermittedSubtypes(isApplicableSubtypePredicate(bp.type), (ClassSymbol) bp.type.tsym);
-
-                if (closesAccessiblePermittedSubtypes == null) {
-                    return inMissingPatterns;
-                }
-
                 Set<PatternDescription> applicableDirectPermittedPatterns =
                         closesAccessiblePermittedSubtypes.stream()
                                                          .map(cs -> new BindingPattern(types.erasure(cs.type)))
@@ -978,7 +947,7 @@ public class ExhaustivenessComputer {
 
                     if (componentType.tsym.isSealed()) {
                         applicableLeafPermittedSubtypes =
-                                leafAccessiblePermittedSubTypes(componentType.tsym,
+                                accessibleLeafPermittedSubTypes(componentType.tsym,
                                                       isApplicableSubtypePredicate(componentType))
                                     .stream()
                                     .map(csym -> instantiatePatternType(componentType, csym))
@@ -1045,6 +1014,18 @@ public class ExhaustivenessComputer {
         return inMissingPatterns;
     }
 
+    /**
+     * Return permitted subtypes of {@code forClass}, such that they are as immediate subtypes
+     * of {@code forClass} as possible, but also accessible.
+     *
+     * I.e. if an immediate permitted subtype of {@code forClass} is not accessible, its
+     * immediate permitted subtypes are inspected, recursively, and possibly used in place of the
+     * inaccessible permitted subtype.
+     *
+     * Returns {@code} null if some permitted subtype is inaccessible and cannot be
+     * replaced by its own accessible permitted subtypes (i.e. if it has no accessible
+     * permitted subtypes).
+     */
     private Set<ClassSymbol> closesAccessiblePermittedSubtypes(Predicate<TypeSymbol> filter, ClassSymbol forClass) {
         if (!forClass.isSealed()) {
             return null;

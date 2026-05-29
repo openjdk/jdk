@@ -576,7 +576,6 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "Lib.Rec _");
     }
 
-
     @Test
     public void testInaccessiblePermittedType3(Path base) throws Exception {
         doTest(base,
@@ -649,6 +648,55 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                }
                """,
                "Test.Box(Lib.Intermediate3 _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType6(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   sealed interface Intermediate extends Base {}
+                   private record Leaf1() implements Intermediate {}
+                   record Leaf2() implements Intermediate {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+//                           case Lib.Intermediate _ -> 0;
+                       };
+                   }
+               }
+               """,
+               "Lib.Intermediate _");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType7(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   sealed interface Intermediate extends Base {}
+                   private record Leaf1() implements Intermediate {}
+                   record Leaf2() implements Intermediate {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+                           case Lib.Leaf2 _ -> 0;
+//                           cannot refer to Lib.Leaf1, must use Intermediate
+                       };
+                   }
+               }
+               """,
+               "Lib.Intermediate _");
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
