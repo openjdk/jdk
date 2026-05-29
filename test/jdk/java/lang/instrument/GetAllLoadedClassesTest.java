@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
  * @summary simple tests for getAllLoadedClasses (is Object there? does a newly loaded class show up?)
  * @author Gabriel Adauto, Wily Technology
  *
- * @run build GetAllLoadedClassesTest DummyClass
- * @run shell MakeJAR.sh basicAgent
+ * @library /test/lib
+ * @run build GetAllLoadedClassesTest DummyClass InstrumentationHandoff
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
  * @run main/othervm -javaagent:basicAgent.jar GetAllLoadedClassesTest GetAllLoadedClassesTest
  */
 

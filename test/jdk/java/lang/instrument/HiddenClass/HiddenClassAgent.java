@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *          jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.Utils *
- * @run shell ../MakeJAR3.sh HiddenClassAgent 'Can-Retransform-Classes: true'
+ * @run driver jdk.test.lib.util.JavaAgentBuilder HiddenClassAgent HiddenClassAgent.jar Can-Retransform-Classes:true
  * @run main/othervm/native -javaagent:HiddenClassAgent.jar HiddenClassApp
  */
 

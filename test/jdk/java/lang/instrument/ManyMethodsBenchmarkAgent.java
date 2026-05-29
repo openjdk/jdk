@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@
  * @modules jdk.compiler
  *          java.instrument
  *          jdk.zipfs
+ * @library /test/lib
  * @run build ManyMethodsBenchmarkApp ManyMethodsBenchmarkAgent
- * @run shell MakeJAR3.sh ManyMethodsBenchmarkAgent 'Can-Retransform-Classes: true'
+ * @run driver jdk.test.lib.util.JavaAgentBuilder ManyMethodsBenchmarkAgent ManyMethodsBenchmarkAgent.jar Can-Retransform-Classes:true
  * @run main/othervm -javaagent:ManyMethodsBenchmarkAgent.jar ManyMethodsBenchmarkApp
  */
 import java.lang.instrument.*;

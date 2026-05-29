@@ -27,9 +27,10 @@
  * @summary simple test for the Boot-Class-Path manifest attribute
  * @author Gabriel Adauto, Wily Technology, Robert Field, Sun Microsystems
  *
- * @run build AppendToBootstrapClassPathTest ExampleForBootClassPath
- * @run shell AppendToBootstrapClassPathSetUp.sh
- * @run shell MakeJAR.sh bootclasspathAgent
+ * @library /test/lib
+ * @run build AppendToBootstrapClassPathTest ExampleForBootClassPath MoveClassToHidden InstrumentationHandoff
+ * @run driver MoveClassToHidden ExampleForBootClassPath
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff bootclasspathAgent.jar Boot-Class-Path:hidden/
  * @run main/othervm -javaagent:bootclasspathAgent.jar AppendToBootstrapClassPathTest AppendToBootstrapClassPathTest
  */
 

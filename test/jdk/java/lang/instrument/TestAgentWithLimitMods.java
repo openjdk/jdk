@@ -26,8 +26,10 @@
  * @test
  * @summary Tests that the -javaagent option adds the java.instrument into
  * the module graph
+ * @library /test/lib
+ * @build SimpleAgent
  *
- * @run shell MakeJAR3.sh SimpleAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder SimpleAgent SimpleAgent.jar
  * @run main/othervm -javaagent:SimpleAgent.jar --limit-modules java.base TestAgentWithLimitMods
  *
  */

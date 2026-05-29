@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,91 @@
  */
 
 /*
+ * @test
+ * @bug 6173575
+ * @summary Unit tests for appendToBootstrapClassLoaderSearch and
+ *   appendToSystemClassLoaderSearch methods.
  *
- *
- * Unit test for Instrumentation appendToBootstrapClassLoaderSearch:
- *
- * 1. Reference class A. Resolving this class should fail with
- *    ClassCircularityError.
- *
- * 2. Add JAR file to boot class path which contains a "good"
- *    version of A.
- *
- * 3. Re-run the code for 1 again - it should fail with
- *    ClassCircularityError again.
+ * @library /test/lib
+ * @build CircularityErrorTest
+ * @run driver jdk.test.lib.util.JavaAgentBuilder CircularityErrorTest CircularityErrorTest.jar
+ * @run main/othervm/timeout=240 -javaagent:CircularityErrorTest.jar CircularityErrorTest
  */
+
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.jar.JarFile;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.JarUtils;
 
 public class CircularityErrorTest {
 
     static Instrumentation ins;
 
-    static void resolve() {
-        try {
-            Class c = A.class;
-            throw new RuntimeException("Test failed - class A loaded by: " +
-                c.getClassLoader());
-        } catch (ClassCircularityError e) {
-            System.err.println(e);
-        }
-    }
-
     public static void main(String args[]) throws Exception {
-        resolve();
+        Path srcDir = Path.of("circsrc");
+        Path outDir = Path.of(System.getProperty("test.classes"));
+        Files.createDirectories(srcDir);
+
+        // Step 1: B extends A (A is standalone)
+        Files.writeString(srcDir.resolve("A.java"), "public interface A { }\n");
+        Files.writeString(srcDir.resolve("B.java"), "public interface B extends A { }\n");
+        CompilerUtils.compile(srcDir, outDir);
+
+        // Jar A.class and save B.class as B.keep
+        JarUtils.createJarFile(Path.of("A.jar"), outDir, Path.of("A.class"));
+        Files.delete(outDir.resolve("A.class"));
+        Files.move(outDir.resolve("B.class"), outDir.resolve("B.keep"));
+
+        // Step 2: A extends B (B is standalone) - creates circularity
+        Files.writeString(srcDir.resolve("A.java"), "public interface A extends B { }\n");
+        Files.writeString(srcDir.resolve("B.java"), "public interface B { }\n");
+
+        // Also create Resolver that references A.class literal
+        Files.writeString(srcDir.resolve("Resolver.java"),
+            "public class Resolver {\n" +
+            "    public static Class<?> resolve() {\n" +
+            "        return A.class;\n" +
+            "    }\n" +
+            "}\n");
+
+        CompilerUtils.compile(srcDir, outDir);
+        Files.delete(outDir.resolve("B.class"));
+
+        // Step 3: Restore B.keep as B.class -> A extends B AND B extends A
+        Files.move(outDir.resolve("B.keep"), outDir.resolve("B.class"));
+
+        // First resolve - should get ClassCircularityError
+        try {
+            Method m = Class.forName("Resolver").getMethod("resolve");
+            Class<?> c = (Class<?>) m.invoke(null);
+            throw new RuntimeException("Test failed - class A loaded by: " + c.getClassLoader());
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            if (e.getCause() instanceof ClassCircularityError) {
+                System.err.println(e.getCause());
+            } else {
+                throw new RuntimeException("Unexpected exception", e.getCause());
+            }
+        }
+
+        // Add good A.jar to bootstrap
         ins.appendToBootstrapClassLoaderSearch(new JarFile("A.jar"));
-        resolve();
+
+        // Second resolve - should STILL get ClassCircularityError
+        // because JVM caches the resolution failure for A.class literal
+        try {
+            Method m = Class.forName("Resolver").getMethod("resolve");
+            Class<?> c = (Class<?>) m.invoke(null);
+            throw new RuntimeException("Test failed - class A loaded by: " + c.getClassLoader());
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            if (e.getCause() instanceof ClassCircularityError) {
+                System.err.println(e.getCause());
+            } else {
+                throw new RuntimeException("Unexpected exception", e.getCause());
+            }
+        }
     }
 
     public static void premain(String args, Instrumentation i) {

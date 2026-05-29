@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,22 @@
  * questions.
  */
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /**
- * @test
- * @bug 8156147
- * @summary simple test for the Boot-Class-Path agent
- *
- * @library /test/lib
- * @run build BootstrapClassPathTest BootstrapClassPathAgent BuildBootstrapAgent
- * @run driver BuildBootstrapAgent
- * @run main/othervm -javaagent:agent.jar BootstrapClassPathTest BootstrapClassPathTest
+ * Helper driver to move a class file to the hidden/ directory.
+ * Replaces AppendToBootstrapClassPathSetUp.sh and AppendToClassPathSetUp.sh.
+ * Usage: MoveClassToHidden <className>
  */
-
-import java.io.*;
-import java.lang.instrument.*;
-import java.security.ProtectionDomain;
-
-public class BootstrapClassPathTest {
-
-    public static void main (String[] args) {
+public class MoveClassToHidden {
+    public static void main(String[] args) throws Exception {
+        String className = args[0];
+        String testClasses = System.getProperty("test.classes");
+        Path src = Path.of(testClasses, className + ".class");
+        Path hiddenDir = Path.of("hidden");
+        Files.createDirectories(hiddenDir);
+        Files.move(src, hiddenDir.resolve(className + ".class"));
+        System.out.println("Moved " + className + ".class to hidden/");
     }
 }

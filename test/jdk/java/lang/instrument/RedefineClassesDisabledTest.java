@@ -27,9 +27,10 @@
  * @summary test that redefineClasses and isRedefineClassesSupported behave correctly when redefine is not enabled
  * @author Robert Field, Sun Microsystems -- as modified from the work of Gabriel Adauto, Wily Technology
  *
- * @run build RedefineClassesDisabledTest
- * @run shell RedefineSetUp.sh
- * @run shell MakeJAR.sh basicAgent
+ * @library /test/lib
+ * @run build RedefineClassesDisabledTest RedefineSetUpDriver InstrumentationHandoff
+ * @run driver RedefineSetUpDriver
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false
  * @run main/othervm -javaagent:basicAgent.jar RedefineClassesDisabledTest RedefineClassesDisabledTest
  */
 

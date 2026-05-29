@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@ import java.lang.reflect.Field;
   * @bug 8160950
   * @summary test for custom system class loader
   *
+  * @library /test/lib
   * @run build App Agent CustomLoader
-  * @run shell ../MakeJAR3.sh Agent 'Can-Retransform-Classes: true'
+  * @run driver jdk.test.lib.util.JavaAgentBuilder Agent Agent.jar Can-Retransform-Classes:true
   * @run main/othervm -javaagent:Agent.jar -Djava.system.class.loader=CustomLoader App
   */
 

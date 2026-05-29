@@ -27,7 +27,7 @@
  * @requires vm.flagless
  * @library src /test/lib
  * @build test/*
- * @run shell AppendToClassPathModuleTest.sh
+ * @run driver BuildModuleAgent
  * @run main AppendToClassPathModuleTest
  */
 

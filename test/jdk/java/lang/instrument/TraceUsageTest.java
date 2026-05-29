@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8307478
  * @summary Test Instrumentation tracing is enabled with a system property
  * @library /test/lib
- * @run shell MakeJAR3.sh TraceUsageAgent 'Agent-Class: TraceUsageAgent' 'Can-Retransform-Classes: true'
- * @run junit TraceUsageTest
+ * @build TraceUsageAgent
+ * @run driver jdk.test.lib.util.JavaAgentBuilder TraceUsageAgent TraceUsageAgent.jar Can-Retransform-Classes:true
  */
 
 import com.sun.tools.attach.VirtualMachine;
