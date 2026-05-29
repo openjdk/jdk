@@ -25,20 +25,18 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
 
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "memory/allocation.hpp"
 
 class ShenandoahAllocRequest;
 class ShenandoahHeapRegion;
-class ShenandoahSerialAllocator;
 
-// ShenandoahPartitionAllocator handles allocation within a single free-set partition.
-// It uses ShenandoahFreeSet APIs to find regions and performs allocation within them.
-// Templated on partition ID so that partition-specific behavior (overflow stealing
-// for Collector/OldCollector) is resolved at compile time.
+// ShenandoahPartitionAllocator is the serial (lock-based) partition allocator.
+// It uses ShenandoahFreeSet APIs to find regions and performs allocation within them
+// under the heap lock. Templated on partition ID so that partition-specific behavior
+// (overflow stealing for Collector/OldCollector) is resolved at compile time.
 template<ShenandoahFreeSetPartitionId PARTITION>
-class ShenandoahPartitionAllocator : public CHeapObj<mtGC> {
-  friend class ShenandoahSerialAllocator;
+class ShenandoahPartitionAllocator : public ShenandoahPartitionAllocatorBase {
 
 private:
   ShenandoahFreeSet* const _free_set;
@@ -55,10 +53,10 @@ public:
   ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set);
 
   // Allocate from this partition. Returns nullptr if partition cannot satisfy the request.
-  HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
+  HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) override;
 
   // Must be called when the free set is rebuilt to invalidate retained regions.
-  void clear_retained_regions() { _retained_region = nullptr; }
+  void clear_retained_regions() override { _retained_region = nullptr; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP

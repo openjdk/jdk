@@ -39,7 +39,8 @@ ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(Shenandoah
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
-  shenandoah_assert_heaplocked();
+  // Mutator allocations may yield to safepoint; GC allocations cannot.
+  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
 
   // OldCollector: verify old generation has room before attempting allocation.
   if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {

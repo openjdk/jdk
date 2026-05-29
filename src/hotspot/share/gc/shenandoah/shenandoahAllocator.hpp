@@ -29,24 +29,38 @@
 
 class ShenandoahAllocRequest;
 class ShenandoahFreeSet;
+class ShenandoahHeapRegion;
 
-// ShenandoahAllocator defines the allocation interface for the Shenandoah GC.
-// Subclasses implement different allocation strategies (e.g. serial under heap lock, CAS-based).
-// Partition accounting is delegated back to ShenandoahFreeSet.
+// Base class for per-partition allocation strategies.
+// Subclasses implement different mechanisms (serial under lock, CAS-based).
+class ShenandoahPartitionAllocatorBase : public CHeapObj<mtGC> {
+public:
+  virtual ~ShenandoahPartitionAllocatorBase() = default;
+  virtual HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) = 0;
+  virtual void clear_retained_regions() = 0;
+};
+
+// ShenandoahAllocator routes allocation requests to per-partition allocators
+// and handles humongous allocations directly via ShenandoahFreeSet.
 class ShenandoahAllocator : public CHeapObj<mtGC> {
-protected:
-  ShenandoahFreeSet* const _free_set;
+private:
+  ShenandoahFreeSet* const            _free_set;
+  ShenandoahPartitionAllocatorBase*   _mutator_alloc;
+  ShenandoahPartitionAllocatorBase*   _collector_alloc;
+  ShenandoahPartitionAllocatorBase*   _old_collector_alloc;
 
 public:
-  ShenandoahAllocator(ShenandoahFreeSet* free_set) : _free_set(free_set) {}
-  virtual ~ShenandoahAllocator() = default;
+  ShenandoahAllocator(ShenandoahFreeSet* free_set,
+                      ShenandoahPartitionAllocatorBase* mutator_allocator,
+                      ShenandoahPartitionAllocatorBase* collector_allocator,
+                      ShenandoahPartitionAllocatorBase* old_collector_allocator);
 
-  // Allocate memory for the given request. Returns nullptr on failure.
-  // Sets in_new_region to true if allocation consumes a previously empty region.
-  virtual HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) = 0;
+  // Route allocation to the appropriate partition allocator.
+  // Humongous allocations are handled directly under heap lock.
+  HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Called during free-set rebuild to invalidate any cached allocation state.
-  virtual void clear_retained_regions() = 0;
+  // Invalidate cached state in all partition allocators.
+  void clear_retained_regions();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP

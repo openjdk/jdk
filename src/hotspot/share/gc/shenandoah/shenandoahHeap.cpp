@@ -71,7 +71,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahSerialAllocator.hpp"
+#include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUncommitThread.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -435,7 +435,11 @@ jint ShenandoahHeap::initialize() {
     }
 
     _free_set = new ShenandoahFreeSet(this, _num_regions);
-    _allocator = new ShenandoahSerialAllocator(_free_set);
+    _allocator = new ShenandoahAllocator(
+      _free_set,
+      new ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Mutator>(_free_set),
+      new ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Collector>(_free_set),
+      new ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::OldCollector>(_free_set));
     initialize_generations();
 
     // We are initializing free set.  We ignore cset region tallies.

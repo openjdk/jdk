@@ -22,24 +22,24 @@
  *
  */
 
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahSerialAllocator.hpp"
 
-ShenandoahSerialAllocator::ShenandoahSerialAllocator(ShenandoahFreeSet* free_set)
-  : ShenandoahAllocator(free_set),
-    _mutator_alloc(free_set),
-    _collector_alloc(free_set),
-    _old_collector_alloc(free_set) {}
+ShenandoahAllocator::ShenandoahAllocator(ShenandoahFreeSet* free_set,
+                                         ShenandoahPartitionAllocatorBase* mutator_allocator,
+                                         ShenandoahPartitionAllocatorBase* collector_allocator,
+                                         ShenandoahPartitionAllocatorBase* old_collector_allocator)
+  : _free_set(free_set),
+    _mutator_alloc(mutator_allocator),
+    _collector_alloc(collector_allocator),
+    _old_collector_alloc(old_collector_allocator) {}
 
-HeapWord* ShenandoahSerialAllocator::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
-  // Serial allocator acquires heap lock for all allocations.
-  // Mutator allocations may yield to safepoint; GC allocations cannot.
-  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
-
+HeapWord* ShenandoahAllocator::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
   if (ShenandoahHeapRegion::requires_humongous(req.size())) {
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
     switch (req.type()) {
       case ShenandoahAllocRequest::_alloc_shared:
       case ShenandoahAllocRequest::_alloc_shared_gc:
@@ -60,18 +60,18 @@ HeapWord* ShenandoahSerialAllocator::allocate(ShenandoahAllocRequest& req, bool&
     }
   }
 
-  // Dispatch to the appropriate per-partition allocator.
+  // Route to the appropriate per-partition allocator.
   if (req.is_mutator_alloc()) {
-    return _mutator_alloc.allocate(req, in_new_region);
+    return _mutator_alloc->allocate(req, in_new_region);
   } else if (req.is_old()) {
-    return _old_collector_alloc.allocate(req, in_new_region);
+    return _old_collector_alloc->allocate(req, in_new_region);
   } else {
-    return _collector_alloc.allocate(req, in_new_region);
+    return _collector_alloc->allocate(req, in_new_region);
   }
 }
 
-void ShenandoahSerialAllocator::clear_retained_regions() {
-  _mutator_alloc.clear_retained_regions();
-  _collector_alloc.clear_retained_regions();
-  _old_collector_alloc.clear_retained_regions();
+void ShenandoahAllocator::clear_retained_regions() {
+  _mutator_alloc->clear_retained_regions();
+  _collector_alloc->clear_retained_regions();
+  _old_collector_alloc->clear_retained_regions();
 }
