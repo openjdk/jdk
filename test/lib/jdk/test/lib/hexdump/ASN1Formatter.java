@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * ASN.1 stream formatter; a debugging utility for visualizing the contents of an ASN.1 stream.
- * The ANS1Formatter can be used standalone by calling the {@link #annotate(DataInputStream)}
+ * ASN.1 stream formatter; a debugging utility for visualizing the contents
+ * of an ASN.1 stream. The ANS1Formatter can be used standalone by calling the
+ * {@link #annotate(DataInputStream)}
  * or {@link #annotate(DataInputStream, Appendable)} methods.
  * The ASN1Formatter implements the Formatter interface so it can be used
  * with the {@code HexPrinter} as a formatter to display the ASN.1 tagged values
@@ -46,11 +49,22 @@ import java.util.Base64;
  * <p>
  * The formatter reads a single tag from the stream and prints a description
  * of the tag and its contents. If the tag is a constructed tag, set or sequence,
- * each of the contained tags is read and printed.
- * Generally, each tagged value is printed on a separate line. For constructed and application
- * tags the nested tagged values are indented.
- * There are few consistency checks and an improperly encoded stream may produce
- * unpredictable output.
+ * each of the contained tags is read and printed. Generally, each tagged value
+ * is printed on a separate line. For constructed and application tags the nested
+ * tagged values are indented. There are few consistency checks and an improperly
+ * encoded stream may produce unpredictable output.
+ * <p>
+ * The annotation line for each tagged value starts with a path label that shows
+ * how to reach the value by walking through the constructed structure of the
+ * ASN.1 encoding. For example, the path "123" means going to the 1st (zero-based)
+ * child of the root constructed value, then the 2nd child of this inner value,
+ * and finally the 3rd child of it. The path label can be used as location in
+ * various {@link jdk.test.lib.security.DerUtils DerUtils} methods.
+ *
+ * <p>
+ * The formatter can be configured with a set of drill paths, which will drill
+ * into the OCTET STRING or BIT STRING value at the path to parse the content as
+ * another ASN.1 stream. A drill-into is shown as "c" in its label.
  * <p>
  * For example, to show the contents of a stream from a file.
  * <pre>{@code
@@ -88,8 +102,39 @@ import java.util.Base64;
  *             // done
  *         }
  * }</pre>
+ * As a standalone program, it can be launched with
+ * <pre>
+ * java ASN1Formatter [--drill=path[,path...]] [--no-dump] [asn1file]
+ * </pre>
+ * It parses {@code asn1file} as a binary DER or BER encoded ASN.1 data block
+ * and print out both the HEX dump and annotations. If no file is supplied,
+ * the program reads from the standard input.
+ * <p>
+ * When the program detects that the content of an OCTET STRING or BIT STRING
+ * might be an embedded DER or BER encoding, it prints out hints in the form
+ * of "try --drill=110". User can launch the program again with the option
+ * and the content will be displayed. Multiple drill-into path can be provided
+ * in comma-separated-value format.
+ * <p>
+ * If {@code --no-dump} option is provided, the HEX dump will not be displayed.
+ * <p>
+ * For example:
+ * {@snippet lang = shell :
+ * o $ echo 3009040730050201050500 | xxd -r -p > bin
+ * o $ java ASN1Formatter.java bin
+ * 0000: 30 09                                           ; []: SEQUENCE [9]
+ * 0002:       04 07 30 05 02 01 05 05 00                ; [0]: OCTET STRING [7] (try --drill=0)
+ * o $ java ASN1Formatter.java bin --drill=0
+ * 0000: 30 09                                           ; []: SEQUENCE [9]
+ * 0002:       04 07                                     ; [0]: OCTET STRING [7] encapsulates
+ * 0004:             30 05                               ; [0c]: SEQUENCE [5]
+ * 0006:                   02 01 05                      ; [0c0]: BYTE 5.
+ * 0009:                            05 00                ; [0c1]: NULL
+ * }
  */
 public class ASN1Formatter implements HexPrinter.Formatter {
+
+    private final Set<String> drillPaths;
 
     /**
      * Returns an ASN1Formatter.
@@ -100,9 +145,24 @@ public class ASN1Formatter implements HexPrinter.Formatter {
     }
 
     /**
+     * Returns an ASN1Formatter that drills into OCTET STRING or BIT STRING
+     * content at the specified paths.
+     * @param drillPaths paths like {@code 110} that should be drilled into
+     * @return an ASN1Formatter
+     */
+    public static ASN1Formatter formatter(Set<String> drillPaths) {
+        return new ASN1Formatter(drillPaths);
+    }
+
+    /**
      * Create a ANS1Formatter.
      */
     private ASN1Formatter() {
+        this.drillPaths = Set.of();
+    }
+
+    private ASN1Formatter(Set<String> drillPaths) {
+        this.drillPaths = drillPaths;
     }
 
     /**
@@ -139,22 +199,30 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @throws IOException if an I/O error occurs
      */
     public void annotate(DataInputStream in, Appendable out) throws IOException {
-        annotate(in, out, -1, "");
+        annotate(in, out, -1, true, "");
     }
 
     /**
      * Read bytes from the stream and annotate the stream as ASN.1.
      *
-     * @param in  a DataInputStream
+     * @param in a DataInputStream
      * @param out an Appendable for the output
      * @param available the number of bytes to read from the stream (if greater than zero)
+     * @param isRoot true for outermost call and drilling into OCTET STRING
      * @param prefix a string to prefix each line of output, used for indentation
      * @throws IOException if an I/O error occurs
      */
     @SuppressWarnings("fallthrough")
-    private int annotate(DataInputStream in, Appendable out, int available, String prefix) throws IOException {
+    private int annotate(DataInputStream in, Appendable out, int available,
+            boolean isRoot, String prefix) throws IOException {
         int origAvailable = available;
+        int position = 0;
+        String currentPrefix;
         while (available != 0 || origAvailable < 0) {
+            // When isRoot is true, there is only one ASN.1 value inside.
+            // Do not use a new prefix.
+            currentPrefix = isRoot ? prefix : (prefix + position);
+            position++;
             // Read the tag
             int tag = in.readByte() & 0xff;
             available--;
@@ -196,7 +264,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 // started out unknown; set available to the length of this tagged value
                 available = len;
             }
-            out.append(prefix);     // start with indent
+            out.append('[').append(currentPrefix).append("]: ");     // start with path
             switch (tag) {
                 case TAG_EndOfContent:    // End-of-contents octets; len == 0
                     out.append("END-OF-CONTENT");
@@ -223,27 +291,45 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                             available -= 8;
                             break;
                         default:
-                            byte[] bytes = new byte[len];
-                            int l = in.read(bytes);
-                            BigInteger big = new BigInteger(bytes);
-                            out.append("BIG INTEGER [" + len + "] ");
-                            out.append(big.toString());
-                            out.append(".");
+                            in.readNBytes(len);
+                            out.append("BIG INTEGER [" + len + "]");
                             available -= len;
                             break;
                     }
                     break;
                 case TAG_ObjectId:
-                    byte[] oid = new byte[len];
-                    int l1 = in.read(oid);
-                    available -= l1;
+                    byte[] oid = in.readNBytes(len);
+                    available -= oid.length;
                     String s = oidName(oid);
                     out.append(tagName(tag) + " [" + len + "] ");
                     out.append(s);
                     out.append(' ');
                     break;
 
-                case TAG_OctetString:
+                case TAG_BitString:
+                case TAG_OctetString: {
+                    out.append(String.format("%s [%d]", tagName(tag), len));
+                    if (tag == TAG_BitString) {
+                        in.read();
+                        len--;
+                        available--;
+                    }
+                    String drillPath = currentPrefix + "c";
+                    if (drillPaths.contains(currentPrefix)) {
+                        out.append(" encapsulates");
+                        out.append(System.lineSeparator());
+                        annotate(in, out, len, true, drillPath);
+                        available -= len;
+                        continue;
+                    } else {
+                        byte[] content = in.readNBytes(len);
+                        available -= content.length;
+                        if (looksLikeDrillable(content)) {
+                            out.append(" (try --drill=").append(currentPrefix).append(")");
+                        }
+                    }
+                    break;
+                }
                 case TAG_UtcTime:
                 case TAG_GeneralizedTime:
                     out.append(tagName(tag) + " [" + len + "] ");
@@ -252,8 +338,8 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 case TAG_IA5String:
                 case TAG_GeneralString: {
                     // Check if the contents are too long or not printable
-                    byte[] buf = new byte[Math.min(32, len)];
-                    int l = in.read(buf, 0, buf.length);
+                    byte[] buf = in.readNBytes(Math.min(32, len));
+                    int l = buf.length;
                     if (countPrintable(buf, l) > l / 2) {
                         // If more than 1/2 are printable, show the string
                         out.append("'");
@@ -270,19 +356,26 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                         out.append("<Unprintable> ");
                     }
                     // Skip the rest
-                    while (l < len) {
-                        l += (int)in.skip(len - l);
-                    }
-                    available -= len;
+                    available -= in.skipBytes(len - l) + l;
                     break;
                 }
                 case TAG_Null:
-                    out.append("NULL ");
+                    if (len > 0) { // abnormal
+                        out.append(String.format("NULL [%d] (invalid length) ", len));
+                        available -= in.skipBytes(len);
+                    } else {
+                        out.append("NULL ");
+                    }
                     break;
                 case TAG_Boolean:
-                    int b = in.readByte();
-                    available--;
-                    out.append((b == 0) ? "FALSE " : "TRUE ");
+                    if (len != 1) {
+                        out.append(String.format("BOOLEAN [%d] (invalid length) ", len));
+                        available -= in.skipBytes(len);
+                    } else {
+                        int b = in.readByte();
+                        available--;
+                        out.append((b == 0) ? "FALSE " : "TRUE ");
+                    }
                     break;
                 case TAG_UTF8String:
                     out.append(getString(in, len, StandardCharsets.UTF_8));
@@ -300,37 +393,22 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     out.append(' ');
                     available -= len;
                     break;
-                case TAG_BitString:
-                    out.append(String.format("%s [%d]", tagName(tag), len));
-                    do {
-                        var skipped = (int) in.skip(len);
-                        len -= skipped;
-                        available -= skipped;
-                    } while (len > 0);
-                    break;
                 default: {
-                    if (tag == TAG_Sequence ||
-                            tag == TAG_Set ||
-                            isApplication(tag) ||
-                            isConstructed(tag)) {
-                        String lenStr = (len < 0) ? "INDEFINITE" : Integer.toString(len);
-                        // Handle nesting
-                        if (isApplication(tag)) {
-                            out.append(String.format("APPLICATION %d. [%s] {%n", tagType(tag), lenStr));
-                        } else {
-                            out.append(String.format("%s [%s]%n", tagName(tag), lenStr));
-                        }
-                        int remaining = annotate(in, out, len, prefix + "  ");
+                    String lenStr = (len < 0) ? "INDEFINITE" : Integer.toString(len);
+                    // Handle nesting
+                    if (isApplication(tag)) {
+                        out.append(String.format("APPLICATION %d. [%s] {%n", tagType(tag), lenStr));
+                    } else {
+                        out.append(String.format("%s [%s]%n", tagName(tag), lenStr));
+                    }
+                    if (isConstructed(tag)) {
+                        int remaining = annotate(in, out, len, false, currentPrefix);
                         if (len > 0) {
                             available -= len - remaining;
                         }
                         continue;
                     } else {
-                        // Any other tag not already handled, dump the bytes
-                        out.append(String.format("%s[%d]: ", tagName(tag), len));
-                        formatBytes(in, out, len);
-                        available -= len;
-                        break;
+                        available -= in.skipBytes(len);
                     }
                 }
             }
@@ -339,20 +417,20 @@ public class ASN1Formatter implements HexPrinter.Formatter {
         return available;
     }
 
-    /**
-     * Reads bytes from the stream and annotates them as hexadecimal.
-     * @param in an inputStream
-     * @param out the Appendable for the formatted bytes
-     * @param len the number of bytes to read
-     * @throws IOException if an I/O error occurs
-     */
-    private void formatBytes(DataInputStream in, Appendable out, int len) throws IOException {
-        int b = in.readByte() & 0xff;
-        out.append(String.format("%02x", b));
-        for (int i = 1; i < len; i++) {
-            b = in.readByte() & 0xff;
-            out.append(String.format(",%02x", b));
+    private static boolean looksLikeDrillable(byte[] bytes) {
+        int len = bytes.length;
+        if (len < 2) {
+            return false;
         }
+        int b1 = bytes[1] & 0xff;
+        return switch (b1) {
+            case 0x80 -> true;
+            case 0x81 -> bytes.length >= 3 && (bytes[2] & 0xff) == len - 3;
+            case 0x82 -> bytes.length >= 4
+                    && (((bytes[2] & 0xff) << 8) | (bytes[3] & 0xff)) == len - 4;
+            case 0x83, 0x84 -> false;
+            default -> b1 == len - 2;
+        };
     }
 
     /**
@@ -364,8 +442,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @throws IOException if an I/O error occurs
      */
     private String getString(DataInputStream in, int len, Charset charset) throws IOException {
-        byte[] bytes = new byte[len];
-        int l = in.read(bytes);
+        byte[] bytes = in.readNBytes(len);
         return new String(bytes, charset);
     }
 
@@ -375,14 +452,14 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @return a String representation of the tag.
      */
     private String tagName(int tag) {
-        String tagString = (isConstructed(tag) ? "CONSTRUCTED "  : "") + tagNames[tagType(tag)];
+        String tagString = (isConstructed(tag) ? "CONSTRUCTED " : "") + tagNames[tagType(tag)];
         switch (tag & 0xc0) {
             case TAG_APPLICATION:
-                return "APPLICATION " + tagString;
+                return "APPLICATION " + tagType(tag);
             case TAG_PRIVATE:
-                return "PRIVATE " + tagString;
+                return "PRIVATE " + tagType(tag);
             case TAG_CONTEXT:
-                return tagString;
+                return "CONTEXT " + tagType(tag);
             case TAG_UNIVERSAL:
                 if (tag > 0 && tag < tagNames.length)
                     return tagNames[tag];
@@ -424,7 +501,8 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             Method findMatch = cl.getDeclaredMethod("findMatch", String.class);
             Object oid = findMatch.invoke(null, noid);
             return (oid == null) ? noid : noid + " (" + oid.toString() + ")";
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                 InvocationTargetException e) {
             return noid;
         }
     }
@@ -565,18 +643,14 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * These values are the high order bits for the other kinds of tags.
      */
 
-    /**
-     * Returns true if the tag class is UNIVERSAL.
-     */
+    /** Returns true if the tag class is UNIVERSAL. */
     private boolean isUniversal(int tag)      { return ((tag & 0xc0) == 0x0); }
 
-    /**
-     * Returns true if the tag class is APPLICATION.
-     */
+    /** Returns true if the tag class is APPLICATION. */
     private boolean isApplication(int tag)    { return ((tag & 0xc0) == TAG_APPLICATION); }
 
-     /** Returns true iff the CONSTRUCTED bit is set in the type tag. */
-    private boolean isConstructed(int tag)    { return ((tag & 0x20) == 0x20); }
+    /** Returns true iff the CONSTRUCTED bit is set in the type tag. */
+    private boolean isConstructed(int tag)   { return ((tag & 0x20) == 0x20); }
 
     // Names for tags.
     private static final String[] tagNames = new String[] {
@@ -596,27 +670,47 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @param args file names
      */
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("Usage:  <asn.1 files>");
-            return;
+        Set<String> drillPaths = new HashSet<>();
+        boolean dump = true;
+        String file = null;
+        for (String arg : args) {
+            if (arg.equals("--help")) {
+                System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [--no-dump] [asn.1 file]");
+                return;
+            } else if (arg.startsWith("--drill=")) {
+                drillPaths.addAll(Arrays.asList(
+                        arg.substring("--drill=".length()).split(",")));
+            } else if (arg.equals("--no-dump")) {
+                dump = false;
+            } else if (arg.startsWith("-")) {
+                System.out.println("Unknown option: " + arg);
+                System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [--no-dump] [asn.1 file]");
+                System.exit(1);
+            } else if (file == null) {
+                file = arg;
+            } else {
+                System.out.println("Error: multiple files provided");
+                System.exit(1);
+            }
         }
-        ASN1Formatter fmt = ASN1Formatter.formatter();
-        for (String file : args) {
-            System.out.printf("%s%n", file);
-            try (InputStream fis = Files.newInputStream(Path.of(file));
-                 BufferedInputStream is = new BufferedInputStream(fis);
-                 InputStream in = wrapIfBase64Mime(is)) {
+        ASN1Formatter fmt = ASN1Formatter.formatter(drillPaths);
+        try (InputStream fis = file == null ? System.in : Files.newInputStream(Path.of(file));
+             BufferedInputStream is = new BufferedInputStream(fis);
+             InputStream in = wrapIfBase64Mime(is)) {
 
-                DataInputStream dis = new DataInputStream(in);
+            DataInputStream dis = new DataInputStream(in);
+            if (dump) {
                 HexPrinter p = HexPrinter.simple()
                         .dest(System.out)
-                        .formatter(ASN1Formatter.formatter(), "; ", 100);
+                        .formatter(fmt, "; ", 100);
                 p.format(dis);
-            } catch (EOFException eof) {
-                System.out.println();
-            } catch (IOException ioe) {
-                System.out.printf("%s: %s%n", file, ioe);
+            } else {
+                System.out.println(fmt.annotate(dis));
             }
+        } catch (EOFException eof) {
+            System.out.println();
+        } catch (IOException ioe) {
+            System.out.printf("%s: %s%n", file, ioe);
         }
     }
 
