@@ -179,6 +179,12 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + original_young_evac_reserve;
   size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
+  // Admit every region with any garbage so every live object gets a chance to be promoted.
+  if (heap->age_census()->is_always_tenure()) {
+    ignore_threshold = 0;
+    min_garbage = SIZE_MAX;
+  }
+
   ShenandoahGlobalCSetBudget budget(region_size_bytes,
                                     shared_reserve_regions * region_size_bytes,
                                     garbage_threshold, ignore_threshold, min_garbage,

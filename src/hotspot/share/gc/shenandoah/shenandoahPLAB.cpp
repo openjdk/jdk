@@ -40,7 +40,7 @@ ShenandoahPLAB::ShenandoahPLAB() :
   _promoted(0),
   _promotion_failure_count(0),
   _promotion_failure_words(0),
-  _allows_promotion(false),
+  _allows_promotion(true),
   _retries_enabled(false),
   _heap(ShenandoahGenerationalHeap::heap()) {
   _plab = new PLAB(align_up(PLAB::min_size(), CardTable::card_size_in_words()));
