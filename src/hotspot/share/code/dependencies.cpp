@@ -598,9 +598,13 @@ void Dependencies::print_dependency(DepType dept, GrowableArray<DepArgument>* ar
   }
   if (witness != nullptr) {
     bool put_star = !Dependencies::is_concrete_klass(witness);
-    st->print_cr("  witness = %s%s",
-                  (put_star? "*": ""),
-                  witness->external_name());
+    st->print("  witness = %s%s",
+              (put_star ? "*": ""),
+              witness->external_name());
+    if (witness->is_instance_klass()) {
+      st->print(" (%s)", InstanceKlass::cast(witness)->init_state_name());
+    }
+    st->cr();
   }
 }
 

@@ -122,6 +122,7 @@ ifneq ($(call check-jvm-feature, cds), true)
       aotCodeCache.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
+      aotCompileBroker.cpp \
       systemDictionaryShared.cpp \
       trainingData.cpp
   JVM_EXCLUDE_PATTERNS += cds/

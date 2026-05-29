@@ -383,6 +383,45 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
+  /* AOT Code Caching flags */                                              \
+                                                                            \
+  product(uint, DisableAOTCode, 0, DIAGNOSTIC,                              \
+          "Disable AOT code on some compilation levels "                    \
+          "(T1=1; T2=10; T4=1000; T5/preload=10000)")                       \
+          constraint(DisableAOTCodeConstraintFunc, AtParse)                 \
+                                                                            \
+  product(uint, ClassInitBarrierMode, 0, DIAGNOSTIC,                        \
+          "Produce AOT preload code which could be called on first "        \
+          "method invocation, add class initialization barriers, "          \
+          "other checks and constraints if needed "                         \
+          "(0: no barriers; 1: uncommon trap)")                             \
+          range(0, 1)                                                       \
+                                                                            \
+  product(uint, AOTCodePreloadStart, 0, DIAGNOSTIC,                         \
+          "The id of the first AOT code to preload")                        \
+                                                                            \
+  product(uint, AOTCodePreloadStop, max_jint, DIAGNOSTIC,                   \
+          "The id of the last AOT code to preload")                         \
+                                                                            \
+  product(double, AOTCodeInvokeBase, 100.0, DIAGNOSTIC,                     \
+          "AOT code invocation base limit")                                 \
+          range(1.0, DBL_MAX)                                               \
+                                                                            \
+  product(double, AOTCodeInvokeScale, 1.0, DIAGNOSTIC,                      \
+          "scale AOT code invocation limit")                                \
+          range(0.001, DBL_MAX)                                             \
+                                                                            \
+  product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
+          "Use AOT code counter to trigger JIT compilation")                \
+                                                                            \
+  product(bool, VerifyAOTCode, false, DIAGNOSTIC,                           \
+          "Load AOT code but not publish")                                  \
+                                                                            \
+  product(bool, AOTPreloadBlocking, false, DIAGNOSTIC,                      \
+          "Preload code is processed with blocking. Startup would not "     \
+          "proceed until all preloaded code is done loading.")              \
+                                                                            \
+
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

@@ -40,6 +40,7 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
@@ -1711,7 +1712,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
                               PatchALot;
 
   ValueStack* state_before = nullptr;
-  if (!holder->is_initialized() || needs_patching) {
+  if (!holder->is_initialized() || needs_patching || compilation()->env()->is_aot_compile()) {
     // save state before instruction for debug info when
     // deoptimization happens during patching
     state_before = copy_state_before();
@@ -2119,7 +2120,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       callee_holder->is_loaded()) { // the effect of symbolic reference resolution
 
     // callee is known => check if we have static binding
-    if ((code == Bytecodes::_invokestatic && klass->is_initialized()) || // invokestatic involves an initialization barrier on declaring class
+    if ((code == Bytecodes::_invokestatic && klass->is_initialized() &&
+        !compilation()->env()->is_aot_compile()) || // invokestatic involves an initialization barrier on declaring class
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
@@ -3863,7 +3865,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
       !InlineSynchronizedMethods         ) INLINE_BAILOUT("callee is synchronized");
   if (!callee->holder()->is_linked())      INLINE_BAILOUT("callee's klass not linked yet");
   if (bc == Bytecodes::_invokestatic &&
-      !callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
+      (!callee->holder()->is_initialized() ||
+       compilation()->env()->is_aot_compile())) INLINE_BAILOUT("callee's klass not initialized yet");
   if (!callee->has_balanced_monitors())    INLINE_BAILOUT("callee's monitors do not match");
 
   // Proper inlining of methods with jsrs requires a little more work.

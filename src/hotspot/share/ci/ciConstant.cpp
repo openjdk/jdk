@@ -61,6 +61,19 @@ bool ciConstant::is_loaded() const {
 }
 
 // ------------------------------------------------------------------
+// ciConstant::should_be_constant
+bool ciConstant::should_be_constant() const {
+  if (is_valid()) {
+    if (is_reference_type(basic_type())) {
+      return as_object()->should_be_constant();
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ------------------------------------------------------------------
 // ciConstant::print
 void ciConstant::print() {
   tty->print("<ciConstant type=%s value=",

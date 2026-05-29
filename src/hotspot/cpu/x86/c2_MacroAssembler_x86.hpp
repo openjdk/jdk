@@ -39,6 +39,9 @@ public:
                  Register t, Register thread);
   void fast_unlock(Register obj, Register reg_rax, Register t, Register thread);
 
+  static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi);
+  static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi);
+
   void verify_int_in_range(uint idx, const TypeInt* t, Register val);
   void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
 

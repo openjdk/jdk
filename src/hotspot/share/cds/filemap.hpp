@@ -144,6 +144,7 @@ private:
                                         // some expensive operations.
   bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
+  size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
 
@@ -198,6 +199,7 @@ public:
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_aot_linked_classes()            const { return _has_aot_linked_classes; }
+  size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compatible_oop_compression()        const { return _compatible_oop_compression; }
   int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
@@ -370,6 +372,7 @@ public:
   size_t remove_bitmap_zeros(CHeapBitMap* map);
   char* write_bitmap_region(CHeapBitMap* rw_ptrmap,
                             CHeapBitMap* ro_ptrmap,
+                            CHeapBitMap* ac_ptrmap,
                             AOTMappedHeapInfo* mapped_heap_info,
                             AOTStreamedHeapInfo* streamed_heap_info,
                             size_t &size_in_bytes);
@@ -453,6 +456,7 @@ public:
 
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
+  void  relocate_pointers_in_aot_code_region();
   char* map_auxiliary_region(int region_index, bool read_only);
 
 public:

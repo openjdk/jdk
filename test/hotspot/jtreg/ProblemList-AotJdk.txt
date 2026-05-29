@@ -53,9 +53,18 @@ compiler/intrinsics/klass/TestIsPrimitive.java        0000000 generic-all
 # However when AOTClassLinking is enabled, Integer is always resolved at JVM start-up.
 compiler/ciReplay/TestInliningProtectionDomain.java   0000000 generic-all
 
+# Error: GC triggered before VM initialization completed. Try increasing NewSize
+gc/arguments/TestG1HeapSizeFlags.java 8366026 generic-all
+
 # These tests fail often with AotJdk due to JDK-8323727
 compiler/arguments/TestStressReflectiveCode.java 8323727 generic-all
 compiler/arraycopy/TestCloneWithStressReflectiveCode.java 8323727 generic-all
+
+serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8382548 linux-aarch64
+
+compiler/calls/NativeCalls.java 8383780 generic-all
+
+vmTestbase/vm/mlvm/indy/stress/jdi/breakpointInCompiledCode/Test.java 8383781 generic-all
 
 #############################################################################
 

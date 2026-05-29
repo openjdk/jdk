@@ -55,6 +55,7 @@ class ArchivePtrMarker : AllStatic {
   static CHeapBitMap*  _ptrmap;
   static CHeapBitMap*  _rw_ptrmap;
   static CHeapBitMap*  _ro_ptrmap;
+  static CHeapBitMap*  _ac_ptrmap;
   static VirtualSpace* _vs;
 
   // Once _ptrmap is compacted, we don't allow bit marking anymore. This is to
@@ -66,7 +67,7 @@ class ArchivePtrMarker : AllStatic {
 
 public:
   static void initialize(CHeapBitMap* ptrmap, VirtualSpace* vs);
-  static void initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap);
+  static void initialize_rw_ro_ac_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, CHeapBitMap* ac_ptrmap);
   static void mark_pointer(address* ptr_loc);
   static void clear_pointer(address* ptr_loc);
   static void compact(address relocatable_base, address relocatable_end);
@@ -95,10 +96,15 @@ public:
     return _ro_ptrmap;
   }
 
+  static CHeapBitMap* ac_ptrmap() {
+    return _ac_ptrmap;
+  }
+
   static void reset_map_and_vs() {
     _ptrmap = nullptr;
     _rw_ptrmap = nullptr;
     _ro_ptrmap = nullptr;
+    _ac_ptrmap = nullptr;
     _vs = nullptr;
   }
 };

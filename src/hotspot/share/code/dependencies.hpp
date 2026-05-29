@@ -346,6 +346,12 @@ class Dependencies: public ResourceObj {
     return _size_in_bytes;
   }
 
+  void set_content(address content_bytes, int size_in_bytes) {
+    assert(_content_bytes == nullptr, "not intialized expected");
+    _content_bytes = content_bytes;
+    _size_in_bytes = size_in_bytes;
+  }
+
   OopRecorder* oop_recorder() { return _oop_recorder; }
   CompileLog*  log()          { return _log; }
 

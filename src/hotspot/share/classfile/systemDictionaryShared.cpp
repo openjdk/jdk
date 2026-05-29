@@ -892,7 +892,7 @@ void SystemDictionaryShared::link_all_exclusion_check_candidates(InstanceKlass* 
 // it can be checked by should_be_excluded_impl().
 bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  assert(CDSConfig::current_thread_is_vm_or_dumper(), "sanity");
+  // This method could be called during AOT compilation from compiler thread.
 
   if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(k)) {
     // We have reached a super type that's already in the base archive. Treat it

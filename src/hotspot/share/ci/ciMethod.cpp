@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "ci/ciCallProfile.hpp"
 #include "ci/ciExceptionHandler.hpp"
 #include "ci/ciInstanceKlass.hpp"
@@ -33,6 +34,7 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -144,6 +146,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   constantPoolHandle cpool(Thread::current(), h_m->constants());
   _signature = new (env->arena()) ciSignature(_holder, cpool, sig_symbol);
   _method_data = nullptr;
+  _method_data_recorded = nullptr;
   // Take a snapshot of these values, so they will be commensurate with the MDO.
   if (ProfileInterpreter || CompilerConfig::is_c1_profiling()) {
     int invcnt = h_m->interpreter_invocation_count();
@@ -175,6 +178,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _name(                   name),
   _holder(                 holder),
   _method_data(            nullptr),
+  _method_data_recorded(   nullptr),
   _method_blocks(          nullptr),
   _intrinsic_id(           vmIntrinsics::_none),
   _inline_instructions_size(-1),
@@ -1004,15 +1008,19 @@ bool ciMethod::has_member_arg() const {
 //
 // Generate new MethodData* objects at compile time.
 // Return true if allocation was successful or no MDO is required.
-bool ciMethod::ensure_method_data(const methodHandle& h_m) {
+bool ciMethod::ensure_method_data(const methodHandle& h_m, bool training_data_only) {
   EXCEPTION_CONTEXT;
   if (is_native() || is_abstract() || h_m()->is_accessor()) {
     return true;
   }
   if (h_m()->method_data() == nullptr) {
-    Method::build_profiling_method_data(h_m, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
+    if (training_data_only) {
+      Method::install_training_method_data(h_m);
+    } else {
+      Method::build_profiling_method_data(h_m, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION;
+      }
     }
   }
   if (h_m()->method_data() != nullptr) {
@@ -1025,12 +1033,12 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
 }
 
 // public, retroactive version
-bool ciMethod::ensure_method_data() {
+bool ciMethod::ensure_method_data(bool training_data_only) {
   bool result = true;
   if (_method_data == nullptr || _method_data->is_empty()) {
     GUARDED_VM_ENTRY({
       methodHandle mh(Thread::current(), get_Method());
-      result = ensure_method_data(mh);
+      result = ensure_method_data(mh, training_data_only);
     });
   }
   return result;
@@ -1041,22 +1049,49 @@ bool ciMethod::ensure_method_data() {
 // ciMethod::method_data
 //
 ciMethodData* ciMethod::method_data() {
+#if INCLUDE_CDS
+  if (CURRENT_ENV->is_aot_compile() && CURRENT_ENV->task()->comp_level() == CompLevel_full_optimization) {
+    if (_method_data_recorded == nullptr) {
+      VM_ENTRY_MARK;
+      methodHandle h_m(thread, get_Method());
+      MethodTrainingData* mtd = MethodTrainingData::find(h_m);
+      MethodData* mdo = (mtd != nullptr ? mtd->final_profile() : nullptr);
+      int comp_id = CURRENT_ENV->task()->compile_id();
+      if (mdo == nullptr) {
+        ResourceMark rm;
+        log_debug(aot, compilation)("%d: No profile for %s", comp_id, h_m->name_and_sig_as_C_string());
+        _method_data_recorded = CURRENT_ENV->get_empty_methodData();
+      } else {
+        if (mdo->extra_data_lock() == nullptr) {
+          assert(!HAS_PENDING_EXCEPTION, "");
+          mdo->restore_unshareable_info(thread);
+          assert(!HAS_PENDING_EXCEPTION, "");
+        }
+        _method_data_recorded = CURRENT_ENV->get_method_data(mdo);
+        _method_data_recorded->load_data();
+        {
+          ResourceMark rm;
+          log_debug(aot, compilation)("%d: Recorded profile " PTR_FORMAT " for %s", comp_id, p2i(mdo), h_m->name_and_sig_as_C_string());
+        }
+      }
+    }
+    assert(_method_data_recorded != nullptr, "");
+    return _method_data_recorded;
+  }
+#endif
   if (_method_data != nullptr) {
     return _method_data;
   }
   VM_ENTRY_MARK;
-  ciEnv* env = CURRENT_ENV;
-  Thread* my_thread = JavaThread::current();
-  methodHandle h_m(my_thread, get_Method());
-
-  if (h_m()->method_data() != nullptr) {
-    _method_data = CURRENT_ENV->get_method_data(h_m()->method_data());
+  methodHandle h_m(thread, get_Method());
+  MethodData* mdo = h_m()->method_data();
+  if (mdo != nullptr) {
+    _method_data = CURRENT_ENV->get_method_data(mdo);
     _method_data->load_data();
   } else {
     _method_data = CURRENT_ENV->get_empty_methodData();
   }
   return _method_data;
-
 }
 
 // ------------------------------------------------------------------
@@ -1074,12 +1109,15 @@ ciMethodData* ciMethod::method_data_or_null() {
 // ------------------------------------------------------------------
 // ciMethod::ensure_method_counters
 //
-MethodCounters* ciMethod::ensure_method_counters() {
+ciMetadata* ciMethod::ensure_method_counters() {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
-  MethodCounters* method_counters = mh->get_method_counters(CHECK_NULL);
-  return method_counters;
+  MethodCounters* method_counters = mh->get_method_counters(THREAD);
+  if (method_counters != nullptr) {
+    return CURRENT_ENV->get_method_counters(method_counters);
+  }
+  return nullptr;
 }
 
 // ------------------------------------------------------------------
@@ -1157,7 +1195,7 @@ int ciMethod::inline_instructions_size() {
         methodHandle top_level_mh(Thread::current(), CURRENT_ENV->task()->method());
         MethodTrainingData* mtd = MethodTrainingData::find(top_level_mh);
         if (mtd != nullptr) {
-          CompileTrainingData* ctd = mtd->last_toplevel_compile(level);
+          CompileTrainingData* ctd = mtd->compile_data_for_aot_code(level);
           if (ctd != nullptr) {
             methodHandle mh(Thread::current(), get_Method());
             MethodTrainingData* this_mtd = MethodTrainingData::find(mh);
@@ -1176,7 +1214,8 @@ int ciMethod::inline_instructions_size() {
     GUARDED_VM_ENTRY(
       nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
-        int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
+        int isize = code->is_aot() ? code->aot_code_entry()->inline_instructions_size()
+                                   : code->inline_instructions_size();
         _inline_instructions_size = isize > 0 ? isize : 0;
       } else {
         _inline_instructions_size = 0;
@@ -1217,6 +1256,19 @@ bool ciMethod::is_not_reached(int bci) {
 // ------------------------------------------------------------------
 // ciMethod::was_never_executed
 bool ciMethod::was_executed_more_than(int times) {
+#if INCLUDE_CDS
+  if (CURRENT_ENV->is_aot_compile()) { // Look only on training data
+    // Invocation counter is reset when the Method* is compiled.
+    // If the method has compiled code we therefore assume it has
+    // be executed more than n times.
+    if (is_accessor() || is_empty() || has_compiled_code()) {
+      // interpreter doesn't bump invocation counter of trivial methods
+      // compiler does not bump invocation counter of compiled methods
+      return true;
+    }
+    return (method_data()->invocation_count() > times);
+  }
+#endif
   VM_ENTRY_MARK;
   return get_Method()->was_executed_more_than(times);
 }

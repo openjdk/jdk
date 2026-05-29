@@ -1376,7 +1376,7 @@ inline int Parse::repush_if_args() {
 }
 
 // Used by StressUnstableIfTraps
-static volatile int _trap_stress_counter = 0;
+volatile int Parse::_trap_stress_counter = 0;
 
 void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
   Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));

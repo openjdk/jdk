@@ -279,6 +279,9 @@ bool Runtime1::initialize(BufferBlob* blob) {
       return false;
     }
   }
+  BarrierSetC1* bs = BarrierSet::barrier_set()->barrier_set_c1();
+  bool success = bs->generate_c1_runtime_stubs(blob);
+
   // disallow any further c1 stub generation
   AOTCodeCache::set_c1_stubs_complete();
   // printing
@@ -295,8 +298,7 @@ bool Runtime1::initialize(BufferBlob* blob) {
     }
   }
 #endif
-  BarrierSetC1* bs = BarrierSet::barrier_set()->barrier_set_c1();
-  return bs->generate_c1_runtime_stubs(blob);
+  return success;
 }
 
 CodeBlob* Runtime1::blob_for(StubId id) {
@@ -832,7 +834,8 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
   // We must load class, initialize class and resolve the field
   fieldDescriptor result; // initialize class if needed
   constantPoolHandle constants(THREAD, caller->constants());
-  LinkResolver::resolve_field_access(result, constants, field_access.index(), caller, Bytecodes::java_code(code), CHECK_NULL);
+  LinkResolver::resolve_field_access(result, constants, field_access.index(), caller,
+                                     Bytecodes::java_code(code), ClassInitMode::init, CHECK_NULL);
   return result.field_holder();
 }
 
@@ -980,7 +983,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
     fieldDescriptor result; // initialize class if needed
     Bytecodes::Code code = field_access.code();
     constantPoolHandle constants(current, caller_method->constants());
-    LinkResolver::resolve_field_access(result, constants, field_access.index(), caller_method, Bytecodes::java_code(code), CHECK);
+    LinkResolver::resolve_field_access(result, constants, field_access.index(), caller_method,
+                                       Bytecodes::java_code(code), ClassInitMode::init, CHECK);
     patch_field_offset = result.offset();
     patch_field_type = result.field_type();
 

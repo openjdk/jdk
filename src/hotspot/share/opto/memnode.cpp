@@ -24,6 +24,7 @@
  */
 
 #include "classfile/javaClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -2077,7 +2078,9 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type*
 LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
-  assert(!UseCompactObjectHeaders || tkls->offset() != in_bytes(Klass::prototype_header_offset()),
+  assert(!UseCompactObjectHeaders ||
+         AOTCodeCache::is_on_for_dump() ||
+         tkls->offset() != in_bytes(Klass::prototype_header_offset()),
          "must not happen");
 
   if (tkls->isa_instklassptr() && tkls->offset() == in_bytes(InstanceKlass::access_flags_offset())) {
@@ -2258,7 +2261,9 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         assert(Opcode() == Op_LoadI, "must load an int from _super_check_offset");
         return TypeInt::make(klass->super_check_offset());
       }
-      if (UseCompactObjectHeaders) {
+      // Class encoding in prototype header may change between runs.
+      // Force loading prototype header when AOT code is generated.
+      if (UseCompactObjectHeaders && !AOTCodeCache::is_on_for_dump()) {
         if (tkls->offset() == in_bytes(Klass::prototype_header_offset())) {
           // The field is Klass::_prototype_header. Return its (constant) value.
           assert(this->Opcode() == Op_LoadX, "must load a proper type from _prototype_header");

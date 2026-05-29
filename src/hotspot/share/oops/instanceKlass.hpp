@@ -539,6 +539,8 @@ public:
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
 
+  static const char* state2name(ClassState state);
+
   // is this a sealed class
   bool is_sealed() const;
 

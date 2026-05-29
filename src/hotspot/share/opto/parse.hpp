@@ -583,6 +583,9 @@ class Parse : public GraphKit {
   // helper function for call statistics
   void count_compiled_calls(bool at_method_entry, bool is_inline) PRODUCT_RETURN;
 
+  // AOT compiled code invocations count
+  void count_aot_code_calls() NOT_CDS_RETURN;
+
   Node_Notes* make_node_notes(Node_Notes* caller_nn);
 
   // Helper functions for handling normal and abnormal exits.
@@ -613,8 +616,12 @@ class Parse : public GraphKit {
   void stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store);
   // Increment counter used by StressUnstableIfTraps
   void increment_trap_stress_counter(Node*& counter, Node*& incr_store);
+  static volatile int _trap_stress_counter;
 
  public:
+  // Needed for AOT external address recording
+  static address trap_stress_counter_address() { return (address)&_trap_stress_counter; }
+
 #ifndef PRODUCT
   // Handle PrintOpto, etc.
   void show_parse_info();

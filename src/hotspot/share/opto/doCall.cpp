@@ -26,6 +26,7 @@
 #include "ci/ciMethodHandle.hpp"
 #include "ci/ciSymbols.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -107,6 +108,14 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
     allow_inline = false;
+  }
+
+  if (AOTCodeCache::is_using_code()) {
+    // During production run, when AOT code is used,
+    // C2 compilation could be requested without collecting
+    // profiling. Instead use profiling from training run.
+    // Make sure training data is loaded for callee.
+    callee->ensure_method_data(true /*training_data_only*/);
   }
 
   // Note: When we get profiling during stage-1 compiles, we want to pull
@@ -514,6 +523,10 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
   if (!holder_klass->is_being_initialized() &&
       !holder_klass->is_initialized() &&
       !holder_klass->is_interface()) {
+    if (C->env()->task()->is_aot_compile()) {
+      ResourceMark rm;
+      log_debug(aot, compilation)("Emitting uncommon trap (cannot compile call site) in AOT code for %s", holder_klass->name()->as_klass_external_name());
+    }
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
                   holder_klass);

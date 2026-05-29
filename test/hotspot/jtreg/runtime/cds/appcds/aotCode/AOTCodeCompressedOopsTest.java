@@ -26,7 +26,7 @@
  * @test
  * @summary Sanity test of AOT Code Cache with compressed oops configurations
  * @requires vm.cds.supports.aot.code.caching
- * @requires vm.compMode != "Xcomp"
+ * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
  * @requires vm.bits == 64
  * @requires vm.opt.final.UseCompressedOops
  * @comment The test verifies AOT checks during VM startup and not code generation.
@@ -180,7 +180,7 @@ public class AOTCodeCompressedOopsTest {
                          line = list.get(i+2);
                          Matcher m = p.matcher(line);
                          if (!m.find()) {
-                             throw new RuntimeException("Pattern \"" + p + "\" not found in the output");
+                             throw new RuntimeException("Pattern \"" + p + "\" not found in the output. Got \"" + line + "\"");
                          }
                          aotCacheBase = Long.valueOf(m.group(1), 16);
                          aotCacheShift = Integer.valueOf(m.group(2));
@@ -188,7 +188,7 @@ public class AOTCodeCompressedOopsTest {
                          line = list.get(i+6);
                          m = p.matcher(line);
                          if (!m.find()) {
-                             throw new RuntimeException("Pattern \"" + p + "\" not found in the output");
+                             throw new RuntimeException("Pattern \"" + p + "\" not found in the output. Got \"" + line + "\"");
                          }
                          currentBase = Long.valueOf(m.group(1), 16);
                          currentShift = Integer.valueOf(m.group(2));

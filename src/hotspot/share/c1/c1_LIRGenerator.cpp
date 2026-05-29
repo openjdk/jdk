@@ -33,6 +33,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -656,7 +657,8 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
   if (UseFastNewInstance && klass->is_loaded()
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
 
-    StubId stub_id = klass->is_initialized() ? StubId::c1_fast_new_instance_id : StubId::c1_fast_new_instance_init_check_id;
+    bool known_initialized = klass->is_initialized() && !compilation()->env()->is_aot_compile();
+    StubId stub_id = known_initialized ? StubId::c1_fast_new_instance_id : StubId::c1_fast_new_instance_init_check_id;
 
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, stub_id);
 
@@ -665,7 +667,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
     assert(klass->size_helper() > 0, "illegal instance size");
     const int instance_size = align_object_size(klass->size_helper());
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
-                       oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
+                       oopDesc::header_size(), instance_size, klass_reg, !known_initialized, slow_path);
   } else {
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, StubId::c1_new_instance_id);
     __ branch(lir_cond_always, slow_path);
@@ -3152,13 +3154,18 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   int offset = -1;
   LIR_Opr counter_holder;
   if (level == CompLevel_limited_profile) {
-    MethodCounters* counters_adr = method->ensure_method_counters();
+    ciMetadata* counters_adr = method->ensure_method_counters();
     if (counters_adr == nullptr) {
       bailout("method counters allocation failed");
       return;
     }
-    counter_holder = new_pointer_register();
-    __ move(LIR_OprFact::intptrConst(counters_adr), counter_holder);
+    if (AOTCodeCache::is_dumping_code()) {
+      counter_holder = new_register(T_METADATA);
+      __ metadata2reg(counters_adr->constant_encoding(), counter_holder);
+    } else {
+      counter_holder = new_pointer_register();
+      __ move(LIR_OprFact::intptrConst(counters_adr->constant_encoding()), counter_holder);
+    }
     offset = in_bytes(backedge ? MethodCounters::backedge_counter_offset() :
                                  MethodCounters::invocation_counter_offset());
   } else if (level == CompLevel_full_profile) {

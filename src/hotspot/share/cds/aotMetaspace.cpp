@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotArtifactFinder.hpp"
+#include "cds/aotCacheAccess.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
@@ -61,6 +62,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/aotCompileBroker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -79,6 +81,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
@@ -949,17 +952,16 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
- if (CDSConfig::is_dumping_final_static_archive()) {
-   if (AOTPrintTrainingInfo) {
-     tty->print_cr("==================== archived_training_data ** before dumping ====================");
-     TrainingData::print_archived_training_data_on(tty);
-   }
-   LogStreamHandle(Info, aot, training, data) log;
-   if (log.is_enabled()) {
-     TrainingData::print_archived_training_data_on(&log);
-   }
- }
-
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    if (AOTPrintTrainingInfo) {
+      tty->print_cr("==================== archived_training_data ** before dumping ====================");
+      TrainingData::print_archived_training_data_on(tty);
+    }
+    LogStreamHandle(Info, aot, training, data) log;
+    if (log.is_enabled()) {
+      TrainingData::print_archived_training_data_on(&log);
+    }
+  }
 
   StaticArchiveBuilder builder;
   dump_static_archive_impl(builder, THREAD);
@@ -993,6 +995,8 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
       } else {
         tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache, (int64_t)(st.st_size));
       }
+      print_statistics_before_exit();
+      ostream_exit(); // finalize VM log
       vm_direct_exit(0);
     }
   }
@@ -1007,8 +1011,11 @@ void AOTMetaspace::init_heap_settings() {
     } else if (CDSConfig::is_dumping_final_static_archive()) {
       // Obey the command-line switch. Do not override
     } else if (CDSConfig::is_using_archive()) {
-      precond(FileMapInfo::current_info() == nullptr);
-      FileMapInfo* static_mapinfo = open_static_archive();
+      FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+      // may have been opened by get_aot_code_region_size()
+      if (static_mapinfo == nullptr) {
+        static_mapinfo = open_static_archive();
+      }
       if (static_mapinfo != nullptr && static_mapinfo->header()->compatible_oop_compression()) {
         // Use the same setting as recorded in the archive.
         FLAG_SET_ERGO(AOTCompatibleOopCompression, true);
@@ -1206,15 +1213,21 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   VM_PopulateDumpSharedSpace op(builder, _output_mapinfo);
   VMThread::execute(&op);
 
-  if (AOTCodeCache::is_on_for_dump() && CDSConfig::is_dumping_final_static_archive()) {
-    CDSConfig::enable_dumping_aot_code();
-    {
-      builder.start_ac_region();
-      // Write the contents to AOT code region before packing the region
-      AOTCodeCache::dump();
-      builder.end_ac_region();
+  if (AOTCodeCache::is_caching_enabled() && CDSConfig::is_dumping_final_static_archive()) {
+    // We have just created the final image. Now dump AOT adapters, stubs and compiled code.
+    builder.start_ac_region();
+    if (AOTCodeCache::is_dumping_code()) {
+      // Let's run the AOT compiler.
+      CDSConfig::enable_dumping_aot_code();
+      log_info(aot)("Compiling AOT code");
+      AOTCompileBroker::compile_aot_code(&builder, CHECK);
+      log_info(aot)("Finished compiling AOT code");
+      CDSConfig::disable_dumping_aot_code();
     }
-    CDSConfig::disable_dumping_aot_code();
+    // Write the contents to AOT code region before packing the region
+    AOTCodeCache::dump();
+    log_info(aot)("Dumped AOT code Cache");
+    builder.end_ac_region();
   }
 
   bool status = write_static_archive(&builder, _output_mapinfo, op.mapped_heap_info(), op.streamed_heap_info());
@@ -1422,7 +1435,7 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
   if (CDSConfig::is_dumping_heap()) {
     HeapShared::write_heap(&_mapped_heap_info, &_streamed_heap_info);
-  } else {
+  } else if (!CDSConfig::is_dumping_preimage_static_archive()) {
     CDSConfig::log_reasons_for_not_dumping_heap();
   }
 }
@@ -1584,7 +1597,25 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
     delete dynamic_mapinfo;
   }
   if (RequireSharedSpaces && has_failed) {
-      AOTMetaspace::unrecoverable_loading_error("Unable to map shared spaces");
+    // static archive mapped but dynamic archive failed
+    AOTMetaspace::unrecoverable_loading_error("Unable to map shared spaces");
+  }
+}
+
+// This is called very early at VM start up to get AOT cache header
+// and the size of the AOT code region during production run.
+// We need the size to reseve space in CodeCache to map code from AOT code region.
+void AOTMetaspace::get_aot_code_region_size() {
+  if (!AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_final_static_archive()) {
+    return;
+  } else if (CDSConfig::is_using_archive()) { // production run with AOT code cache
+    precond(FileMapInfo::current_info() == nullptr);
+    precond(CodeCache::max_capacity() == 0);
+    FileMapInfo* static_mapinfo = open_static_archive();
+    if (static_mapinfo != nullptr) {
+      FileMapRegion* aot_code_region = static_mapinfo->region_at(AOTMetaspace::ac);
+      AOTCacheAccess::set_aot_code_region_size(aot_code_region->used_aligned());
+    }
   }
 }
 

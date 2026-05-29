@@ -22,6 +22,9 @@
  *
  */
 
+#include "cds/aotCacheAccess.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
+#include "cds/heapShared.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
@@ -37,6 +40,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationLog.hpp"
@@ -65,6 +69,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -117,6 +122,7 @@ ciEnv::ciEnv(CompileTask* task)
   _debug_info = nullptr;
   _dependencies = nullptr;
   _inc_decompile_count_on_failure = true;
+  _codecache_full = false;
   _compilable = MethodCompilable;
   _break_at_compile = false;
   _compiler_data = nullptr;
@@ -251,6 +257,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   _debug_info = nullptr;
   _dependencies = nullptr;
   _inc_decompile_count_on_failure = true;
+  _codecache_full = false;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
   _compiler_data = nullptr;
@@ -667,7 +674,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
                                              ciInstanceKlass* accessor) {
   if (obj_index >= 0) {
     ciConstant con = get_resolved_constant(cpool, obj_index);
-    if (con.is_valid()) {
+    if (con.should_be_constant()) {
       return con;
     }
   }
@@ -821,7 +828,15 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Patch the call site to the nmethod entry point of the static compiled lambda form.
     // As with other two-component call sites, both values must be independently verified.
     assert(index < cpool->cache()->resolved_indy_entries_length(), "impossible");
-    Method* adapter = cpool->resolved_indy_entry_at(index)->method();
+    ResolvedIndyEntry* indy_info = cpool->resolved_indy_entry_at(index);
+    Method* adapter = indy_info->method();
+#if INCLUDE_CDS
+    if (is_aot_compile() && !AOTConstantPoolResolver::is_resolution_deterministic(cpool(), indy_info->constant_pool_index())) {
+      // This is an indy callsite that was resolved as a side effect of VM bootstrap, but
+      // it cannot be cached in the resolved state, so AOT code should not reference it.
+      adapter = nullptr;
+    }
+#endif
     // Resolved if the adapter is non null.
     if (adapter != nullptr) {
       return get_method(adapter);
@@ -868,11 +883,11 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
       constantTag tag = cpool->tag_ref_at(index, bc);
       assert(accessor->get_instanceKlass() == cpool->pool_holder(), "not the pool holder?");
       Method* m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
-      if (m != nullptr &&
-          (bc == Bytecodes::_invokestatic
-           ?  m->method_holder()->is_not_initialized()
-           : !m->method_holder()->is_loaded())) {
-        m = nullptr;
+      if (m != nullptr) {
+        ciInstanceKlass* cik = get_instance_klass(m->method_holder());
+        if ((bc == Bytecodes::_invokestatic && cik->is_not_initialized()) || !cik->is_loaded()) {
+          m = nullptr;
+        }
       }
       if (m != nullptr && ReplayCompiles && !ciReplay::is_loaded(m)) {
         m = nullptr;
@@ -953,7 +968,7 @@ bool ciEnv::is_in_vm() {
 // Check for changes during compilation (e.g. class loads, evolution,
 // breakpoints, call site invalidation).
 void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
-  if (failing())  return;  // no need for further checks
+  assert(!failing(), "should not call this when failing");
 
   Dependencies::DepType result = dependencies()->validate_dependencies(_task);
   if (result != Dependencies::end_marker) {
@@ -968,8 +983,199 @@ void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
   }
 }
 
+// is_loading_aot_code = true implies loading compiled code from AOT code cache
+bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool install_code, bool is_loading_aot_code, bool preload) {
+  methodHandle method(thread, target->get_Method());
+
+  // Change in Jvmti state may invalidate compilation.
+  if (!failing() && jvmti_state_changed()) {
+    record_failure("Jvmti state change invalidated dependencies");
+  }
+
+  // Change in DTrace flags may invalidate compilation.
+  if (!failing() &&
+      ( (!dtrace_method_probes() && DTraceMethodProbes) ||
+        (!dtrace_alloc_probes() && DTraceAllocProbes) )) {
+    record_failure("DTrace flags change invalidated dependencies");
+  }
+
+  if (!failing() && target->needs_clinit_barrier() &&
+      target->holder()->is_in_error_state()) {
+    record_failure("method holder is in error state");
+  }
+
+  if (!failing() && !is_loading_aot_code) {
+    if (log() != nullptr) {
+      // Log the dependencies which this compilation declares.
+      dependencies()->log_all_dependencies();
+    }
+
+    // Encode the dependencies now, so we can check them right away.
+    dependencies()->encode_content_bytes();
+  }
+  // Check for {class loads, evolution, breakpoints, ...} during compilation.
+  // This check is skipped for RepeatCompilation request.
+  // Execute this check for VerifyAOTCode when loading AOT code.
+  // Note, RepeatCompilation request is ignored for AOT code load.
+  if (!failing() && (install_code || is_loading_aot_code)) {
+    // Check for {class loads, evolution, breakpoints, ...} during compilation
+    validate_compile_task_dependencies(target);
+    if (failing() && preload) {
+      ResourceMark rm;
+      char* method_name = method->name_and_sig_as_C_string();
+      log_info(aot, codecache, nmethod)("preload code for '%s' failed dependency check", method_name);
+    }
+  }
+
+  if (failing()) {
+    // While not a true deoptimization, it is a preemptive decompile.
+    MethodData* mdo = method()->method_data();
+    if (mdo != nullptr && _inc_decompile_count_on_failure) {
+      mdo->inc_decompile_count();
+    }
+    return false;
+  }
+  return true;
+}
+
+void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool preload, int entry_bci, AOTCodeEntry* aot_code_entry, nmethod* nm) {
+  methodHandle method(thread, target->get_Method());
+
+  if (entry_bci == InvocationEntryBci) {
+    if (TieredCompilation) {
+      // If there is an old version we're done with it
+      nmethod* old = method->code();
+      if (TraceMethodReplacement && old != nullptr) {
+        ResourceMark rm;
+        char *method_name = method->name_and_sig_as_C_string();
+        tty->print_cr("Replacing method %s", method_name);
+      }
+      if (old != nullptr) {
+        old->make_not_used();
+      }
+    }
+
+    LogTarget(Info, nmethod, install) lt;
+    if (lt.is_enabled()) {
+      ResourceMark rm;
+      char *method_name = method->name_and_sig_as_C_string();
+      lt.print("Installing method (L%d) %s id=%d aot=%s%s%u",
+               task()->comp_level(), method_name, compile_id(),
+               task()->is_aot_load() ? "A" : "", preload ? "P" : "",
+               (aot_code_entry != nullptr ? aot_code_entry->offset() : 0));
+    }
+    // Allow the code to be executed
+    MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+    if (nm->make_in_use()) {
+      assert(!preload || method->method_holder()->is_linked(), "AOT code preloaded only for linked method holder");
+      method->set_code(method, nm);
+#if INCLUDE_CDS
+      if (preload) {
+        MethodCounters* mc = method->get_method_counters(thread);
+        assert(mc != nullptr, "CompileBroker should create MethodCounters if it is missing");
+        mc->set_aot_preload_code_entry(aot_code_entry);
+        nm->set_preloaded(true);
+      }
+#endif
+    }
+  } else {
+    LogTarget(Info, nmethod, install) lt;
+    if (lt.is_enabled()) {
+      assert(aot_code_entry == nullptr && !task()->is_aot_load(), "OSR nmethods are not AOT compiled");
+      ResourceMark rm;
+      char *method_name = method->name_and_sig_as_C_string();
+      lt.print("Installing osr method (L%d) %s @ %d id=%u",
+               task()->comp_level(), method_name, entry_bci, compile_id());
+    }
+    MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+    if (nm->make_in_use()) {
+      method->method_holder()->add_osr_nmethod(nm);
+    }
+  }
+}
+
+#if INCLUDE_CDS
+// Register method loaded from AOT code cache
+nmethod* ciEnv::register_aot_method(JavaThread* thread,
+                                ciMethod* target,
+                                AbstractCompiler* compiler,
+                                nmethod* archived_nm,
+                                AOTCodeReader* aot_code_reader,
+                                bool install_code)
+{
+  AOTCodeEntry* aot_code_entry = task()->aot_code_entry();
+  precond(aot_code_entry != nullptr);
+  nmethod* nm = nullptr;
+  {
+    methodHandle method(thread, target->get_Method());
+    bool preload = task()->preload(); // Code is preloaded before Java method execution
+
+    // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+    if (method->get_method_counters(thread) == nullptr) {
+      record_failure("can't create method counters");
+      return nullptr;
+    }
+
+    // Check if memory should be freed before allocation
+    CodeCache::gc_on_allocation();
+
+    // To prevent compile queue updates.
+    MutexLocker locker(thread, MethodCompileQueue_lock);
+
+    // Prevent InstanceKlass::add_to_hierarchy from running
+    // and invalidating our dependencies until we install this method.
+    // No safepoints are allowed. Otherwise, class redefinition can occur in between.
+    MutexLocker ml(Compile_lock);
+    NoSafepointVerifier nsv;
+
+    // AOTCode entry indicates this shared code was marked invalid while it was loaded.
+    if (aot_code_entry->not_entrant()) {
+      record_failure("AOT entry was marked not-entrant");
+      return nullptr;
+    }
+
+    if (!is_compilation_valid(thread, target, install_code, /*is_loading_aot_code*/ true, preload)) {
+      return nullptr;
+    }
+
+    if (install_code) {
+      nm = nmethod::new_nmethod(archived_nm, method, compiler, aot_code_reader);
+    }
+    if (nm != nullptr) {
+#ifdef ASSERT
+      LogStreamHandle(Trace, aot, codecache, nmethod) log;
+      if (log.is_enabled()) {
+        ResourceMark rm;
+        stringStream ss;
+        ss.print_cr("=== loaded AOT nmethod code ===");
+        FlagSetting fs(PrintRelocations, true);
+        nm->print_on_impl(&ss);
+        nm->decode(&ss);
+        ss.print_cr("===============================");
+        log.print_cr("%s", ss.freeze());
+      }
+#endif
+      aot_code_entry->set_loaded();
+      assert(nm->has_clinit_barriers() == aot_code_entry->has_clinit_barriers(), "should match");
+      make_code_usable(thread, target, preload, InvocationEntryBci, aot_code_entry, nm);
+    }
+  }
+
+  NoSafepointVerifier nsv;
+  if (nm != nullptr) {
+    // Compilation succeeded, post what we know about it
+    nm->post_compiled_method(task());
+  } else if (install_code) {
+    // The CodeCache is full.
+    record_codecache_full();
+  }
+  return nm;
+  // safepoints are allowed again
+}
+#endif
+
 // ------------------------------------------------------------------
-// ciEnv::register_method
+// Register the result of a compilation including AOT compilation
 void ciEnv::register_method(ciMethod* target,
                             int entry_bci,
                             CodeOffsets* offsets,
@@ -980,11 +1186,14 @@ void ciEnv::register_method(ciMethod* target,
                             ExceptionHandlerTable* handler_table,
                             ImplicitExceptionTable* inc_table,
                             AbstractCompiler* compiler,
+                            bool has_clinit_barriers,
+                            bool for_preload,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             bool has_monitors,
                             bool has_scoped_access,
-                            int immediate_oops_patched) {
+                            int immediate_oops_patched,
+                            bool install_code) {
   VM_ENTRY_MARK;
   nmethod* nm = nullptr;
   {
@@ -1012,46 +1221,7 @@ void ciEnv::register_method(ciMethod* target,
     MutexLocker ml(Compile_lock);
     NoSafepointVerifier nsv;
 
-    // Change in Jvmti state may invalidate compilation.
-    if (!failing() && jvmti_state_changed()) {
-      record_failure("Jvmti state change invalidated dependencies");
-    }
-
-    // Change in DTrace flags may invalidate compilation.
-    if (!failing() &&
-        ( (!dtrace_method_probes() && DTraceMethodProbes) ||
-          (!dtrace_alloc_probes() && DTraceAllocProbes) )) {
-      record_failure("DTrace flags change invalidated dependencies");
-    }
-
-    if (!failing() && target->needs_clinit_barrier() &&
-        target->holder()->is_in_error_state()) {
-      record_failure("method holder is in error state");
-    }
-
-    if (!failing()) {
-      if (log() != nullptr) {
-        // Log the dependencies which this compilation declares.
-        dependencies()->log_all_dependencies();
-      }
-
-      // Encode the dependencies now, so we can check them right away.
-      dependencies()->encode_content_bytes();
-
-      // Check for {class loads, evolution, breakpoints, ...} during compilation
-      validate_compile_task_dependencies(target);
-    }
-
-    if (failing()) {
-      // While not a true deoptimization, it is a preemptive decompile.
-      MethodData* mdo = method()->method_data();
-      if (mdo != nullptr && _inc_decompile_count_on_failure) {
-        mdo->inc_decompile_count();
-      }
-
-      // All buffers in the CodeBuffer are allocated in the CodeCache.
-      // If the code buffer is created on each compile attempt
-      // as in C2, then it must be freed.
+    if (!is_compilation_valid(THREAD, target, install_code, /*is_loading_aot_code*/ false, /*preload*/ false)) {
       code_buffer->free_blob();
       return;
     }
@@ -1061,62 +1231,72 @@ void ciEnv::register_method(ciMethod* target,
     assert(compiler->type() == compiler_c2 ||
            offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
 
-    nm =  nmethod::new_nmethod(method,
-                               compile_id(),
-                               entry_bci,
-                               offsets,
-                               orig_pc_offset,
-                               debug_info(), dependencies(), code_buffer,
-                               frame_words, oop_map_set,
-                               handler_table, inc_table,
-                               compiler, CompLevel(task()->comp_level()),
-                               nmethod::Flags(has_unsafe_access, has_wide_vectors, has_monitors, has_scoped_access));
-
+    if (install_code) {
+      nm =  nmethod::new_nmethod(method,
+                                 compile_id(),
+                                 entry_bci,
+                                 offsets,
+                                 orig_pc_offset,
+                                 debug_info(), dependencies(), code_buffer,
+                                 frame_words, oop_map_set,
+                                 handler_table, inc_table,
+                                 compiler, CompLevel(task()->comp_level()),
+                                 nmethod::Flags(has_unsafe_access,
+                                                has_wide_vectors,
+                                                has_monitors,
+                                                has_scoped_access,
+                                                has_clinit_barriers));
+    }
     // Free codeBlobs
     code_buffer->free_blob();
 
     if (nm != nullptr) {
       assert(!method->is_synchronized() || nm->has_monitors(), "");
 
-      if (entry_bci == InvocationEntryBci) {
-        if (TieredCompilation) {
-          // If there is an old version we're done with it
-          nmethod* old = method->code();
-          if (TraceMethodReplacement && old != nullptr) {
-            ResourceMark rm;
-            char *method_name = method->name_and_sig_as_C_string();
-            tty->print_cr("Replacing method %s", method_name);
-          }
-          if (old != nullptr) {
-            old->make_not_used();
-          }
-        }
-
-        LogTarget(Info, nmethod, install) lt;
-        if (lt.is_enabled()) {
+#if INCLUDE_CDS
+      if (task()->is_aot_compile()) {
+#ifdef ASSERT
+        LogStreamHandle(Trace, aot, codecache, nmethod) log;
+        if (log.is_enabled()) {
           ResourceMark rm;
-          char *method_name = method->name_and_sig_as_C_string();
-          lt.print("Installing method (%d) %s ",
-                    task()->comp_level(), method_name);
+          stringStream ss;
+          ss.print_cr("=== storing AOT nmethod code ===");
+          FlagSetting fs(PrintRelocations, true);
+          nm->print_on_impl(&ss);
+          nm->decode(&ss);
+          ss.print_cr("===============================");
+          log.print_cr("%s", ss.freeze());
         }
-        // Allow the code to be executed
-        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
-        if (nm->make_in_use()) {
-          method->set_code(method, nm);
+#endif
+        AOTCodeEntry* aot_code_entry = AOTCodeCache::store_nmethod(nm, compiler, for_preload);
+        if (aot_code_entry != nullptr) {
+          nm->set_aot_code_entry(aot_code_entry);
+          aot_code_entry->set_inlined_bytecodes(num_inlined_bytecodes());
+          // Inline size was recorded during training.
+          CompileTrainingData* ctd = nullptr;
+          {
+            TrainingData::TrainingDataLocker l;
+            MethodTrainingData* mtd = MethodTrainingData::find(method);
+            assert(mtd != nullptr, "AOT compiled method should have MethodTrainingData");
+            ctd = mtd->compile_data_for_aot_code(nm->comp_level());
+          }
+          assert(ctd != nullptr, "AOT compiled method should have CompileTrainingData");
+          int inline_size = ctd->inline_instructions_size();
+          aot_code_entry->set_inline_instructions_size(inline_size);
+          if (for_preload) {
+            // To have reference from method to AOT preload code
+            // during assembly phase.
+            MethodCounters* mc = method->get_method_counters(thread);
+            assert(mc != nullptr, "CompileBroker should create MethodCounters if it is missing");
+            mc->set_aot_preload_code_entry(aot_code_entry);
+            // Set it only for printing purpose, otherwise it is unused
+            // during assembly phase.
+            nm->set_preloaded(true);
+          }
         }
-      } else {
-        LogTarget(Info, nmethod, install) lt;
-        if (lt.is_enabled()) {
-          ResourceMark rm;
-          char *method_name = method->name_and_sig_as_C_string();
-          lt.print("Installing osr method (%d) %s @ %d",
-                    task()->comp_level(), method_name, entry_bci);
-        }
-        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
-        if (nm->make_in_use()) {
-          method->method_holder()->add_osr_nmethod(nm);
-        }
-      }
+      } else // No need to make AOT code usable during assembly phase
+#endif
+      make_code_usable(THREAD, target, /* preload */ false, entry_bci, /* aot_code_entry */ nullptr, nm);
     }
   }
 
@@ -1125,9 +1305,11 @@ void ciEnv::register_method(ciMethod* target,
     // Compilation succeeded, post what we know about it
     nm->post_compiled_method(task());
     task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
-  } else {
+  } else if (install_code) {
     // The CodeCache is full.
-    record_failure("code cache is full");
+    record_codecache_full();
+  } else {
+    task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
   }
 
   // safepoints are allowed again
@@ -1227,6 +1409,11 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
 void ciEnv::record_out_of_memory_failure() {
   // If memory is low, we stop compiling methods.
   record_method_not_compilable("out of memory");
+}
+
+void ciEnv::record_codecache_full() {
+  _codecache_full = true;
+  record_failure("code cache is full");
 }
 
 ciInstance* ciEnv::unloaded_ciinstance() {
@@ -1697,3 +1884,77 @@ void ciEnv::dump_inline_data(int compile_id) {
 void ciEnv::dump_replay_data_version(outputStream* out) {
   out->print_cr("version %d", REPLAY_VERSION);
 }
+
+#if INCLUDE_CDS
+
+bool ciEnv::is_aot_compile() {
+  return (task() != nullptr) && task()->is_aot_compile();
+}
+
+InstanceKlass::ClassState ciEnv::compute_init_state_for_aot_compile(InstanceKlass* ik) {
+  ASSERT_IN_VM;
+  ResourceMark rm;
+  assert(is_aot_compile(), "should be called only for AOT compialtion in assembly phase");
+  assert(!ik->is_in_error_state(), "comp_id: %d, klass %s", task()->compile_id(), ik->external_name());
+
+  if (!AOTCacheAccess::can_generate_aot_code_for(ik)) {
+    log_debug(aot, compilation)("%d: klass (%s) %s is not archived", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
+    // Skip this class
+    return InstanceKlass::ClassState::initialization_error;
+  }
+  if (task()->method()->method_holder() == ik) {
+    log_trace(aot, compilation)("%d: method_holder: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
+    if (task()->method()->is_static_initializer()) { // Happens with -Xcomp
+       return InstanceKlass::ClassState::being_initialized;
+    } else {
+       return InstanceKlass::ClassState::fully_initialized;
+    }
+  }
+
+  switch (task()->compile_reason()) {
+    case CompileTask::Reason_AOTCompile: {
+      // Check init dependencies
+      MethodTrainingData* mtd = nullptr;
+      GUARDED_VM_ENTRY(mtd = MethodTrainingData::find(methodHandle(Thread::current(), task()->method())); )
+      if (mtd != nullptr) {
+        CompileTrainingData* ctd = mtd->compile_data_for_aot_code(task()->comp_level());
+        if (ctd != nullptr) {
+          for (int i = 0; i < ctd->init_dep_count(); i++) {
+            KlassTrainingData* ktd = ctd->init_dep(i);
+            if (ktd->has_holder() && (ktd->holder() == ik)) {
+              log_trace(aot, compilation)("%d: init_dependency: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
+              return InstanceKlass::ClassState::fully_initialized; // init dependency present
+            }
+          }
+        }
+      }
+
+      // Core java/lang/invoke classes are peculiar. They include LF invokers, which
+      // are initialized in production run, but they are not recorded as init dependencies.
+      // CI query should report their status as if in production run, otherwise AOT
+      // code would have uncommon traps at invokedynamic calls.
+      if (HeapShared::is_core_java_lang_invoke_klass(ik)) {
+        log_trace(aot, compilation)("%d: core_java_lang_invoke: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
+        return InstanceKlass::ClassState::fully_initialized;
+      }
+
+      // Class may be not present during TD creation for this method.
+      // It could happen when profiled data for inlined method
+      // was updated after this method was compiled during training.
+      break;
+    }
+    case CompileTask::Reason_AOTCompileForPreload: {
+      // Preload AOT code does not depend on Training Data,
+      // it has class init barriers to initialize class by
+      // going into interpreter or directly calling runtime.
+      log_trace(aot, compilation)("%d: for_preload: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
+      return InstanceKlass::ClassState::fully_initialized;
+    }
+    default: fatal("%s", CompileTask::reason_name(task()->compile_reason()));
+  }
+  log_debug(aot, compilation)("%d: klass (%s) %s is not recorded for this compilation", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
+  // Skip this class
+  return InstanceKlass::ClassState::initialization_error;
+}
+
+#endif // INCLUDE_CDS

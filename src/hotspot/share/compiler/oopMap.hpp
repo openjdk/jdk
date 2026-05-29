@@ -154,6 +154,7 @@ class OopMap: public ResourceObj {
   friend class VMStructs;
   friend class OopMapSet;
   friend class OopMapSort;
+  friend class AOTCodeReader;
  private:
   int  _pc_offset; // offset in the code that this OopMap corresponds to
   int  _omv_count; // number of OopMapValues in the stream
@@ -180,6 +181,7 @@ class OopMap: public ResourceObj {
 
  public:
   OopMap(int frame_size, int arg_count);
+  OopMap(int data_size);
 
   // pc-offset handling
   int offset() const     { return _pc_offset; }
@@ -216,6 +218,7 @@ class OopMap: public ResourceObj {
 
 class OopMapSet : public ResourceObj {
   friend class VMStructs;
+  friend class AOTCodeReader;
  private:
   GrowableArray<OopMap*> _list;
 
@@ -223,6 +226,7 @@ class OopMapSet : public ResourceObj {
 
  public:
   OopMapSet();
+  OopMapSet(int size);
 
   // returns the number of OopMaps in this OopMapSet
   int size() const            { return _list.length(); }

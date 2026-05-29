@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/aotCodeCache.hpp"
@@ -129,6 +130,7 @@ jint init_globals() {
   bytecodes_init();
   classLoader_init1();
   compilationPolicy_init();
+  AOTMetaspace::get_aot_code_region_size();
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
   icache_init2();                 // depends on VM_Version for choosing the mechanism

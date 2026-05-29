@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  *          java.instrument
  * @requires vm.jvmti & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @requires vm.compMode != "Xcomp"
+ * @comment  Can't use AOT cache because -XX:TypeProfileLevel=222 invalidates training data
+ * @requires !vm.cds.supports.aot.code.caching | vm.opt.AOTCache == null
  * @build compiler.profiling.spectrapredefineclass.Agent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.profiling.spectrapredefineclass.Agent
  * @run driver compiler.profiling.spectrapredefineclass.Launcher

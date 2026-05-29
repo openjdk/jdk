@@ -909,6 +909,9 @@
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
                                                                             \
+  product(bool, PreloadReduceTraps, true, DIAGNOSTIC,                       \
+          "Preload code should avoid traps as much as possible.")           \
+                                                                            \
   develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
           "When a Type node becomes top, make paths where the node is "     \
           "used dead by replacing them with a Halt node. Turning this off " \

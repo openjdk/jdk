@@ -112,6 +112,8 @@ protected:
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
   bool compute_has_trusted_loader();
 
+  static InstanceKlass::ClassState compute_init_state(InstanceKlass* ik);
+
 public:
   // Has this klass been initialized?
   bool                   is_initialized() {

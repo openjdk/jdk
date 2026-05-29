@@ -324,6 +324,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- use_optimized_module_handling:            %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph                     %d", _has_full_module_graph);
   st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
+  st->print_cr("- ptrmap_size_in_bits:                      %zu", _ptrmap_size_in_bits);
 }
 
 bool FileMapInfo::validate_class_location() {
@@ -967,6 +968,7 @@ size_t FileMapInfo::remove_bitmap_zeros(CHeapBitMap* map) {
 
 char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
                                        CHeapBitMap* ro_ptrmap,
+                                       CHeapBitMap* ac_ptrmap,
                                        AOTMappedHeapInfo* mapped_heap_info,
                                        AOTStreamedHeapInfo* streamed_heap_info,
                                        size_t &size_in_bytes) {
@@ -974,7 +976,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
   size_t removed_ro_leading_zeros = remove_bitmap_zeros(ro_ptrmap);
   header()->set_rw_ptrmap_start_pos(removed_rw_leading_zeros);
   header()->set_ro_ptrmap_start_pos(removed_ro_leading_zeros);
-  size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes();
+  size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes() + ac_ptrmap->size_in_bytes();
 
   if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
     // Remove leading and trailing zeros
@@ -992,9 +994,10 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
     size_in_bytes += streamed_heap_info->oopmap()->size_in_bytes();
   }
 
-  // The bitmap region contains up to 4 parts:
+  // The bitmap region contains up to 5 parts:
   // rw_ptrmap:                  metaspace pointers inside the read-write region
   // ro_ptrmap:                  metaspace pointers inside the read-only region
+  // ac_ptrmap:                  metaspace pointers inside the AOT code cache region
   // *_heap_info->oopmap():      Java oop pointers in the heap region
   // mapped_heap_info->ptrmap(): metaspace pointers in the heap region
   char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
@@ -1005,6 +1008,11 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
 
   region_at(AOTMetaspace::ro)->init_ptrmap(written, ro_ptrmap->size());
   written = write_bitmap(ro_ptrmap, buffer, written);
+
+  if (ac_ptrmap->size() > 0) {
+    region_at(AOTMetaspace::ac)->init_ptrmap(written, ac_ptrmap->size());
+    written = write_bitmap(ac_ptrmap, buffer, written);
+  }
 
   if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
     assert(HeapShared::is_writing_mapping_mode(), "unexpected dumping mode");
@@ -1272,8 +1280,10 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // Note that this may either be a "fresh" mapping into unreserved address
     // space (Windows, first mapping attempt), or a mapping into pre-reserved
     // space (Posix). See also comment in AOTMetaspace::map_archives().
+    bool read_only = r->read_only() && !CDSConfig::is_dumping_final_static_archive();
+
     char* base = map_memory(_fd, _full_path, r->file_offset(),
-                            requested_addr, size, r->read_only(),
+                            requested_addr, size, read_only,
                             r->allow_exec(), mtClassShared);
     if (base != requested_addr) {
       AOTMetaspace::report_loading_error("Unable to map %s shared space at " INTPTR_FORMAT,
@@ -1375,11 +1385,58 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
 
     r->set_mapped_from_file(true);
     r->set_mapped_base(mapped_base);
+    relocate_pointers_in_aot_code_region();
     aot_log_info(aot)("Mapped static  region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
                   AOTMetaspace::ac, p2i(r->mapped_base()), p2i(r->mapped_end()),
                   shared_region_name[AOTMetaspace::ac]);
     return true;
   }
+}
+
+class CachedCodeRelocator: public BitMapClosure {
+  address _code_requested_base;
+  address* _patch_base;
+  intx _code_delta;
+  intx _metadata_delta;
+
+public:
+  CachedCodeRelocator(address code_requested_base, address code_mapped_base,
+                      intx metadata_delta) {
+    _code_requested_base = code_requested_base;
+    _patch_base = (address*)code_mapped_base;
+    _code_delta = code_mapped_base - code_requested_base;
+    _metadata_delta = metadata_delta;
+  }
+
+  bool do_bit(size_t offset) {
+    address* p = _patch_base + offset;
+    address requested_ptr = *p;
+    if (requested_ptr < _code_requested_base) {
+      *p = requested_ptr + _metadata_delta;
+    } else {
+      *p = requested_ptr + _code_delta;
+    }
+    return true; // keep iterating
+  }
+};
+
+void FileMapInfo::relocate_pointers_in_aot_code_region() {
+  FileMapRegion* r = region_at(AOTMetaspace::ac);
+  char* bitmap_base = map_bitmap_region();
+
+  BitMapView ac_ptrmap = ptrmap_view(AOTMetaspace::ac);
+  if (ac_ptrmap.size() == 0) {
+    return;
+  }
+
+  address core_regions_requested_base = (address)header()->requested_base_address();
+  address core_regions_mapped_base = (address)header()->mapped_base_address();
+  address ac_region_requested_base = core_regions_requested_base + r->mapping_offset();
+  address ac_region_mapped_base = (address)r->mapped_base();
+
+  CachedCodeRelocator patcher(ac_region_requested_base, ac_region_mapped_base,
+                              core_regions_mapped_base - core_regions_requested_base);
+  ac_ptrmap.iterate(&patcher);
 }
 
 class SharedDataRelocationTask : public ArchiveWorkerTask {

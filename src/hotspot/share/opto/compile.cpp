@@ -573,10 +573,15 @@ void Compile::print_compile_messages() {
 
   if( PrintOpto ) {
     if (is_osr_compilation()) {
-      tty->print("[OSR]%3d", _compile_id);
-    } else {
-      tty->print("%3d", _compile_id);
+      tty->print("[OSR]");
+    } else if (env()->task()->is_aot_compile()) {
+      if (for_preload()) {
+        tty->print("[PRE]");
+      } else {
+        tty->print("[AOT]");
+      }
     }
+    tty->print("%3d", _compile_id);
   }
 #endif
 }
@@ -614,7 +619,8 @@ void Compile::print_ideal_ir(const char* compile_phase_name) const {
   if (xtty != nullptr) {
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
-               is_osr_compilation() ? " compile_kind='osr'" : "",
+               is_osr_compilation() ? " compile_kind='osr'" :
+               (for_preload() ? " compile_kind='AP'" : ""),
                compile_phase_name);
   }
 
@@ -659,6 +665,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
+      _has_clinit_barriers(false),
       _stress_seed(0),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
@@ -739,9 +746,14 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if (ProfileTraps) {
+  if ((ProfileTraps && !ci_env->is_aot_compile()) ||
+      AOTCodeCache::is_using_code()) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
+    // Load recorded MDO from training run when AOT code
+    // is used - MDO may not created yet in such case.
+    // No need for AOT compilation - it is not
+    // executed during assembly phase.
     method()->ensure_method_data();
   }
 
@@ -944,6 +956,7 @@ Compile::Compile(ciEnv* ci_env,
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
+      _has_clinit_barriers(false),
       _stress_seed(0),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
@@ -1121,8 +1134,12 @@ void Compile::Init(bool aliasing) {
 
   _max_node_limit = _directive->MaxNodeLimitOption;
 
-  if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() && method()->needs_clinit_barrier()) {
+  if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() &&
+      (method()->needs_clinit_barrier() || (do_clinit_barriers() && method()->is_static()))) {
     set_clinit_barrier_on_entry(true);
+    if (do_clinit_barriers()) {
+      set_has_clinit_barriers(true); // Entry clinit barrier is in prolog code.
+    }
   }
   if (debug_info()->recording_non_safepoints()) {
     set_node_note_array(new(comp_arena()) GrowableArray<Node_Notes*>
@@ -4132,6 +4149,10 @@ bool Compile::final_graph_reshaping() {
 bool Compile::too_many_traps(ciMethod* method,
                              int bci,
                              Deoptimization::DeoptReason reason) {
+  if (PreloadReduceTraps && for_preload()) {
+    // Preload code should not have traps, if possible.
+    return true;
+  }
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only
@@ -4157,6 +4178,10 @@ bool Compile::too_many_traps(ciMethod* method,
 // Less-accurate variant which does not require a method and bci.
 bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
                              ciMethodData* logmd) {
+  if (PreloadReduceTraps && for_preload()) {
+    // Preload code should not have traps, if possible.
+    return true;
+  }
   if (trap_count(reason) >= Deoptimization::per_method_trap_limit(reason)) {
     // Too many traps globally.
     // Note that we use cumulative trap_count, not just md->trap_count.
@@ -4246,10 +4271,10 @@ bool Compile::needs_clinit_barrier(ciField* field, ciMethod* accessing_method) {
 }
 
 bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_method) {
-  if (holder->is_initialized()) {
+  if (holder->is_initialized() && !do_clinit_barriers()) {
     return false;
   }
-  if (holder->is_being_initialized()) {
+  if (holder->is_being_initialized() || do_clinit_barriers()) {
     if (accessing_method->holder() == holder) {
       // Access inside a class. The barrier can be elided when access happens in <clinit>,
       // <init>, or a static method. In all those cases, there was an initialization

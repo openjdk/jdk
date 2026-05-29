@@ -3702,6 +3702,10 @@ const char* InstanceKlass::init_state_name() const {
   return state_names[init_state()];
 }
 
+const char* InstanceKlass::state2name(ClassState s) {
+  return state_names[s];
+}
+
 void InstanceKlass::print_class_flags(outputStream* st) const {
   AccessFlags flags(compute_modifier_flags());
   if (flags.is_public    ()) st->print("public ");

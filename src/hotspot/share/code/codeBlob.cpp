@@ -192,6 +192,12 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   assert(_mutable_data == blob_end(), "sanity");
 }
 
+#ifdef ASSERT
+CodeBlob::~CodeBlob() {
+  assert(_oop_maps == nullptr || AOTCodeCache::is_address_in_aot_cache((address)_oop_maps), "Not flushed");
+}
+#endif
+
 void CodeBlob::purge() {
   assert(_mutable_data != nullptr, "should never be null");
   if (_mutable_data != blob_end()) {
@@ -200,7 +206,7 @@ void CodeBlob::purge() {
     _mutable_data_size = 0;
     _relocation_size = 0;
   }
-  if (_oop_maps != nullptr) {
+  if (_oop_maps != nullptr && !AOTCodeCache::is_address_in_aot_cache((address)_oop_maps)) {
     delete _oop_maps;
     _oop_maps = nullptr;
   }
@@ -250,8 +256,8 @@ void CodeBlob::prepare_for_archiving_impl() {
   _oop_maps = nullptr;
   _mutable_data = nullptr;
 #ifndef PRODUCT
-  asm_remarks().clear();
-  dbg_strings().clear();
+  asm_remarks().clear_ref();
+  dbg_strings().clear_ref();
 #endif /* PRODUCT */
 }
 

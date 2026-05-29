@@ -51,6 +51,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -634,6 +635,10 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         InstanceKlass* method_holder = m->method_holder();
         AOTArtifactFinder::add_cached_class(method_holder);
       }
+    } else if (AOTCodeCache::is_dumping_code() &&
+               (java_lang_invoke_MethodHandle::is_instance(obj) || is_interned_string(obj))) {
+      // Needed by AOT compiler.
+      append_root(obj);
     }
   }
 
@@ -1060,7 +1065,11 @@ void KlassSubGraphInfo::add_subgraph_entry_field(int static_field_offset, oop v)
       new (mtClass) GrowableArray<int>(10, mtClass);
   }
   _subgraph_entry_fields->append(static_field_offset);
-  _subgraph_entry_fields->append(HeapShared::append_root(v));
+  if (v == nullptr) {
+    _subgraph_entry_fields->append(-1);
+  } else {
+    _subgraph_entry_fields->append(HeapShared::append_root(v));
+  }
 }
 
 // Add the Klass* for an object in the current KlassSubGraphInfo's subgraphs.
@@ -1363,16 +1372,35 @@ void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) 
   }
 }
 
+static const char* java_lang_invoke_core_klasses[] = {
+  "java/lang/invoke/Invokers$Holder",
+  "java/lang/invoke/MethodHandle",
+  "java/lang/invoke/MethodHandleNatives",
+  "java/lang/invoke/DirectMethodHandle$Holder",
+  "java/lang/invoke/DelegatingMethodHandle$Holder",
+  "java/lang/invoke/LambdaForm$Holder",
+  "java/lang/invoke/BoundMethodHandle$Species_L",
+};
+
 void HeapShared::initialize_java_lang_invoke(TRAPS) {
   if (CDSConfig::is_using_aot_linked_classes() || CDSConfig::is_dumping_method_handles()) {
-    resolve_or_init("java/lang/invoke/Invokers$Holder", true, CHECK);
-    resolve_or_init("java/lang/invoke/MethodHandle", true, CHECK);
-    resolve_or_init("java/lang/invoke/MethodHandleNatives", true, CHECK);
-    resolve_or_init("java/lang/invoke/DirectMethodHandle$Holder", true, CHECK);
-    resolve_or_init("java/lang/invoke/DelegatingMethodHandle$Holder", true, CHECK);
-    resolve_or_init("java/lang/invoke/LambdaForm$Holder", true, CHECK);
-    resolve_or_init("java/lang/invoke/BoundMethodHandle$Species_L", true, CHECK);
+    int len = sizeof(java_lang_invoke_core_klasses)/sizeof(char*);
+    for (int i = 0; i < len; i++) {
+      resolve_or_init(java_lang_invoke_core_klasses[i], true, CHECK);
+    }
   }
+}
+
+bool HeapShared::is_core_java_lang_invoke_klass(InstanceKlass* klass) {
+  ResourceMark rm;
+  char* s2 = klass->name()->as_C_string();
+  int len = sizeof(java_lang_invoke_core_klasses)/sizeof(char*);
+  for (int i = 0; i < len; i++) {
+    if (strcmp(java_lang_invoke_core_klasses[i], s2) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Initialize the InstanceKlasses of objects that are reachable from the following roots:
@@ -1551,7 +1579,12 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
       int root_index = entry_field_records->at(i+1);
       // Load the subgraph entry fields from the record and store them back to
       // the corresponding fields within the mirror.
-      oop v = get_root(root_index, /*clear=*/true);
+      oop v;
+      if (root_index < 0) {
+        v = nullptr;
+      } else {
+        v = get_root(root_index, /*clear=*/true);
+      }
       oop m = k->java_mirror();
       if (k->has_aot_initialized_mirror()) {
         assert(v == m->obj_field(field_offset), "must be aot-initialized");

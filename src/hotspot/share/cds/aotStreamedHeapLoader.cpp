@@ -798,6 +798,8 @@ void AOTStreamedHeapLoader::cleanup() {
   }
 
   FREE_C_HEAP_ARRAY(_object_index_to_heap_object_table);
+  _object_index_to_heap_object_table = nullptr;
+  _roots_archive = nullptr;
 
   // Unmap regions
   FileMapInfo::current_info()->unmap_region(AOTMetaspace::hp);

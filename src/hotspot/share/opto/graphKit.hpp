@@ -420,6 +420,7 @@ class GraphKit : public Phase {
   // Check the null_seen bit.
   bool seems_never_null(Node* obj, ciProfileData* data, bool& speculating);
 
+  void guard_klass_is_initialized(Node* klass);
   void guard_klass_being_initialized(Node* klass);
   void guard_init_thread(Node* klass);
 

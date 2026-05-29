@@ -23,6 +23,7 @@
  */
 
 #include "classfile/vmClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -122,8 +123,14 @@ void C2Compiler::initialize() {
 
 void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
-
   CompilationMemoryStatisticMark cmsm(directive);
+  CompileTask* task = env->task();
+  if (install_code && task->is_aot_load()) {
+    AOTCodeCache::load_nmethod(env, target, entry_bci, this, CompLevel_full_optimization);
+    // We want to go quickly through AOT code load requests
+    // instead of spending time on normal compilation.
+    return;
+  }
 
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
@@ -132,7 +139,8 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
-
+  bool for_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
+  assert(!for_preload || (ClassInitBarrierMode > 0), "sanity");
   while (!env->failing()) {
     ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
@@ -143,6 +151,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     eliminate_boxing,
                     do_locks_coarsening,
                     do_superword,
+                    for_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
 

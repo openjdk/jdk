@@ -246,7 +246,7 @@ class CompilationPolicy : AllStatic {
   typedef CompilationPolicyUtils::Queue<InstanceKlass> TrainingReplayQueue;
 
   static int64_t _start_time;
-  static int _c1_count, _c2_count;
+  static int _c1_count, _c2_count, _ac_count;
   static double _increase_threshold_at_ratio;
   static TrainingReplayQueue _training_replay_queue;
 
@@ -297,6 +297,7 @@ class CompilationPolicy : AllStatic {
   inline static double weight(Method* method);
   // Apply heuristics and return true if x should be compiled before y
   inline static bool compare_methods(Method* x, Method* y);
+  inline static bool compare_tasks(CompileTask* x, CompileTask* y);
   // Compute event rate for a given method. The rate is the number of event (invocations + backedges)
   // per millisecond.
   inline static void update_rate(int64_t t, const methodHandle& method);
@@ -313,6 +314,7 @@ class CompilationPolicy : AllStatic {
 
   static void set_c1_count(int x) { _c1_count = x;    }
   static void set_c2_count(int x) { _c2_count = x;    }
+  static void set_ac_count(int x) { _ac_count = x;    }
 
   enum EventType { CALL, LOOP, COMPILE, FORCE_COMPILE, FORCE_RECOMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
   static void print_event_on(outputStream *st, EventType type, Method* m, Method* im, int bci, CompLevel level);
@@ -336,12 +338,13 @@ class CompilationPolicy : AllStatic {
 
   // m must be compiled before executing it
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
-  static void maybe_compile_early(const methodHandle& m, TRAPS);
+  static void maybe_compile_early(const methodHandle& m, MethodTrainingData* mtd, TRAPS);
   static void replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current);
  public:
   static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
   static int c2_count() { return _c2_count; }
+  static int ac_count() { return _ac_count; }
   static int compiler_count(CompLevel comp_level);
   // If m must_be_compiled then request a compilation from the CompileBroker.
   // This supports the -Xcomp option.

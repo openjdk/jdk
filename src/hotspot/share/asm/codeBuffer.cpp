@@ -1013,8 +1013,8 @@ void CodeBuffer::verify_section_allocation() {
       }
       guarantee(other->disjoint(sect), "sanity");
     }
-    guarantee(sect->end() <= tend, "sanity");
-    guarantee(sect->end() <= sect->limit(), "sanity");
+    guarantee(sect->end() <= tend, "sanity, sect_end: " PTR_FORMAT " tend: " PTR_FORMAT " size: %d", p2i(sect->end()), p2i(tend), (int)_total_size);
+    guarantee(sect->end() <= sect->limit(), "sanity, sect_end: " PTR_FORMAT " sect_limit: " PTR_FORMAT, p2i(sect->end()), p2i(sect->limit()));
   }
 }
 
@@ -1115,7 +1115,10 @@ AsmRemarks::AsmRemarks() {
 }
 
 AsmRemarks::~AsmRemarks() {
-  assert(_remarks == nullptr, "Must 'clear()' before deleting!");
+  if (_remarks != nullptr) {
+    clear();
+  }
+  assert(_remarks == nullptr, "must be");
 }
 
 void AsmRemarks::init() {
@@ -1172,7 +1175,10 @@ DbgStrings::DbgStrings() {
 }
 
 DbgStrings::~DbgStrings() {
-  assert(_strings == nullptr, "Must 'clear()' before deleting!");
+  if (_strings != nullptr) {
+    clear();
+  }
+  assert(_strings == nullptr, "must be");
 }
 
 void DbgStrings::init() {
@@ -1213,6 +1219,7 @@ const char* AsmRemarkCollection::insert(uint offset, const char* remstr) {
   } else {
     _remarks->push_back(cell);
   }
+  log_trace(codestrings)("AsmRemark::insert: offset=%u '%s'.", offset, remstr);
   return cell->string();
 }
 

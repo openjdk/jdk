@@ -228,6 +228,7 @@
   do_stub(monitor_notifyAll, 0, false, false)                          \
   do_stub(rethrow, 2, true, true)                                      \
   do_stub(slow_arraycopy, 0, false, false)                             \
+  do_stub(compile_method, 0,  true, false)                             \
   do_stub(register_finalizer, 0, false, false)                         \
   do_stub(vthread_end_first_transition, 0, false, false)               \
   do_stub(vthread_start_final_transition, 0, false, false)             \

@@ -24,6 +24,7 @@
 
 #include "asm/assembler.inline.hpp"
 #include "cds/cdsConfig.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
@@ -56,6 +57,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -972,14 +974,17 @@ int nmethod::total_size() const {
 }
 
 const char* nmethod::compile_kind() const {
-  if (is_osr_method())     return "osr";
+  if (is_osr_method()) return "osr";
+  if (preloaded())     return "AP";
+  if (is_aot())        return "A";
+
   if (method() != nullptr && is_native_method()) {
     if (method()->is_continuation_native_intrinsic()) {
       return "cnt";
     }
     return "c2n";
   }
-  return nullptr;
+  return "";
 }
 
 const char* nmethod::compiler_name() const {
@@ -1076,6 +1081,31 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   return nm;
 }
 
+void nmethod::record_nmethod_dependency() {
+  // To make dependency checking during class loading fast, record
+  // the nmethod dependencies in the classes it is dependent on.
+  // This allows the dependency checking code to simply walk the
+  // class hierarchy above the loaded class, checking only nmethods
+  // which are dependent on those classes.  The slow way is to
+  // check every nmethod for dependencies which makes it linear in
+  // the number of methods compiled.  For applications with a lot
+  // classes the slow way is too slow.
+  for (Dependencies::DepStream deps(this); deps.next(); ) {
+    if (deps.type() == Dependencies::call_site_target_value) {
+      // CallSite dependencies are managed on per-CallSite instance basis.
+      oop call_site = deps.argument_oop(0);
+      MethodHandles::add_dependent_nmethod(call_site, this);
+    } else {
+      InstanceKlass* ik = deps.context_type();
+      if (ik == nullptr) {
+        continue;  // ignore things like evol_method
+      }
+      // record this nmethod as dependent on this klass
+      ik->add_dependent_nmethod(this);
+    }
+  }
+}
+
 nmethod* nmethod::new_nmethod(const methodHandle& method,
   int compile_id,
   int entry_bci,
@@ -1127,29 +1157,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
             handler_table, nul_chk_table, compiler, comp_level, flags);
 
     if (nm != nullptr) {
-      // To make dependency checking during class loading fast, record
-      // the nmethod dependencies in the classes it is dependent on.
-      // This allows the dependency checking code to simply walk the
-      // class hierarchy above the loaded class, checking only nmethods
-      // which are dependent on those classes.  The slow way is to
-      // check every nmethod for dependencies which makes it linear in
-      // the number of methods compiled.  For applications with a lot
-      // classes the slow way is too slow.
-      for (Dependencies::DepStream deps(nm); deps.next(); ) {
-        if (deps.type() == Dependencies::call_site_target_value) {
-          // CallSite dependencies are managed on per-CallSite instance basis.
-          oop call_site = deps.argument_oop(0);
-          MethodHandles::add_dependent_nmethod(call_site, nm);
-        } else {
-          InstanceKlass* ik = deps.context_type();
-          if (ik == nullptr) {
-            continue;  // ignore things like evol_method
-          }
-          // record this nmethod as dependent on this klass
-          ik->add_dependent_nmethod(nm);
-        }
-      }
-      NOT_PRODUCT(if (nm != nullptr)  note_java_nmethod(nm));
+      nm->record_nmethod_dependency();
+      NOT_PRODUCT(note_java_nmethod(nm));
     }
   }
   // Do verification and logging outside CodeCache_lock.
@@ -1161,6 +1170,52 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   return nm;
 }
 
+#if INCLUDE_CDS
+nmethod* nmethod::restore(address code_cache_buffer,
+                          const methodHandle& method,
+                          AOTCodeReader* aot_code_reader)
+{
+  // This will call AOTCodeReader::restore() which restores some nmethods data
+  CodeBlob::restore(code_cache_buffer, aot_code_reader);
+  nmethod* nm = (nmethod*)code_cache_buffer;
+  nm->set_method(method());
+  nm->_gc_epoch = CodeCache::gc_epoch();
+
+  // Create cache after PcDesc data is copied - it will be used to initialize cache
+  nm->_pc_desc_container = new PcDescContainer(nm->scopes_pcs_begin());
+
+  nm->post_init();
+  return nm;
+}
+
+nmethod* nmethod::new_nmethod(nmethod* archived_nm,
+                              const methodHandle& method,
+                              AbstractCompiler* compiler,
+                              AOTCodeReader* aot_code_reader)
+{
+  nmethod* nm = nullptr;
+  int nmethod_size = archived_nm->size();
+  int comp_level   = archived_nm->comp_level();
+  // create nmethod
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    address code_cache_buffer = (address)CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
+    if (code_cache_buffer != nullptr) {
+      nm = archived_nm->restore(code_cache_buffer, method, aot_code_reader);
+      nm->record_nmethod_dependency();
+      NOT_PRODUCT(note_java_nmethod(nm));
+    }
+  }
+  // Do verification and logging outside CodeCache_lock.
+  if (nm != nullptr) {
+    // Safepoints in nmethod::verify aren't allowed because nm hasn't been installed yet.
+    DEBUG_ONLY(nm->verify();)
+    nm->log_new_nmethod();
+  }
+  return nm;
+}
+#endif // INCLUDE_CDS
+
 // Fill in default values for various fields
 void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   // avoid uninitialized fields, even for short time periods
@@ -1168,6 +1223,7 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _gc_data                    = nullptr;
   _oops_do_mark_link          = nullptr;
   _compiled_ic_data           = nullptr;
+  _aot_code_entry             = nullptr;
 
   _is_unloading_state         = 0;
   _state                      = not_installed;
@@ -1175,6 +1231,7 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _has_flushed_dependencies   = false;
   _is_unlinked                = false;
   _load_reported              = false; // jvmti state
+  _preloaded                  = false;
 
   _deoptimization_status      = not_marked;
 
@@ -1199,6 +1256,7 @@ void nmethod::post_init() {
   // Flush generated code
   ICache::invalidate_range(code_begin(), code_size());
 
+  // This will disarm entry barrier.
   Universe::heap()->register_nmethod(this);
 
 #ifdef COMPILER2
@@ -1309,7 +1367,7 @@ nmethod::nmethod(
 #if defined(SUPPORT_DATA_STRUCTS)
     if (AbstractDisassembler::show_structs()) {
       if (PrintRelocations) {
-        print_relocations();
+        print_relocations_on(tty);
         tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
       }
     }
@@ -1374,6 +1432,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _oops_do_mark_nmethods        = nullptr;
   _oops_do_mark_link            = nullptr;
   _compiled_ic_data             = nullptr;
+  _aot_code_entry               = nm._aot_code_entry;
 
   if (nm._osr_entry_point != nullptr) {
     _osr_entry_point            = (nm._osr_entry_point - (address) &nm) + (address) this;
@@ -1416,6 +1475,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _has_flushed_dependencies     = nm._has_flushed_dependencies;
   _is_unlinked                  = nm._is_unlinked;
   _load_reported                = nm._load_reported;
+  _preloaded                    = nm._preloaded;
 
   _deoptimization_status        = nm._deoptimization_status;
 
@@ -1550,6 +1610,10 @@ bool nmethod::is_relocatable() {
   }
 
   if (is_osr_method()) {
+    return false;
+  }
+
+  if (is_aot()) {
     return false;
   }
 
@@ -1713,7 +1777,7 @@ nmethod::nmethod(
 void nmethod::log_identity(xmlStream* log) const {
   log->print(" compile_id='%d'", compile_id());
   const char* nm_kind = compile_kind();
-  if (nm_kind != nullptr)  log->print(" compile_kind='%s'", nm_kind);
+  log->print(" compile_kind='%s'", nm_kind);
   log->print(" compiler='%s'", compiler_name());
   if (TieredCompilation) {
     log->print(" level='%d'", comp_level());
@@ -1857,7 +1921,7 @@ void nmethod::print_nmethod(bool printmethod) {
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintRelocations || CompilerOracle::has_option(mh, CompileCommandEnum::PrintRelocations)) {
-      print_relocations();
+      print_relocations_on(tty);
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintDependencies || CompilerOracle::has_option(mh, CompileCommandEnum::PrintDependencies)) {
@@ -1897,6 +1961,14 @@ inline void nmethod::initialize_immediate_oop(oop* dest, jobject handle) {
   }
 }
 
+void nmethod::copy_values(GrowableArray<Handle>* array) {
+  int length = array->length();
+  assert((address)(oops_begin() + length) <= (address)oops_end(), "oops big enough");
+  oop* dest = oops_begin();
+  for (int index = 0 ; index < length; index++) {
+    dest[index] = array->at(index)();
+  }
+}
 
 // Have to have the same name because it's called by a template
 void nmethod::copy_values(GrowableArray<jobject>* array) {
@@ -1959,6 +2031,26 @@ void nmethod::fix_oop_relocations(ICacheInvalidationContext* icic) {
   bool modified_code = fix_oop_relocations(/*initialize_immediates=*/ false);
   if (modified_code) {
     icic->set_has_modified_code();
+  }
+}
+
+void nmethod::create_reloc_immediates_list(JavaThread* thread, GrowableArray<Handle>& oop_list, GrowableArray<Metadata*>& metadata_list) {
+  RelocIterator iter(this);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::oop_type) {
+      oop_Relocation* reloc = iter.oop_reloc();
+      if (reloc->oop_is_immediate()) {
+        oop dest = reloc->oop_value();
+        Handle h(thread, dest);
+        oop_list.append(h);
+      }
+    } else if (iter.type() == relocInfo::metadata_type) {
+      metadata_Relocation* reloc = iter.metadata_reloc();
+      if (reloc->metadata_is_immediate()) {
+        Metadata* m = reloc->metadata_value();
+        metadata_list.append(m);
+      }
+    }
   }
 }
 
@@ -2178,7 +2270,7 @@ void nmethod::unlink_from_method() {
 }
 
 // Invalidate code
-bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
+bool nmethod::make_not_entrant(InvalidationReason invalidation_reason, bool keep_aot_entry) {
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
@@ -2242,6 +2334,13 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
     // Remove nmethod from method.
     unlink_from_method();
 
+    if (!keep_aot_entry) {
+      // Keep AOT code if it was simply replaced
+      // otherwise make it not entrant too.
+      AOTCodeCache::invalidate(_aot_code_entry);
+    }
+
+    CompileBroker::log_not_entrant(this);
   } // leave critical region under NMethodState_lock
 
 #ifdef ASSERT
@@ -2288,7 +2387,7 @@ void nmethod::purge(bool unregister_nmethod) {
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
-  Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, is_osr_method() ? "osr" : "", p2i(this));
+  Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, compile_kind(), p2i(this));
 
   LogTarget(Debug, codecache) lt;
   if (lt.is_enabled()) {
@@ -2297,9 +2396,9 @@ void nmethod::purge(bool unregister_nmethod) {
     const char* method_name = method()->name()->as_C_string();
     const size_t codecache_capacity = CodeCache::capacity()/1024;
     const size_t codecache_free_space = CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024;
-    ls.print("Flushing nmethod %6d/" INTPTR_FORMAT ", level=%d, osr=%d, cold=%d, epoch=" UINT64_FORMAT ", cold_count=" UINT64_FORMAT ". "
+    ls.print("Flushing %s nmethod %6d/" INTPTR_FORMAT ", level=%d, cold=%d, epoch=" UINT64_FORMAT ", cold_count=" UINT64_FORMAT ". "
               "Cache capacity: %zuKb, free space: %zuKb. method %s (%s)",
-              _compile_id, p2i(this), _comp_level, is_osr_method(), is_cold(), _gc_epoch, CodeCache::cold_gc_count(),
+              compile_kind(), _compile_id, p2i(this), _comp_level, is_cold(), _gc_epoch, CodeCache::cold_gc_count(),
               codecache_capacity, codecache_free_space, method_name, compiler_name());
   }
 
@@ -2315,9 +2414,11 @@ void nmethod::purge(bool unregister_nmethod) {
   if (_pc_desc_container != nullptr) {
     delete _pc_desc_container;
   }
-  delete[] _compiled_ic_data;
+  if (_compiled_ic_data != nullptr) {
+    delete[] _compiled_ic_data;
+  }
 
-  if (_immutable_data != blob_end()) {
+  if (_immutable_data != blob_end() && !AOTCodeCache::is_address_in_aot_cache((address)_oop_maps)) {
     // Free memory if this was the last nmethod referencing immutable data
     if (dec_immutable_data_ref_count() == 0) {
       os::free(_immutable_data);
@@ -2387,6 +2488,21 @@ void nmethod::post_compiled_method(CompileTask* task) {
   task->set_nm_content_size(content_size());
   task->set_nm_insts_size(insts_size());
   task->set_nm_total_size(total_size());
+
+  CompileTrainingData* ctd = task->training_data();
+  if (ctd != nullptr) {
+    // Record inline code size during training to help inlining during production run
+    assert(TrainingData::need_data(), "should be called only during training"); // training run
+    int inline_size = inline_instructions_size();
+    if (inline_size < 0) inline_size = 0;
+    ctd->set_inline_instructions_size(inline_size);
+  }
+
+  // task->is_aot_load() is true only for loaded AOT code.
+  // nmethod::_aot_code_entry is set for loaded and stored AOT code
+  // to invalidate the entry when nmethod is deoptimized.
+  // VerifyAOTCode is option to not store in archive AOT code.
+  guarantee((_aot_code_entry != nullptr) || !task->is_aot_load() || VerifyAOTCode, "sanity");
 
   // JVMTI -- compiled method notification (must be done outside lock)
   post_compiled_method_load_event();
@@ -3146,9 +3262,13 @@ void nmethod::verify() {
     fatal("find_nmethod did not find this nmethod (" INTPTR_FORMAT ")", p2i(this));
   }
 
-  for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
-    if (! p->verify(this)) {
-      tty->print_cr("\t\tin nmethod at " INTPTR_FORMAT " (pcs)", p2i(this));
+  // Verification can triggered during shutdown after AOTCodeCache is closed.
+  // If the Scopes data is in the AOT code cache, then we should avoid verification during shutdown.
+  if (!is_aot() || AOTCodeCache::is_on()) {
+    for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
+      if (! p->verify(this)) {
+        tty->print_cr("\t\tin nmethod at " INTPTR_FORMAT " (pcs)", p2i(this));
+      }
     }
   }
 
@@ -3159,7 +3279,9 @@ void nmethod::verify() {
 
   assert(_oops_do_mark_link == nullptr, "_oops_do_mark_link for %s should be nullptr but is " PTR_FORMAT,
          nm->method()->external_name(), p2i(_oops_do_mark_link));
-  verify_scopes();
+  if (!is_aot() || AOTCodeCache::is_on()) {
+    verify_scopes();
+  }
 
   CompiledICLocker nm_verify(this);
   VerifyMetadataClosure vmc;
@@ -3314,6 +3436,9 @@ void nmethod::print_on_impl(outputStream* st) const {
                                              p2i(scopes_data_begin()),
                                              p2i(scopes_data_end()),
                                              scopes_data_size());
+  if (AOTCodeCache::is_on() && _aot_code_entry != nullptr) {
+    _aot_code_entry->print(st);
+  }
 }
 
 void nmethod::print_code() {
@@ -3413,11 +3538,11 @@ void nmethod::print_scopes_on(outputStream* st) {
 #endif
 
 #ifndef PRODUCT  // RelocIterator does support printing only then.
-void nmethod::print_relocations() {
+void nmethod::print_relocations_on(outputStream* st) {
   ResourceMark m;       // in case methods get printed via the debugger
-  tty->print_cr("relocations:");
+  st->print_cr("relocations:");
   RelocIterator iter(this);
-  iter.print_on(tty);
+  iter.print_on(st);
 }
 #endif
 
@@ -4242,3 +4367,22 @@ void nmethod::print_statistics() {
 }
 
 #endif // !PRODUCT
+
+void nmethod::prepare_for_archiving_impl() {
+  CodeBlob::prepare_for_archiving_impl();
+  _deoptimization_generation = 0;
+  _gc_epoch = 0;
+  _osr_link = nullptr;
+  _method = nullptr;
+  _immutable_data = nullptr;
+  _pc_desc_container = nullptr;
+  _exception_cache = nullptr;
+  _gc_data = nullptr;
+  _oops_do_mark_link = nullptr;
+  _compiled_ic_data = nullptr;
+  _osr_entry_point = nullptr;
+  _compile_id = -1;
+  _deoptimization_status = not_marked;
+  _is_unloading_state = 0;
+  _state = not_installed;
+}

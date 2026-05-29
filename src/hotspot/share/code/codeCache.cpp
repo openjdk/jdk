@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -238,6 +239,19 @@ void CodeCache::initialize_heaps() {
     vm_exit_during_initialization(msg);
   }
   size_t compiler_buffer_size = integer_cast_permit_tautology<size_t>(compiler_buffer_size_uint64);
+
+  // During AOT assembly phase more compiler threads are used
+  // and C2 temp buffer is bigger.
+  // But due to rounding issue the total code cache size could be smaller
+  // than during production run. We can not use AOT code in such case
+  // because branch and call instructions will be incorrect.
+  //
+  // Increase code cache size to guarantee that total size
+  // will be bigger during assembly phase.
+  if (AOTCodeCache::maybe_dumping_code()) {
+    cache_size += align_up(compiler_buffer_size, min_size);
+    cache_size = MIN2(cache_size, CODE_CACHE_SIZE_LIMIT);
+  }
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
@@ -1162,8 +1176,8 @@ size_t CodeCache::max_distance_to_non_nmethod() {
     CodeHeap* blob = get_code_heap(CodeBlobType::NonNMethod);
     // the max distance is minimized by placing the NonNMethod segment
     // in between MethodProfiled and MethodNonProfiled segments
-    size_t dist1 = (size_t)blob->high() - (size_t)_low_bound;
-    size_t dist2 = (size_t)_high_bound - (size_t)blob->low();
+    size_t dist1 = (size_t)blob->high_boundary() - (size_t)_low_bound;
+    size_t dist2 = (size_t)_high_bound - (size_t)blob->low_boundary();
     return dist1 > dist2 ? dist1 : dist2;
   }
 }
@@ -1308,11 +1322,12 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
         // Determine if dependency is already checked. table->put(...) returns
         // 'true' if the dependency is added (i.e., was not in the hashtable).
         if (table->put(*current_sig, 1)) {
-          if (deps.check_dependency() != nullptr) {
+          Klass* witness = deps.check_dependency();
+          if (witness != nullptr) {
             // Dependency checking failed. Print out information about the failed
             // dependency and finally fail with an assert. We can fail here, since
             // dependency checking is never done in a product build.
-            tty->print_cr("Failed dependency:");
+            deps.print_dependency(tty, witness, true);
             changes.print();
             nm->print();
             nm->print_dependencies_on(tty);
@@ -1338,6 +1353,13 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassD
   NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
     InstanceKlass* d = str.klass();
+    {
+      LogStreamHandle(Trace, dependencies) log;
+      if (log.is_enabled()) {
+        log.print("Processing context ");
+        d->name()->print_value_on(&log);
+      }
+    }
     d->mark_dependent_nmethods(deopt_scope, changes);
   }
 
@@ -1634,20 +1656,16 @@ void CodeCache::print_internals() {
 
   int i = 0;
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
-    if ((_nmethod_heaps->length() >= 1) && Verbose) {
-      tty->print_cr("-- %s --", (*heap)->name());
-    }
+    int heap_total = 0;
+    tty->print_cr("-- %s --", (*heap)->name());
     FOR_ALL_BLOBS(cb, *heap) {
       total++;
+      heap_total++;
       if (cb->is_nmethod()) {
         nmethod* nm = (nmethod*)cb;
 
-        if (Verbose && nm->method() != nullptr) {
-          ResourceMark rm;
-          char *method_name = nm->method()->name_and_sig_as_C_string();
-          tty->print("%s", method_name);
-          if(nm->is_not_entrant()) { tty->print_cr(" not-entrant"); }
-        }
+        tty->print("%4d: ", heap_total);
+        CompileTask::print(tty, nm, (nm->is_not_entrant() ? "non-entrant" : ""), true, true);
 
         nmethodCount++;
 
