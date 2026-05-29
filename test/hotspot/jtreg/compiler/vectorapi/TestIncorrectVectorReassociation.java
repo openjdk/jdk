@@ -63,7 +63,7 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VB, IRNode.VECTOR_SIZE_ANY, " 2 "},
+    @IR(counts = {IRNode.SATURATING_ADD_VB, " 2 "},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test_byte_sadd(int index) {
         ByteVector.broadcast(BSP, BA)
@@ -100,7 +100,7 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VS, IRNode.VECTOR_SIZE_ANY, " 2 "},
+    @IR(counts = {IRNode.SATURATING_ADD_VS, " 2 "},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test_short_sadd(int index) {
         ShortVector.broadcast(SSP, SA)
@@ -137,7 +137,7 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "},
+    @IR(counts = {IRNode.SATURATING_ADD_VI, " 2 "},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test_int_sadd(int index) {
         IntVector.broadcast(ISP, IA)
@@ -174,7 +174,7 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VL, IRNode.VECTOR_SIZE_ANY, " 2 "},
+    @IR(counts = {IRNode.SATURATING_ADD_VL, " 2 "},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test_long_sadd(int index) {
         LongVector.broadcast(LSP, LA)
@@ -196,7 +196,7 @@ public class TestIncorrectVectorReassociation {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "},
+    @IR(counts = {IRNode.SATURATING_ADD_VI, " 2 "},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static IntVector test_mixed_sadd_suadd() {
         IntVector v0 = IntVector.broadcast(ISP, 1);
