@@ -124,6 +124,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
         counts = {IRNode.ADD_VL, ">0"})
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VL, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.VMLA, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

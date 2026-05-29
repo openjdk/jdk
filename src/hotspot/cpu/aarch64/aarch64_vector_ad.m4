@@ -378,6 +378,70 @@ source %{
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
+  // Determine whether the given multiply-add/sub-structured node is a profitable
+  // vector MLA/MLS candidate.
+  //
+  // A multiply-add/sub-structured node is NOT considered a profitable MLA/MLS
+  // candidate if forming an MLA/MLS would likely extend a dependency chain, e.g.
+  //
+  //        add_input     MulVL          MulVL      add_input
+  //             \        /                   \     /
+  //            AddVL/SubVL                     AddVL
+  //
+  //  - The "add_input" itself is (or feeds from) another multiply-add/sub-structured
+  // node or a multiply node.
+  //
+  // Exceptions:
+  // If the "add_input" is identical to one of the multiply operands, then fusing
+  // does not introduce an additional dependency edge and is allowed.
+  bool Matcher::is_multiply_accumulate_candidate(const Node* n) {
+    assert(n->Opcode() == Op_AddVL || n->Opcode() == Op_SubVL ,
+           "Invalid opcode: vmlaL/vmlsL are only valid for AddVL/SubVL nodes.");
+    // Only apply the chain-length heuristic to 128-bit vectors.
+    if (!AvoidMLAChain || Matcher::vector_length_in_bytes(n) != 16) {
+      return true;
+    }
+
+    Node* in1 = n->in(1);
+    Node* in2 = n->in(2);
+
+    // Exception:
+    // If the "add_input" is already needed to compute the "mul", the
+    // multiply-add/sub-structured node is still considered a profitable vector
+    // MLA/MLS candidate:
+    //
+    //          add_input      ...         ...    add_input
+    //           \     \     /               \    /     /
+    //            \     MulVL                 MulVL    /
+    //             \      /                      \    /
+    //            AddVL/SubVL                     AddVL
+    if (in1->Opcode() == Op_MulVL) {
+      if (in2 == in1->in(1) || in2 == in1->in(2)) {
+        return true;
+      }
+    }
+    if (in2->Opcode() == Op_MulVL) {
+      if (in1 == in2->in(1) || in1 == in2->in(2)) {
+        return true;
+      }
+    }
+
+    // If both inputs are already long-mul(-add/sub) patterns, fusing again tends
+    // to lengthen chains.
+    if (VectorNode::is_vector_long_mul_or_muladdsub(in1) &&
+        VectorNode::is_vector_long_mul_or_muladdsub(in2)) {
+      return false;
+    }
+
+    // If an input is a Phi, check whether *its* incoming values are long-mul patterns.
+    if (VectorNode::phi_has_vector_long_mul_or_muladdsub_input(in1) ||
+        VectorNode::phi_has_vector_long_mul_or_muladdsub_input(in2)) {
+      return false;
+    }
+
+    return true;
+  }
+
   bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
     // 1. Only SVE requires partial vector operations.
     // 2. The vector size in bytes must be smaller than MaxVectorSize.
@@ -1424,7 +1488,7 @@ instruct vmla(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 instruct vmlaL(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && Matcher::is_multiply_accumulate_candidate(n));
   match(Set dst_src1 (AddVL dst_src1 (MulVL src2 src3)));
   format %{ "vmlaL $dst_src1, $src2, $src3" %}
   ins_encode %{
@@ -1515,7 +1579,7 @@ instruct vmls(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 instruct vmlsL(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && Matcher::is_multiply_accumulate_candidate(n));
   match(Set dst_src1 (SubVL dst_src1 (MulVL src2 src3)));
   format %{ "vmlsL $dst_src1, $src2, $src3" %}
   ins_encode %{

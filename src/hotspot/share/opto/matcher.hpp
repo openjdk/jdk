@@ -338,6 +338,9 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
+  // Determine whether the given node is a valid vector MLA/MLS candidate.
+  static bool is_multiply_accumulate_candidate(const Node* n);
+
   // Identify if a vector mask operation prefers the input/output mask to be
   // saved with a predicate type or not.
   // - Return true if it prefers a predicate type (i.e. TypePVectMask).

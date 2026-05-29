@@ -172,6 +172,9 @@ class VectorNode : public TypeNode {
   // are all 1s or all 0s, indicating a "mask all" or "mask none" pattern.
   static bool is_maskall_type(const TypeLong* type, int vlen);
   static bool is_muladds2i(const Node* n);
+  static bool is_vector_long_mul_or_muladdsub(const Node* n);
+  static bool is_vector_long_multiply_addsub(const Node* n);
+  static bool phi_has_vector_long_mul_or_muladdsub_input(Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
