@@ -882,7 +882,7 @@ void VM_Version::set_vendor_agnostic_vm_config() {
     }
   }
 
-#if COMPILER2_OR_JVMCI
+#if COMPILER2
   int max_vector_size = 0;
   if (UseAVX == 0 || !os_supports_avx_vectors()) {
     // 16 byte vectors (in XMM) are supported with SSE2+
@@ -915,7 +915,7 @@ void VM_Version::set_vendor_agnostic_vm_config() {
     }
   }
 
-#if defined(COMPILER2) && defined(ASSERT)
+#if defined(ASSERT)
   if (MaxVectorSize > 0) {
     if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {
       tty->print_cr("State of YMM registers after signal handle:");
@@ -930,8 +930,8 @@ void VM_Version::set_vendor_agnostic_vm_config() {
       }
     }
   }
-#endif // COMPILER2 && ASSERT
-#endif // COMPILER2_OR_JVMCI
+#endif // ASSERT
+#endif // COMPILER2
 
   // Use count trailing zeros instruction if available
   if (supports_bmi1()) {
@@ -1486,7 +1486,7 @@ void VM_Version::configure_intrinsics() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-#if COMPILER2_OR_JVMCI
+#if COMPILER2
   if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma())  {
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
       FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
@@ -1524,7 +1524,7 @@ void VM_Version::configure_intrinsics() {
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     UseMontgomerySquareIntrinsic = true;
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   if (supports_sse4_2()) {
     if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
       FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
