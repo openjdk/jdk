@@ -2010,9 +2010,8 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
     z_brz(jvmti_post_done);
 
     // if (interp_only_mode() == false && frame_pop_cnt() == 0) exit;
-    z_lgf(Z_R0_scratch, Address(Z_R1_scratch, JvmtiThreadState::frame_pop_cnt_offset()));
-    z_lgf(Z_R1_scratch, Address(Z_thread, JavaThread::interp_only_mode_offset()));
-    z_or(Z_R1_scratch, Z_R0_scratch);
+    z_lgf(Z_R1_scratch, Address(Z_R1_scratch, JvmtiThreadState::frame_pop_cnt_offset()));
+    z_o(Z_R1_scratch, Address(Z_thread, JavaThread::interp_only_mode_offset()));
     z_brz(jvmti_post_done);
 
     if (!native_method) push(state); // see frame::interpreter_frame_result()
