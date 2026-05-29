@@ -926,12 +926,6 @@ public class IRNode {
         beforeMatchingNameRegex(IF, "If\\b");
     }
 
-    // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
-    public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = PREFIX + "INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP" + POSTFIX;
-    static {
-        trapNodes(INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "intrinsic_or_type_checked_inlining");
-    }
-
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
     static {
         trapNodes(INTRINSIC_TRAP, "intrinsic");
@@ -1487,6 +1481,16 @@ public class IRNode {
     public static final String MASK_ALL = PREFIX + "MASK_ALL" + POSTFIX;
     static {
         beforeMatchingNameRegex(MASK_ALL, "MaskAll");
+    }
+
+    public static final String AARCH64_VMASK_ALL_IMM_I = PREFIX + "AARCH64_VMASK_ALL_IMM_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_I, "vmaskAll_immI");
+    }
+
+    public static final String AARCH64_VMASK_ALL_IMM_L = PREFIX + "AARCH64_VMASK_ALL_IMM_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_L, "vmaskAll_immL");
     }
 
     public static final String VECTOR_LONG_TO_MASK = PREFIX + "VECTOR_LONG_TO_MASK" + POSTFIX;
@@ -2718,6 +2722,11 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VFMADD_MASKED, "vfmadd_masked");
     }
 
+    public static final String VMASK_AND_NOT_I = PREFIX + "VMASK_AND_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_AND_NOT_I, "vmask_and_notI");
+    }
+
     public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
     static {
         machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
@@ -3592,12 +3601,6 @@ public class IRNode {
      */
     public static void checkIRNodeSupported(String node) throws CheckedTestFrameworkException {
         switch (node) {
-            case INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP -> {
-                if (!WhiteBox.getWhiteBox().isJVMCISupportedByGC()) {
-                    throw new CheckedTestFrameworkException("INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP is unsupported " +
-                                                            "in builds without JVMCI.");
-                }
-            }
             case CHECKCAST_ARRAYCOPY -> {
                 if (Platform.isS390x()) {
                     throw new CheckedTestFrameworkException("CHECKCAST_ARRAYCOPY is unsupported on s390.");

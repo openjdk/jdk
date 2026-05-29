@@ -1244,6 +1244,21 @@ public final class TKit {
         return System.getProperty(getConfigPropertyName(propertyName));
     }
 
+    static Optional<Boolean> getConfigBooleanProperty(String propertyName) {
+        return Optional.ofNullable(getConfigProperty(propertyName))
+                .map(v -> {
+                    if (v.equalsIgnoreCase("true")) {
+                        return true;
+                    } else if (v.equalsIgnoreCase("false")) {
+                        return false;
+                    } else {
+                        throw new IllegalArgumentException(String.format(
+                                "Invalid value of property %s: %s. Expected: true or false",
+                                getConfigPropertyName(propertyName), v));
+                    }
+                });
+    }
+
     static String getConfigPropertyName(String propertyName) {
         return "jpackage.test." + propertyName;
     }

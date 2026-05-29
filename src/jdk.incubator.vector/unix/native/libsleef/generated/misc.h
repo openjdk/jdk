@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2024.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -13,8 +13,13 @@
 #include <string.h>
 #endif
 
+
 #ifndef M_PI
 #define M_PI 3.141592653589793238462643383279502884
+#endif
+
+#ifndef M_PIf
+# define M_PIf ((float)M_PI)
 #endif
 
 #ifndef M_PIl
@@ -137,9 +142,17 @@
 #define L2Lf 1.428606765330187045e-06f
 
 #define R_LN2f 1.442695040888963407359924681001892137426645954152985934135449406931f
-#ifndef M_PIf
-# define M_PIf ((float)M_PI)
-#endif
+
+// Overflow bounds
+
+// - exp(x) overflows for x over (also used in pow)
+#define LOG_DBL_MAX 0x1.62e42fefa39efp+9 /* 709.782712893384 */
+
+// Other bounds
+
+// - log1p(f)(x) approximation holds up to x equals
+#define LOG1PF_BOUND 0x1.2ced32p+126 /* 1.0e+38 */
+#define LOG1P_BOUND 0x1.c7b1f3cac7433p+1019 /* 1.0e+307 */
 
 //
 
@@ -183,17 +196,13 @@ typedef struct {
 } Sleef_longdouble2;
 #endif
 
-#if (defined (__GNUC__) || defined (__clang__) || defined(__INTEL_COMPILER)) && !defined(_MSC_VER)
+#if (defined (__GNUC__) || defined (__clang__)) && !defined(_MSC_VER)
 
 #define LIKELY(condition) __builtin_expect(!!(condition), 1)
 #define UNLIKELY(condition) __builtin_expect(!!(condition), 0)
 #define RESTRICT __restrict__
 
-#ifndef __arm__
 #define ALIGNED(x) __attribute__((aligned(x)))
-#else
-#define ALIGNED(x)
-#endif
 
 #if defined(SLEEF_GENHEADER)
 
@@ -229,7 +238,7 @@ typedef struct {
 #define SLEEF_INFINITYf __builtin_inff()
 #define SLEEF_INFINITYl __builtin_infl()
 
-#if defined(__INTEL_COMPILER) || defined (__clang__)
+#if defined (__clang__)
 #define SLEEF_INFINITYq __builtin_inf()
 #define SLEEF_NANq __builtin_nan("")
 #else
@@ -237,7 +246,7 @@ typedef struct {
 #define SLEEF_NANq (SLEEF_INFINITYq - SLEEF_INFINITYq)
 #endif
 
-#elif defined(_MSC_VER) // #if (defined (__GNUC__) || defined (__clang__) || defined(__INTEL_COMPILER)) && !defined(_MSC_VER)
+#elif defined(_MSC_VER) // #if (defined (__GNUC__) || defined (__clang__)) && !defined(_MSC_VER)
 
 #if defined(SLEEF_GENHEADER)
 
@@ -249,6 +258,9 @@ typedef struct {
 #else // #if defined(SLEEF_GENHEADER)
 
 #define INLINE __forceinline
+#ifdef CONST
+#undef CONST
+#endif
 #define CONST
 #ifndef SLEEF_STATIC_LIBS
 #define EXPORT __declspec(dllexport)
@@ -265,7 +277,7 @@ typedef struct {
 #define LIKELY(condition) (condition)
 #define UNLIKELY(condition) (condition)
 
-#if (defined(__GNUC__) || defined(__CLANG__)) && (defined(__i386__) || defined(__x86_64__)) && !defined(SLEEF_GENHEADER)
+#if (defined(__GNUC__) || defined(__CLANG__)) && defined(__x86_64__) && !defined(SLEEF_GENHEADER)
 #include <x86intrin.h>
 #endif
 
@@ -294,7 +306,7 @@ typedef struct {
 #endif
 #endif
 
-#endif // #elif defined(_MSC_VER) // #if (defined (__GNUC__) || defined (__clang__) || defined(__INTEL_COMPILER)) && !defined(_MSC_VER)
+#endif // #elif defined(_MSC_VER) // #if (defined (__GNUC__) || defined (__clang__)) && !defined(_MSC_VER)
 
 #if !defined(__linux__)
 #define isinff(x) ((x) == SLEEF_INFINITYf || (x) == -SLEEF_INFINITYf)
@@ -305,15 +317,9 @@ typedef struct {
 
 #endif // #ifndef __MISC_H__
 
-#ifdef ENABLE_AAVPCS
-#define VECTOR_CC __attribute__((aarch64_vector_pcs))
-#else
-#define VECTOR_CC
-#endif
-
 //
 
-#if defined (__GNUC__) && !defined(__INTEL_COMPILER)
+#if defined (__GNUC__)
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #if !defined (__clang__)

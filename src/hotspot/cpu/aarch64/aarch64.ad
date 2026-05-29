@@ -1508,8 +1508,6 @@ source %{
     case Op_CompareAndSwapL:
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN:
-    case Op_ShenandoahCompareAndSwapP:
-    case Op_ShenandoahCompareAndSwapN:
     case Op_CompareAndSwapB:
     case Op_CompareAndSwapS:
     case Op_GetAndSetI:
@@ -1531,10 +1529,6 @@ source %{
     case Op_WeakCompareAndSwapL:
     case Op_WeakCompareAndSwapP:
     case Op_WeakCompareAndSwapN:
-    case Op_ShenandoahWeakCompareAndSwapP:
-    case Op_ShenandoahWeakCompareAndSwapN:
-    case Op_ShenandoahCompareAndExchangeP:
-    case Op_ShenandoahCompareAndExchangeN:
       return maybe_volatile;
     default:
       return false;
@@ -2647,11 +2641,36 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 }
 
 // (XorV src (Replicate m1))
-// (XorVMask src (MaskAll m1))
 static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
   if (n != nullptr && m != nullptr) {
-    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
+    return n->Opcode() == Op_XorV &&
            VectorNode::is_all_ones_vector(m);
+  }
+  return false;
+}
+
+// Returns true if (n, m) matches "(XorVMask vm2 (MaskAll m1))" and that XorVMask
+// is used only by an AndVMask. In that case, cloning m (the MaskAll) lets the
+// matcher avoid sharing the MaskAll node and subsume the pattern into rule:
+//   "(AndVMask vm1 (XorVMask vm2 (MaskAll m1)))".
+//
+// Limitation: the "andNot" rule still cannot be matched if "m" has other
+// uses outside this pattern.
+static bool is_vector_mask_not_operand_in_andnot_pattern(Node* n, Node* m) {
+  if (n == nullptr || m == nullptr) {
+    return false;
+  }
+
+  if (VectorNode::is_all_ones_vector(m) &&
+      n->Opcode() == Op_XorVMask &&
+      n->outcnt() == 1 &&
+      n->unique_out()->Opcode() == Op_AndVMask) {
+    // If another input of the AndVMask is also a mask-not pattern that would
+    // qualify for the `maskAll` cloning, do not clone the "maskAll" here,
+    // because the match rule can only consume one such pattern.
+    Node* use = n->unique_out();
+    Node* other_input = use->in(1) == n ? use->in(2) : use->in(1);
+    return !VectorNode::is_vectormask_bitwise_not_pattern(other_input);
   }
   return false;
 }
@@ -2660,6 +2679,7 @@ static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   if (is_vshift_con_pattern(n, m) ||
       is_vector_bitwise_not_pattern(n, m) ||
+      is_vector_mask_not_operand_in_andnot_pattern(n, m) ||
       is_valid_sve_arith_imm_pattern(n, m) ||
       is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);

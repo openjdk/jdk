@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8371155 8379550
+ * @bug 8371155 8379550 8384843
  * @summary Verify type annotations on local-like variables are propagated to
  *          their types at an appropriate time.
  * @library /tools/lib
@@ -56,7 +56,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -299,7 +301,7 @@ public class TypeAnnotationsOnVariables {
         Path testClass = classes.resolve("Test.class");
         TestClassDesc testClassDesc = TestClassDesc.create(testClass);
         MethodModel oMethod = singletonValue(testClassDesc.name2Method().get("o"));
-        var oTypeAnnos = getAnnotations(oMethod);
+        var oTypeAnnos = getAnnotationsFromCode(oMethod);
         assertFalse(oTypeAnnos.isPresent(), () -> oTypeAnnos.toString());
 
         checkTypeAnnotations(testClassDesc,
@@ -337,11 +339,238 @@ public class TypeAnnotationsOnVariables {
                              "          Test$TypeAnno");
     }
 
+    @Test
+    void explicitLambdaHeader1() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import java.lang.annotation.ElementType;
+                          import java.lang.annotation.Target;
+                          import java.util.function.BiConsumer;
+                          import java.util.function.Consumer;
+                          import java.util.List;
+
+                          class Test {
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno { }
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno2 { }
+
+                              static final Consumer<List<@TypeAnno String>> TEST1 =
+                                  (List<@TypeAnno String> arg1) -> {};
+                              static final BiConsumer<List<@TypeAnno String>, List<@TypeAnno2 String>> TEST2 =
+                                  (List<@TypeAnno String> arg11, List<@TypeAnno2 String> arg12) -> {};
+
+                              private void test() {
+                                  Consumer<List<@TypeAnno String>> test1 =
+                                        (List<@TypeAnno String> arg2) -> {};
+                                  BiConsumer<List<@TypeAnno String>, List<@TypeAnno2 String>> test2 =
+                                        (List<@TypeAnno String> arg21, List<@TypeAnno2 String> arg22) -> {};
+                              }
+                          }
+                          """);
+        Files.createDirectories(classes);
+        List<String> actual = new ArrayList<>();
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(tb.findJavaFiles(src))
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() != TaskEvent.Kind.ANALYZE) {
+                                return ;
+                            }
+                            Trees trees = Trees.instance(task);
+                            new TreePathScanner<Void, Void>() {
+                                @Override
+                                public Void visitVariable(VariableTree node, Void p) {
+                                    actual.add(node.getName() + ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    return super.visitVariable(node, p);
+                                }
+                                @Override
+                                public Void visitLambdaExpression(LambdaExpressionTree node, Void p) {
+                                    actual.add(treeToString(node)+ ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    return super.visitLambdaExpression(node, p);
+                                }
+                            }.scan(e.getCompilationUnit(), null);
+                        }
+                    });
+                })
+                .run()
+                .writeAll();
+
+        List<String> expected = List.of(
+            "TEST1: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
+            "(List<@TypeAnno String> arg1)->{ }: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
+            "arg1: java.util.List<java.lang.@Test.TypeAnno String>",
+            "TEST2: java.util.function.BiConsumer<java.util.List<java.lang.@Test.TypeAnno String>,java.util.List<java.lang.@Test.TypeAnno2 String>>",
+            "(List<@TypeAnno String> arg11, List<@TypeAnno2 String> arg12)->{ }: java.util.function.BiConsumer<java.util.List<java.lang.@Test.TypeAnno String>,java.util.List<java.lang.@Test.TypeAnno2 String>>",
+            "arg11: java.util.List<java.lang.@Test.TypeAnno String>",
+            "arg12: java.util.List<java.lang.@Test.TypeAnno2 String>",
+            "test1: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
+            "(List<@TypeAnno String> arg2)->{ }: java.util.function.Consumer<java.util.List<java.lang.@Test.TypeAnno String>>",
+            "arg2: java.util.List<java.lang.@Test.TypeAnno String>",
+            "test2: java.util.function.BiConsumer<java.util.List<java.lang.@Test.TypeAnno String>,java.util.List<java.lang.@Test.TypeAnno2 String>>",
+            "(List<@TypeAnno String> arg21, List<@TypeAnno2 String> arg22)->{ }: java.util.function.BiConsumer<java.util.List<java.lang.@Test.TypeAnno String>,java.util.List<java.lang.@Test.TypeAnno2 String>>",
+            "arg21: java.util.List<java.lang.@Test.TypeAnno String>",
+            "arg22: java.util.List<java.lang.@Test.TypeAnno2 String>"
+        );
+
+        actual.forEach(System.out::println);
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Expected: " + expected + ", but got: " + actual);
+        }
+
+        Path testClass = classes.resolve("Test.class");
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+        MethodModel clInit = singletonValue(testClassDesc.name2Method().get("<clinit>"));
+        assertEmpty(getAnnotationsFromHeader(clInit));
+        assertEmpty(getAnnotationsFromCode(clInit));
+
+        checkTypeAnnotations(testClassDesc,
+                             "test",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=6, length=7, index=1}, location=[TYPE_ARGUMENT(0), TYPE_ARGUMENT(0)]",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=12, length=1, index=2}, location=[TYPE_ARGUMENT(0), TYPE_ARGUMENT(0)]",
+                             "          Test$TypeAnno",
+                             "        2: LTest$TypeAnno2;(): LOCAL_VARIABLE, {start_pc=12, length=1, index=2}, location=[TYPE_ARGUMENT(1), TYPE_ARGUMENT(0)]",
+                             "          Test$TypeAnno2");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$static$0",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$static$1",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno",
+                             "      1: LTest$TypeAnno2;(): METHOD_FORMAL_PARAMETER, param_index=1, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno2");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$test$0",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$test$1",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno",
+                             "      1: LTest$TypeAnno2;(): METHOD_FORMAL_PARAMETER, param_index=1, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno2");
+    }
+
+    @Test
+    void explicitLambdaHeader2() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import java.lang.annotation.ElementType;
+                          import java.lang.annotation.Target;
+                          import java.util.function.Consumer;
+                          import java.util.List;
+
+                          class Test {
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno { }
+
+                              static final Consumer<List<String>> TEST =
+                                  (@TypeAnno List<String> arg) -> {};
+
+                              private void test() {
+                                  Consumer<List<String>> test =
+                                        (@TypeAnno List<String> arg) -> {};
+                              }
+                          }
+                          """);
+        Files.createDirectories(classes);
+        List<String> actual = new ArrayList<>();
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(tb.findJavaFiles(src))
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() != TaskEvent.Kind.ANALYZE) {
+                                return ;
+                            }
+                            Trees trees = Trees.instance(task);
+                            new TreePathScanner<Void, Void>() {
+                                @Override
+                                public Void visitVariable(VariableTree node, Void p) {
+                                    actual.add(node.getName() + ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    return super.visitVariable(node, p);
+                                }
+                                @Override
+                                public Void visitLambdaExpression(LambdaExpressionTree node, Void p) {
+                                    actual.add(treeToString(node)+ ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    return super.visitLambdaExpression(node, p);
+                                }
+                            }.scan(e.getCompilationUnit(), null);
+                        }
+                    });
+                })
+                .run()
+                .writeAll();
+
+        List<String> expected = List.of(
+            "TEST: java.util.function.Consumer<java.util.List<java.lang.String>>",
+            "(@TypeAnno List<String> arg)->{ }: java.util.function.Consumer<java.util.List<java.lang.String>>",
+            "arg: java.util.@Test.TypeAnno List<java.lang.String>",
+            "test: java.util.function.Consumer<java.util.List<java.lang.String>>",
+            "(@TypeAnno List<String> arg)->{ }: java.util.function.Consumer<java.util.List<java.lang.String>>",
+            "arg: java.util.@Test.TypeAnno List<java.lang.String>"
+        );
+
+        actual.forEach(System.out::println);
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Expected: " + expected + ", but got: " + actual);
+        }
+
+        Path testClass = classes.resolve("Test.class");
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+        MethodModel clInit = singletonValue(testClassDesc.name2Method().get("<clinit>"));
+        assertEmpty(getAnnotationsFromHeader(clInit));
+        assertEmpty(getAnnotationsFromCode(clInit));
+        MethodModel test = singletonValue(testClassDesc.name2Method().get("test"));
+        assertEmpty(getAnnotationsFromHeader(test));
+        assertEmpty(getAnnotationsFromCode(test));
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$static$0",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0",
+                             "        Test$TypeAnno");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$test$0",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0",
+                             "        Test$TypeAnno");
+    }
+
     private void checkTypeAnnotations(TestClassDesc testClassDesc,
                                       String lambdaMethodName,
                                       String... expectedEntries) throws IOException {
+        checkTypeAnnotations(testClassDesc, lambdaMethodName, this::getAnnotationsFromCode, expectedEntries);
+    }
+
+    private void checkTypeAnnotations(TestClassDesc testClassDesc,
+                                      String lambdaMethodName,
+                                      Function<MethodModel, Optional<RuntimeInvisibleTypeAnnotationsAttribute>> annotationsGetter,
+                                      String... expectedEntries) throws IOException {
         MethodModel lambdaMethod = singletonValue(testClassDesc.name2Method().get(lambdaMethodName));
-        var lambdaTypeAnnos = getAnnotations(lambdaMethod);
+        var lambdaTypeAnnos = annotationsGetter.apply(lambdaMethod);
         if (expectedEntries.length == 0) {
             assertFalse(lambdaTypeAnnos.isPresent(), () -> lambdaTypeAnnos.toString());
         } else {
@@ -351,6 +580,7 @@ public class TypeAnnotationsOnVariables {
                          () -> lambdaTypeAnnos.orElseThrow().annotations().toString());
 
             checkJavapOutput(testClassDesc,
+                             lambdaMethodName,
                              List.of(expectedEntries));
         }
     }
@@ -360,13 +590,17 @@ public class TypeAnnotationsOnVariables {
         return values.get(0);
     }
 
-    private Optional<RuntimeInvisibleTypeAnnotationsAttribute> getAnnotations(MethodModel m) {
+    private Optional<RuntimeInvisibleTypeAnnotationsAttribute> getAnnotationsFromCode(MethodModel m) {
         return m.findAttribute(Attributes.code())
                 .orElseThrow()
                 .findAttribute(Attributes.runtimeInvisibleTypeAnnotations());
     }
 
-    void checkJavapOutput(TestClassDesc testClassDesc, List<String> expectedOutput) throws IOException {
+    private Optional<RuntimeInvisibleTypeAnnotationsAttribute> getAnnotationsFromHeader(MethodModel m) {
+        return m.findAttribute(Attributes.runtimeInvisibleTypeAnnotations());
+    }
+
+    void checkJavapOutput(TestClassDesc testClassDesc, String nameOfMethodToCheck, List<String> expectedOutput) throws IOException {
         String javapOut = new JavapTask(tb)
                 .options("-v", "-p")
                 .classes(testClassDesc.pathToClass().toString())
@@ -385,13 +619,40 @@ public class TypeAnnotationsOnVariables {
         m.appendTail(expandedJavapOutBuilder);
 
         String expandedJavapOut = expandedJavapOutBuilder.toString();
+        boolean inClass = false;
+        String currentFeature = null;
+        Map<String, List<String>> feature2Text = new HashMap<>();
+
+        for (String line : expandedJavapOut.split("\\R")) {
+            if (line.equals("{")) {
+                inClass = true;
+            } else if (line.equals("}")) {
+                inClass = false;
+                currentFeature = null;
+            } else if (inClass && line.startsWith("  ") && line.charAt(2) != ' ') {
+                currentFeature = line;
+            } else if (currentFeature != null) {
+                feature2Text.computeIfAbsent(currentFeature, _ -> new ArrayList<>())
+                            .add(line);
+            }
+        }
+
+        List<List<String>> methodContents = feature2Text.entrySet().stream().filter(e -> e.getKey().contains(" " + nameOfMethodToCheck + "(")).map(Entry::getValue).toList();
+
+        assertEquals(1, methodContents.size(), methodContents.toString());
+
+        String linearMethodContents = methodContents.get(0).stream().collect(Collectors.joining("\n"));
 
         for (String expected : expectedOutput) {
-            if (!expandedJavapOut.contains(expected)) {
-                System.err.println(expandedJavapOut);
+            if (!linearMethodContents.contains(expected)) {
+                System.err.println(linearMethodContents);
                 throw new AssertionError("unexpected output");
             }
         }
+    }
+
+    private void assertEmpty(Optional<?> value) {
+        assertFalse(value.isPresent(), () -> value.toString());
     }
 
     record TestClassDesc(Path pathToClass,

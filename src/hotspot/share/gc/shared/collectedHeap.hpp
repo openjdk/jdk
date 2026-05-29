@@ -91,7 +91,6 @@ public:
 class CollectedHeap : public CHeapObj<mtGC> {
   friend class CPUTimeUsage::GC;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
   friend class MemAllocator;
 
