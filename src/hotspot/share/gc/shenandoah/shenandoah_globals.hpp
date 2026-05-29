@@ -192,7 +192,9 @@
           "at all times, even during the GC cycle;"                         \
           " static - trigger GC when free heap falls below a specified "    \
           "threshold;"                                                      \
-          " aggressive - run GC continuously, try to evacuate everything;"  \
+          " aggressive - run GC very frequently (controlled by "            \
+          "ShenandoahAggressiveGCInterval), try to evacuate everything "    \
+          "(recommended only for testing);"                                 \
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
                                                                             \
@@ -292,6 +294,10 @@
           "Run a collection of the young generation at least this often. "  \
           "Heuristics may trigger collections more frequently. Time is in " \
           "milliseconds. Setting this to 0 disables the feature.")          \
+                                                                            \
+  product(uintx, ShenandoahAggressiveGCInterval, 50, EXPERIMENTAL,          \
+          "If using ShenandoahHeuristics=aggressive, run GC at least "      \
+          "this often. Time is in milliseconds.")                           \
                                                                             \
   product(bool, ShenandoahAlwaysClearSoftRefs, false, EXPERIMENTAL,         \
           "Unconditionally clear soft references, instead of using any "    \

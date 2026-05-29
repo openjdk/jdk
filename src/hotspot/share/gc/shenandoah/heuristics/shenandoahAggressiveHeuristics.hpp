@@ -26,12 +26,13 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHAGGRESSIVEHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 
 /*
  * This is a diagnostic heuristic that continuously runs collections
  * cycles and adds every region with any garbage to the collection set.
  */
-class ShenandoahAggressiveHeuristics : public ShenandoahHeuristics {
+class ShenandoahAggressiveHeuristics : public ShenandoahStaticHeuristics {
 public:
   ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info);
 
