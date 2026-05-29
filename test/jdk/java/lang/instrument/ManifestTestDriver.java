@@ -47,6 +47,7 @@ public class ManifestTestDriver {
     static final String AGENT = "ManifestTestAgent";
     static String testClasses;
     static Path outOfTheWay;
+    static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().startsWith("windows");
     static int failures = 0;
 
     public static void main(String[] args) throws Exception {
@@ -144,24 +145,28 @@ public class ManifestTestDriver {
             case "boot_cp_line3":
                 bootCpLine = "Boot-Class-Path: has_trailing_blank ";
                 expectBootCp = "ExampleForBootClassPath was loaded.";
-                toBeDeleted = "has_trailing_blank ";
                 Files.createDirectories(Path.of("has_trailing_blank"));
-                Files.createDirectories(Path.of("has_trailing_blank "));
                 Files.copy(outOfTheWay.resolve("ExampleForBootClassPath.class"),
                     Path.of("has_trailing_blank/ExampleForBootClassPath.class"));
-                Files.copy(outOfTheWay.resolve("ExampleForBootClassPath.class.bad"),
-                    Path.of("has_trailing_blank /ExampleForBootClassPath.class"));
+                if (!IS_WINDOWS) {
+                    toBeDeleted = "has_trailing_blank ";
+                    Files.createDirectories(Path.of("has_trailing_blank "));
+                    Files.copy(outOfTheWay.resolve("ExampleForBootClassPath.class.bad"),
+                        Path.of("has_trailing_blank /ExampleForBootClassPath.class"));
+                }
                 break;
             case "boot_cp_line4":
                 bootCpLine = "Boot-Class-Path:  has_leading_and_trailing_blank ";
                 expectBootCp = "ExampleForBootClassPath was loaded.";
-                toBeDeleted = " has_leading_and_trailing_blank ";
                 Files.createDirectories(Path.of("has_leading_and_trailing_blank"));
-                Files.createDirectories(Path.of(" has_leading_and_trailing_blank "));
                 Files.copy(outOfTheWay.resolve("ExampleForBootClassPath.class"),
                     Path.of("has_leading_and_trailing_blank/ExampleForBootClassPath.class"));
-                Files.copy(outOfTheWay.resolve("ExampleForBootClassPath.class.bad"),
-                    Path.of(" has_leading_and_trailing_blank /ExampleForBootClassPath.class"));
+                if (!IS_WINDOWS) {
+                    toBeDeleted = " has_leading_and_trailing_blank ";
+                    Files.createDirectories(Path.of(" has_leading_and_trailing_blank "));
+                    Files.copy(outOfTheWay.resolve("ExampleForBootClassPath.class.bad"),
+                        Path.of(" has_leading_and_trailing_blank /ExampleForBootClassPath.class"));
+                }
                 break;
             case "boot_cp_line5":
                 bootCpLine = "Boot-Class-Path: has_embedded blank";
