@@ -120,7 +120,7 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
                 pid_t ppid = (pid_t) ProcessBuffer[i].pi_ppid;
 
                 // Get the parent pid, and start time
-                if (pid == 0 || ppid == pid) {
+                if (pid == java_lang_ProcessHandleImpl_ALL_CHILDREN_PID || ppid == pid) {
                     if (count < arraySize) {
                         // Only store if it fits
                         pids[count] = (jlong) childpid;

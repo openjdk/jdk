@@ -40,11 +40,14 @@ import java.util.stream.Stream;
 import jdk.test.lib.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 /*
  * @test
  * @summary Test counting and JavaChild.spawning and counting of Processes.
  * @requires vm.flagless
+ * @bug 8381567
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
@@ -469,4 +472,21 @@ public class TreeTest extends ProcessUtil {
         }
     }
 
+    @Test
+    @EnabledOnOs(OS.MAC)
+    void pidZeroTest() {
+        ProcessHandle pZero = ProcessHandle.of(0).orElseThrow();
+        Assertions.assertFalse(pZero.children().toList().contains(pZero),
+                    "pid 0 should not be a child of pid 0");
+
+        Assertions.assertDoesNotThrow(() -> pZero.descendants().toList());
+
+        Assertions.assertFalse(pZero.descendants().toList().contains(pZero),
+                    "pid 0 should not be a descendant of pid 0");
+
+        // Verify that (on MacOS) pid 0 is listed as one of allProcesses()
+        Stream<ProcessHandle> allProcesses = ProcessHandle.allProcesses();
+        long pZeroCount = allProcesses.filter(p -> p.equals(pZero)).count();
+        Assertions.assertEquals(1, pZeroCount, "pid 0 should appear exactly once in a list of all processes");
+    }
 }

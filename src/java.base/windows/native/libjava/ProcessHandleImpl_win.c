@@ -273,7 +273,7 @@ Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
             // Now walk the snapshot of processes, and
             // save information about each process in turn
             do {
-                if (ppid == 0 ||
+                if (jpid == java_lang_ProcessHandleImpl_ALL_CHILDREN_PID ||
                     (pe32.th32ParentProcessID > 0
                     && (pe32.th32ParentProcessID == ppid))) {
                     if (count < arraySize) {
