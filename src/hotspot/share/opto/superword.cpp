@@ -36,10 +36,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _arena(mtCompiler, Arena::Tag::tag_superword),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _pairset(&_arena, _vloop_analyzer),
-  _packset(&_arena, _vloop_analyzer
-           NOT_PRODUCT(COMMA is_trace_superword_packset())
-           NOT_PRODUCT(COMMA is_trace_superword_rejections())
-           ),
+  _packset(&_arena, _vloop_analyzer),
   _vpointer_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
   _do_vector_loop(phase()->C->do_vector_loop())             // whether to do vectorization/simd style
@@ -400,7 +397,7 @@ bool SuperWord::transform_loop() {
   assert(phase()->C->do_superword(), "SuperWord option should be enabled");
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 #ifndef PRODUCT
-  if (is_trace_superword_any()) {
+  if (_vloop.is_trace_superword_any()) {
     tty->print_cr("\nSuperWord::transform_loop:");
     lpt()->dump_head();
     cl()->dump();
@@ -409,7 +406,7 @@ bool SuperWord::transform_loop() {
 
   if (!SLP_extract()) {
 #ifndef PRODUCT
-    if (is_trace_superword_any()) {
+    if (_vloop.is_trace_superword_any()) {
       tty->print_cr("\nSuperWord::transform_loop failed: SuperWord::SLP_extract did not vectorize");
     }
 #endif
@@ -417,7 +414,7 @@ bool SuperWord::transform_loop() {
   }
 
 #ifndef PRODUCT
-  if (is_trace_superword_any()) {
+  if (_vloop.is_trace_superword_any()) {
     tty->print_cr("\nSuperWord::transform_loop: success");
   }
 #endif
@@ -474,7 +471,7 @@ bool SuperWord::SLP_extract() {
 
   if (_pairset.is_empty()) {
 #ifndef PRODUCT
-    if (is_trace_superword_any()) {
+    if (_vloop.is_trace_superword_any()) {
       tty->print_cr("\nNo pair packs generated, abort SuperWord.");
       tty->cr();
     }
@@ -547,7 +544,7 @@ void SuperWord::create_adjacent_memop_pairs() {
   memops.sort(MemOp::cmp_by_group_and_con_and_original_index);
 
 #ifndef PRODUCT
-  if (is_trace_superword_adjacent_memops()) {
+  if (_vloop.is_trace_superword_adjacent_memops()) {
     tty->print_cr("\nSuperWord::create_adjacent_memop_pairs:");
   }
 #endif
@@ -555,7 +552,7 @@ void SuperWord::create_adjacent_memop_pairs() {
   create_adjacent_memop_pairs_in_all_groups(memops);
 
 #ifndef PRODUCT
-  if (is_trace_superword_packset()) {
+  if (_vloop.is_trace_superword_packset()) {
     tty->print_cr("\nAfter Superword::create_adjacent_memop_pairs");
     _pairset.print();
   }
@@ -602,7 +599,7 @@ int SuperWord::find_group_end(const GrowableArray<MemOp>& memops, int group_star
 // Create pairs and add them to the pairset.
 void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<MemOp>& memops, const int group_start, const int group_end) {
 #ifndef PRODUCT
-  if (is_trace_superword_adjacent_memops()) {
+  if (_vloop.is_trace_superword_adjacent_memops()) {
     tty->print_cr(" group:");
     for (int i = group_start; i < group_end; i++) {
       const MemOp& memop = memops.at(i);
@@ -642,7 +639,7 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
       if (!can_pack_into_pair(mem1, mem2)) { continue; }
 
 #ifndef PRODUCT
-      if (is_trace_superword_adjacent_memops()) {
+      if (_vloop.is_trace_superword_adjacent_memops()) {
         if (found) {
           tty->print_cr(" WARNING: multiple pairs with the same node. Ignored pairing:");
         } else {
@@ -938,7 +935,7 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   }
 
 #ifndef PRODUCT
-  if (is_trace_superword_packset()) {
+  if (_vloop.is_trace_superword_packset()) {
     tty->print_cr("\nAfter Superword::extend_pairset_with_more_pairs_by_following_use_and_def");
     _pairset.print();
   }
@@ -1212,7 +1209,7 @@ void SuperWord::combine_pairs_to_longer_packs() {
   assert(!_packset.is_empty(), "must have combined some packs");
 
 #ifndef PRODUCT
-  if (is_trace_superword_packset()) {
+  if (_vloop.is_trace_superword_packset()) {
     tty->print_cr("\nAfter Superword::combine_pairs_to_longer_packs");
     _packset.print();
   }
@@ -1231,7 +1228,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
 
   if (task.is_rejected()) {
 #ifndef PRODUCT
-      if (is_trace_superword_rejections()) {
+      if (_vloop.is_trace_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed pack: %s:", task.message());
         print_pack(pack);
@@ -1249,7 +1246,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
   uint old_size = pack_size - new_size;
 
 #ifndef PRODUCT
-  if (is_trace_superword_packset()) {
+  if (_vloop.is_trace_superword_packset()) {
     tty->cr();
     tty->print_cr("INFO: splitting pack (sizes: %d %d): %s:",
                   old_size, new_size, task.message());
@@ -1261,7 +1258,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
   if (old_size < 2 && new_size < 2) {
     assert(old_size == 1 && new_size == 1, "implied");
 #ifndef PRODUCT
-      if (is_trace_superword_rejections()) {
+      if (_vloop.is_trace_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed size 2 pack, cannot be split: %s:", task.message());
         print_pack(pack);
@@ -1277,7 +1274,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
     Node* n = pack->pop();
     unmap_node_in_pack(n);
 #ifndef PRODUCT
-      if (is_trace_superword_rejections()) {
+      if (_vloop.is_trace_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed node from pack, because of split: %s:", task.message());
         n->dump();
@@ -1293,7 +1290,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
     pack->remove(0);
     unmap_node_in_pack(n);
 #ifndef PRODUCT
-      if (is_trace_superword_rejections()) {
+      if (_vloop.is_trace_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed node from pack, because of split: %s:", task.message());
         n->dump();
@@ -1351,7 +1348,7 @@ void PackSet::split_packs(const char* split_name,
   } while (changed);
 
 #ifndef PRODUCT
-  if (is_trace_superword_packset()) {
+  if (_vloop.is_trace_superword_packset()) {
     tty->print_cr("\nAfter %s", split_name);
     print();
   }
@@ -1474,7 +1471,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
                          pre_end->stride_con(),
                          iv_stride(),
                          _vloop.are_speculative_checks_possible()
-                         DEBUG_ONLY(COMMA is_trace_align_vector()));
+                         DEBUG_ONLY(COMMA _vloop.is_trace_align_vector()));
   return solver.solve();
 }
 
@@ -1489,7 +1486,7 @@ void SuperWord::filter_packs_for_alignment() {
   }
 
 #ifndef PRODUCT
-  if (is_trace_superword_info() || is_trace_align_vector()) {
+  if (_vloop.is_trace_superword_info() || _vloop.is_trace_align_vector()) {
     tty->print_cr("\nSuperWord::filter_packs_for_alignment:");
   }
 #endif
@@ -1513,7 +1510,7 @@ void SuperWord::filter_packs_for_alignment() {
     const AlignmentSolution* intersect = current->filter(s);
 
 #ifndef PRODUCT
-    if (is_trace_align_vector()) {
+    if (_vloop.is_trace_align_vector()) {
       tty->print("  solution for pack:         ");
       s->print();
       tty->print("  intersection with current: ");
@@ -1533,7 +1530,7 @@ void SuperWord::filter_packs_for_alignment() {
                         "rejected by AlignVector (strict alignment requirement)", filter);
 
 #ifndef PRODUCT
-  if (is_trace_superword_info() || is_trace_align_vector()) {
+  if (_vloop.is_trace_superword_info() || _vloop.is_trace_align_vector()) {
     tty->print("\n final solution: ");
     current->print();
     tty->print_cr(" rejected mem_ops packs: %d of %d", mem_ops_rejected, mem_ops_count);
@@ -1887,19 +1884,9 @@ bool SuperWord::do_vtransform() const {
   if (_packset.is_empty()) { return false; }
 
   // Make an empty transform.
-#ifndef PRODUCT
-  VTransformTrace trace(_vloop.vtrace(),
-                        is_trace_superword_rejections(),
-                        is_trace_align_vector(),
-                        _vloop.is_trace_speculative_aliasing_analysis(),
-                        _vloop.is_trace_speculative_runtime_checks(),
-                        is_trace_superword_info());
-#endif
   VTransform vtransform(_vloop_analyzer,
                         _vpointer_for_main_loop_alignment,
-                        _aw_for_main_loop_alignment
-                        NOT_PRODUCT(COMMA trace)
-                        );
+                        _aw_for_main_loop_alignment);
 
   // Build the transform from the packset.
   {
@@ -1924,7 +1911,7 @@ bool VTransform::is_profitable() const {
 
   if (AutoVectorizationOverrideProfitability == 0) {
 #ifndef PRODUCT
-    if (_trace._info) {
+    if (_vloop.is_trace_vtransform() || _vloop.is_trace_rejections() || _vloop.is_trace_cost()) {
       tty->print_cr("\nForced bailout of vectorization (AutoVectorizationOverrideProfitability=0).");
     }
 #endif
@@ -1933,7 +1920,7 @@ bool VTransform::is_profitable() const {
 
   if (AutoVectorizationOverrideProfitability == 2) {
 #ifndef PRODUCT
-    if (_trace._info) {
+    if (_vloop.is_trace_vtransform() || _vloop.is_trace_cost()) {
       tty->print_cr("\nForced vectorization, ignoring profitability (AutoVectorizationOverrideProfitability=2).");
     }
 #endif
@@ -1951,7 +1938,7 @@ bool VTransform::is_profitable() const {
   float scalar_cost = _vloop_analyzer.cost_for_scalar_loop();
   float vector_cost = cost_for_vector_loop();
 #ifndef PRODUCT
-  if (_trace._info) {
+  if (_vloop.is_trace_vtransform() || _vloop.is_trace_cost()) {
     tty->print_cr("\nVTransform: scalar_cost = %.2f vs vector_cost = %.2f",
                   scalar_cost, vector_cost);
   }
@@ -1964,7 +1951,7 @@ bool VTransform::is_profitable() const {
 // See description at top of "vtransform.hpp".
 void VTransform::apply() {
 #ifndef PRODUCT
-  if (_trace._info || TraceLoopOpts) {
+  if (_vloop.is_trace_vtransform() || TraceLoopOpts) {
     tty->print_cr("\nVTransform::apply:");
     lpt()->dump_head();
     lpt()->head()->dump();
@@ -1995,7 +1982,7 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     VTransformApplyResult result = vtn->apply(apply_state);
-    NOT_PRODUCT( if (_trace._verbose) { result.trace(vtn); } )
+    NOT_PRODUCT( if (_vloop.is_trace_vtransform_verbose()) { result.trace(vtn); } )
 
     apply_state.set_transformed_node(vtn, result.node());
     max_vector_length = MAX2(max_vector_length, result.vector_length());
@@ -2017,7 +2004,7 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
 void VTransform::apply_vectorization() const {
   Compile* C = phase()->C;
 #ifndef PRODUCT
-  if (_trace._verbose) {
+  if (_vloop.is_trace_vtransform_verbose()) {
     tty->print_cr("\nVTransform::apply_vectorization:");
   }
 #endif
@@ -2745,7 +2732,7 @@ void VTransform::determine_vpointer_and_aw_for_main_loop_alignment() {
 
 #define TRACE_ALIGN_VECTOR_NODE(node) { \
   DEBUG_ONLY(                           \
-    if (_trace._align_vector) {         \
+    if (_vloop.is_trace_align_vector()) { \
       tty->print("  " #node ": ");      \
       node->dump();                     \
     }                                   \
@@ -2767,7 +2754,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
 #ifdef ASSERT
-    if (_trace._align_vector) {
+    if (_vloop.is_trace_align_vector()) {
       tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: disabled.");
     }
 #endif
@@ -2923,7 +2910,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* base          = p.mem_pointer().base().object_or_native();
 
 #ifdef ASSERT
-  if (_trace._align_vector) {
+  if (_vloop.is_trace_align_vector()) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  vpointer_for_main_loop_alignment");
     p.print_on(tty);
@@ -2954,7 +2941,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       iv_scale  == 0 || !is_power_of_2(abs(iv_scale))  ||
       abs(iv_scale) >= aw) {
 #ifdef ASSERT
-    if (_trace._align_vector) {
+    if (_vloop.is_trace_align_vector()) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
       tty->print_cr(" iv_stride or iv_scale are not power of 2, or abs(iv_scale) >= aw.");
     }
@@ -2970,7 +2957,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const int AW = aw / abs(iv_scale);
 
 #ifdef ASSERT
-  if (_trace._align_vector) {
+  if (_vloop.is_trace_align_vector()) {
     tty->print_cr("  AW = aw(%d) / abs(iv_scale(%d)) = %d", aw, iv_scale, AW);
   }
 #endif

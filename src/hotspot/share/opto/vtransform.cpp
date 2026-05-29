@@ -126,7 +126,7 @@ bool VTransformGraph::schedule() {
   assert(!is_scheduled(), "not yet scheduled");
 
 #ifndef PRODUCT
-  if (_trace._verbose) {
+  if (_vloop.is_trace_vtransform_verbose()) {
     print_vtnodes();
   }
 #endif
@@ -174,7 +174,7 @@ bool VTransformGraph::schedule() {
           // and discover that use is also pre_visited but not post_visited. Thus, use
           // lies on that path from "root" to vtn, and the edge (vtn, use) closes a
           // cycle.
-          NOT_PRODUCT(if (_trace._rejections) { trace_schedule_cycle(stack, pre_visited, post_visited); } )
+          NOT_PRODUCT(if (_vloop.is_trace_rejections()) { trace_schedule_cycle(stack, pre_visited, post_visited); } )
           return false;
         }
         stack.push(use);
@@ -192,7 +192,7 @@ bool VTransformGraph::schedule() {
   }
 
 #ifndef PRODUCT
-  if (_trace._info) {
+  if (_vloop.is_trace_vtransform()) {
     print_schedule();
   }
 #endif
@@ -346,7 +346,9 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 void VTransform::apply_speculative_alignment_runtime_checks() {
   if (VLoop::vectors_should_be_aligned()) {
 #ifdef ASSERT
-    if (_trace._align_vector || _trace._speculative_runtime_checks) {
+    if (_vloop.is_trace_speculative_runtime_checks() ||
+        _vloop.is_trace_align_vector() ||
+        _vloop.is_trace_vtransform()) {
       tty->print_cr("\nVTransform::apply_speculative_alignment_runtime_checks: native memory alignment");
     }
 #endif
@@ -370,7 +372,7 @@ void VTransform::apply_speculative_alignment_runtime_checks() {
 
 #define TRACE_SPECULATIVE_ALIGNMENT_CHECK(node) {                     \
   DEBUG_ONLY(                                                         \
-    if (_trace._align_vector || _trace._speculative_runtime_checks) { \
+    if (_vloop.is_trace_align_vector() || _vloop.is_trace_speculative_runtime_checks()) { \
       tty->print("  " #node ": ");                                    \
       node->dump();                                                   \
     }                                                                 \
@@ -457,7 +459,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
   if (_vloop.use_speculative_aliasing_checks()) {
 
 #ifdef ASSERT
-    if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+    if (_vloop.is_trace_speculative_aliasing_analysis() ||
+        _vloop.is_trace_speculative_runtime_checks()) {
       tty->print_cr("\nVTransform::apply_speculative_aliasing_runtime_checks: speculative aliasing analysis runtime checks");
     }
 #endif
@@ -478,7 +481,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
           const VPointer& vp1 = vtn->vpointer();
           const VPointer& vp2 = use->vpointer();
 #ifdef ASSERT
-          if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+          if (_vloop.is_trace_speculative_aliasing_analysis() ||
+              _vloop.is_trace_speculative_runtime_checks()) {
             tty->print_cr("\nViolated Weak Edge:");
             vtn->print();
             vp1.print_on(tty);
@@ -565,7 +569,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
       const VPointer vp2_union = vp2->make_with_size(size2);
 
 #ifdef ASSERT
-      if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+      if (_vloop.is_trace_speculative_aliasing_analysis() ||
+          _vloop.is_trace_speculative_runtime_checks()) {
         tty->print_cr("\nUnion of %d weak aliasing edges:", group_end - group_start);
         vp1_union.print_on(tty);
         vp2_union.print_on(tty);
@@ -853,7 +858,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
   memory_regions.sort(VMemoryRegion::cmp_for_sort);
 
 #ifndef PRODUCT
-  if (_trace._verbose) {
+  if (_vloop.is_trace_vtransform_verbose()) {
     tty->print_cr("VTransformGraph::has_store_to_load_forwarding_failure:");
     tty->print_cr("  simulated_unrolling_count = %d", simulated_unrolling_count);
     tty->print_cr("  simulated_super_unrolling_count = %d", simulated_super_unrolling_count);
@@ -883,7 +888,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
             (!region1.is_load() && region2.is_load() && region1.schedule_order() < region2.schedule_order())) {
           // We predict that this leads to a store-to-load-forwarding failure penalty.
 #ifndef PRODUCT
-          if (_trace._rejections) {
+          if (_vloop.is_trace_rejections()) {
             tty->print_cr("VTransformGraph::has_store_to_load_forwarding_failure:");
             tty->print_cr("  Partial overlap of store->load. We predict that this leads to");
             tty->print_cr("  a store-to-load-forwarding failure penalty which makes");

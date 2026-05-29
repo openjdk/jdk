@@ -205,6 +205,50 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
+  bool is_trace_rejections() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::REJECTIONS);
+  }
+
+  bool is_trace_superword_adjacent_memops() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
+  }
+
+  bool is_trace_superword_packset() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET);
+  }
+
+  bool is_trace_superword_info() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO);
+  }
+
+  bool is_trace_superword_any() const {
+    return TraceSuperWord ||
+           is_trace_align_vector() ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::REJECTIONS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
+
+  bool is_trace_align_vector() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
+
+  bool is_trace_vtransform() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
+  }
+
+  bool is_trace_vtransform_verbose() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM_VERBOSE);
+  }
+
   bool is_trace_optimization() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
   }

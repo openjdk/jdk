@@ -129,44 +129,12 @@ public:
   NOT_PRODUCT( void trace(VTransformNode* vtnode) const; )
 };
 
-#ifndef PRODUCT
-// Convenience class for tracing flags.
-class VTransformTrace {
-public:
-  const bool _verbose;
-  const bool _rejections;
-  const bool _align_vector;
-  const bool _speculative_aliasing_analysis;
-  const bool _speculative_runtime_checks;
-  const bool _info;
-
-  VTransformTrace(const VTrace& vtrace,
-                  const bool is_trace_rejections,
-                  const bool is_trace_align_vector,
-                  const bool is_trace_speculative_aliasing_analysis,
-                  const bool is_trace_speculative_runtime_checks,
-                  const bool is_trace_info) :
-    _verbose                   (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
-    _rejections                    (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
-    _align_vector                  (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
-    _speculative_aliasing_analysis (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_aliasing_analysis),
-    _speculative_runtime_checks    (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
-    _info                          (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
-
-  static bool is_trace_vtransform(const VTrace& vtrace) {
-    return vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
-  }
-};
-#endif
-
 // VTransformGraph: component of VTransform
 // See description at top of this file.
 class VTransformGraph : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
   const VLoop& _vloop;
-
-  NOT_PRODUCT(const VTransformTrace _trace;)
 
   VTransformNodeIDX _next_idx;
   GrowableArray<VTransformNode*> _vtnodes;
@@ -177,11 +145,9 @@ private:
 
 public:
   VTransformGraph(const VLoopAnalyzer& vloop_analyzer,
-                  Arena& arena
-                  NOT_PRODUCT( COMMA const VTransformTrace trace)) :
+                  Arena& arena) :
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
-    NOT_PRODUCT(_trace(trace) COMMA)
     _next_idx(0),
     _vtnodes(&arena, _vloop.estimated_body_length(), 0, nullptr),
     _schedule(&arena, _vloop.estimated_body_length(), 0, nullptr) {}
@@ -225,8 +191,6 @@ private:
   const VLoopAnalyzer& _vloop_analyzer;
   const VLoop& _vloop;
 
-  NOT_PRODUCT(const VTransformTrace _trace;)
-
   // Everything in the vtransform is allocated from this arena, including all vtnodes.
   Arena _arena;
 
@@ -241,13 +205,11 @@ public:
   VTransform(const VLoopAnalyzer& vloop_analyzer,
              VPointer const* vpointer_for_main_loop_alignment,
              int aw_for_main_loop_alignment
-             NOT_PRODUCT( COMMA const VTransformTrace trace)
              ) :
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
-    NOT_PRODUCT(_trace(trace) COMMA)
     _arena(mtCompiler, Arena::Tag::tag_superword),
-    _graph(_vloop_analyzer, _arena NOT_PRODUCT(COMMA _trace)),
+    _graph(_vloop_analyzer, _arena),
     _vpointer_for_main_loop_alignment(vpointer_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
 
