@@ -1246,7 +1246,6 @@ public final class TKit {
 
     static Optional<Boolean> getConfigBooleanProperty(String propertyName) {
         return Optional.ofNullable(getConfigProperty(propertyName))
-                .map(String::strip)
                 .map(v -> {
                     if (v.equalsIgnoreCase("true")) {
                         return true;
@@ -1254,8 +1253,8 @@ public final class TKit {
                         return false;
                     } else {
                         throw new IllegalArgumentException(String.format(
-                                "Invalid value of -Djpackage.test.%s=%s. Expected: true or false",
-                                propertyName, getConfigProperty(propertyName)));
+                                "Invalid value of property %s: %s. Expected: true or false",
+                                getConfigPropertyName(propertyName), v));
                     }
                 });
     }
