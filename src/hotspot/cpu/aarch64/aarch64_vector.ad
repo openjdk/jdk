@@ -388,10 +388,10 @@ source %{
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
-  // Determine whether the given multiply-add/sub-structured node is a good
+  // Determine whether the given multiply-add/sub-structured node is a profitable
   // vector MLA/MLS candidate.
   //
-  // A multiply-add/sub-structured node is NOT considered a good MLA/MLS
+  // A multiply-add/sub-structured node is NOT considered a profitable MLA/MLS
   // candidate if forming an MLA/MLS would likely extend a dependency chain, e.g.
   //
   //        add_input     MulVL          MulVL      add_input
@@ -417,8 +417,8 @@ source %{
 
     // Exception:
     // If the "add_input" is already needed to compute the "mul", the
-    // multiply-add/sub-structured node is still considered a good vector MLA/MLS
-    // candidate:
+    // multiply-add/sub-structured node is still considered a profitable vector
+    // MLA/MLS candidate:
     //
     //          add_input      ...         ...    add_input
     //           \     \     /               \    /     /
