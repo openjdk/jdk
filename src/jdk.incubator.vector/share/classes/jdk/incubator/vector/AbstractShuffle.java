@@ -35,7 +35,8 @@ abstract sealed class AbstractShuffle<E> extends VectorShuffle<E>
         FloatVector64.FloatShuffle64, FloatVector128.FloatShuffle128, FloatVector256.FloatShuffle256, FloatVector512.FloatShuffle512, FloatVectorMax.FloatShuffleMax,
         IntVector64.IntShuffle64, IntVector128.IntShuffle128, IntVector256.IntShuffle256, IntVector512.IntShuffle512, IntVectorMax.IntShuffleMax,
         LongVector64.LongShuffle64, LongVector128.LongShuffle128, LongVector256.LongShuffle256, LongVector512.LongShuffle512, LongVectorMax.LongShuffleMax,
-        ShortVector64.ShortShuffle64, ShortVector128.ShortShuffle128, ShortVector256.ShortShuffle256, ShortVector512.ShortShuffle512, ShortVectorMax.ShortShuffleMax {
+        ShortVector64.ShortShuffle64, ShortVector128.ShortShuffle128, ShortVector256.ShortShuffle256, ShortVector512.ShortShuffle512, ShortVectorMax.ShortShuffleMax,
+        Float16Vector64.Float16Shuffle64, Float16Vector128.Float16Shuffle128, Float16Vector256.Float16Shuffle256, Float16Vector512.Float16Shuffle512, Float16VectorMax.Float16ShuffleMax {
     static final IntUnaryOperator IDENTITY = i -> i;
 
     // Internal representation allows for a maximum index of E.MAX_VALUE - 1
