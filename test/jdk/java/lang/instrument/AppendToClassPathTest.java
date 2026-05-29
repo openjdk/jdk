@@ -27,9 +27,10 @@
  * @summary simple test for the Class-Path manifest attribute
  * @author Gabriel Adauto, Wily Technology; Robert Field, Sun Microsystems
  *
- * @run build AppendToClassPathTest
- * @run shell AppendToClassPathSetUp.sh
- * @run shell MakeJAR.sh classpathAgent
+ * @library /test/lib
+ * @run build AppendToClassPathTest ExampleForClassPath MoveClassToHidden InstrumentationHandoff
+ * @run driver MoveClassToHidden ExampleForClassPath
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff classpathAgent.jar Class-Path:hidden/
  * @run main/othervm -javaagent:classpathAgent.jar AppendToClassPathTest AppendToClassPathTest
  */
 

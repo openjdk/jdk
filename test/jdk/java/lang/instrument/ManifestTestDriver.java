@@ -274,8 +274,10 @@ public class ManifestTestDriver {
     static void deleteRecursive(Path path) {
         try {
             if (Files.isDirectory(path)) {
-                for (Path child : Files.list(path).toList()) {
-                    deleteRecursive(child);
+                try (var stream = Files.list(path)) {
+                    for (Path child : stream.toList()) {
+                        deleteRecursive(child);
+                    }
                 }
             }
             Files.deleteIfExists(path);
