@@ -1009,6 +1009,26 @@ bool VectorNode::is_all_zeros_vector(Node* n) {
   }
 }
 
+// Return true if all the lanes of vector are zero (works for integral and floating point types).
+bool VectorNode::is_vector_zero(Node* n, PhaseGVN* phase) {
+  if (n->Opcode() != Op_Replicate) {
+    return false;
+  }
+  const Type* t = phase->type(n->in(1));
+  return t == TypeInt::ZERO || t == TypeLong::ZERO ||
+         t == TypeF::ZERO  || t == TypeD::ZERO;
+}
+
+// Return true if all the lanes of vector are one (works for integral and floating point types).
+bool VectorNode::is_vector_one(Node* n, PhaseGVN* phase) {
+  if (n->Opcode() != Op_Replicate) {
+    return false;
+  }
+  const Type* t = phase->type(n->in(1));
+  return t == TypeInt::ONE || t == TypeLong::ONE ||
+         t == TypeF::ONE  || t == TypeD::ONE;
+}
+
 bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
   if (n->Opcode() == Op_XorV) {
     return is_all_ones_vector(n->in(1)) ||
@@ -1415,6 +1435,96 @@ Node* VectorNode::uncast_mask(Node* n) {
     n = n->in(1);
   }
   return n;
+}
+
+//------------------------------AddVNode---------------------------------------
+Node* AddVNode::Identity(PhaseGVN* phase) {
+  // Float/double: X + 0.0 is NOT X when X is -0.0 (IEEE 754: -0.0 + 0.0 = +0.0).
+  if (!is_integral_type(vect_type()->element_basic_type())) {
+    return this;
+  }
+
+  // AddV(X, Replicate(0)) => X (integral only)
+  // For blend-predicated nodes, if edges were swapped then Replicate(0) was originally
+  // in(1) i.e. the passthrough operand. Folding to in(1) would return X instead of
+  // the passthrough, so we must not fold in that case.
+  if (VectorNode::is_vector_zero(in(2), phase) && (!is_predicated_using_blend() || !has_swapped_edges())) {
+    return in(1);
+  }
+
+  // AddV(Replicate(0), X) => X (integral only)
+  // For predicated nodes, returning in(2) loses the passthrough from in(1).
+  // For blend-predicated nodes, safe when edges were swapped: in(2) was originally
+  // in(1) i.e. the passthrough operand, so returning in(2) returns the passthrough.
+  if (VectorNode::is_vector_zero(in(1), phase) && !is_predicated_vector() &&
+      (!is_predicated_using_blend() || has_swapped_edges())) {
+    return in(2);
+  }
+
+  return this;
+}
+
+Node* AddVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+//------------------------------SubVNode---------------------------------------
+Node* SubVNode::Identity(PhaseGVN* phase) {
+  // SubV(X, Replicate(0)) => X
+  if (VectorNode::is_vector_zero(in(2), phase)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* SubVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // SubV(X, X) => Replicate(0) for integral types, non-predicated only
+  if (!is_predicated_vector() && !is_predicated_using_blend() && in(1) == in(2)) {
+    BasicType bt = vect_type()->element_basic_type();
+    if (is_integral_type(bt)) {
+      return new ReplicateNode(phase->zerocon(bt), vect_type());
+    }
+  }
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+//------------------------------MulVNode---------------------------------------
+Node* MulVNode::Identity(PhaseGVN* phase) {
+  // MulV(X, Replicate(1)) => X
+  // For blend-predicated nodes, if edges were swapped then Replicate(1) was originally
+  // in(1) i.e. the passthrough operand. Folding to in(1) would return X instead of
+  // the passthrough, so we must not fold in that case.
+  if (VectorNode::is_vector_one(in(2), phase) && (!is_predicated_using_blend() || !has_swapped_edges())) {
+    return in(1);
+  }
+
+  // MulV(Replicate(1), X) => X
+  // For predicated nodes, returning in(2) loses the passthrough from in(1).
+  // For blend-predicated nodes, safe when edges were swapped: in(2) was originally
+  // in(1) i.e. the passthrough (opd1), so returning in(2) returns the passthrough.
+  if (VectorNode::is_vector_one(in(1), phase) && !is_predicated_vector() &&
+      (!is_predicated_using_blend() || has_swapped_edges())) {
+    return in(2);
+  }
+
+  // MulV(Replicate(0), X) => Replicate(0) for integral types
+  // Safe for predicated: in(1) is both the passthrough and the result (0 * X = 0),
+  // so all lanes produce zero.
+  if (is_integral_type(vect_type()->element_basic_type()) && VectorNode::is_vector_zero(in(1), phase) &&
+      (!is_predicated_using_blend() || !has_swapped_edges())) {
+    return in(1);
+  }
+
+  // MulV(X, Replicate(0)) => Replicate(0) for integral types, non-predicated only
+  if (VectorNode::is_vector_zero(in(2), phase) && is_integral_type(vect_type()->element_basic_type()) &&
+      !is_predicated_vector() && (!is_predicated_using_blend() || has_swapped_edges()))  {
+    return in(2);
+  }
+  return this;
+}
+
+Node* MulVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 // Return initial Pack node. Additional operands added with add_opd() calls.
