@@ -24,6 +24,7 @@
 
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahSerialAllocator.hpp"
 
@@ -34,7 +35,9 @@ ShenandoahSerialAllocator::ShenandoahSerialAllocator(ShenandoahFreeSet* free_set
     _old_collector_alloc(free_set) {}
 
 HeapWord* ShenandoahSerialAllocator::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
-  shenandoah_assert_heaplocked();
+  // Serial allocator acquires heap lock for all allocations.
+  // Mutator allocations may yield to safepoint; GC allocations cannot.
+  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
 
   if (ShenandoahHeapRegion::requires_humongous(req.size())) {
     switch (req.type()) {

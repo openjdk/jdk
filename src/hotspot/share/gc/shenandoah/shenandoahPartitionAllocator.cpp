@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 #include "logging/log.hpp"
 
@@ -39,6 +40,13 @@ ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(Shenandoah
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
   shenandoah_assert_heaplocked();
+
+  // OldCollector: verify old generation has room before attempting allocation.
+  if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
+    if (!ShenandoahHeap::heap()->old_generation()->can_allocate(req)) {
+      return nullptr;
+    }
+  }
 
   // Fast path: try the retained region first.
   if (_retained_region != nullptr) {
