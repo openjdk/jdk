@@ -331,6 +331,107 @@ void ShenandoahFreeSet::notify_allocation(ShenandoahFreeSetPartitionId partition
   }
 }
 
+ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(ShenandoahFreeSetPartitionId partition,
+                                                               size_t min_size_words,
+                                                               ShenandoahAffiliation affiliation,
+                                                               bool& in_new_region) {
+  shenandoah_assert_heaplocked();
+  update_allocation_bias();
+
+  if (_partitions.is_empty(partition)) {
+    return nullptr;
+  }
+
+  ShenandoahHeapRegion* result = nullptr;
+  ShenandoahHeapRegion* free_region = nullptr;
+  size_t min_size_bytes = min_size_words * HeapWordSize;
+
+  auto search = [&](auto& iterator) {
+    for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
+      ShenandoahHeapRegion* r = _heap->get_region(idx);
+      if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) continue;
+      r->try_recycle_under_lock();
+      if (r->is_empty()) {
+        if (free_region == nullptr) free_region = r;
+        if (alloc_capacity(r) >= min_size_bytes) { result = r; return; }
+      } else if (r->affiliation() == affiliation) {
+        if (alloc_capacity(r) >= min_size_bytes) { result = r; return; }
+      }
+    }
+  };
+
+  if (_partitions.alloc_from_left_bias(partition)) {
+    ShenandoahLeftRightIterator iterator(&_partitions, partition);
+    search(iterator);
+  } else {
+    ShenandoahRightLeftIterator iterator(&_partitions, partition);
+    search(iterator);
+  }
+
+  // For collector partitions: fall back to any free (empty) region if no affiliated region found.
+  if (result == nullptr && free_region != nullptr && partition != ShenandoahFreeSetPartitionId::Mutator) {
+    result = free_region;
+  }
+
+  if (result == nullptr) {
+    return nullptr;
+  }
+
+  // Prepare the region for allocation.
+  in_new_region = result->is_empty();
+  if (in_new_region) {
+    assert(!result->is_affiliated(), "New region should be unaffiliated");
+    result->set_affiliation(affiliation);
+    if (result->is_old()) {
+      result->end_preemptible_coalesce_and_fill();
+    }
+#ifdef ASSERT
+    ShenandoahMarkingContext* const ctx = _heap->marking_context();
+    assert(ctx->top_at_mark_start(result) == result->bottom(), "TAMS must equal bottom for new region");
+    assert(ctx->is_bitmap_range_within_region_clear(ctx->top_bitmap(result), result->end()), "Bitmap must be clear");
+#endif
+  }
+  return result;
+}
+
+ShenandoahHeapRegion* ShenandoahFreeSet::steal_from_mutator(ShenandoahFreeSetPartitionId target_partition,
+                                                            ShenandoahAllocRequest& req,
+                                                            bool& in_new_region) {
+  shenandoah_assert_heaplocked();
+  assert(target_partition != ShenandoahFreeSetPartitionId::Mutator, "Cannot steal from self");
+
+  if (_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator) == 0) {
+    return nullptr;
+  }
+
+  ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator, true);
+  for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
+    ShenandoahHeapRegion* r = _heap->get_region(idx);
+    if (can_allocate_from(r)) {
+      if (req.is_old()) {
+        if (!flip_to_old_gc(r)) {
+          continue;
+        }
+      } else {
+        flip_to_gc(r);
+      }
+      log_debug(gc, free)("Flipped region %zu to gc for request: " PTR_FORMAT, idx, p2i(&req));
+
+      in_new_region = r->is_empty();
+      if (in_new_region) {
+        ShenandoahAffiliation aff = (target_partition == ShenandoahFreeSetPartitionId::OldCollector)
+                                    ? OLD_GENERATION : YOUNG_GENERATION;
+        r->set_affiliation(aff);
+        if (r->is_old()) {
+          r->end_preemptible_coalesce_and_fill();
+        }
+      }
+      return r;
+    }
+  }
+  return nullptr;
+}
+
 idx_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition < NumPartitions, "selected free partition must be valid");
   idx_t idx = _leftmosts[int(which_partition)];

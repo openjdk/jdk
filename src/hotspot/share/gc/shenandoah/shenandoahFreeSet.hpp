@@ -673,6 +673,23 @@ public:
   // Called by ShenandoahAllocator after a successful allocation to update used/affiliated totals.
   void notify_allocation(ShenandoahFreeSetPartitionId partition, bool in_new_region);
 
+  // Find a region in the given partition with at least min_size_words of allocatable capacity.
+  // Handles bias direction, trash recycling, and affiliation setup for new (empty) regions.
+  // Returns nullptr if no suitable region found. Sets in_new_region if the returned region was empty.
+  // Caller must hold the heap lock.
+  ShenandoahHeapRegion* find_region_for_alloc(ShenandoahFreeSetPartitionId partition,
+                                              size_t min_size_words,
+                                              ShenandoahAffiliation affiliation,
+                                              bool& in_new_region);
+
+  // Steal an empty region from the Mutator partition for the given collector partition.
+  // Flips the region, sets up affiliation, and returns it ready for allocation.
+  // Returns nullptr if no region can be stolen. Sets in_new_region to true on success.
+  // Caller must hold the heap lock.
+  ShenandoahHeapRegion* steal_from_mutator(ShenandoahFreeSetPartitionId target_partition,
+                                           ShenandoahAllocRequest& req,
+                                           bool& in_new_region);
+
   // Public because ShenandoahRegionPartitions assertions require access.
   size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   size_t alloc_capacity(size_t idx) const;
