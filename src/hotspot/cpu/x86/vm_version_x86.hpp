@@ -381,6 +381,8 @@ protected:
     decl(HT,                ht                )  \
     decl(3DNOW_PREFETCH,    3dnowpref         )  /* Processor supports 3dnow prefetch and prefetchw instructions */ \
                                                  /* may not necessarily support other 3dnow instructions */ \
+    decl(SSE,               sse               )  \
+    decl(SSE2,              sse2              )  \
     decl(SSE3,              sse3              ) /* SSE3 comes from cpuid 1 (ECX) */ \
     decl(SSSE3,             ssse3             ) \
     decl(SSE4A,             sse4a             ) \

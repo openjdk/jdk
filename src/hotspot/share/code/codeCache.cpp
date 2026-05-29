@@ -61,6 +61,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
 #include "services/memoryService.hpp"
@@ -1936,6 +1937,18 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
+static bool is_stub_code_blob(CodeBlob* cb) {
+  if (!cb->is_buffer_blob()) {
+    return false;
+  }
+  for (StubCodeDesc* d = StubCodeDesc::first(); d != nullptr; d = StubCodeDesc::next(d)) {
+    if (cb->code_contains(d->begin())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   char fname[JVM_MAXPATHLEN];
@@ -1958,6 +1971,10 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   AllCodeBlobsIterator iter(AllCodeBlobsIterator::not_unloading);
   while (iter.next()) {
     CodeBlob *cb = iter.method();
+    if (is_stub_code_blob(cb)) {
+      // Individual stub routines are dumped after the main loop.
+      continue;
+    }
     ResourceMark rm;
     const char* method_name = nullptr;
     if (cb->is_nmethod()) {
@@ -1968,6 +1985,11 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
     }
     fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
                 (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(), method_name);
+  }
+  for (StubCodeDesc* d = StubCodeDesc::first(); d != nullptr; d = StubCodeDesc::next(d)) {
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s %s",
+                (intptr_t)d->begin(), (intptr_t)d->size_in_bytes(),
+                d->group(), d->name());
   }
 }
 #endif // LINUX
