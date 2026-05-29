@@ -87,7 +87,7 @@ case "$OS" in
       TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
       ;;
 
-    CYGWIN* )
+    CYGWIN* | MSYS* | MINGW* )
       VAR="A different value for Cygwin"
       DEFAULT_JDK="/cygdrive/c/Program\ Files/Java/jdk1.8.0"
       FILESEP="/"

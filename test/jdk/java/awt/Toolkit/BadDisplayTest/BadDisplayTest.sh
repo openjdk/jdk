@@ -23,7 +23,7 @@ ${TESTJAVA}/bin/javac -cp ${TESTSRC} -d . ${TESTSRC}/BadDisplayTest.java
 
 OS=`uname -s`
 case "$OS" in
-    Windows* | CYGWIN* | Darwin)
+    Windows* | CYGWIN* | MSYS* | MINGW* | Darwin)
         echo "Passed"; exit 0 ;;
 esac
 
