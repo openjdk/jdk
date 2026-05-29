@@ -358,7 +358,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
 
 // Having chosen the collection set, adjust the budgets for generational mode based on its composition.  Note
 // that young_generation->available() now knows about recently discovered immediate garbage.
-void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahHeap* const heap,
+void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahGenerationalHeap* const heap,
                                                                  ShenandoahCollectionSet* const collection_set) {
   shenandoah_assert_generational();
   // We may find that old_evacuation_reserve and/or loaned_for_young_evacuation are not fully consumed, in which case we may
@@ -481,11 +481,10 @@ void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahHeap*
 
   if (add_regions_to_young > 0) {
     assert(excess_old >= add_regions_to_young * region_size_bytes, "Cannot xfer more than excess old");
-    const ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-    if (gen_heap->age_census()->is_always_tenure()) {
+    if (heap->age_census()->is_always_tenure()) {
       // Cap excess_old at one min-PLAB per worker so this much stays in old's promotion reserve
       // instead of being transferred to young.
-      const size_t min_plab_total = gen_heap->plab_min_size() * HeapWordSize * heap->workers()->max_workers();
+      const size_t min_plab_total = heap->plab_min_size() * HeapWordSize * heap->workers()->max_workers();
       if (excess_old > min_plab_total) {
         excess_old = min_plab_total;
         // Avoid underflowing excess_old when we subtract below.

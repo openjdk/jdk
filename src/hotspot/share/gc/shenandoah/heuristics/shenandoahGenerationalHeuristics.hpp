@@ -92,7 +92,7 @@ private:
 
   // Adjust evacuation budgets after choosing collection set.  On entry, the instance variable _regions_to_xfer
   // represents regions to be transferred to old based on decisions made in top_off_collection_set()
-  void adjust_evacuation_budgets(ShenandoahHeap* const heap,
+  void adjust_evacuation_budgets(ShenandoahGenerationalHeap* const heap,
                                  ShenandoahCollectionSet* const collection_set);
 
 protected:
