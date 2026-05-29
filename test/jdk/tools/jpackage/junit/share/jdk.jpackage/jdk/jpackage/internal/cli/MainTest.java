@@ -26,7 +26,6 @@ import static jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Globals;
+import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.model.JPackageException;
@@ -77,8 +77,6 @@ public class MainTest extends JUnitAdapter {
     @ParameterizedTest
     @MethodSource
     public void testOutput(TestSpec test) throws IOException {
-        assumeTrue(!test.quietBundlerSetupRequired() || QuietBundlerSetup.VALUE,
-                "Skipping test because the platform bundler setup is not quiet on this host");
         test.run();
     }
 
@@ -190,14 +188,14 @@ public class MainTest extends JUnitAdapter {
                 build().args("foo", "--version").stderrMatchType(OutputMatchType.STARTS_WITH).expectErrors(I18N.format("error.non-option-arguments", 1)),
                 // Should print two errors: one for the invalid value of the "--type" option
                 // and another for the invalid value of the "--verbose" option.
-                build().args("--temp", invalidTempValue, "--verbose", "bar").requiresQuietBundlerSetup().expectErrors(
+                build().args("--temp", invalidTempValue, "--verbose", "bar").expectErrors(
                         I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp"),
                         I18N.format("error.parameter-invalid-value", "bar", "--verbose")),
-                build().args("--verbose", "bar", "--temp", invalidTempValue).requiresQuietBundlerSetup().expectErrors(
+                build().args("--verbose", "bar", "--temp", invalidTempValue).expectErrors(
                         I18N.format("error.parameter-invalid-value", "bar", "--verbose"),
                         I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp")),
                 // This is just for the coverage.
-                build().args("--verbose", "errors", "--temp", invalidTempValue).requiresQuietBundlerSetup().expectErrors(
+                build().args("--verbose", "errors", "--temp", invalidTempValue).expectErrors(
                         I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp")),
                 // Silent failure.
                 build().args("--verbose", "", "--temp", invalidTempValue).expectErrorExitCode(),
@@ -368,8 +366,7 @@ public class MainTest extends JUnitAdapter {
     }
 
 
-    record TestSpec(List<String> args, int expectedExitCode, ExpectedOutput expectedStdout, ExpectedOutput expectedStderr,
-            boolean quietBundlerSetupRequired) {
+    record TestSpec(List<String> args, int expectedExitCode, ExpectedOutput expectedStdout, ExpectedOutput expectedStderr) {
 
         TestSpec {
             Objects.requireNonNull(args);
@@ -392,8 +389,7 @@ public class MainTest extends JUnitAdapter {
                         args,
                         expectedExitCode,
                         new ExpectedOutput(expectedStdout, Optional.ofNullable(stdoutMatchType).orElse(OutputMatchType.EQUALS)),
-                        new ExpectedOutput(expectedStderr, Optional.ofNullable(stderrMatchType).orElse(OutputMatchType.EQUALS)),
-                        quietBundlerSetupRequired);
+                        new ExpectedOutput(expectedStderr, Optional.ofNullable(stderrMatchType).orElse(OutputMatchType.EQUALS)));
             }
 
             Builder args(String... v) {
@@ -468,11 +464,6 @@ public class MainTest extends JUnitAdapter {
                 return expectExitCode(1);
             }
 
-            Builder requiresQuietBundlerSetup() {
-                quietBundlerSetupRequired = true;
-                return this;
-            }
-
             private Builder append(List<String> sink, Collection<String> lines) {
                 lines.forEach(sink::add);
                 return this;
@@ -484,7 +475,6 @@ public class MainTest extends JUnitAdapter {
             private OutputMatchType stderrMatchType;
             private List<String> expectedStdout = new ArrayList<>();
             private List<String> expectedStderr = new ArrayList<>();
-            private boolean quietBundlerSetupRequired;
         }
     }
 
@@ -502,8 +492,35 @@ public class MainTest extends JUnitAdapter {
 
             var os = OperatingSystem.current();
             var exitCode = Main.run(os, () -> {
-                CliBundlingEnvironment bundlingEnv = JPackageMockUtils.createBundlingEnvironment(os);
-                return bundlingEnv;
+                return new CliBundlingEnvironment() {
+                    @Override
+                    public Optional<BundlingOperationDescriptor> defaultOperation() {
+                        switch (os) {
+                            case LINUX -> {
+                                return Optional.of(StandardBundlingOperation.CREATE_LINUX_DEB.descriptor());
+                            }
+                            case WINDOWS -> {
+                                return Optional.of(StandardBundlingOperation.CREATE_WIN_MSI.descriptor());
+                            }
+                            case MACOS -> {
+                                return Optional.of(StandardBundlingOperation.CREATE_MAC_PKG.descriptor());
+                            }
+                            default -> {
+                                throw new AssertionError();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void createBundle(BundlingOperationDescriptor op, Options cmdline) {
+                        if (StandardBundlingOperation.CREATE_APP_IMAGE.contains(StandardBundlingOperation.valueOf(op).orElseThrow())) {
+                            CliBundlingEnvironment bundlingEnv = JPackageMockUtils.createBundlingEnvironment(os);
+                            bundlingEnv.createBundle(op, cmdline);
+                        } else {
+                            throw new AssertionError();
+                        }
+                    }
+                };
             }, new PrintWriter(stdout), new PrintWriter(stderr), args);
 
             return new ExecutionResult(lines(stdout.toString()), lines(stderr.toString()), exitCode);
@@ -812,36 +829,5 @@ public class MainTest extends JUnitAdapter {
     private static Path goldenHelpOutputFile(OperatingSystem os) {
         String fname = String.format("help-%s.txt", os.name().toLowerCase());
         return TKit.TEST_SRC_ROOT.resolve("junit/share/jdk.jpackage/jdk/jpackage/internal/cli", fname);
-    }
-
-    // Check whether jpackage's platform bundler setup runs quietly on this host
-    // (i.e. emits no extra diagnostics on stderr that would pollute strict
-    // output assertions).  Mirrors the pattern in `SigningBase.SignEnvReady`
-    // for macOS signing tests.
-    private static final class QuietBundlerSetup {
-        static final boolean VALUE = compute();
-
-        private static boolean compute() {
-            if (OperatingSystem.current() != OperatingSystem.WINDOWS) {
-                return true;
-            }
-
-            try {
-                // We use reflection since `WixTool` is available only on Windows.
-                var m = Class.forName("jdk.jpackage.internal.WixTool")
-                        .getDeclaredMethod("createToolset");
-                m.setAccessible(true);
-                m.invoke(null);
-                return true;
-            } catch (java.lang.reflect.InvocationTargetException ex) {
-                // The call happened, but it threw an exception.  When WiX is
-                // unavailable, `createTooLSet()` throws a `ConfigException`
-                // with the message "error.no-wix-tools".
-                return false;
-            } catch (ReflectiveOperationException ex) {
-                // Something went wrong.
-                throw new AssertionError(ex);
-            }
-        }
     }
 }
