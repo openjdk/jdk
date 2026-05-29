@@ -261,6 +261,20 @@ public class CommandOutputControlTest {
         assertEquals("Unexpected exit code 3 from executing the command <unknown>", ex.getMessage());
     }
 
+    @Test
+    public void test_Result_expectExitCode_unavailable() {
+        var result = CommandOutputControl.Result.build().noExitCode().create();
+
+        var ex = assertThrowsExactly(CommandOutputControl.UnavailableExitCodeException.class, () -> {
+            result.expectExitCode(0);
+        });
+
+        assertNull(ex.getCause());
+        assertSame(result, ex.getResult());
+        assertEquals(String.format("Exit code unavailable from executing the command %s",
+                result.execAttrs().printableCommandLine()), ex.getMessage());
+    }
+
     @ParameterizedTest
     @MethodSource
     public void test_Result_toCharacterResult(ToCharacterResultTestSpec spec) throws IOException, InterruptedException {
@@ -351,6 +365,13 @@ public class CommandOutputControlTest {
 
         var getExitCodeEx = assertThrowsExactly(IllegalStateException.class, result::getExitCode);
         assertEquals(("Exit code is unavailable for timed-out command"), getExitCodeEx.getMessage());
+
+        // Verify UnavailableExitCodeException
+        var expectExitCodeEx = assertThrowsExactly(CommandOutputControl.UnavailableExitCodeException.class, () -> {
+            result.expectExitCode(0);
+        });
+        assertEquals(String.format("Exit code unavailable from executing the command %s",
+                result.execAttrs().printableCommandLine()), expectExitCodeEx.getMessage());
 
         // We want to check that the saved output contains only the text emitted before the "sleep" action.
         // It works for a subprocess, but in the case of a ToolProvider, sometimes the timing is such

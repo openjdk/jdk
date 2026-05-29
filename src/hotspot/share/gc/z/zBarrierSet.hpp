@@ -48,7 +48,8 @@ private:
 
   static zaddress load_barrier_on_oop_field(volatile zpointer* p);
 
-  static void clone_obj_array(objArrayOop src, objArrayOop dst);
+  class ZClonerOopClosure;
+  static void clone_obj(zaddress src, zaddress dst, size_t size);
 
 public:
   ZBarrierSet();

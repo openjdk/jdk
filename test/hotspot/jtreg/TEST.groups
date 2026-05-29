@@ -181,7 +181,6 @@ tier1_compiler_2 = \
   compiler/inlining/ \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
-  compiler/jvmci/ \
   -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
   -compiler/codecache/stress \
   -compiler/codegen/aes \

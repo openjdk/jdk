@@ -558,9 +558,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 
   assert(_g1h->verifier()->check_region_attr_table(), "Inconsistency in the region attributes table.");
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 
   allocation_failure_injector()->arm_if_needed();
 }

@@ -26,7 +26,7 @@
  * @bug 8241486
  * @summary G1/Z give warning when using LoopStripMiningIter and turn off LoopStripMiningIter (0)
  * @requires vm.flagless
- * @requires vm.flavor == "server" & !vm.graal.enabled
+ * @requires vm.flavor == "server"
  * @requires vm.gc.G1
  * @library /test/lib
  * @run driver TestNoWarningLoopStripMiningIterSet G1
@@ -37,7 +37,7 @@
  * @bug 8241486
  * @summary G1/Z give warning when using LoopStripMiningIter and turn off LoopStripMiningIter (0)
  * @requires vm.flagless
- * @requires vm.flavor == "server" & !vm.graal.enabled
+ * @requires vm.flavor == "server"
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestNoWarningLoopStripMiningIterSet Shenandoah
@@ -48,7 +48,7 @@
  * @bug 8241486
  * @summary G1/Z give warning when using LoopStripMiningIter and turn off LoopStripMiningIter (0)
  * @requires vm.flagless
- * @requires vm.flavor == "server" & !vm.graal.enabled
+ * @requires vm.flavor == "server"
  * @requires vm.gc.Z
  * @library /test/lib
  * @run driver TestNoWarningLoopStripMiningIterSet Z
@@ -59,7 +59,7 @@
  * @bug 8241486
  * @summary G1/Z give warning when using LoopStripMiningIter and turn off LoopStripMiningIter (0)
  * @requires vm.flagless
- * @requires vm.flavor == "server" & !vm.graal.enabled
+ * @requires vm.flavor == "server"
  * @requires vm.gc.Epsilon
  * @library /test/lib
  * @run driver TestNoWarningLoopStripMiningIterSet Epsilon
