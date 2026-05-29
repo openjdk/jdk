@@ -290,7 +290,7 @@ void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
   // else, old generation is already appropriately sized
 }
 
-void ShenandoahFreeSet::notify_allocation(ShenandoahFreeSetPartitionId partition, bool in_new_region) {
+void ShenandoahFreeSet::notify_allocation(ShenandoahFreeSetPartitionId partition, bool in_new_region, bool boundary_changed) {
   switch (partition) {
   case ShenandoahFreeSetPartitionId::Mutator:
     recompute_total_used</* UsedByMutatorChanged */ true,
@@ -329,6 +329,23 @@ void ShenandoahFreeSet::notify_allocation(ShenandoahFreeSetPartitionId partition
   default:
     assert(false, "won't happen");
   }
+  if (boundary_changed) {
+    _partitions.assert_bounds();
+  } else {
+    _partitions.assert_bounds_sanity();
+  }
+}
+
+void ShenandoahFreeSet::increase_partition_used(ShenandoahFreeSetPartitionId partition, size_t bytes) {
+  _partitions.increase_used(partition, bytes);
+}
+
+void ShenandoahFreeSet::mark_region_used(ShenandoahFreeSetPartitionId partition) {
+  _partitions.one_region_is_no_longer_empty(partition);
+}
+
+size_t ShenandoahFreeSet::retire_region(ShenandoahFreeSetPartitionId partition, size_t idx, size_t used_bytes) {
+  return _partitions.retire_from_partition(partition, idx, used_bytes);
 }
 
 ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(ShenandoahFreeSetPartitionId partition,

@@ -80,7 +80,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region) {
-  assert(_free_set->has_alloc_capacity(r), "Performance: should avoid full regions on this path: %zu", r->index());
+  assert(_free_set->alloc_capacity(r) > 0, "Performance: should avoid full regions on this path: %zu", r->index());
 
   HeapWord* result = nullptr;
 
@@ -111,26 +111,26 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in(ShenandoahHea
   if (result != nullptr) {
     if constexpr (PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
       assert(req.is_young(), "Mutator allocations always come from young generation.");
-      _free_set->_partitions.increase_used(PARTITION, req.actual_size() * HeapWordSize);
+      _free_set->increase_partition_used(PARTITION, req.actual_size() * HeapWordSize);
     } else {
       assert(req.is_gc_alloc(), "Should be gc_alloc since req wasn't mutator alloc");
       // GC allocations set update_watermark so relocated objects aren't re-updated during update-refs.
       r->set_update_watermark(r->top());
-      _free_set->_partitions.increase_used(PARTITION, (req.actual_size() + req.waste()) * HeapWordSize);
+      _free_set->increase_partition_used(PARTITION, (req.actual_size() + req.waste()) * HeapWordSize);
     }
   }
 
-  DEBUG_ONLY(bool boundary_changed = false;)
+  bool boundary_changed = false;
   if ((result != nullptr) && in_new_region) {
-    _free_set->_partitions.one_region_is_no_longer_empty(PARTITION);
-    DEBUG_ONLY(boundary_changed = true;)
+    _free_set->mark_region_used(PARTITION);
+    boundary_changed = true;
   }
 
   // Retire the region if remaining capacity is too small for any future PLAB.
   if (_free_set->alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
     size_t idx = r->index();
-    size_t waste_bytes = _free_set->_partitions.retire_from_partition(PARTITION, idx, r->used());
-    DEBUG_ONLY(boundary_changed = true;)
+    size_t waste_bytes = _free_set->retire_region(PARTITION, idx, r->used());
+    boundary_changed = true;
     if constexpr (PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
       if (waste_bytes > 0) {
         req.set_waste(waste_bytes / HeapWordSize);
@@ -144,16 +144,8 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in(ShenandoahHea
     _retained_region = r;
   }
 
-  // Recompute generation used/affiliated totals.
-  _free_set->notify_allocation(PARTITION, in_new_region);
-
-#ifdef ASSERT
-  if (boundary_changed) {
-    _free_set->_partitions.assert_bounds();
-  } else {
-    _free_set->_partitions.assert_bounds_sanity();
-  }
-#endif
+  // Recompute generation used/affiliated totals and validate bounds if changed.
+  _free_set->notify_allocation(PARTITION, in_new_region, boundary_changed);
   return result;
 }
 

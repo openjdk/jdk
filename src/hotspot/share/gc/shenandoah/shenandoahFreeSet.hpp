@@ -35,9 +35,6 @@
 typedef ShenandoahLock                           ShenandoahRebuildLock;
 typedef ShenandoahLocker<ShenandoahRebuildLock>  ShenandoahRebuildLocker;
 
-class ShenandoahAllocator;
-class ShenandoahSerialAllocator;
-
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
   Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
@@ -439,9 +436,6 @@ public:
 //     during the next GC pass.
 
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
-  friend class ShenandoahAllocator;
-  friend class ShenandoahSerialAllocator;
-  template<ShenandoahFreeSetPartitionId> friend class ShenandoahPartitionAllocator;
 
 using idx_t = ShenandoahSimpleBitMap::idx_t;
 private:
@@ -577,13 +571,6 @@ private:
   // Precondition: !ShenandoahHeapRegion::requires_humongous(req.size())
   HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // While holding the heap lock, allocate memory for a humongous object which spans one or more regions that
-  // were previously empty.  Regions that represent humongous objects are entirely dedicated to the humongous
-  // object.  No other objects are packed into these regions.
-  //
-  // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
-  HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
-
   bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
@@ -669,7 +656,9 @@ public:
   }
 
   // Called by ShenandoahAllocator after a successful allocation to update used/affiliated totals.
-  void notify_allocation(ShenandoahFreeSetPartitionId partition, bool in_new_region);
+  // boundary_changed indicates if partition boundaries were modified (retire or new-region),
+  // triggering a full bounds validation in debug builds.
+  void notify_allocation(ShenandoahFreeSetPartitionId partition, bool in_new_region, bool boundary_changed);
 
   // Find a region in the given partition with at least min_size_words of allocatable capacity.
   // Handles bias direction, trash recycling, and affiliation setup for new (empty) regions.
@@ -687,6 +676,14 @@ public:
   ShenandoahHeapRegion* steal_from_mutator(ShenandoahFreeSetPartitionId target_partition,
                                            ShenandoahAllocRequest& req,
                                            bool& in_new_region);
+
+  // Allocate contiguous regions for humongous objects. Caller must hold heap lock.
+  HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
+
+  // Partition accounting APIs for allocators.
+  void increase_partition_used(ShenandoahFreeSetPartitionId partition, size_t bytes);
+  void mark_region_used(ShenandoahFreeSetPartitionId partition);
+  size_t retire_region(ShenandoahFreeSetPartitionId partition, size_t idx, size_t used_bytes);
 
   // Public because ShenandoahRegionPartitions assertions require access.
   size_t alloc_capacity(ShenandoahHeapRegion *r) const;
