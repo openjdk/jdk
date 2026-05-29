@@ -32,12 +32,14 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/z/c1/zBarrierSetC1.hpp"
@@ -125,18 +127,90 @@ zaddress ZBarrierSet::load_barrier_on_oop_field(volatile zpointer* p) {
   return ZBarrier::load_barrier_on_oop_field(p);
 }
 
-void ZBarrierSet::clone_obj_array(objArrayOop src_obj, objArrayOop dst_obj) {
-  volatile zpointer* src = (volatile zpointer*)src_obj->base();
-  volatile zpointer* dst = (volatile zpointer*)dst_obj->base();
-  const int length = src_obj->length();
+class ZBarrierSet::ZClonerOopClosure : public BasicOopIterateClosure {
+  const zaddress _src;
+  const zaddress _dst;
+  const size_t   _size;
+  const bool     _is_dst_old;
 
-  for (const volatile zpointer* const end = src + length; src < end; src++, dst++) {
-    zaddress elem = ZBarrier::load_barrier_on_oop_field(src);
-    // We avoid healing here because the store below colors the pointer store good,
-    // hence avoiding the cost of a CAS.
-    ZBarrier::store_barrier_on_heap_oop_field(dst, false /* heal */);
-    AtomicAccess::store(dst, ZAddress::store_good(elem));
+  size_t _copied_bytes;
+
+  void copy_to(size_t byte_offset) {
+    assert(byte_offset != 0 && _copied_bytes <= byte_offset,
+           "Unexpected size and oop iteration order: %zu <= %zu",
+           _copied_bytes, byte_offset);
+
+    if (_copied_bytes == byte_offset) {
+      // Already copied
+      return;
+    }
+
+    // Copy up to byte_offset
+    const size_t copy_size = byte_offset - _copied_bytes;
+    ZUtils::object_copy_disjoint_atomic(_src, _dst, _copied_bytes, copy_size);
+
+    // Account copied bytes
+    _copied_bytes = byte_offset;
   }
+
+public:
+  ZClonerOopClosure(zaddress src, zaddress dst, size_t size)
+    : _src(src),
+      _dst(dst),
+      _size(size),
+      _is_dst_old(ZHeap::heap()->page(dst)->is_old()),
+      _copied_bytes(0) {}
+
+  ~ZClonerOopClosure() {
+    precond(!to_oop(_src)->is_typeArray() || _copied_bytes == 0);
+
+    // Copy any potential tail
+    copy_to(_size);
+
+    // Copy will have copied the header, clear it.
+    to_oop(_dst)->init_mark();
+
+    postcond(_copied_bytes == _size);
+  }
+
+  virtual void do_oop(oop* p) {
+    volatile zpointer* const src_p = (volatile zpointer*)p;
+    const size_t offset = (uintptr_t)src_p - untype(_src);
+    volatile zpointer* const dst_p = (volatile zpointer*)(untype(_dst) + offset);
+
+    // Copy payload up to element or field
+    copy_to(offset);
+
+    // Load source object
+    const zaddress obj = ZBarrier::load_barrier_on_oop_field(src_p);
+
+    // Store barrier
+
+    // Store barrier over null (or uninitialized) requires only remembered-set handling
+    if (_is_dst_old) {
+      // "page is old" may be racy w.r.t. flip aging, but relocation handles
+      // missing remembered-set entries via ZRelocateAddRemsetForFlipPromoted.
+      ZGeneration::young()->remember(dst_p);
+    }
+
+    // No concurrent writes are allowed to the dst object, except potential
+    // GC barrier healing.
+    AtomicAccess::store(dst_p, ZAddress::store_good(obj));
+
+    _copied_bytes += oopSize;
+
+    postcond(_copied_bytes == offset + oopSize);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+void ZBarrierSet::clone_obj(zaddress src, zaddress dst, size_t size) {
+  // Clone the object
+  ZClonerOopClosure cl(src, dst, size);
+  ZIterator::oop_iterate(to_oop(src), &cl);
 }
 
 ZBarrierSet::ZBarrierSet()

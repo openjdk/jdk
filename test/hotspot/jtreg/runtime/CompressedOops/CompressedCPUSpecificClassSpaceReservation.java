@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Red Hat. All rights reserved.
+ * Copyright (c) 2023, 2026, Red Hat. All rights reserved.
  * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
  * @requires vm.flagless
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
+ * @requires vm.cds.nocoh.archive.available
  * @requires (os.family != "windows") & (os.family != "aix")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

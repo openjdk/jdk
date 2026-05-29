@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Red Hat Inc.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +31,7 @@
  *  @author Severin Gehwolf <sgehwolf@redhat.com>
  *
  *  @requires vm.gc != "Z"
+ *  @requires vm.flagless
  *  @library ..
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g OomDebugTest.java
