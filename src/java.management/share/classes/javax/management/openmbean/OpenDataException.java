@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.management.openmbean;
 
+import java.io.Serial;
+
 // jmx import
 //
 import javax.management.JMException;
@@ -38,6 +40,7 @@ import javax.management.JMException;
  */
 public class OpenDataException extends JMException {
 
+    @Serial
     private static final long serialVersionUID = 8346311255433349870L;
 
     /**

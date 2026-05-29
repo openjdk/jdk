@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.util.EventObject;
 
 /**
@@ -51,6 +52,7 @@ import java.util.EventObject;
  */
 public class Notification extends EventObject {
 
+    @Serial
     private static final long serialVersionUID = -7516092053498031989L;
     /**
      * @serialField type String The notification type.
@@ -67,6 +69,7 @@ public class Notification extends EventObject {
      * @serialField message String The notification message.
      * @serialField source Object The object on which the notification initially occurred.
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields =
     {
         new ObjectStreamField("message", String.class),
@@ -311,6 +314,7 @@ public class Notification extends EventObject {
     /**
      * Deserializes a {@link Notification} from an {@link ObjectInputStream}.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
       // New serial form ignores extra field "sourceObjectName"
@@ -322,6 +326,7 @@ public class Notification extends EventObject {
     /**
      * Serializes a {@link Notification} to an {@link ObjectOutputStream}.
      */
+    @Serial
     private void writeObject(ObjectOutputStream out)
             throws IOException {
       out.defaultWriteObject();

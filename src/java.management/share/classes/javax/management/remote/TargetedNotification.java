@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package javax.management.remote;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import javax.management.Notification;
 
@@ -41,6 +42,7 @@ import javax.management.Notification;
  */
 public class TargetedNotification implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 7676132089779300926L;
 
 // If we replace Integer with int...
@@ -131,6 +133,7 @@ public class TargetedNotification implements Serializable {
 //      return id.intValue();
 //     }
 
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         try {

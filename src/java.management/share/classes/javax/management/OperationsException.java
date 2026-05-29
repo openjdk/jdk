@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package javax.management;
 
-
+import java.io.Serial;
 
 /**
  * Represents exceptions thrown in the MBean server when performing operations
@@ -36,6 +36,7 @@ package javax.management;
 public class OperationsException extends JMException   {
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = -4967597595580536216L;
 
     /**

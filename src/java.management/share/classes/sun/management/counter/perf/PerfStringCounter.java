@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.management.counter.perf;
 
 import sun.management.counter.*;
+
+import java.io.Serial;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.charset.Charset;
@@ -78,6 +80,7 @@ public class PerfStringCounter extends PerfByteArrayCounter
     /**
      * Serialize as a snapshot object.
      */
+    @Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return new StringCounterSnapshot(getName(),
                                          getUnits(),
@@ -86,5 +89,6 @@ public class PerfStringCounter extends PerfByteArrayCounter
                                          stringValue());
     }
 
+    @Serial
     private static final long serialVersionUID = 6802913433363692452L;
 }

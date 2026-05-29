@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package javax.management;
 
 import com.sun.jmx.mbeanserver.Introspector;
+
+import java.io.Serial;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -41,7 +43,8 @@ import java.util.Objects;
 public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
 
     /* Serial version */
-    static final long serialVersionUID = -6178860474881375330L;
+    @Serial
+    private static final long serialVersionUID = -6178860474881375330L;
 
     static final MBeanOperationInfo[] NO_OPERATIONS =
         new MBeanOperationInfo[0];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package javax.management.openmbean;
 
 // java import
 //
+import java.io.Serial;
 import java.util.Arrays;
 
 import javax.management.Descriptor;
@@ -48,7 +49,8 @@ public class OpenMBeanOperationInfoSupport
     implements OpenMBeanOperationInfo {
 
     /* Serial version */
-    static final long serialVersionUID = 4996859732565369366L;
+    @Serial
+    private static final long serialVersionUID = 4996859732565369366L;
 
     /**
      * @serial The <i>open type</i> of the values returned by the operation
@@ -413,6 +415,7 @@ public class OpenMBeanOperationInfoSupport
      * behavior in this version, we must replace the object with one
      * where the Descriptors reflect the same value of returned openType.
      **/
+    @Serial
     private Object readResolve() {
         if (getDescriptor().getFieldNames().length == 0) {
             // This constructor will construct the expected default Descriptor.

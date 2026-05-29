@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 package javax.management.remote;
 
 import java.io.IOException;
+import java.io.Serial;
 
 // imports for javadoc
 import javax.management.MBeanServer;
@@ -44,6 +45,7 @@ import javax.management.MBeanServer;
 @SuppressWarnings("doclint:reference") // cross-module links
 public class JMXServerErrorException extends IOException {
 
+    @Serial
     private static final long serialVersionUID = 3996732239558744666L;
 
     /**

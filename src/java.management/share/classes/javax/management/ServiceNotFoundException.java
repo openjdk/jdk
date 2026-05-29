@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.management;
 
+import java.io.Serial;
+
 //RI import
 import javax.management.OperationsException;
 
@@ -37,6 +39,7 @@ import javax.management.OperationsException;
 public class ServiceNotFoundException extends OperationsException   {
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = -3990675661956646827L;
 
     /**

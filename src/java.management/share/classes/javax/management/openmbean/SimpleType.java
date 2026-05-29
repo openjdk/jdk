@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ package javax.management.openmbean;
 //
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
@@ -63,7 +64,8 @@ import javax.management.ObjectName;
 public final class SimpleType<T> extends OpenType<T> {
 
     /* Serial version */
-    static final long serialVersionUID = 2215577471957694503L;
+    @Serial
+    private static final long serialVersionUID = 2215577471957694503L;
 
     // SimpleType instances.
     // IF YOU ADD A SimpleType, YOU MUST UPDATE OpenType and typeArray
@@ -312,6 +314,7 @@ public final class SimpleType<T> extends OpenType<T> {
      * @exception ObjectStreamException if the read object cannot be
      * resolved.
      */
+    @Serial
     public Object readResolve() throws ObjectStreamException {
         final SimpleType<?> canonical = canonicalTypes.get(this);
         if (canonical == null) {

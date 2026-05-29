@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management.monitor;
 
+import java.io.Serial;
 
 /**
  * Exception thrown by the monitor when a monitor setting becomes invalid while the monitor is running.
@@ -38,6 +39,7 @@ package javax.management.monitor;
 public class MonitorSettingException extends javax.management.JMRuntimeException {
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = -8807913418190202007L;
 
     /**

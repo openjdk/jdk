@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.management;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.security.Permission;
 
 /**
@@ -171,6 +172,7 @@ import java.security.Permission;
 @Deprecated(since="25", forRemoval=true)
 public class MBeanPermission extends Permission {
 
+    @Serial
     private static final long serialVersionUID = -2416928705275160661L;
 
     /**
@@ -1159,6 +1161,7 @@ public class MBeanPermission extends Permission {
     /**
      * Deserialize this object based on its name and actions.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         in.defaultReadObject();

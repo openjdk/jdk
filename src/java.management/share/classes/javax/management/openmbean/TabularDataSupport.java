@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package javax.management.openmbean;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,7 +72,8 @@ public class TabularDataSupport
 
 
     /* Serial version */
-    static final long serialVersionUID = 5720150593236309827L;
+    @Serial
+    private static final long serialVersionUID = 5720150593236309827L;
 
 
     /**
@@ -901,6 +903,7 @@ public class TabularDataSupport
     /**
      * Deserializes a {@link TabularDataSupport} from an {@link ObjectInputStream}.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
       in.defaultReadObject();

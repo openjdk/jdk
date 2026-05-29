@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.management;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.StreamCorruptedException;
 import java.io.Serializable;
 import java.io.ObjectOutputStream;
@@ -105,7 +106,8 @@ import static javax.management.ImmutableDescriptor.nonNullDescriptor;
 public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
 
     /* Serial version */
-    static final long serialVersionUID = -6451021435135161911L;
+    @Serial
+    private static final long serialVersionUID = -6451021435135161911L;
 
     /**
      * @serial The Descriptor for the MBean.  This field
@@ -618,6 +620,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      *
      * @since 1.6
      */
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
 
@@ -665,6 +668,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      * @since 1.6
      */
 
+    @Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException {
 

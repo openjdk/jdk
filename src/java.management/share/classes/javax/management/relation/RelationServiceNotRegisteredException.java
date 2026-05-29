@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.management.relation;
 
+import java.io.Serial;
+
 /**
  * This exception is raised when an access is done to the Relation Service and
  * that one is not registered.
@@ -34,6 +36,7 @@ package javax.management.relation;
 public class RelationServiceNotRegisteredException extends RelationException {
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = 8454744887157122910L;
 
     /**

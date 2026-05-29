@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.lang.reflect.Constructor;
 import java.lang.System.Logger.Level;
 
@@ -91,10 +92,12 @@ public class ModelMBeanConstructorInfo
     extends MBeanConstructorInfo
     implements DescriptorAccess {
 
+        @Serial
         private static final long serialVersionUID = 3862947819818064362L;
         /**
          * @serialField consDescriptor Descriptor The {@link Descriptor} containing the metadata for this instance
          */
+        @Serial
         private static final ObjectStreamField[] serialPersistentFields =
         {
           new ObjectStreamField("consDescriptor", Descriptor.class)
@@ -405,6 +408,7 @@ public class ModelMBeanConstructorInfo
     /**
      * Deserializes a {@link ModelMBeanConstructorInfo} from an {@link ObjectInputStream}.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
       // New serial form ignores extra field "currClass"
@@ -415,6 +419,7 @@ public class ModelMBeanConstructorInfo
     /**
      * Serializes a {@link ModelMBeanConstructorInfo} to an {@link ObjectOutputStream}.
      */
+    @Serial
     private void writeObject(ObjectOutputStream out)
             throws IOException {
       out.defaultWriteObject();

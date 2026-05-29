@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -126,6 +127,7 @@ import java.util.StringTokenizer;
  */
 public class JMXServiceURL implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 8173364409860779292L;
 
     /**
@@ -393,6 +395,7 @@ public class JMXServiceURL implements Serializable {
 
     private static final String INVALID_INSTANCE_MSG =
             "Trying to deserialize an invalid instance of JMXServiceURL";
+    @Serial
     private void readObject(ObjectInputStream  inputStream) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField gf = inputStream.readFields();
         String h = (String)gf.get("host", null);
