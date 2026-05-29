@@ -39,7 +39,6 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @requires vm.flagless
- * @requires vm.opt.NativeMemoryTracking == null
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr

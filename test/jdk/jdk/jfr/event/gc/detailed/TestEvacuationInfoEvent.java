@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @requires vm.gc == "G1" | vm.gc == null
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:G1HeapRegionSize=1m -Xmx64m -Xmn16m -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestEvacuationInfoEvent
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
 
 package jdk.jfr.event.gc.collection;
 
-import static java.lang.System.gc;
-import static java.lang.Thread.sleep;
 import static java.util.Set.of;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -37,23 +35,17 @@ import static jdk.test.whitebox.WhiteBox.getWhiteBox;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import gc.testlibrary.g1.MixedGCProvoker;
 import jdk.jfr.Recording;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
-import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @requires vm.gc == "G1" | vm.gc == null
  * @library /test/lib /test/jdk /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import jdk.test.lib.jfr.GCHelper;
  * @test
  * @bug 8330577
  * @requires vm.hasJFR
- * @requires vm.gc == "G1" | vm.gc == null
  * @requires vm.debug
  * @requires vm.flagless
  * @library /test/lib /test/jdk
