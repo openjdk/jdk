@@ -150,13 +150,13 @@ public class GetCanonicalPath {
             "\\\\localhost\\" + cwd.charAt(0) + "$" + cwd.substring(2);
         String junctionName = "tmpDir";
         try {
-            Process p = rt.exec(new String[] {"net", "use", drive + ":", share});
-            assertEquals(0, p.waitFor());
-
             // create directory junction
             Path tmpDir = Files.createTempDirectory(junctionName);
             String tmpDirLink = cwd + "\\" + junctionName;
-            p = rt.exec(new String[] {"cmd", "/c", "mklink", "/J", tmpDirLink, tmpDir.toString()});
+            Process pmklink = rt.exec(new String[] {"cmd", "/c", "mklink", "/J", tmpDirLink, tmpDir.toString()});
+            assertEquals(0, pmklink.waitFor());
+
+            Process p = rt.exec(new String[] {"net", "use", drive + ":", share});
             assertEquals(0, p.waitFor());
         } catch (InterruptedException x) {
             fail(x);
