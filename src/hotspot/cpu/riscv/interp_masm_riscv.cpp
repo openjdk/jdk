@@ -1230,11 +1230,11 @@ void InterpreterMacroAssembler::notify_method_exit(
     // template interpreter will leave the result on the top of the stack.
     push(state);
 
-    ld(t0, Address(xthread, JavaThread::jvmti_thread_state_offset()));
-    beqz(t0, L);  // if (thread->jvmti_thread_state() == nullptr) exit;
+    ld(t1, Address(xthread, JavaThread::jvmti_thread_state_offset()));
+    beqz(t1, L);  // if (thread->jvmti_thread_state() == nullptr) exit;
 
-    lwu(t0, Address(t0, JvmtiThreadState::frame_pop_cnt_offset()));
-    lwu(t1, Address(xthread, JavaThread::interp_only_mode_offset()));
+    lwu(t1, Address(t1, JvmtiThreadState::frame_pop_cnt_offset()));
+    lwu(t0, Address(xthread, JavaThread::interp_only_mode_offset()));
     orr(t0, t0, t1);
     beqz(t0, L);
 
