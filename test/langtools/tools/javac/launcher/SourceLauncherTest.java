@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896 8344706
- *      8362237 8376534
+ *      8362237 8376534 8379083
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -158,6 +158,10 @@ public class SourceLauncherTest extends TestRunner {
             "    }\n" +
             "}");
         Files.copy(base.resolve("HelloWorld.java"), base.resolve("HelloWorld"));
+        testSuccess(base.resolve("HelloWorld"), "Hello World! [1, 2, 3]\n");
+
+        // Re-run with a "stray" module descriptor being ignored
+        Files.writeString(base.resolve("module-info.java"), "module stray {}");
         testSuccess(base.resolve("HelloWorld"), "Hello World! [1, 2, 3]\n");
     }
 

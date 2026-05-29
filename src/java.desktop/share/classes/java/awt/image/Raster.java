@@ -200,8 +200,8 @@ public class Raster {
      * @throws IllegalArgumentException if {@code bands} is less than 1
      * @throws IllegalArgumentException if {@code w} and {@code h} are not
      *         both > 0
-     * @throws IllegalArgumentException if the product of {@code w}
-     *         and {@code h} is greater than {@code Integer.MAX_VALUE}
+     * @throws IllegalArgumentException if the product of {@code w},
+     *         {@code h} and {@code bands} is greater than {@code Integer.MAX_VALUE}
      * @throws RasterFormatException if computing either
      *         {@code location.x + w} or
      *         {@code location.y + h} results in integer overflow
@@ -217,6 +217,14 @@ public class Raster {
         if (lsz > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Dimensions (width="+w+
                                                " height="+h+") are too large");
+        }
+        if (bands < 1) {
+            throw new IllegalArgumentException("Number of bands ("+
+                                               bands+") must be greater than 0");
+        }
+        long slsz = (long)w * bands;
+        if (slsz > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("width * bands is too large");
         }
         int[] bandOffsets = new int[bands];
         for (int i = 0; i < bands; i++) {
