@@ -451,6 +451,14 @@ bool CompilerConfig::check_args_consistency(bool status) {
     }
   }
 
+#ifdef COMPILER2
+  if (StressDeepIGVNRevisit != nullptr && !UseDeepIGVNRevisit) {
+    jio_fprintf(defaultStream::error_stream(),
+                "StressDeepIGVNRevisit cannot be used with disabled UseDeepIGVNRevisit.\n");
+    status = false;
+  }
+#endif
+
   return status;
 }
 

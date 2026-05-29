@@ -70,6 +70,11 @@
           "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
+  develop(ccstr, StressDeepIGVNRevisit, nullptr,                             \
+          "Override deep IGVN revisit for all optimize() calls: "           \
+          "all or random. Requires UseDeepIGVNRevisit=true.")               \
+          constraint(StressDeepIGVNRevisitConstraintFunc, AtParse)          \
+                                                                            \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
