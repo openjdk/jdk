@@ -65,12 +65,11 @@ protected:
 };
 
 size_t ShenandoahGenerationalHeap::calculate_min_plab() {
-  return align_up(PLAB::min_size(), CardTable::card_size_in_words());
+  return PLAB::min_size();
 }
 
 size_t ShenandoahGenerationalHeap::calculate_max_plab() {
-  size_t MaxTLABSizeWords = ShenandoahHeapRegion::max_tlab_size_words();
-  return align_down(MaxTLABSizeWords, CardTable::card_size_in_words());
+  return ShenandoahHeapRegion::max_tlab_size_words();
 }
 
 // Returns size in bytes
@@ -86,8 +85,6 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   _regulator_thread(nullptr),
   _young_gen_memory_pool(nullptr),
   _old_gen_memory_pool(nullptr) {
-  assert(is_aligned(_min_plab_size, CardTable::card_size_in_words()), "min_plab_size must be aligned");
-  assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
 }
 
 void ShenandoahGenerationalHeap::initialize_generations() {
