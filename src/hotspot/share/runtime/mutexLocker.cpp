@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,11 +157,6 @@ Mutex*   FinalImageRecipes_lock       = nullptr;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = nullptr;
 
-#if INCLUDE_JVMCI
-Monitor* JVMCI_lock                   = nullptr;
-Monitor* JVMCIRuntime_lock            = nullptr;
-#endif
-
 // Only one RecursiveMutex
 RecursiveMutex* MultiArray_lock       = nullptr;
 
@@ -310,11 +305,6 @@ void mutex_init() {
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
 
-#if INCLUDE_JVMCI
-  // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock
-  MUTEX_DEFN(JVMCIRuntime_lock               , PaddedMonitor, safepoint, true);
-#endif
-
   MUTEX_DEFN(ThreadsLockThrottle_lock        , PaddedMonitor, safepoint);
 
   // These locks have relative rankings, and inherit safepoint checking attributes from that rank.
@@ -355,10 +345,6 @@ void mutex_init() {
   }
 #endif
   MUTEX_DEFL(SystemDictionary_lock          , PaddedMonitor, Module_lock);
-#if INCLUDE_JVMCI
-  // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
-  MUTEX_DEFL(JVMCI_lock                     , PaddedMonitor, JVMCIRuntime_lock);
-#endif
   MUTEX_DEFL(JvmtiThreadState_lock          , PaddedMutex  , VThreadTransition_lock); // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFL(SharedDecoder_lock             , PaddedMutex  , NmtVirtualMemory_lock);  // Must be lower than NmtVirtualMemory_lock due to MemTracker::print_containing_region
 
