@@ -1370,6 +1370,13 @@ public:
     BoolTest::mask _mask;
     float _cl_prob;
 
+    // True when the exit test is "(long) int_iv < long_limit" (or similar): we may treat it as an int counted loop
+    // by rewriting the comparision to int (see ::speculatively_narrow_limit()). Until then, _cmp/_limit describe the
+    // graph. After narrowing, _narrowed_cmp/_narrowed_limit hold the new CmpI and ConvL2I(limit).
+    bool _should_speculatively_narrow_limit;
+    Node* _narrowed_cmp;
+    Node* _narrowed_limit;
+
   public:
     LoopExitTest(const Node* back_control, const IdealLoopTree* loop, PhaseIdealLoop* phase) :
       _is_valid(false),
@@ -1380,22 +1387,77 @@ public:
       _incr(nullptr),
       _limit(nullptr),
       _mask(BoolTest::illegal),
-      _cl_prob(0.0f) {}
+      _cl_prob(0.0f),
+      _should_speculatively_narrow_limit(false),
+      _narrowed_cmp(nullptr),
+      _narrowed_limit(nullptr) {}
 
     void build();
     void canonicalize_mask(jlong stride_con);
 
     bool is_valid_with_bt(BasicType bt) const {
-      return _is_valid && _cmp != nullptr && _cmp->Opcode() == Op_Cmp(bt);
+      return _is_valid && cmp() != nullptr && cmp()->Opcode() == Op_Cmp(bt);
     }
 
     bool should_include_limit() const { return _mask == BoolTest::le || _mask == BoolTest::ge; }
 
-    CmpNode* cmp() const { return _cmp->as_Cmp(); }
-    Node* incr() const { return _incr; }
-    Node* limit() const { return _limit; }
+    const Node* back_control() const { return _back_control; }
     BoolTest::mask mask() const { return _mask; }
     float cl_prob() const { return _cl_prob; }
+
+    CmpNode* cmp() const {
+      if (_should_speculatively_narrow_limit) {
+        assert(_narrowed_cmp != nullptr, "must call speculatively_narrow_limit() first");
+        return _narrowed_cmp->as_Cmp();
+      }
+      return _cmp->as_Cmp();
+    }
+
+    Node* incr() const {
+      if (_should_speculatively_narrow_limit) {
+        assert(_incr->Opcode() == Op_ConvI2L, "");
+        return _incr->in(1);
+      }
+      return _incr;
+    }
+
+    // The original long limit from the parsed CmpL (second operand after canonicalization). Use this to get the
+    // dominance, ctrl nodes and/or predicates that must refer to the same node as in the original graph before
+    // narrowing.
+    Node* raw_limit() const { return _limit; }
+
+    // Limit used for counted-loop math: after speculative narrowing, ConvL2I(_limit); otherwise _limit (same as raw).
+    Node* limit() const {
+      if (_should_speculatively_narrow_limit) {
+        assert(_narrowed_limit != nullptr, "must call speculatively_narrow_limit() first");
+        return _narrowed_limit;
+      }
+      return _limit;
+    }
+    const TypeInteger* limit_t(PhaseIterGVN& igvn, BasicType bt) const {
+      if (_should_speculatively_narrow_limit) {
+        return TypeLong::INT->filter(igvn.type(_limit)->is_long())->is_long();
+      }
+      return igvn.type(_limit)->is_integer(bt);
+    }
+
+    bool can_speculatively_narrow_limit() {
+      assert(!is_valid_with_bt(T_INT), "must not be a valid int loop");
+
+      // long->int->long conversion is redundant, so skip long->int loop conversion when StressLongCountedLoop is set.
+      #ifdef ASSERT
+      if (StressLongCountedLoop) {
+        _should_speculatively_narrow_limit = false;
+        return false;
+      }
+      #endif
+
+      // pattern must be: (long) i < some_long (with any comparison operator)
+      _should_speculatively_narrow_limit = is_valid_with_bt(T_LONG) && _incr->Opcode() == Op_ConvI2L;
+      return _should_speculatively_narrow_limit;
+    }
+    bool should_speculatively_narrow_limit() const { return _should_speculatively_narrow_limit; }
+    Node* speculatively_narrow_limit(PhaseIterGVN& igvn);
   };
 
   class LoopIVIncr {
@@ -2190,6 +2252,8 @@ class CountedLoopConverter {
   bool has_truncation_wrap(const TruncatedIncrement& truncation, Node* phi, jlong stride_con);
   SafePointNode* find_safepoint(Node* iftrue);
   bool is_safepoint_invalid(SafePointNode* sfpt) const;
+
+  ParsePredicateNode* loop_limit_check_parse_predicate() const;
 
  public:
   CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
