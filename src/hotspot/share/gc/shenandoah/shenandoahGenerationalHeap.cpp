@@ -202,7 +202,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 
   ShenandoahHeapRegion* from_region = heap_region_containing(p);
   assert(!from_region->is_humongous(), "never evacuate humongous objects");
-  if (_has_self_forwarded_objects && from_region->has_self_forwards()) {
+  if (has_self_forwarded_objects() && from_region->has_self_forwards()) {
     // We don't want GC threads to evacuate objects in regions that have evacuation failures. We'd
     // rather have them concentrate on regions that still have a chance of being completely evacuated.
     markWord old_mark = p->mark();
@@ -355,7 +355,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     if (winner == nullptr) {
       // We own the self-forwarding. Flag the from-region so the degen/full
       // GC entry drain knows to scan it for self_fwd bits to clear.
-      _has_self_forwarded_objects = true;
+      _has_self_forwarded_objects.store_relaxed(true);
       heap_region_containing(p)->set_has_self_forwards();
       return p;
     }

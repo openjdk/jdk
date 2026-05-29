@@ -1317,7 +1317,7 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
 
   ShenandoahHeapRegion* r = heap_region_containing(p);
-  if (_has_self_forwarded_objects && r->has_self_forwards()) {
+  if (has_self_forwarded_objects() && r->has_self_forwards()) {
     // We don't want GC threads to evacuate objects in regions that have evacuation failures. We'd
     // rather have them concentrate on regions that still have a chance of being completely evacuated.
     markWord old_mark = p->mark();
@@ -1380,7 +1380,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     if (winner == nullptr) {
       // We own the self-forwarding. Flag the region so the degen/full GC
       // entry drain knows to scan it for self_fwd bits to clear.
-      _has_self_forwarded_objects = true;
+      _has_self_forwarded_objects.store_relaxed(true);
       from_region->set_has_self_forwards();
       log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), from_region->index());
       return p;
@@ -2560,13 +2560,13 @@ void ShenandoahHeap::finish_concurrent_roots() {
     _unloader.finish();
   }
 
-  if (_has_self_forwarded_objects) {
+  if (has_self_forwarded_objects()) {
     uint nworkers = workers()->active_workers();
     // TODO: Phase timing name is inaccurate here
     ShenandoahRootUpdater root_updater(nworkers, ShenandoahPhaseTimings::degen_gc_update_roots);
     ShenandoahUpdateRootsTask update_roots(&root_updater, true);
     workers()->run_task(&update_roots);
-    _has_self_forwarded_objects = false;
+    _has_self_forwarded_objects.store_relaxed(false);
   }
 }
 

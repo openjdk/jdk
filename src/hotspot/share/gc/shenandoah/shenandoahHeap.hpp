@@ -472,7 +472,7 @@ public:
   bool check_soft_max_changed();
 
   bool has_self_forwarded_objects() const {
-    return _has_self_forwarded_objects;
+    return _has_self_forwarded_objects.load_relaxed();
   }
 
 protected:
@@ -481,7 +481,7 @@ protected:
   // also used in shGenerationalHeap, which uses a different closure for update refs.
   ShenandoahRegionIterator _update_refs_iterator;
 
-  bool _has_self_forwarded_objects;
+  Atomic<bool> _has_self_forwarded_objects;
 private:
   inline void reset_cancellation_time();
 
