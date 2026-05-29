@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +34,7 @@ import compiler.lib.ir_framework.*;
  * @key randomness
  * @summary Test that Ideal transformations of ModDNode are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.ModDNodeTests
+ * @run driver ${test.main.class}
  */
 public class ModDNodeTests {
     public static final double q = Utils.getRandomInstance().nextDouble() * 100.0d;
@@ -236,8 +237,8 @@ public class ModDNodeTests {
     @Test
     @IR(counts = {IRNode.MOD_D, "3"},
         phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.MOD_D, "2"},
-        phase = CompilePhase.AFTER_CLOOPS) // drop the useless one
+    @IR(counts = {IRNode.MOD_D, "1"},
+        phase = CompilePhase.AFTER_CLOOPS) // drop the useless one + ModD with integer constant divisor optimized to ModL
     @IR(failOn = {IRNode.MOD_D},
         phase = CompilePhase.PHASEIDEALLOOP1) // drop the rest
     @IR(failOn = {".*CallLeaf.*drem.*"},

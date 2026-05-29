@@ -2707,6 +2707,18 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
              (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F);
     });
   }
+  // Notify ConvD2L's users when a FP expression's inputs change.
+  // Enables ConvD2L type narrowing and ConvL2D(ConvD2L(x)) => x folding.
+  if (use_op == Op_AddD || use_op == Op_SubD || use_op == Op_NegD ||
+      use_op == Op_AbsD || use_op == Op_ConvI2D || use_op == Op_ConvF2D ||
+      use_op == Op_CastDD || use_op == Op_ConvL2D) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* u = use->fast_out(i);
+      if (u->Opcode() == Op_ConvD2L) {
+        add_users_to_worklist0(u, worklist);
+      }
+    }
+  }
   // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
   // Notify ConvD2F users of SqrtD when any input of the SqrtD changes.
   if (use_op == Op_SqrtD) {

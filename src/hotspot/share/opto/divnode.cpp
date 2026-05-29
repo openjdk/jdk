@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
@@ -57,6 +59,135 @@ ModDNode::ModDNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntim
 ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::modf_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::frem), "frem") {
   init_req(TypeFunc::Parms + 0, a);
   init_req(TypeFunc::Parms + 1, b);
+}
+
+// Copy sign bit from sign_src to magnitude using bit manipulation.
+// JLS 15.17.3: If the result is not NaN, the sign of the result equals the sign of the dividend.
+static Node* copy_sign_d(PhaseIterGVN* igvn, Node* magnitude, Node* sign_src) {
+  Node* mag_bits  = igvn->register_new_node_with_optimizer(new MoveD2LNode(magnitude));
+  Node* sign_bits = igvn->register_new_node_with_optimizer(new MoveD2LNode(sign_src));
+  Node* mag_abs   = igvn->register_new_node_with_optimizer(new AndLNode(mag_bits,  igvn->longcon(max_jlong)));
+  Node* sign_only = igvn->register_new_node_with_optimizer(new AndLNode(sign_bits, igvn->longcon(min_jlong)));
+  Node* combined  = igvn->register_new_node_with_optimizer(new OrLNode(mag_abs, sign_only));
+  return new MoveL2DNode(combined);
+}
+
+TupleNode* ModDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result, Node* control) {
+  if (control == nullptr) {
+    control = in(TypeFunc::Control);
+  }
+  Compile* C = phase->C;
+  C->remove_macro_node(this);
+  return TupleNode::make(
+      tf()->range(),
+      control,
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr),
+      result,
+      C->top());
+}
+
+// Optimize drem(x, d) where d is a constant integral double:
+//
+// if is_integral_fp(x):
+//   copysign(ConvL2D(ConvD2L(x) % d_as_long), x)
+// else speculative with two guards:
+//   if (x == ConvL2D(ConvD2L(x))       // x is integral and fits in jlong
+//       && ConvD2L(x) != max_jlong)    // not 2^63 saturation (see below)
+//     copysign(ConvL2D(ConvD2L(x) % d_as_long), x)
+//   else
+//     drem(x, d) // bailout to slow
+Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  Node* x = dividend();
+  Node* y = divisor();
+
+  // Divisor must be a constant integral double with |d| < 2^DBL_MANT_DIG (= 2^53).
+  // This ensures |ModL result| < 2^53, and all integers below 2^53 are exactly
+  // representable as double, so ConvL2D of the result is exact.
+  const TypeD* divisor_type = phase->type(y)->isa_double_constant();
+  if (divisor_type == nullptr) {
+    return CallLeafPureNode::Ideal(phase, can_reshape);
+  }
+
+  double divisor_d = divisor_type->getd();
+  if (!g_isfinite(divisor_d) || divisor_d == 0.0 || fabs(divisor_d) >= (1LL << DBL_MANT_DIG)) {
+    return CallLeafPureNode::Ideal(phase, can_reshape);
+  }
+  jlong divisor_l = (jlong)divisor_d;
+  if ((double)divisor_l != divisor_d) {
+    // Divisor not integral
+    return CallLeafPureNode::Ideal(phase, can_reshape);
+  }
+
+  // Dividend is provably integral, no branch needed
+  if (is_integral_fp(phase, x, 0)) {
+    Node* x_as_long = igvn->transform(new ConvD2LNode(x));
+    Node* mod_l = igvn->transform(new ModLNode(in(TypeFunc::Control), x_as_long, igvn->longcon(divisor_l)));
+    Node* result = igvn->transform(new ConvL2DNode(mod_l));
+    result = igvn->transform(copy_sign_d(igvn, result, x));
+    return make_tuple_of_input_state_and_result(igvn, result);
+  }
+
+  // Runtime check if dividend is integral
+  Node* ctrl = in(TypeFunc::Control);
+
+  // Guard 1 roundtrip check for integrality: x == ConvL2D(ConvD2L(x))
+  Node* x_as_long = igvn->register_new_node_with_optimizer(new ConvD2LNode(x));
+  Node* x_roundtrip = igvn->register_new_node_with_optimizer(new ConvL2DNode(x_as_long));
+  Node* cmp = igvn->register_new_node_with_optimizer(new CmpDNode(x, x_roundtrip));
+  Node* test = igvn->register_new_node_with_optimizer(new BoolNode(cmp, BoolTest::ne));
+
+  IfNode* iff = new IfNode(ctrl, test, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
+  igvn->register_new_node_with_optimizer(iff);
+  Node* if_not_integral = igvn->register_new_node_with_optimizer(new IfTrueNode(iff));
+  ctrl = igvn->register_new_node_with_optimizer(new IfFalseNode(iff));
+
+  // Guard 2: reject x = 2^63 where ConvD2L saturates.
+  // (double)(max_jlong) rounds to 2^63 which exceeds jlong range, so ConvD2L(2^63) clamps to max_jlong, silently losing precision.
+  // The roundtrip hides this because ConvL2D(max_jlong) rounds back to 2^63 == x.
+  Node* cmp_sat = igvn->register_new_node_with_optimizer(new CmpLNode(x_as_long, igvn->longcon(max_jlong)));
+  Node* test_sat = igvn->register_new_node_with_optimizer(new BoolNode(cmp_sat, BoolTest::eq));
+  IfNode* iff_sat = new IfNode(ctrl, test_sat, PROB_UNLIKELY_MAG(5), COUNT_UNKNOWN);
+  igvn->register_new_node_with_optimizer(iff_sat);
+  Node* if_saturated = igvn->register_new_node_with_optimizer(new IfTrueNode(iff_sat));
+  Node* if_fast = igvn->register_new_node_with_optimizer(new IfFalseNode(iff_sat));
+
+  // Slow path: merge both guard failures, then call fmod
+  RegionNode* slow_region = new RegionNode(3);
+  igvn->register_new_node_with_optimizer(slow_region);
+  slow_region->init_req(1, if_not_integral);
+  slow_region->init_req(2, if_saturated);
+
+  Node* call = igvn->register_new_node_with_optimizer(inline_call_leaf_pure_node(slow_region));
+  Node* call_ctrl = igvn->register_new_node_with_optimizer(new ProjNode(call, TypeFunc::Control));
+  Node* call_result = igvn->register_new_node_with_optimizer(new ProjNode(call, TypeFunc::Parms + 0));
+
+  // Fast path: integer modulo
+  Node* mod_l = igvn->register_new_node_with_optimizer(new ModLNode(if_fast, x_as_long, igvn->longcon(divisor_l)));
+  Node* fast_conv = igvn->register_new_node_with_optimizer(new ConvL2DNode(mod_l));
+  Node* fast_result = igvn->register_new_node_with_optimizer(copy_sign_d(igvn, fast_conv, x));
+
+  // Merge paths
+  RegionNode* region = new RegionNode(3);
+  igvn->register_new_node_with_optimizer(region);
+  region->init_req(1, call_ctrl);
+  region->init_req(2, if_fast);
+
+  PhiNode* phi = new PhiNode(region, Type::DOUBLE);
+  igvn->register_new_node_with_optimizer(phi);
+  phi->init_req(1, call_result);
+  phi->init_req(2, fast_result);
+
+  igvn->C->set_has_split_ifs(true);
+
+  return make_tuple_of_input_state_and_result(igvn, phi, region);
 }
 
 //----------------------magic_int_divide_constants-----------------------------

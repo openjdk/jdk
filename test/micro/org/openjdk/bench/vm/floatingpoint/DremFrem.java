@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023, Azul Systems, Inc. All rights reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +45,29 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class DremFrem {
 
-    private static final int DEFAULT_X_RANGE = 1 << 11;
-    private static final int DEFAULT_Y_RANGE = 1 << 11;
+    private static final int DEFAULT_X_RANGE = 1 << 16;
+    private static final int DEFAULT_Y_RANGE = 1 << 8;
     private static boolean regressionValue = false;
+
+    private int[] ints;
+    private double[] intDoubles;
+    private double[] fracDoubles;
+    private double[] mixedDoubles;
+
+    @Setup
+    public void setup() {
+        Random r = new Random(42);
+        ints = new int[DEFAULT_X_RANGE];
+        intDoubles = new double[DEFAULT_X_RANGE];
+        fracDoubles = new double[DEFAULT_X_RANGE];
+        mixedDoubles = new double[DEFAULT_X_RANGE];
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            ints[i] = r.nextInt(10000);
+            intDoubles[i] = ints[i];
+            fracDoubles[i] = r.nextInt(10000) + 0.5;
+            mixedDoubles[i] = (i % 2 == 0) ? (double) r.nextInt(10000) : r.nextInt(10000) + 0.5;
+        }
+    }
 
     @Benchmark
     @OperationsPerInvocation(DEFAULT_X_RANGE * DEFAULT_Y_RANGE)
@@ -73,4 +94,94 @@ public class DremFrem {
             }
         }
     }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void calcDoubleConstDivisor() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            double x = i;
+            sum += (13.0D * x * x * x) % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void calcDoubleConstDivisorSimple() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            double x = i;
+            sum += x % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void staticPathOpaque() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += (double) ints[i] % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void specFastAlways() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += intDoubles[i] % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void specSlowAlways() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += fracDoubles[i] % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void specMixed50() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += mixedDoubles[i] % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void baselineSlow() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            sum += intDoubles[i] % 42.5D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void foldedAfterLoopOpts() {
+        int a = 77;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            double x = (double) i + (b == 77 ? 0.0 : 0.5);
+            sum += x % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
 }

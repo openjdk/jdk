@@ -29,6 +29,7 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
@@ -1257,6 +1258,11 @@ const Type* CmpDNode::Value(PhaseGVN* phase) const {
   if( t1 == Type::TOP ) return Type::TOP;
   const Type* t2 = (in2 == this) ? Type::TOP : phase->type(in2);
   if( t2 == Type::TOP ) return Type::TOP;
+
+  // Same node compared to itself: equal unless it could be NaN, integral FP values are never NaN
+  if (in1 == in2 && is_integral_fp(phase, in1)) {
+    return TypeInt::CC_EQ;
+  }
 
   // Not constants?  Don't know squat - even if they are the same
   // value!  If they are NaN's they compare to LT instead of EQ.

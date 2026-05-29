@@ -28,6 +28,7 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 
+bool is_integral_fp(const PhaseGVN* phase, const Node* n, int depth = 0);
 
 //------------------------------Conv2BNode-------------------------------------
 // Convert int/pointer to a Boolean.  Map zero to zero, all else to 1.
@@ -186,6 +187,7 @@ public:
   virtual int Opcode() const;
   virtual const Type* in_type() const { return TypeLong::LONG; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------ConvL2FNode------------------------------------

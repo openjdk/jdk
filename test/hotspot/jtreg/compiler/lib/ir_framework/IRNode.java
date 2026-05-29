@@ -691,6 +691,16 @@ public class IRNode {
         beforeMatchingNameRegex(CONV_I2L, "ConvI2L");
     }
 
+    public static final String CONV_L2D = PREFIX + "CONV_L2D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_L2D, "ConvL2D");
+    }
+
+    public static final String CONV_L2F = PREFIX + "CONV_L2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_L2F, "ConvL2F");
+    }
+
     public static final String CONV_L2I = PREFIX + "CONV_L2I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_L2I, "ConvL2I");
@@ -1633,6 +1643,16 @@ public class IRNode {
     public static final String UMAX_REDUCTION_V = PREFIX + "UMAX_REDUCTION_V" + POSTFIX;
     static {
         superWordNodes(UMAX_REDUCTION_V, "UMaxReductionV");
+    }
+
+    public static final String NEG_D = PREFIX + "NEG_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_D, "NegD");
+    }
+
+    public static final String NEG_F = PREFIX + "NEG_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_F, "NegF");
     }
 
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
