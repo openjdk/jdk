@@ -1039,7 +1039,7 @@ public class ExhaustivenessComputer {
                 continue;
             }
 
-            if (rs.isAccessible(env, candidate)) {
+            if (isAccessible(candidate.tsym)) {
                 applicableDirectPermittedPatterns.add((ClassSymbol) candidate.tsym);
             } else {
                 Set<ClassSymbol> nextLevel = closesAccessiblePermittedSubtypes(filter, (ClassSymbol) candidate.tsym);
@@ -1052,6 +1052,18 @@ public class ExhaustivenessComputer {
             }
         }
         return applicableDirectPermittedPatterns;
+    }
+
+    private boolean isAccessible(Symbol candidate) {
+        while (candidate.kind == Kind.TYP) {
+            if (!rs.isAccessible(env, (TypeSymbol) candidate)) {
+                return false;
+            }
+
+            candidate = candidate.owner;
+        }
+
+        return true;
     }
 
     /*
@@ -1170,10 +1182,10 @@ public class ExhaustivenessComputer {
             } else if (pd1 instanceof BindingPattern bp1 && pd2 instanceof BindingPattern bp2) {
                 Type t1 = bp1.type();
                 Type t2 = bp2.type();
-                if (rs.isAccessible(env, t1) && !rs.isAccessible(env, t2)) {
+                if (isAccessible(t1.tsym) && !isAccessible(t2.tsym)) {
                     return false;
                 }
-                if (!rs.isAccessible(env, t1) && rs.isAccessible(env, t2)) {
+                if (!isAccessible(t1.tsym) && isAccessible(t2.tsym)) {
                     return true;
                 }
                 boolean t1IsImportantRecord =
