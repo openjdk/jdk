@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
  * @author Xuelei Fan
  */
 
-import java.security.DEREncodable;
+import java.security.BinaryEncodable;
 import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
@@ -340,11 +340,11 @@ public class CPBuilder {
     }
 
     private static CertStore generateCertificateStore() throws Exception {
-        Collection<DEREncodable> entries = new HashSet<>();
+        Collection<BinaryEncodable> entries = new HashSet<>();
 
         for (String key : certmap.keySet()) {
             String certStr = certmap.get(key);
-            DEREncodable cert = PEM_DECODER.decode(certStr, X509Certificate.class);
+            BinaryEncodable cert = PEM_DECODER.decode(certStr, X509Certificate.class);
             entries.add(cert);
         }
 
