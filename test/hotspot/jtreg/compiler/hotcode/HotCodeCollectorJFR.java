@@ -26,9 +26,8 @@
  * @test
  * @summary Verify the HotCodeSampler and JFR do not attempt to suspend the same JavaThread and crash
  * @requires vm.compiler2.enabled
- * @run main/othervm -XX:StartFlightRecording -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:+NMethodRelocation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:HotCodeIntervalSeconds=0 -XX:HotCodeSamplePercent=100
- *                   -XX:HotCodeStartupDelaySeconds=0 -XX:HotCodeStablePercent=-1 -Xlog:hotcode=debug
+ * @run main/othervm -XX:StartFlightRecording -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:HotCodeIntervalSeconds=0 -XX:HotCodeStartupDelaySeconds=0 -XX:HotCodeStablePercent=-1 -Xlog:hotcode=debug
  *                   compiler.hotcode.HotCodeCollectorJFR
  */
 
