@@ -482,6 +482,25 @@ class MacroAssembler: public Assembler {
   WRAP(smaddl) WRAP(smsubl) WRAP(umaddl) WRAP(umsubl)
 #undef WRAP
 
+  using Assembler::andw, Assembler::andr;
+  void andw(Register Rd, Register Rn, uint64_t imm) {
+    if (operand_valid_for_logical_immediate(/*is32*/true, imm)) {
+      Assembler::andw(Rd, Rn, imm);
+    } else {
+      assert(Rd != Rn, "must be");
+      movw(Rd, imm);
+      andw(Rd, Rn, Rd);
+    }
+  }
+  void andr(Register Rd, Register Rn, uint64_t imm) {
+    if (operand_valid_for_logical_immediate(/*is32*/false, imm)) {
+      Assembler::andr(Rd, Rn, imm);
+    } else {
+      assert(Rd != Rn, "must be");
+      mov(Rd, imm);
+      andr(Rd, Rn, Rd);
+    }
+  }
 
   // macro assembly operations needed for aarch64
 
@@ -743,7 +762,7 @@ public:
   // n.b. increment/decrement calls with an Address destination will
   // need to use a scratch register to load the value to be
   // incremented. increment/decrement calls which add or subtract a
-  // constant value greater than 2^12 will need to use a 2nd scratch
+  // constant value greater than 2^24 will need to use a 2nd scratch
   // register to hold the constant. so, a register increment/decrement
   // may trash rscratch2 and an address increment/decrement trash
   // rscratch and rscratch2
@@ -754,11 +773,11 @@ public:
   void decrement(Register reg, int value = 1);
   void decrement(Address dst, int value = 1);
 
-  void incrementw(Address dst, int value = 1);
+  void incrementw(Address dst, int value = 1, Register result = rscratch1);
   void incrementw(Register reg, int value = 1);
 
   void increment(Register reg, int value = 1);
-  void increment(Address dst, int value = 1);
+  void increment(Address dst, int value = 1, Register result = rscratch1);
 
 
   // Alignment
