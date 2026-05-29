@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,27 @@
  * questions.
  */
 
-#ifndef EXECUTOR_H
-#define EXECUTOR_H
+#ifndef ExecCommand_h
+#define ExecCommand_h
 
-#include "tstrings.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#define EXEC_CALLBACK_IGNORE 0
+#define EXEC_CALLBACK_USE 1
+#define EXEC_CALLBACK_ERROR 2
 
-class CommandOutputConsumer {
-public:
-    virtual ~CommandOutputConsumer() {}
+typedef int (*ExecCommandCallbackType)(void*, char*);
 
-    virtual bool accept(const std::string& line) {
-        return true;
-    };
-};
+int execCommand(const char* const       argv[],
+                ExecCommandCallbackType callback,
+                void*                   callbackData);
 
-int executeCommandLineAndReadStdout(const tstring_array& cmd,
-        CommandOutputConsumer& consumer);
+void closePipeEnd(int* pipefd, int idx);
 
-#endif // #ifndef EXECUTOR_H
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* #ifndef ExecCommand_h */

@@ -23,16 +23,16 @@
  * questions.
  */
 
-#include <stdio.h>
 #include <string.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <linux/limits.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <stdbool.h>
 #include "JvmLauncher.h"
 #include "LinuxPackage.h"
+#include "ExecCommand.h"
 
 
 static char* getModulePath(void) {
@@ -56,19 +56,9 @@ static char* getModulePath(void) {
 }
 
 
-# define PACKAGE_TYPE_UNKNOWN 0
-# define PACKAGE_TYPE_RPM 1
-# define PACKAGE_TYPE_DEB 2
-
-typedef struct {
-    char* name;
-    int type;
-} PackageDesc;
-
-
 static void freePackageDesc(PackageDesc* desc) {
     if (desc) {
-        free(desc->name);
+        free((void*)desc->name);
         free(desc);
     }
 }
@@ -91,116 +81,73 @@ cleanup:
 }
 
 
-static PackageDesc* initPackageDesc(PackageDesc* desc, const char* str,
-                                                                int type) {
+static bool initPackageDesc(PackageDesc* desc, const char* str, int type) {
     char *newStr = strdup(str);
     if (!newStr) {
         JP_LOG_ERRNO;
-        return 0;
+        return false;
     }
 
-    free(desc->name);
+    free((void*)desc->name);
     desc->name = newStr;
     desc->type = type;
-    return desc;
+    return true;
 }
 
 
-#define POPEN_CALLBACK_USE 1
-#define POPEN_CALLBACK_IGNORE 0
+static JvmLauncherDesc* createJvmLauncherDesc(void) {
+    JvmLauncherDesc* result = 0;
 
-typedef int (*popenCallbackType)(void*, char*);
-
-static int popenCommand(const char* cmdlineFormat, const char* arg,
-                            popenCallbackType callback, void* callbackData) {
-    char* cmdline = 0;
-    FILE *stream = 0;
-    const size_t cmdlineLenth = strlen(cmdlineFormat) + strlen(arg);
-    char* strBufBegin = 0;
-    char* strBufEnd = 0;
-    char* strBufNextChar = 0;
-    char* strNewBufBegin = 0;
-    size_t strBufCapacity = 0;
-    int callbackMode = POPEN_CALLBACK_USE;
-    int exitCode = -1;
-    int c;
-    ptrdiff_t char_offset;
-
-    cmdline = malloc(cmdlineLenth + 1 /* \0 */);
-    if (!cmdline) {
+    result = malloc(sizeof(JvmLauncherDesc));
+    if (!result) {
         JP_LOG_ERRNO;
         goto cleanup;
     }
 
-#if defined(__GNUC__) && __GNUC__ >= 5
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-    if (0 > snprintf(cmdline, cmdlineLenth, cmdlineFormat, arg)) {
-        JP_LOG_ERRNO;
-        goto cleanup;
-    }
-#if defined(__GNUC__) && __GNUC__ >= 5
-#pragma GCC diagnostic pop
-#endif
-
-    JP_LOG_TRACE("popen: (%s)", cmdline);
-
-    stream = popen(cmdline, "r");
-    if (!stream) {
-        JP_LOG_ERRNO;
-        goto cleanup;
-    }
-
-    for (;;) {
-        c = fgetc(stream);
-        if((EOF == c || '\n' == c)) {
-            if (POPEN_CALLBACK_USE == callbackMode
-                                            && strBufBegin != strBufNextChar) {
-                *strBufNextChar = 0;
-                JP_LOG_TRACE("popen: [%s]", strBufBegin);
-                callbackMode = (*callback)(callbackData, strBufBegin);
-                strBufNextChar = strBufBegin;
-            }
-
-            if (EOF == c) {
-                break;
-            }
-
-            continue;
-        }
-
-        if (strBufNextChar == strBufEnd) {
-            /* Double buffer size */
-            strBufCapacity = strBufCapacity * 2 + 1;
-            char_offset = strBufNextChar - strBufBegin;
-            strNewBufBegin = realloc(strBufBegin, strBufCapacity);
-            if (!strNewBufBegin) {
-                JP_LOG_ERRNO;
-                goto cleanup;
-            }
-
-            strBufNextChar = strNewBufBegin + char_offset;
-            strBufEnd = strNewBufBegin + strBufCapacity;
-            strBufBegin = strNewBufBegin;
-        }
-
-        *strBufNextChar++ = (char)c;
-    }
+    result->packageType = PACKAGE_TYPE_UNKNOWN;
+    result->packageName = NULL;
+    result->jvmLauncherLibPath = NULL;
 
 cleanup:
-    if (stream) {
-        exitCode = pclose(stream);
+    return result;
+}
+
+
+static bool initJvmLauncherDesc(
+        JvmLauncherDesc*    desc,
+        const PackageDesc*  packageDesc,
+        const char*         jvmLauncherLibPath) {
+
+    char* newJvmLauncherLibPath = NULL;
+    char* newPackageName = NULL;
+
+    newJvmLauncherLibPath = strdup(jvmLauncherLibPath);
+    if (!newJvmLauncherLibPath) {
+        JP_LOG_ERRNO;
+        return false;
     }
 
-    if (strBufBegin) {
-        free(strBufBegin);
+    if (packageDesc && packageDesc->name) {
+        newPackageName = strdup(packageDesc->name);
+        if (!newPackageName) {
+            JP_LOG_ERRNO;
+            free(newJvmLauncherLibPath);
+            return false;
+        }
     }
 
-    free(cmdline);
+    free((void*)desc->packageName);
+    free((void*)desc->jvmLauncherLibPath);
 
-    JP_LOG_TRACE("popen: exit: %d", exitCode);
-    return exitCode;
+    desc->packageName = newPackageName;
+    if (packageDesc) {
+        desc->packageType = packageDesc->type;
+    } else {
+        desc->packageType = PACKAGE_TYPE_UNKNOWN;
+    }
+    desc->jvmLauncherLibPath = newJvmLauncherLibPath;
+
+    return true;
 }
 
 
@@ -222,7 +169,7 @@ static char* concat(const char *x, const char *y) {
 
 static int initRpmPackage(void* desc, char* str) {
     initPackageDesc((PackageDesc*)desc, str, PACKAGE_TYPE_RPM);
-    return POPEN_CALLBACK_IGNORE;
+    return EXEC_CALLBACK_IGNORE;
 }
 
 
@@ -232,7 +179,7 @@ static int initDebPackage(void* desc, char* str) {
         *colonChrPos = 0;
     }
     initPackageDesc((PackageDesc*)desc, str, PACKAGE_TYPE_DEB);
-    return POPEN_CALLBACK_IGNORE;
+    return EXEC_CALLBACK_IGNORE;
 }
 
 
@@ -248,34 +195,38 @@ static int findLauncherLib(void* launcherLibPath, char* str) {
         buf = strdup(str);
         if (!buf) {
             JP_LOG_ERRNO;
+            return EXEC_CALLBACK_ERROR;
         } else {
             *(char**)launcherLibPath = buf;
         }
-        return POPEN_CALLBACK_IGNORE;
+        return EXEC_CALLBACK_IGNORE;
     }
-    return POPEN_CALLBACK_USE;
+    return EXEC_CALLBACK_USE;
 }
 
 
 static PackageDesc* findOwnerOfFile(const char* path) {
-    int popenStatus = -1;
+    int execStatus = -1;
     PackageDesc* pkg = 0;
+    const char* rpmOwner[] = {
+        "rpm", "--queryformat", "%{NAME}", "-qf", path, NULL
+    };
+    const char* debOwner[] = {
+        "dpkg", "-S", path, NULL
+    };
 
     pkg = createPackageDesc();
     if (!pkg) {
         return 0;
     }
 
-    popenStatus = popenCommand(
-            "rpm --queryformat '%{NAME}' -qf '%s' 2>/dev/null", path,
-            initRpmPackage, pkg);
-    if (popenStatus) {
+    execStatus = execCommand(rpmOwner, initRpmPackage, pkg);
+    if (execStatus) {
         pkg->type = PACKAGE_TYPE_UNKNOWN;
-        popenStatus = popenCommand("dpkg -S '%s' 2>/dev/null", path,
-                                                        initDebPackage, pkg);
+        execStatus = execCommand(debOwner, initDebPackage, pkg);
     }
 
-    if (popenStatus) {
+    if (execStatus) {
         pkg->type = PACKAGE_TYPE_UNKNOWN;
     }
 
@@ -292,13 +243,25 @@ static PackageDesc* findOwnerOfFile(const char* path) {
 }
 
 
-char* getJvmLauncherLibPath(void) {
+void freeJvmLauncherDesc(JvmLauncherDesc* desc) {
+    if (desc) {
+        free((void*)desc->packageName);
+        free((void*)desc->jvmLauncherLibPath);
+        free(desc);
+    }
+}
+
+
+JvmLauncherDesc* getJvmLauncherDesc(void) {
     char* modulePath = 0;
     char* appImageDir = 0;
     char* launcherLibPath = 0;
-    const char* pkgQueryCmd = 0;
-    int popenStatus = -1;
+    const char* pkgQueryCmd[] = {
+        NULL, NULL, NULL, NULL
+    };
     PackageDesc* pkg = 0;
+    JvmLauncherDesc* result = 0;
+    bool resultReady = false;
 
     modulePath = getModulePath();
     if (!modulePath) {
@@ -314,27 +277,45 @@ char* getJvmLauncherLibPath(void) {
         launcherLibPath = concat(appImageDir, "/lib" LAUNCHER_LIB_NAME);
     } else {
         if (PACKAGE_TYPE_RPM == pkg->type) {
-            pkgQueryCmd = "rpm -ql '%s' 2>/dev/null";
+            pkgQueryCmd[0] = "rpm";
+            pkgQueryCmd[1] = "-ql";
+            pkgQueryCmd[2] = pkg->name;
         } else if (PACKAGE_TYPE_DEB == pkg->type) {
-            pkgQueryCmd = "dpkg -L '%s' 2>/dev/null";
+            pkgQueryCmd[0] = "dpkg";
+            pkgQueryCmd[1] = "-L";
+            pkgQueryCmd[2] = pkg->name;
         } else {
             /* Should never happen */
             JP_LOG_ERRMSG("Internal error");
             goto cleanup;
         }
 
-        popenStatus = popenCommand(pkgQueryCmd, pkg->name, findLauncherLib,
-                                                        &launcherLibPath);
-        if (popenStatus) {
-            free(launcherLibPath);
-            launcherLibPath = NULL;
+        if (execCommand(pkgQueryCmd, findLauncherLib, &launcherLibPath)) {
             goto cleanup;
         }
+    }
+
+    if (!launcherLibPath) {
+        goto cleanup;
+    }
+
+    result = createJvmLauncherDesc();
+    if (result && initJvmLauncherDesc(result, pkg, launcherLibPath)) {
+        JP_LOG_TRACE("JvmLauncherDesc(%s|%d|%s)",
+                result->packageName ? result->packageName : "(null)",
+                result->packageType,
+                result->jvmLauncherLibPath);
+        resultReady = true;
     }
 
 cleanup:
     free(modulePath);
     freePackageDesc(pkg);
+    if (!resultReady) {
+        freeJvmLauncherDesc(result);
+        result = NULL;
+    }
+    free(launcherLibPath);
 
-    return launcherLibPath;
+    return result;
 }

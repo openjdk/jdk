@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,16 @@ size_t hash(const std::string& str) {
 }
 
 Jvm* jvmLauncher;
+PackageDesc pkgDesc = {};
 
 void launchApp() {
     const tstring launcherPath = SysInfo::getProcessModulePath();
 
-    const Package ownerPackage = Package::findOwnerOfFile(launcherPath);
+    LOG_TRACE(tstrings::any() << "PackageDesc("
+                << (pkgDesc.name ? pkgDesc.name : "(null)")
+                << "|" << pkgDesc.type << ")");
+
+    const Package ownerPackage = Package(pkgDesc);
 
     AppLauncher appLauncher;
     appLauncher.addJvmLibName(_T("lib/libjli.so"));
@@ -133,10 +138,15 @@ void launchApp() {
 
 extern "C" {
 
-JNIEXPORT JvmlLauncherHandle jvmLauncherCreate(int argc, char *argv[]) {
+JNIEXPORT JvmlLauncherHandle jvmLauncherCreate(
+        const PackageDesc*  pkg,
+        int                 argc,
+        char*               argv[]) {
+
     SysInfo::argc = argc;
     SysInfo::argv = argv;
     jvmLauncher = 0;
+    pkgDesc = *pkg;
     app::launch(std::nothrow, launchApp);
 
     JvmlLauncherHandle jlh = 0;
