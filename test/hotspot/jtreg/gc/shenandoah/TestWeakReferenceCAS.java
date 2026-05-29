@@ -69,7 +69,7 @@ public class TestWeakReferenceCAS {
             "-Xmx128m",
             "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
             "--add-opens", "java.base/java.lang.ref=ALL-UNNAMED",
-            "-XX:+UseShenandoahGC",
+            "-XX:+UseShenandoahGC", "-XX:-CreateCoredumpOnCrash",
             TestWeakReferenceCAS.class.getName(),
             test);
         if (Platform.isDebugBuild()) {
