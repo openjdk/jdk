@@ -199,7 +199,6 @@ public class JavacParser implements Parser {
 
     /** Construct a parser from an existing parser, with minimal overhead.
      */
-    @SuppressWarnings("this-escape")
     protected JavacParser(JavacParser parser,
                           Lexer S) {
         this.S = S;
