@@ -2124,6 +2124,26 @@ void MacroAssembler::vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len
   }
 }
 
+void MacroAssembler::vmovdqa(XMMRegister dst, Address src, int vector_len) {
+  if (vector_len == AVX_512bit) {
+    Assembler::evmovdqaq(dst, src, AVX_512bit);
+  } else if (vector_len == AVX_256bit) {
+    Assembler::vmovdqa(dst, src);
+  } else {
+    Assembler::movdqa(dst, src);
+  }
+}
+
+void MacroAssembler::vmovdqa(Address dst, XMMRegister src, int vector_len) {
+  if (vector_len == AVX_512bit) {
+    Assembler::evmovdqaq(dst, src, AVX_512bit);
+  } else if (vector_len == AVX_256bit) {
+    Assembler::vmovdqa(dst, src);
+  } else {
+    Assembler::movdqa(dst, src);
+  }
+}
+
 void MacroAssembler::kmov(KRegister dst, Address src) {
   if (VM_Version::supports_avx512bw()) {
     kmovql(dst, src);
@@ -5848,7 +5868,7 @@ void MacroAssembler::reinit_heapbase() {
   }
 }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM/ZMM registers
 void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, KRegister mask) {
@@ -6052,7 +6072,7 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
   BIND(DONE);
 }
 
-#endif //COMPILER2_OR_JVMCI
+#endif //COMPILER2
 
 
 void MacroAssembler::generate_fill(BasicType t, bool aligned,
@@ -9444,7 +9464,7 @@ void MacroAssembler::vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, Add
   }
 }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 void MacroAssembler::fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRegister mask,
                                  Register length, Register temp, int vec_enc) {
@@ -9679,7 +9699,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
   }
   bind(L_exit);
 }
-#endif //COMPILER2_OR_JVMCI
+#endif //COMPILER2
 
 
 void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {

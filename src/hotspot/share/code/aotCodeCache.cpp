@@ -1576,10 +1576,6 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
       addresses.append(deopt_blob->unpack_with_exception());
       addresses.append(deopt_blob->unpack_with_reexecution());
       addresses.append(deopt_blob->unpack_with_exception_in_tls());
-#if INCLUDE_JVMCI
-      addresses.append(deopt_blob->uncommon_trap());
-      addresses.append(deopt_blob->implicit_exception_uncommon_trap());
-#endif // INCLUDE_JVMCI
       cache()->add_stub_entries(stub_id, start, &addresses, 0);
     }
   }
@@ -2101,14 +2097,19 @@ void AOTCodeAddressTable::init_extrs() {
 #endif
 #if INCLUDE_SHENANDOAHGC
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow_narrow);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_oop);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_narrow_oop);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::clone);
 #endif
 #if INCLUDE_ZGC
   ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -101,9 +101,6 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -558,6 +555,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _active_generation(nullptr),
   _initial_size(0),
   _committed(0),
+  _alloc_rate_decay(&_alloc_rate),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),
   _safepoint_workers(nullptr),
@@ -701,6 +699,11 @@ void ShenandoahHeap::post_initialize() {
 
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
+
+  // Periodically decay allocation rate to compensate for not being updated when allocation rate
+  // is low. Heuristics are evaluated unconditionally from a dedicated thread so it will continue
+  // to see the last (possibly stale) allocation rate if the allocation rate is low.
+  _alloc_rate_decay.enroll();
 
   MutexLocker ml(Threads_lock);
 
@@ -2315,10 +2318,13 @@ void ShenandoahHeap::stop() {
   // Step 1. Stop reporting on gc thread cpu utilization
   mmu_tracker()->stop();
 
-  // Step 2. Wait until GC worker exits normally (this will cancel any ongoing GC).
+  // Step 2. Stop decaying allocation rate.
+  _alloc_rate_decay.disenroll();
+
+  // Step 3. Wait until GC worker exits normally (this will cancel any ongoing GC).
   control_thread()->stop();
 
-  // Step 3. Shutdown uncommit thread.
+  // Step 4. Shutdown uncommit thread.
   if (_uncommit_thread != nullptr) {
     _uncommit_thread->stop();
   }
@@ -2341,9 +2347,6 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       ShenandoahGCPhase gc_phase(phase);
       ShenandoahGCWorkerPhase worker_phase(phase);
       bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
-
-      // Clean JVMCI metadata handles.
-      JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
 
       ShenandoahClassUnloadingTask unlink_task(phase, unloading_occurred);
       _workers->run_task(&unlink_task);
