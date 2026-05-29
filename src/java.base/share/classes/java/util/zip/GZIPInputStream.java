@@ -172,10 +172,6 @@ public class GZIPInputStream extends InflaterInputStream {
      * operation. If this method returns {@code -1} or throws an exception then
      * the content of {@code buf[off]} through {@code buf[off+}<i>len</i>{@code
      * -1]} is undefined.
-     * <p>
-     * After reading a member trailer, this method calls {@link InputStream#available()}
-     * on the underlying stream to determine whether additional data is available that may represent
-     * a subsequent member.
      *
      * @param buf the buffer into which the data is read
      * @param off the start offset in the destination array {@code buf}
