@@ -24955,12 +24955,11 @@ instruct long_to_mask_evex(kReg dst, rRegL src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
+instruct mask_opers_evex(kReg dst, kReg src1, kReg src2) %{
   match(Set dst (AndVMask src1 src2));
   match(Set dst (OrVMask src1 src2));
   match(Set dst (XorVMask src1 src2));
-  effect(TEMP kscratch);
-  format %{ "mask_opers_evex $dst, $src1, $src2\t! using $kscratch as TEMP" %}
+  format %{ "mask_opers_evex $dst, $src1, $src2" %}
   ins_encode %{
     const MachNode* mask1 = static_cast<const MachNode*>(this->in(this->operand_index($src1)));
     const MachNode* mask2 = static_cast<const MachNode*>(this->in(this->operand_index($src2)));
