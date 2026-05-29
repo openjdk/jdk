@@ -38,7 +38,6 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
@@ -48,21 +47,7 @@
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-template <StringDedupMode STRING_DEDUP>
-void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
-  if (STRING_DEDUP == ENQUEUE_DEDUP) {
-    if (ShenandoahStringDedup::is_candidate(obj)) {
-      req->add(obj);
-    }
-  } else if (STRING_DEDUP == ALWAYS_DEDUP) {
-    if (ShenandoahStringDedup::is_string_candidate(obj) &&
-        !ShenandoahStringDedup::dedup_requested(obj)) {
-        req->add(obj);
-    }
-  }
-}
-
-template <class T, ShenandoahGenerationType GENERATION, StringDedupMode STRING_DEDUP>
+template <class T, ShenandoahGenerationType GENERATION, bool STRING_DEDUP>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id) {
   oop obj = task->obj();
 
@@ -78,13 +63,14 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
     Klass* klass = obj->klass();
     if (klass->is_instance_klass()) {
       // Case 1: Normal oop, process as usual.
+      if (STRING_DEDUP && (klass == vmClasses::String_klass())) {
+        dedup_string(obj, req);
+      }
       if (klass->is_stack_chunk_instance_klass()) {
         // Loom doesn't support mixing of weak marking and strong marking of stack chunks.
         cl->set_weak(false);
       }
-
       obj->oop_iterate(cl);
-      dedup_string<STRING_DEDUP>(obj, req);
     } else if (klass->is_objArray_klass()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
@@ -105,6 +91,22 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
     do_chunked_array<T>(q, cl, obj, task->chunk(), task->pow(), weak);
+  }
+}
+
+void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
+  assert(req != nullptr, "Should be available if dedup is enabled");
+
+  // Skip if already requested or dedup is forbidden.
+  // The overwhelming majority of Strings would be filtered here.
+  // These bits are also sticky, so older Strings would be filtered here too.
+  if (java_lang_String::deduplication_requested_or_forbidden(obj)) {
+    return;
+  }
+
+  // Accept deduplication request.
+  if (!java_lang_String::test_and_set_deduplication_requested(obj)) {
+    req->add(obj);
   }
 }
 
