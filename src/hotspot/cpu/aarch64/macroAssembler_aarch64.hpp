@@ -33,6 +33,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
@@ -167,7 +168,7 @@ class MacroAssembler: public Assembler {
 
   void bind(Label& L) {
     Assembler::bind(L);
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
     code()->set_last_label(pc());
   }
 
@@ -499,29 +500,20 @@ private:
   void mov_immediate64(Register dst, uint64_t imm64);
   void mov_immediate32(Register dst, uint32_t imm32);
 
-  int push(unsigned int bitset, Register stack);
-  int pop(unsigned int bitset, Register stack);
-
-  int push_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
-  int pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
-
-  int push_p(unsigned int bitset, Register stack);
-  int pop_p(unsigned int bitset, Register stack);
-
   void mov(Register dst, Address a);
 
 public:
 
-  void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
-  void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
+  int push(RegSet regset, Register stack);
+  int pop(RegSet regset, Register stack);
 
-  void push_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) push_fp(regs.bits(), stack, mode); }
-  void pop_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) pop_fp(regs.bits(), stack, mode); }
+  int push_fp(FloatRegSet regset, Register stack, FpPushPopMode mode = PushPopFull);
+  int pop_fp(FloatRegSet regset, Register stack, FpPushPopMode mode = PushPopFull);
 
   static RegSet call_clobbered_gp_registers();
 
-  void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
-  void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
+  int push_p(PRegSet regset, Register stack);
+  int pop_p(PRegSet regset, Register stack);
 
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
@@ -701,7 +693,6 @@ public:
 #endif
 
   static int patch_oop(address insn_addr, address o);
-  static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
   // Return whether code is emitted to a scratch blob.
   virtual bool in_scratch_emit_size() {
@@ -727,6 +718,9 @@ public:
 
   // Support for sign-extension (hi:lo = extend_sign(lo))
   void extend_sign(Register hi, Register lo);
+
+  // Clean up a subword typed value to the representation in compliance with JVMS §2.3
+  void narrow_subword_type(Register reg, BasicType bt);
 
   // Load and store values by size and signed-ness
   void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
@@ -898,10 +892,6 @@ public:
 
   // thread in the default location (rthread)
   void reset_last_Java_frame(bool clear_fp);
-
-  // Stores
-  void store_check(Register obj);                // store check for obj - register is destroyed afterwards
-  void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
@@ -1635,6 +1625,10 @@ public:
   void cc20_set_qr_registers(FloatRegister (&vectorSet)[4],
           const FloatRegister (&stateVectors)[16], int idx1, int idx2,
           int idx3, int idx4);
+
+  // Rotate using ORR (for identity) or USHR + SLI.
+  void neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
+                          FloatRegister src, int shift_amount);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();

@@ -1273,21 +1273,33 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
 
   for (uint spi = 0; spi < safepoints.size(); spi++) {
     SafePointNode* sfpt = safepoints.at(spi)->as_SafePoint();
-    JVMState *jvms      = sfpt->jvms();
-    uint merge_idx      = (sfpt->req() - jvms->scloff());
-    int debug_start     = jvms->debug_start();
+
+    SafePointNode::NodeEdgeTempStorage non_debug_edges_worklist(*_igvn);
+
+    // All sfpt inputs are implicitly included into debug info during the scalarization process below.
+    // Keep non-debug inputs separately, so they stay non-debug.
+    sfpt->remove_non_debug_edges(non_debug_edges_worklist);
+
+    JVMState* jvms  = sfpt->jvms();
+    uint merge_idx  = (sfpt->req() - jvms->scloff());
+    int debug_start = jvms->debug_start();
 
     SafePointScalarMergeNode* smerge = new SafePointScalarMergeNode(merge_t, merge_idx);
     smerge->init_req(0, _compile->root());
     _igvn->register_new_node_with_optimizer(smerge);
 
+    assert(sfpt->jvms()->endoff() == sfpt->req(), "no extra edges past debug info allowed");
+
     // The next two inputs are:
     //  (1) A copy of the original pointer to NSR objects.
     //  (2) A selector, used to decide if we need to rematerialize an object
     //      or use the pointer to a NSR object.
-    // See more details of these fields in the declaration of SafePointScalarMergeNode
+    // See more details of these fields in the declaration of SafePointScalarMergeNode.
+    // It is safe to include them into debug info straight away since create_scalarized_object_description()
+    // will include all newly added inputs into debug info anyway.
     sfpt->add_req(nsr_merge_pointer);
     sfpt->add_req(selector);
+    sfpt->jvms()->set_endoff(sfpt->req());
 
     for (uint i = 1; i < ophi->req(); i++) {
       Node* base = ophi->in(i);
@@ -1302,13 +1314,15 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
       SafePointScalarObjectNode* sobj = mexp.create_scalarized_object_description(alloc, sfpt);
       if (sobj == nullptr) {
-        return false;
+        sfpt->restore_non_debug_edges(non_debug_edges_worklist);
+        return false; // non-recoverable failure; recompile
       }
 
       // Now make a pass over the debug information replacing any references
       // to the allocated object with "sobj"
       Node* ccpp = alloc->result_cast();
       sfpt->replace_edges_in_range(ccpp, sobj, debug_start, jvms->debug_end(), _igvn);
+      non_debug_edges_worklist.remove_edge_if_present(ccpp); // drop scalarized input from non-debug info
 
       // Register the scalarized object as a candidate for reallocation
       smerge->add_req(sobj);
@@ -1316,11 +1330,15 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
 
     // Replaces debug information references to "original_sfpt_parent" in "sfpt" with references to "smerge"
     sfpt->replace_edges_in_range(original_sfpt_parent, smerge, debug_start, jvms->debug_end(), _igvn);
+    non_debug_edges_worklist.remove_edge_if_present(original_sfpt_parent); // drop scalarized input from non-debug info
 
     // The call to 'replace_edges_in_range' above might have removed the
     // reference to ophi that we need at _merge_pointer_idx. The line below make
     // sure the reference is maintained.
     sfpt->set_req(smerge->merge_pointer_idx(jvms), nsr_merge_pointer);
+
+    sfpt->restore_non_debug_edges(non_debug_edges_worklist);
+
     _igvn->_worklist.push(sfpt);
   }
 
@@ -3952,7 +3970,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
 // created phi or an existing phi.  Sets create_new to indicate whether a new
 // phi was created.  Cache the last newly created phi in the node map.
 //
-PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, bool &new_created) {
+PhiNode* ConnectionGraph::create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created) {
   Compile *C = _compile;
   PhaseGVN* igvn = _igvn;
   new_created = false;
@@ -3988,7 +4006,7 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
     }
     return nullptr;
   }
-  orig_phi_worklist.append_if_missing(orig_phi);
+  orig_phi_worklist.push(orig_phi);
   const TypePtr *atype = C->get_adr_type(alias_idx);
   result = PhiNode::make(orig_phi->in(0), nullptr, Type::MEMORY, atype);
   C->copy_node_notes_to(result, orig_phi);
@@ -4003,7 +4021,7 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
 // Return a new version of Memory Phi "orig_phi" with the inputs having the
 // specified alias index.
 //
-PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *> &orig_phi_worklist, uint rec_depth) {
+PhiNode* ConnectionGraph::split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth) {
   assert(alias_idx != Compile::AliasIdxBot, "can't split out bottom memory");
   Compile *C = _compile;
   PhaseGVN* igvn = _igvn;
@@ -4012,7 +4030,7 @@ PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, Gro
   if (!new_phi_created) {
     return result;
   }
-  GrowableArray<PhiNode *>  phi_list;
+  Unique_Node_List phi_list;
   GrowableArray<uint>  cur_input;
   PhiNode *phi = orig_phi;
   uint idx = 1;
@@ -4052,9 +4070,9 @@ PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, Gro
       assert((phi->in(i) == nullptr) == (in == nullptr), "inputs must correspond.");
     }
     // we have finished processing a Phi, see if there are any more to do
-    finished = (phi_list.length() == 0 );
+    finished = (phi_list.size() == 0);
     if (!finished) {
-      phi = phi_list.pop();
+      phi = phi_list.pop()->as_Phi();
       idx = cur_input.pop();
       PhiNode *prev_result = get_map_phi(phi->_idx);
       prev_result->set_req(idx++, result);
@@ -4085,7 +4103,7 @@ Node* ConnectionGraph::step_through_mergemem(MergeMemNode *mmem, int alias_idx, 
 //
 // Move memory users to their memory slices.
 //
-void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis) {
+void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
   Compile* C = _compile;
   PhaseGVN* igvn = _igvn;
   const TypePtr* tp = igvn->type(n->in(MemNode::Address))->isa_ptr();
@@ -4158,7 +4176,7 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
 // is the specified alias index.
 //
 #define FIND_INST_MEM_RECURSION_DEPTH_LIMIT 1000
-Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArray<PhiNode *>  &orig_phis, uint rec_depth) {
+Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_List& orig_phis, uint rec_depth) {
   if (rec_depth > FIND_INST_MEM_RECURSION_DEPTH_LIMIT) {
     _compile->record_failure(_invocation > 0 ? C2Compiler::retry_no_iterative_escape_analysis() : C2Compiler::retry_no_escape_analysis());
     return nullptr;
@@ -4251,7 +4269,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
                C->get_alias_index(result->as_Phi()->adr_type()) != alias_idx) {
       Node *un = result->as_Phi()->unique_input(igvn);
       if (un != nullptr) {
-        orig_phis.append_if_missing(result->as_Phi());
+        orig_phis.push(result);
         result = un;
       } else {
         break;
@@ -4306,7 +4324,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
     if (!is_instance) {
       // Push all non-instance Phis on the orig_phis worklist to update inputs
       // during Phase 4 if needed.
-      orig_phis.append_if_missing(mphi);
+      orig_phis.push(mphi);
     } else if (C->get_alias_index(t) != alias_idx) {
       // Create a new Phi with the specified alias index type.
       result = split_memory_phi(mphi, alias_idx, orig_phis, rec_depth + 1);
@@ -4410,8 +4428,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                                          GrowableArray<MergeMemNode*> &mergemem_worklist,
                                          Unique_Node_List &reducible_merges) {
   DEBUG_ONLY(Unique_Node_List reduced_merges;)
-  GrowableArray<Node *>  memnode_worklist;
-  GrowableArray<PhiNode *>  orig_phis;
+  Unique_Node_List memnode_worklist;
+  Unique_Node_List orig_phis;
   PhaseIterGVN  *igvn = _igvn;
   uint new_index_start = (uint) _compile->num_alias_types();
   VectorSet visited;
@@ -4521,7 +4539,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           const TypePtr* adr_type = proj->adr_type();
           const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
           if (adr_type != new_adr_type && !init->already_has_narrow_mem_proj_with_adr_type(new_adr_type)) {
-            DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
+            // Do NOT remove the next line: ensure a new alias index is allocated for the instance type.
+            uint alias_idx = _compile->get_alias_index(new_adr_type);
             assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
             NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
             igvn->set_type(new_proj, new_proj->bottom_type());
@@ -4566,7 +4585,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             }
             alloc_worklist.append_if_missing(use);
           } else if (use->is_MemBar()) {
-            memnode_worklist.append_if_missing(use);
+            memnode_worklist.push(use);
           }
         }
       }
@@ -4663,10 +4682,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       Node *use = n->fast_out(i);
       if(use->is_Mem() && use->in(MemNode::Address) == n) {
         // Load/store to instance's field
-        memnode_worklist.append_if_missing(use);
+        memnode_worklist.push(use);
       } else if (use->is_MemBar()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
       } else if (use->is_AddP() && use->outcnt() > 0) { // No dead nodes
         Node* addp2 = find_second_addp(use, n);
@@ -4695,14 +4714,14 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       } else if (use->Opcode() == Op_EncodeISOArray) {
         if (use->in(MemNode::Memory) == n || use->in(3) == n) {
           // EncodeISOArray overwrites destination array
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
       } else {
         uint op = use->Opcode();
         if ((op == Op_StrCompressedCopy || op == Op_StrInflatedCopy) &&
             (use->in(MemNode::Memory) == n)) {
           // They overwrite memory edge corresponding to destination array,
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
               op == Op_CastP2X ||
               op == Op_FastLock || op == Op_AryEq ||
@@ -4712,6 +4731,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
               op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
               op == Op_SubTypeCheck ||
               op == Op_ReinterpretS2HF ||
+              op == Op_ReachabilityFence ||
               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use))) {
           n->dump();
           use->dump();
@@ -4786,15 +4806,22 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   //  Phase 2:  Process MemNode's from memnode_worklist. compute new address type and
   //            compute new values for Memory inputs  (the Memory inputs are not
   //            actually updated until phase 4.)
-  if (memnode_worklist.length() == 0)
+  if (memnode_worklist.size() == 0) {
     return;  // nothing to do
-  while (memnode_worklist.length() != 0) {
+  }
+  while (memnode_worklist.size() != 0) {
     Node *n = memnode_worklist.pop();
     if (visited.test_set(n->_idx)) {
       continue;
     }
-    if (n->is_Phi() || n->is_ClearArray()) {
-      // we don't need to do anything, but the users must be pushed
+    if (n->is_Phi()) {
+      if ((uint) _compile->get_alias_index(n->adr_type()) < new_index_start) {
+        // Push memory phis on the orig_phis worklist to update
+        // during Phase 4 if needed.
+        orig_phis.push(n);
+      }
+    } else if (n->is_ClearArray()) {
+     // we don't need to do anything, but the users must be pushed
     } else if (n->is_MemBar()) { // MemBar nodes
       if (!n->is_Initialize()) { // memory projections for Initialize pushed below (so we get to all their uses)
         // we don't need to do anything, but the users must be pushed
@@ -4856,17 +4883,17 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node *use = n->fast_out(i);
       if (use->is_Phi() || use->is_ClearArray()) {
-        memnode_worklist.append_if_missing(use);
+        memnode_worklist.push(use);
       } else if (use->is_Mem() && use->in(MemNode::Memory) == n) {
-        memnode_worklist.append_if_missing(use);
+        memnode_worklist.push(use);
       } else if (use->is_MemBar() || use->is_CallLeaf()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
       } else if (use->is_Proj()) {
         assert(n->is_Initialize(), "We only push projections of Initialize");
         if (use->as_Proj()->_con == TypeFunc::Memory) { // Ignore precedent edge
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
 #ifdef ASSERT
       } else if(use->is_Mem()) {
@@ -4876,14 +4903,14 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       } else if (use->Opcode() == Op_EncodeISOArray) {
         if (use->in(MemNode::Memory) == n || use->in(3) == n) {
           // EncodeISOArray overwrites destination array
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
       } else {
         uint op = use->Opcode();
         if ((use->in(MemNode::Memory) == n) &&
             (op == Op_StrCompressedCopy || op == Op_StrInflatedCopy)) {
           // They overwrite memory edge corresponding to destination array,
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
               op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
@@ -4992,8 +5019,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   // to recursively process Phi's encountered on the input memory
   // chains as is done in split_memory_phi() since they  will
   // also be processed here.
-  for (int j = 0; j < orig_phis.length(); j++) {
-    PhiNode *phi = orig_phis.at(j);
+  for (uint j = 0; j < orig_phis.size(); j++) {
+    PhiNode* phi = orig_phis.at(j)->as_Phi();
     int alias_idx = _compile->get_alias_index(phi->adr_type());
     igvn->hash_delete(phi);
     for (uint i = 1; i < phi->req(); i++) {

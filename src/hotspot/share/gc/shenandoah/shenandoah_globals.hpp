@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -34,22 +34,18 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uint, ShenandoahAccelerationSamplePeriod, 15, EXPERIMENTAL,       \
-          "When at least this much time (measured in ms) has passed "       \
-          "since the acceleration allocation rate was most recently "       \
-          "sampled, capture another allocation rate sample for the purpose "\
-          "of detecting acceleration or momentary spikes in allocation "    \
-          "rate. A smaller value allows quicker response to changes in "    \
-          "allocation rates but is more vulnerable to noise and requires "  \
-          "more monitoring effort.")                                        \
+  product(uint, ShenandoahMomentaryAllocRateSampleWindow, 6, EXPERIMENTAL, \
+          "The number of samples in the momentary allocation rate moving "  \
+          "average. This window serves to detect momentary spikes in the "  \
+          "allocation rate. A smaller value allows quicker response to "    \
+          "changes in the allocation rate but is more vulnerable to noise " \
+          "and requires more monitoring effort. Must not be greater than "  \
+          "ShenandoahRecentAllocRateSampleWindow")                          \
           range(1, 1000)                                                    \
                                                                             \
-  product(uint, ShenandoahRateAccelerationSampleSize, 8, EXPERIMENTAL,      \
-          "In selected ShenandoahControlIntervals "                         \
-          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
-          "since previous allocation rate sample), "                        \
-          "we compute the allocation rate since the previous rate was "     \
-          "sampled.  This many samples are analyzed to determine whether "  \
+  product(uint, ShenandoahRecentAllocRateSampleWindow, 20, EXPERIMENTAL,    \
+          "The number of samples in the recent allocation rate moving "     \
+          "average. These samples are analyzed to determine whether "       \
           "allocation rates are accelerating.  Acceleration may occur "     \
           "due to increasing client demand or due to phase changes in "     \
           "an application.  A larger value reduces sensitivity to "         \
@@ -62,30 +58,13 @@
           "detected.  If the last several of all samples are signficantly " \
           "larger than the other samples, the best fit line through all "   \
           "sampled values will have an upward slope, manifesting as "       \
-          "acceleration.")                                                  \
-          range(1,64)                                                       \
+          "acceleration. Must not be greater than ShenandoahAllocRateSampleWindow") \
+          range(1,5000)                                                     \
                                                                             \
-  product(uint, ShenandoahMomentaryAllocationRateSpikeSampleSize,           \
-          2, EXPERIMENTAL,                                                  \
-          "In selected ShenandoahControlIntervals "                         \
-          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
-          "since previous allocation rate sample), we compute "             \
-          "the allocation rate since the previous rate was sampled. "       \
-          "The weighted average of this "                                   \
-          "many most recent momentary allocation rate samples is compared " \
-          "against current allocation runway and anticipated GC time to "   \
-          "determine whether a spike in momentary allocation rate "         \
-          "justifies an early GC trigger.  Momentary allocation spike "     \
-          "detection is in addition to previously implemented "             \
-          "ShenandoahAdaptiveInitialSpikeThreshold, the latter of which "   \
-          "is more effective at detecting slower spikes.  The latter "      \
-          "spike detection samples at the rate specifieid by "              \
-          "ShenandoahAdaptiveSampleFrequencyHz.  The value of this "        \
-          "parameter must be less than the value of "                       \
-          "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
-          "momentary spike detection less sensitive.  A smaller value "     \
-          "may result in excessive GC triggers.")                           \
-          range(1,64)                                                       \
+  product(uint, ShenandoahAllocRateSampleWindow, 100, EXPERIMENTAL,         \
+          "The size of the moving window over which the average "           \
+          "baseline allocation rate is maintained.")                        \
+          range(1,10000)                                                    \
                                                                             \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \
@@ -196,14 +175,6 @@
           "of regions that would be used, within min/max region size "      \
           "limits.")                                                        \
                                                                             \
-  product(size_t, ShenandoahMinRegionSize, 256 * K, EXPERIMENTAL,           \
-          "With automatic region sizing, the regions would be at least "    \
-          "this large.")                                                    \
-                                                                            \
-  product(size_t, ShenandoahMaxRegionSize, 32 * M, EXPERIMENTAL,            \
-          "With automatic region sizing, the regions would be at most "     \
-          "this large.")                                                    \
-                                                                            \
   product(ccstr, ShenandoahGCMode, "satb",                                  \
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
@@ -275,7 +246,7 @@
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahAllocationThreshold, 0, EXPERIMENTAL,            \
-          "How many new allocations should happen since the last GC cycle " \
+          "How many bytes may be allocated since the last GC cycle started "\
           "before some heuristics trigger the collection. In percents of "  \
           "(soft) max heap size. Set to zero to effectively disable.")      \
           range(0,100)                                                      \
@@ -299,33 +270,11 @@
           "to 100 effectively disables the shortcut.")                      \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahAdaptiveSampleFrequencyHz, 10, EXPERIMENTAL,     \
-          "The number of times per second to update the allocation rate "   \
-          "moving average.")                                                \
-                                                                            \
-  product(uintx, ShenandoahAdaptiveSampleSizeSeconds, 10, EXPERIMENTAL,     \
-          "The size of the moving window over which the average "           \
-          "allocation rate is maintained. The total number of samples "     \
-          "is the product of this number and the sample frequency.")        \
-                                                                            \
   product(double, ShenandoahAdaptiveInitialConfidence, 1.8, EXPERIMENTAL,   \
           "The number of standard deviations used to determine an initial " \
           "margin of error for the average cycle time and average "         \
           "allocation rate. Increasing this value will cause the "          \
           "heuristic to initiate more concurrent cycles." )                 \
-                                                                            \
-  product(double, ShenandoahAdaptiveInitialSpikeThreshold, 1.8, EXPERIMENTAL, \
-          "If the most recently sampled allocation rate is more than "      \
-          "this many standard deviations away from the moving average, "    \
-          "then a cycle is initiated. This value controls how sensitive "   \
-          "the heuristic is to allocation spikes. Decreasing this number "  \
-          "increases the sensitivity. ")                                    \
-                                                                            \
-  product(double, ShenandoahAdaptiveDecayFactor, 0.5, EXPERIMENTAL,         \
-          "The decay factor (alpha) used for values in the weighted "       \
-          "moving average of cycle time and allocation rate. "              \
-          "Larger values give more weight to recent values.")               \
-          range(0,1.0)                                                      \
                                                                             \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \
@@ -560,8 +509,14 @@
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
-          "Turn on/off stack watermark barriers in Shenandoah")             \
+  product(bool, ShenandoahCloneRuntime, false, DIAGNOSTIC,                  \
+          "Handle clone in runtime instead of in copy stubs.")              \
+                                                                            \
+  product(bool, ShenandoahElideIdealBarriers, true, DIAGNOSTIC,             \
+          "Elide redundant Shenandoah barriers on C2 Ideal level.")         \
+                                                                            \
+  product(bool, ShenandoahElideMachBarriers, true, DIAGNOSTIC,              \
+          "Elide redundant Shenandoah barriers on C2 Mach level.")          \
                                                                             \
   develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \

@@ -55,6 +55,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -504,21 +505,6 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   return instructions * NativeInstruction::instruction_size;
 }
 
-int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
-  // Metadata pointers are either narrow (32 bits) or wide (48 bits).
-  // We encode narrow ones by setting the upper 16 bits in the first
-  // instruction.
-  NativeInstruction *insn = nativeInstruction_at(insn_addr);
-  assert(Instruction_aarch64::extract(insn->encoding(), 31, 21) == 0b11010010101 &&
-         nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
-
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
-
-  Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
-  Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
-  return 2 * NativeInstruction::instruction_size;
-}
-
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
   ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   if (at_return) {
@@ -952,7 +938,10 @@ void MacroAssembler::emit_static_call_stub() {
 }
 
 int MacroAssembler::static_call_stub_size() {
-  if (!codestub_branch_needs_far_jump()) {
+  // During AOT production run AOT and JIT compiled code
+  // are used at the same time. We need this size
+  // to be the same for both types of code.
+  if (!codestub_branch_needs_far_jump() && !AOTCodeCache::is_on_for_use()) {
     // isb; movk; movz; movz; b
     return 5 * NativeInstruction::instruction_size;
   }
@@ -2663,7 +2652,7 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
 
 void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address prev = pc() - NativeMembar::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
     if (AlwaysMergeDMB) {
@@ -2683,10 +2672,11 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
       BLOCK_COMMENT("merged membar");
       return;
     } else {
-      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped
-      // We need check the last 2 instructions
+      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped.
+      // We need to check the second-to-last instruction, only if it is inside
+      // the current code section.
       address prev2 = prev - NativeMembar::instruction_size;
-      if (last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
+      if (prev2 >= begin() && last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
         NativeMembar *bar2 = NativeMembar_at(prev2);
         assert(bar2->get_kind() == order_constraint, "it should be merged before");
         BLOCK_COMMENT("merged membar(elided)");
@@ -2694,21 +2684,21 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
       }
     }
   }
-  code()->set_last_insn(pc());
+  code()->set_last_merge_candidate(pc());
   dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
   if (ldst_can_merge(rt, adr, size_in_bytes, is_store)) {
     merge_ldst(rt, adr, size_in_bytes, is_store);
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
     return true;
   } else {
     assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
     const uint64_t mask = size_in_bytes - 1;
     if (adr.getMode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
-      code()->set_last_insn(pc());
+      code()->set_last_merge_candidate(pc());
     }
     return false;
   }
@@ -2808,6 +2798,17 @@ void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in
   case  2:  strh(src, dst); break;
   case  1:  strb(src, dst); break;
   default:  ShouldNotReachHere();
+  }
+}
+
+void MacroAssembler::narrow_subword_type(Register reg, BasicType bt) {
+  assert(is_subword_type(bt), "required");
+  switch (bt) {
+  case T_BOOLEAN: andw(reg, reg, 1); break;
+  case T_BYTE:    sxtbw(reg, reg); break;
+  case T_CHAR:    uxthw(reg, reg); break;
+  case T_SHORT:   sxthw(reg, reg); break;
+  default:        ShouldNotReachHere();
   }
 }
 
@@ -2913,7 +2914,11 @@ void MacroAssembler::increment(Address dst, int value)
 
 // Push lots of registers in the bit set supplied.  Don't push sp.
 // Return the number of words pushed
-int MacroAssembler::push(unsigned int bitset, Register stack) {
+int MacroAssembler::push(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
 
   // Scan bitset to accumulate register pairs
@@ -2943,7 +2948,11 @@ int MacroAssembler::push(unsigned int bitset, Register stack) {
   return count;
 }
 
-int MacroAssembler::pop(unsigned int bitset, Register stack) {
+int MacroAssembler::pop(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
 
   // Scan bitset to accumulate register pairs
@@ -2975,7 +2984,11 @@ int MacroAssembler::pop(unsigned int bitset, Register stack) {
 
 // Push lots of registers in the bit set supplied.  Don't push sp.
 // Return the number of dwords pushed
-int MacroAssembler::push_fp(unsigned int bitset, Register stack, FpPushPopMode mode) {
+int MacroAssembler::push_fp(FloatRegSet regset, Register stack, FpPushPopMode mode) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
@@ -3088,7 +3101,11 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack, FpPushPopMode m
 }
 
 // Return the number of dwords popped
-int MacroAssembler::pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode) {
+int MacroAssembler::pop_fp(FloatRegSet regset, Register stack, FpPushPopMode mode) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
@@ -3198,7 +3215,11 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack, FpPushPopMode mo
 }
 
 // Return the number of dwords pushed
-int MacroAssembler::push_p(unsigned int bitset, Register stack) {
+int MacroAssembler::push_p(PRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   bool use_sve = false;
   int sve_predicate_size_in_slots = 0;
 
@@ -3235,7 +3256,11 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
 }
 
 // Return the number of dwords popped
-int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_p(PRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   bool use_sve = false;
   int sve_predicate_size_in_slots = 0;
 
@@ -3451,7 +3476,7 @@ void MacroAssembler::subw(Register Rd, Register Rn, RegisterOrConstant decrement
 void MacroAssembler::reinit_heapbase()
 {
   if (UseCompressedOops) {
-    if (Universe::is_fully_initialized()) {
+    if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
       mov(rheapbase, CompressedOops::base());
     } else {
       lea(rheapbase, ExternalAddress(CompressedOops::base_addr()));
@@ -3836,7 +3861,7 @@ bool MacroAssembler::ldst_can_merge(Register rt,
                                     size_t cur_size_in_bytes,
                                     bool is_store) const {
   address prev = pc() - NativeInstruction::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
 
   if (last == nullptr || !nativeInstruction_at(last)->is_Imm_LdSt()) {
     return false;
@@ -5125,7 +5150,8 @@ void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
   if (CompressedKlassPointers::base() == nullptr) {
     cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
     return;
-  } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
+  } else if (!AOTCodeCache::is_on_for_dump() &&
+             ((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
              && CompressedKlassPointers::shift() == 0) {
     // Only the bottom 32 bits matter
     cmpw(klass, tmp);
@@ -5368,7 +5394,7 @@ void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
     encode_klass_not_null_for_aot(dst, src);
     return;
   }
@@ -6695,13 +6721,14 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src,
 // by the call to JavaThread::aarch64_get_thread_helper() or, indeed,
 // the call setup code.
 //
-// On Linux, aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On Linux and Windows, aarch64_get_thread_helper() is implemented in
+// assembly and clobbers only r0, r1, and flags.
 // On other systems, the helper is a usual C function.
 //
 void MacroAssembler::get_thread(Register dst) {
   RegSet saved_regs =
-    LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
-    NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
+    BSD_ONLY(RegSet::range(r0, r17) + lr - dst)
+    NOT_BSD (RegSet::range(r0, r1)  + lr - dst);
 
   protect_return_address();
   push(saved_regs, sp);
@@ -7233,4 +7260,21 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   b(slow);
 
   bind(unlocked);
+}
+
+// Rotate using USHR and SLI instructions (or copy, if rotate count is zero)
+void MacroAssembler::neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
+                                        FloatRegister src, int shift_amount) {
+  assert(src != dst, "did not expect src and dst to be the same register");
+
+  int esize = BitsPerByte << (T / 2);
+  int lshift = shift_amount & (esize - 1);
+
+  if (lshift == 0) {
+    // T & 1 == 0 => 64-bit arrangements, else 128-bit arrangements
+    orr(dst, (T & 1) == 0 ? T8B : T16B, src, src);
+  } else {
+    ushr(dst, T, src, esize - lshift);
+    sli(dst, T, src, lshift);
+  }
 }

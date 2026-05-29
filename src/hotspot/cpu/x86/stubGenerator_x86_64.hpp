@@ -84,7 +84,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_count_leading_zeros_lut();
   address generate_popcount_avx_lut();
-  address generate_iota_indices();
+  void    generate_iota_indices();
   address generate_vector_reverse_bit_lut();
 
   address generate_vector_reverse_byte_perm_mask_long();
@@ -161,7 +161,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void restore_argument_regs(BasicType type);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Following rules apply to AVX3 optimized arraycopy stubs:
   // - If target supports AVX3 features (BW+VL+F) then implementation uses 32 byte vectors (YMMs)
   //   for both special cases (various small block sizes) and aligned copy loop. This is the
@@ -216,7 +216,7 @@ class StubGenerator: public StubCodeGenerator {
   void copy32_masked_avx(Register dst, Register src, XMMRegister xmm,
                          KRegister mask, Register length, Register index,
                          Register temp, int shift = Address::times_1, int offset = 0);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   address generate_disjoint_byte_copy(address* entry);
 
@@ -303,11 +303,11 @@ class StubGenerator: public StubCodeGenerator {
   address generate_sha512_implCompress(StubId stub_id);
 
   // Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
-  address generate_pshuffle_byte_flip_mask_sha512();
+  address generate_pshuffle_byte_flip_mask_sha512(address& entry_ymm_lo);
 
   address generate_upper_word_mask();
   address generate_shuffle_byte_flip_mask();
-  address generate_pshuffle_byte_flip_mask();
+  address generate_pshuffle_byte_flip_mask(address& entry_00ba, address& entry_dc0);
 
 
   // AES intrinsic stubs
@@ -650,8 +650,33 @@ class StubGenerator: public StubCodeGenerator {
   void generate_compiler_stubs();
   void generate_final_stubs();
 
+#if INCLUDE_CDS
+  static void init_AOTAddressTable_adler(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_aes(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_cbrt(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_chacha(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_constants(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_dilithium(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_exp(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_fmod(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_ghash(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_kyber(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_log(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_poly1305(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_poly_mont(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_pow(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_sha3(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_sin(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_sinh(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_tan(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_tanh(GrowableArray<address>& external_addresses);
+#endif // INCLUDE_CDS
+
 public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id);
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data);
+#if INCLUDE_CDS
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
+#endif // INCLUDE_CDS
 };
 
 #endif // CPU_X86_STUBGENERATOR_X86_64_HPP

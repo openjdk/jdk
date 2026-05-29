@@ -336,7 +336,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       // Check if object matches.
       movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, rax_reg, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
       cmpptr(rax_reg, obj);
       jcc(Assembler::notEqual, slow_path);
 
@@ -483,7 +483,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     movptr(reg_rax, mark);
-    andptr(reg_rax, ~(int32_t)markWord::lock_mask);
+    andptr(reg_rax, ~(int32_t)markWord::lock_mask_in_place);
     orptr(mark, markWord::unlocked_value);
     lock(); cmpxchgptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     jcc(Assembler::notEqual, push_and_slow_path);
@@ -1706,12 +1706,8 @@ void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, Inte
 }
 
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, int vlen_in_bytes, BasicType bt) {
-  // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 64.
-  int offset = exact_log2(type2aelembytes(bt)) << 6;
-  if (is_floating_point_type(bt)) {
-    offset += 128;
-  }
-  ExternalAddress addr(StubRoutines::x86::vector_iota_indices() + offset);
+  int entry_idx = vector_iota_entry_index(bt);
+  ExternalAddress addr(StubRoutines::x86::vector_iota_indices(entry_idx));
   load_vector(T_BYTE, dst, addr, vlen_in_bytes);
 }
 
@@ -5562,7 +5558,7 @@ void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Regi
       }
       break;
     case Op_VectorMaskFirstTrue:
-      if (VM_Version::supports_bmi1()) {
+      if (UseCountTrailingZerosInstruction) {
         if (masklen < 32) {
           orl(tmp, 1 << masklen);
           tzcntl(dst, tmp);
@@ -6354,7 +6350,7 @@ void C2_MacroAssembler::udivI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movl(rdx, rax);
   subl(rdx, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rdx, rax);
   } else {
     notl(rdx);
@@ -6378,7 +6374,7 @@ void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rax, rdx);
   } else {
     notl(rax);
@@ -6407,7 +6403,7 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnl(rax, rax, rdx);
   } else {
     notl(rax);
@@ -6519,7 +6515,7 @@ void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movq(rdx, rax);
   subq(rdx, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rdx, rax);
   } else {
     notq(rdx);
@@ -6543,7 +6539,7 @@ void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rax, rdx);
   } else {
     notq(rax);
@@ -6571,7 +6567,7 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx()) {
     andnq(rax, rax, rdx);
   } else {
     notq(rax);
@@ -7162,5 +7158,26 @@ void C2_MacroAssembler::vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMReg
     assert(opcode == Op_MinVHF, "");
     // dst = min(src1, src2)
     evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
+  }
+}
+
+int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
+  // The vector iota entries array is ordered by type B/S/I/L/F/D, and
+  // the offset between two types is 16.
+  switch(bt) {
+  case T_BYTE:
+    return 0;
+  case T_SHORT:
+    return 1;
+  case T_INT:
+    return 2;
+  case T_LONG:
+    return 3;
+  case T_FLOAT:
+    return 4;
+  case T_DOUBLE:
+    return 5;
+  default:
+    ShouldNotReachHere();
   }
 }

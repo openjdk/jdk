@@ -551,8 +551,7 @@ import java.util.function.Consumer;
  * upcall is typically executed in the context of a downcall method handle invocation.
  *
  * @implSpec
- * Implementations of this interface are immutable, thread-safe and
- * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ * Implementations of this interface are immutable, thread-safe.
  *
  * @since 22
  */
@@ -833,7 +832,7 @@ public sealed interface Linker permits AbstractLinker {
          * <p>
          * Captured state can be stored in, or retrieved from the capture state segment by
          * constructing var handles from the {@linkplain #captureStateLayout capture state layout}.
-         * Some functions require this state the be initialized to a particular value before
+         * Some functions require this state to be initialized to a particular value before
          * invoking the downcall.
          * <p>
          * The following example demonstrates the use of this linker option:

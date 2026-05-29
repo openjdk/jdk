@@ -215,7 +215,6 @@ public final class StackMapGenerator {
     private final List<RawExceptionCatch> rawHandlers;
     private final ClassHierarchyImpl classHierarchy;
     private final boolean patchDeadCode;
-    private final boolean filterDeadLabels;
     private Frame[] frames = EMPTY_FRAME_ARRAY;
     private int framesCount = 0;
     private final Frame currentFrame;
@@ -257,7 +256,6 @@ public final class StackMapGenerator {
         this.rawHandlers = new ArrayList<>(handlers.size());
         this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolver());
         this.patchDeadCode = context.patchDeadCode();
-        this.filterDeadLabels = context.dropDeadLabels();
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }
@@ -925,8 +923,7 @@ public final class StackMapGenerator {
         for (int i = 0; i < rawHandlers.size(); i++) try {
             addFrame(rawHandlers.get(i).handler());
         } catch (IllegalArgumentException iae) {
-            if (!filterDeadLabels)
-                throw generatorError("Detected exception handler out of bytecode range");
+            throw generatorError("Detected exception handler out of bytecode range");
         }
     }
 
