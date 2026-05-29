@@ -2124,6 +2124,26 @@ void MacroAssembler::vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len
   }
 }
 
+void MacroAssembler::vmovdqa(XMMRegister dst, Address src, int vector_len) {
+  if (vector_len == AVX_512bit) {
+    Assembler::evmovdqaq(dst, src, AVX_512bit);
+  } else if (vector_len == AVX_256bit) {
+    Assembler::vmovdqa(dst, src);
+  } else {
+    Assembler::movdqa(dst, src);
+  }
+}
+
+void MacroAssembler::vmovdqa(Address dst, XMMRegister src, int vector_len) {
+  if (vector_len == AVX_512bit) {
+    Assembler::evmovdqaq(dst, src, AVX_512bit);
+  } else if (vector_len == AVX_256bit) {
+    Assembler::vmovdqa(dst, src);
+  } else {
+    Assembler::movdqa(dst, src);
+  }
+}
+
 void MacroAssembler::kmov(KRegister dst, Address src) {
   if (VM_Version::supports_avx512bw()) {
     kmovql(dst, src);

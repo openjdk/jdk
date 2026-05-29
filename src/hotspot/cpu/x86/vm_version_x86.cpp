@@ -1323,7 +1323,8 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (UseSHA && supports_evex() && supports_avx512bw()) {
+  if (UseSHA && ((supports_evex() && supports_avx512vlbw()) ||
+      (EnableX86ECoreOpts && !supports_hybrid()))) {
     if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
     }
@@ -2840,6 +2841,10 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
   // clflush_size is size in quadwords (8 bytes).
   guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == ICache::line_size/8, "clflush size is not supported");
+
+  // sse and sse2 are guaranteed to be present
+  vm_features.set_feature(CPU_SSE);
+  vm_features.set_feature(CPU_SSE2);
 
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
     vm_features.set_feature(CPU_CX8);
