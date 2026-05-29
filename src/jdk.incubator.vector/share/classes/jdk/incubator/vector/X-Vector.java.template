@@ -6055,10 +6055,10 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
 
     /**
 #if[FP16]
-     * Finds a species for a carrier type of {@code $type$} and shape.
+     * Finds a species for an element type of {@code $elemtype$} and shape.
      *
      * @param s the shape
-     * @return a species for a carrier type of {@code $type$} and shape
+     * @return a species for an element type of {@code $elemtype$} and shape
 #else[FP16]
      * Finds a species for an element type of {@code $type$} and shape.
      *

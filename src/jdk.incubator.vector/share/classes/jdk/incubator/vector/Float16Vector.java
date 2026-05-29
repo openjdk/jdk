@@ -4017,10 +4017,10 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     }
 
     /**
-     * Finds a species for a carrier type of {@code short} and shape.
+     * Finds a species for an element type of {@code Float16} and shape.
      *
      * @param s the shape
-     * @return a species for a carrier type of {@code short} and shape
+     * @return a species for an element type of {@code Float16} and shape
      * @throws IllegalArgumentException if no such species exists for the shape
      */
     static Float16Species species(VectorShape s) {
