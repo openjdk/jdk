@@ -4979,8 +4979,9 @@ public class Check {
                                     // Note per JLS arrays are
                                     // serializable even if the
                                     // component type is not.
-                                    logWarning(TreeInfo.diagnosticPositionFor(enclosed, tree),
-                                            LintWarnings.NonSerializableInstanceField);
+                                    logWarning(
+                                            TreeInfo.diagnosticPositionFor(enclosed, tree),
+                                                LintWarnings.NonSerializableInstanceField);
                                 } else if (varType.hasTag(ARRAY)) {
                                     ArrayType arrayType = (ArrayType)varType;
                                     Type elementType = arrayType.elemtype;
@@ -4989,8 +4990,9 @@ public class Check {
                                         elementType = arrayType.elemtype;
                                     }
                                     if (!canBeSerialized(elementType)) {
-                                        logWarning(TreeInfo.diagnosticPositionFor(enclosed, tree),
-                                                LintWarnings.NonSerializableInstanceFieldArray(elementType));
+                                        logWarning(
+                                                TreeInfo.diagnosticPositionFor(enclosed, tree),
+                                                    LintWarnings.NonSerializableInstanceFieldArray(elementType));
                                     }
                                 }
                             }
@@ -5073,7 +5075,8 @@ public class Check {
                         }
                     }
                 }
-                logWarning(tree.pos(), LintWarnings.ExternalizableMissingPublicNoArgCtor);
+                logWarning(tree.pos(),
+                            LintWarnings.ExternalizableMissingPublicNoArgCtor);
             } else {
                 // Approximate access to the no-arg constructor up in
                 // the superclass chain by checking that the
@@ -5101,7 +5104,7 @@ public class Check {
                                     (supertype.getNestingKind() == NestingKind.MEMBER &&
                                      ((supertype.flags() & STATIC) == 0)))
                                     logWarning(tree.pos(),
-                                            LintWarnings.SerializableMissingAccessNoArgCtor(supertype.getQualifiedName()));
+                                                LintWarnings.SerializableMissingAccessNoArgCtor(supertype.getQualifiedName()));
                             }
                         }
                     }
@@ -5119,31 +5122,43 @@ public class Check {
             // fields.
              if ((svuid.flags() & (STATIC | FINAL)) !=
                  (STATIC | FINAL)) {
-                 logWarning(TreeInfo.diagnosticPositionFor(svuid, tree), LintWarnings.ImproperSVUID((Symbol)e));
+                 logWarning(
+                         TreeInfo.diagnosticPositionFor(svuid, tree),
+                             LintWarnings.ImproperSVUID((Symbol)e));
              }
 
              // check svuid has type long
              if (!svuid.type.hasTag(LONG)) {
-                 logWarning(TreeInfo.diagnosticPositionFor(svuid, tree), LintWarnings.LongSVUID((Symbol)e));
+                 logWarning(
+                         TreeInfo.diagnosticPositionFor(svuid, tree),
+                             LintWarnings.LongSVUID((Symbol)e));
              }
 
              if (svuid.getConstValue() == null)
-                 logWarning(TreeInfo.diagnosticPositionFor(svuid, tree), LintWarnings.ConstantSVUID((Symbol)e));
+                 logWarning(
+                         TreeInfo.diagnosticPositionFor(svuid, tree),
+                             LintWarnings.ConstantSVUID((Symbol)e));
         }
 
         private void checkSerialPersistentFields(JCClassDecl tree, Element e, VarSymbol spf) {
             // To be effective, serialPersisentFields must be private, static, and final.
              if ((spf.flags() & (PRIVATE | STATIC | FINAL)) !=
                  (PRIVATE | STATIC | FINAL)) {
-                 logWarning(TreeInfo.diagnosticPositionFor(spf, tree), LintWarnings.ImproperSPF);
+                 logWarning(
+                         TreeInfo.diagnosticPositionFor(spf, tree),
+                             LintWarnings.ImproperSPF);
              }
 
              if (!types.isSameType(spf.type, OSF_TYPE)) {
-                 logWarning(TreeInfo.diagnosticPositionFor(spf, tree), LintWarnings.OSFArraySPF);
+                 logWarning(
+                         TreeInfo.diagnosticPositionFor(spf, tree),
+                             LintWarnings.OSFArraySPF);
              }
 
             if (isExternalizable((Type)(e.asType()))) {
-                logWarning(TreeInfo.diagnosticPositionFor(spf, tree), LintWarnings.IneffectualSerialFieldExternalizable);
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(spf, tree),
+                            LintWarnings.IneffectualSerialFieldExternalizable);
             }
 
             // Warn if serialPersistentFields is initialized to a
@@ -5153,7 +5168,8 @@ public class Check {
                 JCVariableDecl variableDef = (JCVariableDecl) spfDecl;
                 JCExpression initExpr = variableDef.init;
                  if (initExpr != null && TreeInfo.isNull(initExpr)) {
-                     logWarning(initExpr.pos(), LintWarnings.SPFNullInit);
+                     logWarning(initExpr.pos(),
+                                 LintWarnings.SPFNullInit);
                  }
             }
         }
@@ -5231,19 +5247,24 @@ public class Check {
         private void checkExternMethodRecord(JCClassDecl tree, Element e, MethodSymbol method, Type argType,
                                              boolean isExtern) {
             if (isExtern && isExternMethod(tree, e, method, argType)) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                        LintWarnings.IneffectualExternalizableMethodRecord(method.getSimpleName().toString()));
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.IneffectualExternalizableMethodRecord(method.getSimpleName().toString()));
             }
         }
 
         void checkPrivateNonStaticMethod(JCClassDecl tree, MethodSymbol method) {
             var flags = method.flags();
             if ((flags & PRIVATE) == 0) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree), LintWarnings.SerialMethodNotPrivate(method.getSimpleName()));
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.SerialMethodNotPrivate(method.getSimpleName()));
             }
 
             if ((flags & STATIC) != 0) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree), LintWarnings.SerialMethodStatic(method.getSimpleName()));
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.SerialMethodStatic(method.getSimpleName()));
             }
         }
 
@@ -5266,14 +5287,18 @@ public class Check {
                     case FIELD -> {
                         var field = (VarSymbol)enclosed;
                         if (serialFieldNames.contains(name)) {
-                            logWarning(TreeInfo.diagnosticPositionFor(field, tree), LintWarnings.IneffectualSerialFieldEnum(name));
+                            logWarning(
+                                    TreeInfo.diagnosticPositionFor(field, tree),
+                                        LintWarnings.IneffectualSerialFieldEnum(name));
                         }
                     }
 
                     case METHOD -> {
                         var method = (MethodSymbol)enclosed;
                         if (serialMethodNames.contains(name)) {
-                            logWarning(TreeInfo.diagnosticPositionFor(method, tree), LintWarnings.IneffectualSerialMethodEnum(name));
+                            logWarning(
+                                    TreeInfo.diagnosticPositionFor(method, tree),
+                                        LintWarnings.IneffectualSerialMethodEnum(name));
                         }
 
                         if (isExtern) {
@@ -5311,8 +5336,9 @@ public class Check {
 
         private void checkExternMethodEnum(JCClassDecl tree, Element e, MethodSymbol method, Type argType) {
             if (isExternMethod(tree, e, method, argType)) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                        LintWarnings.IneffectualExternMethodEnum(method.getSimpleName().toString()));
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.IneffectualExternMethodEnum(method.getSimpleName().toString()));
             }
         }
 
@@ -5342,7 +5368,9 @@ public class Check {
                         name = field.getSimpleName().toString();
                         switch(name) {
                         case "serialPersistentFields" -> {
-                            logWarning(TreeInfo.diagnosticPositionFor(field, tree), LintWarnings.IneffectualSerialFieldInterface);
+                            logWarning(
+                                    TreeInfo.diagnosticPositionFor(field, tree),
+                                        LintWarnings.IneffectualSerialFieldInterface);
                         }
 
                         case "serialVersionUID" -> {
@@ -5380,7 +5408,9 @@ public class Check {
                                         Element e,
                                         MethodSymbol method) {
             if ((method.flags() & PRIVATE) == 0) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree), LintWarnings.NonPrivateMethodWeakerAccess);
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.NonPrivateMethodWeakerAccess);
             }
         }
 
@@ -5388,7 +5418,9 @@ public class Check {
                                              Element e,
                                              MethodSymbol method) {
             if ((method.flags() & DEFAULT) == DEFAULT) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree), LintWarnings.DefaultIneffective);
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.DefaultIneffective);
 
             }
         }
@@ -5433,7 +5465,9 @@ public class Check {
                         var field = (VarSymbol)enclosed;
                         switch(name) {
                         case "serialPersistentFields" -> {
-                            logWarning(TreeInfo.diagnosticPositionFor(field, tree), LintWarnings.IneffectualSerialFieldRecord);
+                            logWarning(
+                                    TreeInfo.diagnosticPositionFor(field, tree),
+                                        LintWarnings.IneffectualSerialFieldRecord);
                         }
 
                         case "serialVersionUID" -> {
@@ -5455,8 +5489,9 @@ public class Check {
 
                         default -> {
                             if (serialMethodNames.contains(name)) {
-                                logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                                        LintWarnings.IneffectualSerialMethodRecord(name));
+                                logWarning(
+                                        TreeInfo.diagnosticPositionFor(method, tree),
+                                            LintWarnings.IneffectualSerialMethodRecord(name));
                             }
                         }}
                     }}});
@@ -5468,8 +5503,9 @@ public class Check {
                                          Element enclosing,
                                          MethodSymbol method) {
             if ((method.flags() & (STATIC | ABSTRACT)) != 0) {
-                    logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                            LintWarnings.SerialConcreteInstanceMethod(method.getSimpleName()));
+                    logWarning(
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                                LintWarnings.SerialConcreteInstanceMethod(method.getSimpleName()));
             }
         }
 
@@ -5484,8 +5520,9 @@ public class Check {
             // checking.
             Type rtype = method.getReturnType();
             if (!types.isSameType(expectedReturnType, rtype)) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                        LintWarnings.SerialMethodUnexpectedReturnType(method.getSimpleName(),
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.SerialMethodUnexpectedReturnType(method.getSimpleName(),
                                                                       rtype, expectedReturnType));
             }
         }
@@ -5499,15 +5536,17 @@ public class Check {
             var parameters= method.getParameters();
 
             if (parameters.size() != 1) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                        LintWarnings.SerialMethodOneArg(method.getSimpleName(), parameters.size()));
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.SerialMethodOneArg(method.getSimpleName(), parameters.size()));
                 return;
             }
 
             Type parameterType = parameters.get(0).asType();
             if (!types.isSameType(parameterType, expectedType)) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                        LintWarnings.SerialMethodParameterType(method.getSimpleName(),
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.SerialMethodParameterType(method.getSimpleName(),
                                                                expectedType,
                                                                parameterType));
             }
@@ -5526,16 +5565,18 @@ public class Check {
         private void checkNoArgs(JCClassDecl tree, Element enclosing, MethodSymbol method) {
             var parameters = method.getParameters();
             if (!parameters.isEmpty()) {
-                logWarning(TreeInfo.diagnosticPositionFor(parameters.get(0), tree),
-                        LintWarnings.SerialMethodNoArgs(method.getSimpleName()));
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(parameters.get(0), tree),
+                            LintWarnings.SerialMethodNoArgs(method.getSimpleName()));
             }
         }
 
         private void checkExternalizable(JCClassDecl tree, Element enclosing, MethodSymbol method) {
             // If the enclosing class is externalizable, warn for the method
             if (isExternalizable((Type)enclosing.asType())) {
-                logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                        LintWarnings.IneffectualSerialMethodExternalizable(method.getSimpleName()));
+                logWarning(
+                        TreeInfo.diagnosticPositionFor(method, tree),
+                            LintWarnings.IneffectualSerialMethodExternalizable(method.getSimpleName()));
             }
             return;
         }
@@ -5562,8 +5603,10 @@ public class Check {
                         }
                     }
                     if (!declared) {
-                        logWarning(TreeInfo.diagnosticPositionFor(method, tree),
-                                LintWarnings.SerialMethodUnexpectedException(method.getSimpleName(), thrownType));
+                        logWarning(
+                                TreeInfo.diagnosticPositionFor(method, tree),
+                                    LintWarnings.SerialMethodUnexpectedException(method.getSimpleName(),
+                                                                             thrownType));
                     }
                 }
             }
