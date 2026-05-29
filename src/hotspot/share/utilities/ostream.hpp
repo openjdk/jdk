@@ -349,7 +349,12 @@ void ostream_init();
 void ostream_init_log();
 void ostream_exit();
 void ostream_abort();
-const char* make_log_name(const char* log_name, const char* force_directory);
+
+// Given a name, replace %p with current PID, %t with current timestamp in the form "YYYY-MM-DD_HH-MM-SS".
+// Returns result string in C-heap.
+// If force_directory is not nullptr, log_name is assumed to be a file name whose directory
+// stem is ignored; the resulting name will be <force_directory>/<resolved_log_name>.
+char* make_log_name(const char* log_name, const char* force_directory);
 
 // In the non-fixed buffer case an underlying buffer will be created and
 // managed in C heap. Not MT-safe.

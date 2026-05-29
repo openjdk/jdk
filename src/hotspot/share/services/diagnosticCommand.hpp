@@ -850,27 +850,28 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
+#if defined(LINUX) || defined(_WINDOWS) || defined(__APPLE__)
 
 class SystemMapDCmd : public DCmd {
 public:
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.map"; }
   static const char* description() {
-    return "Prints an annotated process memory map of the VM process (linux, Windows and MacOS only).";
+    return "Prints an annotated process memory map of the VM process.";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
 class SystemDumpMapDCmd : public DCmdWithParser {
+  static constexpr char default_filename[] = "vm_memory_map_pid%p_%t.txt";
   DCmdArgument<char*> _filename;
 public:
   static int num_arguments() { return 1; }
   SystemDumpMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.dump_map"; }
   static const char* description() {
-    return "Dumps an annotated process memory map to an output file (linux, Windows and MacOS only).";
+    return "Dumps an annotated process memory map to an output file.";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
   virtual void execute(DCmdSource source, TRAPS);

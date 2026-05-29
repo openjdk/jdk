@@ -142,7 +142,7 @@ void DCmd::register_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export));
 #endif // LINUX
-#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
+#if defined(LINUX) || defined(_WINDOWS) || defined(__APPLE__)
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export));
 #endif // LINUX or WINDOWS or MacOS
@@ -1178,7 +1178,7 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   CompilationMemoryStatistic::print_jcmd_report(output(), _verbose.value(), _legend.value(), minsize);
 }
 
-#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
+#if defined(LINUX) || defined(_WINDOWS) || defined(__APPLE__)
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
@@ -1186,20 +1186,16 @@ void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
   MemMapPrinter::print_all_mappings(output());
 }
 
-static constexpr char default_filename[] = "vm_memory_map_%p.txt";
-
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
-  _filename("-F", "file path", "FILE", false, default_filename) {
-  _dcmdparser.add_dcmd_option(&_filename);
+  _filename("filename", "file name of the dump", "FILE", false, default_filename) {
+  _dcmdparser.add_dcmd_argument(&_filename);
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  const char* name = _filename.value();
-  if (name == nullptr || name[0] == 0) {
-    output()->print_cr("filename is empty or not specified.  No file written");
-    return;
-  }
+  char* name = _filename.value();
+  assert(name != nullptr && strlen(name) > 0, "Sanity"); // since we specify a default file name
+  name = make_log_name(name, nullptr);
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
@@ -1208,12 +1204,12 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
     MemMapPrinter::print_all_mappings(&fs);
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
-    const char* absname = os::realpath(name, tmp, sizeof(tmp));
-    name = absname != nullptr ? absname : name;
-    output()->print_cr("Memory map dumped to \"%s\".", name);
+    char* absname = os::realpath(name, tmp, sizeof(tmp));
+    output()->print_cr("Memory map dumped to \"%s\".", absname != nullptr ? absname : name);
   } else {
     output()->print_cr("Failed to open \"%s\" for writing (%s).", name, os::strerror(errno));
   }
+  os::free(name);
 }
 
-#endif // LINUX
+#endif // LINUX || WINDOWS || MacOS

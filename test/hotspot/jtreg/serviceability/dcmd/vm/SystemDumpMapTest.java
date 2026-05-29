@@ -51,13 +51,14 @@ public class SystemDumpMapTest extends SystemMapTestBase {
 
     private void run_test(CommandExecutor executor, boolean useDefaultFileName) {
 
-        String filenameOption = useDefaultFileName ? "" : "-F=test-map.txt";
+        String filenameOption = useDefaultFileName ? "" : "test-map.txt";
 
         OutputAnalyzer output = executor.execute("System.dump_map " + filenameOption);
         output.reportDiagnosticSummary();
 
         String filename = useDefaultFileName ?
-            output.firstMatch("Memory map dumped to \"(\\S*vm_memory_map_\\d+\\.txt)\".*", 1) :
+            //                                          e.g.  "vm_memory_map_pid598766_2026-03-30_14-20-58.txt"
+            output.firstMatch("Memory map dumped to \"(\\S*vm_memory_map_pid\\d+_.*\\.txt)\".*", 1) :
             output.firstMatch("Memory map dumped to \"(\\S*test-map.txt)\".*", 1);
 
         if (filename == null) {
