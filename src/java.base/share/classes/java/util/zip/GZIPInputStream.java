@@ -45,9 +45,7 @@ import java.util.Objects;
  * This class is capable of reading a stream consisting of a series of members.
  * <p>
  * Reading from the stream may read and buffer bytes from the underlying stream.
- * This includes bytes that follow a member's trailer. If the additional bytes following a
- * trailer do not constitute a GZIP member header, the stream is considered to have reached
- * end-of-stream, and the read methods return {@code -1}. Whether or not any additional bytes
+ * This includes bytes that follow a member's trailer. Whether or not any additional bytes
  * have been read past a member's trailer, the read methods on this class yield decompressed
  * data from at most one member; data from multiple members is not combined in
  * a single read operation.
