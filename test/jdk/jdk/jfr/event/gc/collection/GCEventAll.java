@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,9 +166,11 @@ public class GCEventAll {
         List<GCHelper.GcBatch> gcBatches = null;
         GCHelper.CollectionSummary eventCounts = null;
 
-        // For some GC configurations, the JFR recording may have stopped before we received the last gc event.
+        // The first/last GC batch can be incomplete if recording starts before all
+        // event settings are applied or stops before all events are received.
         try {
-            gcBatches = GCHelper.GcBatch.createFromEvents(events);
+            List<RecordedEvent> completeEvents = GCHelper.removeFirstAndLastGC(events);
+            gcBatches = GCHelper.GcBatch.createFromEvents(completeEvents);
             eventCounts = GCHelper.CollectionSummary.createFromEvents(gcBatches);
 
             verifyUniqueIds(gcBatches);
@@ -244,9 +246,10 @@ public class GCEventAll {
         }
         // JFR events and GarbageCollectorMXBean events are not updated at the same time.
         // This means that number of collections may diff.
-        // We allow a diff of +- 1 collection count.
-        long minCount = Math.max(0, beanCounts - 1);
-        long maxCount = beanCounts + 1;
+        // We allow a diff of +- 2 collection counts, since the first and last
+        // GC batches are removed to avoid recording-boundary races.
+        long minCount = Math.max(0, beanCounts - 2);
+        long maxCount = beanCounts + 2;
         Asserts.assertGreaterThanOrEqual(eventCounts, minCount, "Too few event counts for collector " + collector);
         Asserts.assertLessThanOrEqual(eventCounts, maxCount, "Too many event counts for collector " + collector);
     }
