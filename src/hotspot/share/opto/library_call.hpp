@@ -298,6 +298,8 @@ class LibraryCallKit : public GraphKit {
   bool check_array_sort_arguments(Node* elementType, Node* obj, BasicType& bt);
   bool inline_array_sort();
   bool inline_array_partition();
+  bool inline_array_binary_search();
+  Node* inline_array_binary_search_predicate();
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind, AccessKind access_kind);
   bool inline_unsafe_fence(vmIntrinsics::ID id);

@@ -152,6 +152,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _array_fill_Type;
   static const TypeFunc* _array_sort_Type;
   static const TypeFunc* _array_partition_Type;
+  static const TypeFunc* _array_binary_search_Type;
   static const TypeFunc* _aescrypt_block_Type;
   static const TypeFunc* _cipherBlockChaining_aescrypt_Type;
   static const TypeFunc* _electronicCodeBook_aescrypt_Type;
@@ -483,6 +484,11 @@ private:
   static inline const TypeFunc* array_partition_Type() {
     assert(_array_partition_Type != nullptr, "should be initialized");
     return _array_partition_Type;
+  }
+
+  static inline const TypeFunc* array_binary_search_Type() {
+    assert(_array_binary_search_Type != nullptr, "should be initialized");
+    return _array_binary_search_Type;
   }
 
   // for aescrypt encrypt/decrypt operations, just three pointers returning void (length is constant)

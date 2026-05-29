@@ -199,6 +199,7 @@ const TypeFunc* OptoRuntime::_unsafe_setmemory_Type               = nullptr;
 const TypeFunc* OptoRuntime::_array_fill_Type                     = nullptr;
 const TypeFunc* OptoRuntime::_array_sort_Type                     = nullptr;
 const TypeFunc* OptoRuntime::_array_partition_Type                = nullptr;
+const TypeFunc* OptoRuntime::_array_binary_search_Type            = nullptr;
 const TypeFunc* OptoRuntime::_aescrypt_block_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_cipherBlockChaining_aescrypt_Type   = nullptr;
 const TypeFunc* OptoRuntime::_electronicCodeBook_aescrypt_Type    = nullptr;
@@ -993,6 +994,29 @@ static const TypeFunc* make_array_sort_Type() {
   fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_array_binary_search_Type() {
+  // create input type (domain)
+  // Signature: (address arr, int elemType, int fromIndex, int toIndex, long key) -> int
+  int num_args = 6; // long counts as 2 slots
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // array base address
+  fields[argp++] = TypeInt::INT;        // element type (BasicType)
+  fields[argp++] = TypeInt::INT;        // fromIndex
+  fields[argp++] = TypeInt::INT;        // toIndex
+  fields[argp++] = TypeLong::LONG;      // key (all types widened to long)
+  fields[argp++] = Type::HALF;          // second half of long
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type: int
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
   return TypeFunc::make(domain, range);
 }
 
@@ -2316,6 +2340,7 @@ void OptoRuntime::initialize_types() {
   _array_fill_Type                    = make_array_fill_Type();
   _array_sort_Type                    = make_array_sort_Type();
   _array_partition_Type               = make_array_partition_Type();
+  _array_binary_search_Type           = make_array_binary_search_Type();
   _aescrypt_block_Type                = make_aescrypt_block_Type();
   _cipherBlockChaining_aescrypt_Type  = make_cipherBlockChaining_aescrypt_Type();
   _electronicCodeBook_aescrypt_Type   = make_electronicCodeBook_aescrypt_Type();

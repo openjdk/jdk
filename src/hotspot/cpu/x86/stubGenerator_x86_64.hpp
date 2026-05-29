@@ -547,6 +547,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_vectorizedMismatch();
 
+  address generate_arrayBinarySearch();
+
   address generate_squareToLen();
 
   address generate_method_entry_barrier();

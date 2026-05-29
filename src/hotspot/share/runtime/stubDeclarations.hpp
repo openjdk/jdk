@@ -718,6 +718,9 @@
   do_stub(compiler, array_partition)                                    \
   do_entry(compiler, array_partition, array_partition,                  \
            select_array_partition_function)                             \
+  do_stub(compiler, array_binary_search)                                \
+  do_entry(compiler, array_binary_search, array_binary_search,          \
+           select_array_binary_search_function)                         \
   do_stub(compiler, aescrypt_encryptBlock)                              \
   do_entry(compiler, aescrypt_encryptBlock, aescrypt_encryptBlock,      \
            aescrypt_encryptBlock)                                       \

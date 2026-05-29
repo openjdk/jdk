@@ -359,6 +359,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \
+  product(bool, UseAVX2BinarySearchIntrinsic, true, DIAGNOSTIC,             \
+          "Enables AVX2 SIMD intrinsification of Arrays.binarySearch()")    \
+                                                                            \
   product(bool, UseVectorizedHashCodeIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedHashCode()") \
                                                                             \

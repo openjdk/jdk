@@ -291,6 +291,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_arraySort:                return inline_array_sort();
   case vmIntrinsics::_arrayPartition:           return inline_array_partition();
 
+  case vmIntrinsics::_binarySearchInt:
+  case vmIntrinsics::_binarySearchLong:
+  case vmIntrinsics::_binarySearchShort:
+  case vmIntrinsics::_binarySearchChar:          return inline_array_binary_search();
+
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
   case vmIntrinsics::_compareToLU:              return inline_string_compareTo(StrIntrinsicNode::LU);
@@ -821,6 +826,12 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     return inline_digestBase_implCompressMB_predicate(predicate);
   case vmIntrinsics::_galoisCounterMode_AESCrypt:
     return inline_galoisCounterMode_AESCrypt_predicate();
+
+  case vmIntrinsics::_binarySearchInt:
+  case vmIntrinsics::_binarySearchLong:
+  case vmIntrinsics::_binarySearchShort:
+  case vmIntrinsics::_binarySearchChar:
+    return inline_array_binary_search_predicate();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -5872,6 +5883,105 @@ bool LibraryCallKit::inline_array_sort() {
                     obj_adr, elemType, fromIndex, toIndex);
 
   return true;
+}
+
+
+// Per-type minimum element count for the stub to outperform C2-compiled Java.
+static const int BSEARCH_INT_STUB_MIN   = 256;
+static const int BSEARCH_LONG_STUB_MIN  = 768;
+static const int BSEARCH_SHORT_STUB_MIN = 512;
+static const int BSEARCH_CHAR_STUB_MIN  = 512;
+
+//------------------------------inline_array_binary_search-----------------------
+bool LibraryCallKit::inline_array_binary_search() {
+  address stubAddr = StubRoutines::select_array_binary_search_function();
+  if (stubAddr == nullptr) {
+    return false;
+  }
+
+  BasicType bt;
+  int min_length;
+  switch (intrinsic_id()) {
+    case vmIntrinsics::_binarySearchInt:
+      bt = T_INT;
+      min_length = BSEARCH_INT_STUB_MIN;
+      break;
+    case vmIntrinsics::_binarySearchLong:
+      bt = T_LONG;
+      min_length = BSEARCH_LONG_STUB_MIN;
+      break;
+    case vmIntrinsics::_binarySearchShort:
+      bt = T_SHORT;
+      min_length = BSEARCH_SHORT_STUB_MIN;
+      break;
+    case vmIntrinsics::_binarySearchChar:
+      bt = T_CHAR;
+      min_length = BSEARCH_CHAR_STUB_MIN;
+      break;
+    default:
+      ShouldNotReachHere();
+      return false;
+  }
+
+  // Arguments: binarySearch0(array, fromIndex, toIndex, key)
+  Node* array     = argument(0);
+  Node* fromIndex = argument(1);
+  Node* toIndex   = argument(2);
+  Node* key       = argument(3);
+
+  null_check(array);
+  if (stopped()) {
+    return true;
+  }
+
+  // Compile-time guard: if C2 can prove the search range is below the stub's
+  // breakeven point, don't intrinsify - let C2 compile plain inlined Java.
+  Node* length = _gvn.transform(new SubINode(toIndex, fromIndex));
+  const TypeInt* length_type = _gvn.type(length)->isa_int();
+  if (length_type != nullptr && length_type->_hi < min_length) {
+    return false;
+  }
+
+  Node* arr_start = basic_plus_adr(array, arrayOopDesc::base_offset_in_bytes(bt));
+  Node* key_long = bt == T_LONG ? key : ConvI2L(key);
+  Node* elemType = intcon(bt);
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_binary_search_Type(),
+                                 stubAddr, "array_binary_search", TypePtr::BOTTOM,
+                                 arr_start, elemType, fromIndex, toIndex, key_long, top());
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}
+
+//------------------------------inline_array_binary_search_predicate-----------
+// Size guard: if the search range is below the stub's breakeven point, take the slow path.
+Node* LibraryCallKit::inline_array_binary_search_predicate() {
+  int min_length;
+  switch (intrinsic_id()) {
+    case vmIntrinsics::_binarySearchInt:
+      min_length = BSEARCH_INT_STUB_MIN;
+      break;
+    case vmIntrinsics::_binarySearchLong:
+      min_length = BSEARCH_LONG_STUB_MIN;
+      break;
+    case vmIntrinsics::_binarySearchShort:
+      min_length = BSEARCH_SHORT_STUB_MIN;
+      break;
+    case vmIntrinsics::_binarySearchChar:
+      min_length = BSEARCH_CHAR_STUB_MIN;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  Node* fromIndex = argument(1);
+  Node* toIndex   = argument(2);
+  Node* length = _gvn.transform(new SubINode(toIndex, fromIndex));
+  Node* cmp = _gvn.transform(new CmpINode(length, intcon(min_length)));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+  // Use PROB_FAIR so C2 optimizes both paths equally (the slow path's
+  // inlined Java loop must not be treated as cold).
+  return generate_fair_guard(bol, nullptr);
 }
 
 
