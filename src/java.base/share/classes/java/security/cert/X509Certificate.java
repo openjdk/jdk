@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import sun.security.x509.X509CertImpl;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.*;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -123,11 +124,11 @@ public abstract non-sealed class X509Certificate extends Certificate
     }
 
     /**
-     * Checks that the certificate is currently valid. It is if
+     * Checks that the certificate is currently valid. It is valid if
      * the current date and time are within the validity period given in the
      * certificate.
      * <p>
-     * The validity period consists of two date/time values:
+     * The validity period consists of two dates, defined as two time values:
      * the first and last dates (and times) on which the certificate
      * is valid. It is defined in
      * ASN.1 as:
@@ -135,12 +136,12 @@ public abstract non-sealed class X509Certificate extends Certificate
      * validity             Validity
      *
      * Validity ::= SEQUENCE {
-     *     notBefore      CertificateValidityDate,
-     *     notAfter       CertificateValidityDate }
+     *      notBefore      Time,
+     *      notAfter       Time }
      *
-     * CertificateValidityDate ::= CHOICE {
-     *     utcTime        UTCTime,
-     *     generalTime    GeneralizedTime }
+     * Time ::= CHOICE {
+     *      utcTime        UTCTime,
+     *      generalTime    GeneralizedTime }
      * </pre>
      *
      * @throws    CertificateExpiredException if the certificate has expired.
@@ -167,6 +168,37 @@ public abstract non-sealed class X509Certificate extends Certificate
      */
     public abstract void checkValidity(Date date)
         throws CertificateExpiredException, CertificateNotYetValidException;
+
+    /**
+     * Checks that the given instant is within the certificate's
+     * validity period. In other words, this determines whether the
+     * certificate would be valid at the given instant.
+     *
+     * @apiNote Subclasses should override this method to directly process an
+     * instant.
+     *
+     * @implSpec
+     * The default implementation converts the specified {@code Instant} to
+     * a {@code Date} and calls {@code checkValidity(Date)} with it.
+     *
+     * @param instant the {@code Instant} to check against to see if this
+     *                certificate is valid at that instant.
+     *
+     * @throws    CertificateExpiredException if the certificate has expired
+     * with respect to {@code Instant} supplied.
+     * @throws    CertificateNotYetValidException if the certificate is not
+     * yet valid with respect to {@code Instant} supplied.
+     * @throws    NullPointerException if the supplied instant is null.
+     *
+     * @see #checkValidity()
+     * @since 27
+     */
+    public void checkValidity(Instant instant)
+        throws CertificateExpiredException, CertificateNotYetValidException {
+
+        final Date date = Date.from(instant);
+        checkValidity(date);
+    }
 
     /**
      * Gets the {@code version} (version number) value from the
@@ -302,33 +334,71 @@ public abstract non-sealed class X509Certificate extends Certificate
     /**
      * Gets the {@code notBefore} date from the validity period of
      * the certificate.
-     * The relevant ASN.1 definitions are:
-     * <pre>
-     * validity             Validity
-     *
-     * Validity ::= SEQUENCE {
-     *     notBefore      CertificateValidityDate,
-     *     notAfter       CertificateValidityDate }
-     *
-     * CertificateValidityDate ::= CHOICE {
-     *     utcTime        UTCTime,
-     *     generalTime    GeneralizedTime }
-     * </pre>
      *
      * @return the start date of the validity period.
-     * @see #checkValidity
+     * @see #checkValidity()
      */
     public abstract Date getNotBefore();
 
     /**
+     * Gets the {@code notBefore} date as an {@code Instant} from the validity
+     * period of the certificate.
+     *
+     * @apiNote Subclasses should override this method to directly return an
+     * instant.
+     *
+     * @implSpec
+     * The default implementation calls {@code getNotBefore()}
+     * and returns the output as an {@code Instant} value.
+     * If {@code getNotBefore()} returns {@code null}, this method throws a
+     * {@code NullPointerException}
+     *
+     * @return the start date of the validity period (never {@code null}).
+     * @see #checkValidity()
+     * @since 27
+     */
+    public Instant getNotBeforeInstant() {
+        final Date date = getNotBefore();
+        if (date == null) {
+            throw new NullPointerException("notBefore is null");
+        }
+        return date.toInstant();
+    }
+
+    /**
      * Gets the {@code notAfter} date from the validity period of
-     * the certificate. See {@link #getNotBefore() getNotBefore}
+     * the certificate
      * for relevant ASN.1 definitions.
      *
      * @return the end date of the validity period.
-     * @see #checkValidity
+     * @see #checkValidity()
      */
     public abstract Date getNotAfter();
+
+    /**
+     * Gets the {@code notAfter} date as an {@code Instant} from the validity
+     * period of the certificate.
+     *
+     * @apiNote Subclasses should override this method to directly return an
+     * instant.
+     *
+     * @implSpec
+     * The default implementation calls {@code getNotAfter()}
+     * and returns the output as an {@code Instant} value.
+     * If {@code getNotAfter()} returns {@code null}, this method throws a
+     * {@code NullPointerException}
+     *
+     * @return the end date of the validity period (never {@code null}).
+     * @see #checkValidity()
+     * @since 27
+     */
+    public Instant getNotAfterInstant() {
+        final Date date = getNotAfter();
+        if (date == null) {
+            throw new NullPointerException("notAfter is null");
+        }
+        return date.toInstant();
+    }
 
     /**
      * Gets the DER-encoded certificate information, the

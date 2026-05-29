@@ -40,7 +40,7 @@ import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
-import java.util.Date;
+import java.time.Instant;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -241,11 +241,10 @@ class SimpleSigner {
     private X509Certificate getSelfCert() throws Exception {
         long validity = 1000;
         X509CertImpl certLocal;
-        Date firstDate, lastDate;
+        Instant firstDate, lastDate;
 
-        firstDate = new Date();
-        lastDate = new Date();
-        lastDate.setTime(lastDate.getTime() + validity + 1000);
+        firstDate = Instant.now();
+        lastDate = firstDate.plusMillis(validity).plusMillis(1000);
 
         CertificateValidity interval = new CertificateValidity(firstDate,
                 lastDate);
@@ -254,7 +253,7 @@ class SimpleSigner {
         // Add all mandatory attributes
         info.setVersion(new CertificateVersion(CertificateVersion.V1));
         info.setSerialNumber(new CertificateSerialNumber(
-                        (int) (firstDate.getTime() / 1000)));
+                        (int) (firstDate.toEpochMilli() / 1000)));
         info.setAlgorithmId(new CertificateAlgorithmId(algId));
         info.setSubject(agent);
         info.setKey(new CertificateX509Key(publicKey));

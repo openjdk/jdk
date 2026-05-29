@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 
@@ -64,8 +65,8 @@ public class PrivateKeyUsageExtension extends Extension {
     private static final byte TAG_BEFORE = 0;
     private static final byte TAG_AFTER = 1;
 
-    private Date        notBefore = null;
-    private Date        notAfter = null;
+    private Instant notBefore;
+    private Instant notAfter;
 
     // Encode this extension value.
     private void encodeThis() {
@@ -96,12 +97,12 @@ public class PrivateKeyUsageExtension extends Extension {
      * The default constructor for PrivateKeyUsageExtension. At least one
      * of the arguments must be non null.
      *
-     * @param notBefore the date/time before which the private key
-     *         should not be used
-     * @param notAfter the date/time after which the private key
-     *         should not be used.
+     * @param notBefore the date/time as {@code Instant} before which the
+     *                  private key should not be used
+     * @param notAfter the date/time as {@code Instant} after which the private
+     *                 key should not be used.
      */
-    public PrivateKeyUsageExtension(Date notBefore, Date notAfter) {
+    public PrivateKeyUsageExtension(Instant notBefore, Instant notAfter) {
         if (notBefore == null && notAfter == null) {
             throw new IllegalArgumentException(
                     "notBefore and notAfter cannot both be null");
@@ -146,7 +147,7 @@ public class PrivateKeyUsageExtension extends Extension {
                 }
                 opt.resetTag(DerValue.tag_GeneralizedTime);
                 str = new DerInputStream(opt.toByteArray());
-                notBefore = str.getGeneralizedTime();
+                notBefore = str.getGeneralizedInstant();
 
             } else if (opt.isContextSpecific(TAG_AFTER) &&
                        !opt.isConstructed()) {
@@ -156,7 +157,7 @@ public class PrivateKeyUsageExtension extends Extension {
                 }
                 opt.resetTag(DerValue.tag_GeneralizedTime);
                 str = new DerInputStream(opt.toByteArray());
-                notAfter = str.getGeneralizedTime();
+                notAfter = str.getGeneralizedInstant();
             } else
                 throw new IOException("Invalid encoding of " +
                                       "PrivateKeyUsageExtension");
@@ -194,8 +195,34 @@ public class PrivateKeyUsageExtension extends Extension {
      */
     public void valid()
     throws CertificateNotYetValidException, CertificateExpiredException {
-        Date now = new Date();
-        valid(now);
+        valid(Instant.now());
+    }
+
+    /**
+     * Verify that the passed time is within the validity period.
+     *
+     * @exception CertificateExpiredException if the certificate has expired
+     * with respect to the {@code Instant} supplied.
+     * @exception CertificateNotYetValidException if the certificate is not
+     * yet valid with respect to the {@code Instant} supplied.
+     *
+     */
+    public void valid(Instant now)
+    throws CertificateNotYetValidException, CertificateExpiredException {
+        Objects.requireNonNull(now);
+        /*
+         * we use the internal Dates rather than the passed in Date
+         * because someone could override the Date methods after()
+         * and before() to do something entirely different.
+         */
+        if (notBefore != null && notBefore.isAfter(now)) {
+            throw new CertificateNotYetValidException("NotBefore: " +
+                                                      notBefore.toString());
+        }
+        if (notAfter != null && notAfter.isBefore(now)) {
+            throw new CertificateExpiredException("NotAfter: " +
+                                                  notAfter.toString());
+        }
     }
 
     /**
@@ -209,20 +236,7 @@ public class PrivateKeyUsageExtension extends Extension {
      */
     public void valid(Date now)
     throws CertificateNotYetValidException, CertificateExpiredException {
-        Objects.requireNonNull(now);
-        /*
-         * we use the internal Dates rather than the passed in Date
-         * because someone could override the Date methods after()
-         * and before() to do something entirely different.
-         */
-        if (notBefore != null && notBefore.after(now)) {
-            throw new CertificateNotYetValidException("NotBefore: " +
-                                                      notBefore.toString());
-        }
-        if (notAfter != null && notAfter.before(now)) {
-            throw new CertificateExpiredException("NotAfter: " +
-                                                  notAfter.toString());
-        }
+        valid(now.toInstant());
     }
 
     /**
@@ -241,11 +255,11 @@ public class PrivateKeyUsageExtension extends Extension {
     }
 
     public Date getNotBefore() {
-        return new Date(notBefore.getTime());
+        return Date.from(notBefore);
     }
 
     public Date getNotAfter() {
-        return new Date(notAfter.getTime());
+        return Date.from(notAfter);
     }
 
     /**

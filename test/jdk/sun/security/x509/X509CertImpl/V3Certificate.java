@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
@@ -113,18 +114,18 @@ public class V3Certificate {
         signature.initSign(privateKey);
 
         // Validity interval
-        Date firstDate = new Date();
+        Instant firstDate = Instant.now();
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"));
         cal.set(2014, 03, 10, 12, 30, 30);
         Date lastDate = cal.getTime();
         CertificateValidity interval = new CertificateValidity(firstDate,
-                lastDate);
+                lastDate.toInstant());
 
         // Certificate Info
         X509CertInfo cert = new X509CertInfo();
 
         cert.setVersion(new CertificateVersion(CertificateVersion.V3));
-        cert.setSerialNumber(new CertificateSerialNumber((int) (firstDate.getTime() / 1000)));
+        cert.setSerialNumber(new CertificateSerialNumber((int) (firstDate.toEpochMilli() / 1000)));
         cert.setAlgorithmId(new CertificateAlgorithmId(AlgorithmId.get(sigAlg)));
         cert.setSubject(subject);
         cert.setKey(new CertificateX509Key(publicKey));
@@ -172,7 +173,7 @@ public class V3Certificate {
         cal.set(2000, 11, 15, 12, 30, 30);
         lastDate = cal.getTime();
         PrivateKeyUsageExtension pkusage
-                = new PrivateKeyUsageExtension(firstDate, lastDate);
+                = new PrivateKeyUsageExtension(firstDate, lastDate.toInstant());
 
         KeyUsageExtension usage = new KeyUsageExtension();
         usage.set(KeyUsageExtension.CRL_SIGN, true);
