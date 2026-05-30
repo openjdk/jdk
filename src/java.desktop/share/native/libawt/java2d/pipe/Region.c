@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ Region_StartIteration(JNIEnv *env, RegionData *pRgnInfo)
     pRgnInfo->numrects = 0;
 }
 
+#ifndef HEADLESS
 JNIEXPORT jint JNICALL
 Region_CountIterationRects(RegionData *pRgnInfo)
 {
@@ -144,6 +145,7 @@ Region_CountIterationRects(RegionData *pRgnInfo)
     }
     return totalrects;
 }
+#endif
 
 JNIEXPORT jint JNICALL
 Region_NextIteration(RegionData *pRgnInfo, SurfaceDataBounds *pSpan)
@@ -222,6 +224,8 @@ Region_EndIteration(JNIEnv *env, RegionData *pRgnInfo)
     }
 }
 
+
+#ifndef HEADLESS
 /*
  * The code was extracted from
  * src/solaris/native/sun/java2d/x11/X11SurfaceData.c
@@ -282,3 +286,4 @@ RegionToYXBandedRectangles(JNIEnv *env,
 
     return numrects;
 }
+#endif
