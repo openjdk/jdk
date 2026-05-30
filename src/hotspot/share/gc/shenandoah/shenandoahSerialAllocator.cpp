@@ -22,7 +22,6 @@
  *
  */
 
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -273,7 +272,7 @@ HeapWord* ShenandoahSerialAllocator::try_allocate_from_mutator(ShenandoahAllocRe
 
 // Allocate within region r for the given request. This handles:
 // 1. Region recycling and affiliation setup for new (empty) regions
-// 2. LAB sizing (TLAB/GCLAB shrink-to-fit, PLAB card-alignment)
+// 2. LAB sizing (TLAB/GCLAB/PLAB shrink-to-fit)
 // 3. Partition accounting (used, empty counts, retirement)
 HeapWord* ShenandoahSerialAllocator::try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region) {
   assert(_free_set->has_alloc_capacity(r), "Performance: should avoid full regions on this path: %zu", r->index());
@@ -309,41 +308,20 @@ HeapWord* ShenandoahSerialAllocator::try_allocate_in(ShenandoahHeapRegion* r, Sh
     }
   }
 
-  // Perform the actual allocation: LABs may be shrunk to fit, PLABs must be card-aligned.
+  // Perform the actual allocation: LABs (TLAB/GCLAB/PLAB) may be shrunk to fit.
   if (req.is_lab_alloc()) {
     size_t adjusted_size = req.size();
-    size_t free = r->free();
-    if (req.is_old()) {
-      assert(heap->mode()->is_generational(), "PLABs are only for generational mode");
-      assert(_free_set->_partitions.in_free_set(ShenandoahFreeSetPartitionId::OldCollector, r->index()),
-             "PLABS must be allocated in old_collector_free regions");
-
-      size_t usable_free = _free_set->get_usable_free_words(free);
-      if (adjusted_size > usable_free) {
-        adjusted_size = usable_free;
-      }
-      adjusted_size = align_down(adjusted_size, CardTable::card_size_in_words());
-      if (adjusted_size >= req.min_size()) {
-        result = _free_set->allocate_aligned_plab(adjusted_size, req, r);
-        assert(result != nullptr, "allocate must succeed");
-        req.set_actual_size(adjusted_size);
-      } else {
-        log_trace(gc, free)("Failed to shrink PLAB request (%zu) in region %zu to %zu"
-                            " because min_size() is %zu", req.size(), r->index(), adjusted_size, req.min_size());
-      }
+    size_t free = align_down(r->free() >> LogHeapWordSize, MinObjAlignment);
+    if (adjusted_size > free) {
+      adjusted_size = free;
+    }
+    if (adjusted_size >= req.min_size()) {
+      result = r->allocate(adjusted_size, req);
+      assert(result != nullptr, "Allocation must succeed: free %zu, actual %zu", free, adjusted_size);
+      req.set_actual_size(adjusted_size);
     } else {
-      free = align_down(free >> LogHeapWordSize, MinObjAlignment);
-      if (adjusted_size > free) {
-        adjusted_size = free;
-      }
-      if (adjusted_size >= req.min_size()) {
-        result = r->allocate(adjusted_size, req);
-        assert(result != nullptr, "Allocation must succeed: free %zu, actual %zu", free, adjusted_size);
-        req.set_actual_size(adjusted_size);
-      } else {
-        log_trace(gc, free)("Failed to shrink TLAB or GCLAB request (%zu) in region %zu to %zu"
-                            " because min_size() is %zu", req.size(), r->index(), adjusted_size, req.min_size());
-      }
+      log_trace(gc, free)("Failed to shrink LAB request (%zu) in region %zu to %zu"
+                          " because min_size() is %zu", req.size(), r->index(), adjusted_size, req.min_size());
     }
   } else {
     size_t size = req.size();
