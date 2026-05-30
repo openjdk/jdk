@@ -79,6 +79,8 @@ void ShenandoahControlThread::run_service() {
     if (alloc_failure_pending) {
       // Allocation failure takes precedence: we have to deal with it first thing
       heuristics->log_trigger("Handle Allocation Failure");
+      heuristics->accept_trigger();
+      heuristics->cancel_trigger_request();
 
       cause = GCCause::_allocation_failure;
 
@@ -99,6 +101,9 @@ void ShenandoahControlThread::run_service() {
       cause = requested_gc_cause;
       heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
+
+      heuristics->accept_trigger();
+      heuristics->cancel_trigger_request();
 
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
         mode = stw_full;
@@ -295,7 +300,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (gc.collect(cause)) {
     // Cycle is complete.  There were no failed allocation requests and no degeneration, so count this as good progress.
     heap->notify_gc_progress();
-    heap->global_generation()->heuristics()->record_success_concurrent();
+    heap->global_generation()->heuristics()->record_success_concurrent(gc.abbreviated());
     heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
     heap->log_heap_status("At end of GC");
   } else {

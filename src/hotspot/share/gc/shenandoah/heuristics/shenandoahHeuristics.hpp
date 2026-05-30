@@ -27,6 +27,7 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals_extension.hpp"
@@ -81,6 +82,9 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
 private:
   double _most_recent_trigger_evaluation_time;
   double _most_recent_planned_sleep_interval;
+
+  // When we decide to do an abbreviated cycle, withdraw reserves so memory can be made available to mutators.
+  void adjust_reserves_for_abbreviated(ShenandoahHeap* heap);
 
 protected:
   static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
@@ -194,12 +198,6 @@ protected:
 
   virtual void adjust_penalty(intx step);
 
-  inline void accept_trigger() {
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
-    _start_gc_is_pending = true;
-  }
-
   inline void decline_trigger() {
     _declined_trigger_count++;
   }
@@ -215,6 +213,12 @@ protected:
 public:
   ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
+
+  inline void accept_trigger() {
+    _most_recent_declined_trigger_count = _declined_trigger_count;
+    _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+  }
 
   void record_metaspace_oom()     { _metaspace_oom.set(); }
   void clear_metaspace_oom()      { _metaspace_oom.unset(); }
@@ -252,9 +256,9 @@ public:
 
   virtual bool should_degenerate_cycle();
 
-  virtual void record_success_concurrent();
+  virtual void record_success_concurrent(bool abbreviated);
 
-  virtual void record_degenerated();
+  virtual void record_degenerated(bool abbreviated);
 
   virtual void record_success_full();
 

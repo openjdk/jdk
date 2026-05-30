@@ -2488,6 +2488,7 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
   assert(rebuild_lock() != nullptr, "sanity");
   rebuild_lock()->lock(false);
   // This resets all state information, removing all regions from all sets.
+
   clear();
   log_debug(gc, free)("Rebuilding FreeSet");
 

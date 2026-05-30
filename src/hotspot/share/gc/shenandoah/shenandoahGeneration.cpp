@@ -309,7 +309,12 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     }
   }
 
-  {
+  if (collection_set->is_empty()) {
+    // This is an abbreviated cycle, rebuild for idle span here.  This calculates reserves for next GC cycle.
+    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
+                            ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
+    heap->rebuild_free_set(true /*concurrent*/);
+  } else {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
@@ -432,6 +437,6 @@ size_t ShenandoahGeneration::available(size_t capacity) const {
 }
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
-  heuristics()->record_success_concurrent();
+  heuristics()->record_success_concurrent(abbreviated);
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), abbreviated);
 }

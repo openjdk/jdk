@@ -201,9 +201,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
   // the space. This would be the last action if there is nothing to evacuate.  Note that
   // we will not age young-gen objects in the case that we skip evacuation.
+
   entry_cleanup_early();
 
+#ifdef KELVIN_DEPRECATE
+  // Let's not log status here.  We just rebuilt freeset
   heap->free_set()->log_status_under_lock();
+#endif
 
   // Processing strong roots
   // This may be skipped if there is nothing to update/evacuate.
@@ -560,10 +564,8 @@ void ShenandoahConcurrentGC::entry_cleanup_early() {
   heap->try_inject_alloc_failure();
   op_cleanup_early();
   if (!heap->is_evacuation_in_progress()) {
-    // This is an abbreviated cycle.  Rebuild the freeset in order to establish reserves for the next GC cycle.  Doing
-    // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that we will degenerate
-    // during promote-in-place processing.
-    heap->rebuild_free_set(true /*concurrent*/);
+    // This is the end of an abbreviated cycle.  Start the idle span.
+    _generation->heuristics()->start_idle_span();
   }
 }
 

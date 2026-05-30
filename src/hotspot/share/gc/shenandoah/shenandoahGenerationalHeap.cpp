@@ -505,7 +505,6 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   // opportunity below to shift some of this memory into the proposed_reserve_for_mixed.
   size_t proposed_reserve_for_promo = old_fragmented_available;
   const size_t max_old_reserve = proposed_max_old;
-
   const size_t mixed_candidate_live_memory = old_generation()->unprocessed_collection_candidates_live_memory();
   const bool doing_mixed = (mixed_candidate_live_memory > 0);
   if (doing_mixed) {
