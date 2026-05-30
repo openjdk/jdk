@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1POLICY_HPP
 
 #include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1ConcurrentStartToMixedTimeTracker.hpp"
+#include "gc/g1/g1ConcurrentCycleTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
@@ -58,8 +58,7 @@ class STWGCTimer;
 class G1Policy: public CHeapObj<mtGC> {
   using Pause = G1CollectorState::Pause;
 
-  static G1IHOPControl* create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
-                                            const G1Predictions* predictor);
+  static G1IHOPControl* create_ihop_control(const G1Predictions* predictor);
   // Update the IHOP control with the necessary statistics. Returns true if there
   // has been a significant update to the prediction.
   bool update_ihop_prediction(double mutator_time_s,
@@ -70,6 +69,7 @@ class G1Policy: public CHeapObj<mtGC> {
   G1RemSetTrackingPolicy _remset_tracker;
   G1MMUTracker* _mmu_tracker;
 
+  G1ConcurrentCycleTracker _concurrent_cycle_tracker;
   // Tracking the allocation in the old generation between
   // two GCs.
   G1OldGenAllocationTracker _old_gen_alloc_tracker;
@@ -111,8 +111,6 @@ class G1Policy: public CHeapObj<mtGC> {
   // Tracks the approximate number of cards found as to-collection-set by either the
   // garbage collection or the most recent refinement sweep.
   size_t _to_collection_set_cards;
-
-  G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
   bool should_update_surv_rate_group_predictors();
 
@@ -258,17 +256,16 @@ public:
 
 private:
   void abandon_collection_set_candidates();
-  // Manage time-to-mixed tracking.
-  void update_time_to_mixed_tracking(Pause gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
   void record_pause(Pause gc_type,
                     double start,
-                    double end);
+                    double end,
+                    size_t humongous_allocation_bytes = 0);
 
   void update_gc_pause_time_ratios(Pause gc_type, double start_sec, double end_sec);
 
   // Indicate that we aborted marking before doing any mixed GCs.
-  void abort_time_to_mixed_tracking();
+  void abort_concurrent_cycle_tracking();
 
 public:
 

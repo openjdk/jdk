@@ -52,15 +52,13 @@ public:
 
   void report_basic_ihop_statistics(size_t threshold,
                                     size_t target_occupancy,
-                                    size_t current_occupancy,
-                                    size_t last_allocation_size,
-                                    double last_allocation_duration,
-                                    double last_marking_length);
+                                    size_t current_occupancy);
   void report_adaptive_ihop_statistics(size_t threshold,
                                        size_t internal_target_occupancy,
                                        size_t current_occupancy,
                                        size_t additional_buffer_size,
-                                       double predicted_allocation_rate,
+                                       double predicted_old_gen_non_humongous_allocation_rate,
+                                       size_t predicted_peak_humongous_allocated,
                                        double predicted_marking_length,
                                        bool prediction_active);
 private:
@@ -73,15 +71,14 @@ private:
 
   void send_basic_ihop_statistics(size_t threshold,
                                   size_t target_occupancy,
-                                  size_t non_young_occupancy,
-                                  size_t last_allocation_size,
-                                  double last_allocation_duration,
-                                  double last_marking_length);
+                                  size_t non_young_occupancy);
+
   void send_adaptive_ihop_statistics(size_t threshold,
                                      size_t internal_target_occupancy,
                                      size_t non_young_occupancy,
                                      size_t additional_buffer_size,
-                                     double predicted_allocation_rate,
+                                     double predicted_old_gen_non_humongous_allocation_rate,
+                                     size_t predicted_peak_humongous_allocated,
                                      double predicted_marking_length,
                                      bool prediction_active);
 };
