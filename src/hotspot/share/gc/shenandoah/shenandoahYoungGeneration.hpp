@@ -84,7 +84,6 @@ public:
   // Return sum of bytes available to mutator and to Collector, assuming heap lock is held.
   size_t available_with_reserve() const;
   size_t available() const override;
-  size_t soft_mutator_available() const override;
 
   void prepare_gc() override;
 };

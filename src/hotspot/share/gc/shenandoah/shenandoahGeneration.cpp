@@ -421,7 +421,11 @@ size_t ShenandoahGeneration::available() const {
 }
 
 size_t ShenandoahGeneration::soft_mutator_available() const {
-  size_t result = available(ShenandoahHeap::heap()->soft_max_capacity() * (100.0 - ShenandoahEvacReserve) / 100);
+  size_t soft_max = ShenandoahHeap::heap()->soft_max_capacity();
+  size_t result = available(
+    soft_max - ShenandoahHeap::heap()->free_set()->collector_available_locked() * 1.0 * soft_max / max_capacity()
+  );
+
   return result;
 }
 
