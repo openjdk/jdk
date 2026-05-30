@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,10 @@
           "When shrinking, maximum % of free space to free for a single "   \
           "shrink attempt.")                                                \
           range(0, 100)                                                     \
+                                                                            \
+  develop(uint, G1UncommitInitialDelay, 100,                                \
+          "Delay in milliseconds until regions just made eligible for "     \
+          "uncommit are actually uncommitted.")                             \
                                                                             \
   product(uint, G1CPUUsageDeviationPercent, 25, DIAGNOSTIC,                 \
           "The acceptable deviation (in percent) from the target GC CPU "   \
