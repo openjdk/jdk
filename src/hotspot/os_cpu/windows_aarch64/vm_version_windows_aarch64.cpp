@@ -145,6 +145,19 @@ void VM_Version::get_os_cpu_info() {
   }
 
   {
+    DWORD key_type = 0;
+    uint64_t value = 0;
+    DWORD value_size = sizeof(value);
+    if ((RegGetValueA(HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", "CP 4000",
+      RRF_RT_REG_QWORD, &key_type, &value, &value_size) == ERROR_SUCCESS) && (value_size == sizeof(value))) {
+      _cpu = value >> 24 & 0xFF;
+      _variant = value >> 20 & 0x0F;
+      _model = value >> 4 & 0x0FFF;
+      _revision = value & 0x0F;
+    }
+  }
+
+  if (_cpu == 0) {
     char* buf = ::getenv("PROCESSOR_IDENTIFIER");
     if (buf && strstr(buf, "Ampere(TM)") != nullptr) {
       _cpu = CPU_AMCC;
