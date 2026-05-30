@@ -78,6 +78,81 @@ class StackTrackerTest {
     }
 
     @Test
+    void testIfIcmpBranch() {
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
+            clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_int,
+                    ConstantDescs.CD_int, ConstantDescs.CD_int), 0, cob -> {
+                var stackTracker = CodeStackTracker.of();
+                cob.transforming(stackTracker, stcb -> {
+                    // Push two ints for IF_ICMPEQ
+                    stcb.iload(1);
+                    assertIterableEquals(stackTracker.stack().get(), List.of(INT));
+                    stcb.iload(2);
+                    assertIterableEquals(stackTracker.stack().get(), List.of(INT, INT));
+                    // IF_ICMPEQ should pop both ints
+                    var end = stcb.newLabel();
+                    stcb.if_icmpeq(end);
+                    assertIterableEquals(stackTracker.stack().get(), List.of());
+                    stcb.iconst_0();
+                    stcb.ireturn();
+                    stcb.labelBinding(end);
+                    assertIterableEquals(stackTracker.stack().get(), List.of());
+                    stcb.iconst_1();
+                    stcb.ireturn();
+                });
+            }));
+    }
+
+    @Test
+    void testIfAcmpBranch() {
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
+            clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_int,
+                    ConstantDescs.CD_Object, ConstantDescs.CD_Object), 0, cob -> {
+                var stackTracker = CodeStackTracker.of();
+                cob.transforming(stackTracker, stcb -> {
+                    // Push two references for IF_ACMPNE
+                    stcb.aload(1);
+                    assertIterableEquals(stackTracker.stack().get(), List.of(REFERENCE));
+                    stcb.aload(2);
+                    assertIterableEquals(stackTracker.stack().get(), List.of(REFERENCE, REFERENCE));
+                    // IF_ACMPNE should pop both references
+                    var end = stcb.newLabel();
+                    stcb.if_acmpne(end);
+                    assertIterableEquals(stackTracker.stack().get(), List.of());
+                    stcb.iconst_0();
+                    stcb.ireturn();
+                    stcb.labelBinding(end);
+                    assertIterableEquals(stackTracker.stack().get(), List.of());
+                    stcb.iconst_1();
+                    stcb.ireturn();
+                });
+            }));
+    }
+
+    @Test
+    void testIfSingleOperandBranch() {
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
+            clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_int,
+                    ConstantDescs.CD_int), 0, cob -> {
+                var stackTracker = CodeStackTracker.of();
+                cob.transforming(stackTracker, stcb -> {
+                    // Push one int for IFEQ
+                    stcb.iload(1);
+                    assertIterableEquals(stackTracker.stack().get(), List.of(INT));
+                    // IFEQ should pop only one int
+                    var end = stcb.newLabel();
+                    stcb.ifeq(end);
+                    assertIterableEquals(stackTracker.stack().get(), List.of());
+                    stcb.iconst_0();
+                    stcb.ireturn();
+                    stcb.labelBinding(end);
+                    stcb.iconst_1();
+                    stcb.ireturn();
+                });
+            }));
+    }
+
+    @Test
     void testTrackingLost() {
         ClassFile.of().build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {

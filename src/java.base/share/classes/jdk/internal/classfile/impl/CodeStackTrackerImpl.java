@@ -152,7 +152,12 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
                     map.put(i.target(), stack);
                     stack = null;
                 } else {
-                    pop(1);
+                    // IF_ICMP* and IF_ACMP* instructions pop 2 values, others pop 1
+                    switch (i.opcode()) {
+                        case IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE,
+                             IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ, IF_ACMPNE -> pop(2);
+                        default -> pop(1);
+                    }
                     map.put(i.target(), fork());
                 }
             }
