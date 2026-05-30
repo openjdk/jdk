@@ -113,4 +113,10 @@ using MacroAssembler::null_check;
 
   void load_parameter(int offset_in_words, Register reg);
 
+  // Randomized profile capture
+  void step_random(Register state, Register temp, Register data = zr);
+  void save_profile_rng();
+  void restore_profile_rng();
+
+void adjust_mdo_address(Address *a, BasicType type);
 #endif // CPU_AARCH64_C1_MACROASSEMBLER_AARCH64_HPP

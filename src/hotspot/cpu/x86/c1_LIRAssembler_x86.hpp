@@ -43,7 +43,7 @@
   // Record the type of the receiver in ReceiverTypeData
   void type_profile_helper(Register mdo,
                            ciMethodData *md, ciProfileData *data,
-                           Register recv);
+                           Register recv, Register temp = noreg);
 
   enum {
     _call_stub_size = 28,

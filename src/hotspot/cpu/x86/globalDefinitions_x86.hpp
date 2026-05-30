@@ -52,4 +52,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
+#define RANDOMIZED_PROFILE_CAPTURE
+
 #endif // CPU_X86_GLOBALDEFINITIONS_X86_HPP

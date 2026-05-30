@@ -198,6 +198,9 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "hardware does not support it.")                               \
              range(-1, 5)                                                   \
                                                                             \
+  product(bool, UseVregsForProfileCapture, false,                           \
+          "Use Vector (XMM) registers for randomized profile counting")
+
 // end of ARCH_FLAGS
 
 #endif // CPU_X86_GLOBALS_X86_HPP

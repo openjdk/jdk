@@ -41,6 +41,8 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+Register r_profile_rng;
+
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register basic_lock, Register tmp, Label& slow_case) {
   assert(hdr == rax, "hdr must be rax, for the cmpxchg instruction");
   assert_different_registers(hdr, obj, basic_lock, tmp);
@@ -234,6 +236,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   }
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
+  restore_profile_rng();
+
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
@@ -241,6 +245,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
+  save_profile_rng();
   increment(rsp, frame_size_in_bytes);  // Does not emit code for frame_size == 0
   pop(rbp);
 }
@@ -259,6 +264,51 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
   //     + 4: ...
 
   movptr(reg, Address(rbp, (offset_in_words + 2) * BytesPerWord));
+}
+
+// Randomized profile capture.
+
+void C1_MacroAssembler::step_random(Register state, Register temp) {
+  // One of these will be the best for a particular CPU.
+
+  if (!UseVregsForProfileCapture && VM_Version::supports_sse4_2()) {
+    /* CRC used as a psuedo-random-number generator */
+    // In effect, the CRC instruction is being used here for its
+    // linear feedback shift register.
+    movl(temp, 0);
+    crc32(state, temp, /*sizeInBytes*/2);
+  } else {
+    if (UseVregsForProfileCapture) {
+      vpmulld(xmm15, xmm15, xmm14, Assembler::AVX_128bit);
+    } else {
+      /* LCG by Marsaglia. From Karl Entacher,
+       https://www.researchgate.net/publication/2683298_A_Collection_of_Selected_Pseudorandom_Number_Generators_With_Linear_Structures */
+      movl(temp, 69069);
+      imull(state, temp);
+    }
+  }
+}
+
+void C1_MacroAssembler::save_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    if (UseVregsForProfileCapture) {
+      movsd(Address(r15_thread, JavaThread::profile_rng_offset()), xmm15);
+    } else {
+      movl(Address(r15_thread, JavaThread::profile_rng_offset()), r_profile_rng);
+    }
+  }
+}
+
+void C1_MacroAssembler::restore_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    if (UseVregsForProfileCapture) {
+      movl(rscratch1, 69069);
+      movdq(xmm14, rscratch1);
+      movddup(xmm15, Address(r15_thread, JavaThread::profile_rng_offset()));
+    } else {
+      movl(r_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
+    }
+  }
 }
 
 #ifndef PRODUCT

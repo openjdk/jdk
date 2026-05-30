@@ -294,7 +294,7 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
     return;
   }
 
-  // generate code or slow cases
+  // generate code for slow cases
   assembler->emit_slow_case_stubs();
   CHECK_BAILOUT();
 
@@ -363,7 +363,6 @@ int Compilation::emit_code_body() {
   return frame_map()->framesize();
 }
 
-
 int Compilation::compile_java_method() {
   assert(!method()->is_native(), "should not reach here");
 
@@ -387,7 +386,6 @@ int Compilation::compile_java_method() {
   if (BailoutAfterHIR) {
     BAILOUT_("Bailing out because of -XX:+BailoutAfterHIR", no_frame_size);
   }
-
 
   {
     PhaseTraceTime timeit(_t_emit_lir);

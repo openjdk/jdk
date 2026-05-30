@@ -45,6 +45,10 @@ class C1_MacroAssembler: public MacroAssembler {
   void verify_stack_oop(int offset) PRODUCT_RETURN;
   void verify_not_null_oop(Register r)  PRODUCT_RETURN;
 
+#ifdef ASSERT
+  virtual bool is_C1_MacroAssembler() { return true; }
+#endif
+
 #include CPU_HEADER(c1_MacroAssembler)
 
 };

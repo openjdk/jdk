@@ -2526,6 +2526,12 @@ void AdapterHandlerLibrary::initialize() {
     ResourceMark rm;
     _adapter_handler_table = new (mtCode) AdapterHandlerTable();
     _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
+
+  if (_adapter_handler_table == nullptr || _buffer == nullptr) {
+    // Out of memory
+    return;
+  }
+
   }
 
 #if INCLUDE_CDS

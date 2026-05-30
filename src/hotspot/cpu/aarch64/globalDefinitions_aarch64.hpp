@@ -76,4 +76,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define USE_TRAMPOLINE_STUB_FIX_OWNER
 
+#define RANDOMIZED_PROFILE_CAPTURE
+
 #endif // CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP

@@ -127,9 +127,18 @@
   }
 
   static int adjust_reg_range(int range) {
-    // Reduce the number of available regs (to free r12) in case of compressed oops
-    if (UseCompressedOops) return range - 1;
-    return range;
+    int result = range;
+    // Reduce the number of available regs (to free r12 or r14) in
+    // case of compressed oops and randomized profile captures.
+    if (UseCompressedOops)  result -= 1;
+    if (ProfileCaptureRatio > 1 && !UseVregsForProfileCapture)  result -= 1;
+    return result;
+  }
+
+  static int adjust_fpreg_range(int range) {
+    // Reduce the number of available regs
+    return (ProfileCaptureRatio > 1 && UseVregsForProfileCapture)
+      ? range - 2 : range;
   }
 
   static int get_num_caller_save_xmms() {
@@ -139,5 +148,6 @@
   static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map); }
   static int last_cpu_reg()             { return adjust_reg_range(pd_last_cpu_reg);  }
   static int last_byte_reg()            { return adjust_reg_range(pd_last_byte_reg); }
+  static int last_fpu_reg()             { return adjust_fpreg_range(pd_last_fpu_reg);  }
 
 #endif // CPU_X86_C1_FRAMEMAP_X86_HPP

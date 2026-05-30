@@ -450,6 +450,10 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
 void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   verify_oop_map(op->info());
 
+#ifdef RANDOMIZED_PROFILE_CAPTURE
+  save_profile_rng();
+#endif
+
   // must align calls sites, otherwise they can't be updated atomically
   align_call(op->code());
 

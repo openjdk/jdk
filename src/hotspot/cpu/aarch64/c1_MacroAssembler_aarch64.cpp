@@ -36,6 +36,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
+Register r_profile_rng;
+
 void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
                                   FloatRegister f0, FloatRegister f1,
                                   Register result)
@@ -243,6 +245,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
   // Note that we do this before creating a frame.
   generate_stack_overflow_check(bang_size_in_bytes);
   MacroAssembler::build_frame(framesize);
+  restore_profile_rng();
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -251,6 +254,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
 void C1_MacroAssembler::remove_frame(int framesize) {
   MacroAssembler::remove_frame(framesize);
+  save_profile_rng();
 }
 
 
@@ -270,6 +274,46 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
   //     + 4: ...
 
   ldr(reg, Address(rfp, (offset_in_words + 2) * BytesPerWord));
+}
+
+// Randomized profile capture.
+
+void C1_MacroAssembler::step_random(Register state, Register temp, Register data) {
+  if (VM_Version::supports_crc32()) {
+    /* CRC used as a pseudo-random-number generator */
+    // In effect, the CRC instruction is being used here for its
+    // linear feedback shift register.
+    crc32h(state, state, data);
+  } else {
+    /* LCG from glibc. */
+    mov(temp, 69069);
+    mulw(state, state, temp);
+    addw(state, state, 1);
+  }
+}
+
+void C1_MacroAssembler::save_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    strw(r_profile_rng, Address(rthread, JavaThread::profile_rng_offset()));
+  }
+}
+
+void C1_MacroAssembler::restore_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    ldrw(r_profile_rng, Address(rthread, JavaThread::profile_rng_offset()));
+  }
+}
+
+void C1_MacroAssembler::adjust_mdo_address(Address* a, BasicType t) {
+  int size = type2aelembytes(t);
+  if (legitimize_address_requires_lea(*a, size)) {
+    int64_t offset = a->offset();
+    int64_t offset_lo = offset & right_n_bits(12);
+    int64_t offset_hi = offset - offset_lo;
+    lea(a->base(), Address(a->base(), offset_hi));
+    *a = Address(a->base(), offset_lo);
+    assert(!legitimize_address_requires_lea(*a, size), "must not");
+  }
 }
 
 #ifndef PRODUCT
