@@ -54,6 +54,8 @@ public class Longs {
     private String[] strings;
     private long[] longArraySmall;
     private long[] longArrayBig;
+    private long[] hexsArraySmall;
+    private long[] hexsArrayBig;
 
     @Setup
     public void setup() {
@@ -63,10 +65,14 @@ public class Longs {
         res = new long[size];
         longArraySmall = new long[size];
         longArrayBig = new long[size];
+        hexsArraySmall = new long[size];
+        hexsArrayBig = new long[size];
         for (int i = 0; i < size; i++) {
             strings[i] = "" + (random.nextLong(10000) - 5000);
             longArraySmall[i] = 100L * i + i + 103L;
             longArrayBig[i] = ((100L * i + i) << 32) + 4543 + i * 4L;
+            hexsArraySmall[i] = 0x100L * i + i + 0x103L;
+            hexsArrayBig[i] = ((0x100L * i + i) << 32) + 0x4543 + i * 4L;
         }
     }
 
@@ -90,6 +96,20 @@ public class Longs {
     public void toStringBig(Blackhole bh) {
         for (long value : longArrayBig) {
             bh.consume(Long.toString(value));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringSmall(Blackhole bh) {
+        for (long value : hexsArraySmall) {
+            bh.consume(Long.toHexString(value));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringBig(Blackhole bh) {
+        for (long value : hexsArrayBig) {
+            bh.consume(Long.toHexString(value));
         }
     }
 
