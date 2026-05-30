@@ -1231,9 +1231,9 @@ void G1Policy::update_survivors_policy() {
 }
 
 bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) {
-  // We actually check whether we are marking here and not if we are in a
-  // reclamation phase. This means that we will schedule a concurrent mark
-  // even while we are still in the process of reclaiming memory.
+  // Check whether a concurrent cycle is active, do not include the
+  // reclamation/mixed phase. This means that we can schedule a concurrent cycle
+  // even while reclaiming memory.
   bool during_cycle = collector_state()->is_in_concurrent_cycle();
   if (!during_cycle) {
     log_debug(gc, ergo)("Request concurrent cycle initiation (requested by GC cause). "

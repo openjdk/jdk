@@ -1929,7 +1929,7 @@ static bool should_retry_vm_op(GCCause::Cause cause,
     // GC, so try again.
     LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
     return true;
-  } else if (op->whitebox_attached()) {
+  } else if (op->whitebox_controlled()) {
     // If WhiteBox wants control, wait for notification of a state
     // change in the controller, then try again.  Don't wait for
     // release of control, since collections may complete while in
@@ -1997,7 +1997,7 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       }
       // When _wb_breakpoint there can't be another cycle or deferred.
       assert(!op.cycle_already_in_progress(), "invariant");
-      assert(!op.whitebox_attached(), "invariant");
+      assert(!op.whitebox_controlled(), "invariant");
       // Concurrent cycle attempt might have been cancelled by some other
       // collection, so retry.  Unlike other cases below, we want to retry
       // even if cancelled by a STW full collection, because we really want
@@ -2022,13 +2022,19 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // Cases (2) and (3) are detected together by a change to
       // _old_marking_cycles_started.
       //
-      // Compared to other "automatic" GCs (see below), we do not consider being
-      // in whitebox as sufficient too because we might be anywhere within that
-      // cycle and we need to make progress.
+      // Compared to other "automatic" GCs (see below), being in WhiteBox is not
+      // addressed here because we need to handle it specially.
       if (op.mark_in_progress() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;
+      }
+
+      if (op.whitebox_controlled()) {
+        LOG_COLLECT_CONCURRENTLY(cause, "Suppressed CodeCache GC because of WhiteBox in control.");
+        // The caller in this case does not check the return value, so it does not
+        // really matter what we return. However we did not finish the request.
+        return false;
       }
 
       if (wait_full_mark_finished(cause,
@@ -2038,7 +2044,11 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
         return true;
       }
 
-      if (should_retry_vm_op(cause, &op)) {
+      if (op.cycle_already_in_progress()) {
+        // If VMOp failed because a cycle was already in progress, it
+        // is now complete (we just waited).  But it didn't finish this
+        // request, so try again.
+        LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
         continue;
       }
     } else if (!GCCause::is_user_requested_gc(cause)) {
@@ -2059,7 +2069,7 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // _old_marking_cycles_started.
       if (op.gc_succeeded() ||
           op.cycle_already_in_progress() ||
-          op.whitebox_attached() ||
+          op.whitebox_controlled() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;

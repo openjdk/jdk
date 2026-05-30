@@ -37,6 +37,8 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/concurrentGCBreakpoints.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -876,6 +878,11 @@ uint64_t CodeCache::cold_gc_count() {
   return _cold_gc_count;
 }
 
+static bool is_whitebox_controlled() {
+  MutexLocker x(ConcurrentGCBreakpoints::monitor());
+  return ConcurrentGCBreakpoints::is_controlled();
+}
+
 void CodeCache::gc_on_allocation() {
   if (!is_init_completed()) {
     // Let's not heuristically trigger GCs before the JVM is ready for GCs, no matter what
@@ -887,6 +894,9 @@ void CodeCache::gc_on_allocation() {
   size_t used = max - free;
   double free_ratio = double(free) / double(max);
   if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
+    if (is_whitebox_controlled()) {
+      return;
+    }
     // In case the GC is concurrent, we make sure only one thread requests the GC.
     if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
@@ -913,6 +923,9 @@ void CodeCache::gc_on_allocation() {
   // If code cache has been allocated without any GC at all, let's make sure
   // it is eventually invoked to avoid trouble.
   if (allocated_since_last_ratio > threshold) {
+    if (is_whitebox_controlled()) {
+      return;
+    }
     // In case the GC is concurrent, we make sure only one thread requests the GC.
     if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
       log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
@@ -920,6 +933,10 @@ void CodeCache::gc_on_allocation() {
       Universe::heap()->collect(GCCause::_codecache_GC_threshold);
     }
   }
+}
+
+void CodeCache::clear_unloading_gc_request() {
+  AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, true, false);
 }
 
 // We initialize the _gc_epoch to 2, because previous_completed_gc_marking_cycle

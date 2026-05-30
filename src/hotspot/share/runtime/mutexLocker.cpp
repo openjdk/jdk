@@ -263,7 +263,7 @@ void mutex_init() {
   MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
   MUTEX_DEFN(Management_lock                 , PaddedMutex  , safepoint);   // used for JVM management
 
-  MUTEX_DEFN(ConcurrentGCBreakpoints_lock    , PaddedMonitor, safepoint, true);
+  MUTEX_DEFL(ConcurrentGCBreakpoints_lock    , PaddedMonitor, AdapterHandlerLibrary_lock, true);
   MUTEX_DEFN(TouchedMethodLog_lock           , PaddedMutex  , safepoint);
 
   MUTEX_DEFN(CompileThread_lock              , PaddedMonitor, safepoint);

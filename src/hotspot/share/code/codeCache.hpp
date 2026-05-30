@@ -190,6 +190,7 @@ class CodeCache : AllStatic {
   static uint64_t cold_gc_count();
   static void update_cold_gc_count();
   static void gc_on_allocation();
+  static void clear_unloading_gc_request();
 
   // The GC epoch and marking_cycle code below is there to support sweeping
   // nmethods in loom stack chunks.

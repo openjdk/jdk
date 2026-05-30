@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/codeCache.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
@@ -66,7 +67,7 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(size_t allocation_word_size,
   _transient_failure(false),
   _mark_in_progress(false),
   _cycle_already_in_progress(false),
-  _whitebox_attached(false),
+  _whitebox_controlled(false),
   _gc_succeeded(false)
 {}
 
@@ -88,19 +89,26 @@ void VM_G1TryInitiateConcMark::doit() {
   G1CollectorState* state = g1h->collector_state();
   _mark_in_progress = state->is_in_marking();
   _cycle_already_in_progress =  state->is_in_concurrent_cycle();
+  _whitebox_controlled = (_gc_cause != GCCause::_wb_breakpoint) && ConcurrentGCBreakpoints::is_controlled();
 
-  if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
+  // Clear any code cache unloading GC request if we are WhiteBox controlled and we are going to
+  // suppress it. If marking is active, we do not need to suppress because that will satisfy the
+  // request already.
+  // This needs to be atomic wrt. to all code-cache allocation threads to allow setting the request
+  // after WhiteBox releases control again.
+  bool suppress_codecache_request = whitebox_controlled() &&
+                                    GCCause::is_codecache_requested_gc(_gc_cause) &&
+                                    !mark_in_progress();
+  if (suppress_codecache_request) {
+    CodeCache::clear_unloading_gc_request();
+    return;
+  } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
     // there is already a concurrent marking cycle in progress. Flags to indicate
     // that were already set, so return immediately.
-  } else if ((_gc_cause != GCCause::_wb_breakpoint) &&
-             ConcurrentGCBreakpoints::is_controlled()) {
-    // WhiteBox wants to be in control of concurrent cycles, so don't try to
-    // start one.  This check is after the force_concurrent_start_xxx so that a
-    // request will be remembered for a later partial collection, even though
-    // we've rejected this request.
-    _whitebox_attached = true;
-  } else {
+    return;
+  } else if (!whitebox_controlled()) {
+    // Only run a concurrent marking if not controlled by WhiteBox.
     g1h->do_collection_pause_at_safepoint(_word_size);
     _gc_succeeded = true;
   }
