@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -1610,16 +1609,37 @@ class Http2Connection implements Closeable {
         return frames;
     }
 
-    // Dedicated cache for headers encoding ByteBuffer.
+    // Dedicated reusable ByteBuffer for headers encoding.
     // There can be no concurrent access to this  buffer as all access to this buffer
     // and its content happen within a single critical code block section protected
-    // by the sendLock. / (see sendFrame())
-    // private final ByteBufferPool headerEncodingPool = new ByteBufferPool();
+    // by the sendlock (see `sendFrame()`).
+    private ByteBuffer cachedHeaderBuffer;
+
+    // `getCachedHeaderBuffer()` is used only by tests and it should not be
+    // called in source code without also holding `sendlock`.
+    ByteBuffer getCachedHeaderBuffer() {
+        return cachedHeaderBuffer;
+    }
 
     private ByteBuffer getHeaderBuffer(int size) {
-        ByteBuffer buf = ByteBuffer.allocate(size);
-        buf.limit(size);
-        return buf;
+        assert sendlock.isHeldByCurrentThread() : "current thread is not holding sendlock";
+
+        if (cachedHeaderBuffer == null || cachedHeaderBuffer.capacity() < size) {
+            cachedHeaderBuffer = ByteBuffer.allocate(size);
+            return cachedHeaderBuffer;
+        }
+
+        cachedHeaderBuffer.clear();
+        cachedHeaderBuffer.limit(size);
+        return cachedHeaderBuffer;
+    }
+
+    private static ByteBuffer copyBuffer(ByteBuffer buffer) {
+        buffer.flip();
+        ByteBuffer copy = ByteBuffer.allocate(buffer.remaining());
+        copy.put(buffer);
+        copy.flip();
+        return copy;
     }
 
     /*
@@ -1634,8 +1654,8 @@ class Http2Connection implements Closeable {
      *     encoding in HTTP/2...
      */
     private List<ByteBuffer> encodeHeadersImpl(int bufferSize, HttpHeaders... headers) {
-        ByteBuffer buffer = getHeaderBuffer(bufferSize);
         List<ByteBuffer> buffers = new ArrayList<>();
+        ByteBuffer buffer = getHeaderBuffer(bufferSize);
         for (HttpHeaders header : headers) {
             for (Map.Entry<String, List<String>> e : header.map().entrySet()) {
                 String lKey = e.getKey().toLowerCase(Locale.US);
@@ -1644,16 +1664,17 @@ class Http2Connection implements Closeable {
                     hpackOut.header(lKey, value);
                     while (!hpackOut.encode(buffer)) {
                         if (!buffer.hasRemaining()) {
-                            buffer.flip();
-                            buffers.add(buffer);
-                            buffer = getHeaderBuffer(bufferSize);
+                            ByteBuffer copy = copyBuffer(buffer);
+                            buffers.add(copy);
+                            buffer.clear();
+                            buffer.limit(bufferSize);
                         }
                     }
                 }
             }
         }
-        buffer.flip();
-        buffers.add(buffer);
+        ByteBuffer copy = copyBuffer(buffer);
+        buffers.add(copy);
         return buffers;
     }
 
@@ -1710,7 +1731,7 @@ class Http2Connection implements Closeable {
         }
     }
 
-    private final Lock sendlock = new ReentrantLock();
+    private final ReentrantLock sendlock = new ReentrantLock();
 
     void sendFrame(Http2Frame frame) {
         try {

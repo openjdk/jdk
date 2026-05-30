@@ -351,4 +351,9 @@ class Http2ClientImpl {
     public boolean stopping() {
         return stopping;
     }
+
+    // `getConnections()` is used only by tests.
+    Map<String, Http2Connection> getConnections() {
+        return connections;
+    }
 }
