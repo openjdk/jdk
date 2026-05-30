@@ -138,4 +138,26 @@ public class MaxAgeExpires {
         cookie.setMaxAge(-2);
         assertEquals(-2, cookie.getMaxAge());
     }
+
+    @DataProvider(name = "unparseableDates")
+    public Object[][] unparseableDates() {
+        return new Object[][] {
+            { "GARBAGE" },
+            { "2024-01-01T00:00:00Z" },       // format not supported by RFC-6265
+            { "January 1, 2099 00:00:00 GMT" } // format not supported by RFC-6265
+        };
+    }
+
+    @Test(dataProvider = "unparseableDates")
+    public void testUnparseableExpires(String badDate) {
+        // RFC 6265 section 5.2.1: if the expires value fails to parse,
+        // the cookie-av should be ignored.
+        // That results in the HttpCookie implementation to have maxAge value of -1.
+        HttpCookie cookie = HttpCookie.parse(
+            "Set-Cookie: name=value; expires=" + badDate).get(0);
+        Assert.assertEquals(cookie.getMaxAge(), -1,
+            "Unparseable expires=\"" + badDate + "\" should be ignored");
+        Assert.assertFalse(cookie.hasExpired(),
+            "Cookie with ignored expires should not be expired");
+    }
 }
