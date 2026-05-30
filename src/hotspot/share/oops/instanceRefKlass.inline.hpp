@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,12 @@
 #include "oops/instanceRefKlass.hpp"
 
 #include "classfile/javaClasses.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -173,15 +176,50 @@ template <typename T>
 void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
   struct Stream : public LogStream {
     Stream() : LogStream(LogTarget(Trace, gc, ref)()) {}
-    void print_contents_cr(oop* addr)       { print_cr(PTR_FORMAT,   *(uintptr_t*)addr); }
-    void print_contents_cr(narrowOop* addr) { print_cr(UINT32_FORMAT_X_0, *(uint32_t*)addr); }
+    void print_name(oop obj) {
+      if (obj != nullptr) {
+        Klass* k = obj->klass_without_asserts();
+        if (!(Metaspace::contains(k) && Symbol::is_valid(k->name()))) {
+          // Maybe the mark contains a forwarding pointer
+          if (obj->is_forwarded()) {
+            obj = obj->forwardee();
+            k = obj->klass_without_asserts();
+            if (!(Metaspace::contains(k) && Symbol::is_valid(k->name()))) {
+              return; // Give up
+            }
+          } else {
+            return; // Give up
+          }
+        }
+        print(" a %s", k->internal_name());
+      }
+    }
+    void print_contents_cr(oop* addr) {
+      print(PTR_FORMAT, *(uintptr_t*)addr);
+      if (!UseZGC) {
+        // ZGC can't read raw oops without load barriers.
+        oop obj = *addr;
+        print_name(obj);
+      }
+      cr();
+    }
+    void print_contents_cr(narrowOop* addr) {
+      print(UINT32_FORMAT_X_0, *(uint32_t*)addr);
+      if (!UseZGC) {
+        // ZGC can't read raw oops without load barriers.
+        oop obj = CompressedOops::decode(*addr);
+        print_name(obj);
+      }
+      cr();
+    }
   } stream;
 
   if (stream.is_enabled()) {
     T* referent_addr   = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
     T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr_raw(obj);
 
-    stream.print_cr("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
+    ResourceMark rm;
+    stream.print_cr("InstanceRefKlass %s for obj " PTR_FORMAT " a %s", s, p2i(obj), obj->klass()->internal_name());
     stream.print("     referent_addr/* " PTR_FORMAT " / ", p2i(referent_addr));
     stream.print_contents_cr(referent_addr);
     stream.print("     discovered_addr/* " PTR_FORMAT " / ", p2i(discovered_addr));
