@@ -486,7 +486,7 @@ public final class TypeAnnotationParser {
             }
             return null;
         case EXCEPTION_PARAMETER: {
-            byte index = buf.get();
+            short index = buf.getShort();
             }
             return null;
         case INSTANCEOF:
