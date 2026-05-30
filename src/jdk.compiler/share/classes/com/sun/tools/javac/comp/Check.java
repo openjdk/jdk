@@ -530,6 +530,37 @@ public class Check {
         }
     };
 
+    /**
+     * Check context to be used when a type must be a subtype of a target,
+     * rather than querying isAssignable in general. This prevents
+     * isAssignable from leaking into subtype-only language checks.
+     */
+    CheckContext subtypeHandler = new CheckContext() {
+        public void report(DiagnosticPosition pos, JCDiagnostic details) {
+            log.error(pos, Errors.ProbFoundReq(details));
+        }
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return found.hasTag(ERROR) || found.hasTag(BOT) || types.isSubtype(found, req);
+        }
+
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
+            return types.noWarnings;
+        }
+
+        public InferenceContext inferenceContext() {
+            return infer.emptyContext;
+        }
+
+        public DeferredAttrContext deferredAttrContext() {
+            return deferredAttr.emptyDeferredAttrContext;
+        }
+
+        @Override
+        public String toString() {
+            return "CheckContext: subtypeHandler";
+        }
+    };
+
     /** Check that a given type is assignable to a given proto-type.
      *  If it is, return the type, otherwise return errType.
      *  @param pos        Position to be used for error reporting.
