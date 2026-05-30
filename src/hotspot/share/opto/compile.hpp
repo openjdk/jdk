@@ -728,20 +728,8 @@ public:
 
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
-  void add_macro_node(Node * n) {
-    //assert(n->is_macro(), "must be a macro node");
-    assert(!_macro_nodes.contains(n), "duplicate entry in expand list");
-    _macro_nodes.append(n);
-  }
-  void remove_macro_node(Node* n) {
-    // this function may be called twice for a node so we can only remove it
-    // if it's still existing.
-    _macro_nodes.remove_if_existing(n);
-    // Remove from coarsened locks list if present
-    if (coarsened_count() > 0) {
-      remove_coarsened_lock(n);
-    }
-  }
+  void add_macro_node(Node* n);
+  void remove_macro_node(Node* n);
   void add_expensive_node(Node* n);
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);

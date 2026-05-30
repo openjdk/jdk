@@ -40,7 +40,6 @@ class Opaque1Node : public Node {
   public:
   Opaque1Node(Compile* C, Node *n) : Node(nullptr, n) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
-    init_flags(Flag_is_macro);
     init_class_id(Class_Opaque1);
     C->add_macro_node(this);
   }
@@ -48,7 +47,6 @@ class Opaque1Node : public Node {
   // which is consumed by range check elimination.
   Opaque1Node(Compile* C, Node *n, Node* orig_limit) : Node(nullptr, n, orig_limit) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
-    init_flags(Flag_is_macro);
     init_class_id(Class_Opaque1);
     C->add_macro_node(this);
   }
@@ -150,7 +148,6 @@ class OpaqueConstantBoolNode : public Node {
   OpaqueConstantBoolNode(Compile* C, Node* tst, bool constant) : Node(nullptr, tst), _constant(constant) {
     assert(tst->is_Bool() || tst->is_Con(), "Test node must be a BoolNode or a constant");
     init_class_id(Class_OpaqueConstantBool);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
@@ -241,7 +238,6 @@ class OpaqueInitializedAssertionPredicateNode : public Node {
   OpaqueInitializedAssertionPredicateNode(BoolNode* bol, Compile* C) : Node(nullptr, bol),
       _useless(false) {
     init_class_id(Class_OpaqueInitializedAssertionPredicate);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
