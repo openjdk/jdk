@@ -968,6 +968,7 @@ public final class ClassPrinterImpl {
                                 leaf("name", p.name().<ConstantDesc>map(Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)),
                                 list("flags", "flag", p.flags().stream().map(AccessFlag::name))));
                     }
+                    nodes.add(n);
                 }
                 case ModuleAttribute ma ->
                     nodes.add(new MapNodeImpl(BLOCK, "module")

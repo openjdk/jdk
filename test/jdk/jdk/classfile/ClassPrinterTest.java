@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Optional;
 import java.lang.classfile.*;
@@ -86,6 +87,9 @@ class ClassPrinterTest {
                             AnnotationValue.ofShort((short)25),
                             AnnotationValue.ofString("BOO"),
                             AnnotationValue.ofAnnotation(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.of("param", AnnotationValue.ofInt(3)))))))
+                        .with(MethodParametersAttribute.of(
+                            MethodParameterInfo.of(Optional.of("param1"), AccessFlag.FINAL),
+                            MethodParameterInfo.of(Optional.of("param2"))))
                         .with(RuntimeVisibleParameterAnnotationsAttribute.of(List.of(List.of(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.ofFloat("flfl", 22),  AnnotationElement.ofFloat("frfl", 11))))))
                         .with(RuntimeInvisibleParameterAnnotationsAttribute.of(List.of(List.of(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.ofFloat("flfl", -22),  AnnotationElement.ofFloat("frfl", -11))))))
                         .with(ExceptionsAttribute.ofSymbols(ClassDesc.of("Phoo"), ClassDesc.of("Boo"), ClassDesc.of("Bee")))
@@ -177,46 +181,49 @@ class ClassPrinterTest {
                         45: {tag: Integer, value: 25}
                         46: {tag: Utf8, value: param}
                         47: {tag: Integer, value: 3}
-                        48: {tag: Utf8, value: RuntimeVisibleParameterAnnotations}
-                        49: {tag: Float, value: 22.0}
-                        50: {tag: Float, value: 11.0}
-                        51: {tag: Utf8, value: RuntimeInvisibleParameterAnnotations}
-                        52: {tag: Float, value: '-22.0'}
-                        53: {tag: Float, value: '-11.0'}
-                        54: {tag: Utf8, value: Exceptions}
-                        55: {tag: Utf8, value: Bee}
-                        56: {tag: Class, class name index: 55, class internal name: Bee}
-                        57: {tag: Utf8, value: Code}
-                        58: {tag: Utf8, value: RuntimeInvisibleTypeAnnotations}
-                        59: {tag: Utf8, value: RuntimeVisibleTypeAnnotations}
-                        60: {tag: Utf8, value: LFee;}
-                        61: {tag: Utf8, value: yes}
-                        62: {tag: Integer, value: 0}
-                        63: {tag: Utf8, value: LocalVariableTable}
-                        64: {tag: Utf8, value: LocalVariableTypeTable}
-                        65: {tag: Utf8, value: LineNumberTable}
-                        66: {tag: Utf8, value: StackMapTable}
-                        67: {tag: Utf8, value: SourceFile}
-                        68: {tag: Utf8, value: Foo.java}
-                        69: {tag: Utf8, value: InnerClasses}
-                        70: {tag: Utf8, value: InnerName}
-                        71: {tag: Utf8, value: EnclosingMethod}
-                        72: {tag: Utf8, value: enclosingMethod}
-                        73: {tag: Utf8, value: (Ljava/util/Collection;)Ljava/lang/Double;}
-                        74: {tag: NameAndType, name index: 72, type index: 73, name: enclosingMethod, type: (Ljava/util/Collection;)Ljava/lang/Double;}
-                        75: {tag: Utf8, value: Synthetic}
-                        76: {tag: Utf8, value: Signature}
-                        77: {tag: Utf8, value: LBoo;LPhee;LPhoo;}
-                        78: {tag: Utf8, value: Deprecated}
-                        79: {tag: Utf8, value: NestHost}
-                        80: {tag: Utf8, value: NestMembers}
-                        81: {tag: Utf8, value: Record}
-                        82: {tag: Utf8, value: fee}
-                        83: {tag: Utf8, value: RuntimeInvisibleAnnotations}
-                        84: {tag: Float, value: 2.0}
-                        85: {tag: Float, value: 3.0}
-                        86: {tag: Utf8, value: PermittedSubclasses}
-                        87: {tag: Utf8, value: BootstrapMethods}
+                        48: {tag: Utf8, value: MethodParameters}
+                        49: {tag: Utf8, value: param1}
+                        50: {tag: Utf8, value: param2}
+                        51: {tag: Utf8, value: RuntimeVisibleParameterAnnotations}
+                        52: {tag: Float, value: 22.0}
+                        53: {tag: Float, value: 11.0}
+                        54: {tag: Utf8, value: RuntimeInvisibleParameterAnnotations}
+                        55: {tag: Float, value: '-22.0'}
+                        56: {tag: Float, value: '-11.0'}
+                        57: {tag: Utf8, value: Exceptions}
+                        58: {tag: Utf8, value: Bee}
+                        59: {tag: Class, class name index: 58, class internal name: Bee}
+                        60: {tag: Utf8, value: Code}
+                        61: {tag: Utf8, value: RuntimeInvisibleTypeAnnotations}
+                        62: {tag: Utf8, value: RuntimeVisibleTypeAnnotations}
+                        63: {tag: Utf8, value: LFee;}
+                        64: {tag: Utf8, value: yes}
+                        65: {tag: Integer, value: 0}
+                        66: {tag: Utf8, value: LocalVariableTable}
+                        67: {tag: Utf8, value: LocalVariableTypeTable}
+                        68: {tag: Utf8, value: LineNumberTable}
+                        69: {tag: Utf8, value: StackMapTable}
+                        70: {tag: Utf8, value: SourceFile}
+                        71: {tag: Utf8, value: Foo.java}
+                        72: {tag: Utf8, value: InnerClasses}
+                        73: {tag: Utf8, value: InnerName}
+                        74: {tag: Utf8, value: EnclosingMethod}
+                        75: {tag: Utf8, value: enclosingMethod}
+                        76: {tag: Utf8, value: (Ljava/util/Collection;)Ljava/lang/Double;}
+                        77: {tag: NameAndType, name index: 75, type index: 76, name: enclosingMethod, type: (Ljava/util/Collection;)Ljava/lang/Double;}
+                        78: {tag: Utf8, value: Synthetic}
+                        79: {tag: Utf8, value: Signature}
+                        80: {tag: Utf8, value: LBoo;LPhee;LPhoo;}
+                        81: {tag: Utf8, value: Deprecated}
+                        82: {tag: Utf8, value: NestHost}
+                        83: {tag: Utf8, value: NestMembers}
+                        84: {tag: Utf8, value: Record}
+                        85: {tag: Utf8, value: fee}
+                        86: {tag: Utf8, value: RuntimeInvisibleAnnotations}
+                        87: {tag: Float, value: 2.0}
+                        88: {tag: Float, value: 3.0}
+                        89: {tag: Utf8, value: PermittedSubclasses}
+                        90: {tag: Utf8, value: BootstrapMethods}
                     source file: Foo.java
                     inner classes:
                       - {inner class: Phee, outer class: Phoo, inner name: InnerName, flags: [PROTECTED]}
@@ -248,8 +255,11 @@ class ClassPrinterTest {
                       - method name: m
                         flags: [PROTECTED]
                         method type: (ZLjava/lang/Throwable;)Ljava/lang/Void;
-                        attributes: [AnnotationDefault, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
+                        attributes: [AnnotationDefault, MethodParameters, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
                         annotation default: {array: [{boolean: true}, {byte: 12}, {char: c}, {class: LPhee;}, {double: 1.3}, {enum class: LBoo;, constant name: BOO}, {float: 3.7}, {int: 33}, {long: 3333}, {short: 25}, {string: BOO}, {annotation class: LPhoo;}]}
+                        method parameters:
+                            1: {name: param1, flags: [FINAL]}
+                            2: {name: param2, flags: []}
                         visible parameter annotations:
                             parameter 1: [{annotation class: LPhoo;, values: [{name: flfl, value: {float: 22.0}}, {name: frfl, value: {float: 11.0}}]}]
                         invisible parameter annotations:
@@ -319,7 +329,7 @@ class ClassPrinterTest {
                       - method name: m
                         flags: [PROTECTED]
                         method type: (ZLjava/lang/Throwable;)Ljava/lang/Void;
-                        attributes: [AnnotationDefault, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
+                        attributes: [AnnotationDefault, MethodParameters, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
                         code:
                             max stack: 1
                             max locals: 3
@@ -366,7 +376,7 @@ class ClassPrinterTest {
                       - method name: m
                         flags: [PROTECTED]
                         method type: (ZLjava/lang/Throwable;)Ljava/lang/Void;
-                        attributes: [AnnotationDefault, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
+                        attributes: [AnnotationDefault, MethodParameters, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
                 """);
     }
 
@@ -428,46 +438,49 @@ class ClassPrinterTest {
                         "45": {"tag": "Integer", "value": "25"},
                         "46": {"tag": "Utf8", "value": "param"},
                         "47": {"tag": "Integer", "value": "3"},
-                        "48": {"tag": "Utf8", "value": "RuntimeVisibleParameterAnnotations"},
-                        "49": {"tag": "Float", "value": "22.0"},
-                        "50": {"tag": "Float", "value": "11.0"},
-                        "51": {"tag": "Utf8", "value": "RuntimeInvisibleParameterAnnotations"},
-                        "52": {"tag": "Float", "value": "-22.0"},
-                        "53": {"tag": "Float", "value": "-11.0"},
-                        "54": {"tag": "Utf8", "value": "Exceptions"},
-                        "55": {"tag": "Utf8", "value": "Bee"},
-                        "56": {"tag": "Class", "class name index": 55, "class internal name": "Bee"},
-                        "57": {"tag": "Utf8", "value": "Code"},
-                        "58": {"tag": "Utf8", "value": "RuntimeInvisibleTypeAnnotations"},
-                        "59": {"tag": "Utf8", "value": "RuntimeVisibleTypeAnnotations"},
-                        "60": {"tag": "Utf8", "value": "LFee;"},
-                        "61": {"tag": "Utf8", "value": "yes"},
-                        "62": {"tag": "Integer", "value": "0"},
-                        "63": {"tag": "Utf8", "value": "LocalVariableTable"},
-                        "64": {"tag": "Utf8", "value": "LocalVariableTypeTable"},
-                        "65": {"tag": "Utf8", "value": "LineNumberTable"},
-                        "66": {"tag": "Utf8", "value": "StackMapTable"},
-                        "67": {"tag": "Utf8", "value": "SourceFile"},
-                        "68": {"tag": "Utf8", "value": "Foo.java"},
-                        "69": {"tag": "Utf8", "value": "InnerClasses"},
-                        "70": {"tag": "Utf8", "value": "InnerName"},
-                        "71": {"tag": "Utf8", "value": "EnclosingMethod"},
-                        "72": {"tag": "Utf8", "value": "enclosingMethod"},
-                        "73": {"tag": "Utf8", "value": "(Ljava/util/Collection;)Ljava/lang/Double;"},
-                        "74": {"tag": "NameAndType", "name index": 72, "type index": 73, "name": "enclosingMethod", "type": "(Ljava/util/Collection;)Ljava/lang/Double;"},
-                        "75": {"tag": "Utf8", "value": "Synthetic"},
-                        "76": {"tag": "Utf8", "value": "Signature"},
-                        "77": {"tag": "Utf8", "value": "LBoo;LPhee;LPhoo;"},
-                        "78": {"tag": "Utf8", "value": "Deprecated"},
-                        "79": {"tag": "Utf8", "value": "NestHost"},
-                        "80": {"tag": "Utf8", "value": "NestMembers"},
-                        "81": {"tag": "Utf8", "value": "Record"},
-                        "82": {"tag": "Utf8", "value": "fee"},
-                        "83": {"tag": "Utf8", "value": "RuntimeInvisibleAnnotations"},
-                        "84": {"tag": "Float", "value": "2.0"},
-                        "85": {"tag": "Float", "value": "3.0"},
-                        "86": {"tag": "Utf8", "value": "PermittedSubclasses"},
-                        "87": {"tag": "Utf8", "value": "BootstrapMethods"}},
+                        "48": {"tag": "Utf8", "value": "MethodParameters"},
+                        "49": {"tag": "Utf8", "value": "param1"},
+                        "50": {"tag": "Utf8", "value": "param2"},
+                        "51": {"tag": "Utf8", "value": "RuntimeVisibleParameterAnnotations"},
+                        "52": {"tag": "Float", "value": "22.0"},
+                        "53": {"tag": "Float", "value": "11.0"},
+                        "54": {"tag": "Utf8", "value": "RuntimeInvisibleParameterAnnotations"},
+                        "55": {"tag": "Float", "value": "-22.0"},
+                        "56": {"tag": "Float", "value": "-11.0"},
+                        "57": {"tag": "Utf8", "value": "Exceptions"},
+                        "58": {"tag": "Utf8", "value": "Bee"},
+                        "59": {"tag": "Class", "class name index": 58, "class internal name": "Bee"},
+                        "60": {"tag": "Utf8", "value": "Code"},
+                        "61": {"tag": "Utf8", "value": "RuntimeInvisibleTypeAnnotations"},
+                        "62": {"tag": "Utf8", "value": "RuntimeVisibleTypeAnnotations"},
+                        "63": {"tag": "Utf8", "value": "LFee;"},
+                        "64": {"tag": "Utf8", "value": "yes"},
+                        "65": {"tag": "Integer", "value": "0"},
+                        "66": {"tag": "Utf8", "value": "LocalVariableTable"},
+                        "67": {"tag": "Utf8", "value": "LocalVariableTypeTable"},
+                        "68": {"tag": "Utf8", "value": "LineNumberTable"},
+                        "69": {"tag": "Utf8", "value": "StackMapTable"},
+                        "70": {"tag": "Utf8", "value": "SourceFile"},
+                        "71": {"tag": "Utf8", "value": "Foo.java"},
+                        "72": {"tag": "Utf8", "value": "InnerClasses"},
+                        "73": {"tag": "Utf8", "value": "InnerName"},
+                        "74": {"tag": "Utf8", "value": "EnclosingMethod"},
+                        "75": {"tag": "Utf8", "value": "enclosingMethod"},
+                        "76": {"tag": "Utf8", "value": "(Ljava/util/Collection;)Ljava/lang/Double;"},
+                        "77": {"tag": "NameAndType", "name index": 75, "type index": 76, "name": "enclosingMethod", "type": "(Ljava/util/Collection;)Ljava/lang/Double;"},
+                        "78": {"tag": "Utf8", "value": "Synthetic"},
+                        "79": {"tag": "Utf8", "value": "Signature"},
+                        "80": {"tag": "Utf8", "value": "LBoo;LPhee;LPhoo;"},
+                        "81": {"tag": "Utf8", "value": "Deprecated"},
+                        "82": {"tag": "Utf8", "value": "NestHost"},
+                        "83": {"tag": "Utf8", "value": "NestMembers"},
+                        "84": {"tag": "Utf8", "value": "Record"},
+                        "85": {"tag": "Utf8", "value": "fee"},
+                        "86": {"tag": "Utf8", "value": "RuntimeInvisibleAnnotations"},
+                        "87": {"tag": "Float", "value": "2.0"},
+                        "88": {"tag": "Float", "value": "3.0"},
+                        "89": {"tag": "Utf8", "value": "PermittedSubclasses"},
+                        "90": {"tag": "Utf8", "value": "BootstrapMethods"}},
                     "source file": "Foo.java",
                     "inner classes": [
                         {"inner class": "Phee", "outer class": "Phoo", "inner name": "InnerName", "flags": ["PROTECTED"]},
@@ -499,8 +512,11 @@ class ClassPrinterTest {
                           { "method name": "m",
                             "flags": ["PROTECTED"],
                             "method type": "(ZLjava/lang/Throwable;)Ljava/lang/Void;",
-                            "attributes": ["AnnotationDefault", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"],
+                            "attributes": ["AnnotationDefault", "MethodParameters", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"],
                             "annotation default": {"array": [{"boolean": "true"}, {"byte": "12"}, {"char": "c"}, {"class": "LPhee;"}, {"double": "1.3"}, {"enum class": "LBoo;", "constant name": "BOO"}, {"float": "3.7"}, {"int": "33"}, {"long": "3333"}, {"short": "25"}, {"string": "BOO"}, {"annotation class": "LPhoo;"}]},
+                            "method parameters": {
+                                "1": {"name": "param1", "flags": ["FINAL"]},
+                                "2": {"name": "param2", "flags": []}},
                             "visible parameter annotations": {
                                 "parameter 1": [{"annotation class": "LPhoo;", "values": [{"name": "flfl", "value": {"float": "22.0"}}, {"name": "frfl", "value": {"float": "11.0"}}]}]},
                             "invisible parameter annotations": {
@@ -570,7 +586,7 @@ class ClassPrinterTest {
                           { "method name": "m",
                             "flags": ["PROTECTED"],
                             "method type": "(ZLjava/lang/Throwable;)Ljava/lang/Void;",
-                            "attributes": ["AnnotationDefault", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"],
+                            "attributes": ["AnnotationDefault", "MethodParameters", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"],
                             "code": {
                                 "max stack": 1,
                                 "max locals": 3,
@@ -617,7 +633,7 @@ class ClassPrinterTest {
                           { "method name": "m",
                             "flags": ["PROTECTED"],
                             "method type": "(ZLjava/lang/Throwable;)Ljava/lang/Void;",
-                            "attributes": ["AnnotationDefault", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"]}]}
+                            "attributes": ["AnnotationDefault", "MethodParameters", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"]}]}
                 """);
     }
 
@@ -681,46 +697,49 @@ class ClassPrinterTest {
                         <_45><tag>Integer</tag><value>25</value></_45>
                         <_46><tag>Utf8</tag><value>param</value></_46>
                         <_47><tag>Integer</tag><value>3</value></_47>
-                        <_48><tag>Utf8</tag><value>RuntimeVisibleParameterAnnotations</value></_48>
-                        <_49><tag>Float</tag><value>22.0</value></_49>
-                        <_50><tag>Float</tag><value>11.0</value></_50>
-                        <_51><tag>Utf8</tag><value>RuntimeInvisibleParameterAnnotations</value></_51>
-                        <_52><tag>Float</tag><value>-22.0</value></_52>
-                        <_53><tag>Float</tag><value>-11.0</value></_53>
-                        <_54><tag>Utf8</tag><value>Exceptions</value></_54>
-                        <_55><tag>Utf8</tag><value>Bee</value></_55>
-                        <_56><tag>Class</tag><class_name_index>55</class_name_index><class_internal_name>Bee</class_internal_name></_56>
-                        <_57><tag>Utf8</tag><value>Code</value></_57>
-                        <_58><tag>Utf8</tag><value>RuntimeInvisibleTypeAnnotations</value></_58>
-                        <_59><tag>Utf8</tag><value>RuntimeVisibleTypeAnnotations</value></_59>
-                        <_60><tag>Utf8</tag><value>LFee;</value></_60>
-                        <_61><tag>Utf8</tag><value>yes</value></_61>
-                        <_62><tag>Integer</tag><value>0</value></_62>
-                        <_63><tag>Utf8</tag><value>LocalVariableTable</value></_63>
-                        <_64><tag>Utf8</tag><value>LocalVariableTypeTable</value></_64>
-                        <_65><tag>Utf8</tag><value>LineNumberTable</value></_65>
-                        <_66><tag>Utf8</tag><value>StackMapTable</value></_66>
-                        <_67><tag>Utf8</tag><value>SourceFile</value></_67>
-                        <_68><tag>Utf8</tag><value>Foo.java</value></_68>
-                        <_69><tag>Utf8</tag><value>InnerClasses</value></_69>
-                        <_70><tag>Utf8</tag><value>InnerName</value></_70>
-                        <_71><tag>Utf8</tag><value>EnclosingMethod</value></_71>
-                        <_72><tag>Utf8</tag><value>enclosingMethod</value></_72>
-                        <_73><tag>Utf8</tag><value>(Ljava/util/Collection;)Ljava/lang/Double;</value></_73>
-                        <_74><tag>NameAndType</tag><name_index>72</name_index><type_index>73</type_index><name>enclosingMethod</name><type>(Ljava/util/Collection;)Ljava/lang/Double;</type></_74>
-                        <_75><tag>Utf8</tag><value>Synthetic</value></_75>
-                        <_76><tag>Utf8</tag><value>Signature</value></_76>
-                        <_77><tag>Utf8</tag><value>LBoo;LPhee;LPhoo;</value></_77>
-                        <_78><tag>Utf8</tag><value>Deprecated</value></_78>
-                        <_79><tag>Utf8</tag><value>NestHost</value></_79>
-                        <_80><tag>Utf8</tag><value>NestMembers</value></_80>
-                        <_81><tag>Utf8</tag><value>Record</value></_81>
-                        <_82><tag>Utf8</tag><value>fee</value></_82>
-                        <_83><tag>Utf8</tag><value>RuntimeInvisibleAnnotations</value></_83>
-                        <_84><tag>Float</tag><value>2.0</value></_84>
-                        <_85><tag>Float</tag><value>3.0</value></_85>
-                        <_86><tag>Utf8</tag><value>PermittedSubclasses</value></_86>
-                        <_87><tag>Utf8</tag><value>BootstrapMethods</value></_87></constant_pool>
+                        <_48><tag>Utf8</tag><value>MethodParameters</value></_48>
+                        <_49><tag>Utf8</tag><value>param1</value></_49>
+                        <_50><tag>Utf8</tag><value>param2</value></_50>
+                        <_51><tag>Utf8</tag><value>RuntimeVisibleParameterAnnotations</value></_51>
+                        <_52><tag>Float</tag><value>22.0</value></_52>
+                        <_53><tag>Float</tag><value>11.0</value></_53>
+                        <_54><tag>Utf8</tag><value>RuntimeInvisibleParameterAnnotations</value></_54>
+                        <_55><tag>Float</tag><value>-22.0</value></_55>
+                        <_56><tag>Float</tag><value>-11.0</value></_56>
+                        <_57><tag>Utf8</tag><value>Exceptions</value></_57>
+                        <_58><tag>Utf8</tag><value>Bee</value></_58>
+                        <_59><tag>Class</tag><class_name_index>58</class_name_index><class_internal_name>Bee</class_internal_name></_59>
+                        <_60><tag>Utf8</tag><value>Code</value></_60>
+                        <_61><tag>Utf8</tag><value>RuntimeInvisibleTypeAnnotations</value></_61>
+                        <_62><tag>Utf8</tag><value>RuntimeVisibleTypeAnnotations</value></_62>
+                        <_63><tag>Utf8</tag><value>LFee;</value></_63>
+                        <_64><tag>Utf8</tag><value>yes</value></_64>
+                        <_65><tag>Integer</tag><value>0</value></_65>
+                        <_66><tag>Utf8</tag><value>LocalVariableTable</value></_66>
+                        <_67><tag>Utf8</tag><value>LocalVariableTypeTable</value></_67>
+                        <_68><tag>Utf8</tag><value>LineNumberTable</value></_68>
+                        <_69><tag>Utf8</tag><value>StackMapTable</value></_69>
+                        <_70><tag>Utf8</tag><value>SourceFile</value></_70>
+                        <_71><tag>Utf8</tag><value>Foo.java</value></_71>
+                        <_72><tag>Utf8</tag><value>InnerClasses</value></_72>
+                        <_73><tag>Utf8</tag><value>InnerName</value></_73>
+                        <_74><tag>Utf8</tag><value>EnclosingMethod</value></_74>
+                        <_75><tag>Utf8</tag><value>enclosingMethod</value></_75>
+                        <_76><tag>Utf8</tag><value>(Ljava/util/Collection;)Ljava/lang/Double;</value></_76>
+                        <_77><tag>NameAndType</tag><name_index>75</name_index><type_index>76</type_index><name>enclosingMethod</name><type>(Ljava/util/Collection;)Ljava/lang/Double;</type></_77>
+                        <_78><tag>Utf8</tag><value>Synthetic</value></_78>
+                        <_79><tag>Utf8</tag><value>Signature</value></_79>
+                        <_80><tag>Utf8</tag><value>LBoo;LPhee;LPhoo;</value></_80>
+                        <_81><tag>Utf8</tag><value>Deprecated</value></_81>
+                        <_82><tag>Utf8</tag><value>NestHost</value></_82>
+                        <_83><tag>Utf8</tag><value>NestMembers</value></_83>
+                        <_84><tag>Utf8</tag><value>Record</value></_84>
+                        <_85><tag>Utf8</tag><value>fee</value></_85>
+                        <_86><tag>Utf8</tag><value>RuntimeInvisibleAnnotations</value></_86>
+                        <_87><tag>Float</tag><value>2.0</value></_87>
+                        <_88><tag>Float</tag><value>3.0</value></_88>
+                        <_89><tag>Utf8</tag><value>PermittedSubclasses</value></_89>
+                        <_90><tag>Utf8</tag><value>BootstrapMethods</value></_90></constant_pool>
                     <source_file>Foo.java</source_file>
                     <inner_classes>
                         <cls><inner_class>Phee</inner_class><outer_class>Phoo</outer_class><inner_name>InnerName</inner_name><flags><flag>PROTECTED</flag></flags></cls>
@@ -755,8 +774,11 @@ class ClassPrinterTest {
                             <method_name>m</method_name>
                             <flags><flag>PROTECTED</flag></flags>
                             <method_type>(ZLjava/lang/Throwable;)Ljava/lang/Void;</method_type>
-                            <attributes><attribute>AnnotationDefault</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes>
+                            <attributes><attribute>AnnotationDefault</attribute><attribute>MethodParameters</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes>
                             <annotation_default><array><value><boolean>true</boolean></value><value><byte>12</byte></value><value><char>c</char></value><value><class>LPhee;</class></value><value><double>1.3</double></value><value><enum_class>LBoo;</enum_class><constant_name>BOO</constant_name></value><value><float>3.7</float></value><value><int>33</int></value><value><long>3333</long></value><value><short>25</short></value><value><string>BOO</string></value><value><annotation_class>LPhoo;</annotation_class></value></array></annotation_default>
+                            <method_parameters>
+                                <_1><name>param1</name><flags><flag>FINAL</flag></flags></_1>
+                                <_2><name>param2</name><flags></flags></_2></method_parameters>
                             <visible_parameter_annotations>
                                 <parameter_1><anno><annotation_class>LPhoo;</annotation_class><values><pair><name>flfl</name><value><float>22.0</float></value></pair><pair><name>frfl</name><value><float>11.0</float></value></pair></values></anno></parameter_1></visible_parameter_annotations>
                             <invisible_parameter_annotations>
@@ -830,7 +852,7 @@ class ClassPrinterTest {
                             <method_name>m</method_name>
                             <flags><flag>PROTECTED</flag></flags>
                             <method_type>(ZLjava/lang/Throwable;)Ljava/lang/Void;</method_type>
-                            <attributes><attribute>AnnotationDefault</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes>
+                            <attributes><attribute>AnnotationDefault</attribute><attribute>MethodParameters</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes>
                             <code>
                                 <max_stack>1</max_stack>
                                 <max_locals>3</max_locals>
@@ -881,26 +903,26 @@ class ClassPrinterTest {
                             <method_name>m</method_name>
                             <flags><flag>PROTECTED</flag></flags>
                             <method_type>(ZLjava/lang/Throwable;)Ljava/lang/Void;</method_type>
-                            <attributes><attribute>AnnotationDefault</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes></method></methods></class>
+                            <attributes><attribute>AnnotationDefault</attribute><attribute>MethodParameters</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes></method></methods></class>
                 """);
     }
 
     @Test
     void testWalkTraceAll() throws IOException {
         var node = ClassPrinter.toTree(getClassModel(), ClassPrinter.Verbosity.TRACE_ALL);
-        assertEquals(node.walk().count(), 588);
+        assertEquals(node.walk().count(), 606);
     }
 
     @Test
     void testWalkCriticalAttributes() throws IOException {
         var node = ClassPrinter.toTree(getClassModel(), ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES);
-        assertEquals(node.walk().count(), 146);
+        assertEquals(node.walk().count(), 147);
     }
 
     @Test
     void testWalkMembersOnly() throws IOException {
         var node = ClassPrinter.toTree(getClassModel(), ClassPrinter.Verbosity.MEMBERS_ONLY);
-        assertEquals(node.walk().count(), 42);
+        assertEquals(node.walk().count(), 43);
     }
 
     private static void assertOut(CharSequence out, String expected) {
