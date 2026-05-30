@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address ame_addr = __ pc();
   __ jmp( Address(rbx, Method::from_compiled_offset()));
 
-  masm->flush();
+  // Code will be copied. No ICache sync required.
   slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, index_dependent_slop);
 
@@ -246,7 +246,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // dirty work.
   __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-  masm->flush();
+  // Code will be copied. No ICache sync required.
   slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, index_dependent_slop);
 

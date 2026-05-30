@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ z_lg(Z_R1_scratch, in_bytes(Method::from_compiled_offset()), Z_method);
   __ z_br(Z_R1_scratch);
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
@@ -235,7 +235,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
   __ z_br(Z_R1_scratch);
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;

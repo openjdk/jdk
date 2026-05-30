@@ -1982,7 +1982,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
-    __ flush();
+    // Code will be copied. No ICache sync required.
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
@@ -2011,7 +2011,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                          in_sig_bt,
                          in_regs);
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-    __ flush();
+    // Code will be copied. No ICache sync required.
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
     return nmethod::new_native_nmethod(method,
                                        compile_id,
@@ -2671,7 +2671,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Done.
   // --------------------------------------------------------------------------
 
-  __ flush();
+  // Code will be copied. No ICache sync required.
 
   nmethod *nm = nmethod::new_native_nmethod(method,
                                             compile_id,
@@ -3038,8 +3038,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ unimplemented("deopt blob needed only with compiler");
 #endif
 
-  // Make sure all code is generated
-  __ flush();
+  // Code will be copied. No ICache sync required.
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset,
                                            reexecute_offset, first_frame_size_in_bytes / wordSize);
@@ -3176,7 +3175,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Return to the interpreter entry point.
   __ blr();
 
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   return UncommonTrapBlob::create(&buffer, oop_maps, frame_size_in_bytes/wordSize);
 }
@@ -3282,8 +3281,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
 
   __ blr();
 
-  // Make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   // Fill-out other meta info
   // CodeBlob frame size is in words.
@@ -3369,9 +3367,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   __ std(R11_scratch1, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
   __ b64_patchable(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type);
 
-  // -------------
-  // Make sure all code is generated.
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   // return the blob
   // frame_size_words or bytes??

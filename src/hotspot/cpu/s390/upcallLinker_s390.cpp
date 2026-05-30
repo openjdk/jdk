@@ -267,7 +267,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  _masm->flush();
+  // Code will be copied. No ICache sync required.
 
 #ifndef PRODUCT
   stringStream ss;
