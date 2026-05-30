@@ -320,7 +320,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * @since  1.5
      */
     public Writer append(CharSequence csq) throws IOException {
-        write(String.valueOf(csq));
+        write(csq == null ? "null" : csq.toString());
         return this;
     }
 
