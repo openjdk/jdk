@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8348760
+ * @bug 8348760 8370945
  * @summary Verify if RadioButtonMenuItem bullet and
  *          JCheckboxMenuItem checkmark is shown if
  *          JRadioButtonMenuItem and JCheckboxMenuItem
@@ -75,14 +75,20 @@ public class TestRadioAndCheckMenuItemWithIcon {
         for first JCheckBoxMenuItem with imageicon
         a checkmark is shown alongside the imageicon.
 
-        If bullet and checkmark is shown, test passes else fails.""";
+        Also, verify the JMenuItem "MenuItem2" red square imageicon location.
+        Red square icon location should be close to the left edge of JMenu
+        and should be in same column as checkmark and radiobullet
+        and text of all menuitems should be vertically aligned.
+
+        If bullet and checkmark is shown,
+        and "MenuItem2" imageicon location is as described, test passes else fails.""";
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         PassFailJFrame.builder()
                 .title("JRadioButtonMenuItem Instructions")
                 .instructions(INSTRUCTIONS)
-                .columns(60)
+                .columns(75)
                 .testUI(TestRadioAndCheckMenuItemWithIcon::doTest)
                 .build()
                 .awaitAndCheck();
