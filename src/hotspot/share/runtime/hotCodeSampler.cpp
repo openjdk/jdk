@@ -45,15 +45,13 @@ void ThreadSampler::sample_all_java_threads() {
       continue;
     }
 
-    if (CodeCache::contains(pc)) {
-      nmethod* nm = CodeCache::find_blob(pc)->as_nmethod_or_null();
-      if (nm != nullptr) {
-        bool created = false;
-        int *count = _samples.put_if_absent(nm, 0, &created);
-        (*count)++;
-        if (created) {
-          _samples.maybe_grow();
-        }
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb != nullptr && cb->is_nmethod()) {
+      bool created = false;
+      int *count = _samples.put_if_absent(cb->as_nmethod(), 0, &created);
+      (*count)++;
+      if (created) {
+        _samples.maybe_grow();
       }
     }
   }
