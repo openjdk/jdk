@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class JdbExprTest extends JdbTest {
         execCommand(JdbCommand.set("JdbExprTestTarg.anInt", "0x80000000"))
                 .shouldMatch("InvalidTypeException: .* convert 2147483648 to int");
         execCommand(JdbCommand.set("JdbExprTestTarg.anInt", "0x8000000000000000L"))
-                .shouldContain("java.lang.NumberFormatException: For input string: \"8000000000000000\"");
+                .shouldContain("java.lang.NumberFormatException: Error at index 15 in: \"8000000000000000\"");
 
         execCommand(JdbCommand.set("JdbExprTestTarg.anInt", "0x7fffffff"))
                 .shouldContain("0x7fffffff = 2147483647");
