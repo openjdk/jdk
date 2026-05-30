@@ -171,7 +171,8 @@ module java.base {
     exports jdk.internal.classfile.components to
         jdk.jfr;
     exports jdk.internal.foreign to
-        jdk.incubator.vector;
+        jdk.incubator.vector,
+        jdk.security.auth;
     exports jdk.internal.event to
         jdk.jfr;
     exports jdk.internal.io to
