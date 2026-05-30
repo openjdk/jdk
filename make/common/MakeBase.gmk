@@ -203,7 +203,7 @@ ExtendFlags = $(foreach file,$(call FilterFiles,$(strip $1),$(strip $2)),$(call 
 
 ################################################################################
 
-MAX_PARAMS := 96
+MAX_PARAMS := 130
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
 
 # Template for creating a macro taking named parameters. To use it, assign the
