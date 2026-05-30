@@ -289,14 +289,14 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
 
   CodeOffsets* code_offsets = assembler->offsets();
 
+  // generate code for slow cases
+  assembler->emit_slow_case_stubs();
+  CHECK_BAILOUT();
+
   if (!code()->finalize_stubs()) {
     bailout("CodeCache is full");
     return;
   }
-
-  // generate code or slow cases
-  assembler->emit_slow_case_stubs();
-  CHECK_BAILOUT();
 
   // generate exception adapters
   assembler->emit_exception_entries(exception_info_list());
