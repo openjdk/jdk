@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand.StandardAssert;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageCommand.MessageCategory;
@@ -237,6 +238,9 @@ public class WinL10nTest {
             if (withJavaOptions) {
                 // Use jpackage as a command to allow "-J" options come through
                 cmd.useToolProvider(false);
+                // Disable FA validation as it will read exported MSI tables that require reading
+                // string data with non-default character encoding(s) that may be unavailable.
+                cmd.excludeStandardAsserts(StandardAssert.FILE_ASSOCIATIONS);
             }
 
             // Cultures handling is affected by the WiX extensions used.

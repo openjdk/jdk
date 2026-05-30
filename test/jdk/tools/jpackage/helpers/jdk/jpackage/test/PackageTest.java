@@ -56,7 +56,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -259,30 +258,25 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     static void withFileAssociationsTestRuns(FileAssociations fa,
-            ThrowingBiConsumer<FileAssociations.TestRun, List<Path>, ? extends Exception> consumer) {
+            ThrowingBiConsumer<FileAssociations.TestRun, Path, ? extends Exception> consumer) {
         Objects.requireNonNull(consumer);
         for (var testRun : fa.getTestRuns()) {
             TKit.withTempDirectory("fa-test-files", tempDir -> {
-                List<Path> testFiles = StreamSupport.stream(testRun.getFileNames().spliterator(), false).map(fname -> {
-                    return tempDir.resolve(fname + fa.getSuffix()).toAbsolutePath().normalize();
-                }).toList();
+                var testFile = tempDir.resolve(testRun.fileName().toString() + fa.getSuffix()).toAbsolutePath().normalize();
 
-                testFiles.forEach(toConsumer(Files::createFile));
+                Files.createFile(testFile);
 
                 if (TKit.isLinux()) {
-                    testFiles.forEach(LinuxHelper::initFileAssociationsTestFile);
+                    LinuxHelper.initFileAssociationsTestFile(testFile);
                 }
 
-                consumer.accept(testRun, testFiles);
+                consumer.accept(testRun, testFile);
             });
         }
     }
 
     PackageTest addHelloAppFileAssociationsVerifier(FileAssociations fa) {
         Objects.requireNonNull(fa);
-
-        // Setup test app to have valid jpackage command line before running the check.
-        addHelloAppInitializer(null);
 
         forTypes(LINUX, () -> {
             LinuxHelper.addFileAssociationsVerifier(this, fa);
@@ -300,12 +294,11 @@ public final class PackageTest extends RunnablePackageTest {
                 return;
             }
 
-            withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
-                final Path appOutput = testFiles.get(0).getParent()
-                        .resolve(HelloApp.OUTPUT_FILENAME);
+            withFileAssociationsTestRuns(fa, (testRun, testFile) -> {
+                final Path appOutput = testFile.getParent().resolve(HelloApp.OUTPUT_FILENAME);
                 Files.deleteIfExists(appOutput);
 
-                List<String> expectedArgs = testRun.openFiles(testFiles);
+                List<String> expectedArgs = testRun.openFile(testFile);
                 TKit.waitForFileCreated(appOutput, Duration.ofSeconds(7), Duration.ofSeconds(3));
 
                 HelloApp.verifyOutputFile(appOutput, expectedArgs, Map.of());

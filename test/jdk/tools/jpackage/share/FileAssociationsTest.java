@@ -27,12 +27,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -87,10 +89,15 @@ public class FileAssociationsTest {
     @Parameter("true")
     @Parameter("false")
     public static void test(boolean includeDescription) throws IOException {
-        PackageTest packageTest = new PackageTest();
+        PackageTest packageTest = new PackageTest().configureHelloApp();
 
         // Not supported
         packageTest.excludeTypes(PackageType.MAC_DMG);
+
+        if (RunnablePackageTest.hasAction(RunnablePackageTest.Action.INSTALL)) {
+            // Ensure launchers are executable.
+            packageTest.addInitializer(JPackageCommand::ignoreFakeRuntime);
+        }
 
         FileAssociations fa = new FileAssociations("jptest1");
         if (!includeDescription) {
@@ -102,7 +109,6 @@ public class FileAssociationsTest {
         Files.copy(ICON, icon);
 
         new FileAssociations("jptest2")
-                .setFilename("fa2")
                 .setIcon(icon)
                 .applyTo(packageTest);
 
@@ -142,6 +148,36 @@ public class FileAssociationsTest {
                     JPackageCommand.makeError("error.too-many-content-types-for-file-association", 1),
                     JPackageCommand.makeAdvice("error.too-many-content-types-for-file-association.advice", 1));
         }).run();
+    }
+
+
+    @Test
+    @Parameter("true")
+    @Parameter("false")
+    public static void testFromAppImage(boolean withAdditionalLauncher) {
+
+        var appImageCmd = JPackageCommand.helloAppImage();
+
+        if (RunnablePackageTest.hasAction(RunnablePackageTest.Action.INSTALL)) {
+            // Ensure launchers are executable.
+            appImageCmd.ignoreFakeRuntime();
+        }
+
+        if (withAdditionalLauncher) {
+            new AdditionalLauncher("foo").applyTo(appImageCmd);
+        }
+
+        new PackageTest()
+                .excludeTypes(PackageType.MAC_DMG)
+                .addRunOnceInitializer(appImageCmd::execute)
+                .usePredefinedAppImage(appImageCmd)
+                .addInitializer(cmd -> {
+                    // Lousy JDK-8372753 patch in jdk25 doesn't work if `--name` option is missing.
+                    // Ensure this is not a problem anymore.
+                    cmd.removeArgumentWithValue("--name");
+                })
+                .mutate(new FileAssociations("jptest3")::applyTo)
+                .run();
     }
 
     private static PackageTest initPackageTest() {

@@ -22,7 +22,11 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.test.TKit.getSingleItem;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
@@ -45,6 +49,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.test.FileAssociations.FileAssociationDescriptor;
 
 
 public final class MsiDatabase {
@@ -83,6 +89,7 @@ public final class MsiDatabase {
         DIRECTORY("Directory"),
         FILE("File"),
         PROPERTY("Property"),
+        REGISTRY("Registry"),
         SHORTCUT("Shortcut"),
         CONTROL_EVENT("ControlEvent"),
         INSTALL_UI_SEQUENCE("InstallUISequence"),
@@ -101,6 +108,7 @@ public final class MsiDatabase {
         static final Set<Table> FIND_PROPERTY_REQUIRED_TABLES = Set.of(PROPERTY);
         static final Set<Table> LIST_SHORTCUTS_REQUIRED_TABLES = Set.of(COMPONENT, DIRECTORY, FILE, SHORTCUT);
         static final Set<Table> UI_ALTERATIONS_REQUIRED_TABLES = Set.of(CONTROL_EVENT, INSTALL_UI_SEQUENCE);
+        static final Set<Table> FA_REQUIRED_TABLES = Set.of(COMPONENT, DIRECTORY, FILE, REGISTRY);
     }
 
 
@@ -179,6 +187,51 @@ public final class MsiDatabase {
                 .thenComparing(Comparator.comparingInt(ControlEvent::ordering))).toList();
 
         return new UIAlterations(actions, controlEvents);
+    }
+
+    Collection<FileAssociationDescriptor> fileAssociations() {
+        return rows(Table.REGISTRY).filter(row -> {
+            return row.apply("Name").equals("Content Type");
+        }).map(row -> {
+            var extension = row.apply("Key");
+
+            var mime = row.apply("Value");
+
+            var id = getSingleItem(rows(Table.REGISTRY).filter(row2 -> {
+                return row2.apply("Name").equals("") && row2.apply("Key").equals(extension);
+            }).map(row2 -> {
+                return row2.apply("Value");
+            }));
+
+            var description = getSingleItem(rows(Table.REGISTRY).filter(row2 -> {
+                return row2.apply("Key").equals(id);
+            }).map(row2 -> {
+                return row2.apply("Value");
+            }).map(v -> {
+                if (v.isEmpty()) {
+                    v = null;
+                }
+                return v;
+            }));
+
+            var launcherName = getSingleItem(rows(Table.REGISTRY).filter(row2 -> {
+                return row2.apply("Key").equals(id + "\\shell\\open\\command");
+            }).map(row2 -> {
+                // "[#file10a74e783935359393275e13817c7281]" "%1" %*
+                var cmdline = row2.apply("Value");
+                // [#file10a74e783935359393275e13817c7281]
+                var formattedExecutable = removeQuotes(cmdline.split("\\s+")[0]);
+                var launcherExecutable = Path.of(expandFormattedString(formattedExecutable)).getFileName();
+                return PathUtils.replaceSuffix(launcherExecutable, "");
+            })).toString();
+
+            return new FileAssociationDescriptor(
+                    launcherName,
+                    Optional.ofNullable(description),
+                    mime,
+                    // .foo -> foo
+                    Optional.of(extension.substring(1)));
+        }).toList();
     }
 
     record Shortcut(Path path, Path target, Path workDir) {
@@ -320,6 +373,14 @@ public final class MsiDatabase {
         return sb.toString();
     }
 
+    private static String removeQuotes(String str) {
+        if (str.charAt(0) == '"' && str.charAt(str.length() - 1) == '"') {
+            return str.substring(1, str.length() - 1);
+        } else {
+            return str;
+        }
+    }
+
 
     private record MsiTable(Map<String, List<String>> columns) {
 
@@ -419,14 +480,37 @@ public final class MsiDatabase {
          * @param path path to the input text archive file
          * @return the table header
          */
+        @SuppressWarnings("fallthrough")
         static IdtFileHeader loadFromTextArchiveFile(Path idtFile) {
             var charset = StandardCharsets.US_ASCII;
-            try (var stream = Files.lines(idtFile, charset)) {
-                var headerLines = stream.limit(3).toList();
-                if (headerLines.size() != 3) {
-                    throw new IllegalArgumentException(String.format(
-                            "[%s] file should have at least three text lines", idtFile));
-                }
+
+            // Don't use `Files.lines(idtFile, charset).limit(3)` to read the table header as it may attempt to fetch more than
+            // three lines of text using the ASCII encoding, which will blow if a different encoding is used for the table body.
+            // This is the case with WinL10nTest test when it deals with Japanese locale.
+
+            try (var in = new BufferedInputStream(new FileInputStream(idtFile.toFile()))) {
+                var headerLines = new ArrayList<String>();
+                var buf = new ByteArrayOutputStream();
+                do {
+                    int b = in.read();
+                    switch (b) {
+                        case -1:
+                            throw new IllegalArgumentException(String.format(
+                                    "[%s] file should have at least three text lines", idtFile));
+                        case '\r':
+                            in.mark(1);
+                            if (in.read() != '\n') {
+                                in.reset();
+                            }
+                        case '\n':
+                            headerLines.add(new String(buf.toByteArray(), charset));
+                            buf.reset();
+                            break;
+                        default:
+                            buf.write(b);
+                            break;
+                    }
+                } while (headerLines.size() < 3);
 
                 var columns = headerLines.get(0).split("\t");
 

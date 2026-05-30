@@ -25,6 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -88,7 +89,7 @@ public interface Launcher {
      *
      * @return the file associations of this launcher
      */
-    List<FileAssociation> fileAssociations();
+    Collection<FileAssociation> fileAssociations();
 
     /**
      * Returns <code>true</code> if this launcher should be installed as a service.
@@ -185,8 +186,14 @@ public interface Launcher {
     /**
      * Default implementation of {@link Launcher} interface.
      */
-    record Stub(String name, Optional<LauncherStartupInfo> startupInfo, List<FileAssociation> fileAssociations,
-            boolean isService, String description, Optional<LauncherIcon> icon, String defaultIconResourceName,
+    record Stub(
+            String name,
+            Optional<LauncherStartupInfo> startupInfo,
+            Collection<FileAssociation> fileAssociations,
+            boolean isService,
+            String description,
+            Optional<LauncherIcon> icon,
+            String defaultIconResourceName,
             Map<String, String> extraAppImageFileData) implements Launcher {
     }
 }

@@ -1636,6 +1636,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertFileExists(libjliPath);
             }
         }),
+        FILE_ASSOCIATIONS(cmd -> {
+            if (!cmd.isRuntime()) {
+                FileAssociations.validateFileAssociations(cmd);
+            }
+        }),
         MAC_BUNDLE_STRUCTURE(cmd -> {
             if (TKit.isOSX()) {
                 MacHelper.verifyBundleStructure(cmd);
@@ -1764,6 +1769,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             copy.removeArgumentWithValue("--runtime-image");
             if (!copy.hasArgument("--name")) {
                 copy.addArguments("--name", cmd.nameFromRuntimeImage().orElseThrow());
+            }
+            if (!copy.hasArgument("--app-version")) {
+                copy.addArguments("--app-version", cmd.version());
             }
             return copy;
         }

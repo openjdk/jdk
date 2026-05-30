@@ -27,21 +27,24 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public final class FileAssociations {
     public FileAssociations(String faSuffixName) {
         suffixName = faSuffixName;
-        setFilename("fa");
         setDescription("jpackage test extension");
     }
 
-    private void createFile() {
+    private Path createPropertiesFile() {
         Map<String, String> entries = new TreeMap<>(Map.of(
             "extension", suffixName,
             "mime-type", getMime()
@@ -56,12 +59,11 @@ public final class FileAssociations {
                 entries.put("icon", icon.toString());
             }
         }
-        TKit.createPropertiesFile(file, entries);
-    }
 
-    public FileAssociations setFilename(String v) {
-        file = TKit.workDir().resolve(v + ".properties");
-        return this;
+        var path = TKit.createTempFile("fa.properties");
+        TKit.createPropertiesFile(path, entries);
+
+        return path;
     }
 
     public FileAssociations setDescription(String v) {
@@ -72,10 +74,6 @@ public final class FileAssociations {
     public FileAssociations setIcon(Path v) {
         icon = v;
         return this;
-    }
-
-    Path getPropertiesFile() {
-        return file;
     }
 
     String getSuffix() {
@@ -93,8 +91,7 @@ public final class FileAssociations {
     public void applyTo(PackageTest test) {
         test.notForTypes(PackageType.MAC_DMG, () -> {
             test.addInitializer(cmd -> {
-                createFile();
-                cmd.addArguments("--file-associations", getPropertiesFile());
+                cmd.addArguments("--file-associations", createPropertiesFile());
             });
             test.addHelloAppFileAssociationsVerifier(this);
         });
@@ -119,14 +116,18 @@ public final class FileAssociations {
         return new TestRunsBuilder();
     }
 
-    static class TestRun {
-        Iterable<String> getFileNames() {
-            return testFileNames;
+    record TestRun(Path fileName, InvocationType invocationType) {
+
+        TestRun {
+            Objects.requireNonNull(fileName);
+            Objects.requireNonNull(invocationType);
+
+            if (fileName.getNameCount() != 1 || fileName.isAbsolute()) {
+                throw new IllegalArgumentException();
+            }
         }
 
-        List<String> openFiles(List<Path> testFiles) throws IOException {
-            // current supported invocation types work only on single files
-            Path testFile = testFiles.get(0);
+        List<String> openFile(Path testFile) throws IOException {
 
             // To test unicode arguments on Windows manually:
             // 1. add the following argument ("Hello" in Bulgarian) to the
@@ -202,54 +203,144 @@ public final class FileAssociations {
                             "Invalid invocationType: [%s]", invocationType));
             }
         }
-
-        private TestRun(Collection<String> testFileNames,
-                InvocationType invocationType) {
-
-            Objects.requireNonNull(invocationType);
-
-            if (testFileNames.size() == 0) {
-                throw new IllegalArgumentException("Empty test file names list");
-            }
-
-            if (invocationType == InvocationType.DesktopOpenAssociatedFile && testFileNames.size() != 1) {
-                throw new IllegalArgumentException("Only one file can be configured for opening with the desktop");
-            }
-
-            this.testFileNames = testFileNames;
-            this.invocationType = invocationType;
-        }
-
-        private final Collection<String> testFileNames;
-        private final InvocationType invocationType;
     }
 
-    public static class TestRunsBuilder {
+    public static final class TestRunsBuilder {
+
+        private TestRunsBuilder() {
+        }
+
         public TestRunsBuilder setCurrentInvocationType(InvocationType v) {
             curInvocationType = v;
             return this;
         }
 
-        public TestRunsBuilder addTestRunForFilenames(String ... filenames) {
-            testRuns.add(new TestRun(List.of(filenames), curInvocationType));
+        public TestRunsBuilder addTestRunForFilenames(String fileName) {
+            testRuns.add(new TestRun(Path.of(fileName), curInvocationType));
             return this;
         }
 
         public void applyTo(FileAssociations fa) {
-            fa.testRuns = testRuns;
+            fa.testRuns = List.copyOf(testRuns);
         }
 
         private InvocationType curInvocationType = InvocationType.DesktopOpenAssociatedFile;
         private List<TestRun> testRuns = new ArrayList<>();
     }
 
-    public static enum InvocationType {
+    public enum InvocationType {
         DesktopOpenAssociatedFile,
         WinCommandLine,
         WinDesktopOpenShortcut
     }
 
-    private Path file;
+    record FileAssociationDescriptor(
+            String launcherName,
+            Optional<String> description,
+            String mimeType,
+            Optional<String> extension) {
+
+        FileAssociationDescriptor {
+            Objects.requireNonNull(launcherName);
+            Objects.requireNonNull(description);
+            Objects.requireNonNull(mimeType);
+            Objects.requireNonNull(extension);
+        }
+
+        FileAssociationDescriptor copyWithDescription(String description) {
+            return new FileAssociationDescriptor(launcherName, Optional.of(description), mimeType, extension);
+        }
+
+        static FileAssociationDescriptor create(String launcherName, PropertyFile props) {
+            return new FileAssociationDescriptor(
+                    launcherName,
+                    props.findProperty("description"),
+                    props.findProperty("mime-type").orElseThrow(),
+                    props.findProperty("extension"));
+        }
+
+        private static <T> Comparator<Optional<T>> optionalComparator(Comparator<T> valueComparator) {
+            return Comparator
+                    .comparing(Optional<T>::isPresent)
+                    .thenComparing(opt -> {
+                        return opt.orElse(null);
+                    }, Comparator.nullsLast(valueComparator));
+        }
+
+        static final Comparator<FileAssociationDescriptor> COMPARATOR = Comparator
+                .comparing(FileAssociationDescriptor::launcherName)
+                .thenComparing(FileAssociationDescriptor::mimeType)
+                .thenComparing(FileAssociationDescriptor::extension, optionalComparator(String::compareTo))
+                .thenComparing(FileAssociationDescriptor::description, optionalComparator(String::compareTo));
+    }
+
+    static void validateFileAssociations(JPackageCommand cmd) {
+        if (TKit.isOSX() && cmd.hasArgument("--app-image")) {
+            // It fails on macOS because jpackage ignores --file-associations and many other options
+            // when building a package from the predefined app image.
+            TKit.trace("Not validating FA because jpackage ignores --file-associations option "
+                    + "when building a package from the predefined app image");
+            return;
+        }
+
+        var comm = Comm.compare(Set.copyOf(declaredFileAssociations(cmd)), Set.copyOf(definedFileAssociations(cmd)));
+        if (!Stream.of(comm.unique1(), comm.unique2(), comm.common()).allMatch(Collection::isEmpty)) {
+            trace(comm.common(), "Expected file associations (size=%d):");
+            trace(comm.unique1(), "Missing file associations (size=%d):");
+            trace(comm.unique2(), "Unexpected file associations (size=%d):");
+            TKit.trace("DONE");
+            TKit.assertTrue(comm.uniqueEmpty(), "Check file associations are as expected");
+        }
+    }
+
+    private static void trace(Collection<FileAssociationDescriptor> fas, String format) {
+        Objects.requireNonNull(fas);
+        Objects.requireNonNull(format);
+        if (!fas.isEmpty()) {
+            TKit.trace(String.format(format, fas.size()));
+            fas.stream().sorted(FileAssociationDescriptor.COMPARATOR).forEach(fa -> {
+                var tokens = new ArrayList<String>();
+                tokens.add("launcher=[" + fa.launcherName() + "]");
+                tokens.add("mime=[" + fa.mimeType() + "]");
+                fa.extension().ifPresent(extension -> {
+                    tokens.add("ext=[" + extension + "]");
+                });
+                fa.description().ifPresent(description -> {
+                    tokens.add("description=[" + description + "]");
+                });
+                TKit.trace(String.format("  %s", tokens.stream().collect(Collectors.joining(", "))));
+            });
+        }
+    }
+
+    private static Collection<FileAssociationDescriptor> definedFileAssociations(JPackageCommand cmd) {
+        if (cmd.isImagePackageType()) {
+            if (TKit.isOSX()) {
+                return MacHelper.fileAssociations(cmd);
+            } else {
+                return List.of();
+            }
+        } else if (TKit.isWindows()) {
+            return WindowsHelper.fileAssociations(cmd);
+        } else if (TKit.isLinux()) {
+            return LinuxHelper.fileAssociations(cmd);
+        } else if (TKit.isOSX()) {
+            return MacHelper.fileAssociations(cmd);
+        } else {
+            throw new AssertionError();
+        }
+    }
+
+    private static Collection<FileAssociationDescriptor> declaredFileAssociations(JPackageCommand cmd) {
+        return Stream.of(cmd.getAllArgumentValues("--file-associations")).map(Path::of).map(PropertyFile::new).map(props -> {
+            var fa = FileAssociationDescriptor.create(cmd.mainLauncherName(), props);
+            if (fa.description().isEmpty() && !TKit.isOSX()) {
+                fa = fa.copyWithDescription(String.format("%s association", cmd.name()));
+            }
+            return fa;
+        }).toList();
+    }
+
     private final String suffixName;
     private String description;
     private Path icon;

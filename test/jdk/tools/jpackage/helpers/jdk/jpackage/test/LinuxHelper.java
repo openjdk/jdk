@@ -27,6 +27,9 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
+import static jdk.jpackage.internal.util.XmlUtils.queryNodes;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.test.TKit.findZeroOrSingleItem;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -50,12 +53,19 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.Result;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.XmlUtils;
+import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.test.FileAssociations.FileAssociationDescriptor;
 import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 
 public final class LinuxHelper {
@@ -383,6 +393,57 @@ public final class LinuxHelper {
         }).toList();
     }
 
+    static Collection<FileAssociationDescriptor> fileAssociations(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+
+        final var mimeInfoXml = findZeroOrSingleItem(relativePackageFilesInSubdirectory(
+                cmd, ApplicationLayout::desktopIntegrationDirectory).filter(path -> {
+                    return path.getNameCount() == 1 && path.toString().endsWith("-MimeInfo.xml");
+                }).map(cmd.appLayout().desktopIntegrationDirectory()::resolve));
+
+        var mimeTypes = mimeInfoXml
+                .map(Path::toFile)
+                .map(toFunction(XmlUtils.initDocumentBuilder()::parse))
+                .map(MimeType::parseMimeTypes)
+                .orElseGet(List::of);
+
+        final var desktopFiles = getDesktopFiles(cmd);
+
+        var launcherWithMimeType = desktopFiles.stream().flatMap(path -> {
+            var launcherName = launcherNameFromDesktopFile(cmd, path);
+            return new DesktopFile(path, false).find("MimeType").map(mimeTypesString -> {
+                return Stream.of(mimeTypesString.split(";")).filter(Predicate.not(String::isEmpty)).map(mimeType -> {
+                    return Map.entry(launcherName, mimeType);
+                });
+            }).orElseGet(Stream::of);
+        }).toList();
+
+        var mimeTypesInMimeInfoXml = mimeTypes.stream().map(MimeType::value).collect(toMap(x -> x, x -> x, (a, _) -> {
+            throw new IllegalStateException(String.format("Duplicated mime type [%s] in [%s] file", a, mimeInfoXml.orElseThrow()));
+        })).keySet().stream().sorted().toList();
+
+        var mimeTypeToLauncher = launcherWithMimeType.stream().collect(toMap(Map.Entry::getValue, Map.Entry::getKey, (a, _) -> {
+            throw new IllegalStateException(String.format("Mime type [%s] is handled by multiple launchers", a));
+        }));
+
+        TKit.assertStringListEquals(mimeTypesInMimeInfoXml, mimeTypeToLauncher.keySet().stream().sorted().toList(), mimeInfoXml.map(path -> {
+            return String.format("Check mime types in [%s] file match mime types handled by launchers", path);
+        }).orElseGet(() -> {
+            return "Check launchers don't handle mime types";
+        }));
+
+        return mimeTypes.stream().flatMap(mimeType -> {
+            var extensions = mimeType.globToExtensions().stream().map(Optional::of).toList();
+            if (extensions.isEmpty()) {
+                extensions = List.of(Optional.empty());
+            }
+            return extensions.stream().map(extension -> {
+                return new FileAssociationDescriptor(
+                        mimeTypeToLauncher.get(mimeType.value()), mimeType.comment(), mimeType.value(), extension);
+            });
+        }).toList();
+    }
+
     static void addBundleDesktopIntegrationVerifier(PackageTest test, boolean integrated) {
         final String xdgUtils = "xdg-utils";
 
@@ -644,48 +705,35 @@ public final class LinuxHelper {
                 "Failed to locate system .desktop files folder"));
     }
 
-    private static void withTestFileAssociationsFile(FileAssociations fa,
-            ThrowingConsumer<Path, ? extends Exception> consumer) {
-        boolean iterated[] = new boolean[] { false };
-        PackageTest.withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
-            if (!iterated[0]) {
-                iterated[0] = true;
-                consumer.accept(testFiles.get(0));
-            }
-        });
-    }
-
     static void addFileAssociationsVerifier(PackageTest test, FileAssociations fa) {
         test.addInstallVerifier(cmd -> {
             if (cmd.isPackageUnpacked("Not running file associations checks")) {
                 return;
             }
 
-            withTestFileAssociationsFile(fa, testFile -> {
+            PackageTest.withFileAssociationsTestRuns(fa, (_, testFile) -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertEquals(fa.getMime(), mimeType, String.format(
                         "Check mime type of [%s] file", testFile));
 
-                String desktopFileName = queryMimeTypeDefaultHandler(mimeType).orElse(null);
+                String desktopFileName = queryMimeTypeDefaultHandler(mimeType).orElseThrow();
 
-                Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(
-                        desktopFileName);
-                Path appDesktopFile = cmd.appLayout().desktopIntegrationDirectory().resolve(
-                        desktopFileName);
+                Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFileName);
+                Path appDesktopFile = cmd.appLayout().desktopIntegrationDirectory().resolve(desktopFileName);
 
                 TKit.assertFileExists(systemDesktopFile);
                 TKit.assertFileExists(appDesktopFile);
 
-                TKit.assertStringListEquals(Files.readAllLines(appDesktopFile),
-                        Files.readAllLines(systemDesktopFile), String.format(
-                        "Check [%s] file is a copy of [%s] file",
-                        systemDesktopFile, appDesktopFile));
+                TKit.assertStringListEquals(
+                        Files.readAllLines(appDesktopFile),
+                        Files.readAllLines(systemDesktopFile),
+                        String.format("Check [%s] file is a copy of [%s] file", systemDesktopFile, appDesktopFile));
             });
         });
 
         test.addUninstallVerifier(cmd -> {
-            withTestFileAssociationsFile(fa, testFile -> {
+            PackageTest.withFileAssociationsTestRuns(fa, (_, testFile) -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertNotEquals(fa.getMime(), mimeType, String.format(
@@ -932,6 +980,55 @@ public final class LinuxHelper {
         }
 
         private final Map<String, String> data;
+    }
+
+
+    private record MimeType(String value, Optional<String> glob, Optional<String> comment) {
+
+        MimeType {
+            Objects.requireNonNull(value);
+            Objects.requireNonNull(glob);
+            Objects.requireNonNull(comment);
+        }
+
+        static Collection<MimeType> parseMimeTypes(Node node) {
+
+            final String query;
+            if (node.getParentNode() == null) {
+                query = "/mime-info/mime-type";
+            } else {
+                query = "mime-type";
+            }
+
+            try {
+                return queryNodes(node, XPathSingleton.INSTANCE, query).map(Element.class::cast).map(toFunction(e -> {
+                    var mimeType = e.getAttribute("type");
+                    var glob = queryNodes(e, XPathSingleton.INSTANCE, "glob[1]/@pattern").findFirst().map(Node::getTextContent);
+                    var comment = queryNodes(e, XPathSingleton.INSTANCE, "comment[1]").findFirst().map(Node::getTextContent);
+
+                    return new MimeType(mimeType, glob, comment);
+                })).toList();
+            } catch (XPathExpressionException ex) {
+                throw ExceptionBox.toUnchecked(ex);
+            }
+        }
+
+        List<String> globToExtensions() {
+            return glob.map(v -> {
+                return Stream.of(v.split(";")).map(str -> {
+                    if (str.startsWith("*.")) {
+                        // Strip the leading '*.' substring
+                        return str.substring(2);
+                    } else {
+                        return str;
+                    }
+                }).toList();
+            }).orElseGet(List::of);
+        }
+
+        private static final class XPathSingleton {
+            private static final XPath INSTANCE = XPathFactory.newInstance().newXPath();
+        }
     }
 
 
