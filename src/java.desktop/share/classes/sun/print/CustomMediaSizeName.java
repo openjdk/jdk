@@ -209,10 +209,7 @@ class CustomMediaSizeName extends MediaSizeName {
                     try {
                         new MediaSize(width, length, Size2DSyntax.INCH, value);
                     } catch (IllegalArgumentException e) {
-                        /* PDF printer in Linux for Ledger paper causes
-                        "IllegalArgumentException: X dimension > Y dimension".
-                        We rotate based on IPP spec. */
-                        new MediaSize(length, width, Size2DSyntax.INCH, value);
+                        // Should not happen, keep for safety
                     }
                 }
             }

@@ -77,13 +77,10 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @param  units unit conversion factor, e.g. {@code Size2DSyntax.INCH} or
      *         {@code Size2DSyntax.MM}
      * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
-     *         {@code units < 1} or {@code x > y}
+     *         {@code units < 1}
      */
     public MediaSize(float x, float y,int units) {
         super (x, y, units);
-        if (x > y) {
-            throw new IllegalArgumentException("X dimension > Y dimension");
-        }
         sizeVector.add(this);
     }
 
@@ -95,13 +92,10 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @param  units unit conversion factor, e.g. {@code Size2DSyntax.INCH} or
      *         {@code Size2DSyntax.MM}
      * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
-     *         {@code units < 1} or {@code x > y}
+     *         {@code units < 1}
      */
     public MediaSize(int x, int y,int units) {
         super (x, y, units);
-        if (x > y) {
-            throw new IllegalArgumentException("X dimension > Y dimension");
-        }
         sizeVector.add(this);
     }
 
@@ -115,13 +109,10 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      *         {@code Size2DSyntax.MM}
      * @param  media a media name to associate with this {@code MediaSize}
      * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
-     *         {@code units < 1} or {@code x > y}
+     *         {@code units < 1}
      */
     public MediaSize(float x, float y,int units, MediaSizeName media) {
         super (x, y, units);
-        if (x > y) {
-            throw new IllegalArgumentException("X dimension > Y dimension");
-        }
         if (media != null && mediaMap.get(media) == null) {
             mediaName = media;
             mediaMap.put(mediaName, this);
@@ -138,13 +129,10 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      *         {@code Size2DSyntax.MM}
      * @param  media a media name to associate with this {@code MediaSize}
      * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
-     *         {@code units < 1} or {@code x > y}
+     *         {@code units < 1}
      */
     public MediaSize(int x, int y,int units, MediaSizeName media) {
         super (x, y, units);
-        if (x > y) {
-            throw new IllegalArgumentException("X dimension > Y dimension");
-        }
         if (media != null && mediaMap.get(media) == null) {
             mediaName = media;
             mediaMap.put(mediaName, this);
