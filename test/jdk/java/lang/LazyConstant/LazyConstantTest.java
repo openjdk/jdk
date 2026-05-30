@@ -316,6 +316,7 @@ final class LazyConstantTest {
         int interrupted = 1;
         AtomicInteger observedInterrupted = new AtomicInteger(unset);
         CountDownLatch supplierRunning = new CountDownLatch(1);
+        CountDownLatch interruptOccured = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
         LazyConstant<Integer> constant = LazyConstant.of(() -> {
@@ -325,6 +326,7 @@ final class LazyConstantTest {
             } catch (InterruptedException e) {
                 observedInterrupted.set(Thread.currentThread().isInterrupted() ? interrupted : notInterrupted);
                 Thread.currentThread().interrupt(); // restore if await cleared it
+                interruptOccured.countDown();
             }
             return VALUE;
         });
@@ -337,10 +339,14 @@ final class LazyConstantTest {
         });
 
         assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
-        Thread.sleep(OVERLAP_TIME_MS);
         t.interrupt();
-        release.countDown();
-        t.join();
+        try {
+            assertTrue(interruptOccured.await(TIME_OUT_S, TimeUnit.SECONDS));
+        } finally {
+            release.countDown();
+            t.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+        }
+        assertFalse(t.isAlive());
 
         assertEquals(notInterrupted, observedInterrupted.get()); // Observed before restoration of the status
         assertEquals(interrupted, interruptedAfterGet.get(), "get() cleared interrupt status");
