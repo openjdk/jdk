@@ -47,7 +47,7 @@
 
 ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity)
   : _backing(max_capacity),
-    _physical_mappings(ZAddressOffsetMax) {
+    _physical_mappings(ZAddressOffsetUpperLimit) {
   assert(is_aligned(max_capacity, ZGranuleSize), "must be granule aligned");
 
   // Setup backing storage limits
