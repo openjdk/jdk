@@ -26,6 +26,7 @@
 /*
  * @test
  * @key randomness
+ * @requires vm.compiler2.enabled & vm.opt.SegmentedCodeCache != false
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

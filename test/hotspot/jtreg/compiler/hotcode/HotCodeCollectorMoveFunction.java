@@ -24,14 +24,15 @@
 
 /*
  * @test
+ * @summary Ensure the HotCodeCollector detects a very hot method and relocates
+ *          it to the HotCodeHeap. Sampling is best effort, so for reliability
+ *          we spawn a seperate test process to manage the VM flags.
+ * @requires vm.flagless
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap
- *                   -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:HotCodeIntervalSeconds=0 -XX:HotCodeCallLevel=0
- *                   -XX:HotCodeSampleSeconds=5 -XX:HotCodeStablePercent=-1 -XX:HotCodeSamplePercent=100 -XX:HotCodeStartupDelaySeconds=0
- *                   -XX:CompileCommand=compileonly,compiler.hotcode.HotCodeCollectorMoveFunction::func
- *                   compiler.hotcode.HotCodeCollectorMoveFunction
+ * @run main/othervm compiler.hotcode.HotCodeCollectorMoveFunction
  */
 
 package compiler.hotcode;
@@ -39,50 +40,78 @@ package compiler.hotcode;
 import java.lang.reflect.Method;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.code.BlobType;
 import jdk.test.whitebox.code.NMethod;
 
 public class HotCodeCollectorMoveFunction {
 
-    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    private static final Method method;
-    private static final int C2_LEVEL = 4;
-    private static final int FUNC_RUN_MILLIS = 60_000;
-
-    static {
-        try {
-            method = HotCodeCollectorMoveFunction.class.getMethod("func");
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static void main(String[] args) throws Exception {
-        WHITE_BOX.testSetDontInlineMethod(method, true);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xbootclasspath/a:.",
+            "-Xbatch",
+            "-XX:-TieredCompilation",
+            "-XX:+SegmentedCodeCache",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+HotCodeHeap",
+            "-XX:+NMethodRelocation",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+WhiteBoxAPI",
+            "-XX:HotCodeIntervalSeconds=0",
+            "-XX:HotCodeCallLevel=0",
+            "-XX:HotCodeSampleSeconds=5",
+            "-XX:HotCodeStablePercent=-1",
+            "-XX:HotCodeSamplePercent=100",
+            "-XX:HotCodeStartupDelaySeconds=0",
+            "-XX:CompileCommand=compileonly," + Runner.class.getName() + "::func",
+            Runner.class.getName()
+        );
 
-        compileFunc();
-
-        // Call function so collector samples and relocates
-        func();
-
-        // Function should now be in the Hot code heap after collector has had time to relocate
-        NMethod reloc_nm = NMethod.get(method, false);
-        Asserts.assertNotEquals(reloc_nm, null);
-        Asserts.assertEQ(reloc_nm.code_blob_type, BlobType.MethodHot);
+        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
     }
 
-    public static void compileFunc() {
-        WHITE_BOX.enqueueMethodForCompilation(method, C2_LEVEL);
+    static class Runner {
+        private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+        private static final Method method;
+        private static final int C2_LEVEL = 4;
+        private static final int FUNC_RUN_MILLIS = 60_000;
 
-        if (WHITE_BOX.getMethodCompilationLevel(method) != C2_LEVEL) {
-            throw new IllegalStateException("Method " + method + " is not compiled by C2.");
+        static {
+            try {
+                method = Runner.class.getMethod("func");
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public static void main(String[] args) {
+            WHITE_BOX.testSetDontInlineMethod(method, true);
+
+            compileFunc();
+
+            // Call function so collector samples and relocates
+            func();
+
+            // Function should now be in the Hot code heap after collector has had time to relocate
+            NMethod relocatedNMethod = NMethod.get(method, false);
+            Asserts.assertNotNull(relocatedNMethod);
+            Asserts.assertEQ(BlobType.MethodHot, relocatedNMethod.code_blob_type);
+        }
+
+        private static void compileFunc() {
+            WHITE_BOX.enqueueMethodForCompilation(method, C2_LEVEL);
+
+            if (WHITE_BOX.getMethodCompilationLevel(method) != C2_LEVEL) {
+                throw new IllegalStateException("Method " + method + " is not compiled by C2.");
+            }
+        }
+
+        public static void func() {
+            long start = System.currentTimeMillis();
+            while (System.currentTimeMillis() - start < FUNC_RUN_MILLIS) {}
         }
     }
-
-    public static void func() {
-        long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < FUNC_RUN_MILLIS) {}
-    }
-
 }
