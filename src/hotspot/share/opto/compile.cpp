@@ -1793,8 +1793,9 @@ bool Compile::have_alias_type(const TypePtr* adr_type) {
   }
 
   // Handle special cases.
-  if (adr_type == nullptr)             return true;
+  if (adr_type == nullptr)          return true;
   if (adr_type == TypePtr::BOTTOM)  return true;
+  if (adr_type->base() == Type::AnyPtr && adr_type->is_ptr()->ptr() == TypePtr::Null) return false;
 
   return find_alias_type(adr_type, true, nullptr) != nullptr;
 }
