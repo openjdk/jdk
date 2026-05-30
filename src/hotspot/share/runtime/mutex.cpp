@@ -31,6 +31,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -51,7 +52,7 @@ class InFlightMutexRelease {
 
 #ifdef ASSERT
 void Mutex::check_block_state(Thread* thread) {
-  if (!_allow_vm_block && thread->is_VM_thread()) {
+  if (!_allow_vm_block && thread->is_VM_thread() && !Thread::is_revived()) {
     // JavaThreads are checked to make sure that they do not hold _allow_vm_block locks during operations
     // that could safepoint.  Make sure the vm thread never uses locks with _allow_vm_block == false.
     fatal("VM thread could block on lock that may be held by a JavaThread during safepoint: %s", name());
@@ -600,6 +601,19 @@ void Mutex::print_lock_ranks(outputStream* st) {
 #else
   st->print_cr("  Only known in debug builds.");
 #endif // ASSERT
+}
+
+void Mutex::clear_all_for_revive() {
+  guarantee(Thread::is_revived(), "Must be in revived VM to revive Mutexes");
+  for (int i = 0; i < Mutex::_num_mutex; i++) {
+    _internal_mutex_arr[i]->clear_for_revive();
+  }
+}
+
+void Mutex::clear_for_revive() {
+  guarantee(Thread::is_revived(), "Must be in revived VM to revive Mutex");
+  raw_set_owner(nullptr);
+  _lock.clear_for_revive();
 }
 
 RecursiveMutex::RecursiveMutex() : _sem(1), _owner(nullptr), _recursions(0) {}

@@ -4458,6 +4458,14 @@ static void check_pax(void) {
 #endif
 }
 
+void init_mallinfo() {
+#ifdef __GLIBC__
+  g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+  g_malloc_info = CAST_TO_FN_PTR(malloc_info_func_t, dlsym(RTLD_DEFAULT, "malloc_info"));
+#endif // __GLIBC__
+}
+
 // this is called _before_ most of the global arguments have been parsed
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
@@ -4476,11 +4484,7 @@ void os::init(void) {
 
   Linux::initialize_system_info();
 
-#ifdef __GLIBC__
-  g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
-  g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
-  g_malloc_info = CAST_TO_FN_PTR(malloc_info_func_t, dlsym(RTLD_DEFAULT, "malloc_info"));
-#endif // __GLIBC__
+  init_mallinfo();
 
   os::Linux::CPUPerfTicks pticks;
   bool res = os::Linux::get_tick_information(&pticks, -1);
@@ -4500,6 +4504,11 @@ void os::init(void) {
   FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(nullptr, 0, MADV_POPULATE_WRITE) == 0));
 
   os::Posix::init();
+}
+
+void os::Linux::revive_init(void) {
+  os::Posix::init();
+  init_mallinfo();
 }
 
 // To install functions for atexit system call

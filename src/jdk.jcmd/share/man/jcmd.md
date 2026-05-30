@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
 
 `jcmd` \[*pid* \| *main-class*\] *command*... \| `PerfCounter.print` \| `-f`
 *filename*
+
+`jcmd` \[ `-c` \] \[ `-L` *LIB_PATH* \] \[ `-R` *CACHE_PATH* \] *corefile* *command*... | `-f` *filename*
 
 `jcmd` \[`-l`\]
 
@@ -72,6 +74,23 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
 
 `-h`
 :   Displays the `jcmd` utility's command-line help.
+
+
+When using a core file (Linux) or MiniDump (Windows) for post-mortem analysis:
+
+`-c`
+:   Forces reading a core file, only required in case of a clash with a live process name.
+
+`-L` *LIB_PATH*
+:   Must be given if the core file originates from another system, or the
+    JDK at the path in the core has changed.
+    LIB_PATH must name a directory containing a copy of the same JDK that the corefile originated from.
+    When analyzing a corefile a `corefile.revival` cache directory is
+    created.  -L is not required once the cache is created.
+
+`-R` *CACHE_PATH*
+:   Should be specified when the core file is in a read-only location, to give a path
+    where cache files may be stored.  This must be specified on subsequent invocations.
 
 ## Description
 

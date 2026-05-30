@@ -296,6 +296,9 @@ class os: AllStatic {
 
   static double elapsed_process_cpu_time();
 
+  static jlong initial_time_count();
+  static uint64_t initial_time_date();
+
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
   // It is MT safe, but not async-safe, as reading time zone
   // information may require a lock on some platforms.

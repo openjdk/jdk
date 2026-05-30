@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,10 @@ void DCmdParser::add_dcmd_argument(GenDCmdArgument* arg) {
 }
 
 void DCmdParser::parse(CmdLine* line, char delim, TRAPS) {
+    parse(line, delim, nullptr, CHECK);
+}
+
+void DCmdParser::parse(CmdLine* line, char delim, outputStream* out, TRAPS) {
   GenDCmdArgument* next_argument = _arguments_list;
   DCmdArgIter iter(line->args_addr(), line->args_len(), delim);
   bool cont = iter.next(CHECK);
@@ -446,7 +450,7 @@ bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
 }
 
 void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {
-  _dcmdparser.parse(line, delim, CHECK);
+  _dcmdparser.parse(line, delim, output(), CHECK);
 }
 
 void DCmdWithParser::print_help(const char* name) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,4 +60,9 @@ void ThreadLocalStorage::set_thread(Thread* current) {
   assert(_initialized, "TLS not initialized yet!");
   BOOL res = TlsSetValue(_thread_key, current);
   assert(res, "TlsSetValue failed with error code: %lu", GetLastError());
+}
+
+uint64_t ThreadLocalStorage::revive(Thread* thread) {
+  // no-op on Windows but gives access to _thread_key
+  return (uint64_t) _thread_key;
 }

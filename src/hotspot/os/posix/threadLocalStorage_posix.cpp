@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,4 +67,12 @@ void ThreadLocalStorage::set_thread(Thread* current) {
   assert(_initialized, "TLS not initialized yet!");
   int rslt = pthread_setspecific(_thread_key, current);
   assert_status(rslt == 0, rslt, "pthread_setspecific");
+}
+
+uint64_t ThreadLocalStorage::revive(Thread* thread) {
+  int rslt = pthread_key_create(&_thread_key, restore_thread_pointer);
+  assert_status(rslt == 0, rslt, "pthread_key_create");
+  rslt = pthread_setspecific(_thread_key, thread);
+  assert_status(rslt == 0, rslt, "pthread_setspecific");
+  return (uint64_t) _thread_key;
 }
