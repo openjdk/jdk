@@ -39,6 +39,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -615,6 +616,7 @@ void JavaThread::run() {
   assert(!Thread::current()->owns_locks(), "sanity check");
 
   JFR_ONLY(Jfr::on_thread_start(this);)
+  JFR_ONLY(JfrStackWalker::on_javathread_create(this);)
 
   DTRACE_THREAD_PROBE(start, this);
 

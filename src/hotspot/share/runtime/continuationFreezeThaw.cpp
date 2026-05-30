@@ -79,6 +79,7 @@
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.inline.hpp"
 #endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -599,7 +600,8 @@ void FreezeBase::unwind_frames() {
   ContinuationEntry* entry = _cont.entry();
   entry->flush_stack_processing(_thread);
   assert_frames_in_continuation_are_safe(_thread);
-  JFR_ONLY(Jfr::check_and_process_sample_request(_thread);)
+  JFR_ONLY(JfrStackWalker::check_and_process_requests(_thread));
+  JFR_ONLY(Jfr::check_and_process_sample_request(_thread));
   set_anchor_to_entry(_thread, entry);
 }
 

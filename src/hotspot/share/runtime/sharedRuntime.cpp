@@ -95,6 +95,7 @@
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.inline.hpp"
 #endif
 
 // Shared runtime stub routines reside in their own unique blob with a
@@ -3246,7 +3247,9 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   assert(current == JavaThread::current(), "pre-condition");
-  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
+  JFR_ONLY(JfrStackWalker::check_and_process_requests(current));
+  JFR_ONLY(Jfr::check_and_process_sample_request(current));
+
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed
   // before it gets unwound. This is helpful as the size of the compiled frame could be

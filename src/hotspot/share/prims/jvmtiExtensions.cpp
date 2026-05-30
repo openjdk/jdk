@@ -28,15 +28,27 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
+#include "runtime/threadSMR.hpp"
+#include "utilities/macros.hpp"
+
+#if INCLUDE_JFR
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
+#endif
 
 // the list of extension functions
 GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
 
 // the list of extension events
 GrowableArray<jvmtiExtensionEventInfo*>* JvmtiExtensions::_ext_events;
-
 
 //
 // Extension Functions
@@ -167,6 +179,140 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   return JVMTI_ERROR_NONE;
 }
 
+#if INCLUDE_JFR
+
+class JfrStackTraceRequestCallback : public JfrStackWalkerCallback {
+  JfrTicks _sample_ticks;
+  jlong _user_data;
+
+public:
+  JfrStackTraceRequestCallback(jlong user_data) :
+    _sample_ticks(JfrTicks::now()),
+    _user_data(user_data) {
+  }
+
+  void on_stacktrace(JavaThread* jt, traceid sid, traceid tid, bool truncated, bool biased,
+                     JfrStackTrace& stack_trace) final {
+    EventStackTraceRequest event(UNTIMED);
+    event.set_starttime(_sample_ticks);
+    event.set_eventThread(tid);
+    event.set_stackTrace(sid);
+    event.set_userData(_user_data);
+    event.set_failed(false);
+    event.set_biased(biased);
+    event.commit();
+  }
+
+  void on_failure(JavaThread* jt, traceid tid) final {
+    EventStackTraceRequest event(UNTIMED);
+    event.set_starttime(_sample_ticks);
+    event.set_eventThread(tid);
+    event.set_stackTrace(0);
+    event.set_userData(_user_data);
+    event.set_failed(true);
+    event.set_biased(false);
+    event.commit();
+  }
+};
+
+#endif // INCLUDE_JFR
+
+// Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jlong user_data)
+static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
+#if !INCLUDE_JFR
+  return JVMTI_ERROR_NOT_AVAILABLE;
+#else
+  jthread thread = nullptr;
+  void* ucontext = nullptr;
+  jlong user_data = 0;
+  va_list ap;
+
+  va_start(ap, env);
+  thread = va_arg(ap, jthread);
+  ucontext = va_arg(ap, void*);
+  user_data = va_arg(ap, jlong);
+  va_end(ap);
+
+  // Use current_or_null_safe() because this is called from a signal handler
+  // and the signal may fire on a thread that is detaching from the VM.
+  Thread* current = Thread::current_or_null_safe();
+  if (current == nullptr || !current->is_Java_thread()) {
+    return JVMTI_ERROR_WRONG_PHASE;
+  }
+
+  if (!JfrRecorder::is_created()) {
+    return JVMTI_ERROR_WRONG_PHASE;
+  }
+
+  if (!EventStackTraceRequest::is_enabled()) {
+    return JVMTI_ERROR_NOT_AVAILABLE;
+  }
+
+  JavaThread* const current_jt = JavaThread::cast(current);
+
+  // Helper that issues the actual request once the target is known and
+  // (when foreign) protected by a live ThreadsListHandle in the caller.
+  auto submit = [&](JavaThread* target) -> jvmtiError {
+    // Filter out threads that are exiting or excluded, matching the JFR
+    // CPU time sampler's get_java_thread_if_valid() checks.
+    if (target->is_exiting() ||
+        target->is_hidden_from_external_view() ||
+        target->jfr_thread_local()->is_excluded()) {
+      return JVMTI_ERROR_WRONG_PHASE;
+    }
+    // The walker can read frame state directly only when the target is the
+    // calling thread (we hold its state by virtue of executing on it) or
+    // when the caller has externally suspended the target and provided a
+    // captured ucontext. Otherwise we queue a biased request, processed at
+    // the target's next safepoint.
+    const bool thread_is_suspended = (target == current_jt) || (ucontext != nullptr);
+
+    JfrStackWalkRequest request;
+    request.set_max_frames(JfrOptionSet::stackdepth());
+    request.construct_callback<JfrStackTraceRequestCallback>(user_data);
+    JfrStackWalker::request_stack_trace(request, target, ucontext, thread_is_suspended);
+    return JVMTI_ERROR_NONE;
+  };
+
+  if (thread == nullptr) {
+    // Signal-safe path: no JNI handle resolution, no ThreadsListHandle.
+    return submit(current_jt);
+  }
+
+  // Resolving a non-null jthread uses ThreadsListHandle and JNI handle
+  // resolution; the latter requires the calling thread to be in_VM. The
+  // JfrStackWalker submit path, in contrast, requires _thread_in_Java or
+  // _thread_in_native (it would silently drop the request otherwise), so
+  // we scope the in_VM transition narrowly to just the resolution.
+  // ThreadsListHandle stays alive across the submit so the resolved
+  // target JavaThread* cannot be freed underneath us. None of this is
+  // async-signal-safe; the JEP only promises signal-safety for the
+  // current-thread case (thread == nullptr).
+  ThreadsListHandle tlh;
+  JavaThread* target = nullptr;
+  {
+    ThreadInVMfromNative tiv(current_jt);
+    oop thread_oop = nullptr;
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(
+        tlh.list(), thread, &target, &thread_oop);
+    if (err != JVMTI_ERROR_NONE) {
+      // Explicit virtual thread arguments are not supported - vthread
+      // sampling is available via thread=NULL from within the vthread
+      // itself, where the carrier's walker traverses continuation frames.
+      // cv_external_thread_to_JavaThread reports INVALID_THREAD for any
+      // vthread because java_lang_Thread::thread(vthread_oop) is null;
+      // distinguish that case from "garbage jthread" via thread_oop.
+      if (thread_oop != nullptr
+          && java_lang_VirtualThread::is_instance(thread_oop)) {
+        return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+      }
+      return err;
+    }
+  }
+  return submit(target);
+#endif // !INCLUDE_JFR
+}
+
 // register extension functions and events. In this implementation we
 // have a single extension function (to prove the API) that tests if class
 // unloading is enabled or disabled. We also have a single extension event
@@ -225,9 +371,32 @@ void JvmtiExtensions::register_extensions() {
     errors
   };
 
+  static jvmtiParamInfo func_params_rst[] = {
+    { (char*)"thread",    JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_TRUE },
+    { (char*)"ucontext",  JVMTI_KIND_IN_PTR, JVMTI_TYPE_CVOID, JNI_TRUE },
+    { (char*)"user_data", JVMTI_KIND_IN, JVMTI_TYPE_JLONG, JNI_FALSE }
+  };
+
+  static jvmtiError rst_errors[] = {
+    JVMTI_ERROR_NOT_AVAILABLE,
+    JVMTI_ERROR_UNSUPPORTED_OPERATION,
+    JVMTI_ERROR_WRONG_PHASE
+  };
+
+  static jvmtiExtensionFunctionInfo ext_func_rst = {
+    (jvmtiExtensionFunction)RequestJFRStackTrace,
+    (char*)"com.sun.hotspot.functions.RequestJFRStackTrace",
+    (char*)"Request an async stack trace of the current thread, emitted as a JFR StackTraceRequest event",
+    sizeof(func_params_rst)/sizeof(func_params_rst[0]),
+    func_params_rst,
+    sizeof(rst_errors)/sizeof(jvmtiError),
+    rst_errors
+  };
+
   _ext_functions->append(&ext_func0);
   _ext_functions->append(&ext_func1);
   _ext_functions->append(&ext_func2);
+  _ext_functions->append(&ext_func_rst);
 
   // register our extension event
 
