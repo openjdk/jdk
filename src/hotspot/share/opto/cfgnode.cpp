@@ -37,6 +37,7 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -690,6 +691,36 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         assert(parent_ctrl != nullptr, "Region is a copy of some non-null control");
         assert(parent_ctrl != this, "Close dead loop");
       }
+
+      // Process all the Phis when cnt == 1, do it separately because this calls
+      // igvn->transform(phi) which can randomly create and delete outputs of this, upsetting
+      // DUIterator
+      if (cnt == 1) {
+        bool progress = true;
+        while (progress) {
+          progress = false;
+          for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+            Node* phi = fast_out(i);
+            if (!phi->is_Phi()) {
+              continue;
+            }
+            if (phi->outcnt() == 0) {
+              // Dead node does not need processing
+              continue;
+            }
+
+            assert(phi->req() == 2 && phi->in(1) != nullptr, "Only one data input expected");
+            Node* simplified_phi = igvn->transform(phi);
+            assert(!simplified_phi->is_Phi() || simplified_phi->in(0) != this, "must be simplified");
+            igvn->replace_node(phi, simplified_phi);
+
+            // Iterate again from the beginning, or DUIterator will complain
+            progress = true;
+            break;
+          }
+        }
+      }
+
       if (add_to_worklist) {
         igvn->add_users_to_worklist(this); // Check for further allowed opts
       }
@@ -703,19 +734,12 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
           continue;
         }
-        if( n->is_Phi() ) {   // Collapse all Phis
+        if (n->is_Phi()) {   // Collapse all Phis
           // Eagerly replace phis to avoid regionless phis.
-          Node* in;
-          if( cnt == 0 ) {
-            assert( n->req() == 1, "No data inputs expected" );
-            in = parent_ctrl; // replaced by top
-          } else {
-            assert( n->req() == 2 &&  n->in(1) != nullptr, "Only one data input expected" );
-            in = n->in(1);               // replaced by unique input
-            if( n->as_Phi()->is_unsafe_data_reference(in) )
-              in = phase->C->top();      // replaced by top
-          }
-          igvn->replace_node(n, in);
+          assert(cnt == 0, "must process already");
+          assert(n->req() == 1, "No data inputs expected");
+          Node* top = parent_ctrl; // replaced by top
+          igvn->replace_node(n, top);
         }
         else if( n->is_Region() ) { // Update all incoming edges
           assert(n != this, "Must be removed from DefUse edges");
@@ -2165,6 +2189,88 @@ bool PhiNode::wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const {
   return false;
 }
 
+Node* PhiNode::ideal_unique_input(PhaseGVN* phase, bool can_reshape, Node* unique_input, bool uncasted) {
+  assert(unique_input != nullptr, "must have a unique_input");
+  assert(!must_wait_for_region_in_irreducible_loop(phase), "must check beforehand");
+
+  Node* top = phase->C->top();
+  if (unique_input == top) {
+    // Simplest case: no alive inputs
+    if (can_reshape) {
+      return top;
+    } else {
+      // Can't return top during parsing, identity will return TOP
+      return nullptr;
+    }
+  }
+
+  // Determine if this input is backedge of a loop.
+  // (Skip new phis which have no uses and dead regions).
+  RegionNode* r = region();
+  if (outcnt() > 0 && r->in(0) != nullptr) {
+    if (is_data_loop(r->as_Region(), unique_input, phase)) {
+      // Break this data loop to avoid creation of a dead loop.
+      if (can_reshape) {
+        return top;
+      } else {
+        // We can't return top if we are in Parse phase - cut inputs only
+        // let Identity to handle the case.
+        replace_edge(unique_input, top, phase);
+        return nullptr;
+      }
+    }
+  }
+
+  const Type* phi_type = bottom_type();
+  const Type* uin_type = phase->type(unique_input);
+
+  // In principle, we should insert a cast whenever uin_type is not a subset of phi_type. However,
+  // it is unexpected to leave behind a CastII after removing the iv of a CountedLoop. As a result,
+  // only handle pointers for now, as they are necessary, see Node::verify_type_replacement.
+  if (!uncasted && (!phi_type->isa_ptr() || uin_type->higher_equal_speculative(phi_type))) {
+    // Let Identity handle
+    return nullptr;
+  }
+
+  // Add casts to carry the control dependency of the Phi that is going away
+  const TypeTuple* extra_types = collect_types(phase);
+  if (phi_type->isa_ptr() == nullptr) {
+    assert(phi_type->isa_narrowoop() == nullptr, "must not be a narrow oop");
+    return ConstraintCastNode::make_cast_for_type(r, unique_input, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+  }
+
+  if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
+    return new CastPPNode(r, unique_input, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+  }
+
+  // Use a CastPP for a cast to not null and a CheckCastPP for a cast to a new klass (and
+  // both if both null-ness and klass change).
+
+  // If the type of phi is not null but the type of uin may be null, uin's type must be
+  // casted to not null
+  Node* cast = nullptr;
+  if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
+      uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
+    cast = new CastPPNode(r, unique_input, uin_type->filter_speculative(TypePtr::NOTNULL), ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+  }
+
+  // If the type of phi and uin, both casted to not null, differ the klass of uin must be
+  // (check)cast'ed to match that of phi
+  if (phi_type->join_speculative(TypePtr::NOTNULL) != uin_type->join_speculative(TypePtr::NOTNULL)) {
+    Node* n = unique_input;
+    if (cast != nullptr) {
+      cast = phase->transform(cast);
+      n = cast;
+    }
+    cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+  }
+
+  if (cast == nullptr) {
+    cast = new CastPPNode(r, unique_input, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
+  }
+  return cast;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
@@ -2248,98 +2354,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     uncasted = true;
     uin = unique_input(phase, true);
   }
-  if (uin == top) {             // Simplest case: no alive inputs.
-    if (can_reshape)            // IGVN transformation
-      return top;
-    else
-      return nullptr;              // Identity will return TOP
-  } else if (uin != nullptr) {
-    // Only one not-null unique input path is left.
-    // Determine if this input is backedge of a loop.
-    // (Skip new phis which have no uses and dead regions).
-    if (outcnt() > 0 && r->in(0) != nullptr) {
-      if (is_data_loop(r->as_Region(), uin, phase)) {
-        // Break this data loop to avoid creation of a dead loop.
-        if (can_reshape) {
-          return top;
-        } else {
-          // We can't return top if we are in Parse phase - cut inputs only
-          // let Identity to handle the case.
-          replace_edge(uin, top, phase);
-          return nullptr;
-        }
-      }
-    }
 
-    if (uncasted) {
-      // Add cast nodes between the phi to be removed and its unique input.
-      // Wait until after parsing for the type information to propagate from the casts.
-      assert(can_reshape, "Invalid during parsing");
-      const Type* phi_type = bottom_type();
-      // Add casts to carry the control dependency of the Phi that is
-      // going away
-      Node* cast = nullptr;
-      const TypeTuple* extra_types = collect_types(phase);
-      if (phi_type->isa_ptr()) {
-        const Type* uin_type = phase->type(uin);
-        if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-        } else {
-          // Use a CastPP for a cast to not null and a CheckCastPP for
-          // a cast to a new klass (and both if both null-ness and
-          // klass change).
-
-          // If the type of phi is not null but the type of uin may be
-          // null, uin's type must be casted to not null
-          if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
-              uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-          }
-
-          // If the type of phi and uin, both casted to not null,
-          // differ the klass of uin must be (check)cast'ed to match
-          // that of phi
-          if (phi_type->join_speculative(TypePtr::NOTNULL) != uin_type->join_speculative(TypePtr::NOTNULL)) {
-            Node* n = uin;
-            if (cast != nullptr) {
-              cast = phase->transform(cast);
-              n = cast;
-            }
-            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-          }
-          if (cast == nullptr) {
-            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-          }
-        }
-      } else {
-        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
-      }
-      assert(cast != nullptr, "cast should be set");
-      cast = phase->transform(cast);
-      // set all inputs to the new cast(s) so the Phi is removed by Identity
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      for (uint i = 1; i < req(); i++) {
-        set_req_X(i, cast, igvn);
-        progress = this;
-      }
-      uin = cast;
-    }
-
-    // One unique input.
-    DEBUG_ONLY(Node* ident = Identity(phase));
-    // The unique input must eventually be detected by the Identity call.
-#ifdef ASSERT
-    if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {
-      // print this output before failing assert
-      r->dump(3);
-      this->dump(3);
-      ident->dump();
-      uin->dump();
-    }
-#endif
-    // Identity may not return the expected uin, if it has to wait for the region, in irreducible case
-    assert(ident == uin || ident->is_top() || must_wait_for_region_in_irreducible_loop(phase), "Identity must clean this up");
-    return progress;
+  if (uin != nullptr) {
+    Node* res = ideal_unique_input(phase, can_reshape, uin, uncasted);
+    return res == nullptr ? progress : res;
   }
 
   Node* opt = nullptr;

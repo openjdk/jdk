@@ -183,6 +183,7 @@ class PhiNode : public TypeNode {
 
   void verify_type_stability(const PhaseGVN* phase, const Type* union_of_input_types, const Type* new_type) const NOT_DEBUG_RETURN;
   bool wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const;
+  Node* ideal_unique_input(PhaseGVN* phase, bool can_reshape, Node* unique_input, bool uncasted);
 
 public:
   // Node layout (parallels RegionNode):

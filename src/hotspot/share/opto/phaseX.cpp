@@ -2214,8 +2214,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 
   // Apply the Ideal call in a loop until it no longer applies
   Node* k = n;
-  DEBUG_ONLY(dead_loop_check(k);)
-  DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
+#ifdef ASSERT
+  dead_loop_check(k);
+  bool is_new = (k->outcnt() == 0);
+  const Type* old_bottom_type = n->bottom_type();
+#endif // ASSERT
   C->remove_modified_node(k);
 #ifndef PRODUCT
   uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
@@ -2237,6 +2240,9 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 #ifdef ASSERT
     if (loop_count >= K + C->live_nodes()) {
       dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
+    }
+    if (is_verify_Ideal()) {
+      Node::verify_type_replacement(old_bottom_type, i->bottom_type(), n, i);
     }
 #endif
     assert((i->_idx >= k->_idx) || i->is_top(), "Idealize should return new nodes, use Identity to return old nodes");
@@ -2298,6 +2304,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   // Now check for Identities
   i = k->Identity(this);      // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
+#ifdef ASSERT
+    if (is_verify_Identity()) {
+      Node::verify_type_replacement(k->bottom_type(), i->bottom_type(), k, i);
+    }
+#endif // ASSERT
     set_progress();
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
@@ -2654,6 +2665,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
+    });
+  }
+  // If changed AddI inputs, check Phi for CmpLTMask pattern
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Phi();
     });
   }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.

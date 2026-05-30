@@ -23,6 +23,8 @@
  *
  */
 
+#include "ci/ciEnv.hpp"
+#include "ci/ciInstanceKlass.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "libadt/vectset.hpp"
@@ -43,6 +45,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
@@ -89,6 +92,77 @@ void Node::verify_construction() {
   _hash_lock = 0;
 }
 
+// It is not valid to replace an oop node with another node such that the derived pointers lie in
+// different alias classes with and without the node. For example, a CastPPNode c may not cast an
+// Object to a Bottom[], because the removal of c during final_graph_rehshaping would affect the
+// alias class of c's array length field (c + arrayOopDesc::length_offset_in_bytes()).
+//
+// Effectively, it means that after a transformation, the type of the new oop node must be at
+// least as strong as the type of the old node.
+//
+// This function verifies that a replacing a node of old_type with another node of new_type does
+// not violate the aforementioned property.
+void Node::verify_type_replacement(const Type* old_type, const Type* new_type, const Node* old_node, const Node* new_node) {
+  if (old_type == Type::TOP || new_type == Type::TOP) {
+    // Dead graph can have weird interactions
+    return;
+  }
+  if (old_type->isa_oopptr() == nullptr && new_type->isa_oopptr() == nullptr) {
+    // Not oops, such as ints, longs
+    return;
+  }
+  if (old_type->base() == Type::AnyPtr || old_type->base() == Type::OopPtr) {
+    // Some very wide type, such as TypePtr::NOTNULL
+    return;
+  }
+
+  if (new_type->higher_equal(old_type)) {
+    // Trivially stricter
+    return;
+  }
+
+  const char* reason = nullptr;
+  if (old_type->isa_oopptr() == nullptr || new_type->isa_oopptr() == nullptr) {
+    reason = "must be both oops or both non-oops";
+  } else if (old_type->isa_aryptr() != nullptr) {
+    if (new_type->isa_aryptr() == nullptr) {
+      reason = "must not replace an array with a non-array";
+    }
+  } else {
+    ciInstanceKlass* old_citype = old_type->is_instptr()->instance_klass();
+    if (new_type->isa_aryptr() != nullptr) {
+      if (old_citype != ciEnv::current()->Object_klass()) {
+        reason = "can only replace a j.l.Object with an array";
+      }
+    } else {
+      ciInstanceKlass* new_citype = new_type->is_instptr()->instance_klass();
+      // Can replace a loaded type with an unloaded type, but not vice versa
+      if (new_citype->is_loaded() && !new_citype->is_subclass_of(old_citype)) {
+        reason = "can only replace a node with another node if the new node is a subtype of the new node";
+      }
+    }
+  }
+
+  if (reason == nullptr) {
+    return;
+  }
+
+  stringStream ss;
+  old_type->dump_on(&ss);
+  ss.cr();
+  new_type->dump_on(&ss);
+  ss.cr();
+  if (old_node != nullptr) {
+    ss.cr();
+    old_node->dump("", false, &ss);
+  }
+  if (new_node != nullptr) {
+    ss.cr();
+    new_node->dump("", false, &ss);
+  }
+  tty->print_cr("%s", ss.as_string());
+  assert(false, "%s", reason);
+}
 
 // #ifdef ASSERT ...
 
