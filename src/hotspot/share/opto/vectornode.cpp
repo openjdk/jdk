@@ -1513,18 +1513,30 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!in(3)->is_top() && in(3)->Opcode() == Op_VectorMaskGen) {
     Node* mask_len = in(3)->in(1);
     const TypeLong* ty = phase->type(mask_len)->isa_long();
-    if (ty && ty->is_con()) {
-      BasicType mask_bt = Matcher::vector_element_basic_type(in(3));
-      int load_sz = type2aelembytes(mask_bt) * ty->get_con();
-      if (load_sz > MaxVectorSize) {
-        // After loop opts, cast nodes are aggressively removed, if the input is then transformed
-        // into a constant that is outside the range of the removed cast, we may encounter it here.
-        // This should be a dead node then.
-        assert(Compile::current()->post_loop_opts_phase(), "Unexpected load size");
-        return phase->C->top();
+    if (ty != nullptr) {
+      bool is_all_true_mask = false;
+      if (ty->is_con()) {
+        BasicType mask_bt = Matcher::vector_element_basic_type(in(3));
+        jlong mask_lanes = ty->get_con();
+        int max_mask_lanes = Matcher::max_vector_size(mask_bt);
+        if (mask_lanes > max_mask_lanes) {
+          // After loop opts, cast nodes are aggressively removed, if the input is then transformed
+          // into a constant that is outside the range of the removed cast, we may encounter it here.
+          // This should be a dead node then.
+          assert(Compile::current()->post_loop_opts_phase(), "Unexpected load size");
+          return phase->C->top();
+        }
+
+        is_all_true_mask = (mask_lanes >= (jlong)vect_type()->length());
+      } else if (ty->lo_as_long() >= vect_type()->length()) {
+        // If loop optimizations can prove that the generated mask always has at least as many
+        // active lanes as this vector operation needs, then this masked load is equivalent to
+        // an unmasked load. This is important for main-loop iterations where the tail predicate
+        // is known to be all-true.
+        is_all_true_mask = true;
       }
 
-      if (load_sz == MaxVectorSize) {
+      if (is_all_true_mask) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
@@ -1539,18 +1551,27 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!in(4)->is_top() && in(4)->Opcode() == Op_VectorMaskGen) {
     Node* mask_len = in(4)->in(1);
     const TypeLong* ty = phase->type(mask_len)->isa_long();
-    if (ty && ty->is_con()) {
-      BasicType mask_bt = Matcher::vector_element_basic_type(in(4));
-      int load_sz = type2aelembytes(mask_bt) * ty->get_con();
-      if (load_sz > MaxVectorSize) {
-        // After loop opts, cast nodes are aggressively removed, if the input is then transformed
-        // into a constant that is outside the range of the removed cast, we may encounter it here.
-        // This should be a dead node then.
-        assert(Compile::current()->post_loop_opts_phase(), "Unexpected store size");
-        return phase->C->top();
+    if (ty != nullptr) {
+      bool is_all_true_mask = false;
+      if (ty->is_con()) {
+        BasicType mask_bt = Matcher::vector_element_basic_type(in(4));
+        jlong mask_lanes = ty->get_con();
+        int max_mask_lanes = Matcher::max_vector_size(mask_bt);
+        if (mask_lanes > max_mask_lanes) {
+          // After loop opts, cast nodes are aggressively removed, if the input is then transformed
+          // into a constant that is outside the range of the removed cast, we may encounter it here.
+          // This should be a dead node then.
+          assert(Compile::current()->post_loop_opts_phase(), "Unexpected store size");
+          return phase->C->top();
+        }
+
+        is_all_true_mask = (mask_lanes >= (jlong)vect_type()->length());
+      } else if (ty->lo_as_long() >= vect_type()->length()) {
+        // See LoadVectorMaskedNode::Ideal for rationale.
+        is_all_true_mask = true;
       }
 
-      if (load_sz == MaxVectorSize) {
+      if (is_all_true_mask) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
@@ -2771,6 +2792,26 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+Node* VectorBlendNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* mask = in(3);
+  if (mask != nullptr && mask->Opcode() == Op_VectorMaskGen) {
+    const TypeLong* ty = phase->type(mask->in(1))->isa_long();
+    if (ty != nullptr) {
+      bool is_all_true_mask = false;
+      if (ty->is_con()) {
+        is_all_true_mask = (ty->get_con() >= (jlong)vect_type()->length());
+      } else if (ty->lo_as_long() >= vect_type()->length()) {
+        is_all_true_mask = true;
+      }
+      if (is_all_true_mask) {
+        return in(2);
+      }
+    }
+  }
+  return nullptr;
+}
+
 static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&

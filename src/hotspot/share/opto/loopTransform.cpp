@@ -119,6 +119,190 @@ IfFalseNode* IdealLoopTree::unique_loop_exit_proj_or_null() {
 
 //=============================================================================
 
+// Strip long casts that may be introduced around expressions in loop optimization.
+static Node* strip_long_casts(Node* n) {
+  n = n->uncast();
+  while (n->Opcode() == Op_CastLL) {
+    n = n->in(1)->uncast();
+  }
+  return n;
+}
+
+// Match indexInRange mask length expressions derived from loop limits/ivs.
+// Supported forms:
+//   SubL(ConvI2L(limit), ConvI2L(iv))
+//   ConvI2L(SubI(limit, iv))
+static bool match_index_in_range_mask_len(Node* mask_len, Node* loop_limit, Node* iv) {
+  Node* len = strip_long_casts(mask_len);
+
+  if (len->Opcode() == Op_SubL) {
+    Node* limit_long = strip_long_casts(len->in(1));
+    Node* offset_long = strip_long_casts(len->in(2));
+    return (offset_long->Opcode() == Op_ConvI2L && offset_long->in(1) == iv) &&
+           (limit_long->Opcode() == Op_ConvI2L && limit_long->in(1) == loop_limit);
+  }
+
+  if (len->Opcode() == Op_ConvI2L) {
+    Node* sub = len->in(1)->uncast();
+    if (sub->Opcode() == Op_SubI) {
+      Node* limit = sub->in(1)->uncast();
+      Node* offset = sub->in(2)->uncast();
+      return (offset == iv) && (limit == loop_limit);
+    }
+  }
+
+  return false;
+}
+
+// Return true if all uses of n are inside loop.
+static bool all_uses_in_loop(Node* n, IdealLoopTree* loop, PhaseIdealLoop* phase) {
+  for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+    Node* use = n->fast_out(j);
+    if (!loop->is_member(phase->get_loop(use))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Detect loops with masked vector memory accesses using
+//   VectorMaskGen(limit - iv)
+// where limit is the counted-loop limit and iv is the counted-loop phi.
+// Return the maximum lane count among such masks, or 0 if not found.
+static int detect_index_in_range_masked_vector_lanes(IdealLoopTree* loop, CountedLoopNode* cl) {
+  Node* iv = cl->phi();
+  Node* loop_limit = cl->limit();
+  int max_lanes = 0;
+
+  for (uint i = 0; i < loop->_body.size(); i++) {
+    Node* n = loop->_body.at(i);
+    Node* mask = nullptr;
+    if (n->Opcode() == Op_LoadVectorMasked) {
+      mask = n->in(3);
+    } else if (n->Opcode() == Op_StoreVectorMasked) {
+      mask = n->in(4);
+    } else if (n->Opcode() == Op_VectorBlend) {
+      mask = n->in(3);
+    } else {
+      continue;
+    }
+
+    if (mask == nullptr || mask->Opcode() != Op_VectorMaskGen) {
+      continue;
+    }
+
+    if (!match_index_in_range_mask_len(mask->in(1), loop_limit, iv)) {
+      continue;
+    }
+
+    const TypeVect* mask_type = mask->bottom_type()->is_vect();
+    if (mask_type == nullptr) {
+      continue;
+    }
+    max_lanes = MAX2(max_lanes, (int)mask_type->length());
+  }
+
+  return max_lanes;
+}
+
+// Tighten main-loop limit so all main-loop iterations have a full mask:
+//   iv + (vlen - 1) < limit  <=>  iv < limit - (vlen - 1)
+static bool tighten_main_loop_limit_for_vector_masked_ops(PhaseIdealLoop* phase,
+                                                           CountedLoopNode* main_head,
+                                                           int mask_lanes) {
+  if (mask_lanes <= 1) {
+    return false;
+  }
+
+  CountedLoopEndNode* main_end = main_head->loopexit();
+  if (main_end == nullptr || main_end->test_trip() != BoolTest::lt || !main_end->stride_is_con() ||
+      main_end->stride_con() <= 0) {
+    return false;
+  }
+
+  Node* main_limit = main_end->limit();
+  if (phase->igvn().type(main_limit)->isa_int() == nullptr) {
+    return false;
+  }
+
+  Node* main_limit_ctrl = phase->get_ctrl(main_limit);
+  Node* underflow_bound = phase->intcon(min_jint + mask_lanes - 1);
+  Node* cmp = new CmpINode(main_limit, underflow_bound);
+  Node* bol = new BoolNode(cmp, BoolTest::lt);
+  phase->register_new_node(cmp, main_limit_ctrl);
+  phase->register_new_node(bol, main_limit_ctrl);
+
+  Node* sub = new SubINode(main_limit, phase->intcon(mask_lanes - 1));
+  phase->register_new_node(sub, main_limit_ctrl);
+
+  // Clamp to min_jint if the subtraction would underflow.
+  Node* adjusted_main_limit = CMoveNode::make(bol, phase->intcon(min_jint), sub, TypeInt::INT);
+  phase->register_new_node(adjusted_main_limit, main_limit_ctrl);
+
+  main_head->set_nonexact_trip_count();
+
+  Node* main_bol = main_end->in(CountedLoopEndNode::TestValue);
+  if (main_bol->outcnt() > 1) {
+    main_bol = main_bol->clone();
+    phase->register_new_node(main_bol, main_end->in(CountedLoopEndNode::TestControl));
+    phase->igvn().replace_input_of(main_end, CountedLoopEndNode::TestValue, main_bol);
+  }
+
+  Node* main_cmp = main_bol->in(1);
+  if (main_cmp->outcnt() > 1) {
+    main_cmp = main_cmp->clone();
+    phase->register_new_node(main_cmp, main_end->in(CountedLoopEndNode::TestControl));
+    phase->igvn().replace_input_of(main_bol, 1, main_cmp);
+  }
+  phase->igvn().replace_input_of(main_cmp, 2, adjusted_main_limit);
+
+  // Keep zero-trip guard for main loop consistent with the tightened limit.
+  Node* ctrl = main_head->skip_assertion_predicates_with_halt();
+  Node* iffm = ctrl != nullptr ? ctrl->in(0) : nullptr;
+  if (iffm != nullptr) {
+    Node* bol = iffm->in(1);
+    Node* cmp = bol != nullptr ? bol->in(1) : nullptr;
+    Node* opq = cmp != nullptr ? cmp->in(2) : nullptr;
+    OpaqueZeroTripGuardNode* opqz = (opq != nullptr && opq->Opcode() == Op_OpaqueZeroTripGuard)
+        ? (OpaqueZeroTripGuardNode*)opq : nullptr;
+    if (opqz != nullptr) {
+      phase->igvn().replace_input_of(opqz, 1, adjusted_main_limit);
+      phase->set_ctrl(opqz, phase->get_ctrl(adjusted_main_limit));
+    }
+  }
+
+  // Make indexInRange masks in the main loop explicit all-true masks so IGVN can
+  // fold masked operations reliably even when original limits are non-constant.
+  IdealLoopTree* main_ilt = phase->get_loop(main_head);
+  Node* iv = main_head->phi();
+  Node* loop_limit = main_head->limit();
+  for (uint i = 0; i < main_ilt->_body.size(); i++) {
+    Node* n = main_ilt->_body.at(i);
+    if (n->Opcode() != Op_VectorMaskGen) {
+      continue;
+    }
+
+    if (!match_index_in_range_mask_len(n->in(1), loop_limit, iv)) {
+      continue;
+    }
+
+    const TypeVect* mask_type = n->bottom_type()->is_vect();
+    if (mask_type == nullptr) {
+      continue;
+    }
+    // Be conservative: avoid rewriting a shared mask node that is also used
+    // outside the main loop (e.g. by post/drain). Rewriting such a node could
+    // accidentally force non-main users to all-true as well.
+    if (!all_uses_in_loop(n, main_ilt, phase)) {
+      continue;
+    }
+    phase->igvn().replace_input_of(n, 1, phase->longcon((jlong)mask_type->length()));
+  }
+
+  phase->C->set_major_progress();
+  return true;
+}
+
 
 //------------------------------record_for_igvn----------------------------
 // Put loop body on igvn work list
@@ -3653,6 +3837,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   bool should_unroll = policy_unroll(phase);
   bool should_rce    = policy_range_check(phase, false, T_INT);
   bool should_rce_long = policy_range_check(phase, false, T_LONG);
+  int vector_mask_lanes = detect_index_in_range_masked_vector_lanes(this, cl);
+  bool should_vector_mask_split = (vector_mask_lanes > 0);
 
   // If not RCE'ing (iteration splitting), then we do not need a pre-loop.
   // We may still need to peel an initial iteration but we will not
@@ -3665,7 +3851,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // If we have any of these conditions (RCE, unrolling) met, then
   // we switch to the pre-/main-/post-loop model.  This model also covers
   // peeling.
-  if (should_rce || should_unroll) {
+  if (should_rce || should_unroll || should_vector_mask_split) {
     if (cl->is_normal_loop()) { // Convert to 'pre/main/post' loops
       if (should_rce_long && phase->create_loop_nest(this, old_new)) {
         return true;
@@ -3686,6 +3872,13 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       }
 
       phase->insert_pre_post_loops(this, old_new, peel_only);
+
+      if (should_vector_mask_split) {
+        CountedLoopNode* main_head = _head->as_CountedLoop();
+        if (main_head->is_main_loop()) {
+          tighten_main_loop_limit_for_vector_masked_ops(phase, main_head, vector_mask_lanes);
+        }
+      }
     }
     // Adjust the pre- and main-loop limits to let the pre and  post loops run
     // with full checks, but the main-loop with no checks.  Remove said checks
