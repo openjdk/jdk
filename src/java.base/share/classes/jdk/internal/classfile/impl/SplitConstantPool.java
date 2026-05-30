@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,11 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public int bootstrapMethodCount() {
         return bsmSize;
+    }
+
+    private static int poolHash(PoolEntry cpi) {
+        // SplitConstantPool only stores the AbstractPoolEntry implementation.
+        return ((AbstractPoolEntry) cpi).poolHash();
     }
 
     @Override
@@ -193,13 +198,13 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                     doneFullScan = false;
                     i++;
                 } else {
-                    map.put(cpi.hashCode(), cpi.index());
+                    map.put(poolHash(cpi), cpi.index());
                     i += cpi.width();
                 }
             }
             for (int i = Math.max(parentSize, 1); i < size; ) {
                 PoolEntry cpi = myEntries[i - parentSize];
-                map.put(cpi.hashCode(), cpi.index());
+                map.put(poolHash(cpi), cpi.index());
                 i += cpi.width();
             }
         }
@@ -209,7 +214,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private void fullScan() {
         for (int i=1; i<parentSize;) {
             PoolEntry cpi = parent.entryByIndex(i);
-            map.put(cpi.hashCode(), cpi.index());
+            map.put(poolHash(cpi), cpi.index());
             i += cpi.width();
         }
         doneFullScan = true;
@@ -222,18 +227,18 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             this.bsmMap = bsmMap = new EntryMap(Math.max(bsmSize, 16), .75f);
             for (int i=0; i<parentBsmSize; i++) {
                 BootstrapMethodEntryImpl bsm = parent.bootstrapMethodEntry(i);
-                bsmMap.put(bsm.hash, bsm.index);
+                bsmMap.put(bsm.poolHash, bsm.index);
             }
             for (int i = parentBsmSize; i < bsmSize; ++i) {
                 BootstrapMethodEntryImpl bsm = myBsmEntries[i - parentBsmSize];
-                bsmMap.put(bsm.hash, bsm.index);
+                bsmMap.put(bsm.poolHash, bsm.index);
             }
         }
         return bsmMap;
     }
 
     private <E extends PoolEntry> E internalAdd(E cpi) {
-        return internalAdd(cpi, cpi.hashCode());
+        return internalAdd(cpi, poolHash(cpi));
     }
 
     private <E extends PoolEntry> E internalAdd(E cpi, int hash) {
@@ -720,7 +725,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             }
         }
         AbstractPoolEntry.MethodHandleEntryImpl mre = (AbstractPoolEntry.MethodHandleEntryImpl) methodReference;
-        int hash = BootstrapMethodEntryImpl.computeHashCode(mre, arguments);
+        int hash = BootstrapMethodEntryImpl.computePoolHashCode(mre, arguments);
         EntryMap map = bsmMap();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             BootstrapMethodEntryImpl e = bootstrapMethodEntry(map.getIndexByToken(token));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,24 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
 import java.util.List;
+import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 
 public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     final int index;
-    final int hash;
+    final int poolHash;
     private final ConstantPool constantPool;
     private final MethodHandleEntryImpl handle;
     private final List<LoadableConstantEntry> arguments;
+    private @Stable int contentHash;
 
     BootstrapMethodEntryImpl(ConstantPool constantPool, int bsmIndex, int hash,
                              MethodHandleEntryImpl handle,
                              List<LoadableConstantEntry> arguments) {
         this.index = bsmIndex;
-        this.hash = hash;
+        this.poolHash = hash;
         this.constantPool = constantPool;
         this.handle = handle;
         this.arguments = Util.sanitizeU2List(arguments);
@@ -72,8 +74,18 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
                 && e.arguments().equals(arguments);
     }
 
-    static int computeHashCode(MethodHandleEntryImpl handle,
-                               List<? extends LoadableConstantEntry> arguments) {
+    static int computePoolHashCode(MethodHandleEntryImpl handle,
+                                   List<? extends LoadableConstantEntry> arguments) {
+        // Keep bootstrap method table lookup independent of recursive content hash computation
+        int argumentsHash = 1;
+        for (LoadableConstantEntry argument : arguments) {
+            argumentsHash = 31 * argumentsHash + ((AbstractPoolEntry) argument).poolHash();
+        }
+        return (31 * handle.poolHash() + argumentsHash) | AbstractPoolEntry.NON_ZERO;
+    }
+
+    private static int computeContentHashCode(MethodHandleEntryImpl handle,
+                                              List<? extends LoadableConstantEntry> arguments) {
         return (31 * handle.hashCode() + arguments.hashCode()) | AbstractPoolEntry.NON_ZERO;
     }
 
@@ -82,7 +94,11 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     @Override
     public int hashCode() {
-        return hash;
+        int hash = this.contentHash;
+        if (hash != 0)
+            return hash;
+
+        return this.contentHash = computeContentHashCode(handle, arguments);
     }
 
     void writeTo(BufWriterImpl writer) {

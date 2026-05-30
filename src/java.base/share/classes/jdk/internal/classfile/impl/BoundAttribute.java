@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -760,7 +760,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                     final var handle = classReader.readEntry(p, AbstractPoolEntry.MethodHandleEntryImpl.class);
                     final List<LoadableConstantEntry> args = readEntryList(p + 2, LoadableConstantEntry.class);
                     p += 4 + args.size() * 2;
-                    int hash = BootstrapMethodEntryImpl.computeHashCode(handle, args);
+                    int hash = BootstrapMethodEntryImpl.computePoolHashCode(handle, args);
                     bs[i] = new BootstrapMethodEntryImpl(classReader, i, hash, handle, args);
                 }
                 bootstraps = List.of(bs);

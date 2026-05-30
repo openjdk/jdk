@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ public final class ClassReaderImpl
                 for (BootstrapMethodEntry bm : list) {
                     AbstractPoolEntry.MethodHandleEntryImpl handle = (AbstractPoolEntry.MethodHandleEntryImpl) bm.bootstrapMethod();
                     List<LoadableConstantEntry> args = bm.arguments();
-                    int hash = BootstrapMethodEntryImpl.computeHashCode(handle, args);
+                    int hash = BootstrapMethodEntryImpl.computePoolHashCode(handle, args);
                     bsmEntries.add(new BootstrapMethodEntryImpl(this, bsmEntries.size(), hash, handle, args));
                 }
             }
