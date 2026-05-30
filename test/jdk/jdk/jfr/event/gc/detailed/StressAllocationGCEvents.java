@@ -34,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -104,6 +105,7 @@ public class StressAllocationGCEvents {
             this.OBJ_SIZE = obj_size;
             this.OLD_OBJ_COUNT = Math.max(1, (int) ((float) Runtime.getRuntime().maxMemory() / 2 / THREAD_COUNT / OBJ_SIZE));
             this.old_garbage = new Object[OLD_OBJ_COUNT];
+            this.slowDownRate = obj_size >= 1_048_576 ? HUMONGOUS_SLOW_DOWN_RATE : DEFAULT_SLOW_DOWN_RATE;
             this.r = new Random(Utils.getRandomInstance().nextLong());
 
             System.out.println(String.format("In \"%s\" old objects count  = %d, recursion depth = %d",
@@ -122,16 +124,20 @@ public class StressAllocationGCEvents {
                 diver(stack - 1);
             } else {
                 long endTime = startTime + (SECONDS_TO_RUN * 1000);
+                int i = 0;
                 while (endTime > System.currentTimeMillis()) {
-                    byte[] garbage = new byte[OBJ_SIZE];
-                    if (r.nextInt(100) > OLD_GEN_RATE) {
-                        old_garbage[r.nextInt(OLD_OBJ_COUNT)] = garbage;
+                    if (i++ % slowDownRate == 0) { // slow down the allocation rate
+                        byte[] garbage = new byte[OBJ_SIZE];
+                        if (r.nextInt(100) > OLD_GEN_RATE) {
+                            old_garbage[r.nextInt(OLD_OBJ_COUNT)] = garbage;
+                        }
                     }
                 }
             }
         }
 
         private final long startTime;
+        private final int slowDownRate;
         private final Object[] old_garbage;
         private final int OBJ_SIZE;
         private final int OLD_OBJ_COUNT;
@@ -185,13 +191,15 @@ public class StressAllocationGCEvents {
         }
     }
 
+    private final static int DEFAULT_SLOW_DOWN_RATE = 1000;
+    private final static int HUMONGOUS_SLOW_DOWN_RATE = 100000;
     // Because each thread will keep some number of objects live we need to limit
     // the number of threads to ensure we don't run out of heap space. The big
     // allocation tests uses 256m heap and 1m allocations, so a 64 thread limit
     // should be fine.
     private final static int THREAD_COUNT_LIMIT = 64;
     private final static int THREAD_COUNT = Math.min(1 + (int) (Runtime.getRuntime().availableProcessors() * 2), THREAD_COUNT_LIMIT);
-    private final static int SECONDS_TO_RUN = 60;
+    private final static int SECONDS_TO_RUN = 30;
     private final static int DEFAULT_OBJ_SIZE = 1024;
     private final static int OLD_GEN_RATE = 60; // from 0 to 100
     private final static int RECURSION_DEPTH = 5;
