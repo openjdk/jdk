@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  */
 package java.util.stream;
 
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,15 +35,13 @@ import java.util.Spliterators;
 import java.util.SpliteratorTestHelper;
 import java.util.function.Function;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Test
 public class LongNodeTest extends OpTestCase {
 
-    @DataProvider(name = "nodes")
-    public Object[][] createSizes() {
-        List<Object[]> params = new ArrayList<>();
+    public static Stream<Arguments> nodes() {
+        List<Arguments> params = new ArrayList<>();
 
         for (int size : Arrays.asList(0, 1, 4, 15, 16, 17, 127, 128, 129, 1000)) {
             long[] array = new long[size];
@@ -55,21 +58,21 @@ public class LongNodeTest extends OpTestCase {
             nodes.add(fill(array, Nodes.longBuilder()));
 
             for (Node<Long> node : nodes) {
-                params.add(new Object[]{array, node});
+                params.add(Arguments.of(array, node));
             }
 
         }
 
-        return params.toArray(new Object[0][]);
+        return params.stream();
     }
 
-    private static void assertEqualsListLongArray(List<Long> list, long[] array) {
-        assertEquals(list.size(), array.length);
-        for (int i = 0; i < array.length; i++)
-            assertEquals(array[i], (long) list.get(i));
+    private static void assertEqualsListLongArray(long[] expected, List<Long> actual) {
+        assertEquals(expected.length, actual.size());
+        for (int i = 0; i < expected.length; i++)
+            assertEquals(expected[i], (long) actual.get(i));
     }
 
-    private List<Long> toList(long[] a) {
+    private static List<Long> toList(long[] a) {
         List<Long> l = new ArrayList<>();
         for (long i : a) {
             l.add(i);
@@ -78,7 +81,7 @@ public class LongNodeTest extends OpTestCase {
         return l;
     }
 
-    private long[] toLongArray(List<Long> l) {
+    private static long[] toLongArray(List<Long> l) {
         long[] a = new long[l.size()];
 
         int i = 0;
@@ -88,7 +91,7 @@ public class LongNodeTest extends OpTestCase {
         return a;
     }
 
-    private Node.OfLong fill(long[] array, Node.Builder.OfLong nb) {
+    private static Node.OfLong fill(long[] array, Node.Builder.OfLong nb) {
         nb.begin(array.length);
         for (long i : array)
             nb.accept(i);
@@ -96,7 +99,7 @@ public class LongNodeTest extends OpTestCase {
         return nb.build();
     }
 
-    private Node.OfLong degenerateTree(PrimitiveIterator.OfLong it) {
+    private static Node.OfLong degenerateTree(PrimitiveIterator.OfLong it) {
         if (!it.hasNext()) {
             return Nodes.node(new long[0]);
         }
@@ -110,7 +113,7 @@ public class LongNodeTest extends OpTestCase {
         }
     }
 
-    private Node.OfLong tree(List<Long> l, Function<List<Long>, Node.OfLong> m) {
+    private static Node.OfLong tree(List<Long> l, Function<List<Long>, Node.OfLong> m) {
         if (l.size() < 3) {
             return m.apply(l);
         }
@@ -121,35 +124,41 @@ public class LongNodeTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testAsArray(long[] array, Node.OfLong n) {
-        assertEquals(n.asPrimitiveArray(), array);
+        assertArrayEquals(array, n.asPrimitiveArray());
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testFlattenAsArray(long[] array, Node.OfLong n) {
-        assertEquals(Nodes.flattenLong(n).asPrimitiveArray(), array);
+        assertArrayEquals(array, Nodes.flattenLong(n).asPrimitiveArray());
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testCopyTo(long[] array, Node.OfLong n) {
         long[] copy = new long[(int) n.count()];
         n.copyInto(copy, 0);
 
-        assertEquals(copy, array);
+        assertArrayEquals(array, copy);
     }
 
-    @Test(dataProvider = "nodes", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("nodes")
+    @Tag("serialization-hostile")
     public void testForEach(long[] array, Node.OfLong n) {
         List<Long> l = new ArrayList<>((int) n.count());
         n.forEach((long e) -> {
             l.add(e);
         });
 
-        assertEqualsListLongArray(l, array);
+        assertEqualsListLongArray(array, l);
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testStreams(long[] array, Node.OfLong n) {
         TestData.OfLong data = TestData.Factory.ofNode("Node", n);
 
@@ -158,12 +167,14 @@ public class LongNodeTest extends OpTestCase {
         exerciseTerminalOps(data, s -> s.toArray());
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testSpliterator(long[] array, Node.OfLong n) {
         SpliteratorTestHelper.testLongSpliterator(n::spliterator);
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testTruncate(long[] array, Node.OfLong n) {
         int[] nums = new int[] { 0, 1, array.length / 2, array.length - 1, array.length };
         for (int start : nums)

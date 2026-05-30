@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,24 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.stream.IntStream;
-import java.util.stream.IntStreamTestDataProvider;
 import java.util.stream.OpTestCase;
-import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.OptionalInt;
 import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class IntReduceTest extends OpTestCase {
+
+    @Test
     public void testReduce() {
         int[] a = IntStream.range(1, 11).toArray();
 
@@ -50,7 +56,8 @@ public class IntReduceTest extends OpTestCase {
         assertEquals(2, Arrays.stream(a).map(irDoubler).reduce(irMin).getAsInt());
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testOps(String name, TestData.OfInt data) {
         assertEquals(0, (int) exerciseTerminalOps(data, s -> s.filter(ipFalse), s -> s.reduce(0, irPlus)));
 

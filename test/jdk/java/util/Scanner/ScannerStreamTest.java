@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,10 @@
  * questions.
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +33,6 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.MatchResult;
@@ -41,33 +42,29 @@ import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
 
-import static org.testng.Assert.*;
-
 /**
  * @test
  * @bug 8072722 8150488
  * @summary Tests of stream support in java.util.Scanner
  * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
- * @run testng/othervm ScannerStreamTest
+ * @run junit/othervm ScannerStreamTest
  */
 
-@Test
 public class ScannerStreamTest extends OpTestCase {
 
     static File inputFile = new File(System.getProperty("test.src", "."), "input.txt");
 
-    @DataProvider(name = "Tokens")
-    public static Object[][] makeTokensTestData() {
+    public static Stream<Arguments> makeTokensTestData() {
         // each inner array is [String description, String input, String delimiter]
         // delimiter may be null
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
 
-        data.add(new Object[] { "default delimiter", "abc def ghi",           null });
-        data.add(new Object[] { "fixed delimiter",   "abc,def,,ghi",          "," });
-        data.add(new Object[] { "regex delimiter",   "###abc##def###ghi###j", "#+" });
+        data.add(Arguments.of("default delimiter", "abc def ghi",           null));
+        data.add(Arguments.of("fixed delimiter",   "abc,def,,ghi",          ","));
+        data.add(Arguments.of("regex delimiter",   "###abc##def###ghi###j", "#+"));
 
-        return data.toArray(new Object[0][]);
+        return data.stream();
     }
 
     /*
@@ -85,7 +82,8 @@ public class ScannerStreamTest extends OpTestCase {
      * Given input and a delimiter, tests that tokens() returns the same
      * results that would be provided by a Scanner hasNext/next loop.
      */
-    @Test(dataProvider = "Tokens")
+    @ParameterizedTest
+    @MethodSource("makeTokensTestData")
     public void tokensTest(String description, String input, String delimiter) {
         // derive expected result by using conventional loop
         Scanner sc = makeScanner(input, delimiter);
@@ -117,6 +115,7 @@ public class ScannerStreamTest extends OpTestCase {
      * as what are returned by findWithinHorizon(pat, 0). This tests
      * a single pattern against a single input file.
      */
+    @Test
     public void findAllFileTest() {
         // derive expected result by using conventional loop
         Pattern pat = Pattern.compile("[A-Z]{7,}");
@@ -138,25 +137,24 @@ public class ScannerStreamTest extends OpTestCase {
                 .exercise();
     }
 
-    @DataProvider(name = "FindAllZero")
-    public static Object[][] makeFindAllZeroTestData() {
+    public static Stream<Arguments> makeFindAllZeroTestData() {
         // each inner array is [String input, String patternString]
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
 
-        data.add(new Object[] { "aaaaa",        "a*" });
-        data.add(new Object[] { "aaaaab",       "a*" });
-        data.add(new Object[] { "aaaaabb",      "a*" });
-        data.add(new Object[] { "aaaaabbb",     "a*" });
-        data.add(new Object[] { "aaabbaaaa",    "a*" });
-        data.add(new Object[] { "aaabbaaaab",   "a*" });
-        data.add(new Object[] { "aaabbaaaabb",  "a*" });
-        data.add(new Object[] { "aaabbaaaabbb", "a*" });
-        data.add(new Object[] { "aaabbaaaa",    "a*|b*" });
-        data.add(new Object[] { "aaabbaaaab",   "a*|b*" });
-        data.add(new Object[] { "aaabbaaaabb",  "a*|b*" });
-        data.add(new Object[] { "aaabbaaaabbb", "a*|b*" });
+        data.add(Arguments.of("aaaaa",        "a*"));
+        data.add(Arguments.of("aaaaab",       "a*"));
+        data.add(Arguments.of("aaaaabb",      "a*"));
+        data.add(Arguments.of("aaaaabbb",     "a*"));
+        data.add(Arguments.of("aaabbaaaa",    "a*"));
+        data.add(Arguments.of("aaabbaaaab",   "a*"));
+        data.add(Arguments.of("aaabbaaaabb",  "a*"));
+        data.add(Arguments.of("aaabbaaaabbb", "a*"));
+        data.add(Arguments.of("aaabbaaaa",    "a*|b*"));
+        data.add(Arguments.of("aaabbaaaab",   "a*|b*"));
+        data.add(Arguments.of("aaabbaaaabb",  "a*|b*"));
+        data.add(Arguments.of("aaabbaaaabbb", "a*|b*"));
 
-        return data.toArray(new Object[0][]);
+        return data.stream();
     }
 
     /*
@@ -174,7 +172,8 @@ public class ScannerStreamTest extends OpTestCase {
      * high enough that the resulting truncated stream won't be
      * mistaken for a correct expected result.
      */
-    @Test(dataProvider = "FindAllZero")
+    @ParameterizedTest
+    @MethodSource("makeFindAllZeroTestData")
     public void findAllZeroTest(String input, String patternString) {
         Pattern pattern = Pattern.compile(patternString);
 

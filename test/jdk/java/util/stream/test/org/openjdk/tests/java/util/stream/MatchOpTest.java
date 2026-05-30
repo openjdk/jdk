@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,10 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,18 +40,12 @@ import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
-import java.util.stream.DoubleStreamTestDataProvider;
 import java.util.stream.IntStream;
-import java.util.stream.IntStreamTestDataProvider;
 import java.util.stream.LongStream;
-import java.util.stream.LongStreamTestDataProvider;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
-
-import org.testng.annotations.Test;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
 import static java.util.stream.LambdaTestHelpers.dpEven;
@@ -66,13 +64,15 @@ import static java.util.stream.LambdaTestHelpers.pEven;
 import static java.util.stream.LambdaTestHelpers.pFalse;
 import static java.util.stream.LambdaTestHelpers.pOdd;
 import static java.util.stream.LambdaTestHelpers.pTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * MatchOpTest
  *
  * @author Brian Goetz
  */
-@Test
 public class MatchOpTest extends OpTestCase {
     private enum Kind { ANY, ALL, NONE }
 
@@ -101,6 +101,7 @@ public class MatchOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testStreamMatches() {
         assertPredicates(countTo(0), Kind.ANY, INTEGER_PREDICATES, false, false, false, false);
         assertPredicates(countTo(0), Kind.ALL, INTEGER_PREDICATES, true, true, true, true);
@@ -115,7 +116,8 @@ public class MatchOpTest extends OpTestCase {
         assertPredicates(countTo(5), Kind.NONE, INTEGER_PREDICATES, false, true, false, false);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testStream(String name, TestData.OfRef<Integer> data) {
         for (Predicate<Integer> p : INTEGER_PREDICATES) {
             setContext("p", p);
@@ -128,6 +130,7 @@ public class MatchOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testInfinite() {
         class CycleIterator implements Iterator<Integer> {
             final Supplier<Iterator<Integer>> source;
@@ -186,6 +189,7 @@ public class MatchOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testIntStreamMatches() {
         assertIntPredicates(() -> IntStream.range(0, 0), Kind.ANY, INT_PREDICATES, false, false, false, false);
         assertIntPredicates(() -> IntStream.range(0, 0), Kind.ALL, INT_PREDICATES, true, true, true, true);
@@ -200,7 +204,8 @@ public class MatchOpTest extends OpTestCase {
         assertIntPredicates(() -> IntStream.range(1, 6), Kind.NONE, INT_PREDICATES, false, true, false, false);
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntStream(String name, TestData.OfInt data) {
         for (IntPredicate p : INT_PREDICATES) {
             setContext("p", p);
@@ -213,6 +218,7 @@ public class MatchOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testIntInfinite() {
         class CycleIterator implements PrimitiveIterator.OfInt {
             final Supplier<PrimitiveIterator.OfInt> source;
@@ -271,6 +277,7 @@ public class MatchOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testLongStreamMatches() {
         assertLongPredicates(() -> LongStream.range(0, 0), Kind.ANY, LONG_PREDICATES, false, false, false, false);
         assertLongPredicates(() -> LongStream.range(0, 0), Kind.ALL, LONG_PREDICATES, true, true, true, true);
@@ -285,7 +292,8 @@ public class MatchOpTest extends OpTestCase {
         assertLongPredicates(() -> LongStream.range(1, 6), Kind.NONE, LONG_PREDICATES, false, true, false, false);
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongStream(String name, TestData.OfLong data) {
         for (LongPredicate p : LONG_PREDICATES) {
             setContext("p", p);
@@ -298,6 +306,7 @@ public class MatchOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testLongInfinite() {
         class CycleIterator implements PrimitiveIterator.OfLong {
             final Supplier<PrimitiveIterator.OfLong> source;
@@ -356,6 +365,7 @@ public class MatchOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testDoubleStreamMatches() {
         assertDoublePredicates(() -> LongStream.range(0, 0).asDoubleStream(), Kind.ANY, DOUBLE_PREDICATES, false, false, false, false);
         assertDoublePredicates(() -> LongStream.range(0, 0).asDoubleStream(), Kind.ALL, DOUBLE_PREDICATES, true, true, true, true);
@@ -370,7 +380,8 @@ public class MatchOpTest extends OpTestCase {
         assertDoublePredicates(() -> LongStream.range(1, 6).asDoubleStream(), Kind.NONE, DOUBLE_PREDICATES, false, true, false, false);
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleStream(String name, TestData.OfDouble data) {
         for (DoublePredicate p : DOUBLE_PREDICATES) {
             setContext("p", p);
@@ -383,6 +394,7 @@ public class MatchOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testDoubleInfinite() {
         class CycleIterator implements PrimitiveIterator.OfDouble {
             final Supplier<PrimitiveIterator.OfDouble> source;

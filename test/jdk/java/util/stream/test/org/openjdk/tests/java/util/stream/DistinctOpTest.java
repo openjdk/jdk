@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,17 +43,19 @@ import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * DistinctOpTest
  */
-@Test
 public class DistinctOpTest extends OpTestCase {
 
+    @Test
     public void testUniqOp() {
         assertCountSum(repeat(0, 10).stream().distinct(), 1, 0);
         assertCountSum(repeat(1, 10).stream().distinct(), 1, 1);
@@ -59,6 +64,7 @@ public class DistinctOpTest extends OpTestCase {
         assertCountSum(countTo(10).stream().distinct(), 10, 55);
     }
 
+    @Test
     public void testWithUnorderedInfiniteStream() {
         // These tests should short-circuit, otherwise will fail with a time-out
         // or an OOME
@@ -74,7 +80,8 @@ public class DistinctOpTest extends OpTestCase {
         assertTrue(oi.isPresent());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOp(String name, TestData.OfRef<Integer> data) {
         Collection<Integer> result = exerciseOpsInt(
                 data,
@@ -88,7 +95,8 @@ public class DistinctOpTest extends OpTestCase {
         assertTrue(result.size() <= data.size());
     }
 
-    @Test(dataProvider = "withNull:StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerWithNullStreamTestData")
     public void testOpWithNull(String name, TestData.OfRef<Integer> data) {
         Collection<Integer> node = exerciseOps(data, Stream::distinct);
         assertUnique(node);
@@ -102,7 +110,8 @@ public class DistinctOpTest extends OpTestCase {
         assertUnique(node);
     }
 
-    @Test(dataProvider = "withNull:StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerWithNullStreamTestData")
     public void testOpWithNullSorted(String name, TestData.OfRef<Integer> data) {
         List<Integer> l = new ArrayList<>();
         data.into(l).sort(cNullInteger);
@@ -139,7 +148,8 @@ public class DistinctOpTest extends OpTestCase {
         }
     };
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testDistinctDistinct(String name, TestData.OfRef<Integer> data) {
         Collection<Integer> result = exerciseOpsInt(
                 data,
@@ -151,7 +161,8 @@ public class DistinctOpTest extends OpTestCase {
         assertUnique(result);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testDistinctSorted(String name, TestData.OfRef<Integer> data) {
         Collection<Integer> result = withData(data)
                 .stream(s -> s.distinct().sorted(),
@@ -161,7 +172,8 @@ public class DistinctOpTest extends OpTestCase {
         assertSorted(result);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testSortedDistinct(String name, TestData.OfRef<Integer> data) {
         Collection<Integer> result = withData(data)
                 .stream(s -> s.sorted().distinct(),
@@ -171,7 +183,8 @@ public class DistinctOpTest extends OpTestCase {
         assertSorted(result);
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testStable() {
         // Create N instances of Integer all with the same value
         List<Integer> input = IntStream.rangeClosed(0, 1000)
@@ -190,9 +203,8 @@ public class DistinctOpTest extends OpTestCase {
                     // Assert stability
                     // The single result element should be equal in identity to
                     // the first input element
-                    assertEquals(l.size(), 1);
-                    assertEquals(System.identityHashCode(l.get(0)),
-                                 System.identityHashCode(expectedElement));
+                    assertEquals(1, l.size());
+                    assertSame(expectedElement, l.getFirst());
 
                 })
                 .exercise();

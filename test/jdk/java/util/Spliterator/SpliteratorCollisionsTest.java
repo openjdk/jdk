@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
  * @bug 8005698
  * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.SpliteratorTestHelper
- * @run testng SpliteratorCollisions
+ * @run junit SpliteratorCollisionsTest
  * @summary Spliterator traversing and splitting hash maps containing colliding hashes
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,17 +50,18 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
-public class SpliteratorCollisions extends SpliteratorTestHelper {
+public class SpliteratorCollisionsTest extends SpliteratorTestHelper {
 
     private static final List<Integer> SIZES = Arrays.asList(0, 1, 10, 100, 1000);
 
     private static class SpliteratorDataBuilder<T> {
-        List<Object[]> data;
+        List<Arguments> data;
         List<T> exp;
         Map<T, T> mExp;
 
-        SpliteratorDataBuilder(List<Object[]> data, List<T> exp) {
+        SpliteratorDataBuilder(List<Arguments> data, List<T> exp) {
             this.data = data;
             this.exp = exp;
             this.mExp = createMap(exp);
@@ -75,7 +77,7 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
 
         void add(String description, Collection<?> expected, Supplier<Spliterator<?>> s) {
             description = joiner(description).toString();
-            data.add(new Object[]{description, expected, s});
+            data.add(Arguments.of(description, expected, s));
         }
 
         void add(String description, Supplier<Spliterator<?>> s) {
@@ -107,15 +109,14 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
         }
     }
 
-    static Object[][] spliteratorDataProvider;
+    static List<Arguments> spliteratorDataProvider;
 
-    @DataProvider(name = "HashableIntSpliterator")
-    public static Object[][] spliteratorDataProvider() {
+    public static Stream<Arguments> hashableIntSpliteratorDataProvider() {
         if (spliteratorDataProvider != null) {
-            return spliteratorDataProvider;
+            return spliteratorDataProvider.stream();
         }
 
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
         for (int size : SIZES) {
             List<HashableInteger> exp = listIntRange(size, false);
             SpliteratorDataBuilder<HashableInteger> db = new SpliteratorDataBuilder<>(data, exp);
@@ -129,18 +130,20 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
             db.addCollection(LinkedHashSet::new);
             db.addCollection(TreeSet::new);
         }
-        return spliteratorDataProvider = data.toArray(new Object[0][]);
+
+        spliteratorDataProvider = data;
+
+        return data.stream();
     }
 
-    static Object[][] spliteratorDataProviderWithNull;
+    static List<Arguments> spliteratorDataProviderWithNull;
 
-    @DataProvider(name = "HashableIntSpliteratorWithNull")
-    public static Object[][] spliteratorNullDataProvider() {
+    public static Stream<Arguments> hashableIntSpliteratorWithNullDataProvider() {
         if (spliteratorDataProviderWithNull != null) {
-            return spliteratorDataProviderWithNull;
+            return spliteratorDataProviderWithNull.stream();
         }
 
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
         for (int size : SIZES) {
             List<HashableInteger> exp = listIntRange(size, true);
             SpliteratorDataBuilder<HashableInteger> db = new SpliteratorDataBuilder<>(data, exp);
@@ -157,7 +160,10 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
 //            db.addCollection(TreeSet::new);
 
         }
-        return spliteratorDataProviderWithNull = data.toArray(new Object[0][]);
+
+        spliteratorDataProviderWithNull = data;
+
+        return data.stream();
     }
 
     static final class HashableInteger implements Comparable<HashableInteger> {
@@ -208,7 +214,8 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
         return Collections.unmodifiableList(exp);
     }
 
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testNullPointerException(String description,
                                   Collection<HashableInteger> exp,
                                   Supplier<Spliterator<HashableInteger>> s) {
@@ -216,7 +223,8 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
         assertThrowsNPE(() -> s.get().tryAdvance(null));
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testNullPointerExceptionWithNull(String description,
                                           Collection<HashableInteger> exp,
                                           Supplier<Spliterator<HashableInteger>> s) {
@@ -224,72 +232,80 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
         assertThrowsNPE(() -> s.get().tryAdvance(null));
     }
 
-
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testForEach(String description,
                      Collection<HashableInteger> exp,
                      Supplier<Spliterator<HashableInteger>> s) {
         testForEach(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testForEachWithNull(String description,
                              Collection<HashableInteger> exp,
                              Supplier<Spliterator<HashableInteger>> s) {
         testForEach(exp, s, UnaryOperator.identity());
     }
 
-
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testTryAdvance(String description,
                         Collection<HashableInteger> exp,
                         Supplier<Spliterator<HashableInteger>> s) {
         testTryAdvance(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testTryAdvanceWithNull(String description,
                                 Collection<HashableInteger> exp,
                                 Supplier<Spliterator<HashableInteger>> s) {
         testTryAdvance(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testMixedTryAdvanceForEach(String description,
                                     Collection<HashableInteger> exp,
                                     Supplier<Spliterator<HashableInteger>> s) {
         testMixedTryAdvanceForEach(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testMixedTryAdvanceForEachWithNull(String description,
                                             Collection<HashableInteger> exp,
                                             Supplier<Spliterator<HashableInteger>> s) {
         testMixedTryAdvanceForEach(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testMixedTraverseAndSplit(String description,
                                    Collection<HashableInteger> exp,
                                    Supplier<Spliterator<HashableInteger>> s) {
         testMixedTraverseAndSplit(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testMixedTraverseAndSplitWithNull(String description,
                                            Collection<HashableInteger> exp,
                                            Supplier<Spliterator<HashableInteger>> s) {
         testMixedTraverseAndSplit(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testSplitAfterFullTraversal(String description,
                                      Collection<HashableInteger> exp,
                                      Supplier<Spliterator<HashableInteger>> s) {
         testSplitAfterFullTraversal(s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testSplitAfterFullTraversalWithNull(String description,
                                              Collection<HashableInteger> exp,
                                              Supplier<Spliterator<HashableInteger>> s) {
@@ -297,42 +313,48 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
     }
 
 
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testSplitOnce(String description,
                        Collection<HashableInteger> exp,
                        Supplier<Spliterator<HashableInteger>> s) {
         testSplitOnce(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testSplitOnceWithNull(String description,
                                Collection<HashableInteger> exp,
                                Supplier<Spliterator<HashableInteger>> s) {
         testSplitOnce(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testSplitSixDeep(String description,
                           Collection<HashableInteger> exp,
                           Supplier<Spliterator<HashableInteger>> s) {
         testSplitSixDeep(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testSplitSixDeepWithNull(String description,
                                   Collection<HashableInteger> exp,
                                   Supplier<Spliterator<HashableInteger>> s) {
         testSplitSixDeep(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliterator")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorDataProvider")
     void testSplitUntilNull(String description,
                             Collection<HashableInteger> exp,
                             Supplier<Spliterator<HashableInteger>> s) {
         testSplitUntilNull(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "HashableIntSpliteratorWithNull")
+    @ParameterizedTest
+    @MethodSource("hashableIntSpliteratorWithNullDataProvider")
     void testSplitUntilNullWithNull(String description,
                                     Collection<HashableInteger> exp,
                                     Supplier<Spliterator<HashableInteger>> s) {

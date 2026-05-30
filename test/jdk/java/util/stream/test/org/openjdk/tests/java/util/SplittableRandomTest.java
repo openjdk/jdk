@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 package org.openjdk.tests.java.util;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,10 +41,13 @@ import java.util.stream.IntStreamTestScenario;
 import java.util.stream.LongStream;
 import java.util.stream.LongStreamTestScenario;
 import java.util.stream.OpTestCase;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.stream.TestData;
 
-@Test
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class SplittableRandomTest extends OpTestCase {
 
     static class RandomBoxedSpliterator<T> implements Spliterator<T> {
@@ -105,7 +109,7 @@ public class SplittableRandomTest extends OpTestCase {
                 values.add(t);
                 count++;
             }
-            assertEquals(count, size);
+            assertEquals(size, count);
             // Assert that at least one different result is produced
             // For the size of the data it is highly improbable that this
             // will cause a false negative (i.e. a false failure)
@@ -113,9 +117,8 @@ public class SplittableRandomTest extends OpTestCase {
         };
     }
 
-    @DataProvider(name = "ints")
-    public static Object[][] intsDataProvider() {
-        List<Object[]> data = new ArrayList<>();
+    public static Stream<Arguments> intsDataProvider() {
+        List<Arguments> data = new ArrayList<>();
 
         // Function to create a stream using a RandomBoxedSpliterator
 
@@ -125,26 +128,26 @@ public class SplittableRandomTest extends OpTestCase {
 
         // Unbounded
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofIntSupplier(
                         String.format("new SplittableRandom().ints().limit(%d)", SIZE),
                         () -> new SplittableRandom().ints().limit(SIZE)),
                 randomAsserter(SIZE, Integer.MAX_VALUE, 0)
-        });
+        ));
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofIntSupplier(
                         String.format("new SplittableRandom().ints(%d)", SIZE),
                         () -> new SplittableRandom().ints(SIZE)),
                 randomAsserter(SIZE, Integer.MAX_VALUE, 0)
-        });
+        ));
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofIntSupplier(
                         String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextInt())", SIZE),
                         () -> rbsf.apply(sr -> sr.nextInt())),
                 randomAsserter(SIZE, Integer.MAX_VALUE, 0)
-        });
+        ));
 
         // Bounded
 
@@ -153,42 +156,43 @@ public class SplittableRandomTest extends OpTestCase {
                 final int origin = o;
                 final int bound = b;
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofIntSupplier(
                                 String.format("new SplittableRandom().ints(%d, %d).limit(%d)", origin, bound, SIZE),
                                 () -> new SplittableRandom().ints(origin, bound).limit(SIZE)),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofIntSupplier(
                                 String.format("new SplittableRandom().ints(%d, %d, %d)", SIZE, origin, bound),
                                 () -> new SplittableRandom().ints(SIZE, origin, bound)),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
 
                 if (origin == 0) {
-                    data.add(new Object[]{
+                    data.add(Arguments.of(
                             TestData.Factory.ofIntSupplier(
                                     String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextInt(%d))", SIZE, bound),
                                     () -> rbsf.apply(sr -> sr.nextInt(bound))),
                             randomAsserter(SIZE, origin, bound)
-                    });
+                    ));
                 }
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofIntSupplier(
                                 String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextInt(%d, %d))", SIZE, origin, bound),
                                 () -> rbsf.apply(sr -> sr.nextInt(origin, bound))),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
             }
         }
 
-        return data.toArray(new Object[0][]);
+        return data.stream();
     }
 
-    @Test(dataProvider = "ints")
+    @ParameterizedTest
+    @MethodSource("intsDataProvider")
     public void testInts(TestData.OfInt data, ResultAsserter<Iterable<Integer>> ra) {
         withData(data).
                 stream(s -> s).
@@ -197,9 +201,8 @@ public class SplittableRandomTest extends OpTestCase {
                 exercise();
     }
 
-    @DataProvider(name = "longs")
-    public static Object[][] longsDataProvider() {
-        List<Object[]> data = new ArrayList<>();
+    public static Stream<Arguments> longsDataProvider() {
+        List<Arguments> data = new ArrayList<>();
 
         // Function to create a stream using a RandomBoxedSpliterator
 
@@ -209,26 +212,26 @@ public class SplittableRandomTest extends OpTestCase {
 
         // Unbounded
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofLongSupplier(
                         String.format("new SplittableRandom().longs().limit(%d)", SIZE),
                         () -> new SplittableRandom().longs().limit(SIZE)),
                 randomAsserter(SIZE, Long.MAX_VALUE, 0L)
-        });
+        ));
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofLongSupplier(
                         String.format("new SplittableRandom().longs(%d)", SIZE),
                         () -> new SplittableRandom().longs(SIZE)),
                 randomAsserter(SIZE, Long.MAX_VALUE, 0L)
-        });
+        ));
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofLongSupplier(
                         String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextLong())", SIZE),
                         () -> rbsf.apply(sr -> sr.nextLong())),
                 randomAsserter(SIZE, Long.MAX_VALUE, 0L)
-        });
+        ));
 
         // Bounded
 
@@ -237,42 +240,43 @@ public class SplittableRandomTest extends OpTestCase {
                 final long origin = o;
                 final long bound = b;
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofLongSupplier(
                                 String.format("new SplittableRandom().longs(%d, %d).limit(%d)", origin, bound, SIZE),
                                 () -> new SplittableRandom().longs(origin, bound).limit(SIZE)),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofLongSupplier(
                                 String.format("new SplittableRandom().longs(%d, %d, %d)", SIZE, origin, bound),
                                 () -> new SplittableRandom().longs(SIZE, origin, bound)),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
 
                 if (origin == 0) {
-                    data.add(new Object[]{
+                    data.add(Arguments.of(
                             TestData.Factory.ofLongSupplier(
                                     String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextLong(%d))", SIZE, bound),
                                     () -> rbsf.apply(sr -> sr.nextLong(bound))),
                             randomAsserter(SIZE, origin, bound)
-                    });
+                    ));
                 }
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofLongSupplier(
                                 String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextLong(%d, %d))", SIZE, origin, bound),
                                 () -> rbsf.apply(sr -> sr.nextLong(origin, bound))),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
             }
         }
 
-        return data.toArray(new Object[0][]);
+        return data.stream();
     }
 
-    @Test(dataProvider = "longs")
+    @ParameterizedTest
+    @MethodSource("longsDataProvider")
     public void testLongs(TestData.OfLong data, ResultAsserter<Iterable<Long>> ra) {
         withData(data).
                 stream(s -> s).
@@ -281,9 +285,8 @@ public class SplittableRandomTest extends OpTestCase {
                 exercise();
     }
 
-    @DataProvider(name = "doubles")
-    public static Object[][] doublesDataProvider() {
-        List<Object[]> data = new ArrayList<>();
+    public static Stream<Arguments> doublesDataProvider() {
+        List<Arguments> data = new ArrayList<>();
 
         // Function to create a stream using a RandomBoxedSpliterator
 
@@ -293,26 +296,26 @@ public class SplittableRandomTest extends OpTestCase {
 
         // Unbounded
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofDoubleSupplier(
                         String.format("new SplittableRandom().doubles().limit(%d)", SIZE),
                         () -> new SplittableRandom().doubles().limit(SIZE)),
                 randomAsserter(SIZE, Double.MAX_VALUE, 0d)
-        });
+        ));
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofDoubleSupplier(
                         String.format("new SplittableRandom().doubles(%d)", SIZE),
                         () -> new SplittableRandom().doubles(SIZE)),
                 randomAsserter(SIZE, Double.MAX_VALUE, 0d)
-        });
+        ));
 
-        data.add(new Object[]{
+        data.add(Arguments.of(
                 TestData.Factory.ofDoubleSupplier(
                         String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextDouble())", SIZE),
                         () -> rbsf.apply(sr -> sr.nextDouble())),
                 randomAsserter(SIZE, Double.MAX_VALUE, 0d)
-        });
+        ));
 
         // Bounded
 
@@ -321,42 +324,43 @@ public class SplittableRandomTest extends OpTestCase {
                 final double origin = o;
                 final double bound = b;
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofDoubleSupplier(
                                 String.format("new SplittableRandom().doubles(%f, %f).limit(%d)", origin, bound, SIZE),
                                 () -> new SplittableRandom().doubles(origin, bound).limit(SIZE)),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofDoubleSupplier(
                                 String.format("new SplittableRandom().doubles(%d, %f, %f)", SIZE, origin, bound),
                                 () -> new SplittableRandom().doubles(SIZE, origin, bound)),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
 
                 if (origin == 0) {
-                    data.add(new Object[]{
+                    data.add(Arguments.of(
                             TestData.Factory.ofDoubleSupplier(
                                     String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextDouble(%f))", SIZE, bound),
                                     () -> rbsf.apply(sr -> sr.nextDouble(bound))),
                             randomAsserter(SIZE, origin, bound)
-                    });
+                    ));
                 }
 
-                data.add(new Object[]{
+                data.add(Arguments.of(
                         TestData.Factory.ofDoubleSupplier(
                                 String.format("new RandomBoxedSpliterator(0, %d, sr -> sr.nextDouble(%f, %f))", SIZE, origin, bound),
                                 () -> rbsf.apply(sr -> sr.nextDouble(origin, bound))),
                         randomAsserter(SIZE, origin, bound)
-                });
+                ));
             }
         }
 
-        return data.toArray(new Object[0][]);
+        return data.stream();
     }
 
-    @Test(dataProvider = "doubles")
+    @ParameterizedTest
+    @MethodSource("doublesDataProvider")
     public void testDoubles(TestData.OfDouble data, ResultAsserter<Iterable<Double>> ra) {
         withData(data).
                 stream(s -> s).

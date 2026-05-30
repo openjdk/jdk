@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
@@ -44,10 +44,12 @@ import java.util.stream.OpTestCase;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
 import static java.util.stream.ThrowableHelper.checkNPE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Test
 public class CollectAndSummaryStatisticsTest extends OpTestCase {
 
+    @Test
     public void testIntCollectNull() {
         checkNPE(() -> IntStream.of(1).collect(null,
                                                IntSummaryStatistics::accept,
@@ -60,6 +62,7 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
                                                null));
     }
 
+    @Test
     public void testLongCollectNull() {
         checkNPE(() -> LongStream.of(1).collect(null,
                                                LongSummaryStatistics::accept,
@@ -72,6 +75,7 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
                                                 null));
     }
 
+    @Test
     public void testDoubleCollectNull() {
         checkNPE(() -> DoubleStream.of(1).collect(null,
                                                 DoubleSummaryStatistics::accept,
@@ -84,6 +88,7 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
                                                   null));
     }
 
+    @Test
     public void testIntStatistics() {
         List<IntSummaryStatistics> instances = new ArrayList<>();
         instances.add(countTo(1000).stream().collect(Collectors.summarizingInt(i -> i)));
@@ -106,18 +111,18 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
         instances.add(new IntSummaryStatistics(original.getCount(), original.getMin(), original.getMax(), original.getSum()));
 
         for (IntSummaryStatistics stats : instances) {
-            assertEquals(stats.getCount(), 1000);
-            assertEquals(stats.getSum(), countTo(1000).stream().mapToInt(i -> i).sum());
-            assertEquals(stats.getAverage(), (double) stats.getSum() / stats.getCount());
-            assertEquals(stats.getMax(), 1000);
-            assertEquals(stats.getMin(), 1);
+            assertEquals(1000, stats.getCount());
+            assertEquals(countTo(1000).stream().mapToInt(i -> i).sum(), stats.getSum());
+            assertEquals((double) stats.getSum() / stats.getCount(), stats.getAverage());
+            assertEquals(1000, stats.getMax());
+            assertEquals(1, stats.getMin());
         }
 
-        expectThrows(IllegalArgumentException.class, () -> new IntSummaryStatistics(-1, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class, () -> new IntSummaryStatistics(1, 3, 2, 0));
+        assertThrows(IllegalArgumentException.class, () -> new IntSummaryStatistics(-1, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new IntSummaryStatistics(1, 3, 2, 0));
     }
 
-
+    @Test
     public void testLongStatistics() {
         List<LongSummaryStatistics> instances = new ArrayList<>();
         instances.add(countTo(1000).stream().collect(Collectors.summarizingLong(i -> i)));
@@ -140,17 +145,18 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
         instances.add(new LongSummaryStatistics(original.getCount(), original.getMin(), original.getMax(), original.getSum()));
 
         for (LongSummaryStatistics stats : instances) {
-            assertEquals(stats.getCount(), 1000);
-            assertEquals(stats.getSum(), (long) countTo(1000).stream().mapToInt(i -> i).sum());
-            assertEquals(stats.getAverage(), (double) stats.getSum() / stats.getCount());
-            assertEquals(stats.getMax(), 1000L);
-            assertEquals(stats.getMin(), 1L);
+            assertEquals(1000, stats.getCount());
+            assertEquals((long) countTo(1000).stream().mapToInt(i -> i).sum(), stats.getSum());
+            assertEquals((double) stats.getSum() / stats.getCount(), stats.getAverage());
+            assertEquals(1000L, stats.getMax());
+            assertEquals(1L, stats.getMin());
         }
 
-        expectThrows(IllegalArgumentException.class, () -> new LongSummaryStatistics(-1, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class, () -> new LongSummaryStatistics(1, 3, 2, 0));
+        assertThrows(IllegalArgumentException.class, () -> new LongSummaryStatistics(-1, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new LongSummaryStatistics(1, 3, 2, 0));
     }
 
+    @Test
     public void testDoubleStatistics() {
         List<DoubleSummaryStatistics> instances = new ArrayList<>();
         instances.add(countTo(1000).stream().collect(Collectors.summarizingDouble(i -> i)));
@@ -173,22 +179,22 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
         instances.add(new DoubleSummaryStatistics(original.getCount(), original.getMin(), original.getMax(), original.getSum()));
 
         for (DoubleSummaryStatistics stats : instances) {
-            assertEquals(stats.getCount(), 1000);
-            assertEquals(stats.getSum(), (double) countTo(1000).stream().mapToInt(i -> i).sum());
-            assertEquals(stats.getAverage(), stats.getSum() / stats.getCount());
-            assertEquals(stats.getMax(), 1000.0);
-            assertEquals(stats.getMin(), 1.0);
+            assertEquals(1000, stats.getCount());
+            assertEquals((double) countTo(1000).stream().mapToInt(i -> i).sum(), stats.getSum());
+            assertEquals(stats.getSum() / stats.getCount(), stats.getAverage());
+            assertEquals(1000.0, stats.getMax());
+            assertEquals(1.0, stats.getMin());
         }
 
-        expectThrows(IllegalArgumentException.class, () -> new DoubleSummaryStatistics(-1, 0, 0, 0));
-        expectThrows(IllegalArgumentException.class, () -> new DoubleSummaryStatistics(1, 3, 2, 0));
+        assertThrows(IllegalArgumentException.class, () -> new DoubleSummaryStatistics(-1, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new DoubleSummaryStatistics(1, 3, 2, 0));
         double[] values = {1.0, Double.NaN};
         for (var min : values) {
             for (var max : values) {
                 for (var sum : values) {
                     if (Double.isNaN(min) && Double.isNaN(max) && Double.isNaN(sum)) continue;
                     if (!Double.isNaN(min) && !Double.isNaN(max) && !Double.isNaN(sum)) continue;
-                    expectThrows(IllegalArgumentException.class, () -> new DoubleSummaryStatistics(1, min, max, sum));
+                    assertThrows(IllegalArgumentException.class, () -> new DoubleSummaryStatistics(1, min, max, sum));
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,20 @@
  */
 package java.util.stream;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import org.testng.Assert;
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
 
 /**
  * LoggingTestCase
  *
  */
-@Test
-public class LoggingTestCase extends Assert {
-    private Map<String, Object> context = new HashMap<>();
-
-    @BeforeMethod
-    public void before() {
-        context.clear();
-    }
-
-    @AfterMethod
-    public void after(ITestResult result) {
-        if (!result.isSuccess()) {
-            List<Object> list = new ArrayList<>();
-            Collections.addAll(list, result.getParameters());
-            list.add(context.toString());
-            result.setParameters(list.toArray(new Object[list.size()]));
-        }
-    }
+public class LoggingTestCase {
+    private final Map<String, Object> context = new HashMap<>();
 
     protected void setContext(String key, Object value) {
         context.put(key, value);
@@ -63,5 +43,26 @@ public class LoggingTestCase extends Assert {
 
     protected void clearContext(String key) {
         context.remove(key);
+    }
+
+    public static class Extension implements BeforeEachCallback, TestWatcher {
+
+        @Override
+        public void beforeEach(ExtensionContext ctx) {
+            getInstance(ctx).ifPresent(l -> l.context.clear());
+        }
+
+        @Override
+        public void testFailed(ExtensionContext ctx, Throwable cause) {
+            getInstance(ctx).ifPresent(l ->
+                    System.err.printf("[FAILED] %s | context: %s%n",
+                            ctx.getDisplayName(), l.context));
+        }
+
+        private Optional<LoggingTestCase> getInstance(ExtensionContext ctx) {
+            return ctx.getTestInstance()
+                    .filter(i -> i instanceof LoggingTestCase)
+                    .map(i -> (LoggingTestCase) i);
+        }
     }
 }

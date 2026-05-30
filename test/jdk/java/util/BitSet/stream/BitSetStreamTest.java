@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  */
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -34,16 +39,13 @@ import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @test
@@ -53,7 +55,7 @@ import static org.testng.Assert.assertTrue;
  * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.SpliteratorTestHelper
  *        java.base/java.util.SpliteratorOfIntDataBuilder
- * @run testng/othervm -Xms512m -Xmx1024m BitSetStreamTest
+ * @run junit/othervm -Xms512m -Xmx1024m BitSetStreamTest
  */
 public class BitSetStreamTest extends SpliteratorTestHelper {
     static class Fibs implements IntSupplier {
@@ -83,28 +85,27 @@ public class BitSetStreamTest extends SpliteratorTestHelper {
         assertEquals(987, Fibs.fibs(16));
     }
 
-
-    @DataProvider(name = "cases")
-    public static Object[][] produceCases() {
-        return new Object[][] {
-                { "none", IntStream.empty() },
-                { "index 0", IntStream.of(0) },
-                { "index 255", IntStream.of(255) },
-                { "index 0 and 255", IntStream.of(0, 255) },
-                { "index Integer.MAX_VALUE", IntStream.of(Integer.MAX_VALUE) },
-                { "index Integer.MAX_VALUE - 1", IntStream.of(Integer.MAX_VALUE - 1) },
-                { "index 0 and Integer.MAX_VALUE", IntStream.of(0, Integer.MAX_VALUE) },
-                { "every bit", IntStream.range(0, 255) },
-                { "step 2", IntStream.range(0, 255).map(f -> f * 2) },
-                { "step 3", IntStream.range(0, 255).map(f -> f * 3) },
-                { "step 5", IntStream.range(0, 255).map(f -> f * 5) },
-                { "step 7", IntStream.range(0, 255).map(f -> f * 7) },
-                { "1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000) },
-                { "25 fibs", IntStream.generate(new Fibs()).limit(25) }
-        };
+    public static Stream<Arguments> produceCases() {
+        return Stream.of(
+                Arguments.of("none", IntStream.empty()),
+                Arguments.of("index 0", IntStream.of(0)),
+                Arguments.of("index 255", IntStream.of(255)),
+                Arguments.of("index 0 and 255", IntStream.of(0, 255)),
+                Arguments.of("index Integer.MAX_VALUE", IntStream.of(Integer.MAX_VALUE)),
+                Arguments.of("index Integer.MAX_VALUE - 1", IntStream.of(Integer.MAX_VALUE - 1)),
+                Arguments.of("index 0 and Integer.MAX_VALUE", IntStream.of(0, Integer.MAX_VALUE)),
+                Arguments.of("every bit", IntStream.range(0, 255)),
+                Arguments.of("step 2", IntStream.range(0, 255).map(f -> f * 2)),
+                Arguments.of("step 3", IntStream.range(0, 255).map(f -> f * 3)),
+                Arguments.of("step 5", IntStream.range(0, 255).map(f -> f * 5)),
+                Arguments.of("step 7", IntStream.range(0, 255).map(f -> f * 7)),
+                Arguments.of("1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000)),
+                Arguments.of("25 fibs", IntStream.generate(new Fibs()).limit(25))
+        );
     }
 
-    @Test(dataProvider = "cases")
+    @ParameterizedTest
+    @MethodSource("produceCases")
     public void testBitsetStream(String name, IntStream data) {
         BitSet bs = data.collect(BitSet::new, BitSet::set, BitSet::or);
 
@@ -120,22 +121,21 @@ public class BitSetStreamTest extends SpliteratorTestHelper {
         PrimitiveIterator.OfInt it = bs.stream().iterator();
         for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i + 1)) {
             assertTrue(it.hasNext());
-            assertEquals(it.nextInt(), i);
+            assertEquals(i, it.nextInt());
             if (i == Integer.MAX_VALUE)
                 break; // or (i + 1) would overflow
         }
         assertFalse(it.hasNext());
     }
 
-    static Object[][] spliteratorOfIntDataProvider;
+    static List<Arguments> spliteratorOfIntDataProvider;
 
-    @DataProvider(name = "BitSet.stream.spliterator")
-    public static Object[][] spliteratorOfIntDataProvider() {
+    public static Stream<Arguments> spliteratorOfIntDataProvider() {
         if (spliteratorOfIntDataProvider != null) {
-            return spliteratorOfIntDataProvider;
+            return spliteratorOfIntDataProvider.stream();
         }
 
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
 
         Object[][] bitStreamTestcases = new Object[][] {
                 { "none", IntStream.empty().toArray() },
@@ -163,51 +163,63 @@ public class BitSetStreamTest extends SpliteratorTestHelper {
                         stream().spliterator()
             );
         }
-        return spliteratorOfIntDataProvider = data.toArray(new Object[0][]);
+
+        spliteratorOfIntDataProvider = data;
+
+        return data.stream();
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntNullPointerException(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         assertThrows(NullPointerException.class, () -> s.get().forEachRemaining((IntConsumer) null));
         assertThrows(NullPointerException.class, () -> s.get().tryAdvance((IntConsumer) null));
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntForEach(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testForEach(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntTryAdvance(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testTryAdvance(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntMixedTryAdvanceForEach(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testMixedTryAdvanceForEach(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntMixedTraverseAndSplit(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testMixedTraverseAndSplit(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntSplitAfterFullTraversal(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testSplitAfterFullTraversal(s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntSplitOnce(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testSplitOnce(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntSplitSixDeep(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testSplitSixDeep(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "BitSet.stream.spliterator")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntSplitUntilNull(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testSplitUntilNull(exp, s, intBoxingConsumer());
     }

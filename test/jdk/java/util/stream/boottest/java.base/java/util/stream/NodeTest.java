@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  */
 package java.util.stream;
 
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,15 +35,13 @@ import java.util.List;
 import java.util.SpliteratorTestHelper;
 import java.util.function.Function;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Test
 public class NodeTest extends OpTestCase {
 
-    @DataProvider(name = "nodes")
-    public Object[][] createSizes() {
-        List<Object[]> params = new ArrayList<>();
+    public static Stream<Arguments> nodes() {
+        List<Arguments> params = new ArrayList<>();
 
         for (int size : Arrays.asList(0, 1, 4, 15, 16, 17, 127, 128, 129, 1000)) {
             Integer[] array = new Integer[size];
@@ -56,15 +59,15 @@ public class NodeTest extends OpTestCase {
             nodes.add(fill(array, Nodes.builder()));
 
             for (int i = 0; i < nodes.size(); i++) {
-                params.add(new Object[]{array, nodes.get(i)});
+                params.add(Arguments.of(array, nodes.get(i)));
             }
 
         }
 
-        return params.toArray(new Object[0][]);
+        return params.stream();
     }
 
-    Node<Integer> fill(Integer[] array, Node.Builder<Integer> nb) {
+    static Node<Integer> fill(Integer[] array, Node.Builder<Integer> nb) {
         nb.begin(array.length);
         for (Integer i : array) {
             nb.accept(i);
@@ -73,7 +76,7 @@ public class NodeTest extends OpTestCase {
         return nb.build();
     }
 
-    Node<Integer> degenerateTree(Iterator<Integer> it) {
+    static Node<Integer> degenerateTree(Iterator<Integer> it) {
         if (!it.hasNext()) {
             return Nodes.node(Collections.emptyList());
         }
@@ -87,7 +90,7 @@ public class NodeTest extends OpTestCase {
         }
     }
 
-    Node<Integer> tree(List<Integer> l, Function<List<Integer>, Node<Integer>> m) {
+    static Node<Integer> tree(List<Integer> l, Function<List<Integer>, Node<Integer>> m) {
         if (l.size() < 3) {
             return m.apply(l);
         }
@@ -98,34 +101,40 @@ public class NodeTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testAsArray(Integer[] array, Node<Integer> n) {
-        assertEquals(n.asArray(LambdaTestHelpers.integerArrayGenerator), array);
+        assertArrayEquals(array, n.asArray(LambdaTestHelpers.integerArrayGenerator));
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testFlattenAsArray(Integer[] array, Node<Integer> n) {
-        assertEquals(Nodes.flatten(n, LambdaTestHelpers.integerArrayGenerator)
-                          .asArray(LambdaTestHelpers.integerArrayGenerator), array);
+        assertArrayEquals(array, Nodes.flatten(n, LambdaTestHelpers.integerArrayGenerator)
+                          .asArray(LambdaTestHelpers.integerArrayGenerator));
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testCopyTo(Integer[] array, Node<Integer> n) {
         Integer[] copy = new Integer[(int) n.count()];
         n.copyInto(copy, 0);
 
-        assertEquals(copy, array);
+        assertArrayEquals(array, copy);
     }
 
-    @Test(dataProvider = "nodes", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("nodes")
+    @Tag("serialization-hostile")
     public void testForEach(Integer[] array, Node<Integer> n) {
         List<Integer> l = new ArrayList<>((int) n.count());
         n.forEach(e -> l.add(e));
 
-        assertEquals(l.toArray(), array);
+        assertArrayEquals(array, l.toArray());
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testStreams(Integer[] array, Node<Integer> n) {
         TestData<Integer, Stream<Integer>> data = TestData.Factory.ofRefNode("Node", n);
 
@@ -134,12 +143,14 @@ public class NodeTest extends OpTestCase {
         exerciseTerminalOps(data, s -> s.toArray());
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testSpliterator(Integer[] array, Node<Integer> n) {
         SpliteratorTestHelper.testSpliterator(n::spliterator);
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testTruncate(Integer[] array, Node<Integer> n) {
         int[] nums = new int[] { 0, 1, array.length / 2, array.length - 1, array.length };
         for (int start : nums)

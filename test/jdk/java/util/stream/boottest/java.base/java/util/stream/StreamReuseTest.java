@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ */
 package java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.function.Function;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * StreamReuseTest
  *
  * @author Brian Goetz
  */
-@Test
 public class StreamReuseTest {
 
     private <T, U, E, S extends BaseStream<E, S>, D extends TestData<E, S>> void assertSecondFails(
@@ -42,46 +47,19 @@ public class StreamReuseTest {
             Function<S, U> second,
             Class<? extends Throwable> exception,
             String text) {
-        S stream = data.stream();
-        T fr = first.apply(stream);
-        try {
-            U sr = second.apply(stream);
-            fail(text + " (seq)");
-        }
-        catch (Throwable e) {
-            if (exception.isAssignableFrom(e.getClass())) {
-                // Expected
-            }
-            else if (e instanceof Error)
-                throw (Error) e;
-            else if (e instanceof RuntimeException)
-                throw (RuntimeException) e;
-            else
-                throw new AssertionError("Unexpected exception " + e.getClass(), e);
-        }
+        final S stream = data.stream();
+        first.apply(stream);
+        assertThrows(exception, () -> second.apply(stream), text + " (seq)");
 
-        stream = data.parallelStream();
-        fr = first.apply(stream);
-        try {
-            U sr = second.apply(stream);
-            fail(text + " (par)");
-        }
-        catch (Throwable e) {
-            if (exception.isAssignableFrom(e.getClass())) {
-                // Expected
-            }
-            else if (e instanceof Error)
-                throw (Error) e;
-            else if (e instanceof RuntimeException)
-                throw (RuntimeException) e;
-            else
-                throw new AssertionError("Unexpected exception " + e.getClass(), e);
-        }
+        final S parallelStream = data.parallelStream();
+        first.apply(parallelStream);
+        assertThrows(exception, () -> second.apply(parallelStream), text + " (par)");
     }
 
     // Stream
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTwoStreams(String name, TestData<Integer, Stream<Integer>> data) {
         assertSecondFails(data,
                           (Stream<Integer> s) -> s.map(i -> i), (Stream<Integer> s) -> s.map(i -> i),
@@ -101,7 +79,8 @@ public class StreamReuseTest {
                           "Stream distinct / distinct succeeded erroneously");
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTwoTerminals(String name, TestData<Integer, Stream<Integer>> data) {
         assertSecondFails(data,
                           Stream::findFirst, Stream::findFirst,
@@ -109,7 +88,8 @@ public class StreamReuseTest {
                           "Stream findFirst / findFirst succeeded erroneously");
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTerminalStream(String name, TestData<Integer, Stream<Integer>> data) {
         assertSecondFails(data,
                           Stream::findFirst, (Stream<Integer> s) -> s.map(i -> i),
@@ -129,7 +109,8 @@ public class StreamReuseTest {
                           "Stream distinct / findFirst succeeded erroneously");
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTwoIterators(String name, TestData<Integer, Stream<Integer>> data) {
         assertSecondFails(data,
                           Stream::iterator, Stream::iterator,
@@ -137,7 +118,8 @@ public class StreamReuseTest {
                           "Stream iterator / iterator succeeded erroneously");
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTerminalIterator(String name, TestData<Integer, Stream<Integer>> data) {
         assertSecondFails(data,
                           Stream::iterator, Stream::findFirst,
@@ -149,7 +131,8 @@ public class StreamReuseTest {
                           "Stream findFirst / iterator succeeded erroneously");
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testStreamIterator(String name, TestData<Integer, Stream<Integer>> data) {
         assertSecondFails(data,
                           Stream::iterator, (Stream<Integer> s) -> s.map(i -> i),
@@ -171,7 +154,8 @@ public class StreamReuseTest {
 
     // IntStream
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testTwoStreams(String name, TestData.OfInt data) {
         assertSecondFails(data,
                           (IntStream s) -> s.mapToObj(i -> i), (IntStream s) -> s.mapToObj(i -> i),
@@ -191,7 +175,8 @@ public class StreamReuseTest {
                           "IntStream distinct / distinct succeeded erroneously");
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testTwoTerminals(String name, TestData.OfInt data) {
         assertSecondFails(data,
                           IntStream::sum, IntStream::sum,
@@ -199,7 +184,8 @@ public class StreamReuseTest {
                           "IntStream sum / sum succeeded erroneously");
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testTerminalStream(String name, TestData.OfInt data) {
         assertSecondFails(data,
                           IntStream::sum, (IntStream s) -> s.mapToObj(i -> i),
@@ -219,7 +205,8 @@ public class StreamReuseTest {
                           "IntStream distinct / sum succeeded erroneously");
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testTwoIterators(String name, TestData.OfInt data) {
         assertSecondFails(data,
                           IntStream::iterator, IntStream::iterator,
@@ -227,7 +214,8 @@ public class StreamReuseTest {
                           "IntStream iterator / iterator succeeded erroneously");
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testTerminalIterator(String name, TestData.OfInt data) {
         assertSecondFails(data,
                           IntStream::iterator, IntStream::sum,
@@ -239,7 +227,8 @@ public class StreamReuseTest {
                           "Stream sum / iterator succeeded erroneously");
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testStreamIterator(String name, TestData.OfInt data) {
         assertSecondFails(data,
                           IntStream::iterator, (IntStream s) -> s.mapToObj(i -> i),
@@ -261,7 +250,8 @@ public class StreamReuseTest {
 
     // LongStream
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testTwoStreams(String name, TestData.OfLong data) {
         assertSecondFails(data,
                           (LongStream s) -> s.mapToObj(i -> i), (LongStream s) -> s.mapToObj(i -> i),
@@ -281,7 +271,8 @@ public class StreamReuseTest {
                           "LongStream distinct / distinct succeeded erroneously");
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testTwoTerminals(String name, TestData.OfLong data) {
         assertSecondFails(data,
                           LongStream::sum, LongStream::sum,
@@ -289,7 +280,8 @@ public class StreamReuseTest {
                           "LongStream sum / sum succeeded erroneously");
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testTerminalStream(String name, TestData.OfLong data) {
         assertSecondFails(data,
                           LongStream::sum, (LongStream s) -> s.mapToObj(i -> i),
@@ -309,7 +301,8 @@ public class StreamReuseTest {
                           "LongStream distinct / sum succeeded erroneously");
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testTwoIterators(String name, TestData.OfLong data) {
         assertSecondFails(data,
                           LongStream::iterator, LongStream::iterator,
@@ -317,7 +310,8 @@ public class StreamReuseTest {
                           "LongStream iterator / iterator succeeded erroneously");
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testTerminalIterator(String name, TestData.OfLong data) {
         assertSecondFails(data,
                           LongStream::iterator, LongStream::sum,
@@ -329,7 +323,8 @@ public class StreamReuseTest {
                           "Stream sum / iterator succeeded erroneously");
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testStreamIterator(String name, TestData.OfLong data) {
         assertSecondFails(data,
                           LongStream::iterator, (LongStream s) -> s.mapToObj(i -> i),
@@ -351,7 +346,8 @@ public class StreamReuseTest {
 
     // DoubleStream
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testTwoStreams(String name, TestData.OfDouble data) {
         assertSecondFails(data,
                           (DoubleStream s) -> s.mapToObj(i -> i), (DoubleStream s) -> s.mapToObj(i -> i),
@@ -371,7 +367,8 @@ public class StreamReuseTest {
                           "DoubleStream distinct / distinct succeeded erroneously");
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testTwoTerminals(String name, TestData.OfDouble data) {
         assertSecondFails(data,
                           DoubleStream::sum, DoubleStream::sum,
@@ -379,7 +376,8 @@ public class StreamReuseTest {
                           "DoubleStream sum / sum succeeded erroneously");
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testTerminalStream(String name, TestData.OfDouble data) {
         assertSecondFails(data,
                           DoubleStream::sum, (DoubleStream s) -> s.mapToObj(i -> i),
@@ -399,7 +397,8 @@ public class StreamReuseTest {
                           "DoubleStream distinct / sum succeeded erroneously");
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testTwoIterators(String name, TestData.OfDouble data) {
         assertSecondFails(data,
                           DoubleStream::iterator, DoubleStream::iterator,
@@ -407,7 +406,8 @@ public class StreamReuseTest {
                           "DoubleStream iterator / iterator succeeded erroneously");
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testTerminalIterator(String name, TestData.OfDouble data) {
         assertSecondFails(data,
                           DoubleStream::iterator, DoubleStream::sum,
@@ -419,7 +419,8 @@ public class StreamReuseTest {
                           "Stream sum / iterator succeeded erroneously");
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testStreamIterator(String name, TestData.OfDouble data) {
         assertSecondFails(data,
                           DoubleStream::iterator, (DoubleStream s) -> s.mapToObj(i -> i),

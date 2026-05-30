@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@
  * @summary Unit tests stream and lambda-based methods on Pattern and Matcher
  * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
- * @run testng/othervm PatternStreamTest
+ * @run junit/othervm PatternStreamTest
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,91 +50,92 @@ import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@Test
 public class PatternStreamTest extends OpTestCase {
 
-    @DataProvider(name = "Patterns")
-    public static Object[][] makeStreamTestData() {
+    public static Stream<Arguments> patterns() {
         // Each item must match the type signature of the consumer of this data
         // String, String, Pattern
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
 
         String description = "All matches";
         String input = "XXXXXX";
         Pattern pattern = Pattern.compile("X");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "Bounded every other match";
         input = "XYXYXYYXYX";
         pattern = Pattern.compile("X");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "Every other match";
         input = "YXYXYXYYXYXY";
         pattern = Pattern.compile("X");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "";
         input = "awgqwefg1fefw4vssv1vvv1";
         pattern = Pattern.compile("4");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         input = "afbfq\u00a3abgwgb\u00a3awngnwggw\u00a3a\u00a3ahjrnhneerh";
         pattern = Pattern.compile("\u00a3a");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         input = "awgqwefg1fefw4vssv1vvv1";
         pattern = Pattern.compile("1");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         input = "a\u4ebafg1fefw\u4eba4\u9f9cvssv\u9f9c1v\u672c\u672cvv";
         pattern = Pattern.compile("1");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         input = "1\u56da23\u56da456\u56da7890";
         pattern = Pattern.compile("\u56da");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         input = "1\u56da23\u9f9c\u672c\u672c\u56da456\u56da\u9f9c\u672c7890";
         pattern = Pattern.compile("\u56da");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "Empty input";
         input = "";
         pattern = Pattern.compile("\u56da");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "Empty input with empty pattern";
         input = "";
         pattern = Pattern.compile("");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "Multiple separators";
         input = "This is,testing: with\tdifferent separators.";
         pattern = Pattern.compile("[ \t,:.]");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "Repeated separators within and at end";
         input = "boo:and:foo";
         pattern = Pattern.compile("o");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "Many repeated separators within and at end";
         input = "booooo:and:fooooo";
         pattern = Pattern.compile("o");
-        data.add(new Object[]{description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
         description = "Many repeated separators before last match";
         input = "fooooo:";
         pattern = Pattern.compile("o");
-        data.add(new Object[] {description, input, pattern});
+        data.add(Arguments.of(description, input, pattern));
 
-        return data.toArray(new Object[0][]);
+        return data.stream();
     }
 
-    @Test(dataProvider = "Patterns")
+    @ParameterizedTest
+    @MethodSource("patterns")
     public void testPatternSplitAsStream(String description, String input, Pattern pattern) {
         // Derive expected result from pattern.split
         List<String> expected = Arrays.asList(pattern.split(input));
@@ -144,20 +147,22 @@ public class PatternStreamTest extends OpTestCase {
                 .exercise();
     }
 
-    @Test(dataProvider = "Patterns")
+    @ParameterizedTest
+    @MethodSource("patterns")
     public void testReplaceFirst(String description, String input, Pattern pattern) {
         // Derive expected result from Matcher.replaceFirst(String )
         String expected = pattern.matcher(input).replaceFirst("R");
         String actual = pattern.matcher(input).replaceFirst(r -> "R");
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
-    @Test(dataProvider = "Patterns")
+    @ParameterizedTest
+    @MethodSource("patterns")
     public void testReplaceAll(String description, String input, Pattern pattern) {
         // Derive expected result from Matcher.replaceAll(String )
         String expected = pattern.matcher(input).replaceAll("R");
         String actual = pattern.matcher(input).replaceAll(r -> "R");
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
 
         // Derive expected result from Matcher.find
         Matcher m = pattern.matcher(input);
@@ -170,7 +175,8 @@ public class PatternStreamTest extends OpTestCase {
         assertEquals(expectedMatches, actualMatches.get());
     }
 
-    @Test(dataProvider = "Patterns")
+    @ParameterizedTest
+    @MethodSource("patterns")
     public void testMatchResults(String description, String input, Pattern pattern) {
         // Derive expected result from Matcher.find
         Matcher m = pattern.matcher(input);
@@ -200,6 +206,7 @@ public class PatternStreamTest extends OpTestCase {
         assertEquals(Arrays.asList("a", "b", "f", "g"), stream.collect(Collectors.toList()));
     }
 
+    @Test
     public void testFailfastMatchResults() {
         Pattern p = Pattern.compile("X");
         Matcher m = p.matcher("XX");
@@ -207,25 +214,15 @@ public class PatternStreamTest extends OpTestCase {
         Stream<MatchResult> s = m.results();
         m.find();
         // Should start on the second match
-        assertEquals(s.count(), 1);
+        assertEquals(1, s.count());
 
         // Fail fast without short-circuit
         // Exercises Iterator.forEachRemaining
         m.reset();
-        try {
-            m.results().peek(mr -> m.reset()).count();
-            fail();
-        } catch (ConcurrentModificationException e) {
-            // Should reach here
-        }
+        assertThrows(ConcurrentModificationException.class, () -> m.results().peek(mr -> m.reset()).count());
 
         m.reset();
-        try {
-            m.results().peek(mr -> m.find()).count();
-            fail();
-        } catch (ConcurrentModificationException e) {
-            // Should reach here
-        }
+        assertThrows(ConcurrentModificationException.class, () -> m.results().peek(mr -> m.find()).count());
 
         // Fail fast with short-circuit
         // Exercises Iterator.hasNext/next
@@ -246,6 +243,7 @@ public class PatternStreamTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testFailfastReplace() {
         Pattern p = Pattern.compile("X");
         Matcher m = p.matcher("XX");

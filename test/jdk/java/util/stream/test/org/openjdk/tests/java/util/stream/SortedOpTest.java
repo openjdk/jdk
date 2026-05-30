@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.util.Comparator;
@@ -35,15 +38,20 @@ import java.util.function.Supplier;
 import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * SortedOpTest
  *
  * @author Brian Goetz
  */
-@Test
 public class SortedOpTest extends OpTestCase {
 
+    @Test
     public void testRefStreamTooLarge() {
         Function<LongStream, Stream<Long>> f = s ->
                 // Clear the SORTED flag
@@ -53,6 +61,7 @@ public class SortedOpTest extends OpTestCase {
         testStreamTooLarge(f, Stream::findFirst);
     }
 
+    @Test
     public void testIntStreamTooLarge() {
         Function<LongStream, IntStream> f = s ->
                 // Clear the SORTED flag
@@ -62,6 +71,7 @@ public class SortedOpTest extends OpTestCase {
         testStreamTooLarge(f, IntStream::findFirst);
     }
 
+    @Test
     public void testLongStreamTooLarge() {
         Function<LongStream, LongStream> f = s ->
                 // Clear the SORTED flag
@@ -71,6 +81,7 @@ public class SortedOpTest extends OpTestCase {
         testStreamTooLarge(f, LongStream::findFirst);
     }
 
+    @Test
     public void testDoubleStreamTooLarge() {
         Function<LongStream, DoubleStream> f = s ->
                 // Clear the SORTED flag
@@ -101,11 +112,12 @@ public class SortedOpTest extends OpTestCase {
                 caught = e;
             }
             assertNotNull(caught, "Expected an instance of exception IllegalArgumentException but no exception thrown");
-            assertTrue(caught instanceof IllegalArgumentException,
-                       String.format("Expected an instance of exception IllegalArgumentException but got %s", caught));
+            assertInstanceOf(IllegalArgumentException.class, caught,
+                    String.format("Expected an instance of exception IllegalArgumentException but got %s", caught));
         }
     }
 
+    @Test
     public void testSorted() {
         assertCountSum(countTo(0).stream().sorted(), 0, 0);
         assertCountSum(countTo(10).stream().sorted(), 10, 55);
@@ -128,7 +140,8 @@ public class SortedOpTest extends OpTestCase {
         assertFalse(s.hasCharacteristics(Spliterator.SORTED));
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testSequentialShortCircuitTerminal() {
         // The sorted op for sequential evaluation will buffer all elements when
         // accepting then at the end sort those elements and push those elements
@@ -145,25 +158,26 @@ public class SortedOpTest extends OpTestCase {
                 (unknownSizeStream(l).sorted(), Stream::peek, i);
 
         // Find
-        assertEquals(knownSize.apply(1).findFirst(), Optional.of(1));
-        assertEquals(knownSize.apply(1).findAny(), Optional.of(1));
-        assertEquals(unknownSize.apply(1).findFirst(), Optional.of(1));
-        assertEquals(unknownSize.apply(1).findAny(), Optional.of(1));
+        assertEquals(Optional.of(1), knownSize.apply(1).findFirst());
+        assertEquals(Optional.of(1), knownSize.apply(1).findAny());
+        assertEquals(Optional.of(1), unknownSize.apply(1).findFirst());
+        assertEquals(Optional.of(1), unknownSize.apply(1).findAny());
 
         // Match
-        assertEquals(knownSize.apply(2).anyMatch(i -> i == 2), true);
-        assertEquals(knownSize.apply(2).noneMatch(i -> i == 2), false);
-        assertEquals(knownSize.apply(2).allMatch(i -> i == 2), false);
-        assertEquals(unknownSize.apply(2).anyMatch(i -> i == 2), true);
-        assertEquals(unknownSize.apply(2).noneMatch(i -> i == 2), false);
-        assertEquals(unknownSize.apply(2).allMatch(i -> i == 2), false);
+        assertTrue(knownSize.apply(2).anyMatch(i -> i == 2));
+        assertFalse(knownSize.apply(2).noneMatch(i -> i == 2));
+        assertFalse(knownSize.apply(2).allMatch(i -> i == 2));
+        assertTrue(unknownSize.apply(2).anyMatch(i -> i == 2));
+        assertFalse(unknownSize.apply(2).noneMatch(i -> i == 2));
+        assertFalse(unknownSize.apply(2).allMatch(i -> i == 2));
     }
 
     private <T> Stream<T> unknownSizeStream(List<T> l) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(l.iterator(), 0), false);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         Collection<Integer> result = exerciseOpsInt(data, Stream::sorted, IntStream::sorted, LongStream::sorted, DoubleStream::sorted);
         assertSorted(result.iterator());
@@ -174,7 +188,8 @@ public class SortedOpTest extends OpTestCase {
         assertContentsUnordered(data, result);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testSortSort(String name, TestData.OfRef<Integer> data) {
         // For parallel cases ensure the size is known
         Collection<Integer> result = withData(data)
@@ -212,7 +227,8 @@ public class SortedOpTest extends OpTestCase {
 
     //
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testIntSequentialShortCircuitTerminal() {
         int[] a = new int[]{5, 4, 3, 2, 1};
 
@@ -222,32 +238,34 @@ public class SortedOpTest extends OpTestCase {
                 (unknownSizeIntStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
 
         // Find
-        assertEquals(knownSize.apply(1).findFirst(), OptionalInt.of(1));
-        assertEquals(knownSize.apply(1).findAny(), OptionalInt.of(1));
-        assertEquals(unknownSize.apply(1).findFirst(), OptionalInt.of(1));
-        assertEquals(unknownSize.apply(1).findAny(), OptionalInt.of(1));
+        assertEquals(OptionalInt.of(1), knownSize.apply(1).findFirst());
+        assertEquals(OptionalInt.of(1), knownSize.apply(1).findAny());
+        assertEquals(OptionalInt.of(1), unknownSize.apply(1).findFirst());
+        assertEquals(OptionalInt.of(1), unknownSize.apply(1).findAny());
 
         // Match
-        assertEquals(knownSize.apply(2).anyMatch(i -> i == 2), true);
-        assertEquals(knownSize.apply(2).noneMatch(i -> i == 2), false);
-        assertEquals(knownSize.apply(2).allMatch(i -> i == 2), false);
-        assertEquals(unknownSize.apply(2).anyMatch(i -> i == 2), true);
-        assertEquals(unknownSize.apply(2).noneMatch(i -> i == 2), false);
-        assertEquals(unknownSize.apply(2).allMatch(i -> i == 2), false);
+        assertTrue(knownSize.apply(2).anyMatch(i -> i == 2));
+        assertFalse(knownSize.apply(2).noneMatch(i -> i == 2));
+        assertFalse(knownSize.apply(2).allMatch(i -> i == 2));
+        assertTrue(unknownSize.apply(2).anyMatch(i -> i == 2));
+        assertFalse(unknownSize.apply(2).noneMatch(i -> i == 2));
+        assertFalse(unknownSize.apply(2).allMatch(i -> i == 2));
     }
 
     private IntStream unknownSizeIntStream(int[] a) {
         return StreamSupport.intStream(Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(a)), 0), false);
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOps(String name, TestData.OfInt data) {
         Collection<Integer> result = exerciseOps(data, s -> s.sorted());
         assertSorted(result);
         assertContentsUnordered(data, result);
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntSortSort(String name, TestData.OfInt data) {
         // For parallel cases ensure the size is known
         Collection<Integer> result = withData(data)
@@ -260,7 +278,8 @@ public class SortedOpTest extends OpTestCase {
 
     //
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testLongSequentialShortCircuitTerminal() {
         long[] a = new long[]{5, 4, 3, 2, 1};
 
@@ -270,32 +289,34 @@ public class SortedOpTest extends OpTestCase {
                 (unknownSizeLongStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
 
         // Find
-        assertEquals(knownSize.apply(1).findFirst(), OptionalLong.of(1));
-        assertEquals(knownSize.apply(1).findAny(), OptionalLong.of(1));
-        assertEquals(unknownSize.apply(1).findFirst(), OptionalLong.of(1));
-        assertEquals(unknownSize.apply(1).findAny(), OptionalLong.of(1));
+        assertEquals(OptionalLong.of(1), knownSize.apply(1).findFirst());
+        assertEquals(OptionalLong.of(1), knownSize.apply(1).findAny());
+        assertEquals(OptionalLong.of(1), unknownSize.apply(1).findFirst());
+        assertEquals(OptionalLong.of(1), unknownSize.apply(1).findAny());
 
         // Match
-        assertEquals(knownSize.apply(2).anyMatch(i -> i == 2), true);
-        assertEquals(knownSize.apply(2).noneMatch(i -> i == 2), false);
-        assertEquals(knownSize.apply(2).allMatch(i -> i == 2), false);
-        assertEquals(unknownSize.apply(2).anyMatch(i -> i == 2), true);
-        assertEquals(unknownSize.apply(2).noneMatch(i -> i == 2), false);
-        assertEquals(unknownSize.apply(2).allMatch(i -> i == 2), false);
+        assertTrue(knownSize.apply(2).anyMatch(i -> i == 2));
+        assertFalse(knownSize.apply(2).noneMatch(i -> i == 2));
+        assertFalse(knownSize.apply(2).allMatch(i -> i == 2));
+        assertTrue(unknownSize.apply(2).anyMatch(i -> i == 2));
+        assertFalse(unknownSize.apply(2).noneMatch(i -> i == 2));
+        assertFalse(unknownSize.apply(2).allMatch(i -> i == 2));
     }
 
     private LongStream unknownSizeLongStream(long[] a) {
         return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(a)), 0), false);
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOps(String name, TestData.OfLong data) {
         Collection<Long> result = exerciseOps(data, s -> s.sorted());
         assertSorted(result);
         assertContentsUnordered(data, result);
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongSortSort(String name, TestData.OfLong data) {
         // For parallel cases ensure the size is known
         Collection<Long> result = withData(data)
@@ -308,7 +329,8 @@ public class SortedOpTest extends OpTestCase {
 
     //
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testDoubleSequentialShortCircuitTerminal() {
         double[] a = new double[]{5.0, 4.0, 3.0, 2.0, 1.0};
 
@@ -318,32 +340,34 @@ public class SortedOpTest extends OpTestCase {
                 (unknownSizeDoubleStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
 
         // Find
-        assertEquals(knownSize.apply(1).findFirst(), OptionalDouble.of(1));
-        assertEquals(knownSize.apply(1).findAny(), OptionalDouble.of(1));
-        assertEquals(unknownSize.apply(1).findFirst(), OptionalDouble.of(1));
-        assertEquals(unknownSize.apply(1).findAny(), OptionalDouble.of(1));
+        assertEquals(OptionalDouble.of(1), knownSize.apply(1).findFirst());
+        assertEquals(OptionalDouble.of(1), knownSize.apply(1).findAny());
+        assertEquals(OptionalDouble.of(1), unknownSize.apply(1).findFirst());
+        assertEquals(OptionalDouble.of(1), unknownSize.apply(1).findAny());
 
         // Match
-        assertEquals(knownSize.apply(2).anyMatch(i -> i == 2.0), true);
-        assertEquals(knownSize.apply(2).noneMatch(i -> i == 2.0), false);
-        assertEquals(knownSize.apply(2).allMatch(i -> i == 2.0), false);
-        assertEquals(unknownSize.apply(2).anyMatch(i -> i == 2.0), true);
-        assertEquals(unknownSize.apply(2).noneMatch(i -> i == 2.0), false);
-        assertEquals(unknownSize.apply(2).allMatch(i -> i == 2.0), false);
+        assertTrue(knownSize.apply(2).anyMatch(i -> i == 2.0));
+        assertFalse(knownSize.apply(2).noneMatch(i -> i == 2.0));
+        assertFalse(knownSize.apply(2).allMatch(i -> i == 2.0));
+        assertTrue(unknownSize.apply(2).anyMatch(i -> i == 2.0));
+        assertFalse(unknownSize.apply(2).noneMatch(i -> i == 2.0));
+        assertFalse(unknownSize.apply(2).allMatch(i -> i == 2.0));
     }
 
     private DoubleStream unknownSizeDoubleStream(double[] a) {
         return StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(a)), 0), false);
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOps(String name, TestData.OfDouble data) {
         Collection<Double> result = exerciseOps(data, s -> s.sorted());
         assertSorted(result);
         assertContentsUnordered(data, result);
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleSortSort(String name, TestData.OfDouble data) {
         // For parallel cases ensure the size is known
         Collection<Double> result = withData(data)

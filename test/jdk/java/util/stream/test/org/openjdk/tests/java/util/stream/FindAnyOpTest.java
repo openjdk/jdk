@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,43 +21,49 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8148115
  */
 
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.*;
 
-import org.testng.annotations.Test;
-
 import java.util.function.Function;
 
 import static java.util.stream.LambdaTestHelpers.*;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * FindAnyOpTest
  */
-@Test
 public class FindAnyOpTest extends OpTestCase {
 
+    @Test
     public void testFindAny() {
         assertFalse(Collections.emptySet().stream().findAny().isPresent(), "no result");
         assertFalse(countTo(10).stream().filter(x -> x > 10).findAny().isPresent(), "no result");
         assertTrue(countTo(10).stream().filter(pEven).findAny().isPresent(), "with result");
     }
 
+    @Test
     public void testFindAnyParallel() {
         assertFalse(Collections.emptySet().parallelStream().findAny().isPresent(), "no result");
         assertFalse(countTo(1000).parallelStream().filter(x -> x > 1000).findAny().isPresent(), "no result");
         assertTrue(countTo(1000).parallelStream().filter(pEven).findAny().isPresent(), "with result");
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testStream(String name, TestData.OfRef<Integer> data) {
         exerciseStream(data, s -> s);
         exerciseStream(data, s -> s.filter(pTrue));
@@ -70,7 +76,8 @@ public class FindAnyOpTest extends OpTestCase {
         assertContains(or, fs.apply(data.stream()).iterator());
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntStream(String name, TestData.OfInt data) {
         exerciseIntStream(data, s -> s);
         exerciseIntStream(data, s -> s.filter(ipTrue));
@@ -94,7 +101,8 @@ public class FindAnyOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongStream(String name, TestData.OfLong data) {
         exerciseLongStream(data, s -> s);
         exerciseLongStream(data, s -> s.filter(lpTrue));
@@ -118,7 +126,8 @@ public class FindAnyOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleStream(String name, TestData.OfDouble data) {
         exerciseDoubleStream(data, s -> s);
         exerciseDoubleStream(data, s -> s.filter(dpTrue));

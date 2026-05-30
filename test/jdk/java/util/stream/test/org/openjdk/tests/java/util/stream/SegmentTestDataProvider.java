@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.params.provider.Arguments;
+
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
-import java.lang.invoke.VarHandle;
 import java.util.Collection;
 import java.util.List;
 import java.util.SpliteratorTestHelper;
@@ -35,7 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import java.lang.foreign.ValueLayout;
-import org.testng.annotations.DataProvider;
+import java.util.stream.Stream;
 
 public class SegmentTestDataProvider {
 
@@ -130,19 +131,18 @@ public class SegmentTestDataProvider {
         }
     }
 
-    static Object[][] spliteratorTestData = {
-            { "bytes", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_BYTE), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsByte },
-            { "chars", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_CHAR), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsChar },
-            { "shorts", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_SHORT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsShort },
-            { "ints", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsInt },
-            { "longs", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_LONG), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsLong },
-            { "floats", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_FLOAT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsFloat },
-            { "doubles", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_DOUBLE), (SpliteratorTestHelper.ContentAsserter<MemorySegment>)SegmentTestDataProvider::compareSegmentsDouble },
-    };
+    static List<Arguments> spliteratorTestData = List.of(
+            Arguments.of("bytes", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_BYTE), (SpliteratorTestHelper.ContentAsserter<MemorySegment>) SegmentTestDataProvider::compareSegmentsByte),
+            Arguments.of("chars", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_CHAR), (SpliteratorTestHelper.ContentAsserter<MemorySegment>) SegmentTestDataProvider::compareSegmentsChar),
+            Arguments.of("shorts", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_SHORT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>) SegmentTestDataProvider::compareSegmentsShort),
+            Arguments.of("ints", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>) SegmentTestDataProvider::compareSegmentsInt),
+            Arguments.of("longs", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_LONG), (SpliteratorTestHelper.ContentAsserter<MemorySegment>) SegmentTestDataProvider::compareSegmentsLong),
+            Arguments.of("floats", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_FLOAT), (SpliteratorTestHelper.ContentAsserter<MemorySegment>) SegmentTestDataProvider::compareSegmentsFloat),
+            Arguments.of("doubles", MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_DOUBLE), (SpliteratorTestHelper.ContentAsserter<MemorySegment>) SegmentTestDataProvider::compareSegmentsDouble)
+    );
 
     // returns an array of (String name, Supplier<Spliterator<MemorySegment>>, ContentAsserter<MemorySegment>)
-    @DataProvider(name = "SegmentSpliterator")
-    public static Object[][] spliteratorProvider() {
-        return spliteratorTestData;
+    public static Stream<Arguments> segmentSpliterator() {
+        return spliteratorTestData.stream();
     }
 }

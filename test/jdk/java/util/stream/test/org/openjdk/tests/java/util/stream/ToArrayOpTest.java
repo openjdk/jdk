@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,36 +20,48 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ */
+
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
-import static org.testng.Assert.assertEquals;
-
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * ToArrayOpTest
  *
  */
-@Test
 public class ToArrayOpTest extends OpTestCase {
 
+    @Test
     public void testToArray() {
         assertCountSum(Arrays.asList(countTo(0).stream().toArray()), 0, 0);
         assertCountSum(Arrays.asList(countTo(10).stream().toArray()), 10, 55);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         exerciseTerminalOps(data, s -> s.toArray());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOpsWithMap(String name, TestData.OfRef<Integer> data) {
         // Retain the size of the source
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
@@ -58,7 +70,8 @@ public class ToArrayOpTest extends OpTestCase {
         assertTrue(objects.length == data.size());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOpsWithSorted(String name, TestData.OfRef<Integer> data) {
         // Retain the size of the source
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
@@ -67,7 +80,8 @@ public class ToArrayOpTest extends OpTestCase {
         assertTrue(objects.length == data.size());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOpsWithFlatMap(String name, TestData.OfRef<Integer> data) {
         // Double the size of the source
         // Fixed size optimizations will not be used
@@ -78,7 +92,8 @@ public class ToArrayOpTest extends OpTestCase {
         assertTrue(objects.length == data.size() * 2);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOpsWithFilter(String name, TestData.OfRef<Integer> data) {
         // Reduce the size of the source
         // Fixed size optimizations will not be used
@@ -86,6 +101,7 @@ public class ToArrayOpTest extends OpTestCase {
         exerciseTerminalOps(data, s -> s.filter(LambdaTestHelpers.pEven), s -> s.toArray());
     }
 
+    @Test
     public void testAsArrayWithType() {
         exerciseTerminalOps(
                 TestData.Factory.ofCollection("", Arrays.asList(1.1, 2.2, 3.4, 4.4)),
@@ -104,16 +120,17 @@ public class ToArrayOpTest extends OpTestCase {
                     s -> s.sorted()
             ));
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testDistinctAndSortedPermutations(String name, TestData.OfRef<Integer> data) {
         for (Function<Stream<Integer>, Stream<Integer>> f : uniqueAndSortedPermutations) {
             exerciseTerminalOps(data, f, s -> s.toArray());
 
             Integer[] is = exerciseTerminalOps(data, f, s -> s.toArray(Integer[]::new));
-            assertEquals(is.getClass(), Integer[].class);
+            assertEquals(Integer[].class, is.getClass());
 
             Number[] ns = exerciseTerminalOps(data, f, s -> s.toArray(Number[]::new));
-            assertEquals(ns.getClass(), Number[].class);
+            assertEquals(Number[].class, ns.getClass());
 
             if (data.size() > 0) {
                 Exception caught = null;
@@ -123,7 +140,7 @@ public class ToArrayOpTest extends OpTestCase {
                     caught = e;
                 }
                 assertTrue(caught != null);
-                assertEquals(caught.getClass(), ArrayStoreException.class);
+                assertEquals(ArrayStoreException.class, caught.getClass());
             }
         }
     }
@@ -161,12 +178,13 @@ public class ToArrayOpTest extends OpTestCase {
                     return;
                 }
             }
-            assertEquals(act, exp);
+            assertArrayEquals(exp, act);
         };
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    @Tag("serialization-hostile")
     public void testStatefulOpPermutations(String name, TestData.OfRef<Integer> data) {
         for (Function<Stream<Integer>, Stream<Integer>> f : statefulOpPermutations) {
             withData(data).terminal(f, s -> s.toArray())
@@ -176,12 +194,12 @@ public class ToArrayOpTest extends OpTestCase {
             Integer[] is = withData(data).terminal(f, s -> s.toArray(Integer[]::new))
                     .resultAsserter(statefulOpResultAsserter(data))
                     .exercise();
-            assertEquals(is.getClass(), Integer[].class);
+            assertEquals(Integer[].class, is.getClass());
 
             Number[] ns = withData(data).terminal(f, s -> s.toArray(Number[]::new))
                     .resultAsserter(statefulOpResultAsserter(data))
                     .exercise();
-            assertEquals(ns.getClass(), Number[].class);
+            assertEquals(Number[].class, ns.getClass());
 
             if (data.size() > 0) {
                 Exception caught = null;
@@ -190,38 +208,42 @@ public class ToArrayOpTest extends OpTestCase {
                 } catch (Exception e) {
                     caught = e;
                 }
-                assertTrue(caught != null);
-                assertEquals(caught.getClass(), ArrayStoreException.class);
+                assertNotNull(caught);
+                assertEquals(ArrayStoreException.class, caught.getClass());
             }
         }
     }
 
     //
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOps(String name, TestData.OfInt data) {
         exerciseTerminalOps(data, s -> s.toArray());
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOpsWithMap(String name, TestData.OfInt data) {
         // Retain the size of the source
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         int[] ints = exerciseTerminalOps(data, s -> s.map(i -> i + i), s -> s.toArray());
-        assertTrue(ints.length == data.size());
+        assertEquals(data.size(), ints.length);
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOpsWithSorted(String name, TestData.OfInt data) {
         // Retain the size of the source
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         int[] ints = exerciseTerminalOps(data, s -> s.sorted(), (IntStream s) -> s.toArray());
-        assertTrue(ints.length == data.size());
+        assertEquals(data.size(), ints.length);
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOpsWithFlatMap(String name, TestData.OfInt data) {
         // Int the size of the source
         // Fixed size optimizations will not be used
@@ -229,10 +251,11 @@ public class ToArrayOpTest extends OpTestCase {
         int[] objects = exerciseTerminalOps(data,
                                                s -> s.flatMap(e -> Arrays.stream(new int[] { e, e })),
                                                s -> s.toArray());
-        assertTrue(objects.length == data.size() * 2);
+        assertEquals(data.size() * 2, objects.length);
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOpsWithFilter(String name, TestData.OfInt data) {
         // Reduce the size of the source
         // Fixed size optimizations will not be used
@@ -248,7 +271,8 @@ public class ToArrayOpTest extends OpTestCase {
                     s -> s.sorted()
             ));
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntDistinctAndSortedPermutations(String name, TestData.OfInt data) {
         for (Function<IntStream, IntStream> f : intUniqueAndSortedPermutations) {
             exerciseTerminalOps(data, f, s -> s.toArray());
@@ -262,7 +286,8 @@ public class ToArrayOpTest extends OpTestCase {
                     s -> s.sorted()
             ));
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntStatefulOpPermutations(String name, TestData.OfInt data) {
         for (Function<IntStream, IntStream> f : intStatefulOpPermutations) {
             exerciseTerminalOps(data, f, s -> s.toArray());
@@ -271,30 +296,34 @@ public class ToArrayOpTest extends OpTestCase {
 
     //
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOps(String name, TestData.OfLong data) {
         exerciseTerminalOps(data, s -> s.toArray());
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOpsWithMap(String name, TestData.OfLong data) {
         // Retain the size of the source
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         long[] longs = exerciseTerminalOps(data, s -> s.map(i -> i + i), s -> s.toArray());
-        assertTrue(longs.length == data.size());
+        assertEquals(data.size(), longs.length);
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOpsWithSorted(String name, TestData.OfLong data) {
         // Retain the size of the source
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         long[] longs = exerciseTerminalOps(data, s -> s.sorted(), (LongStream s) -> s.toArray());
-        assertTrue(longs.length == data.size());
+        assertEquals(data.size(), longs.length);
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOpsWithFlatMap(String name, TestData.OfLong data) {
         // Long the size of the source
         // Fixed size optimizations will not be used
@@ -302,10 +331,11 @@ public class ToArrayOpTest extends OpTestCase {
         long[] objects = exerciseTerminalOps(data,
                                                s -> s.flatMap(e -> Arrays.stream(new long[] { e, e })),
                                                s -> s.toArray());
-        assertTrue(objects.length == data.size() * 2);
+        assertEquals(data.size() * 2, objects.length);
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOpsWithFilter(String name, TestData.OfLong data) {
         // Reduce the size of the source
         // Fixed size optimizations will not be used
@@ -321,7 +351,8 @@ public class ToArrayOpTest extends OpTestCase {
                     s -> s.sorted()
             ));
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongDistinctAndSortedPermutations(String name, TestData.OfLong data) {
         for (Function<LongStream, LongStream> f : longUniqueAndSortedPermutations) {
             exerciseTerminalOps(data, f, s -> s.toArray());
@@ -335,7 +366,8 @@ public class ToArrayOpTest extends OpTestCase {
                     s -> s.sorted()
             ));
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongStatefulOpPermutations(String name, TestData.OfLong data) {
         for (Function<LongStream, LongStream> f : longStatefulOpPermutations) {
             exerciseTerminalOps(data, f, s -> s.toArray());
@@ -344,30 +376,34 @@ public class ToArrayOpTest extends OpTestCase {
 
     //
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOps(String name, TestData.OfDouble data) {
         exerciseTerminalOps(data, s -> s.toArray());
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOpsWithMap(String name, TestData.OfDouble data) {
         // Retain the size of the source
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         double[] doubles = exerciseTerminalOps(data, s -> s.map(i -> i + i), s -> s.toArray());
-        assertTrue(doubles.length == data.size());
+        assertEquals(data.size(), doubles.length);
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOpsWithSorted(String name, TestData.OfDouble data) {
         // Retain the size of the source
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         double[] doubles = exerciseTerminalOps(data, s -> s.sorted(), (DoubleStream s) -> s.toArray());
-        assertTrue(doubles.length == data.size());
+        assertEquals(data.size(), doubles.length);
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOpsWithFlatMap(String name, TestData.OfDouble data) {
         // Double the size of the source
         // Fixed size optimizations will not be used
@@ -375,10 +411,11 @@ public class ToArrayOpTest extends OpTestCase {
         double[] objects = exerciseTerminalOps(data,
                                                s -> s.flatMap(e -> Arrays.stream(new double[] { e, e })),
                                                s -> s.toArray());
-        assertTrue(objects.length == data.size() * 2);
+        assertEquals(data.size() * 2, objects.length);
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOpsWithFilter(String name, TestData.OfDouble data) {
         // Reduce the size of the source
         // Fixed size optimizations will not be used
@@ -394,7 +431,8 @@ public class ToArrayOpTest extends OpTestCase {
                     s -> s.sorted()
             ));
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleDistinctAndSortedPermutations(String name, TestData.OfDouble data) {
         for (Function<DoubleStream, DoubleStream> f : doubleUniqueAndSortedPermutations) {
             exerciseTerminalOps(data, f, s -> s.toArray());
@@ -408,7 +446,8 @@ public class ToArrayOpTest extends OpTestCase {
                     s -> s.sorted()
             ));
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleStatefulOpPermutations(String name, TestData.OfDouble data) {
         for (Function<DoubleStream, DoubleStream> f : doubleStatefulOpPermutations) {
             exerciseTerminalOps(data, f, s -> s.toArray());

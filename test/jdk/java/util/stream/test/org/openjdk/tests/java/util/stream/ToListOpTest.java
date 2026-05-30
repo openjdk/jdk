@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,24 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * ToListOpTest
  */
-@Test
 public class ToListOpTest extends OpTestCase {
 
+    @Test
     public void testToList() {
         assertCountSum(countTo(0).stream().toList(), 0, 0);
         assertCountSum(countTo(10).stream().toList(), 10, 55);
@@ -58,28 +59,32 @@ public class ToListOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> objects = exerciseTerminalOps(data, s -> s.toList());
         checkUnmodifiable(objects);
         assertFalse(objects.contains(null));
     }
 
-    @Test(dataProvider = "withNull:StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerWithNullStreamTestData")
     public void testOpsWithNull(String name, TestData.OfRef<Integer> data) {
         List<Integer> objects = exerciseTerminalOps(data, s -> s.toList());
         checkUnmodifiable(objects);
         assertTrue(objects.contains(null));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testDefaultOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> objects = exerciseTerminalOps(data, s -> DefaultMethodStreams.delegateTo(s).toList());
         checkUnmodifiable(objects);
         assertFalse(objects.contains(null));
     }
 
-    @Test(dataProvider = "withNull:StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerWithNullStreamTestData")
     public void testDefaultOpsWithNull(String name, TestData.OfRef<Integer> data) {
         List<Integer> objects = exerciseTerminalOps(data, s -> DefaultMethodStreams.delegateTo(s).toList());
         checkUnmodifiable(objects);

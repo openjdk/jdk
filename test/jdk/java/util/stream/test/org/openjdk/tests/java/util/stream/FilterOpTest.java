@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,26 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.Collection;
 import java.util.stream.*;
-
-import org.testng.annotations.Test;
 
 import java.util.Arrays;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * FilterOpTest
  *
  * @author Brian Goetz
  */
-@Test
 public class FilterOpTest extends OpTestCase {
+
+    @Test
     public void testFilter() {
         assertCountSum(countTo(0).stream().filter(pTrue), 0, 0);
         assertCountSum(countTo(10).stream().filter(pFalse), 0, 0);
@@ -53,55 +57,59 @@ public class FilterOpTest extends OpTestCase {
         exerciseOps(countTo(1000), s -> s.filter(e -> e == 100), Arrays.asList(100));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         Collection<Integer> result = exerciseOps(data, s -> s.filter(pTrue));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
 
         result = exerciseOps(data, s -> s.filter(pFalse));
-        assertEquals(result.size(), 0);
+        assertEquals(0, result.size());
 
         exerciseOps(data, s -> s.filter(pEven));
         exerciseOps(data, s -> s.filter(pOdd));
 
         result = exerciseOps(data, s -> s.filter(pOdd.and(pEven)));
-        assertEquals(result.size(), 0);
+        assertEquals(0, result.size());
 
         result = exerciseOps(data, s -> s.filter(pOdd.or(pEven)));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testOps(String name, TestData.OfInt data) {
         Collection<Integer> result = exerciseOps(data, s -> s.filter(i -> true));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
 
         result = exerciseOps(data, s -> s.filter(i -> false));
-        assertEquals(result.size(), 0);
+        assertEquals(0, result.size());
 
         exerciseOps(data, s -> s.filter(i -> 0 == i % 2));
         exerciseOps(data, s -> s.filter(i -> 1 == i % 2));
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testOps(String name, TestData.OfLong data) {
         Collection<Long> result = exerciseOps(data, s -> s.filter(i -> true));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
 
         result = exerciseOps(data, s -> s.filter(i -> false));
-        assertEquals(result.size(), 0);
+        assertEquals(0, result.size());
 
         exerciseOps(data, s -> s.filter(i -> 0 == i % 2));
         exerciseOps(data, s -> s.filter(i -> 1 == i % 2));
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testOps(String name, TestData.OfDouble data) {
         Collection<Double> result = exerciseOps(data, s -> s.filter(i -> true));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
 
         result = exerciseOps(data, s -> s.filter(i -> false));
-        assertEquals(result.size(), 0);
+        assertEquals(0, result.size());
 
         exerciseOps(data, s -> s.filter(i -> 0 == ((long) i) % 2));
         exerciseOps(data, s -> s.filter(i -> 1 == ((long) i) % 2));
