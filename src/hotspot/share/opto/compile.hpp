@@ -480,6 +480,7 @@ private:
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
 
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
+  GrowableArray<CallGenerator*> _vector_late_inlines; // inline fallback implementation for failed intrinsics
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   bool                          _has_mh_late_inlines; // Can there still be a method handle late inlining pending?
@@ -508,6 +509,12 @@ private:
   InlinePrinter _inline_printer;
 
 public:
+
+  void add_vector_late_inline(CallGenerator* cg) {
+    _vector_late_inlines.push(cg);
+  }
+  void process_vector_late_inlines();
+
   void* barrier_set_state() const { return _barrier_set_state; }
 
   InlinePrinter* inline_printer() { return &_inline_printer; }

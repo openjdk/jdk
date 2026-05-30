@@ -253,7 +253,8 @@ public class VectorCompareWithZeroTest {
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
-                     .addFlags("--add-modules=jdk.incubator.vector")
+                     .addFlags("--add-modules=jdk.incubator.vector",
+                               "-XX:-IncrementalInlineVector")
                      .addFlags("-XX:UseSVE=0")
                      .start();
     }
