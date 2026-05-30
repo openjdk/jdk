@@ -1137,6 +1137,7 @@ public:
   static const TypeInterfaces* make(GrowableArray<ciInstanceKlass*>* interfaces = nullptr);
   bool eq(const Type* other) const;
   bool eq(ciInstanceKlass* k) const;
+  bool is_subset(ciInstanceKlass* k) const;
   uint hash() const;
   const Type *xdual() const;
   void dump(outputStream* st) const;
