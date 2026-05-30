@@ -41,6 +41,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #include "jni.h"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -3652,6 +3653,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     }
 
     JFR_ONLY(Jfr::on_thread_start(thread);)
+    JFR_ONLY(JfrStackWalker::on_javathread_create(thread);)
 
     if (ReplayCompiles) ciReplay::replay(thread);
 
@@ -3887,6 +3889,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   // Want this inside 'attaching via jni'.
   JFR_ONLY(Jfr::on_thread_start(thread);)
+  JFR_ONLY(JfrStackWalker::on_javathread_create(thread);)
 
   // mark the thread as no longer attaching
   // this uses a fence to push the change through so we don't have

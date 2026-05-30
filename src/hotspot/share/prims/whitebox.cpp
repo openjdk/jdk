@@ -47,7 +47,7 @@
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -2700,7 +2700,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jboolean enable))
   #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
-    return JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(enable == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
+    return JfrStackWalker::set_out_of_stack_walking_enabled(enable == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
   #else
     return JNI_FALSE;
   #endif
