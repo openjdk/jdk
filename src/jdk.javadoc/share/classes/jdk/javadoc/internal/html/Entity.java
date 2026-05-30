@@ -81,7 +81,7 @@ public class Entity extends Content {
      * @param s the string to escape
      * @return the string with all of the HTML characters escaped
      */
-    static String escapeHtmlChars(CharSequence s) {
+    public static String escapeHtmlChars(CharSequence s) {
         // Convert to string as CharSequence implementations can be slow - see JDK-8263321
         String str = s.toString();
         for (int i = 0; i < str.length(); i++) {
@@ -96,17 +96,6 @@ public class Entity extends Content {
             }
         }
         return str;
-    }
-
-    /**
-     * Escapes the special HTML characters in a given string using the appropriate
-     * entities, appending the results into a string builder.
-     *
-     * @param s the string
-     * @param sb the string builder
-     */
-    static void escapeHtmlChars(CharSequence s, StringBuilder sb) {
-        escapeHtmlChars(s.toString(), 0, sb);
     }
 
     private static void escapeHtmlChars(String s, int start, StringBuilder sb) {

@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -886,19 +886,25 @@ The following options are provided by the standard doclet.
     formats supported by this option are Java, Properties, JSON, HTML and XML.
 
 <span id="option-tag">`-tag` *name*:*locations*:*header*</span>
-:   Specifies a custom tag with a single argument. For the `javadoc` tool to
-    spell-check tag names, it is important to include a `-tag` option for every
-    custom tag that is present in the source code, disabling (with `X`) those
-    that aren't being output in the current run. The colon (`:`) is always the
-    separator. To include a colon in the tag name, escape it with a backward
-    slash (`\`). The `-tag` option outputs the tag heading, *header*, in bold,
-    followed on the next line by the text from its single argument. Similar to
-    any block tag, the argument text can contain inline tags, which are also
-    interpreted. The output is similar to standard one-argument tags, such as
-    the `@return` and `@author` tags. Omitting a *header* value causes the
-    *name* to be the heading.  *locations* is a list of characters specifying
-    the kinds of declarations in which the tag may be used. The following
-    characters may be used, in either uppercase or lowercase:
+:   Specifies a custom [note tag] with the given tag *name*, allowed *locations*
+    and *header*. For example, the option below creates a `@warning` tag that
+    uses "Warning:" as header and can be used in all locations:
+
+    ```
+    -tag 'warning:a:Warning:'
+    ```
+
+    The tag outputs *header* as its heading, followed by the body of the tag.
+    The tag body may contain HTML elements and inline JavaDoc tags, which are
+    also interpreted. Depending on its allowed *locations*, the tag may be
+    used as block, inline tag, or both. The tag may also use attributes as
+    described in the [specification of the note tag][note tag].
+
+    Omitting a *header* value causes the *name* to be the heading. *locations*
+    is a list of characters specifying the kinds of declarations in which the
+    tag may be used, and whether to restrict its use to block tag or inline tag
+    (both uses are allowed by default). The following characters may be used,
+    in either uppercase or lowercase:
 
     * `A`: all declarations
     * `C`: constructors
@@ -908,12 +914,30 @@ The following options are provided by the standard doclet.
     * `P`: packages
     * `S`: modules
     * `T`: types (classes and interfaces)
+    * `B`: block tag only, disallow use as inline tag
+    * `I`: inline tag only, disallow use as block tag
     * `X`: nowhere: the tag is disabled, and will be ignored
+
+    As an example, specifying `CMI` as *locations* allows a tag to be used as
+    inline tag in constructor and method declarations.
+
+    For the `javadoc` tool to spell-check tag names, it is important to include
+    a `-tag` option for every custom tag that is present in the source code,
+    disabling (with `X`) those that aren't being output in the current run.
+    The colon (`:`) is always the separator. To include a colon in the tag name,
+    escape it with a backward slash (`\`).
 
     The order in which tags are given on the command line will be used
     as the order in which the tags appear in the generated output.
     You can include standard tags in the order given on the command line
     by using the `-tag` option with no *locations* or *header*.
+
+    The *name* of the tag, prefixed by `note-tag-`, is also added as `class`
+    attribute to the generated HTML element to enable styling via
+    user-defined stylesheets. For example, a tag with *name* "warning" will
+    generate an HTML element with a `class="note-tag-warning"` attribute.
+
+[note tag]: ../javadoc/doc-comment-spec.html#note
 
 <span id="option-taglet">`-taglet` *class*</span>
 :   Specifies the fully qualified name of the taglet used in generating the

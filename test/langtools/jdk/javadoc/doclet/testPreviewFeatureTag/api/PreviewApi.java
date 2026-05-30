@@ -21,49 +21,14 @@
  * questions.
  */
 
-package taglet;
-
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.lang.model.element.Element;
-
-import com.sun.source.doctree.DocTree;
-import jdk.javadoc.doclet.Doclet;
-import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.doclet.Taglet;
+package api;
 
 /**
- * A Javadoc block tag that provides an alternative preview note.
- * The tag has no direct output, tag contents are used as
- * preview note by javadoc.
+ * This is a preview API marked by javadoc tags.
+ *
+ * @previewFeature [title="First preview feature" url="http://example.org/first-preview-feature"]
+ * Alternative preview note. {@link PreviewApi} is a preview API.
  */
-public class PreviewNote implements Taglet {
-
-    static final String TAG_NAME = "previewNote";
-
-    @Override
-    public void init(DocletEnvironment env, Doclet doclet) {
-    }
-
-    @Override
-    public Set<Location> getAllowedLocations() {
-        return EnumSet.allOf(Taglet.Location.class);
-    }
-
-    @Override
-    public boolean isInlineTag() {
-        return false;
-    }
-
-    @Override
-    public String getName() {
-        return TAG_NAME;
-    }
-
-    @Override
-    public String toString(List<? extends DocTree> tags, Element elem) {
-        return "";
-    }
+public class PreviewApi {
+    private PreviewApi() {}
 }

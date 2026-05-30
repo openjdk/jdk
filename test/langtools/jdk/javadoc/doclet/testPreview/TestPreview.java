@@ -316,10 +316,18 @@ public class TestPreview extends JavadocTester {
                 package p;
 
                  /**
-                  * Non preview feature.
-                  * {@previewNote 2147483647 Preview API Note}
+                  * Non-preview interface.
+                  * @previewNote [jep=2147483647]
+                  * Block preview note.
                   */
-                 public interface NonPrevieFeature {
+                 public interface NonPreviewFeature {
+                      /**
+                       * Non-preview method.
+                       * {@previewNote [jep=2147483647 header="" id="preview-note"]
+                       * Inline preview note with empty header and explicit id.
+                       * }
+                       */
+                       void method();
                  }
                 """);
         javadoc("-d", "out-preview-note-tag",
@@ -331,7 +339,7 @@ public class TestPreview extends JavadocTester {
                 "p");
         checkExit(Exit.OK);
 
-        checkOutput("preview-list.html", true,
+        checkOrder("preview-list.html",
                 """
                     <h2 title="Contents">Contents</h2>
                     <ul class="contents-list">
@@ -341,9 +349,29 @@ public class TestPreview extends JavadocTester {
                     <div class="caption"><span>Permanent APIs affected by Preview Features</span></div>""",
                 """
                     <div class="col-summary-item-name even-row-color preview-api-notes preview-api-notes-tab1\
-                    "><a href="p/NonPrevieFeature.html" title="interface in p">p.NonPrevieFeature</a></div>
+                    "><a href="p/NonPreviewFeature.html" title="interface in p">p.NonPreviewFeature</a></div>
                     <div class="col-second even-row-color preview-api-notes preview-api-notes-tab1">Test Feature</div>
                     <div class="col-last even-row-color preview-api-notes preview-api-notes-tab1">
-                    <div class="block">Non preview feature.</div>""");
+                    <div class="block">Non-preview interface.</div>""",
+                """
+                    <div class="col-summary-item-name odd-row-color preview-api-notes preview-api-notes-tab1"\
+                    ><a href="p/NonPreviewFeature.html#method()">p.NonPreviewFeature.method()</a></div>
+                    <div class="col-second odd-row-color preview-api-notes preview-api-notes-tab1">Test Feature</div>
+                    <div class="col-last odd-row-color preview-api-notes preview-api-notes-tab1">
+                    <div class="block">Non-preview method.</div>""");
+
+        checkOrder("p/NonPreviewFeature.html",
+                """
+                    <div class="block">Non-preview interface.</div>
+                    <dl class="notes">
+                    <div id="block-previewNote" class="note-tag-previewNote">
+                    <dt>Preview Note:</dt>
+                    <dd>Block preview note.</dd>
+                    </div>""",
+                """
+                    <div class="block">Non-preview method.
+                    <div class="inline-note note-tag-previewNote" id="preview-note">
+                    Inline preview note with empty header and explicit id.
+                    </div>""");
     }
 }

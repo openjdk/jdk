@@ -74,9 +74,24 @@
     --snippet-highlight-color: #f7c590;
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
+    /* Note colors */
+    --note-background-color: inherit;
+    --note-border-color: #8c8c8c;
+    --note-header-color: var(--block-text-color);
+    --note-text-color: var(--block-text-color);
+    --note-important-background-color: #f1f7ff;
+    --note-important-border-color: #7b95a5;
+    --note-important-header-color: #ffffff;
+    --note-important-pre-color: #e1eefe;
+    --note-critical-background-color: #fff0f0;
+    --note-critical-border-color: #d01414;
+    --note-critical-header-color: #ffffff;
+    --note-critical-pre-color: #fee3e3;
     /* Border colors for structural elements and user defined tables */
     --border-color: #e6e6e6;
-    --table-border-color: #000000;
+    --table-border-color: #434343;
+    --hairline-border-width: 1px;
+    --hairline-border-color: #c3c3c3;
     /* Styles for table tabs */
     --tab-border-radius: 2px 2px 0 0;
     /* Search input colors */
@@ -135,9 +150,23 @@
     --snippet-highlight-color: #f7c590;
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
+    --note-background-color: inherit;
+    --note-border-color: #adadad;
+    --note-header-color: var(--block-text-color);
+    --note-text-color: var(--block-text-color);
+    --note-important-background-color: #353f4e;
+    --note-important-border-color: #446c86;
+    --note-important-header-color: #ffffff;
+    --note-important-pre-color: #2c353b;
+    --note-critical-background-color: #4f2c2c;
+    --note-critical-border-color: #b82222;
+    --note-critical-header-color: #ffffff;
+    --note-critical-pre-color: #391a1a;
     --border-color: #444444;
-    --table-border-color: #717171;
+    --table-border-color: #747474;
     --tab-border-radius: 2px 2px 0 0;
+    --hairline-border-width: 1px;
+    --hairline-border-color: #6c6c6c;
     --search-input-background-color: #303030;
     --search-input-text-color: #d0d0d0;
     --search-input-placeholder-color: #979797;
@@ -173,6 +202,15 @@
         text-decoration: underline;
         text-decoration-thickness: 0.02em;
         text-underline-offset: 0.12em;
+    }
+}
+@media (min-resolution: 2x) {
+    :root {
+        --hairline-border-width: 0.8px;
+        --hairline-border-color: #888888;
+    }
+    :root[data-theme="theme-dark"] {
+        --hairline-border-color: #808080;
     }
 }
 /*
@@ -220,6 +258,7 @@ pre {
     color: var(--pre-text-color);
     padding: 10px;
     overflow-x:auto;
+    margin: 14px 2px;
 }
 h1 {
     font-size:1.425em;
@@ -522,20 +561,148 @@ section.class-description > div.horizontal-scroll > :is(dl, ol, ul, p, div, bloc
 section.class-description > div.horizontal-scroll > :last-child > :is(li, dd):last-child {
     margin-bottom:4px;
 }
-dl.notes > dt {
+/*
+ * Styles for inline notes.
+ */
+div.inline-note {
+    padding: 1px 16px;
+    margin: 14px 2px;
+    border: 0 solid var(--note-border-color);
+    border-left-width: 1px;
+    background-color: var(--note-background-color);
+    border-radius: 0;
+    > :is(p, div, pre, ul, ol):last-child {
+        margin-bottom: 4px;
+    }
+}
+div.inline-note > span.note-header {
+    font-weight:bold;
+    color:var(--note-header-color);
+}
+div.inline-note.note-tag-previewNote {
+    border: 1px solid var(--block-text-color);
+    border-radius: 6px;
+    font-style: italic;
+    span.note-header {
+        font-style: normal;
+    }
+}
+div.inline-note:has(h2, h3, h4, h5, pre),
+div.inline-note.note-tag-hairline {
+    border: 0 solid var(--hairline-border-color);
+    border-left-width: var(--hairline-border-width);
+}
+div.inline-note.note-tag-indented {
+    border: none;
+    padding: 0 17px;
+}
+div.inline-note.note-tag-bordered {
+    border: 0 solid var(--note-border-color);
+    border-left-width: 1px;
+}
+div.inline-note.note-tag-important {
+    padding: 12px 16px;
+    border-radius: 0;
+    border: 0 solid var(--note-important-border-color);
+    border-left-width: 3px;
+    background-color: var(--note-important-background-color);
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--note-important-pre-color);
+    }
+}
+div.inline-note.note-tag-critical {
+    padding: 12px 16px;
+    margin: 16px 2px;
+    border: 0 solid var(--note-critical-border-color);
+    border-left-width: 4px;
+    background-color: var(--note-critical-background-color);
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--note-critical-pre-color);
+    }
+}
+section.detail div.inline-note.note-tag-important,
+section.detail div.inline-note.note-tag-critical {
+    padding: 9px 14px;
+}
+div.inline-note.block {
+    border-width: 1px;
+    margin: 14px 0;
+    padding: 10px 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+div.inline-note.block:has(h2, h3, h4, h5, pre),
+div.inline-note.note-tag-hairline.block {
+    border-width: var(--hairline-border-width);
+}
+/*
+ * Styles for block notes.
+ */
+dl.notes {
+    margin-right: 10px;
+}
+dl.notes > dt,
+dl.notes > div > dt {
     font-family: var(--body-font-family);
     font-size:0.856em;
     font-weight:bold;
     margin:10px 0 0 0;
-    color:var(--body-text-color);
+    color:var(--note-header-color);
 }
-dl.notes > dd {
+dl.notes > dd,
+dl.notes > div > dd {
     margin:6px 10px 10px 15px;
     font-size:var(--block-font-size);
     font-family:var(--block-font-family);
     line-height:var(--block-line-height);
 }
-dl.notes > dd > ul, dl.notes > dd > ol {
+dl.notes > div.long-note:not(.note-tag-indented),
+dl.notes > div.medium-length-note:not(.note-tag-indented):has(pre, h2, h3, h4, h5, p:nth-of-type(3)),
+dl.notes > div.note-tag-hairline,
+dl.notes > div.note-tag-bordered,
+dl.notes > div.note-tag-important,
+dl.notes > div.note-tag-critical,
+dl.notes > div.note-tag-previewNote {
+    margin: 14px 0;
+    padding: 0 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    dt, dd {
+        margin: 8px 0;
+        padding: 0 1px;
+    }
+}
+dl.notes > div.note-tag-hairline,
+dl.notes > div.long-note,
+dl.notes > div.medium-length-note:has(:where(pre, h2, h3, h4, h5, p:nth-of-type(3))) {
+    border: var(--hairline-border-width) solid var(--hairline-border-color);
+}
+dl.notes > div.note-tag-indented {
+    border: none;
+}
+dl.notes > div.note-tag-bordered {
+    border: 1px solid var(--note-border-color);
+}
+dl.notes > div.note-tag-previewNote {
+    border: 1px solid var(--block-text-color);
+    border-radius: 6px;
+    font-style: italic;
+}
+dl.notes > div.note-tag-important {
+    background-color: var(--note-important-background-color);
+    border: 1px solid var(--note-important-border-color);
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--note-important-pre-color);
+    }
+}
+dl.notes > div.note-tag-critical {
+    background-color: var(--note-critical-background-color);
+    border: 1px solid var(--note-critical-border-color);
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--note-critical-pre-color);
+    }
+}
+dl.notes dd > ul, dl.notes dd > ol {
     margin-bottom: 1em;
     margin-top: 1em;
 }
@@ -1008,7 +1175,7 @@ div.block {
 }
 .block {
     display:block;
-    margin:0 10px 5px 0;
+    margin:0 10px 10px 0;
     color:var(--block-text-color);
 }
 .deprecated-label, .description-from-type-label, .implementation-label, .member-name-link,
@@ -1042,6 +1209,9 @@ sup.restricted-mark > a:link {
     margin-bottom:10px;
     margin-right:10px;
     display:inline-block;
+    p:last-child {
+        margin-bottom: 0;
+    }
 }
 .deprecation-block code, .preview-block code, .restricted-block code {
     font-size: 0.97em;
@@ -1585,8 +1755,7 @@ button.snippet-copy span {
 table.borderless,
 table.plain,
 table.striped {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 10px 2px;
 }
 table.borderless > caption,
 table.plain > caption,
@@ -1791,8 +1960,8 @@ table.striped > tbody > tr > th {
     }
 }
 @media screen and (max-width: 600px) {
-    .nav-list-search > a {
-        display: none;
+    dl.notes {
+        margin-right: 0;
     }
     .member-signature {
         white-space: pre-line;
@@ -1821,11 +1990,13 @@ pre.snippet {
     background-color: var(--snippet-background-color);
     color: var(--snippet-text-color);
     padding: 12px;
+    margin: 0;
 }
 div.snippet-container {
     position: relative;
     padding-right: 30px;
     background-color: var(--snippet-background-color);
+    margin: 14px 2px;
 }
 pre.snippet .italic {
     font-style: italic;

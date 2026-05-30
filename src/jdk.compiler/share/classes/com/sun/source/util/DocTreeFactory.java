@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.NoteTree;
 import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
@@ -272,6 +273,18 @@ public interface DocTreeFactory {
      * @return a {@code LiteralTree} object
      */
     LiteralTree newLiteralTree(TextTree text);
+
+    /**
+     * Creates a new {@code NoteTree} object, to represent a {@code @note} tag.
+     * @param tagName the tag name
+     * @param attributes the attributes of the tag
+     * @param body the body of the tag
+     * @param isInline true if this is an inline tag
+     * @return a {@code NoteTree} object
+     *
+     * @since 27
+     */
+    NoteTree newNoteTree(String tagName, List<? extends DocTree> attributes, List<? extends DocTree> body, boolean isInline);
 
     /**
      * Creates a new {@code ParamTree} object, to represent a {@code @param} tag.

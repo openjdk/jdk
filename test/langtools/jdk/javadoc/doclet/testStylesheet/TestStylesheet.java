@@ -117,6 +117,9 @@ public class TestStylesheet extends JavadocTester {
                         margin-bottom:10px;
                         margin-right:10px;
                         display:inline-block;
+                        p:last-child {
+                            margin-bottom: 0;
+                        }
                     }""",
                 """
                     input#reset-search, input.reset-filter, input#page-search-reset {

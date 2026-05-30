@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,12 @@
  * questions.
  */
 
-package api;
+// key: compiler.err.dc.unterminated.attributes
+// key: compiler.note.note
+// key: compiler.note.proc.messager
+// run: backdoor
+// options: -processor DocCommentProcessor -proc:only
 
-/**
- * Non-preview class with a preview members.
- */
-public class OtherApi {
+/** {@note [ } */
+class UnterminatedAttributes { }
 
-   /**
-    * This is a preview method.
-    *
-    * @previewFeature  First preview feature
-    * @previewNote     Alternative preview note. {@link PreviewApi} is a preview API.
-    */
-    public void previewMethod() {}
-
-   /**
-    * This is another preview method.
-    *
-    * @previewFeature Second preview feature
-    * @previewNote    Alternative preview note for second preview feature.
-    * @previewNote    Extra note tag triggers a warning
-    */
-    public void otherPreviewMethod() {}
-
-}
