@@ -61,7 +61,7 @@ struct DwarfState {
  */
 class DwarfParser {
   private:
-    const lib_info *_lib;
+    lib_info *_lib;
     unsigned char *_buf;
     bool _has_augmentation;
     unsigned char _fde_ptr_encoding;
@@ -94,7 +94,7 @@ class DwarfParser {
     }
 
     bool is_parseable() {
-      return _lib->eh_frame.data != NULL;
+      return _lib->frame.data != NULL;
     }
 };
 

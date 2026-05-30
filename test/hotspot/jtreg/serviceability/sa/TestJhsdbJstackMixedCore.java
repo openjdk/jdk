@@ -26,7 +26,6 @@ import jtreg.SkippedException;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Platform;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
@@ -72,10 +71,6 @@ public class TestJhsdbJstackMixedCore {
     }
 
     public static void main(String... args) throws Throwable {
-        if (Platform.isMusl()) {
-            throw new SkippedException("This test does not work on musl libc.");
-        }
-
         // Check whether the symbol of signal trampoline is available.
         var libc = SATestUtils.getLibCPath();
 

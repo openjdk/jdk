@@ -23,10 +23,12 @@
  *
  */
 
+#include <cstdlib>
 #include <cstring>
 #include <stack>
 
 #include "dwarf.hpp"
+#include "salibelf.h"
 #include "libproc_impl.h"
 
 DwarfParser::DwarfParser(lib_info *lib) : _lib(lib),
@@ -76,7 +78,7 @@ uintptr_t DwarfParser::read_leb(bool sign) {
 uint64_t DwarfParser::get_entry_length() {
   uint64_t length = *(reinterpret_cast<uint32_t *>(_buf));
   _buf += 4;
-  if (length == 0xffffffff) {
+  if (!_lib->frame.is_debug_frame && length == 0xffffffff) {
     length = *(reinterpret_cast<uint64_t *>(_buf));
     _buf += 8;
   }
@@ -85,7 +87,11 @@ uint64_t DwarfParser::get_entry_length() {
 
 bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   unsigned char *orig_pos = _buf;
-  _buf = start_of_entry - id;
+
+  // CIE pointer means the offset from FDE in .eh_frame.
+  // In .debug_frame, CIE pointer means the offset from start of .debug_frame .
+  _buf = _lib->frame.is_debug_frame ? _lib->frame.data + id
+                                    : start_of_entry - id;
 
   uint64_t length = get_entry_length();
   if (length == 0L) {
@@ -93,8 +99,8 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   }
   unsigned char *end = _buf + length;
 
-  _buf += 4; // Skip ID (This value of CIE would be always 0)
-  _buf++;    // Skip version (assume to be "1")
+  _buf += 4; // Skip ID (This value of CIE would be always 0 in .eh_frame / 0xffffffff in .debug_frame)
+  _buf++;    // Skip version
 
   char *augmentation_string = reinterpret_cast<char *>(_buf);
   bool has_ehdata = (strcmp("eh", augmentation_string) == 0);
@@ -275,14 +281,14 @@ uint32_t DwarfParser::get_decoded_value(unsigned char enc) {
   //   https://gcc.gnu.org/ml/gcc-help/2010-09/msg00166.html
 #if defined(_LP64)
   if (size == 8) {
-    result += _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+    result += _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
     size = 4;
   } else
 #endif
   if ((enc & 0x70) == 0x10) { // 0x10 = DW_EH_PE_pcrel
-    result += _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+    result += _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
   } else  if (size == 2) {
-    result = static_cast<int>(result) + _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+    result = static_cast<int>(result) + _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
     size = 4;
   }
 
@@ -329,20 +335,33 @@ unsigned int DwarfParser::get_pc_range() {
 
 bool DwarfParser::process_dwarf(const uintptr_t pc) {
   // https://refspecs.linuxfoundation.org/LSB_3.0.0/LSB-PDA/LSB-PDA/ehframechpt.html
-  _buf = _lib->eh_frame.data;
-  unsigned char *end = _lib->eh_frame.data + _lib->eh_frame.size;
+  _buf = _lib->frame.data;
+  unsigned char *end = _lib->frame.data + _lib->frame.size;
   while (_buf <= end) {
     uint64_t length = get_entry_length();
     if (length == 0L) {
-      return false;
+      break; // it means "terminator" in .eh_frame, so go through to .debug_frame
     }
     unsigned char *next_entry = _buf + length;
     unsigned char *start_of_entry = _buf;
     uint32_t id = *(reinterpret_cast<uint32_t *>(_buf));
     _buf += 4;
-    if (id != 0) { // FDE
-      uintptr_t pc_begin = get_decoded_value(_fde_ptr_encoding) + _lib->eh_frame.library_base_addr;
-      uintptr_t pc_end = pc_begin + get_pc_range();
+    // ID for CIE is 0 in .eh_frame, 0xffffffff in .debug_frame
+    bool is_fde = (_lib->frame.is_debug_frame ? 0xffffffff : 0) != id;
+    if (is_fde) {
+      uintptr_t begin_ofs = 0L;
+      uintptr_t inst_sz = 0L;
+      if (_lib->frame.is_debug_frame) {
+        begin_ofs = *(reinterpret_cast<uintptr_t *>(_buf));
+        _buf += sizeof(void*);
+        inst_sz = *(reinterpret_cast<uintptr_t *>(_buf));
+        _buf += sizeof(void*);
+      } else {
+        begin_ofs = get_decoded_value(_fde_ptr_encoding);
+        inst_sz = get_pc_range();
+      }
+      uintptr_t pc_begin = begin_ofs + _lib->base;
+      uintptr_t pc_end = pc_begin + inst_sz;
 
       if ((pc >= pc_begin) && (pc < pc_end)) {
         // Process CIE
@@ -365,5 +384,30 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
     _buf = next_entry;
   }
 
-  return false;
+  bool result = false;
+  // try again with .debug_frame section if it hasn't been tried yet.
+  if (!_lib->frame.tried_debug_frame && _lib->fd != -1) {
+    // attempts to load .debug_frame from executables.
+    frame_info frame = {};
+    if (!read_frame(".debug_frame", _lib->fd, &frame)) {
+      // attempts again to load .debug_frame from debuginfo if it could not be loaded from executables.
+      int debug_fd = open_debuginfo(_lib->name, _lib->fd);
+      if (debug_fd != -1 && read_frame(".debug_frame", debug_fd, &frame)) {
+        close(debug_fd);
+      }
+    }
+    frame.tried_debug_frame = true;
+    _lib->frame.tried_debug_frame = true;
+
+    // try process_dwarf() again with .debug_frame.
+    if (frame.data != NULL) {
+      if (_lib->frame.data != NULL) {
+        free(_lib->frame.data);
+      }
+      memcpy(&_lib->frame, &frame, sizeof(frame_info));
+      result = process_dwarf(pc);
+    }
+  }
+
+  return result;
 }
