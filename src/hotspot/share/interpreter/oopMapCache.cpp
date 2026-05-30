@@ -155,8 +155,8 @@ InterpreterOopMap::InterpreterOopMap() {
 
 InterpreterOopMap::~InterpreterOopMap() {
   if (has_valid_mask() && mask_size() > small_mask_limit) {
-    assert(_bit_mask[0] != 0, "should have pointer to C heap");
-    FREE_C_HEAP_ARRAY((uintptr_t*)_bit_mask[0]);
+    assert(_external_bit_mask != nullptr, "should have pointer to C heap");
+    FREE_C_HEAP_ARRAY(_external_bit_mask);
   }
 }
 
@@ -164,7 +164,7 @@ bool InterpreterOopMap::is_empty() const {
   bool result = _method == nullptr;
   assert(_method != nullptr || (_bci == 0 &&
     (_mask_size == 0 || _mask_size == USHRT_MAX) &&
-    _bit_mask[0] == 0), "Should be completely empty");
+    _external_bit_mask == nullptr), "Should be completely empty");
   return result;
 }
 
@@ -278,18 +278,17 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
 
 void OopMapCacheEntry::allocate_bit_mask() {
   if (mask_size() > small_mask_limit) {
-    assert(_bit_mask[0] == 0, "bit mask should be new or just flushed");
-    _bit_mask[0] = (intptr_t)
-      NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
+    assert(_external_bit_mask == nullptr, "bit mask should be new or just flushed");
+    _external_bit_mask = NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
   }
 }
 
 void OopMapCacheEntry::deallocate_bit_mask() {
-  if (mask_size() > small_mask_limit && _bit_mask[0] != 0) {
-    assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
+  if (mask_size() > small_mask_limit && _external_bit_mask != nullptr) {
+    assert(!Thread::current()->resource_area()->contains(_external_bit_mask),
       "This bit mask should not be in the resource area");
-    FREE_C_HEAP_ARRAY((uintptr_t*)_bit_mask[0]);
-    DEBUG_ONLY(_bit_mask[0] = 0;)
+    FREE_C_HEAP_ARRAY(_external_bit_mask);
+    DEBUG_ONLY(_external_bit_mask = nullptr;)
   }
 }
 
@@ -402,8 +401,8 @@ void InterpreterOopMap::copy_from(const OopMapCacheEntry* src) {
   if (src->mask_size() <= small_mask_limit) {
     memcpy(_bit_mask, src->_bit_mask, mask_word_size() * BytesPerWord);
   } else {
-    _bit_mask[0] = (uintptr_t) NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
-    memcpy((void*) _bit_mask[0], (void*) src->_bit_mask[0], mask_word_size() * BytesPerWord);
+    _external_bit_mask = NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
+    memcpy(_external_bit_mask, src->_external_bit_mask, mask_word_size() * BytesPerWord);
   }
 }
 
