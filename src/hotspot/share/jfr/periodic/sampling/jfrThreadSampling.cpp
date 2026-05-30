@@ -297,7 +297,7 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
 }
 
 #ifdef LINUX
-static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const JfrTicks& now, const JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
+static void record_cpu_time_thread(JfrAsyncSampleRequest& request, const JfrTicks& now, const JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
   assert(jt != nullptr, "invariant");
   assert(tl != nullptr, "invariant");
   assert(current != nullptr, "invariant");
@@ -308,7 +308,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
 
   if (!could_compute_top_frame) {
-    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+    request.send_empty_event(request._request._sample_ticks, tid);
     return;
   }
   traceid sid;
@@ -317,15 +317,14 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
     JfrStackTrace stacktrace;
     if (!stacktrace.record(jt, top_frame, in_continuation, request._request)) {
       // Unable to record stacktrace. Fail.
-      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+      request.send_empty_event(request._request._sample_ticks, tid);
       return;
     }
     sid = JfrStackTraceRepository::add(stacktrace);
   }
   assert(sid != 0, "invariant");
 
-
-  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased);
+  request.send_event(request._request._sample_ticks, sid, tid, biased);
   if (current == jt) {
     send_safepoint_latency_event(request._request, now, sid, jt);
   }
@@ -358,7 +357,7 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   }
   JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
   for (u4 i = 0; i < queue.size(); i++) {
-    record_cpu_time_thread(queue.at(i), now, tl, jt, current);
+    record_cpu_time_thread(*queue.at(i), now, tl, jt, current);
   }
   queue.clear();
   assert(queue.is_empty(), "invariant");

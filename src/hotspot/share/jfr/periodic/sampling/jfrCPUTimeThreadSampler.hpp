@@ -33,23 +33,58 @@ class JavaThread;
 
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "utilities/macros.hpp"
 
-struct JfrCPUTimeSampleRequest {
+// Base class for async sample requests — common data + virtual event emission
+struct JfrAsyncSampleRequest {
   JfrSampleRequest _request;
+
+  virtual void send_event(const JfrTicks& start_time, traceid sid, traceid tid, bool biased) = 0;
+  virtual void send_empty_event(const JfrTicks& start_time, traceid tid) = 0;
+
+  JfrAsyncSampleRequest() {}
+};
+
+// JFR CPU time sample subtype
+struct JfrCPUTimeSampleRequest : JfrAsyncSampleRequest {
   Tickspan _cpu_time_period;
+
+  void send_event(const JfrTicks& start_time, traceid sid, traceid tid, bool biased) override;
+  void send_empty_event(const JfrTicks& start_time, traceid tid) override;
 
   JfrCPUTimeSampleRequest() {}
 };
 
-// Fixed size async-signal-safe SPSC linear queue backed by an array.
-// Designed to be only used under lock and read linearly
+#if INCLUDE_JVMTI
+// JVMTI async stack trace subtype
+struct JvmtiAsyncStackTraceRequest : JfrAsyncSampleRequest {
+  jlong _user_data;
+
+  void send_event(const JfrTicks& start_time, traceid sid, traceid tid, bool biased) override;
+  void send_empty_event(const JfrTicks& start_time, traceid tid) override;
+
+  JvmtiAsyncStackTraceRequest() {}
+};
+#endif
+
+// Compute the element size for the queue: large enough for any subtype
+#if INCLUDE_JVMTI
+static const size_t ASYNC_REQUEST_ELEMENT_SIZE = sizeof(JfrCPUTimeSampleRequest) > sizeof(JvmtiAsyncStackTraceRequest)
+    ? sizeof(JfrCPUTimeSampleRequest) : sizeof(JvmtiAsyncStackTraceRequest);
+#else
+static const size_t ASYNC_REQUEST_ELEMENT_SIZE = sizeof(JfrCPUTimeSampleRequest);
+#endif
+
+// Fixed size async-signal-safe SPSC linear queue backed by raw aligned storage.
+// Designed to be only used under lock and read linearly.
+// Stores polymorphic JfrAsyncSampleRequest subtypes via placement new.
 class JfrCPUTimeTraceQueue {
 
   // the default queue capacity, scaled if the sampling period is smaller than 10ms
   // when the thread is started
   static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
 
-  JfrCPUTimeSampleRequest* _data;
+  char* _data;  // raw aligned storage: capacity * ASYNC_REQUEST_ELEMENT_SIZE bytes
   volatile u4 _capacity;
   // next unfilled index
   volatile u4 _head;
@@ -64,10 +99,12 @@ public:
 
   ~JfrCPUTimeTraceQueue();
 
-  // signal safe, but can't be interleaved with dequeue
-  bool enqueue(JfrCPUTimeSampleRequest& trace);
+  // Reserve the next slot, return raw pointer for placement new (or nullptr if full).
+  // Signal safe, but can't be interleaved with dequeue.
+  void* reserve_slot();
 
-  JfrCPUTimeSampleRequest& at(u4 index);
+  // Access element by index (cast from raw storage)
+  JfrAsyncSampleRequest* at(u4 index);
 
   u4 size() const;
 
@@ -126,6 +163,8 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void set_rate(JfrCPUSamplerThrottle& throttle);
 
  public:
+  static void initialize_jvmti();
+  static void deinitialize_jvmti();
   static void set_rate(double rate);
   static void set_period(u8 nanos);
 
@@ -133,8 +172,10 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void on_javathread_terminate(JavaThread* thread);
   void handle_timer_signal(siginfo_t* info, void* context);
 
-  static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period);
-  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
+#if INCLUDE_JVMTI
+  static void jvmti_request_stacktrace(void* ucontext, jlong user_data);
+#endif
+
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   static void trigger_async_processing_of_cpu_time_jfr_requests();

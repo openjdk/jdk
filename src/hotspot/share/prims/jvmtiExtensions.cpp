@@ -30,12 +30,17 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
+#if INCLUDE_JFR && defined(LINUX)
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#endif
 
 // the list of extension functions
 GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
 
 // the list of extension events
 GrowableArray<jvmtiExtensionEventInfo*>* JvmtiExtensions::_ext_events;
+
+bool JvmtiExtensions::_request_stack_trace_enabled = false;
 
 
 //
@@ -167,6 +172,58 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   return JVMTI_ERROR_NONE;
 }
 
+// Parameters: (thread, ucontext, user_data)
+static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
+  JvmtiEnv* jvmti_env = JvmtiEnv::JvmtiEnv_from_jvmti_env((jvmtiEnv*)env);
+  if (!JvmtiExtensions::request_stack_trace_enabled()) {
+    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
+  }
+
+  JavaThread* current_thread = JavaThread::current();
+  HandleMark hm(current_thread);
+  jthread thread = nullptr;
+  void* ucontext;
+  jlong user_data;
+
+  va_list ap;
+
+  va_start(ap, env);
+  thread = va_arg(ap, jthread);
+  ucontext = va_arg(ap, void*);
+  user_data = va_arg(ap, jlong);
+  va_end(ap);
+
+#if INCLUDE_JFR && defined(LINUX)
+  if (thread == nullptr) {
+    JfrCPUTimeThreadSampling::jvmti_request_stacktrace(ucontext, user_data);
+    return JVMTI_ERROR_NONE;
+  }
+#endif
+  return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+}
+
+// No parameters.
+static jvmtiError JNICALL EnableRequestStackTrace(const jvmtiEnv* env, ...) {
+  JvmtiExtensions::set_request_stack_trace_enabled(true);
+#if INCLUDE_JFR && defined(LINUX)
+  JavaThread* current_thread = JavaThread::current();
+  ThreadInVMfromNative __tiv(current_thread);
+  JfrCPUTimeThreadSampling::initialize_jvmti();
+#endif
+  return JVMTI_ERROR_NONE;
+}
+
+// No parameters.
+static jvmtiError JNICALL DisableRequestStackTrace(const jvmtiEnv* env, ...) {
+  JvmtiExtensions::set_request_stack_trace_enabled(false);
+#if INCLUDE_JFR && defined(LINUX)
+  JavaThread* current_thread = JavaThread::current();
+  ThreadInVMfromNative __tiv(current_thread);
+  JfrCPUTimeThreadSampling::deinitialize_jvmti();
+#endif
+  return JVMTI_ERROR_NONE;
+}
+
 // register extension functions and events. In this implementation we
 // have a single extension function (to prove the API) that tests if class
 // unloading is enabled or disabled. We also have a single extension event
@@ -189,6 +246,13 @@ void JvmtiExtensions::register_extensions() {
     { (char*)"GetCarrierThread", JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_FALSE },
     { (char*)"GetCarrierThread", JVMTI_KIND_OUT, JVMTI_TYPE_JTHREAD, JNI_FALSE }
   };
+  // RequestStackTrace
+  static jvmtiParamInfo func_params3[] = {
+    { (char*)"thread", JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_TRUE },
+    { (char*)"ucontext", JVMTI_KIND_OUT_BUF, JVMTI_TYPE_CVOID, JNI_FALSE },
+    { (char*)"user_data", JVMTI_KIND_IN, JVMTI_TYPE_JLONG, JNI_FALSE }
+  };
+  // EnableRequestStackTrace and DisableRequestStackTrace take no parameters.
 
   static jvmtiError errors[] = {
     JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
@@ -225,9 +289,42 @@ void JvmtiExtensions::register_extensions() {
     errors
   };
 
+  static jvmtiExtensionFunctionInfo ext_func3 = {
+    (jvmtiExtensionFunction)RequestStackTrace,
+    (char*)"com.sun.hotspot.functions.RequestStackTrace",
+    (char*)"Request a stacktrace to be emitted via a JFR AsyncStackTrace event",
+    sizeof(func_params3)/sizeof(func_params3[0]),
+    func_params3,
+    sizeof(errors)/sizeof(jvmtiError),   // non-universal errors
+    errors
+  };
+
+  static jvmtiExtensionFunctionInfo ext_func4 = {
+    (jvmtiExtensionFunction)EnableRequestStackTrace,
+    (char*)"com.sun.hotspot.functions.EnableRequestStackTrace",
+    (char*)"Enables requesting a stacktrace via RequestStackTrace",
+    0,
+    nullptr,
+    sizeof(errors)/sizeof(jvmtiError),   // non-universal errors
+    errors
+  };
+
+  static jvmtiExtensionFunctionInfo ext_func5 = {
+    (jvmtiExtensionFunction)DisableRequestStackTrace,
+    (char*)"com.sun.hotspot.functions.DisableRequestStackTrace",
+    (char*)"Disables requesting a stacktrace via RequestStackTrace",
+    0,
+    nullptr,
+    sizeof(errors)/sizeof(jvmtiError),   // non-universal errors
+    errors
+  };
+
   _ext_functions->append(&ext_func0);
   _ext_functions->append(&ext_func1);
   _ext_functions->append(&ext_func2);
+  _ext_functions->append(&ext_func3);
+  _ext_functions->append(&ext_func4);
+  _ext_functions->append(&ext_func5);
 
   // register our extension event
 

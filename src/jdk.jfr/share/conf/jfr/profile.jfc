@@ -211,6 +211,11 @@
       <setting name="period" control="method-sampling-native-interval">20 ms</setting>
     </event>
 
+    <event name="jdk.AsyncStackTrace">
+      <setting name="enabled" control="method-sampling-enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.CPUTimeSample">
       <setting name="enabled">false</setting>
       <setting name="throttle">10ms</setting>
