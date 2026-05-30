@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,18 +70,35 @@ public class CustomTzIDCheckDST {
         if (tzStr == null)
             throw new RuntimeException("Got unexpected timezone information: TZ is null");
         boolean nor = CUSTOM_TZ.equals(tzStr);
-        TimeZone tz = new SimpleTimeZone(3600000, tzStr,
-            nor ? Calendar.MARCH : Calendar.OCTOBER, -1,
-            Calendar.SUNDAY, 3600000, SimpleTimeZone.UTC_TIME,
-            nor ? Calendar.OCTOBER : Calendar.MARCH, -1,
-            Calendar.SUNDAY, 3600000, SimpleTimeZone.UTC_TIME,
-            3600000);
+        boolean isAIX = System.getProperty("os.name").equals("AIX");
+        TimeZone tz;
+        if (isAIX) {
+           // On AIX, POSIX TZ environment variable strings (e.g., MEZ-1MESZ,M3.5.0,M10.5.0)
+           // are mapped to proper IANA timezone IDs (e.g., Europe/Berlin) via the tzmappings file.
+            tz = TimeZone.getDefault();
+        } else {
+            // On other platforms, create custom SimpleTimeZone
+            tz = new SimpleTimeZone(3600000, tzStr,
+                nor ? Calendar.MARCH : Calendar.OCTOBER, -1,
+                Calendar.SUNDAY, 3600000, SimpleTimeZone.UTC_TIME,
+                nor ? Calendar.OCTOBER : Calendar.MARCH, -1,
+                Calendar.SUNDAY, 3600000, SimpleTimeZone.UTC_TIME,
+                3600000);
+        }
+
         if (tz.inDaylightTime(time)) {
-            // We are in Daylight savings period.
-            if (time.toString().endsWith("GMT+02:00 " + Integer.toString(time.getYear() + 1900)))
+            // During Daylight Saving Time period:
+            // - AIX (mapped timezone): Expect timezone abbreviation like "CEST"
+            // - Other platforms (custom TZ): Expect GMT offset "GMT+02:00"
+            if (time.toString().endsWith("GMT+02:00 " + Integer.toString(time.getYear() + 1900)) ||
+                time.toString().contains("CEST " + Integer.toString(time.getYear() + 1900)))
                 return;
         } else {
-            if (time.toString().endsWith("GMT+01:00 " + Integer.toString(time.getYear() + 1900)))
+            // During Standard Time period:
+            // - AIX (mapped timezone): Expect timezone abbreviation like "CET"
+            // - Other platforms (custom TZ): Expect GMT offset "GMT+01:00"
+            if (time.toString().endsWith("GMT+01:00 " + Integer.toString(time.getYear() + 1900)) ||
+                time.toString().contains("CET " + Integer.toString(time.getYear() + 1900)))
                 return;
         }
 
