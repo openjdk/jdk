@@ -27,6 +27,7 @@ package jdk.internal.lang;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -84,35 +85,35 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
         return (t != null) ? t : getSlowPath();
     }
 
-    @SuppressWarnings("unchecked")
+    @DontInline
     private T getSlowPath() {
         preventReentry();
         synchronized (this) {
             T t = getAcquire();
             if (t == null) {
-                switch (computingFunctionOrExceptionType) {
-                    case Supplier<?> computingFunction -> {
-                        try {
-                            @SuppressWarnings("unchecked")
-                            final T newT = (T) computingFunction.get();
-                            t = newT;
-                            Objects.requireNonNull(t);
-                            setRelease(t);
-                            // Allow the underlying supplier to be collected after
-                            // a successful initialization
-                            computingFunctionOrExceptionType = null;
-                        } catch (Throwable ex) {
-                            // Release the original computing function and replace it with
-                            // an exception marker
-                            final String exceptionType = ex.getClass().getName().intern();
-                            computingFunctionOrExceptionType = exceptionType;
-                            throw unableToAccessConstant(exceptionType, ex);
-                        }
+                final Object cf = computingFunctionOrExceptionType;
+                // Don't use pattern matching here in order to improve startup time.
+                if (cf instanceof Supplier<?> computingFunction) {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        final T newT = (T) computingFunction.get();
+                        t = newT;
+                        Objects.requireNonNull(t);
+                        setRelease(t);
+                        // Allow the underlying supplier to be collected after
+                        // a successful initialization
+                        computingFunctionOrExceptionType = null;
+                    } catch (Throwable ex) {
+                        // Release the original computing function and replace it with
+                        // an exception marker
+                        final String exceptionType = ex.getClass().getName().intern();
+                        computingFunctionOrExceptionType = exceptionType;
+                        throw unableToAccessConstant(exceptionType, ex);
                     }
-                    case String exceptionType ->
-                            throw unableToAccessConstant(exceptionType, null);
-                    default ->
-                            throw new InternalError("Cannot reach here");
+                } else if (cf instanceof String exceptionType) {
+                    throw unableToAccessConstant(exceptionType, null);
+                } else {
+                    throw new InternalError("Cannot reach here");
                 }
             }
             return t;
