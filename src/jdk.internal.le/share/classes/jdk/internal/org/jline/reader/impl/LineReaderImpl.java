@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2023, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -41,6 +41,7 @@ import jdk.internal.org.jline.terminal.Attributes.ControlChar;
 import jdk.internal.org.jline.terminal.Terminal.Signal;
 import jdk.internal.org.jline.terminal.Terminal.SignalHandler;
 import jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal;
+import jdk.internal.org.jline.terminal.impl.MouseSupport;
 import jdk.internal.org.jline.utils.AttributedString;
 import jdk.internal.org.jline.utils.AttributedStringBuilder;
 import jdk.internal.org.jline.utils.AttributedStyle;
@@ -61,22 +62,37 @@ import static jdk.internal.org.jline.keymap.KeyMap.translate;
 import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_DISABLE_ALTERNATE_CHARSET;
 
 /**
- * A reader for terminal applications. It supports custom tab-completion,
- * saveable command history, and command line editing.
+ * The default implementation of the {@link LineReader} interface.
+ * <p>
+ * This class provides a comprehensive implementation of line editing capabilities
+ * for interactive terminal applications, including:
+ * <ul>
+ *   <li>Command history navigation and management</li>
+ *   <li>Tab completion with customizable completion strategies</li>
+ *   <li>Syntax highlighting</li>
+ *   <li>Emacs and Vi editing modes</li>
+ *   <li>Key binding customization</li>
+ *   <li>Cut and paste with kill ring</li>
+ *   <li>Undo/redo functionality</li>
+ *   <li>Search through history</li>
+ *   <li>Multi-line editing</li>
+ *   <li>Character masking for password input</li>
+ * </ul>
+ * <p>
+ * This implementation is highly configurable through options and variables that
+ * control various aspects of its behavior. It also provides a rich set of widgets
+ * (editing functions) that can be bound to key sequences.
+ * <p>
+ * Most applications should not create instances of this class directly, but instead
+ * use the {@link LineReaderBuilder} to create properly configured instances.
  *
- * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * @see LineReader
+ * @see LineReaderBuilder
  */
 @SuppressWarnings("StatementWithEmptyBody")
 public class LineReaderImpl implements LineReader, Flushable {
     public static final char NULL_MASK = 0;
-
-    /**
-     * @deprecated use {@link #DEFAULT_TAB_WIDTH} and {@link #getTabWidth()}
-     */
-    @Deprecated
-    public static final int TAB_WIDTH = 4;
+    private static final boolean DISABLE_MASKING_THREAD = Boolean.getBoolean("test.disabled.masking.thread");
 
     public static final int DEFAULT_TAB_WIDTH = 4;
 
@@ -185,6 +201,7 @@ public class LineReaderImpl implements LineReader, Flushable {
     //
 
     protected final Map<Option, Boolean> options = new HashMap<>();
+    protected Thread maskThread = null;
 
     protected final Buffer buf = new BufferImpl();
     protected String tailTip = "";
@@ -204,6 +221,7 @@ public class LineReaderImpl implements LineReader, Flushable {
     protected boolean searchFailing;
     protected boolean searchBackward;
     protected int searchIndex = -1;
+    protected Deque<Integer> searchIndexStack = null; // Stack to track search depth
     protected boolean doAutosuggestion;
 
     // Reading buffers
@@ -242,7 +260,9 @@ public class LineReaderImpl implements LineReader, Flushable {
 
     protected KillRing killRing = new KillRing();
 
+    @SuppressWarnings("java:S1845") // field name intentionally similar to inherited UNDO constant
     protected UndoTree<Buffer> undo;
+
     protected boolean isUndo;
 
     /**
@@ -271,9 +291,11 @@ public class LineReaderImpl implements LineReader, Flushable {
 
     protected boolean skipRedisplay;
     protected Display display;
+    protected int lastStatusSize;
 
     protected boolean overTyping = false;
 
+    @SuppressWarnings("java:S1845") // field name intentionally similar to inherited KEYMAP constant
     protected String keyMap;
 
     protected int smallTerminalOffset = 0;
@@ -292,6 +314,7 @@ public class LineReaderImpl implements LineReader, Flushable {
 
     protected String alternateIn;
     protected String alternateOut;
+    protected int currentLine;
 
     public LineReaderImpl(Terminal terminal) throws IOException {
         this(terminal, terminal.getName(), null);
@@ -409,7 +432,7 @@ public class LineReaderImpl implements LineReader, Flushable {
 
     @Override
     public MouseEvent readMouseEvent() {
-        return terminal.readMouseEvent(bindingReader::readCharacter);
+        return terminal.readMouseEvent(bindingReader::readCharacter, bindingReader.getLastBinding());
     }
 
     /**
@@ -666,7 +689,16 @@ public class LineReaderImpl implements LineReader, Flushable {
                     terminal.puts(Capability.keypad_xmit);
                     if (isSet(Option.AUTO_FRESH_LINE)) callWidget(FRESH_LINE);
                     if (isSet(Option.MOUSE)) terminal.trackMouse(Terminal.MouseTracking.Normal);
-                    if (isSet(Option.BRACKETED_PASTE)) terminal.writer().write(BRACKETED_PASTE_ON);
+
+                    if (isSet(Option.BRACKETED_PASTE)) {
+                        terminal.writer().write(BRACKETED_PASTE_ON);
+                    } else if (options.containsKey(Option.BRACKETED_PASTE)) {
+                        // Explicitly disabled: ensure terminal bracketed paste is off
+                        terminal.writer().write(BRACKETED_PASTE_OFF);
+                    }
+                } else if (isTerminalDumb() && maskingCallback != null) {
+                    // Setup masking thread for dumb terminals when reading a password
+                    setupMaskThread(this.prompt.toAnsi());
                 }
 
                 callWidget(CALLBACK_INIT);
@@ -808,6 +840,46 @@ public class LineReaderImpl implements LineReader, Flushable {
         display = new Display(terminal, false);
         display.resize(size.getRows(), size.getColumns());
         if (isSet(Option.DELAY_LINE_WRAP)) display.setDelayLineWrap(true);
+    }
+
+    /**
+     * Setup the masking thread for dumb terminals.
+     * This is similar to the approach used in JLine 1.
+     *
+     * For dumb terminals, we can't process characters one by one, so we use a thread
+     * that continuously overwrites the input line to hide what the user is typing.
+     */
+    private void setupMaskThread(final String prompt) {
+        if (isTerminalDumb() && maskThread == null && !DISABLE_MASKING_THREAD) {
+            // Create a prompt that will overwrite the current line and redisplay the prompt
+            final String fullPrompt = "\r" + prompt + "                                                   \r" + prompt;
+            maskThread = new Thread("JLine Mask Thread") {
+                public void run() {
+                    while (!Thread.interrupted()) {
+                        try {
+                            terminal.writer().write(fullPrompt);
+                            terminal.writer().flush();
+                            sleep(3);
+                        } catch (InterruptedException ie) {
+                            return;
+                        }
+                    }
+                }
+            };
+            maskThread.setPriority(Thread.MAX_PRIORITY);
+            maskThread.setDaemon(true);
+            maskThread.start();
+        }
+    }
+
+    /**
+     * Stops the masking thread for dumb terminals.
+     */
+    private void stopMaskThread() {
+        if (maskThread != null && maskThread.isAlive()) {
+            maskThread.interrupt();
+        }
+        maskThread = null;
     }
 
     @Override
@@ -1201,17 +1273,24 @@ public class LineReaderImpl implements LineReader, Flushable {
     protected synchronized void handleSignal(Signal signal) {
         doAutosuggestion = false;
         if (signal == Signal.WINCH) {
-            size.copy(terminal.getBufferSize());
-            display.resize(size.getRows(), size.getColumns());
-            Status status = Status.getStatus(terminal, false);
-            if (status != null) {
-                status.resize(size);
-                status.reset();
+            // Check if the character grid size actually changed.
+            // Pixel-level resizing can trigger SIGWINCH without changing
+            // the number of rows/columns.
+            Size newSize = terminal.getBufferSize();
+            if (newSize.getRows() != size.getRows() || newSize.getColumns() != size.getColumns()) {
+                // Recreate the display to reset cursor tracking. After a resize,
+                // the terminal has reflowed content and the old cursor position
+                // is no longer valid.
+                doDisplay();
+                Status status = Status.getStatus(terminal, false);
+                if (status != null) {
+                    status.resize(size);
+                }
+                // Position cursor at column 0 to match the new display's
+                // cursor assumption (cursorPos = 0).
+                terminal.puts(Capability.carriage_return);
+                redisplay();
             }
-            terminal.puts(Capability.carriage_return);
-            terminal.puts(Capability.clr_eos);
-            redrawLine();
-            redisplay();
         } else if (signal == Signal.CONT) {
             terminal.enterRawMode();
             size.copy(terminal.getBufferSize());
@@ -1362,7 +1441,7 @@ public class LineReaderImpl implements LineReader, Flushable {
             return false;
         }
         while (count-- > 0 && buf.cursor() < lim) {
-            buf.move(1);
+            moveForwardOne();
         }
         return true;
     }
@@ -1376,7 +1455,7 @@ public class LineReaderImpl implements LineReader, Flushable {
             return false;
         }
         while (count-- > 0 && buf.cursor() > 0) {
-            buf.move(-1);
+            moveBackwardOne();
             if (buf.currChar() == '\n') {
                 buf.move(1);
                 break;
@@ -2357,15 +2436,35 @@ public class LineReaderImpl implements LineReader, Flushable {
             while (buf.cursor() >= lend) {
                 buf.move(-1);
             }
-            int c = buf.currChar();
-            buf.currChar(buf.prevChar());
-            buf.move(-1);
-            buf.currChar(c);
-            buf.move(neg ? 0 : 2);
+            if (terminal.getGraphemeClusterMode()) {
+                // Swap two grapheme clusters: the one before and the one at cursor
+                int curPos = buf.cursor();
+                int prevLen = graphemeClusterCodePointCountBefore(buf, curPos);
+                int prevStart = curPos - prevLen;
+                int curLen = graphemeClusterCodePointCount(buf, curPos);
+                // Extract both clusters
+                String prev = buf.substring(prevStart, curPos);
+                String curr = buf.substring(curPos, curPos + curLen);
+                // Delete both and reinsert swapped
+                buf.cursor(prevStart);
+                buf.delete(prevLen + curLen);
+                buf.write(curr);
+                buf.write(prev);
+                if (neg) {
+                    buf.cursor(prevStart);
+                }
+            } else {
+                int c = buf.currChar();
+                buf.currChar(buf.prevChar());
+                buf.move(-1);
+                buf.currChar(c);
+                buf.move(neg ? 0 : 2);
+            }
         }
         return true;
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     protected boolean undo() {
         isUndo = true;
         if (undo.canUndo()) {
@@ -2396,11 +2495,153 @@ public class LineReaderImpl implements LineReader, Flushable {
     }
 
     protected boolean backwardChar() {
+        if (terminal.getGraphemeClusterMode()) {
+            int moved = 0;
+            for (int i = 0; i < count && buf.cursor() > 0; i++) {
+                moveBackwardOne();
+                moved++;
+            }
+            return moved != 0;
+        }
         return buf.move(-count) != 0;
     }
 
     protected boolean forwardChar() {
+        if (terminal.getGraphemeClusterMode()) {
+            int moved = 0;
+            for (int i = 0; i < count && buf.cursor() < buf.length(); i++) {
+                moveForwardOne();
+                moved++;
+            }
+            return moved != 0;
+        }
         return buf.move(count) != 0;
+    }
+
+    /**
+     * Returns the number of code points in the grapheme cluster starting at
+     * position {@code pos} in the buffer.
+     */
+    private static int graphemeClusterCodePointCount(Buffer buf, int pos) {
+        int len = buf.length();
+        if (pos >= len) return 0;
+        int cp = buf.atChar(pos);
+        int cur = pos + 1;
+        // Regional indicator pairs (flags)
+        if (WCWidth.isRegionalIndicator(cp) && cur < len && WCWidth.isRegionalIndicator(buf.atChar(cur))) {
+            return 2;
+        }
+        // Consume grapheme cluster extensions
+        while (cur < len) {
+            int ncp = buf.atChar(cur);
+            if (ncp == 0x200D && cur + 1 < len) {
+                // ZWJ + next code point
+                cur += 2;
+            } else if (WCWidth.wcwidth(ncp) == 0 && ncp >= 0x20) {
+                cur++;
+            } else {
+                break;
+            }
+        }
+        return cur - pos;
+    }
+
+    /**
+     * Returns the number of code points in the grapheme cluster ending just
+     * before position {@code pos} in the buffer (for backward movement).
+     */
+    private static int graphemeClusterCodePointCountBefore(Buffer buf, int pos) {
+        if (pos <= 0) return 0;
+        // Walk backwards: a grapheme cluster in the buffer is structured as
+        //   BASE [extending | ZWJ BASE]*
+        // We scan left from pos-1, consuming extending chars and ZWJ+BASE pairs.
+        int cur = pos - 1;
+        // Skip trailing extending characters (variation selectors, skin tones, combining marks)
+        while (cur > 0
+                && WCWidth.wcwidth(buf.atChar(cur)) == 0
+                && buf.atChar(cur) >= 0x20
+                && buf.atChar(cur) != 0x200D) {
+            cur--;
+        }
+        // Now cur points at a base character or a ZWJ.
+        // Scan backwards through ZWJ+BASE pairs
+        while (cur >= 2) {
+            int prev = buf.atChar(cur - 1);
+            if (prev == 0x200D) {
+                // ZWJ before the current base — skip over ZWJ and the preceding base
+                cur -= 2;
+                // Also skip extending chars before this base
+                while (cur > 0
+                        && WCWidth.wcwidth(buf.atChar(cur)) == 0
+                        && buf.atChar(cur) >= 0x20
+                        && buf.atChar(cur) != 0x200D) {
+                    cur--;
+                }
+            } else {
+                break;
+            }
+        }
+        // Check for regional indicator pair
+        if (cur > 0
+                && WCWidth.isRegionalIndicator(buf.atChar(cur))
+                && WCWidth.isRegionalIndicator(buf.atChar(cur - 1))) {
+            cur--;
+        }
+        return pos - cur;
+    }
+
+    /**
+     * Moves the cursor forward past one grapheme cluster (or one code point
+     * when grapheme cluster mode is off).
+     */
+    private void moveForwardOne() {
+        if (terminal.getGraphemeClusterMode()) {
+            buf.move(graphemeClusterCodePointCount(buf, buf.cursor()));
+        } else {
+            buf.move(1);
+        }
+    }
+
+    /**
+     * Moves the cursor backward past one grapheme cluster (or one code point
+     * when grapheme cluster mode is off).
+     */
+    private void moveBackwardOne() {
+        if (terminal.getGraphemeClusterMode()) {
+            buf.move(-graphemeClusterCodePointCountBefore(buf, buf.cursor()));
+        } else {
+            buf.move(-1);
+        }
+    }
+
+    /**
+     * Deletes one grapheme cluster (or one code point) at the cursor.
+     *
+     * @return true if a character was deleted
+     */
+    private boolean deleteGrapheme() {
+        if (buf.cursor() >= buf.length()) return false;
+        if (terminal.getGraphemeClusterMode()) {
+            buf.delete(graphemeClusterCodePointCount(buf, buf.cursor()));
+        } else {
+            buf.delete();
+        }
+        return true;
+    }
+
+    /**
+     * Deletes one grapheme cluster (or one code point) before the cursor.
+     *
+     * @return true if a character was deleted
+     */
+    private boolean backspaceGrapheme() {
+        if (buf.cursor() <= 0) return false;
+        if (terminal.getGraphemeClusterMode()) {
+            buf.backspace(graphemeClusterCodePointCountBefore(buf, buf.cursor()));
+        } else {
+            buf.backspace();
+        }
+        return true;
     }
 
     protected boolean viDigitOrBeginningOfLine() {
@@ -2603,8 +2844,11 @@ public class LineReaderImpl implements LineReader, Flushable {
             }
             terminal.puts(Capability.keypad_local);
             terminal.trackMouse(Terminal.MouseTracking.Off);
+
             if (isSet(Option.BRACKETED_PASTE) && !isTerminalDumb())
                 terminal.writer().write(BRACKETED_PASTE_OFF);
+            // Stop the masking thread if it was started for dumb terminals
+            stopMaskThread();
             flush();
         }
         history.moveToEnd();
@@ -2651,6 +2895,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         searchTerm = new StringBuffer();
         searchBackward = backward;
         searchFailing = false;
+        searchIndexStack = new ArrayDeque<>(); // Initialize the stack
         post = () -> new AttributedString((searchFailing ? "failing" + " " : "")
                 + (searchBackward ? "bck-i-search" : "fwd-i-search")
                 + ": " + searchTerm + "_");
@@ -2658,10 +2903,12 @@ public class LineReaderImpl implements LineReader, Flushable {
         redisplay();
         try {
             while (true) {
-                int prevSearchIndex = searchIndex;
                 Binding operation = readBinding(getKeys(), terminators);
                 String ref = (operation instanceof Reference) ? ((Reference) operation).name() : "";
                 boolean next = false;
+                boolean clearedFailingState = false;
+                boolean poppedFromStack = false;
+
                 switch (ref) {
                     case SEND_BREAK:
                         beep();
@@ -2676,12 +2923,33 @@ public class LineReaderImpl implements LineReader, Flushable {
                         next = true;
                         break;
                     case BACKWARD_DELETE_CHAR:
-                        if (searchTerm.length() > 0) {
+                        // Handle backspace with zsh-like behavior
+                        if (searchFailing) {
+                            // If last search failed, clear failing state and stay at current position
+                            searchFailing = false;
+                            clearedFailingState = true;
+                            // Don't do anything else - just clear the failing state
+                        } else if (!searchIndexStack.isEmpty()) {
+                            // Navigate back to previous search depth
+                            searchIndex = searchIndexStack.pop();
+                            poppedFromStack = true;
+                            // Re-search to update the buffer
+                            next = false; // Don't search for next, just update display
+                        } else if (searchTerm.length() > 0) {
+                            // Delete last character of search term
                             searchTerm.deleteCharAt(searchTerm.length() - 1);
+                            // Clear the stack when modifying search term
+                            searchIndexStack.clear();
+                        } else {
+                            // Search term is empty, restore original buffer
+                            buf.copyFrom(originalBuffer);
+                            searchIndex = -1;
                         }
                         break;
                     case SELF_INSERT:
                         searchTerm.append(getLastBinding());
+                        // Clear the stack when typing new characters
+                        searchIndexStack.clear();
                         break;
                     default:
                         // Set buffer and cursor position to the found string.
@@ -2693,69 +2961,111 @@ public class LineReaderImpl implements LineReader, Flushable {
                 }
 
                 // print the search status
-                String pattern = doGetSearchPattern();
-                if (pattern.length() == 0) {
-                    buf.copyFrom(originalBuffer);
-                    searchFailing = false;
-                } else {
-                    boolean caseInsensitive = isSet(Option.CASE_INSENSITIVE_SEARCH);
-                    Pattern pat = Pattern.compile(
-                            pattern,
-                            caseInsensitive ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE : Pattern.UNICODE_CASE);
-                    Pair<Integer, Integer> pair = null;
-                    if (searchBackward) {
-                        boolean nextOnly = next;
-                        pair = matches(pat, buf.toString(), searchIndex).stream()
-                                .filter(p -> nextOnly ? p.v < buf.cursor() : p.v <= buf.cursor())
-                                .max(Comparator.comparing(Pair::getV))
-                                .orElse(null);
-                        if (pair == null) {
-                            pair = StreamSupport.stream(
-                                            Spliterators.spliteratorUnknownSize(
-                                                    history.reverseIterator(
-                                                            searchIndex < 0 ? history.last() : searchIndex - 1),
-                                                    Spliterator.ORDERED),
-                                            false)
-                                    .flatMap(e -> matches(pat, e.line(), e.index()).stream())
+                // Special handling for backspace when navigating back in stack
+                if (poppedFromStack) {
+                    // Just update the display with the popped index
+                    String pattern = doGetSearchPattern();
+                    if (!pattern.isEmpty()) {
+                        boolean caseInsensitive = isSet(Option.CASE_INSENSITIVE_SEARCH);
+                        Pattern pat = Pattern.compile(
+                                pattern,
+                                caseInsensitive
+                                        ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+                                        : Pattern.UNICODE_CASE);
+                        // Find the match at the current searchIndex
+                        Pair<Integer, Integer> pair = null;
+                        if (searchIndex >= 0) {
+                            pair = matches(pat, history.get(searchIndex), searchIndex).stream()
+                                    .findFirst()
+                                    .orElse(null);
+                        } else {
+                            pair = matches(pat, originalBuffer.toString(), -1).stream()
                                     .findFirst()
                                     .orElse(null);
                         }
-                    } else {
-                        boolean nextOnly = next;
-                        pair = matches(pat, buf.toString(), searchIndex).stream()
-                                .filter(p -> nextOnly ? p.v > buf.cursor() : p.v >= buf.cursor())
-                                .min(Comparator.comparing(Pair::getV))
-                                .orElse(null);
-                        if (pair == null) {
-                            pair = StreamSupport.stream(
-                                            Spliterators.spliteratorUnknownSize(
-                                                    history.iterator(
-                                                            (searchIndex < 0 ? history.last() : searchIndex) + 1),
-                                                    Spliterator.ORDERED),
-                                            false)
-                                    .flatMap(e -> matches(pat, e.line(), e.index()).stream())
-                                    .findFirst()
-                                    .orElse(null);
-                            if (pair == null && searchIndex >= 0) {
-                                pair = matches(pat, originalBuffer.toString(), -1).stream()
-                                        .min(Comparator.comparing(Pair::getV))
-                                        .orElse(null);
+                        if (pair != null) {
+                            buf.clear();
+                            if (searchIndex >= 0) {
+                                buf.write(history.get(searchIndex));
+                            } else {
+                                buf.write(originalBuffer.toString());
                             }
+                            buf.cursor(pair.v);
+                            searchFailing = false;
                         }
                     }
-                    if (pair != null) {
-                        searchIndex = pair.u;
-                        buf.clear();
-                        if (searchIndex >= 0) {
-                            buf.write(history.get(searchIndex));
-                        } else {
-                            buf.write(originalBuffer.toString());
-                        }
-                        buf.cursor(pair.v);
+                } else if (!clearedFailingState) {
+                    // Normal search logic (skip if we just cleared the failing state)
+                    String pattern = doGetSearchPattern();
+                    if (pattern.isEmpty()) {
+                        buf.copyFrom(originalBuffer);
                         searchFailing = false;
                     } else {
-                        searchFailing = true;
-                        beep();
+                        boolean caseInsensitive = isSet(Option.CASE_INSENSITIVE_SEARCH);
+                        Pattern pat = Pattern.compile(
+                                pattern,
+                                caseInsensitive
+                                        ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+                                        : Pattern.UNICODE_CASE);
+                        Pair<Integer, Integer> pair;
+                        if (searchBackward) {
+                            boolean nextOnly = next;
+                            pair = matches(pat, buf.toString(), searchIndex).stream()
+                                    .filter(p -> nextOnly ? p.v < buf.cursor() : p.v <= buf.cursor())
+                                    .max(Comparator.comparing(Pair::getV))
+                                    .orElse(null);
+                            if (pair == null) {
+                                pair = StreamSupport.stream(
+                                                Spliterators.spliteratorUnknownSize(
+                                                        history.reverseIterator(
+                                                                searchIndex < 0 ? history.last() : searchIndex - 1),
+                                                        Spliterator.ORDERED),
+                                                false)
+                                        .flatMap(e -> matches(pat, e.line(), e.index()).stream())
+                                        .findFirst()
+                                        .orElse(null);
+                            }
+                        } else {
+                            boolean nextOnly = next;
+                            pair = matches(pat, buf.toString(), searchIndex).stream()
+                                    .filter(p -> nextOnly ? p.v > buf.cursor() : p.v >= buf.cursor())
+                                    .min(Comparator.comparing(Pair::getV))
+                                    .orElse(null);
+                            if (pair == null) {
+                                pair = StreamSupport.stream(
+                                                Spliterators.spliteratorUnknownSize(
+                                                        history.iterator(
+                                                                (searchIndex < 0 ? history.last() : searchIndex) + 1),
+                                                        Spliterator.ORDERED),
+                                                false)
+                                        .flatMap(e -> matches(pat, e.line(), e.index()).stream())
+                                        .findFirst()
+                                        .orElse(null);
+                                if (pair == null && searchIndex >= 0) {
+                                    pair = matches(pat, originalBuffer.toString(), -1).stream()
+                                            .min(Comparator.comparing(Pair::getV))
+                                            .orElse(null);
+                                }
+                            }
+                        }
+                        if (pair != null) {
+                            // Push current index to stack when navigating to a new position
+                            if (next && searchIndex != -1 && pair.u != searchIndex) {
+                                searchIndexStack.push(searchIndex);
+                            }
+                            searchIndex = pair.u;
+                            buf.clear();
+                            if (searchIndex >= 0) {
+                                buf.write(history.get(searchIndex));
+                            } else {
+                                buf.write(originalBuffer.toString());
+                            }
+                            buf.cursor(pair.v);
+                            searchFailing = false;
+                        } else {
+                            searchFailing = true;
+                            beep();
+                        }
                     }
                 }
                 redisplay();
@@ -2769,6 +3079,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         } finally {
             searchTerm = null;
             searchIndex = -1;
+            searchIndexStack = null;
             post = null;
         }
     }
@@ -3299,7 +3610,9 @@ public class LineReaderImpl implements LineReader, Flushable {
         if (buf.cursor() == 0) {
             return false;
         }
-        buf.backspace(count);
+        for (int i = 0; i < count; i++) {
+            if (!backspaceGrapheme()) break;
+        }
         return true;
     }
 
@@ -3350,7 +3663,9 @@ public class LineReaderImpl implements LineReader, Flushable {
         if (buf.cursor() == buf.length()) {
             return false;
         }
-        buf.delete(count);
+        for (int i = 0; i < count; i++) {
+            if (!deleteGrapheme()) break;
+        }
         return true;
     }
 
@@ -3374,9 +3689,7 @@ public class LineReaderImpl implements LineReader, Flushable {
      */
     protected boolean viDeleteChar() {
         for (int i = 0; i < count; i++) {
-            if (!buf.delete()) {
-                return false;
-            }
+            if (!deleteGrapheme()) return false;
         }
         return true;
     }
@@ -3393,7 +3706,7 @@ public class LineReaderImpl implements LineReader, Flushable {
                 int ch = buf.atChar(buf.cursor());
                 ch = switchCase(ch);
                 buf.currChar(ch);
-                buf.move(1);
+                moveForwardOne();
             } else {
                 return false;
             }
@@ -3414,7 +3727,14 @@ public class LineReaderImpl implements LineReader, Flushable {
         }
 
         for (int i = 0; i < count; i++) {
-            if (buf.currChar((char) c)) {
+            if (terminal.getGraphemeClusterMode() && buf.cursor() < buf.length()) {
+                // Delete the entire grapheme cluster, then insert the replacement
+                deleteGrapheme();
+                buf.write(c);
+                if (i == count - 1) {
+                    buf.move(-1);
+                }
+            } else if (buf.currChar((char) c)) {
                 if (i < count - 1) {
                     buf.move(1);
                 }
@@ -3694,6 +4014,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return out;
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     protected Map<String, Widget> builtinWidgets() {
         Map<String, Widget> widgets = new HashMap<>();
         addBuiltinWidget(widgets, ACCEPT_AND_INFER_NEXT_HISTORY, this::acceptAndInferNextHistory);
@@ -3864,6 +4185,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         };
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean redisplay() {
         redisplay(true);
         return true;
@@ -3879,6 +4201,14 @@ public class LineReaderImpl implements LineReader, Flushable {
             }
 
             Status status = Status.getStatus(terminal, false);
+            int currentStatusSize = status != null ? status.size() : 0;
+            if (currentStatusSize != lastStatusSize) {
+                // Status bar appeared, grew, or shrank (e.g. from a background
+                // thread). Content may have scrolled, invalidating cursor tracking.
+                terminal.puts(Capability.carriage_return);
+                doDisplay();
+                lastStatusSize = currentStatusSize;
+            }
             if (status != null) {
                 status.redraw();
             }
@@ -3902,7 +4232,7 @@ public class LineReaderImpl implements LineReader, Flushable {
 
                 int w = WCWidth.wcwidth('\u2026');
                 int width = size.getColumns();
-                int cursor = toCursor.columnLength();
+                int cursor = toCursor.columnLength(terminal);
                 int inc = width / 2 + 1;
                 while (cursor <= smallTerminalOffset + w) {
                     smallTerminalOffset -= inc;
@@ -3913,13 +4243,13 @@ public class LineReaderImpl implements LineReader, Flushable {
                 if (smallTerminalOffset > 0) {
                     sb.setLength(0);
                     sb.append("\u2026");
-                    sb.append(full.columnSubSequence(smallTerminalOffset + w, Integer.MAX_VALUE));
+                    sb.append(full.columnSubSequence(smallTerminalOffset + w, Integer.MAX_VALUE, terminal));
                     full = sb.toAttributedString();
                 }
-                int length = full.columnLength();
+                int length = full.columnLength(terminal);
                 if (length >= smallTerminalOffset + width) {
                     sb.setLength(0);
-                    sb.append(full.columnSubSequence(0, width - w));
+                    sb.append(full.columnSubSequence(0, width - w, terminal));
                     sb.append("\u2026");
                     full = sb.toAttributedString();
                 }
@@ -3936,7 +4266,7 @@ public class LineReaderImpl implements LineReader, Flushable {
                 newLines = new ArrayList<>();
                 newLines.add(full);
             } else {
-                newLines = full.columnSplitLength(size.getColumns(), true, display.delayLineWrap());
+                newLines = full.columnSplitLength(size.getColumns(), true, display.delayLineWrap(), terminal);
             }
 
             List<AttributedString> rightPromptLines;
@@ -3965,10 +4295,10 @@ public class LineReaderImpl implements LineReader, Flushable {
                 }
                 sb.append(insertSecondaryPrompts(new AttributedString(buffer), secondaryPrompts, false));
                 List<AttributedString> promptLines =
-                        sb.columnSplitLength(size.getColumns(), false, display.delayLineWrap());
+                        sb.columnSplitLength(size.getColumns(), false, display.delayLineWrap(), terminal);
                 if (!promptLines.isEmpty()) {
                     cursorNewLinesId = promptLines.size() - 1;
-                    cursorColPos = promptLines.get(promptLines.size() - 1).columnLength();
+                    cursorColPos = promptLines.get(promptLines.size() - 1).columnLength(terminal);
                     cursorPos = size.cursorPos(cursorNewLinesId, cursorColPos);
                 }
             }
@@ -4128,7 +4458,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return new AttributedString(buffer);
     }
 
-    private AttributedString expandPromptPattern(String pattern, int padToWidth, String message, int line) {
+    AttributedString expandPromptPattern(String pattern, int padToWidth, String message, int line) {
         ArrayList<AttributedString> parts = new ArrayList<>();
         boolean isHidden = false;
         int padPartIndex = -1;
@@ -4137,7 +4467,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         // Add "%{" to avoid special case for end of string.
         pattern = pattern + "%{";
         int plen = pattern.length();
-        int padChar = -1;
+        String padString = null;
         int padPos = -1;
         int cols = 0;
         for (int i = 0; i < plen; ) {
@@ -4155,7 +4485,7 @@ public class LineReaderImpl implements LineReader, Flushable {
                             AttributedString astr;
                             if (!isHidden) {
                                 astr = fromAnsi(str);
-                                cols += astr.columnLength();
+                                cols += astr.columnLength(terminal);
                             } else {
                                 astr = new AttributedString(str, AttributedStyle.HIDDEN);
                             }
@@ -4176,14 +4506,28 @@ public class LineReaderImpl implements LineReader, Flushable {
                         case 'N':
                             sb.append(getInt(LINE_OFFSET, 0) + line);
                             break decode;
+                        case '*':
+                            if (this.currentLine == line) {
+                                sb.append("*");
+                            } else {
+                                sb.append(" ");
+                            }
+                            break decode;
                         case 'M':
                             if (message != null) sb.append(message);
                             break decode;
                         case 'P':
                             if (countSeen && count >= 0) padToWidth = count;
-                            if (i < plen) {
-                                padChar = pattern.charAt(i++);
-                                // FIXME check surrogate
+                            if (i < plen && pattern.charAt(i) == '{') {
+                                // Multi-character pad string: %P{. } or %P{...}
+                                i++; // skip '{'
+                                int end = pattern.indexOf('}', i);
+                                if (end > i) {
+                                    padString = pattern.substring(i, end);
+                                    i = end + 1;
+                                }
+                            } else if (i < plen) {
+                                padString = String.valueOf(pattern.charAt(i++));
                             }
                             padPos = sb.length();
                             padPartIndex = parts.size();
@@ -4221,11 +4565,19 @@ public class LineReaderImpl implements LineReader, Flushable {
                 }
             } else sb.append(ch);
         }
-        if (padToWidth > cols && padToWidth > 0) {
-            int padCharCols = WCWidth.wcwidth(padChar);
-            int padCount = (padToWidth - cols) / padCharCols;
+        if (padToWidth > cols && padToWidth > 0 && padString != null) {
+            int remaining = padToWidth - cols;
             sb = padPartString;
-            while (--padCount >= 0) sb.insert(padPos, (char) padChar); // FIXME if wide
+            int padIdx = 0;
+            while (remaining > 0) {
+                char pc = padString.charAt(padIdx % padString.length());
+                int w = WCWidth.wcwidth(pc);
+                if (w <= 0) w = 1;
+                if (w > remaining) break;
+                sb.insert(padPos + padIdx, pc);
+                padIdx++;
+                remaining -= w;
+            }
             parts.set(padPartIndex, fromAnsi(sb.toString()));
         }
         return AttributedString.join(null, parts);
@@ -4251,7 +4603,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         int width = 0;
         List<String> missings = new ArrayList<>();
         if (computePrompts && secondaryPromptPattern.contains("%P")) {
-            width = prompt.columnLength();
+            width = prompt.columnLength(terminal);
             if (width > size.getColumns() || prompt.contains('\n')) {
                 width = new TerminalLine(prompt.toString(), 0, size.getColumns())
                         .getEndLine()
@@ -4272,11 +4624,24 @@ public class LineReaderImpl implements LineReader, Flushable {
                 }
                 missings.add(missing);
                 prompt = expandPromptPattern(secondaryPromptPattern, 0, missing, line + 1);
-                width = Math.max(width, prompt.columnLength());
+                width = Math.max(width, prompt.columnLength(terminal));
             }
             buf.setLength(0);
         }
         int line = 0;
+        // compute the current line number
+        this.currentLine = -1;
+        int cursor = this.buf.cursor();
+        int start = 0;
+        for (int l = 0; l < lines.size(); l++) {
+            int end = start + lines.get(l).length();
+            if (cursor >= start && cursor <= end) {
+                this.currentLine = l;
+                break;
+            }
+            start = end + 1;
+        }
+
         while (line < lines.size() - 1) {
             sb.append(lines.get(line)).append("\n");
             buf.append(lines.get(line)).append("\n");
@@ -4310,10 +4675,10 @@ public class LineReaderImpl implements LineReader, Flushable {
     }
 
     private AttributedString addRightPrompt(AttributedString prompt, AttributedString line) {
-        int width = prompt.columnLength();
+        int width = prompt.columnLength(terminal);
         boolean endsWithNl = line.length() > 0 && line.charAt(line.length() - 1) == '\n';
         // columnLength counts -1 for the final newline; adjust for that
-        int nb = size.getColumns() - width - (line.columnLength() + (endsWithNl ? 1 : 0));
+        int nb = size.getColumns() - width - (line.columnLength(terminal) + (endsWithNl ? 1 : 0));
         if (nb >= 3) {
             AttributedStringBuilder sb = new AttributedStringBuilder(size.getColumns());
             sb.append(line, 0, endsWithNl ? line.length() - 1 : line.length());
@@ -4562,8 +4927,8 @@ public class LineReaderImpl implements LineReader, Flushable {
             }
 
             if (useMenu) {
-                buf.move(line.word().length() - line.wordCursor());
-                buf.backspace(line.word().length());
+                buf.move(line.rawWordLength() - line.rawWordCursor());
+                buf.backspace(line.rawWordLength());
                 doMenu(possible, line.word(), line::escape);
                 return true;
             }
@@ -4581,9 +4946,13 @@ public class LineReaderImpl implements LineReader, Flushable {
             String commonPrefix = completionMatcher.getCommonPrefix();
             boolean hasUnambiguous = commonPrefix.startsWith(current) && !commonPrefix.equals(current);
 
+            // Track raw length in buffer for correct backspace when entering menu
+            int rawLen = line.rawWordLength();
             if (hasUnambiguous) {
-                buf.backspace(line.rawWordLength());
-                buf.write(line.escape(commonPrefix, false));
+                buf.backspace(rawLen);
+                CharSequence escaped = line.escape(commonPrefix, false);
+                buf.write(escaped.toString());
+                rawLen = escaped.length();
                 callWidget(REDISPLAY);
                 current = commonPrefix;
                 if ((!isSet(Option.AUTO_LIST) && isSet(Option.AUTO_MENU))
@@ -4599,7 +4968,7 @@ public class LineReaderImpl implements LineReader, Flushable {
                 }
             }
             if (isSet(Option.AUTO_MENU)) {
-                buf.backspace(current.length());
+                buf.backspace(rawLen);
                 doMenu(possible, line.word(), line::escape);
             }
             return true;
@@ -4734,6 +5103,7 @@ public class LineReaderImpl implements LineReader, Flushable {
     private class MenuSupport implements Supplier<AttributedString> {
         final List<Candidate> possible;
         final BiFunction<CharSequence, Boolean, CharSequence> escaper;
+        final int[] groupOffsets; // start index of each group in possible, final entry = possible.size()
         int selection;
         int topLine;
         String word;
@@ -4751,7 +5121,32 @@ public class LineReaderImpl implements LineReader, Flushable {
             this.word = "";
             this.completed = completed;
             computePost(original, null, possible, completed);
+            // Compute group boundaries
+            if (isSet(Option.GROUP_PERSIST)) {
+                List<Integer> offsets = new ArrayList<>();
+                offsets.add(0);
+                for (int i = 1; i < possible.size(); i++) {
+                    String prev = possible.get(i - 1).group();
+                    String curr = possible.get(i).group();
+                    if (!Objects.equals(prev, curr)) {
+                        offsets.add(i);
+                    }
+                }
+                offsets.add(possible.size());
+                this.groupOffsets = offsets.stream().mapToInt(Integer::intValue).toArray();
+            } else {
+                this.groupOffsets = null;
+            }
             next();
+        }
+
+        private int groupOf(int sel) {
+            for (int g = 0; g < groupOffsets.length - 1; g++) {
+                if (sel < groupOffsets[g + 1]) {
+                    return g;
+                }
+            }
+            return groupOffsets.length - 2;
         }
 
         public Candidate completion() {
@@ -4776,6 +5171,10 @@ public class LineReaderImpl implements LineReader, Flushable {
          * @param step number of options to move by
          */
         private void major(int step) {
+            if (groupOffsets != null) {
+                majorGroupAware(step);
+                return;
+            }
             int axis = isSet(Option.LIST_ROWS_FIRST) ? columns : lines;
             int sel = selection + step * axis;
             if (sel < 0) {
@@ -4800,6 +5199,10 @@ public class LineReaderImpl implements LineReader, Flushable {
          * @param step number of options to move by
          */
         private void minor(int step) {
+            if (groupOffsets != null) {
+                minorGroupAware(step);
+                return;
+            }
             int axis = isSet(Option.LIST_ROWS_FIRST) ? columns : lines;
             int row = selection % axis;
             int options = possible.size();
@@ -4809,6 +5212,92 @@ public class LineReaderImpl implements LineReader, Flushable {
                 axis = options % axis;
             }
             selection = selection - row + ((axis + row + step) % axis);
+            update();
+        }
+
+        /**
+         * Group-aware major axis navigation (left/right for column-major, up/down for row-major).
+         * Wraps within the current group at boundaries.
+         */
+        private void majorGroupAware(int step) {
+            int g = groupOf(selection);
+            int groupStart = groupOffsets[g];
+            int groupSize = groupOffsets[g + 1] - groupStart;
+            int local = selection - groupStart;
+            int groupLines = (groupSize + columns - 1) / columns;
+            int axis = isSet(Option.LIST_ROWS_FIRST) ? columns : groupLines;
+            int sel = local + step * axis;
+            if (sel < 0 || sel >= groupSize) {
+                // Wrap within group
+                if (sel < 0) {
+                    int pos = (sel + axis) % axis;
+                    int remainders = groupSize % axis;
+                    sel = groupSize - remainders + pos;
+                    if (sel >= groupSize) {
+                        sel -= axis;
+                    }
+                } else {
+                    sel = sel % axis;
+                }
+            }
+            selection = groupStart + sel;
+            update();
+        }
+
+        /**
+         * Group-aware minor axis navigation (up/down for column-major, left/right for row-major).
+         * Crosses group boundaries: moving past the edge of a group enters the adjacent group.
+         */
+        private void minorGroupAware(int step) {
+            boolean rowsFirst = isSet(Option.LIST_ROWS_FIRST);
+            int g = groupOf(selection);
+            int groupStart = groupOffsets[g];
+            int groupSize = groupOffsets[g + 1] - groupStart;
+            int local = selection - groupStart;
+            int groupLines = (groupSize + columns - 1) / columns;
+            int axis = rowsFirst ? columns : groupLines;
+            // For column-major: col = local / groupLines, row = local % groupLines
+            // For row-major:    row = local / columns,    col = local % columns
+            int col = rowsFirst ? local % columns : local / groupLines;
+            int row = rowsFirst ? local / columns : local % groupLines;
+            int newRow = row + step;
+            if (newRow >= 0 && newRow < axis) {
+                // Within current group, check bounds
+                int newLocal = rowsFirst ? newRow * columns + col : col * groupLines + newRow;
+                if (newLocal < groupSize) {
+                    selection = groupStart + newLocal;
+                    update();
+                    return;
+                }
+            }
+            // Cross group boundary
+            int numGroups = groupOffsets.length - 1;
+            if (step > 0) {
+                // Moving down/right: go to next group, same column, first row
+                int ng = (g + 1) % numGroups;
+                int ngStart = groupOffsets[ng];
+                int ngSize = groupOffsets[ng + 1] - ngStart;
+                int ngLines = (ngSize + columns - 1) / columns;
+                int newCol = Math.min(col, (rowsFirst ? (ngSize - 1) % columns : (ngSize + ngLines - 1) / ngLines - 1));
+                int newLocal = rowsFirst ? newCol : newCol * ngLines;
+                if (newLocal >= ngSize) {
+                    newLocal = rowsFirst ? 0 : 0;
+                }
+                selection = ngStart + newLocal;
+            } else {
+                // Moving up/left: go to previous group, same column, last row
+                int ng = (g + numGroups - 1) % numGroups;
+                int ngStart = groupOffsets[ng];
+                int ngSize = groupOffsets[ng + 1] - ngStart;
+                int ngLines = (ngSize + columns - 1) / columns;
+                int newCol = Math.min(col, (rowsFirst ? (ngSize - 1) % columns : (ngSize + ngLines - 1) / ngLines - 1));
+                int lastRow = rowsFirst ? (ngSize - 1) / columns : Math.min(ngLines - 1, ngSize - newCol * ngLines - 1);
+                int newLocal = rowsFirst ? lastRow * columns + newCol : newCol * ngLines + lastRow;
+                if (newLocal >= ngSize) {
+                    newLocal = ngSize - 1;
+                }
+                selection = ngStart + newLocal;
+            }
             update();
         }
 
@@ -4885,8 +5374,13 @@ public class LineReaderImpl implements LineReader, Flushable {
             } else {
                 computed = pr.post;
             }
-            lines = pr.lines;
-            columns = (possible.size() + lines - 1) / lines;
+            if (pr.columns > 0) {
+                columns = pr.columns;
+                lines = (possible.size() + columns - 1) / columns;
+            } else {
+                lines = pr.lines;
+                columns = (possible.size() + lines - 1) / lines;
+            }
         }
 
         @Override
@@ -4903,7 +5397,6 @@ public class LineReaderImpl implements LineReader, Flushable {
         original.sort(getCandidateComparator(caseInsensitive, completed));
         mergeCandidates(original);
         computePost(original, null, possible, completed);
-        // candidate grouping is not supported by MenuSupport
         boolean defaultAutoGroup = isSet(Option.AUTO_GROUP);
         boolean defaultGroup = isSet(Option.GROUP);
         if (!isSet(Option.GROUP_PERSIST)) {
@@ -4980,7 +5473,8 @@ public class LineReaderImpl implements LineReader, Flushable {
     }
 
     protected boolean clearChoices() {
-        return doList(new ArrayList<>(), "", false, null, false);
+        post = null;
+        return false;
     }
 
     protected boolean doList(
@@ -5174,11 +5668,17 @@ public class LineReaderImpl implements LineReader, Flushable {
         final AttributedString post;
         final int lines;
         final int selectedLine;
+        final int columns;
 
         public PostResult(AttributedString post, int lines, int selectedLine) {
+            this(post, lines, selectedLine, -1);
+        }
+
+        public PostResult(AttributedString post, int lines, int selectedLine, int columns) {
             this.post = post;
             this.lines = lines;
             this.selectedLine = selectedLine;
+            this.columns = columns;
         }
     }
 
@@ -5325,7 +5825,7 @@ public class LineReaderImpl implements LineReader, Flushable {
             Function<String, Integer> wcwidth,
             int width,
             boolean rowsFirst) {
-        int[] out = new int[2];
+        int[] out = new int[3]; // [0]=lines, [1]=selectedLine, [2]=columns
         // TODO: support Option.LIST_PACKED
         // Compute column width
         int maxWidth = 0;
@@ -5384,7 +5884,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         if (sb.length() > 0 && sb.charAt(sb.length() - 1) == '\n') {
             sb.setLength(sb.length() - 1);
         }
-        return new PostResult(sb.toAttributedString(), out[0], out[1]);
+        return new PostResult(sb.toAttributedString(), out[0], out[1], out[2]);
     }
 
     @SuppressWarnings("unchecked")
@@ -5433,6 +5933,9 @@ public class LineReaderImpl implements LineReader, Flushable {
             // Try to minimize the number of columns for the given number of rows
             // Prevents eg 9 candiates being split 6/3 instead of 5/4.
             final int columns = (candidates.size() + lines - 1) / lines;
+            if (out[2] <= 0) {
+                out[2] = columns;
+            }
             IntBinaryOperator index;
             if (rowsFirst) {
                 index = (i, j) -> i * columns + j;
@@ -5452,7 +5955,7 @@ public class LineReaderImpl implements LineReader, Flushable {
                         boolean hasRightItem = j < columns - 1 && index.applyAsInt(i, j + 1) < candidates.size();
                         AttributedString left = fromAnsi(cand.displ());
                         AttributedString right = fromAnsi(cand.descr());
-                        int lw = left.columnLength();
+                        int lw = left.columnLength(terminal);
                         int rw = 0;
                         if (right != null) {
                             int rem = maxWidth
@@ -5460,17 +5963,17 @@ public class LineReaderImpl implements LineReader, Flushable {
                                             + MARGIN_BETWEEN_DISPLAY_AND_DESC
                                             + DESC_PREFIX.length()
                                             + DESC_SUFFIX.length());
-                            rw = right.columnLength();
+                            rw = right.columnLength(terminal);
                             if (rw > rem) {
                                 right = AttributedStringBuilder.append(
-                                        right.columnSubSequence(0, rem - WCWidth.wcwidth('\u2026')), "\u2026");
-                                rw = right.columnLength();
+                                        right.columnSubSequence(0, rem - WCWidth.wcwidth('\u2026'), terminal), "\u2026");
+                                rw = right.columnLength(terminal);
                             }
                             right = AttributedStringBuilder.append(DESC_PREFIX, right, DESC_SUFFIX);
                             rw += DESC_PREFIX.length() + DESC_SUFFIX.length();
                         }
                         if (cand == selection) {
-                            out[1] = i;
+                            out[1] = out[0] + i;
                             asb.style(getCompletionStyleSelection(doMenuList));
                             if (left.toString()
                                     .regionMatches(
@@ -5841,6 +6344,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return true;
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean yank() {
         String yanked = killRing.yank();
         if (yanked == null) {
@@ -5871,6 +6375,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return true;
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean mouse() {
         MouseEvent event = readMouseEvent();
         if (event.getType() == MouseEvent.Type.Released && event.getButton() == MouseEvent.Button.Button1) {
@@ -5890,11 +6395,11 @@ public class LineReaderImpl implements LineReader, Flushable {
             int currentLine = promptLines.size() - 1;
             int wantedLine = Math.max(0, Math.min(currentLine + event.getY() - cursor.getY(), secondaryPrompts.size()));
             int pl0 = currentLine == 0
-                    ? prompt.columnLength()
-                    : secondaryPrompts.get(currentLine - 1).columnLength();
+                    ? prompt.columnLength(terminal)
+                    : secondaryPrompts.get(currentLine - 1).columnLength(terminal);
             int pl1 = wantedLine == 0
-                    ? prompt.columnLength()
-                    : secondaryPrompts.get(wantedLine - 1).columnLength();
+                    ? prompt.columnLength(terminal)
+                    : secondaryPrompts.get(wantedLine - 1).columnLength(terminal);
             int adjust = pl1 - pl0;
             buf.moveXY(event.getX() - cursor.getX() - adjust, event.getY() - cursor.getY());
         }
@@ -5921,6 +6426,7 @@ public class LineReaderImpl implements LineReader, Flushable {
      * Clean the used display
      * @return <code>true</code>
      */
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean clear() {
         display.update(Collections.emptyList(), 0);
         return true;
@@ -5952,6 +6458,7 @@ public class LineReaderImpl implements LineReader, Flushable {
      * Issue an audible keyboard bell.
      * @return <code>true</code>
      */
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean beep() {
         BellType bell_preference = BellType.AUDIBLE;
         switch (getString(BELL_STYLE, DEFAULT_BELL_STYLE).toLowerCase()) {
@@ -6066,6 +6573,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return keyMaps;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> emacs() {
         KeyMap<Binding> emacs = new KeyMap<>();
         bindKeys(emacs);
@@ -6184,6 +6692,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return viins;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> viCmd() {
         KeyMap<Binding> vicmd = new KeyMap<>();
         bind(vicmd, LIST_CHOICES, ctrl('D'));
@@ -6300,6 +6809,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return vicmd;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> menu() {
         KeyMap<Binding> menu = new KeyMap<>();
         bind(menu, MENU_COMPLETE, "\t");
@@ -6309,6 +6819,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return menu;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> safe() {
         KeyMap<Binding> safe = new KeyMap<>();
         bind(safe, SELF_INSERT, range("^@-^?"));
@@ -6317,6 +6828,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return safe;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> dumb() {
         KeyMap<Binding> dumb = new KeyMap<>();
         bind(dumb, SELF_INSERT, range("^@-^?"));
@@ -6325,6 +6837,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return dumb;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> visual() {
         KeyMap<Binding> visual = new KeyMap<>();
         bind(visual, UP_LINE, key(Capability.key_up), "k");
@@ -6337,6 +6850,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return visual;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> viOpp() {
         KeyMap<Binding> viOpp = new KeyMap<>();
         bind(viOpp, UP_LINE, key(Capability.key_up), "k");
@@ -6379,7 +6893,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         bind(map, DELETE_CHAR, key(Capability.key_dc));
         bind(map, KILL_WHOLE_LINE, key(Capability.key_dl));
         bind(map, OVERWRITE_MODE, key(Capability.key_ic));
-        bind(map, MOUSE, key(Capability.key_mouse));
+        bind(map, MOUSE, MouseSupport.keys(terminal));
         bind(map, BEGIN_PASTE, BRACKETED_PASTE_BEGIN);
         bind(map, FOCUS_IN, FOCUS_IN_SEQ);
         bind(map, FOCUS_OUT, FOCUS_OUT_SEQ);

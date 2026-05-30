@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -12,9 +12,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Utility class for computing string similarity using the Damerau-Levenshtein algorithm.
+ *
+ * <p>
  * The Damerau-Levenshtein Algorithm is an extension to the Levenshtein
  * Algorithm which solves the edit distance problem between a source string and
  * a target string with the following operations:
+ * </p>
  *
  * <ul>
  * <li>Character Insertion</li>
@@ -23,27 +27,42 @@ import java.util.Map;
  * <li>Adjacent Character Swap</li>
  * </ul>
  *
+ * <p>
  * Note that the adjacent character swap operation is an edit that may be
  * applied when two adjacent characters in the source string match two adjacent
  * characters in the target string, but in reverse order, rather than a general
  * allowance for adjacent character swaps.
- * <p>
+ * </p>
  *
+ * <p>
  * This implementation allows the client to specify the costs of the various
  * edit operations with the restriction that the cost of two swap operations
  * must not be less than the cost of a delete operation followed by an insert
  * operation. This restriction is required to preclude two swaps involving the
  * same character being required for optimality which, in turn, enables a fast
  * dynamic programming solution.
- * <p>
+ * </p>
  *
+ * <p>
  * The running time of the Damerau-Levenshtein algorithm is O(n*m) where n is
  * the length of the source string and m is the length of the target string.
  * This implementation consumes O(n*m) space.
+ * </p>
  *
- * @author Kevin L. Stern
+ * <p>
+ * This class is used in JLine for features like command completion and suggestion,
+ * where string similarity is used to find potential matches or corrections for
+ * user input.
+ * </p>
  */
 public class Levenshtein {
+
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private Levenshtein() {
+        // Utility class
+    }
 
     public static int distance(CharSequence lhs, CharSequence rhs) {
         return distance(lhs, rhs, 1, 1, 1, 1);

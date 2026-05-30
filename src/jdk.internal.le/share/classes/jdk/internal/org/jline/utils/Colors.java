@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -19,7 +19,39 @@ import java.util.stream.Stream;
 
 import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_COLOR_DISTANCE;
 
+/**
+ * Utility class for color-related operations and definitions.
+ *
+ * <p>
+ * The Colors class provides utility methods and constants for working with colors
+ * in terminal applications. It includes color palettes, color name mappings, and
+ * methods for color parsing and conversion.
+ * </p>
+ *
+ * <p>
+ * This class defines standard color palettes for different terminal color modes:
+ * </p>
+ * <ul>
+ *   <li>8 standard ANSI colors</li>
+ *   <li>256-color indexed palette</li>
+ *   <li>Named color mappings (e.g., "red", "blue", "navy")</li>
+ * </ul>
+ *
+ * <p>
+ * It also provides methods for parsing color specifications in various formats,
+ * such as RGB hex codes, CSS-style color names, and indexed color references.
+ * These utilities help with consistent color handling across different terminal
+ * types and color capabilities.
+ * </p>
+ */
 public class Colors {
+
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private Colors() {
+        // Utility class
+    }
 
     // @spotless:off
 
@@ -498,6 +530,7 @@ public class Colors {
     /** Hue Composition / Hue Quadrature */
     public static final int H = 5;
     /** Hue */
+    @SuppressWarnings("java:S1845") // H and h are standard CIECAM02 correlate notation
     public static final int h = 6;
 
     /** CIECAM02 appearance correlates */

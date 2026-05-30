@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -15,11 +15,29 @@ import java.util.Iterator;
 import java.util.ListIterator;
 
 /**
- * Console history.
+ * Console command history management interface.
+ * <p>
+ * The History interface provides functionality for storing, retrieving, and navigating
+ * through previously entered commands. It allows users to recall and reuse commands
+ * they've typed before, which is a fundamental feature of interactive command-line
+ * interfaces.
+ * <p>
+ * History implementations typically support:
+ * <ul>
+ *   <li>Adding new entries as commands are executed</li>
+ *   <li>Navigating backward and forward through history</li>
+ *   <li>Persisting history to a file for use across sessions</li>
+ *   <li>Filtering or ignoring certain commands based on patterns</li>
+ * </ul>
+ * <p>
+ * Each history entry contains the command text along with metadata such as the
+ * timestamp when it was executed.
+ * <p>
+ * The default implementation is {@link org.jline.reader.impl.history.DefaultHistory}.
  *
- * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
+ * @see LineReader#getHistory()
+ * @see LineReaderBuilder#history(History)
  */
 public interface History extends Iterable<History.Entry> {
 
@@ -74,24 +92,61 @@ public interface History extends Iterable<History.Entry> {
      */
     void purge() throws IOException;
 
+    /**
+     * Returns the number of items in the history.
+     *
+     * @return the number of history items
+     */
     int size();
 
+    /**
+     * Checks if the history is empty.
+     *
+     * @return true if the history contains no items
+     */
     default boolean isEmpty() {
         return size() == 0;
     }
 
+    /**
+     * Returns the current index in the history.
+     *
+     * @return the current index
+     */
     int index();
 
+    /**
+     * Returns the index of the first element in the history.
+     *
+     * @return the index of the first history item
+     */
     int first();
 
+    /**
+     * Returns the index of the last element in the history.
+     *
+     * @return the index of the last history item
+     */
     int last();
 
+    /**
+     * Returns the history item at the specified index.
+     *
+     * @param index the index of the history item to retrieve
+     * @return the history item at the specified index
+     */
     String get(int index);
 
     default void add(String line) {
         add(Instant.now(), line);
     }
 
+    /**
+     * Adds a new item to the history with the specified timestamp.
+     *
+     * @param time the timestamp for the history item
+     * @param line the line to add to the history
+     */
     void add(Instant time, String line);
 
     /**
@@ -108,14 +163,41 @@ public interface History extends Iterable<History.Entry> {
     // Entries
     //
 
+    /**
+     * Represents a single history entry containing a command line and its metadata.
+     * <p>
+     * Each entry in the history has an index position, a timestamp indicating when
+     * it was added, and the actual command line text.
+     */
     interface Entry {
+        /**
+         * Returns the index of this entry in the history.
+         *
+         * @return the index position of this entry
+         */
         int index();
 
+        /**
+         * Returns the timestamp when this entry was added to the history.
+         *
+         * @return the timestamp of this entry
+         */
         Instant time();
 
+        /**
+         * Returns the command line text of this entry.
+         *
+         * @return the command line text
+         */
         String line();
     }
 
+    /**
+     * Returns a list iterator over the history entries starting at the specified index.
+     *
+     * @param index the index to start iterating from
+     * @return a list iterator over the history entries
+     */
     ListIterator<Entry> iterator(int index);
 
     default ListIterator<Entry> iterator() {

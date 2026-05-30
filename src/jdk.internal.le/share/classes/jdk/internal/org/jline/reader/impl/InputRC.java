@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2023, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -24,20 +24,72 @@ import jdk.internal.org.jline.reader.Reference;
 import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.utils.Log;
 
+/**
+ * Handles inputrc configuration files for JLine.
+ * <p>
+ * This class provides functionality for parsing and applying inputrc configuration
+ * files, which are used to customize key bindings and other behavior of the
+ * LineReader. The format is compatible with GNU Readline's inputrc files.
+ * <p>
+ * Key features include:
+ * <ul>
+ *   <li>Binding keys to functions or macros</li>
+ *   <li>Setting variables that control LineReader behavior</li>
+ *   <li>Conditional configuration based on terminal type</li>
+ * </ul>
+ * <p>
+ * The configuration is typically loaded from a file specified by the
+ * {@link org.jline.reader.LineReader#INPUT_RC_FILE_NAME} variable, but can also
+ * be loaded from any input stream.
+ *
+ * @see org.jline.reader.LineReader#INPUT_RC_FILE_NAME
+ * @see org.jline.reader.LineReader#getKeyMaps()
+ */
 public final class InputRC {
 
+    /**
+     * Configures a LineReader from an inputrc file at the specified URL.
+     * <p>
+     * This method opens the URL and passes the resulting input stream to
+     * {@link #configure(LineReader, InputStream)}.
+     *
+     * @param reader the LineReader to configure
+     * @param url the URL of the inputrc file
+     * @throws IOException if an I/O error occurs while reading the configuration
+     */
     public static void configure(LineReader reader, URL url) throws IOException {
         try (InputStream is = url.openStream()) {
             configure(reader, is);
         }
     }
 
+    /**
+     * Configures a LineReader from an inputrc file.
+     * <p>
+     * This method reads configuration commands from the provided input stream
+     * and passes them to {@link #configure(LineReader, Reader)}.
+     *
+     * @param reader the LineReader to configure
+     * @param is the input stream containing the configuration
+     * @throws IOException if an I/O error occurs while reading the configuration
+     */
     public static void configure(LineReader reader, InputStream is) throws IOException {
         try (InputStreamReader r = new InputStreamReader(is)) {
             configure(reader, r);
         }
     }
 
+    /**
+     * Configures a LineReader from an inputrc file.
+     * <p>
+     * This method reads configuration commands from the provided reader
+     * and applies them to the LineReader. The format of the input is compatible
+     * with GNU Readline's inputrc files.
+     *
+     * @param reader the LineReader to configure
+     * @param r the reader containing the configuration
+     * @throws IOException if an I/O error occurs while reading the configuration
+     */
     public static void configure(LineReader reader, Reader r) throws IOException {
         BufferedReader br;
         if (r instanceof BufferedReader) {
@@ -372,6 +424,16 @@ public final class InputRC {
         }
     }
 
+    /**
+     * Sets a variable in the LineReader.
+     * <p>
+     * This method handles special cases for certain variables, such as the keymap,
+     * and options that can be turned on or off.
+     *
+     * @param reader the LineReader to modify
+     * @param key the name of the variable to set
+     * @param val the value to set
+     */
     static void setVar(LineReader reader, String key, String val) {
         if (LineReader.KEYMAP.equalsIgnoreCase(key)) {
             reader.setKeyMap(val);
@@ -379,7 +441,7 @@ public final class InputRC {
         }
 
         for (LineReader.Option option : LineReader.Option.values()) {
-            if (option.name().toLowerCase(Locale.ENGLISH).replace('_', '-').equals(val)) {
+            if (option.name().toLowerCase(Locale.ENGLISH).replace('_', '-').equals(key)) {
                 if ("on".equalsIgnoreCase(val)) {
                     reader.setOpt(option);
                 } else if ("off".equalsIgnoreCase(val)) {

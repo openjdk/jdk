@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -25,8 +25,6 @@ import jdk.internal.org.jline.reader.ParsedLine;
  * A {@link Completer} implementation that invokes a child completer using the appropriate <i>separator</i> argument.
  * This can be used instead of the individual completers having to know about argument parsing semantics.
  *
- * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
  */
 public class ArgumentCompleter implements Completer {
@@ -140,10 +138,23 @@ public class ArgumentCompleter implements Completer {
         completer.complete(reader, line, candidates);
     }
 
+    /**
+     * A simple implementation of ParsedLine for argument completion.
+     * <p>
+     * This class represents a single word with a cursor position, used for
+     * completing arguments in the ArgumentCompleter.
+     * </p>
+     */
     public static class ArgumentLine implements ParsedLine {
         private final String word;
         private final int cursor;
 
+        /**
+         * Creates a new ArgumentLine with the specified word and cursor position.
+         *
+         * @param word the word being completed
+         * @param cursor the cursor position within the word
+         */
         public ArgumentLine(String word, int cursor) {
             this.word = word;
             this.cursor = cursor;

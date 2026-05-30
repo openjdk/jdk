@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -16,13 +16,60 @@ import java.util.function.Supplier;
 //import java.util.logging.Logger;
 
 /**
- * Internal logger.
+ * Internal logging utility for JLine components.
  *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * <p>
+ * The Log class provides a simple logging facility for JLine components, using
+ * Java's standard logging API (java.util.logging) under the hood. It offers
+ * methods for logging at various levels (trace, debug, info, warn, error) and
+ * supports both direct message logging and lazy evaluation through suppliers.
+ * </p>
+ *
+ * <p>
+ * This class uses a single logger named "org.jline" for all JLine components.
+ * The actual log level can be configured through the standard Java logging
+ * configuration mechanisms, such as logging.properties files or programmatic
+ * configuration of the java.util.logging framework.
+ * </p>
+ *
+ * <p>
+ * Key features include:
+ * </p>
+ * <ul>
+ *   <li>Simple static methods for different log levels</li>
+ *   <li>Support for multiple message objects that are concatenated</li>
+ *   <li>Lazy evaluation of log messages using Supplier interfaces</li>
+ *   <li>Automatic exception handling with stack trace logging</li>
+ *   <li>Performance optimization to avoid string concatenation when logging is disabled</li>
+ * </ul>
+ *
+ * <p>Example usage:</p>
+ * <pre>
+ * // Simple logging
+ * Log.debug("Processing command: ", command);
+ *
+ * // Logging with lazy evaluation
+ * Log.trace(() -> "Expensive computation result: " + computeResult());
+ *
+ * // Logging exceptions
+ * try {
+ *     // Some operation
+ * } catch (Exception e) {
+ *     Log.error("Failed to process: ", e);
+ * }
+ * </pre>
+ *
  * @since 2.0
  */
 public final class Log {
+
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private Log() {
+        // Utility class
+    }
+
 //    private static final Logger logger = Logger.getLogger("org.jline");
 
     public static void trace(final Object... messages) {

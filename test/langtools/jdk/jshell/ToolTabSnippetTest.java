@@ -361,7 +361,7 @@ public class ToolTabSnippetTest extends UITesting {
             waitOutput(out, ".*java.lang.annotation.RetentionPolicy.*java.lang.annotation.RetentionPolicy.CLASS.*" +
                             REDRAW_PROMPT + "@Ann1\\(@java.lang.annotation.Retention\\(");
             inputSink.write("CL" + TAB);
-            waitOutput(out, "CL\\u001B\\[2Djava.lang.annotation.RetentionPolicy.CLASS \\u0008");
+            waitOutput(out, "CL\\u001B\\[2Djava.lang.annotation.RetentionPolicy.CLASS \\u001B\\[D");
         });
     }
 }

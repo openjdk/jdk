@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -21,20 +21,49 @@ import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 
 /**
- * Console implementation with embedded line disciplined.
+ * Terminal implementation designed for external connections with embedded line discipline.
  *
- * This terminal is well-suited for supporting incoming external
- * connections, such as from the network (through telnet, ssh,
- * or any kind of protocol).
- * The terminal will start consuming the input in a separate thread
- * to generate interruption events.
+ * <p>
+ * The ExternalTerminal class provides a terminal implementation that is well-suited
+ * for supporting incoming external connections, such as those from network sources
+ * (telnet, SSH, or other protocols). It extends the LineDisciplineTerminal class,
+ * inheriting its line discipline functionality while adding features specific to
+ * external connection handling.
+ * </p>
+ *
+ * <p>
+ * This terminal implementation starts consuming input in a separate thread to
+ * generate interruption events promptly, ensuring that signals like Ctrl+C are
+ * processed immediately rather than waiting for the application to read the input.
+ * This is particularly important for network-based terminals where latency could
+ * otherwise affect the responsiveness of signal handling.
+ * </p>
+ *
+ * <p>
+ * Key features of this implementation include:
+ * </p>
+ * <ul>
+ *   <li>Support for external connections over various protocols</li>
+ *   <li>Prompt signal handling through background input processing</li>
+ *   <li>Configurable terminal type and attributes</li>
+ *   <li>Support for dynamic size changes</li>
+ * </ul>
+ *
+ * <p>
+ * This terminal is commonly used in server applications that need to provide
+ * terminal access to remote clients, such as SSH servers, telnet servers, or
+ * custom network protocols that require terminal emulation.
+ * </p>
  *
  * @see LineDisciplineTerminal
  */
 public class ExternalTerminal extends LineDisciplineTerminal {
 
     private final TerminalProvider provider;
+
+    @SuppressWarnings("java:S2387") // intentionally shadows AbstractTerminal.closed with AtomicBoolean
     protected final AtomicBoolean closed = new AtomicBoolean();
+
     protected final InputStream masterInput;
     protected final Object lock = new Object();
     protected boolean paused = true;
@@ -43,7 +72,17 @@ public class ExternalTerminal extends LineDisciplineTerminal {
     public ExternalTerminal(
             String name, String type, InputStream masterInput, OutputStream masterOutput, Charset encoding)
             throws IOException {
-        this(null, name, type, masterInput, masterOutput, encoding, SignalHandler.SIG_DFL);
+        this(
+                null,
+                name,
+                type,
+                masterInput,
+                masterOutput,
+                encoding,
+                encoding,
+                encoding,
+                encoding,
+                SignalHandler.SIG_DFL);
     }
 
     public ExternalTerminal(
@@ -55,7 +94,32 @@ public class ExternalTerminal extends LineDisciplineTerminal {
             Charset encoding,
             SignalHandler signalHandler)
             throws IOException {
-        this(provider, name, type, masterInput, masterOutput, encoding, signalHandler, false);
+        this(provider, name, type, masterInput, masterOutput, encoding, encoding, encoding, signalHandler, false);
+    }
+
+    public ExternalTerminal(
+            TerminalProvider provider,
+            String name,
+            String type,
+            InputStream masterInput,
+            OutputStream masterOutput,
+            Charset encoding,
+            Charset stdinEncoding,
+            Charset stdoutEncoding,
+            Charset stderrEncoding,
+            SignalHandler signalHandler)
+            throws IOException {
+        this(
+                provider,
+                name,
+                type,
+                masterInput,
+                masterOutput,
+                encoding,
+                stdinEncoding,
+                stdoutEncoding,
+                signalHandler,
+                false);
     }
 
     public ExternalTerminal(
@@ -68,7 +132,46 @@ public class ExternalTerminal extends LineDisciplineTerminal {
             SignalHandler signalHandler,
             boolean paused)
             throws IOException {
-        this(provider, name, type, masterInput, masterOutput, encoding, signalHandler, paused, null, null);
+        this(
+                provider,
+                name,
+                type,
+                masterInput,
+                masterOutput,
+                encoding,
+                encoding,
+                encoding,
+                signalHandler,
+                paused,
+                null,
+                null);
+    }
+
+    public ExternalTerminal(
+            TerminalProvider provider,
+            String name,
+            String type,
+            InputStream masterInput,
+            OutputStream masterOutput,
+            Charset encoding,
+            Charset inputEncoding,
+            Charset outputEncoding,
+            SignalHandler signalHandler,
+            boolean paused)
+            throws IOException {
+        this(
+                provider,
+                name,
+                type,
+                masterInput,
+                masterOutput,
+                encoding,
+                inputEncoding,
+                outputEncoding,
+                signalHandler,
+                paused,
+                null,
+                null);
     }
 
     @SuppressWarnings("this-escape")
@@ -84,7 +187,37 @@ public class ExternalTerminal extends LineDisciplineTerminal {
             Attributes attributes,
             Size size)
             throws IOException {
-        super(name, type, masterOutput, encoding, signalHandler);
+        this(
+                provider,
+                name,
+                type,
+                masterInput,
+                masterOutput,
+                encoding,
+                encoding,
+                encoding,
+                signalHandler,
+                paused,
+                attributes,
+                size);
+    }
+
+    @SuppressWarnings("this-escape")
+    public ExternalTerminal(
+            TerminalProvider provider,
+            String name,
+            String type,
+            InputStream masterInput,
+            OutputStream masterOutput,
+            Charset encoding,
+            Charset inputEncoding,
+            Charset outputEncoding,
+            SignalHandler signalHandler,
+            boolean paused,
+            Attributes attributes,
+            Size size)
+            throws IOException {
+        super(name, type, masterOutput, encoding, inputEncoding, outputEncoding, signalHandler);
         this.provider = provider;
         this.masterInput = masterInput;
         if (attributes != null) {
@@ -96,6 +229,13 @@ public class ExternalTerminal extends LineDisciplineTerminal {
         if (!paused) {
             resume();
         }
+    }
+
+    @Override
+    public boolean supportsGraphemeClusterMode() {
+        // ExternalTerminal has no real terminal emulator on the other end,
+        // so probing for mode 2027 would consume actual input data from the pipe.
+        return false;
     }
 
     protected void doClose() throws IOException {
@@ -112,8 +252,10 @@ public class ExternalTerminal extends LineDisciplineTerminal {
 
     @Override
     public void pause() {
-        synchronized (lock) {
-            paused = true;
+        try {
+            pause(false);
+        } catch (InterruptedException e) {
+            // nah
         }
     }
 
@@ -126,7 +268,9 @@ public class ExternalTerminal extends LineDisciplineTerminal {
         }
         if (p != null) {
             p.interrupt();
-            p.join();
+            if (wait) {
+                p.join();
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -19,8 +19,29 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
 /**
- * Redirects an {@link OutputStream} to a {@link Writer} by decoding the data
- * using the specified {@link Charset}.
+ * An OutputStream implementation that writes to a Writer, bridging byte and character streams.
+ *
+ * <p>
+ * The WriterOutputStream class provides an OutputStream implementation that redirects
+ * its output to a Writer by decoding the bytes using a specified character encoding.
+ * This allows code that expects to write to an OutputStream to work with a Writer
+ * destination instead.
+ * </p>
+ *
+ * <p>
+ * This class handles the complexities of character encoding conversion, including:
+ * </p>
+ * <ul>
+ *   <li>Proper handling of multi-byte character encodings</li>
+ *   <li>Buffering of partial character sequences</li>
+ *   <li>Configurable behavior for malformed input and unmappable characters</li>
+ * </ul>
+ *
+ * <p>
+ * This class is particularly useful in JLine for bridging between byte-oriented
+ * and character-oriented I/O in terminal handling, especially when dealing with
+ * legacy APIs that expect byte streams.
+ * </p>
  *
  * <p><b>Note:</b> This class should only be used if it is necessary to
  * redirect an {@link OutputStream} to a {@link Writer} for compatibility

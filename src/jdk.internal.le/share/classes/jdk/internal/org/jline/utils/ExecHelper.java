@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -18,7 +18,30 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Helper methods for running unix commands.
+ * Utility class for executing external commands and capturing their output.
+ *
+ * <p>
+ * The ExecHelper class provides methods for executing external commands (primarily
+ * on Unix-like systems) and capturing their output. It handles the complexities of
+ * process creation, input/output redirection, and process termination.
+ * </p>
+ *
+ * <p>
+ * This class is used by various JLine components that need to interact with the
+ * underlying operating system, such as terminal detection, capability querying,
+ * and terminal size determination. It provides a simplified interface for executing
+ * commands and capturing their output as strings.
+ * </p>
+ *
+ * <p>
+ * The methods in this class handle common error conditions, such as interrupted
+ * execution and I/O errors, and provide appropriate logging for debugging purposes.
+ * </p>
+ *
+ * <p>
+ * Note that while this class is primarily designed for Unix-like systems, some
+ * functionality may work on other platforms depending on the available commands.
+ * </p>
  */
 public final class ExecHelper {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -10,6 +10,9 @@ package jdk.internal.org.jline.terminal.impl.ffm;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 
 import jdk.internal.org.jline.utils.AnsiWriter;
 import jdk.internal.org.jline.utils.Colors;
@@ -39,7 +42,7 @@ import static jdk.internal.org.jline.terminal.impl.ffm.Kernel32.getLastErrorMess
 
 class WindowsAnsiWriter extends AnsiWriter {
 
-    private static final java.lang.foreign.MemorySegment console = GetStdHandle(STD_OUTPUT_HANDLE);
+    private static final MemorySegment console = GetStdHandle(STD_OUTPUT_HANDLE);
 
     private static final short FOREGROUND_BLACK = 0;
     private static final short FOREGROUND_YELLOW = (short) (FOREGROUND_RED | FOREGROUND_GREEN);
@@ -75,7 +78,7 @@ class WindowsAnsiWriter extends AnsiWriter {
         BACKGROUND_WHITE,
     };
 
-    private final CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO(java.lang.foreign.Arena.ofAuto());
+    private final CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO(Arena.ofAuto());
     private final short originalColors;
 
     private boolean negative;
@@ -142,8 +145,8 @@ class WindowsAnsiWriter extends AnsiWriter {
     @Override
     protected void processEraseScreen(int eraseOption) throws IOException {
         getConsoleInfo();
-        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
-            java.lang.foreign.MemorySegment written = arena.allocate(java.lang.foreign.ValueLayout.JAVA_INT);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment written = arena.allocate(ValueLayout.JAVA_INT);
             switch (eraseOption) {
                 case ERASE_SCREEN -> {
                     COORD topLeft = new COORD(arena, (short) 0, info.window().top());
@@ -176,8 +179,8 @@ class WindowsAnsiWriter extends AnsiWriter {
     @Override
     protected void processEraseLine(int eraseOption) throws IOException {
         getConsoleInfo();
-        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
-            java.lang.foreign.MemorySegment written = arena.allocate(java.lang.foreign.ValueLayout.JAVA_INT);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment written = arena.allocate(ValueLayout.JAVA_INT);
             switch (eraseOption) {
                 case ERASE_LINE -> {
                     COORD leftColCurrRow =
@@ -243,7 +246,7 @@ class WindowsAnsiWriter extends AnsiWriter {
             applyCursorPosition();
         }
         if (nb > 0) {
-            try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            try (Arena arena = Arena.ofConfined()) {
                 SMALL_RECT scroll = new SMALL_RECT(arena, info.window());
                 scroll.top((short) 0);
                 COORD org = new COORD(arena);
@@ -369,7 +372,7 @@ class WindowsAnsiWriter extends AnsiWriter {
 
     @Override
     protected void processInsertLine(int optionInt) throws IOException {
-        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             getConsoleInfo();
             SMALL_RECT scroll = info.window().copy(arena);
             scroll.top(info.cursorPosition().y());
@@ -384,7 +387,7 @@ class WindowsAnsiWriter extends AnsiWriter {
 
     @Override
     protected void processDeleteLine(int optionInt) throws IOException {
-        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             getConsoleInfo();
             SMALL_RECT scroll = info.window().copy(arena);
             scroll.top(info.cursorPosition().y());
@@ -399,8 +402,8 @@ class WindowsAnsiWriter extends AnsiWriter {
 
     @Override
     protected void processChangeWindowTitle(String title) {
-        try (java.lang.foreign.Arena session = java.lang.foreign.Arena.ofConfined()) {
-            java.lang.foreign.MemorySegment str = session.allocateFrom(title);
+        try (Arena session = Arena.ofConfined()) {
+            MemorySegment str = session.allocateFrom(title);
             SetConsoleTitleW(str);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2023, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -417,6 +417,14 @@ public interface LineReader {
      */
     String SYSTEM_PROPERTY_PREFIX = "system-property-prefix";
 
+    /**
+     * Returns the default key maps used by the LineReader.
+     * <p>
+     * These key maps define the standard key bindings for different editing modes
+     * such as Emacs mode, Vi command mode, Vi insert mode, etc.
+     *
+     * @return a map of key map names to key maps
+     */
     Map<String, KeyMap<Binding>> defaultKeyMaps();
 
     enum Option {
@@ -425,12 +433,14 @@ public interface LineReader {
         COMPLETE_MATCHER_CAMELCASE,
         /** use type completion matcher */
         COMPLETE_MATCHER_TYPO(true),
+        /** disable special handling of magic history expansion commands like "!" and "!!" and "!n" and "!-n" and "!string" and "^string1^string2", as well as [interpret escape characters](https://github.com/jline/jline3/issues/1238) **/
         DISABLE_EVENT_EXPANSION,
         HISTORY_VERIFY,
         HISTORY_IGNORE_SPACE(true),
         HISTORY_IGNORE_DUPS(true),
         HISTORY_REDUCE_BLANKS(true),
         HISTORY_BEEP(true),
+        /** automatically save history when the line reader reads a new line (enabled by default) */
         HISTORY_INCREMENTAL(true),
         HISTORY_TIMESTAMPED(true),
         /** when displaying candidates, group them by {@link Candidate#group()} */
@@ -690,32 +700,151 @@ public interface LineReader {
     // Chainable setters
     //
 
+    /**
+     * Sets a variable in the LineReader and returns the LineReader for method chaining.
+     * <p>
+     * Variables control various aspects of the LineReader's behavior. See the
+     * various variable constants defined in this interface for available options.
+     *
+     * @param name the variable name
+     * @param value the variable value
+     * @return this LineReader
+     */
     LineReader variable(String name, Object value);
 
+    /**
+     * Sets an option in the LineReader and returns the LineReader for method chaining.
+     * <p>
+     * Options control various aspects of the LineReader's behavior. See the
+     * {@link Option} enum for available options.
+     *
+     * @param option the option to set
+     * @param value the option value
+     * @return this LineReader
+     */
     LineReader option(Option option, boolean value);
 
+    /**
+     * Calls a widget by name.
+     * <p>
+     * Widgets are functions that perform editing operations. This method allows
+     * invoking a widget programmatically rather than through a key binding.
+     *
+     * @param name the name of the widget to call
+     */
     void callWidget(String name);
 
+    /**
+     * Returns a map of all variables set in the LineReader.
+     * <p>
+     * Variables control various aspects of the LineReader's behavior. See the
+     * various variable constants defined in this interface for available options.
+     *
+     * @return a map of variable names to their values
+     */
     Map<String, Object> getVariables();
 
+    /**
+     * Returns the value of a variable.
+     * <p>
+     * Variables control various aspects of the LineReader's behavior. See the
+     * various variable constants defined in this interface for available options.
+     *
+     * @param name the variable name
+     * @return the variable value, or null if the variable is not set
+     */
     Object getVariable(String name);
 
+    /**
+     * Sets a variable in the LineReader.
+     * <p>
+     * Variables control various aspects of the LineReader's behavior. See the
+     * various variable constants defined in this interface for available options.
+     *
+     * @param name the variable name
+     * @param value the variable value
+     */
     void setVariable(String name, Object value);
 
+    /**
+     * Checks if an option is set.
+     * <p>
+     * Options control various aspects of the LineReader's behavior. See the
+     * {@link Option} enum for available options.
+     *
+     * @param option the option to check
+     * @return true if the option is set, false otherwise
+     */
     boolean isSet(Option option);
 
+    /**
+     * Sets an option to true.
+     * <p>
+     * Options control various aspects of the LineReader's behavior. See the
+     * {@link Option} enum for available options.
+     *
+     * @param option the option to set
+     */
     void setOpt(Option option);
 
+    /**
+     * Sets an option to false.
+     * <p>
+     * Options control various aspects of the LineReader's behavior. See the
+     * {@link Option} enum for available options.
+     *
+     * @param option the option to unset
+     */
     void unsetOpt(Option option);
 
+    /**
+     * Returns the terminal associated with this LineReader.
+     * <p>
+     * The terminal is used for input/output operations and provides information
+     * about the terminal capabilities and size.
+     *
+     * @return the terminal
+     */
     Terminal getTerminal();
 
+    /**
+     * Returns a map of all widgets registered with this LineReader.
+     * <p>
+     * Widgets are functions that perform editing operations and can be bound
+     * to key sequences.
+     *
+     * @return a map of widget names to widgets
+     */
     Map<String, Widget> getWidgets();
 
+    /**
+     * Returns a map of all built-in widgets provided by the LineReader.
+     * <p>
+     * Built-in widgets implement standard editing operations like cursor movement,
+     * text deletion, history navigation, etc.
+     *
+     * @return a map of built-in widget names to widgets
+     */
     Map<String, Widget> getBuiltinWidgets();
 
+    /**
+     * Returns the current line buffer.
+     * <p>
+     * The buffer contains the text that the user is currently editing.
+     * It provides methods for manipulating the text and cursor position.
+     *
+     * @return the current line buffer
+     */
     Buffer getBuffer();
 
+    /**
+     * Returns the application name associated with this LineReader.
+     * <p>
+     * The application name is used for various purposes, such as naming
+     * history files and identifying the application in terminal titles.
+     *
+     * @return the application name
+     */
     String getAppName();
 
     /**
@@ -741,50 +870,218 @@ public interface LineReader {
      */
     MouseEvent readMouseEvent();
 
+    /**
+     * Returns the history associated with this LineReader.
+     * <p>
+     * The history stores previously entered command lines and provides
+     * methods for navigating, searching, and managing history entries.
+     *
+     * @return the command history
+     */
     History getHistory();
 
+    /**
+     * Returns the parser associated with this LineReader.
+     * <p>
+     * The parser is responsible for breaking command lines into tokens
+     * according to the syntax rules of the shell or application.
+     *
+     * @return the parser
+     */
     Parser getParser();
 
+    /**
+     * Returns the highlighter associated with this LineReader.
+     * <p>
+     * The highlighter is responsible for applying syntax highlighting
+     * to the command line as the user types.
+     *
+     * @return the highlighter
+     */
     Highlighter getHighlighter();
 
+    /**
+     * Returns the expander associated with this LineReader.
+     * <p>
+     * The expander is responsible for expanding special syntax in the command line,
+     * such as history references (e.g., !!, !$) and variables (e.g., $HOME).
+     *
+     * @return the expander
+     */
     Expander getExpander();
 
+    /**
+     * Returns all key maps registered with this LineReader.
+     * <p>
+     * Key maps define the mappings from key sequences to actions for different
+     * editing modes (e.g., Emacs mode, Vi command mode, Vi insert mode).
+     *
+     * @return a map of key map names to key maps
+     */
     Map<String, KeyMap<Binding>> getKeyMaps();
 
+    /**
+     * Returns the name of the currently active key map.
+     * <p>
+     * The active key map determines how key presses are interpreted and
+     * which actions they trigger.
+     *
+     * @return the name of the active key map
+     */
     String getKeyMap();
 
+    /**
+     * Sets the active key map by name.
+     * <p>
+     * The active key map determines how key presses are interpreted and
+     * which actions they trigger.
+     *
+     * @param name the name of the key map to activate
+     * @return true if the key map was successfully set, false if the key map does not exist
+     */
     boolean setKeyMap(String name);
 
+    /**
+     * Returns the currently active key map.
+     * <p>
+     * The active key map determines how key presses are interpreted and
+     * which actions they trigger.
+     *
+     * @return the active key map
+     */
     KeyMap<Binding> getKeys();
 
+    /**
+     * Returns the parsed representation of the current line.
+     * <p>
+     * The parsed line contains the tokenized form of the current input line,
+     * broken down according to the syntax rules of the parser.
+     *
+     * @return the parsed line, or null if the line has not been parsed yet
+     */
     ParsedLine getParsedLine();
 
+    /**
+     * Returns the current search term when in history search mode.
+     * <p>
+     * This is the string that the user is searching for in the command history.
+     *
+     * @return the current search term, or null if not in search mode
+     */
     String getSearchTerm();
 
+    /**
+     * Returns the type of the currently active region selection.
+     * <p>
+     * The region is a selected portion of text in the buffer, similar to
+     * a selection in a text editor.
+     *
+     * @return the type of the active region, or {@link RegionType#NONE} if no region is active
+     */
     RegionType getRegionActive();
 
+    /**
+     * Returns the mark position of the currently active region.
+     * <p>
+     * The mark is one endpoint of the selected region, with the cursor
+     * being the other endpoint.
+     *
+     * @return the position of the mark, or -1 if no region is active
+     */
     int getRegionMark();
 
+    /**
+     * Adds a collection of commands to the input buffer for execution.
+     * <p>
+     * These commands will be executed one by one when the user accepts the current line.
+     * This is useful for implementing features like command scripts or macros.
+     *
+     * @param commands the commands to add to the buffer
+     */
     void addCommandsInBuffer(Collection<String> commands);
 
+    /**
+     * Opens a file in an external editor and adds its contents to the input buffer.
+     * <p>
+     * This method allows the user to edit a file in their preferred text editor
+     * and then have its contents added to the input buffer for execution.
+     *
+     * @param file the file to edit, or null to create a temporary file
+     * @throws Exception if an error occurs while editing the file
+     * @see #editAndAddInBuffer(Path)
+     */
     default void editAndAddInBuffer(File file) throws Exception {
         editAndAddInBuffer(file != null ? file.toPath() : null);
     }
 
+    /**
+     * Opens a file in an external editor and adds its contents to the input buffer.
+     * <p>
+     * This method allows the user to edit a file in their preferred text editor
+     * and then have its contents added to the input buffer for execution.
+     *
+     * @param file the file to edit, or null to create a temporary file
+     * @throws Exception if an error occurs while editing the file
+     */
     void editAndAddInBuffer(Path file) throws Exception;
 
+    /**
+     * Returns the last key binding that was processed.
+     * <p>
+     * This is the string representation of the last key sequence that
+     * triggered an action.
+     *
+     * @return the last key binding, or null if no binding has been processed
+     */
     String getLastBinding();
 
+    /**
+     * Returns the current tail tip text.
+     * <p>
+     * The tail tip is a hint or suggestion displayed at the end of the current line,
+     * typically showing command syntax or parameter information.
+     *
+     * @return the current tail tip text, or null if no tail tip is set
+     */
     String getTailTip();
 
+    /**
+     * Sets the tail tip text.
+     * <p>
+     * The tail tip is a hint or suggestion displayed at the end of the current line,
+     * typically showing command syntax or parameter information.
+     *
+     * @param tailTip the tail tip text to display, or null to clear the tail tip
+     */
     void setTailTip(String tailTip);
 
+    /**
+     * Sets the type of auto-suggestion to use.
+     * <p>
+     * Auto-suggestions provide inline completion suggestions as the user types,
+     * based on history, completers, or other sources.
+     *
+     * @param type the type of auto-suggestion to use
+     */
     void setAutosuggestion(SuggestionType type);
 
+    /**
+     * Returns the current auto-suggestion type.
+     * <p>
+     * Auto-suggestions provide inline completion suggestions as the user types,
+     * based on history, completers, or other sources.
+     *
+     * @return the current auto-suggestion type
+     */
     SuggestionType getAutosuggestion();
 
     /**
-     * Clear any internal buffers.
+     * Clears any internal buffers and sensitive data.
+     * <p>
+     * This method is used to ensure that sensitive information, such as passwords
+     * or other confidential data, is removed from memory when it's no longer needed.
+     * It should be called when the LineReader is no longer in use or before reading
+     * sensitive information.
      */
     void zeroOut();
 }

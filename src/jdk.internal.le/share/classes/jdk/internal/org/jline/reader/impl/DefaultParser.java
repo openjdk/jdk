@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -18,8 +18,34 @@ import jdk.internal.org.jline.reader.EOFError;
 import jdk.internal.org.jline.reader.ParsedLine;
 import jdk.internal.org.jline.reader.Parser;
 
+/**
+ * Default implementation of the {@link Parser} interface.
+ * <p>
+ * This parser provides a flexible implementation for parsing command lines into tokens,
+ * with support for:
+ * <ul>
+ *   <li>Quoted strings with customizable quote characters</li>
+ *   <li>Escaped characters with customizable escape characters</li>
+ *   <li>Bracket matching with customizable bracket pairs</li>
+ *   <li>Line and block comments with customizable delimiters</li>
+ *   <li>Command and variable name validation with customizable regex patterns</li>
+ * </ul>
+ * <p>
+ * The parser is highly configurable through its chainable setter methods, allowing
+ * applications to customize its behavior to match their specific syntax requirements.
+ * <p>
+ * The parser also implements the {@link CompletingParsedLine} interface, which provides
+ * additional methods for handling completion with proper escaping of special characters.
+ *
+ * @see Parser
+ * @see CompletingParsedLine
+ * @see org.jline.reader.LineReader
+ */
 public class DefaultParser implements Parser {
 
+    /**
+     * Enumeration of bracket types that can be used for EOF detection on unclosed brackets.
+     */
     public enum Bracket {
         ROUND, // ()
         CURLY, // {}
@@ -27,6 +53,9 @@ public class DefaultParser implements Parser {
         ANGLE // <>
     }
 
+    /**
+     * Class representing block comment delimiters.
+     */
     public static class BlockCommentDelims {
         private final String start;
         private final String end;
@@ -68,55 +97,122 @@ public class DefaultParser implements Parser {
     private String regexCommand = "[:]?[a-zA-Z]+[a-zA-Z0-9_-]*";
     private int commandGroup = 4;
 
+    /**
+     * Creates a new DefaultParser.
+     */
+    public DefaultParser() {
+        // Default constructor
+    }
+
     //
     // Chainable setters
     //
 
+    /**
+     * Sets the line comment delimiters.
+     *
+     * @param lineCommentDelims the line comment delimiters
+     * @return this parser instance
+     */
     public DefaultParser lineCommentDelims(final String[] lineCommentDelims) {
         this.lineCommentDelims = lineCommentDelims;
         return this;
     }
 
+    /**
+     * Sets the block comment delimiters.
+     *
+     * @param blockCommentDelims the block comment delimiters
+     * @return this parser instance
+     */
     public DefaultParser blockCommentDelims(final BlockCommentDelims blockCommentDelims) {
         this.blockCommentDelims = blockCommentDelims;
         return this;
     }
 
+    /**
+     * Sets the quote characters.
+     *
+     * @param chars the quote characters
+     * @return this parser instance
+     */
     public DefaultParser quoteChars(final char[] chars) {
         this.quoteChars = chars;
         return this;
     }
 
+    /**
+     * Sets the escape characters.
+     *
+     * @param chars the escape characters
+     * @return this parser instance
+     */
     public DefaultParser escapeChars(final char[] chars) {
         this.escapeChars = chars;
         return this;
     }
 
+    /**
+     * Sets whether EOF should be returned on unclosed quotes.
+     *
+     * @param eofOnUnclosedQuote true if EOF should be returned on unclosed quotes
+     * @return this parser instance
+     */
     public DefaultParser eofOnUnclosedQuote(boolean eofOnUnclosedQuote) {
         this.eofOnUnclosedQuote = eofOnUnclosedQuote;
         return this;
     }
 
+    /**
+     * Sets the bracket types that should trigger EOF on unclosed brackets.
+     *
+     * @param brackets the bracket types
+     * @return this parser instance
+     */
     public DefaultParser eofOnUnclosedBracket(Bracket... brackets) {
         setEofOnUnclosedBracket(brackets);
         return this;
     }
 
+    /**
+     * Sets whether EOF should be returned on escaped newlines.
+     *
+     * @param eofOnEscapedNewLine true if EOF should be returned on escaped newlines
+     * @return this parser instance
+     */
     public DefaultParser eofOnEscapedNewLine(boolean eofOnEscapedNewLine) {
         this.eofOnEscapedNewLine = eofOnEscapedNewLine;
         return this;
     }
 
+    /**
+     * Sets the regular expression for identifying variables.
+     *
+     * @param regexVariable the regular expression for variables
+     * @return this parser instance
+     */
     public DefaultParser regexVariable(String regexVariable) {
         this.regexVariable = regexVariable;
         return this;
     }
 
+    /**
+     * Sets the regular expression for identifying commands.
+     *
+     * @param regexCommand the regular expression for commands
+     * @return this parser instance
+     */
     public DefaultParser regexCommand(String regexCommand) {
         this.regexCommand = regexCommand;
         return this;
     }
 
+    /**
+     * Sets the command group for the regular expression.
+     *
+     * @param commandGroup the command group
+     * @return this parser instance
+     */
     public DefaultParser commandGroup(int commandGroup) {
         this.commandGroup = commandGroup;
         return this;
@@ -126,54 +222,119 @@ public class DefaultParser implements Parser {
     // Java bean getters and setters
     //
 
+    /**
+     * Sets the quote characters.
+     *
+     * @param chars the quote characters
+     */
     public void setQuoteChars(final char[] chars) {
         this.quoteChars = chars;
     }
 
+    /**
+     * Gets the quote characters.
+     *
+     * @return the quote characters
+     */
     public char[] getQuoteChars() {
         return this.quoteChars;
     }
 
+    /**
+     * Sets the escape characters.
+     *
+     * @param chars the escape characters
+     */
     public void setEscapeChars(final char[] chars) {
         this.escapeChars = chars;
     }
 
+    /**
+     * Gets the escape characters.
+     *
+     * @return the escape characters
+     */
     public char[] getEscapeChars() {
         return this.escapeChars;
     }
 
+    /**
+     * Sets the line comment delimiters.
+     *
+     * @param lineCommentDelims the line comment delimiters
+     */
     public void setLineCommentDelims(String[] lineCommentDelims) {
         this.lineCommentDelims = lineCommentDelims;
     }
 
+    /**
+     * Gets the line comment delimiters.
+     *
+     * @return the line comment delimiters
+     */
     public String[] getLineCommentDelims() {
         return this.lineCommentDelims;
     }
 
+    /**
+     * Sets the block comment delimiters.
+     *
+     * @param blockCommentDelims the block comment delimiters
+     */
     public void setBlockCommentDelims(BlockCommentDelims blockCommentDelims) {
         this.blockCommentDelims = blockCommentDelims;
     }
 
+    /**
+     * Gets the block comment delimiters.
+     *
+     * @return the block comment delimiters
+     */
     public BlockCommentDelims getBlockCommentDelims() {
         return blockCommentDelims;
     }
 
+    /**
+     * Sets whether EOF should be returned on unclosed quotes.
+     *
+     * @param eofOnUnclosedQuote true if EOF should be returned on unclosed quotes
+     */
     public void setEofOnUnclosedQuote(boolean eofOnUnclosedQuote) {
         this.eofOnUnclosedQuote = eofOnUnclosedQuote;
     }
 
+    /**
+     * Checks if EOF should be returned on unclosed quotes.
+     *
+     * @return true if EOF should be returned on unclosed quotes
+     */
     public boolean isEofOnUnclosedQuote() {
         return eofOnUnclosedQuote;
     }
 
+    /**
+     * Sets whether EOF should be returned on escaped newlines.
+     *
+     * @param eofOnEscapedNewLine true if EOF should be returned on escaped newlines
+     */
     public void setEofOnEscapedNewLine(boolean eofOnEscapedNewLine) {
         this.eofOnEscapedNewLine = eofOnEscapedNewLine;
     }
 
+    /**
+     * Checks if EOF should be returned on escaped newlines.
+     *
+     * @return true if EOF should be returned on escaped newlines
+     */
     public boolean isEofOnEscapedNewLine() {
         return eofOnEscapedNewLine;
     }
 
+    /**
+     * Sets the bracket types that should trigger EOF on unclosed brackets.
+     *
+     * @param brackets the bracket types
+     */
     public void setEofOnUnclosedBracket(Bracket... brackets) {
         if (brackets == null) {
             openingBrackets = null;
@@ -207,14 +368,29 @@ public class DefaultParser implements Parser {
         }
     }
 
+    /**
+     * Sets the regular expression for identifying variables.
+     *
+     * @param regexVariable the regular expression for variables
+     */
     public void setRegexVariable(String regexVariable) {
         this.regexVariable = regexVariable;
     }
 
+    /**
+     * Sets the regular expression for identifying commands.
+     *
+     * @param regexCommand the regular expression for commands
+     */
     public void setRegexCommand(String regexCommand) {
         this.regexCommand = regexCommand;
     }
 
+    /**
+     * Sets the command group for the regular expression.
+     *
+     * @param commandGroup the command group
+     */
     public void setCommandGroup(int commandGroup) {
         this.commandGroup = commandGroup;
     }
@@ -275,6 +451,7 @@ public class DefaultParser implements Parser {
         int rawWordStart = 0;
         BracketChecker bracketChecker = new BracketChecker(cursor);
         boolean quotedWord = false;
+        boolean wordStarted = false;
         boolean lineCommented = false;
         boolean blockCommented = false;
         boolean blockCommentInRightOrder = true;
@@ -295,6 +472,7 @@ public class DefaultParser implements Parser {
             if (quoteStart < 0 && isQuoteChar(line, i) && !lineCommented && !blockCommented) {
                 // Start a quote block
                 quoteStart = i;
+                wordStarted = true;
                 if (current.length() == 0) {
                     quotedWord = true;
                     if (context == ParseContext.SPLIT_LINE) {
@@ -323,9 +501,17 @@ public class DefaultParser implements Parser {
                     }
                 } else {
                     // Delimiter
-                    rawWordLength = handleDelimiterAndGetRawWordLength(
-                            current, words, rawWordStart, rawWordCursor, rawWordLength, i);
+                    if (wordStarted && current.length() == 0) {
+                        words.add(current.toString());
+                        if (rawWordCursor >= 0 && rawWordLength < 0) {
+                            rawWordLength = i - rawWordStart;
+                        }
+                    } else {
+                        rawWordLength = handleDelimiterAndGetRawWordLength(
+                                current, words, rawWordStart, rawWordCursor, rawWordLength, i);
+                    }
                     rawWordStart = i + 1;
+                    wordStarted = false;
                 }
             } else {
                 if (quoteStart < 0 && !blockCommented && (lineCommented || isLineCommentStarted(line, i))) {
@@ -344,6 +530,7 @@ public class DefaultParser implements Parser {
                                 current, words, rawWordStart, rawWordCursor, rawWordLength, i);
                         i += blockCommentStart == null ? 0 : blockCommentStart.length() - 1;
                         rawWordStart = i + 1;
+                        wordStarted = false;
                     }
                 } else if (quoteStart < 0 && !lineCommented && isCommentDelim(line, i, blockCommentEnd)) {
                     current.append(line.charAt(i));
@@ -359,7 +546,7 @@ public class DefaultParser implements Parser {
             }
         }
 
-        if (current.length() > 0 || cursor == line.length()) {
+        if (current.length() > 0 || wordStarted || (cursor == line.length() && context == ParseContext.COMPLETE)) {
             words.add(current.toString());
             if (rawWordCursor >= 0 && rawWordLength < 0) {
                 rawWordLength = line.length() - rawWordStart;
@@ -367,6 +554,9 @@ public class DefaultParser implements Parser {
         }
 
         if (cursor == line.length()) {
+            if (words.isEmpty()) {
+                words.add("");
+            }
             wordIndex = words.size() - 1;
             wordCursor = words.get(words.size() - 1).length();
             rawWordCursor = cursor - rawWordStart;
@@ -655,8 +845,6 @@ public class DefaultParser implements Parser {
 
     /**
      * The result of a delimited buffer.
-     *
-     * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
      */
     public class ArgumentList implements ParsedLine, CompletingParsedLine {
         private final String line;
@@ -674,24 +862,6 @@ public class DefaultParser implements Parser {
         private final int rawWordCursor;
 
         private final int rawWordLength;
-
-        @Deprecated
-        public ArgumentList(
-                final String line,
-                final List<String> words,
-                final int wordIndex,
-                final int wordCursor,
-                final int cursor) {
-            this(
-                    line,
-                    words,
-                    wordIndex,
-                    wordCursor,
-                    cursor,
-                    null,
-                    wordCursor,
-                    words.get(wordIndex).length());
-        }
 
         /**
          *

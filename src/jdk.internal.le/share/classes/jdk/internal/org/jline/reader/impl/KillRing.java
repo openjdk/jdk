@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -132,7 +132,10 @@ public final class KillRing {
         lastKill = false;
         if (lastYank) {
             prev();
-            return slots[head];
+            if (head >= 0) {
+                return slots[head];
+            }
+            head = 0; // restore valid state
         }
         return null;
     }

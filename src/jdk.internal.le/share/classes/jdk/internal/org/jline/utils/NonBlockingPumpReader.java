@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -25,15 +25,13 @@ public class NonBlockingPumpReader extends NonBlockingReader {
     private int count;
 
     /** Main lock guarding all access */
-    final ReentrantLock lock;
+    final ReentrantLock bufferLock;
     /** Condition for waiting takes */
     private final Condition notEmpty;
     /** Condition for waiting puts */
     private final Condition notFull;
 
     private final Writer writer;
-
-    private boolean closed;
 
     public NonBlockingPumpReader() {
         this(DEFAULT_BUFFER_SIZE);
@@ -42,9 +40,9 @@ public class NonBlockingPumpReader extends NonBlockingReader {
     public NonBlockingPumpReader(int bufferSize) {
         this.buffer = new char[bufferSize];
         this.writer = new NbpWriter();
-        this.lock = new ReentrantLock();
-        this.notEmpty = lock.newCondition();
-        this.notFull = lock.newCondition();
+        this.bufferLock = new ReentrantLock();
+        this.notEmpty = bufferLock.newCondition();
+        this.notFull = bufferLock.newCondition();
     }
 
     public Writer getWriter() {
@@ -57,19 +55,18 @@ public class NonBlockingPumpReader extends NonBlockingReader {
     }
 
     public int available() {
-        final ReentrantLock lock = this.lock;
-        lock.lock();
+        bufferLock.lock();
         try {
             return count;
         } finally {
-            lock.unlock();
+            bufferLock.unlock();
         }
     }
 
     @Override
     protected int read(long timeout, boolean isPeek) throws IOException {
-        final ReentrantLock lock = this.lock;
-        lock.lock();
+        checkClosed();
+        bufferLock.lock();
         try {
             // Blocks until more input is available or the reader is closed.
             if (!closed && count == 0) {
@@ -101,7 +98,7 @@ public class NonBlockingPumpReader extends NonBlockingReader {
                 }
             }
         } finally {
-            lock.unlock();
+            bufferLock.unlock();
         }
     }
 
@@ -114,8 +111,7 @@ public class NonBlockingPumpReader extends NonBlockingReader {
         } else if (len == 0) {
             return 0;
         } else {
-            final ReentrantLock lock = this.lock;
-            lock.lock();
+            bufferLock.lock();
             try {
                 if (!closed && count == 0) {
                     try {
@@ -147,15 +143,14 @@ public class NonBlockingPumpReader extends NonBlockingReader {
                     return r;
                 }
             } finally {
-                lock.unlock();
+                bufferLock.unlock();
             }
         }
     }
 
     void write(char[] cbuf, int off, int len) throws IOException {
         if (len > 0) {
-            final ReentrantLock lock = this.lock;
-            lock.lock();
+            bufferLock.lock();
             try {
                 while (len > 0) {
                     // Blocks until there is new space available for buffering or the
@@ -181,21 +176,20 @@ public class NonBlockingPumpReader extends NonBlockingReader {
                     notEmpty.signal();
                 }
             } finally {
-                lock.unlock();
+                bufferLock.unlock();
             }
         }
     }
 
     @Override
     public void close() throws IOException {
-        final ReentrantLock lock = this.lock;
-        lock.lock();
+        bufferLock.lock();
         try {
-            this.closed = true;
+            super.close(); // Use base class closed field
             this.notEmpty.signalAll();
             this.notFull.signalAll();
         } finally {
-            lock.unlock();
+            bufferLock.unlock();
         }
     }
 

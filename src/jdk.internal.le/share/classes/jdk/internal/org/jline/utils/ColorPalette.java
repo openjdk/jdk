@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -17,7 +17,35 @@ import java.util.List;
 import jdk.internal.org.jline.terminal.Terminal;
 
 /**
- * Color palette
+ * Color palette for terminal color management and conversion.
+ *
+ * <p>
+ * The ColorPalette class provides functionality for managing terminal colors,
+ * including color conversion between different formats (RGB, ANSI, indexed),
+ * color distance calculation, and color remapping. It helps bridge the gap
+ * between the different color capabilities of various terminals.
+ * </p>
+ *
+ * <p>
+ * This class supports various terminal color modes:
+ * </p>
+ * <ul>
+ *   <li>8-color mode (standard ANSI colors)</li>
+ *   <li>16-color mode (standard ANSI colors + bright variants)</li>
+ *   <li>256-color mode (indexed colors)</li>
+ *   <li>24-bit true color mode (RGB colors)</li>
+ * </ul>
+ *
+ * <p>
+ * The palette can be used to convert between these color modes, find the closest
+ * matching color in a more limited palette, and even modify the terminal's color
+ * palette on supported terminals.
+ * </p>
+ *
+ * <p>
+ * This class is used internally by JLine components to handle color output across
+ * different terminal types with varying color support capabilities.
+ * </p>
  */
 public class ColorPalette {
 
@@ -264,6 +292,28 @@ public class ColorPalette {
         while (max > 0 && palette[--max] == 0)
             ;
         return Arrays.copyOfRange(palette, 0, max + 1);
+    }
+
+    /**
+     * Get the terminal's default foreground color.
+     * @return the RGB value of the default foreground color, or -1 if not available
+     */
+    public int getDefaultForeground() {
+        if (terminal == null) {
+            return -1;
+        }
+        return terminal.getDefaultForegroundColor();
+    }
+
+    /**
+     * Get the terminal's default background color.
+     * @return the RGB value of the default background color, or -1 if not available
+     */
+    public int getDefaultBackground() {
+        if (terminal == null) {
+            return -1;
+        }
+        return terminal.getDefaultBackgroundColor();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -34,10 +34,54 @@ import jdk.internal.org.jline.utils.OSUtils;
 
 import static jdk.internal.org.jline.utils.ExecHelper.exec;
 
+/**
+ * A pseudoterminal implementation that uses external commands to interact with the terminal.
+ *
+ * <p>
+ * The ExecPty class provides a Pty implementation that uses external commands (such as
+ * stty, tput, etc.) to interact with the terminal. This approach allows JLine to work
+ * in environments where native libraries are not available or cannot be used, by relying
+ * on standard command-line utilities that are typically available on Unix-like systems.
+ * </p>
+ *
+ * <p>
+ * This implementation executes external commands to perform operations such as:
+ * </p>
+ * <ul>
+ *   <li>Getting and setting terminal attributes</li>
+ *   <li>Getting and setting terminal size</li>
+ *   <li>Determining the current terminal device</li>
+ * </ul>
+ *
+ * <p>
+ * The ExecPty is typically used as a fallback when more direct methods of terminal
+ * interaction (such as JNI or JNA) are not available. While it provides good compatibility,
+ * it may have higher overhead due to the need to spawn external processes for many operations.
+ * </p>
+ *
+ * @see org.jline.terminal.impl.AbstractPty
+ * @see org.jline.terminal.spi.Pty
+ */
 public class ExecPty extends AbstractPty implements Pty {
 
     private final String name;
 
+    /**
+     * Creates an ExecPty instance for the current terminal.
+     *
+     * <p>
+     * This method creates an ExecPty instance for the current terminal by executing
+     * the 'tty' command to determine the terminal device name. It is used to obtain
+     * a Pty object that can interact with the current terminal using external commands.
+     * </p>
+     *
+     * @param provider the terminal provider that will own this Pty
+     * @param systemStream the system stream (must be Output or Error) associated with this Pty
+     * @return a new ExecPty instance for the current terminal
+     * @throws IOException if the current terminal is not a TTY or if an error occurs
+     *                     while executing the 'tty' command
+     * @throws IllegalArgumentException if systemStream is not Output or Error
+     */
     public static Pty current(TerminalProvider provider, SystemStream systemStream) throws IOException {
         try {
             String result = exec(true, OSUtils.TTY_COMMAND);
@@ -50,14 +94,49 @@ public class ExecPty extends AbstractPty implements Pty {
         }
     }
 
+    /**
+     * Creates a new ExecPty instance.
+     *
+     * <p>
+     * This constructor creates a new ExecPty instance with the specified provider,
+     * system stream, and terminal device name. It is protected because instances should
+     * typically be created using the {@link #current(TerminalProvider, SystemStream)} method.
+     * </p>
+     *
+     * @param provider the terminal provider that will own this Pty
+     * @param systemStream the system stream associated with this Pty
+     * @param name the name of the terminal device (e.g., "/dev/tty")
+     */
     protected ExecPty(TerminalProvider provider, SystemStream systemStream, String name) {
         super(provider, systemStream);
         this.name = name;
     }
 
+    /**
+     * Closes this Pty.
+     *
+     * <p>
+     * This implementation does nothing, as there are no resources to release.
+     * The terminal device is not actually opened by this class, so it does not
+     * need to be closed.
+     * </p>
+     *
+     * @throws IOException if an I/O error occurs (never thrown by this implementation)
+     */
     @Override
     public void close() throws IOException {}
 
+    /**
+     * Returns the name of the terminal device.
+     *
+     * <p>
+     * This method returns the name of the terminal device associated with this Pty,
+     * which was determined when the Pty was created. This is typically a device path
+     * such as "/dev/tty" or "/dev/pts/0".
+     * </p>
+     *
+     * @return the name of the terminal device
+     */
     public String getName() {
         return name;
     }

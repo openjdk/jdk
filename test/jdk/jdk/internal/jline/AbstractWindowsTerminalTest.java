@@ -82,6 +82,16 @@ public class AbstractWindowsTerminalTest {
             public Size getSize() {
                 throw new UnsupportedOperationException("unexpected.");
             }
+
+            @Override
+            public int getDefaultForegroundColor() {
+                throw new UnsupportedOperationException("unexpected.");
+            }
+
+            @Override
+            public int getDefaultBackgroundColor() {
+                throw new UnsupportedOperationException("unexpected.");
+            }
         };
         t.processInputChar(' ');
         if (t.reader().read() != ' ') {

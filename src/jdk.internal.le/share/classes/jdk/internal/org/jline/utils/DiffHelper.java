@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -12,11 +12,43 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Class containing the diff method.
- * This diff is ANSI aware and will correctly handle text attributes
- * so that any text in a Diff object is a valid ansi string.
+ * Utility class for computing differences between strings with ANSI attribute awareness.
+ *
+ * <p>
+ * The DiffHelper class provides methods for computing the differences between two strings
+ * while being aware of ANSI escape sequences and text attributes. This allows for proper
+ * diffing of styled text without breaking the ANSI escape sequences.
+ * </p>
+ *
+ * <p>
+ * Unlike standard diff algorithms, this implementation ensures that any text in a Diff
+ * object is a valid ANSI string with properly balanced escape sequences. This is particularly
+ * important when diffing AttributedStrings or other text with embedded styling information.
+ * </p>
+ *
+ * <p>
+ * The diff algorithm identifies three types of operations:
+ * </p>
+ * <ul>
+ *   <li>DELETE - Text that exists in the first string but not in the second</li>
+ *   <li>INSERT - Text that exists in the second string but not in the first</li>
+ *   <li>EQUAL - Text that is common to both strings</li>
+ * </ul>
+ *
+ * <p>
+ * This class is particularly useful for implementing features like change highlighting
+ * in terminal applications, where differences between versions of text need to be
+ * displayed with proper styling.
+ * </p>
  */
 public class DiffHelper {
+
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private DiffHelper() {
+        // Utility class
+    }
 
     /**
      * The data structure representing a diff is a Linked list of Diff objects:

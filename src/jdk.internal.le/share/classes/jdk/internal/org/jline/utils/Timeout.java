@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -9,7 +9,42 @@
 package jdk.internal.org.jline.utils;
 
 /**
- * Helper class ti use during I/O operations with an eventual timeout.
+ * Helper class for managing timeouts during I/O operations.
+ *
+ * <p>
+ * The Timeout class provides a simple mechanism for tracking timeouts during I/O
+ * operations. It helps with implementing operations that should complete within
+ * a specified time limit, such as non-blocking reads with timeouts.
+ * </p>
+ *
+ * <p>
+ * This class supports both finite timeouts (specified in milliseconds) and infinite
+ * timeouts (indicated by zero or negative timeout values). It provides methods for
+ * starting the timeout countdown, checking if the timeout has expired, and calculating
+ * the remaining time.
+ * </p>
+ *
+ * <p>
+ * The class is designed to be used in scenarios where multiple I/O operations need
+ * to share a single timeout, ensuring that the total time for all operations does
+ * not exceed the specified limit.
+ * </p>
+ *
+ * <p>Example usage:</p>
+ * <pre>
+ * // Create a timeout of 5 seconds
+ * Timeout timeout = new Timeout(5000);
+ *
+ * // Start the timeout countdown
+ * timeout.start();
+ *
+ * // Perform I/O operations, checking for timeout
+ * while (!timeout.isExpired() &amp;&amp; !operationComplete()) {
+ *     // Perform a partial operation with the remaining time
+ *     long remaining = timeout.remaining();
+ *     performPartialOperation(remaining);
+ * }
+ * </pre>
  */
 public class Timeout {
 

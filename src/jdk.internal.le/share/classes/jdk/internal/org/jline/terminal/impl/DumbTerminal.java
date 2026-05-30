@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -25,6 +25,41 @@ import jdk.internal.org.jline.utils.NonBlocking;
 import jdk.internal.org.jline.utils.NonBlockingInputStream;
 import jdk.internal.org.jline.utils.NonBlockingReader;
 
+/**
+ * A minimal terminal implementation with limited capabilities.
+ *
+ * <p>
+ * The DumbTerminal class provides a basic terminal implementation that works in
+ * environments where a full-featured terminal is not available or not supported.
+ * It has minimal capabilities and does not support features like cursor movement,
+ * color output, or advanced input processing.
+ * </p>
+ *
+ * <p>
+ * This terminal type is often used as a fallback when more capable terminal
+ * implementations cannot be created, such as in non-interactive environments,
+ * redirected I/O scenarios, or when running inside IDEs or other tools that
+ * don't provide full terminal emulation.
+ * </p>
+ *
+ * <p>
+ * The DumbTerminal supports two variants:
+ * </p>
+ * <ul>
+ *   <li>Standard dumb terminal ({@link org.jline.terminal.Terminal#TYPE_DUMB}) - No color support</li>
+ *   <li>Color dumb terminal ({@link org.jline.terminal.Terminal#TYPE_DUMB_COLOR}) - Basic color support</li>
+ * </ul>
+ *
+ * <p>
+ * While limited in capabilities, the DumbTerminal still provides the core terminal
+ * functionality such as reading input and writing output, making it suitable for
+ * basic console applications that don't require advanced terminal features.
+ * </p>
+ *
+ * @see org.jline.terminal.Terminal#TYPE_DUMB
+ * @see org.jline.terminal.Terminal#TYPE_DUMB_COLOR
+ * @see org.jline.terminal.impl.AbstractTerminal
+ */
 public class DumbTerminal extends AbstractTerminal {
 
     private final TerminalProvider provider;
@@ -58,7 +93,24 @@ public class DumbTerminal extends AbstractTerminal {
             SignalHandler signalHandler,
             Function<InputStream, InputStream> inputStreamWrapper)
             throws IOException {
-        super(name, type, encoding, signalHandler);
+        this(provider, systemStream, name, type, in, out, encoding, encoding, encoding, signalHandler, inputStreamWrapper);
+    }
+
+    @SuppressWarnings("this-escape")
+    public DumbTerminal(
+            TerminalProvider provider,
+            SystemStream systemStream,
+            String name,
+            String type,
+            InputStream in,
+            OutputStream out,
+            Charset encoding,
+            Charset inputEncoding,
+            Charset outputEncoding,
+            SignalHandler signalHandler,
+            Function<InputStream, InputStream> inputStreamWrapper)
+            throws IOException {
+        super(name, type, encoding, inputEncoding, outputEncoding, signalHandler);
         this.provider = provider;
         this.systemStream = systemStream;
         NonBlockingInputStream nbis = NonBlocking.nonBlocking(getName(), inputStreamWrapper.apply(in));
@@ -107,10 +159,21 @@ public class DumbTerminal extends AbstractTerminal {
                     return c;
                 }
             }
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                nbis.close();
+            }
+
+            @Override
+            public void shutdown() {
+                nbis.shutdown();
+            }
         };
         this.output = out;
-        this.reader = NonBlocking.nonBlocking(getName(), input, encoding());
-        this.writer = new PrintWriter(new OutputStreamWriter(output, encoding()));
+        this.reader = NonBlocking.nonBlocking(getName(), input, inputEncoding());
+        this.writer = new PrintWriter(new OutputStreamWriter(output, outputEncoding()));
         this.attributes = new Attributes();
         this.attributes.setControlChar(ControlChar.VERASE, (char) 127);
         this.attributes.setControlChar(ControlChar.VWERASE, (char) 23);
@@ -121,39 +184,61 @@ public class DumbTerminal extends AbstractTerminal {
     }
 
     public NonBlockingReader reader() {
+        checkClosed();
         return reader;
     }
 
     public PrintWriter writer() {
+        checkClosed();
         return writer;
     }
 
     @Override
     public InputStream input() {
+        checkClosed();
         return input;
     }
 
     @Override
     public OutputStream output() {
+        checkClosed();
         return output;
     }
 
     public Attributes getAttributes() {
+        checkClosed();
         return new Attributes(attributes);
     }
 
     public void setAttributes(Attributes attr) {
+        checkClosed();
         attributes.copy(attr);
     }
 
     public Size getSize() {
+        checkClosed();
         Size sz = new Size();
         sz.copy(size);
         return sz;
     }
 
     public void setSize(Size sz) {
+        checkClosed();
         size.copy(sz);
+    }
+
+    @Override
+    protected void doClose() throws IOException {
+        super.doClose();
+        try {
+            reader.close();
+        } finally {
+            try {
+                writer.flush();
+            } finally {
+                writer.close();
+            }
+        }
     }
 
     @Override

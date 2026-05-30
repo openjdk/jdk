@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -30,6 +30,32 @@ import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_FILE_DESCRIPT
 import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_FILE_DESCRIPTOR_CREATION_MODE_REFLECTION;
 import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_NON_BLOCKING_READS;
 
+/**
+ * Base implementation of the Pty interface.
+ *
+ * <p>
+ * The AbstractPty class provides a common foundation for pseudoterminal (PTY)
+ * implementations. It handles common functionality such as system stream management
+ * and provider access, while leaving platform-specific PTY operations to be
+ * implemented by concrete subclasses.
+ * </p>
+ *
+ * <p>
+ * This class serves as the base for various PTY implementations, including:
+ * </p>
+ * <ul>
+ *   <li>Native PTY implementations (JNI, JNA, FFM) for direct access to system PTYs</li>
+ *   <li>Exec PTY implementation that uses external commands</li>
+ * </ul>
+ *
+ * <p>
+ * The AbstractPty maintains information about the associated system stream and
+ * terminal provider, which are common to all PTY implementations regardless of
+ * the underlying mechanism used to interact with the terminal.
+ * </p>
+ *
+ * @see org.jline.terminal.spi.Pty
+ */
 public abstract class AbstractPty implements Pty {
 
     protected final TerminalProvider provider;
@@ -110,6 +136,7 @@ public abstract class AbstractPty implements Pty {
 
         @Override
         public int read(long timeout, boolean isPeek) throws IOException {
+            checkClosed();
             checkInterrupted();
             if (c != 0) {
                 int r = c;
@@ -192,7 +219,7 @@ public abstract class AbstractPty implements Pty {
 
     /*
      * Class that could be used on OpenJDK 17.  However, it requires the following JVM option
-     *   --add-exports java.base/jdk.internal.access=ALL-UNNAMED
+     *   --add-exports java.base/jdk.internal.access=org.jline.terminal
      * so the benefit does not seem important enough to warrant the problems caused
      * by access the jdk.internal.access package at compile time, which itself requires
      * custom compiler options and a different maven module, or at least a different compile
@@ -217,7 +244,7 @@ public abstract class AbstractPty implements Pty {
     /**
      * Reflection based file descriptor creator.
      * This requires the following option
-     *   --add-opens java.base/java.io=ALL-UNNAMED
+     *   --add-opens java.base/java.io=org.jline.terminal
      */
     static class ReflectionFileDescriptorCreator implements FileDescriptorCreator {
         private final Field fileDescriptorField;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -11,8 +11,22 @@ package jdk.internal.org.jline.reader.impl;
 import java.util.function.Consumer;
 
 /**
- * Simple undo tree.
- * Note that the first added state can't be undone
+ * Provides undo/redo functionality for the LineReader.
+ * <p>
+ * This class implements a simple undo tree that allows tracking and restoring
+ * previous states of an object (typically the line buffer). It maintains a linear
+ * history of states that can be navigated with undo and redo operations.
+ * <p>
+ * Key features:
+ * <ul>
+ *   <li>Tracks a sequence of states that can be undone and redone</li>
+ *   <li>Uses a consumer to apply state changes when undoing or redoing</li>
+ *   <li>Maintains the current position in the undo history</li>
+ * </ul>
+ * <p>
+ * Note that the first added state (the initial state) cannot be undone.
+ *
+ * @param <T> the type of state object being tracked
  */
 public class UndoTree<T> {
 

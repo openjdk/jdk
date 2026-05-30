@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -14,11 +14,27 @@ import java.util.Objects;
 import jdk.internal.org.jline.reader.Buffer;
 
 /**
- * A holder for a {@link StringBuilder} that also contains the current cursor position.
+ * Default implementation of the {@link Buffer} interface.
+ * <p>
+ * This class provides a mutable buffer for storing and manipulating the text being
+ * edited in the LineReader. It maintains the text content and the current cursor
+ * position, and provides methods for text insertion, deletion, and cursor movement.
+ * <p>
+ * Key features include:
+ * <ul>
+ *   <li>Efficient text insertion and deletion with a gap buffer implementation</li>
+ *   <li>Support for Unicode characters beyond the Basic Multilingual Plane</li>
+ *   <li>Cursor movement in both character and line coordinates</li>
+ *   <li>Copy and paste operations</li>
+ *   <li>Secure clearing of buffer contents</li>
+ * </ul>
+ * <p>
+ * The buffer uses a gap buffer data structure for efficient editing operations,
+ * which provides good performance for the typical editing patterns in a line editor.
  *
- * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.0
+ * @see Buffer
+ * @see org.jline.reader.LineReader#getBuffer()
  */
 public class BufferImpl implements Buffer {
     private int cursor = 0;
@@ -27,10 +43,18 @@ public class BufferImpl implements Buffer {
     private int g0;
     private int g1;
 
+    /**
+     * Creates a new buffer with the default size (64).
+     */
     public BufferImpl() {
         this(64);
     }
 
+    /**
+     * Creates a new buffer with the specified size.
+     *
+     * @param size the initial size of the buffer
+     */
     public BufferImpl(int size) {
         buffer = new int[size];
         g0 = 0;

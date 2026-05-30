@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -14,9 +14,27 @@ import java.lang.reflect.Proxy;
 import java.util.Objects;
 
 /**
- * Signals helpers.
+ * Signal handling utilities for terminal applications.
  *
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * <p>
+ * The Signals class provides utilities for registering and handling system signals
+ * in a platform-independent way. It allows terminal applications to respond to
+ * signals such as SIGINT (Ctrl+C), SIGTSTP (Ctrl+Z), and others, without having
+ * to use platform-specific code.
+ * </p>
+ *
+ * <p>
+ * This class uses reflection to access the underlying signal handling mechanisms
+ * of the JVM, which may vary depending on the platform and JVM implementation.
+ * It provides a consistent API for signal handling across different environments.
+ * </p>
+ *
+ * <p>
+ * Signal handling is particularly important for terminal applications that need
+ * to respond to user interrupts or that need to perform cleanup operations when
+ * the application is terminated.
+ * </p>
+ *
  * @since 3.0
  */
 public final class Signals {
@@ -24,11 +42,41 @@ public final class Signals {
     private Signals() {}
 
     /**
+     * Registers a handler for the specified signal.
      *
-     * @param name the signal, CONT, STOP, etc...
-     * @param handler the callback to run
+     * <p>
+     * This method registers a handler for the specified signal. The handler will be
+     * called when the signal is received. The method returns an object that can be
+     * used to unregister the handler later.
+     * </p>
      *
-     * @return an object that needs to be passed to the {@link #unregister(String, Object)}
+     * <p>
+     * Signal names are platform-dependent, but common signals include:
+     * </p>
+     * <ul>
+     *   <li>INT - Interrupt signal (typically Ctrl+C)</li>
+     *   <li>TERM - Termination signal</li>
+     *   <li>HUP - Hangup signal</li>
+     *   <li>CONT - Continue signal</li>
+     *   <li>STOP - Stop signal (typically Ctrl+Z)</li>
+     *   <li>WINCH - Window change signal</li>
+     * </ul>
+     *
+     * <p>Example usage:</p>
+     * <pre>
+     * Object handle = Signals.register("INT", () -> {
+     *     System.out.println("Caught SIGINT");
+     *     // Perform cleanup
+     * });
+     *
+     * // Later, when no longer needed
+     * Signals.unregister("INT", handle);
+     * </pre>
+     *
+     * @param name the signal name (e.g., "INT", "TERM", "HUP")
+     * @param handler the callback to run when the signal is received
+     * @return an object that can be used to unregister the handler
+     * @see #unregister(String, Object)
      *         method to unregister the handler
      */
     public static Object register(String name, Runnable handler) {

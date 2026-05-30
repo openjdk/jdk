@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -19,6 +19,42 @@ import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.impl.AbstractTerminal;
 import jdk.internal.org.jline.utils.InfoCmp.Capability;
 
+/**
+ * Manages a status bar at the bottom of the terminal.
+ *
+ * <p>
+ * The Status class provides functionality for displaying and managing a status bar
+ * at the bottom of the terminal. It allows applications to show persistent status
+ * information to the user while still using the rest of the terminal for normal
+ * input and output.
+ * </p>
+ *
+ * <p>
+ * Key features include:
+ * </p>
+ * <ul>
+ *   <li>Support for multiple status lines</li>
+ *   <li>Styled text with ANSI colors and attributes</li>
+ *   <li>Automatic resizing based on terminal dimensions</li>
+ *   <li>Optional border between main display and status area</li>
+ *   <li>Ability to temporarily suspend the status display</li>
+ * </ul>
+ *
+ * <p>
+ * The status bar is particularly useful for displaying persistent information such as:
+ * </p>
+ * <ul>
+ *   <li>Application mode or state</li>
+ *   <li>Current file or context</li>
+ *   <li>Key bindings or available commands</li>
+ *   <li>Error messages or notifications</li>
+ * </ul>
+ *
+ * <p>
+ * This class is used by various JLine components to provide status information
+ * to the user without disrupting the main terminal interaction.
+ * </p>
+ */
 public class Status {
 
     protected final Terminal terminal;
@@ -63,10 +99,12 @@ public class Status {
     }
 
     public void close() {
-        terminal.puts(Capability.save_cursor);
-        terminal.puts(Capability.change_scroll_region, 0, display.rows - 1);
-        terminal.puts(Capability.restore_cursor);
-        terminal.flush();
+        if (supported) {
+            terminal.puts(Capability.save_cursor);
+            terminal.puts(Capability.change_scroll_region, 0, display.rows - 1);
+            terminal.puts(Capability.restore_cursor);
+            terminal.flush();
+        }
     }
 
     public void setBorder(boolean border) {
@@ -78,7 +116,58 @@ public class Status {
     }
 
     public void resize(Size size) {
-        display.resize(size.getRows(), size.getColumns());
+        if (supported && isValid(size)) {
+            int oldRows = display.rows;
+            int oldColumns = display.columns;
+
+            display.resize(size.getRows(), size.getColumns());
+
+            // Only process if the character grid size actually changed
+            if (display.rows != oldRows || display.columns != oldColumns) {
+                int oldScrollRegion = scrollRegion;
+                display.reset();
+                int newRows = display.rows;
+
+                // Compute the scroll region that update() will expect, accounting
+                // for the current status lines and border. This prevents update()
+                // from entering the "growing" branch and scrolling content up
+                // unnecessarily — the status bar was already present before resize.
+                int effectiveLines = size(lines);
+                scrollRegion = Math.max(0, newRows - 1 - effectiveLines);
+
+                // Use a single save/restore to preserve cursor position across
+                // both cleanup and scroll region changes. change_scroll_region
+                // moves cursor to (0,0) on most terminals (DECSTBM spec).
+                terminal.puts(Capability.save_cursor);
+
+                // Clean up old status bar remnants:
+                // - When width decreases, old padded status text wraps to extra
+                //   lines above the status area during terminal reflow.
+                // - When height increases, old status lines remain at old position.
+                int clearStart = scrollRegion + 1;
+                if (newRows > oldRows && oldScrollRegion < oldRows - 1) {
+                    clearStart = Math.min(clearStart, oldScrollRegion + 1);
+                }
+                if (effectiveLines > 0) {
+                    // Account for wrapped status lines when width decreased
+                    if (display.columns < oldColumns) {
+                        int wrappedPerLine = (oldColumns + display.columns - 1) / display.columns;
+                        int extraRows = (wrappedPerLine - 1) * effectiveLines;
+                        clearStart = Math.max(0, clearStart - extraRows);
+                    }
+                    for (int row = clearStart; row < newRows; row++) {
+                        terminal.puts(Capability.cursor_address, row, 0);
+                        terminal.puts(Capability.clr_eol);
+                    }
+                }
+
+                // Set the scroll region to match what update() expects.
+                // The terminal emulator resets it to full screen on resize,
+                // so we must re-establish the restricted region here.
+                terminal.puts(Capability.change_scroll_region, 0, scrollRegion);
+                terminal.puts(Capability.restore_cursor);
+            }
+        }
     }
 
     public void reset() {
@@ -130,15 +219,15 @@ public class Status {
         // trim or complete lines to the full width
         for (int i = 0; i < lines.size(); i++) {
             AttributedString str = lines.get(i);
-            if (str.columnLength() > columns) {
+            if (str.columnLength(terminal) > columns) {
                 str = new AttributedStringBuilder(columns)
-                        .append(lines.get(i).columnSubSequence(0, columns - ellipsis.columnLength()))
+                        .append(lines.get(i).columnSubSequence(0, columns - ellipsis.columnLength(terminal), terminal))
                         .append(ellipsis)
                         .toAttributedString();
-            } else if (str.columnLength() < columns) {
+            } else if (str.columnLength(terminal) < columns) {
                 str = new AttributedStringBuilder(columns)
                         .append(str)
-                        .append(' ', columns - str.columnLength())
+                        .append(' ', columns - str.columnLength(terminal))
                         .toAttributedString();
             }
             lines.set(i, str);
@@ -191,7 +280,7 @@ public class Status {
 
     private AttributedString getBorderString(int columns) {
         if (borderString == null || borderString.length() != columns) {
-            char borderChar = '\u2700';
+            char borderChar = '\u2500';
             AttributedStringBuilder bb = new AttributedStringBuilder();
             for (int i = 0; i < columns; i++) {
                 bb.append(borderChar);
@@ -253,6 +342,9 @@ public class Status {
             super.update(newLines, targetCursorPos, flush);
             if (cursorPos != -1) {
                 terminal.puts(Capability.restore_cursor);
+                if (flush) {
+                    terminal.flush();
+                }
             }
         }
 

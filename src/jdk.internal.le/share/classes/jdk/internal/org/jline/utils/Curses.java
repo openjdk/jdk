@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -15,9 +15,36 @@ import java.io.StringWriter;
 import java.util.ArrayDeque;
 
 /**
- * Curses helper methods.
+ * Utility class for terminal cursor and screen manipulation using ANSI escape sequences.
  *
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * <p>
+ * The Curses class provides methods for manipulating the terminal display using
+ * ANSI escape sequences and terminal capabilities. It includes functionality for
+ * cursor movement, screen clearing, text attributes, and other terminal operations.
+ * </p>
+ *
+ * <p>
+ * This class is named after the curses library commonly used in Unix-like systems
+ * for terminal control, though it provides a simplified subset of functionality.
+ * It handles the complexities of formatting and interpreting terminal capability
+ * strings, allowing for portable terminal manipulation across different terminal types.
+ * </p>
+ *
+ * <p>
+ * Key features include:
+ * </p>
+ * <ul>
+ *   <li>Cursor positioning and movement</li>
+ *   <li>Screen and line clearing</li>
+ *   <li>Text attribute control (bold, underline, etc.)</li>
+ *   <li>Color manipulation</li>
+ *   <li>Terminal capability string parsing and execution</li>
+ * </ul>
+ *
+ * <p>
+ * This class is used internally by JLine components to perform terminal operations
+ * in a consistent way across different terminal types and platforms.
+ * </p>
  */
 public final class Curses {
 
@@ -94,9 +121,9 @@ public final class Curses {
                             case 'n':
                                 out.append('\n');
                                 break;
-                                //                        case 'l':
-                                //                            rawPrint('\l');
-                                //                            break;
+                            //                        case 'l':
+                            //                            rawPrint('\l');
+                            //                            break;
                             case 'r':
                                 if (exec) {
                                     out.append('\r');

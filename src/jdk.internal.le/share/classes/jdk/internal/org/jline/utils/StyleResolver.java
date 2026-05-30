@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -19,7 +19,35 @@ import static jdk.internal.org.jline.utils.AttributedStyle.*;
 // TODO: document style specification
 
 /**
- * Resolves named (or source-referenced) {@link AttributedStyle}.
+ * Resolves named styles and style expressions into AttributedStyle objects.
+ *
+ * <p>
+ * The StyleResolver class provides functionality for resolving style specifications
+ * into AttributedStyle objects. It supports a rich expression language for defining
+ * styles, including named colors, RGB values, and various text attributes.
+ * </p>
+ *
+ * <p>
+ * Style specifications can include:
+ * </p>
+ * <ul>
+ *   <li>Named colors (e.g., "red", "blue", "bright-green")</li>
+ *   <li>RGB color values (e.g., "#ff0000", "rgb:ff/00/00")</li>
+ *   <li>Text attributes (e.g., "bold", "underline", "italic")</li>
+ *   <li>Compound styles with foreground and background (e.g., "red,bold,bg:blue")</li>
+ *   <li>References to styles defined elsewhere (e.g., "${named.style}")</li>
+ * </ul>
+ *
+ * <p>
+ * This class is used throughout JLine for resolving style specifications in configuration
+ * files, command-line options, and programmatic style definitions. It provides a consistent
+ * way to define and apply styles across different components.
+ * </p>
+ *
+ * <p>
+ * The resolver can be configured with a source function that looks up named styles,
+ * allowing for hierarchical style definitions and style inheritance.
+ * </p>
  *
  * @since 3.6
  */
@@ -308,7 +336,7 @@ public class StyleResolver {
         }
     }
 
-    // TODO: consider simplify and always using StyleColor, for now for compat with other bits leaving syntax complexity
+    // TODO: consider simplify color handling, for now for compat with other bits leaving syntax complexity
 
     /**
      * Apply color styles specification.
