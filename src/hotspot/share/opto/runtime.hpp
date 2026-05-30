@@ -125,7 +125,6 @@ class OptoRuntime : public AllStatic {
   // static TypeFunc* data members
   static const TypeFunc* _new_instance_Type;
   static const TypeFunc* _new_array_Type;
-  static const TypeFunc* _multianewarray2_Type;
   static const TypeFunc* _multianewarray3_Type;
   static const TypeFunc* _multianewarray4_Type;
   static const TypeFunc* _multianewarray5_Type;
@@ -218,7 +217,6 @@ class OptoRuntime : public AllStatic {
 
   // Allocate storage for a multi-dimensional arrays
   // Note: needs to be fixed for arbitrary number of dimensions
-  static void multianewarray2_C(Klass* klass, int len1, int len2, JavaThread* current);
   static void multianewarray3_C(Klass* klass, int len1, int len2, int len3, JavaThread* current);
   static void multianewarray4_C(Klass* klass, int len1, int len2, int len3, int len4, JavaThread* current);
   static void multianewarray5_C(Klass* klass, int len1, int len2, int len3, int len4, int len5, JavaThread* current);
@@ -283,7 +281,6 @@ private:
   static address new_instance_Java()                     { return _new_instance_Java; }
   static address new_array_Java()                        { return _new_array_Java; }
   static address new_array_nozero_Java()                 { return _new_array_nozero_Java; }
-  static address multianewarray2_Java()                  { return _multianewarray2_Java; }
   static address multianewarray3_Java()                  { return _multianewarray3_Java; }
   static address multianewarray4_Java()                  { return _multianewarray4_Java; }
   static address multianewarray5_Java()                  { return _multianewarray5_Java; }
@@ -329,11 +326,6 @@ private:
   }
 
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
-
-  static inline const TypeFunc* multianewarray2_Type() {
-    assert(_multianewarray2_Type != nullptr, "should be initialized");
-    return _multianewarray2_Type;
-  }
 
   static inline const TypeFunc* multianewarray3_Type() {
     assert(_multianewarray3_Type != nullptr, "should be initialized");

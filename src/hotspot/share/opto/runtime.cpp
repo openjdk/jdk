@@ -172,7 +172,6 @@ bool OptoRuntime::generate(ciEnv* env) {
 
 const TypeFunc* OptoRuntime::_new_instance_Type                   = nullptr;
 const TypeFunc* OptoRuntime::_new_array_Type                      = nullptr;
-const TypeFunc* OptoRuntime::_multianewarray2_Type                = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray3_Type                = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray4_Type                = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray5_Type                = nullptr;
@@ -425,22 +424,6 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
 JRT_END
 
 // Note: multianewarray for one dimension is handled inline by GraphKit::new_array.
-
-// multianewarray for 2 dimensions
-JRT_ENTRY(void, OptoRuntime::multianewarray2_C(Klass* elem_type, int len1, int len2, JavaThread* current))
-#ifndef PRODUCT
-  SharedRuntime::_multi2_ctr++;                // multianewarray for 1 dimension
-#endif
-  assert(check_compiled_frame(current), "incorrect caller");
-  assert(elem_type->is_klass(), "not a class");
-  jint dims[2];
-  dims[0] = len1;
-  dims[1] = len2;
-  Handle holder(current, elem_type->klass_holder()); // keep the klass alive
-  oop obj = ArrayKlass::cast(elem_type)->multi_allocate(2, dims, THREAD);
-  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result_oop(obj);
-JRT_END
 
 // multianewarray for 3 dimensions
 JRT_ENTRY(void, OptoRuntime::multianewarray3_C(Klass* elem_type, int len1, int len2, int len3, JavaThread* current))
@@ -2289,7 +2272,6 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
 void OptoRuntime::initialize_types() {
   _new_instance_Type                  = make_new_instance_Type();
   _new_array_Type                     = make_new_array_Type();
-  _multianewarray2_Type               = multianewarray_Type(2);
   _multianewarray3_Type               = multianewarray_Type(3);
   _multianewarray4_Type               = multianewarray_Type(4);
   _multianewarray5_Type               = multianewarray_Type(5);

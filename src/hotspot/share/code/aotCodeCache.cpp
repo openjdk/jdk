@@ -2065,7 +2065,6 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::new_instance_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::new_array_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::new_array_nozero_C);
-    ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarray2_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarray3_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarray4_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarray5_C);

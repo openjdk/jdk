@@ -550,6 +550,7 @@ class Parse : public GraphKit {
   void do_anewarray();
   void do_multianewarray();
   Node* expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, int ndimensions, int nargs);
+  Node* multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* length2);
 
   // implementation of jsr/ret
   void do_jsr();
