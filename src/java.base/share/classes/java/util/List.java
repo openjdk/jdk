@@ -47,11 +47,11 @@ import java.util.function.UnaryOperator;
  *
  * The {@code List} interface places additional stipulations, beyond those
  * specified in the {@code Collection} interface, on the contracts of the
- * {@code iterator}, {@code add}, {@code remove}, {@code equals}, and
- * {@code hashCode} methods.  Declarations for other inherited methods are
- * also included here for convenience.<p>
+ * {@code iterator}, {@code add}, {@code remove}, {@code removeAtIndex},
+ * {@code equals}, and {@code hashCode} methods.  Declarations for other
+ * inherited methods are also included here for convenience.<p>
  *
- * The {@code List} interface provides four methods for positional (indexed)
+ * The {@code List} interface provides five methods for positional (indexed)
  * access to list elements.  Lists (like Java arrays) are zero based.  Note
  * that these operations may execute in time proportional to the index value
  * for some implementations (the {@code LinkedList} class, for
@@ -623,6 +623,10 @@ public interface List<E> extends SequencedCollection<E> {
      * operation).  Shifts any subsequent elements to the left (subtracts one
      * from their indices).  Returns the element that was removed from the
      * list.
+     * <p>
+     * When removing by index, prefer {@linkplain #removeAt(int)} over
+     * this method, especially for {@code List<Integer>}, to avoid confusion
+     * with {@linkplain #remove(Object)}.
      *
      * @param index the index of the element to be removed
      * @return the element previously at the specified position
@@ -633,6 +637,37 @@ public interface List<E> extends SequencedCollection<E> {
      */
     E remove(int index);
 
+    /**
+     * Removes the element at the specified position in this list (optional
+     * operation).  Shifts any subsequent elements to the left (subtracts one
+     * from their indices).  Returns the element that was removed from the
+     * list.
+     * <p>
+     * This method is preferred over {@linkplain #remove(int)} when removing
+     * by index, especially for {@code List<Integer>}, to avoid confusion
+     * with {@linkplain #remove(Object)}.
+     *
+     * @implSpec
+     * The default implementation invokes {@link #remove(int) remove(index)}.
+     *
+     * @apiNote
+     * The {@linkplain #removeAt(int)} method is a synonym for
+     * {@linkplain remove(int)}. They have exactly the same semantics. Given that
+     * the default implementation of {@linkplain #removeAt(int)} simply calls
+     * {@linkplain #remove(int)}, it is usually unnecessary for subclasses to override
+     * the {@linkplain #removeAt(int)} method.
+     *
+     * @param index the index of the element to be removed
+     * @return the element previously at the specified position
+     * @throws UnsupportedOperationException if the {@code remove} operation
+     *         is not supported by this list
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *         ({@code index < 0 || index >= size()})
+     * @since 27
+     */
+    default E removeAt(int index) {
+        return remove(index);
+    }
 
     // Search Operations
 

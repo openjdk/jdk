@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -273,6 +274,47 @@ public class ListDefaults {
         final AtomicBoolean first = new AtomicBoolean(true);
         list.removeIf(x -> first.getAndSet(false));
         CollectionAsserts.assertContents(original.subList(offset.getAndIncrement(), original.size()), list);
+    }
+
+    @Test
+    public void testRemoveAt() {
+        final class RemoveTrackingList extends AbstractList<Integer> {
+            boolean removeCalled;
+            final List<Integer> delegate = new ArrayList<>(List.of(10, 20, 30));
+
+            @Override public Integer get(int index) { return delegate.get(index); }
+            @Override public int     size() { return delegate.size(); }
+            @Override public Integer remove(int index) {
+                removeCalled = true;
+                return delegate.remove(index);
+            }
+        }
+
+        var trackingList = new RemoveTrackingList();
+        assertEquals(trackingList.removeAt(1), Integer.valueOf(20));
+        assertTrue(trackingList.removeCalled);
+        assertEquals(trackingList, List.of(10, 30));
+
+        // The following two sub-tests show how to avoid picking up the wrong
+        // overload.
+
+        List<Integer> byIndex = new ArrayList<>(List.of(1, 2, 1));
+        assertEquals(byIndex.removeAt(1), Integer.valueOf(2));
+        assertEquals(byIndex, List.of(1, 1));
+
+        List<Integer> byValue = new ArrayList<>(List.of(1, 2, 1));
+        assertTrue(byValue.remove(Integer.valueOf(1)));
+        assertEquals(byValue, List.of(2, 1));
+
+        try {
+            byIndex.removeAt(byIndex.size());
+            fail("expected IndexOutOfBoundsException not thrown");
+        } catch (IndexOutOfBoundsException _) {}
+
+        try {
+            List.of(1, 2, 3).removeAt(1);
+            fail("expected UnsupportedOperationException not thrown");
+        } catch (UnsupportedOperationException _) {}
     }
 
     @Test
