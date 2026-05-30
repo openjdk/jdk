@@ -205,8 +205,15 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("enough regions with no live objects to skip evacuation.");
   out->cr();
 
+  size_t gc_attempts = 0;
+  for (int c = 0; c < GCCause::_last_gc_cause; c++) {
+    gc_attempts += _collection_cause_counts[c];
+  }
+
   size_t completed_gcs = _success_full_gcs + _success_degenerated_gcs + _success_concurrent_gcs + _success_old_gcs;
-  out->print_cr("%5zu Completed GCs", completed_gcs);
+  size_t cancelled_gcs = gc_attempts - completed_gcs;
+  out->print_cr("%5zu GC attempts. %zu Completed GCs (%.2f%%).",
+    gc_attempts, completed_gcs, percent_of(completed_gcs, gc_attempts));
 
   size_t explicit_requests = 0;
   size_t implicit_requests = 0;
@@ -220,7 +227,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
         implicit_requests += cause_count;
       }
       const char* desc = GCCause::to_string(cause);
-      out->print_cr("  %5zu caused by %s (%.2f%%)", cause_count, desc, percent_of(cause_count, completed_gcs));
+      out->print_cr("  %5zu caused by %s (%.2f%%)", cause_count, desc, percent_of(cause_count, gc_attempts));
     }
   }
 
