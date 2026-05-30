@@ -190,6 +190,7 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
             case StoreInstruction i ->
                 pop(1);
             case LookupSwitchInstruction i -> {
+                pop(1); // pop the int switch key
                 map.put(i.defaultTarget(), stack);
                 for (var c : i.cases()) map.put(c.target(), fork());
                 stack = null;
@@ -213,7 +214,12 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
                     case ARRAYLENGTH, INEG, LNEG, FNEG, DNEG -> pop(1);
                     default -> pop(2);
                 }
-                push(i.typeKind());
+                // Comparison operators always produce int result
+                TypeKind resultType = switch (i.opcode()) {
+                    case LCMP, FCMPL, FCMPG, DCMPL, DCMPG -> TypeKind.INT;
+                    default -> i.typeKind();
+                };
+                push(resultType);
             }
             case ReturnInstruction i ->
                 stack = null;
@@ -289,6 +295,7 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
                 }
             }
             case TableSwitchInstruction i -> {
+                pop(1); // pop the int switch key
                 map.put(i.defaultTarget(), stack);
                 for (var c : i.cases()) map.put(c.target(), fork());
                 stack = null;
