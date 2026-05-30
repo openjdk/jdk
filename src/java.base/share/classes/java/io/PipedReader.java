@@ -36,7 +36,7 @@ import java.util.Objects;
 
 public class PipedReader extends Reader {
     boolean closedByWriter = false;
-    boolean closedByReader = false;
+    volatile boolean closedByReader = false;
     boolean connected = false;
 
     /* REMIND: identification of the read and write sides needs to be
@@ -359,7 +359,9 @@ public class PipedReader extends Reader {
      * @throws     IOException  if an I/O error occurs.
      */
     public void close()  throws IOException {
-        in = -1;
         closedByReader = true;
+        synchronized (this) {
+            in = -1;
+        }
     }
 }
