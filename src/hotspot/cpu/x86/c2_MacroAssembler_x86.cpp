@@ -4533,6 +4533,45 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
   }
 }
 
+static void convertHF2X_slowpath(C2_MacroAssembler& masm, C2GeneralStub<Register, Register, address>& stub) {
+#define __ masm.
+  Register dst = stub.data<0>();
+  Register src = stub.data<1>();
+  address target = stub.data<2>();
+  __ bind(stub.entry());
+  __ subptr(rsp, 8);
+  __ movl(Address(rsp), src);
+  __ call(RuntimeAddress(target));
+  // APX REX2 encoding for pop(dst) increases the stub size by 1 byte.
+  __ pop(dst);
+  __ jmp(stub.continuation());
+#undef __
+}
+
+void C2_MacroAssembler::convertHF2X(BasicType dst_bt, Register dst, Register src, XMMRegister xtmp) {
+  assert(dst_bt == T_INT || dst_bt == T_LONG, "");
+
+  address slowpath_target;
+  if (dst_bt == T_INT) {
+    evmovw(xtmp, src);
+    evcvttsh2sil(dst, xtmp);
+    cmpl(dst, 0x80000000);
+    slowpath_target = StubRoutines::x86::hf2i_fixup();
+  } else {
+    evmovw(xtmp, src);
+    evcvttsh2siq(dst, xtmp);
+    cmp64(dst, ExternalAddress(StubRoutines::x86::double_sign_flip()));
+    slowpath_target = StubRoutines::x86::hf2l_fixup();
+  }
+
+  // Using the APX extended general purpose registers increases the instruction encoding size by 1 byte.
+  int max_size = 23 + (UseAPX ? 1 : 0);
+  auto stub = C2CodeStub::make<Register, Register, address>(dst, src, slowpath_target, max_size, convertHF2X_slowpath);
+  jcc(Assembler::equal, stub->entry());
+  bind(stub->continuation());
+}
+
+
 static void convertF2I_slowpath(C2_MacroAssembler& masm, C2GeneralStub<Register, XMMRegister, address>& stub) {
 #define __ masm.
   Register dst = stub.data<0>();
@@ -5028,6 +5067,51 @@ void C2_MacroAssembler::vector_cast_double_to_int_special_cases_evex(XMMRegister
   bind(done);
 }
 
+void C2_MacroAssembler::vector_cast_float16_to_int_special_cases(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                                 XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                                                 Register rscratch, AddressLiteral float_sign_flip,
+                                                                 int vec_enc) {
+  assert(rscratch != noreg || always_reachable(float_sign_flip), "missing");
+  Label done;
+  evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, rscratch);
+  Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmpph(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdqul(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmpph(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogd(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdqul(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
+void C2_MacroAssembler::vector_cast_float16_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                                       XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                                                       Register rscratch, AddressLiteral double_sign_flip,
+                                                                       int vec_enc) {
+  assert(rscratch != noreg || always_reachable(double_sign_flip), "missing");
+
+  Label done;
+  evmovdquq(xtmp1, k0, double_sign_flip, false, vec_enc, rscratch);
+  Assembler::evpcmpeqq(ktmp1, k0, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmpph(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmpph(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
 /*
  * Following routine handles special floating point values(NaN/Inf/-Inf/Max/Min) for casting operation.
  * If src is NaN, the result is 0.
@@ -5319,6 +5403,32 @@ void C2_MacroAssembler::vector_castD2X_avx10_2(BasicType to_elem_bt, XMMRegister
       break;
     default: assert(false, "Unexpected basic type for target of vector castD2X AVX10 (mem src): %s", type2name(to_elem_bt));
   }
+}
+
+void C2_MacroAssembler::vector_castHF2I_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                             XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                             AddressLiteral float_sign_flip, Register rscratch, int vec_enc) {
+  assert(type2aelembytes(to_elem_bt) <= 4, "");
+  evcvttph2dq(dst, src, vec_enc);
+  vector_cast_float16_to_int_special_cases(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, float_sign_flip, vec_enc);
+  switch(to_elem_bt) {
+    case T_INT:
+      break;
+    case T_SHORT:
+      evpmovdw(dst, dst, vec_enc);
+      break;
+    case T_BYTE:
+      evpmovdb(dst, dst, vec_enc);
+      break;
+    default: assert(false, "Unexpected type for vector castHF2I: %s", type2name(to_elem_bt));
+  }
+}
+
+void C2_MacroAssembler::vector_castHF2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                             XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                             AddressLiteral double_sign_flip, Register rscratch, int vec_enc) {
+  evcvttph2qq(dst, src, vec_enc);
+  vector_cast_float16_to_long_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, double_sign_flip, vec_enc);
 }
 
 void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister src,

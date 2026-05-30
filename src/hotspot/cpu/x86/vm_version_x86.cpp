@@ -3005,8 +3005,10 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
       vm_features.set_feature(CPU_SERIALIZE);
     if (sef_cpuid7_edx.bits.hybrid != 0)
       vm_features.set_feature(CPU_HYBRID);
-    if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
-      vm_features.set_feature(CPU_AVX512_FP16);
+  }
+
+  if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0) {
+    vm_features.set_feature(CPU_AVX512_FP16);
   }
 
   // ZX additional features.

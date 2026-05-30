@@ -627,6 +627,101 @@ address StubGenerator::generate_verify_mxcsr() {
   return start;
 }
 
+address StubGenerator::generate_hf2i_fixup() {
+  StubId stub_id = StubId::stubgen_hf2i_fixup_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  Address inout(rsp, 5 * wordSize); // return address + 4 saves
+
+  start = __ pc();
+
+  Label L;
+
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
+
+  __ movl(rax, 0x7c00);
+  __ xorl(c_rarg3, c_rarg3);
+  __ movl(c_rarg2, inout);
+  __ movl(c_rarg1, c_rarg2);
+  __ andl(c_rarg1, 0x7fff);
+  __ cmpl(rax, c_rarg1); // NaN? -> 0
+  __ jcc(Assembler::negative, L);
+  __ testl(c_rarg2, c_rarg2); // signed ? min_jint : max_jint
+  __ movl(c_rarg3, 0x80000000);
+  __ movl(rax, 0x7fffffff);
+  __ cmovl(Assembler::positive, c_rarg3, rax);
+
+  __ bind(L);
+  __ movptr(inout, c_rarg3);
+
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
+
+  __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
+  return start;
+}
+
+address StubGenerator::generate_hf2l_fixup() {
+  StubId stub_id = StubId::stubgen_hf2l_fixup_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  Address inout(rsp, 5 * wordSize); // return address + 4 saves
+  start = __ pc();
+
+  Label L;
+
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
+
+  __ movl(rax, 0x7c00);
+  __ xorq(c_rarg3, c_rarg3);
+  __ movl(c_rarg2, inout);
+  __ movl(c_rarg1, c_rarg2);
+  __ andl(c_rarg1, 0x7fff);
+  __ cmpl(rax, c_rarg1); // NaN? -> 0
+  __ jcc(Assembler::negative, L);
+  __ testl(c_rarg2, c_rarg2); // signed ? min_jlong : max_jlong
+  __ mov64(c_rarg3, 0x8000000000000000);
+  __ mov64(rax, 0x7fffffffffffffff);
+  __ cmov(Assembler::positive, c_rarg3, rax);
+
+  __ bind(L);
+  __ movptr(inout, c_rarg3);
+
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
+
+  __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
+  return start;
+}
+
 address StubGenerator::generate_f2i_fixup() {
   StubId stub_id = StubId::stubgen_f2i_fixup_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -4756,6 +4851,8 @@ void StubGenerator::generate_initial_stubs() {
   // platform dependent
   StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
 
+  StubRoutines::x86::_hf2i_fixup            = generate_hf2i_fixup();
+  StubRoutines::x86::_hf2l_fixup            = generate_hf2l_fixup();
   StubRoutines::x86::_f2i_fixup             = generate_f2i_fixup();
   StubRoutines::x86::_f2l_fixup             = generate_f2l_fixup();
   StubRoutines::x86::_d2i_fixup             = generate_d2i_fixup();
