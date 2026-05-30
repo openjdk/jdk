@@ -2392,6 +2392,26 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L_MASKED, "vand_notL_masked");
     }
 
+    public static final String VBITWISE_BLEND_NEON_SVE1 = PREFIX + "VBITWISE_BLEND_NEON_SVE1" + POSTFIX;
+    static {
+        machOnlyNameRegex(VBITWISE_BLEND_NEON_SVE1, "vbitwise_blend_neon_sve1");
+    }
+
+    public static final String VBITWISE_BLEND_SVE2 = PREFIX + "VBITWISE_BLEND_SVE2" + POSTFIX;
+    static {
+        machOnlyNameRegex(VBITWISE_BLEND_SVE2, "vbitwise_blend_sve2");
+    }
+
+    public static final String VBITWISE_BLEND_MASKED_SVE1 = PREFIX + "VBITWISE_BLEND_MASKED_SVE1" + POSTFIX;
+    static {
+        machOnlyNameRegex(VBITWISE_BLEND_MASKED_SVE1, "vbitwise_blend_masked_sve1");
+    }
+
+    public static final String VBITWISE_BLEND_MASKED_SVE2 = PREFIX + "VBITWISE_BLEND_MASKED_SVE2" + POSTFIX;
+    static {
+        machOnlyNameRegex(VBITWISE_BLEND_MASKED_SVE2, "vbitwise_blend_masked_sve2");
+    }
+
     public static final String RISCV_VAND_NOTI_VX = PREFIX + "RISCV_VAND_NOTI_VX" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX, "vand_notI_vx");
