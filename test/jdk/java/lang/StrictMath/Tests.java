@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class Tests {
                            double input,
                            double result,
                            double expected) {
-        if (Double.compare(expected, result ) != 0) {
+        if (!Double.equivalent(expected, result)) {
             System.err.println("Failure for " + testName + ":\n" +
                                "\tFor input "   + input    + "\t(" + Double.toHexString(input) + ")\n" +
                                "\texpected  " + expected + "\t(" + Double.toHexString(expected) + ")\n" +
@@ -63,7 +63,7 @@ public class Tests {
 
     public static int test(String testName, double input1, double input2,
                            double result, double expected) {
-        if (Double.compare(expected, result ) != 0) {
+        if (!Double.equivalent(expected, result)) {
             System.err.println("Failure for " + testName + ":\n" +
                                "\tFor input "   + input1   + "\t(" + Double.toHexString(input1) + "), " +
                                                 + input2   + "\t(" + Double.toHexString(input2) + ")\n" +

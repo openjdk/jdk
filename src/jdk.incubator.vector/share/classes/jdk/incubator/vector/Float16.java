@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1054,6 +1054,27 @@ public final class Float16
     public static int compare(Float16 f1, Float16 f2) {
         return Float.compare(f1.floatValue(), f2.floatValue());
     }
+
+    /**
+     * {@return {@code true} if the arguments have {@linkplain
+     * Double##repEquivalence representation equivalence} and {@code false}
+     * otherwise}
+     *
+     * Special cases:
+     * <ul>
+     * <li>negative zero and positive zero are <em>not</em> equivalent
+     * <li>two NaN values are equivalent to each other, but not
+     * equivalent to any non-NaN value
+     * </ul>
+     *
+     * @param   f1 the first {@code Float16} to compare
+     * @param   f2 the second {@code Float16} to compare
+     * @since 27
+     */
+    public static boolean equivalent(Float16 f1, Float16 f2) {
+        return Float.equivalent(f1.floatValue(), f2.floatValue());
+    }
+
 
     /**
      * Returns the larger of two {@code Float16} values.
