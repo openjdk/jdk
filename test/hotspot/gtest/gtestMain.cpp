@@ -103,7 +103,7 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
 }
 
 static bool is_same_vm_test(const char* name) {
-  return is_suffix("_vm", name) && !is_suffix("_other_vm", name);
+  return is_suffix("__vm", name);
 }
 
 class JVMInitializerListener : public ::testing::EmptyTestEventListener {
@@ -234,8 +234,8 @@ static void runUnitTestsInner(int argc, char** argv) {
   if (::testing::GTEST_FLAG(internal_run_death_test).length() > 0) {
     // when we execute death test, filter value equals to test name
     const char* test_name = ::testing::GTEST_FLAG(filter).c_str();
-    const char* const othervm_suffix = "_other_vm"; // TEST_OTHER_VM
-    const char* const vmassert_suffix = "_vm_assert"; // TEST_VM_ASSERT(_MSG)
+    const char* const othervm_suffix = "__other_vm"; // TEST_OTHER_VM
+    const char* const vmassert_suffix = "__vm_assert"; // TEST_VM_ASSERT(_MSG)
     if (is_suffix(othervm_suffix, test_name)) {
       is_othervm_test = true;
     } else if (is_suffix(vmassert_suffix, test_name)) {

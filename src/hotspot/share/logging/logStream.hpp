@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,9 @@
 #include "utilities/ostream.hpp"
 
 class LogStreamImplBase : public outputStream {
-  friend class LogStreamTest_TestLineBufferAllocation_vm_Test;
-  friend class LogStreamTest_TestLineBufferAllocationCap_vm_Test;
+  // see test/hotspot/gtest/logging/test_logStream.cpp
+  friend class LogStreamTest_TestLineBufferAllocation__vm_Test;
+  friend class LogStreamTest_TestLineBufferAllocationCap__vm_Test;
 
   // No heap allocation of LogStream.
   static void* operator new   (size_t) = delete;
@@ -85,9 +86,6 @@ public:
 };
 
 class LogStream : public LogStreamImpl<LogTargetHandle> {
-  // see test/hotspot/gtest/logging/test_logStream.cpp
-  friend class LogStreamTest_TestLineBufferAllocation_vm_Test;
-  friend class LogStreamTest_TestLineBufferAllocationCap_vm_Test;
 
   NONCOPYABLE(LogStream);
 
