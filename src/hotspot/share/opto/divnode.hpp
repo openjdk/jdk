@@ -42,6 +42,11 @@ private:
 protected:
   DivModIntegerNode(Node* c, Node* dividend, Node* divisor) : Node(c, dividend, divisor), _pinned(false) {}
 
+  // Shared Identity/Ideal/Value for DivINode and DivLNode
+  Node* IdentityIL(PhaseGVN* phase, BasicType bt);
+  Node* IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt);
+  const Type* ValueIL(PhaseGVN* phase, BasicType bt) const;
+
 private:
   virtual uint size_of() const override { return sizeof(DivModIntegerNode); }
   virtual uint hash() const override { return Node::hash() + _pinned; }
@@ -63,9 +68,9 @@ class DivINode : public DivModIntegerNode {
 public:
   DivINode(Node* c, Node* dividend, Node* divisor) : DivModIntegerNode(c, dividend, divisor) {}
   virtual int Opcode() const;
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase) { return IdentityIL(phase, T_INT); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return IdealIL(phase, can_reshape, T_INT); }
+  virtual const Type* Value(PhaseGVN* phase) const { return ValueIL(phase, T_INT); }
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
@@ -76,9 +81,9 @@ class DivLNode : public DivModIntegerNode {
 public:
   DivLNode(Node* c, Node* dividend, Node* divisor) : DivModIntegerNode(c, dividend, divisor) {}
   virtual int Opcode() const;
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase) { return IdentityIL(phase, T_LONG); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return IdealIL(phase, can_reshape, T_LONG); }
+  virtual const Type* Value(PhaseGVN* phase) const { return ValueIL(phase, T_LONG); }
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };

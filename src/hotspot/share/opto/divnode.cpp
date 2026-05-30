@@ -603,46 +603,51 @@ static const IntegerType* compute_signed_div_type(const IntegerType* i1, const I
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If the divisor is 1, we are an identity on the dividend.
-Node* DivINode::Identity(PhaseGVN* phase) {
-  return (phase->type( in(2) )->higher_equal(TypeInt::ONE)) ? in(1) : this;
+Node* DivModIntegerNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
+  return (phase->type(in(2))->higher_equal(TypeInteger::one(bt))) ? in(1) : this;
 }
 
 //------------------------------Idealize---------------------------------------
 // Divides can be changed to multiplies and/or shifts
-Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* DivModIntegerNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
+  // Check for dead control input
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
+  if (in(0) && in(0)->is_top())  return nullptr;
 
-  const Type *t = phase->type( in(2) );
-  if( t == TypeInt::ONE )      // Identity?
-    return nullptr;            // Skip it
+  const Type *t = phase->type(in(2));
+  if (t == TypeInteger::one(bt))   // Identity?
+    return nullptr;                // Skip it
 
-  const TypeInt *ti = t->isa_int();
-  if( !ti ) return nullptr;
+  const TypeInteger *ti = t->isa_integer(bt);
+  if (!ti) return nullptr;
 
   // Check for useless control input
   // Check for excluding div-zero case
-  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
+  if (in(0) && (ti->hi_as_long() < 0 || ti->lo_as_long() > 0)) {
     set_req(0, nullptr);           // Yank control input
     return this;
   }
 
-  if( !ti->is_con() ) return nullptr;
-  jint i = ti->get_con();       // Get divisor
+  if (!ti->is_con()) return nullptr;
 
-  if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
-
-  // Dividing by MININT does not optimize as a power-of-2 shift.
-  if( i == min_jint ) return nullptr;
-
-  return transform_int_divide( phase, in(1), i );
+  // Return nullptr if dividing by zero (does not idealize) or
+  // by MIN_INT/MIN_LONG (does not optimize as a power-of-2 shift).
+  if (bt == T_INT) {
+    jint i = ti->is_int()->get_con();
+    if (i == 0 || i == min_jint) return nullptr;
+    return transform_int_divide(phase, in(1), i);
+  } else {
+    jlong l = ti->is_long()->get_con();
+    if (l == 0 || l == min_jlong) return nullptr;
+    return transform_long_divide(phase, in(1), l);
+  }
 }
 
 //------------------------------Value------------------------------------------
-// A DivINode divides its inputs.  The third input is a Control input, used to
-// prevent hoisting the divide above an unsafe test.
-const Type* DivINode::Value(PhaseGVN* phase) const {
+// A DivINode/DivLNode divides its inputs.  The third input is a Control input,
+// used to prevent hoisting the divide above an unsafe test.
+const Type* DivModIntegerNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
@@ -650,87 +655,24 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
-  if (t2 == TypeInt::ZERO) {
+  if (t2 == TypeInteger::zero(bt)) {
     // this division will always throw an exception
     return Type::TOP;
   }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
-    return TypeInt::ONE;
+    return TypeInteger::one(bt);
   }
 
-  const TypeInt* i1 = t1->is_int();
-  const TypeInt* i2 = t2->is_int();
+  const TypeInteger* i1 = t1->is_integer(bt);
+  const TypeInteger* i2 = t2->is_integer(bt);
 
-  return compute_signed_div_type<TypeInt>(i1, i2);
-}
-
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// If the divisor is 1, we are an identity on the dividend.
-Node* DivLNode::Identity(PhaseGVN* phase) {
-  return (phase->type( in(2) )->higher_equal(TypeLong::ONE)) ? in(1) : this;
-}
-
-//------------------------------Idealize---------------------------------------
-// Dividing by a power of 2 is a shift.
-Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
-
-  const Type *t = phase->type( in(2) );
-  if( t == TypeLong::ONE )      // Identity?
-    return nullptr;             // Skip it
-
-  const TypeLong *tl = t->isa_long();
-  if( !tl ) return nullptr;
-
-  // Check for useless control input
-  // Check for excluding div-zero case
-  if (in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
-    set_req(0, nullptr);         // Yank control input
-    return this;
+  if (bt == T_INT) {
+    return compute_signed_div_type<TypeInt>(i1->is_int(), i2->is_int());
+  } else {
+    return compute_signed_div_type<TypeLong>(i1->is_long(), i2->is_long());
   }
-
-  if( !tl->is_con() ) return nullptr;
-  jlong l = tl->get_con();      // Get divisor
-
-  if (l == 0) return nullptr;   // Dividing by zero constant does not idealize
-
-  // Dividing by MINLONG does not optimize as a power-of-2 shift.
-  if( l == min_jlong ) return nullptr;
-
-  return transform_long_divide( phase, in(1), l );
-}
-
-//------------------------------Value------------------------------------------
-// A DivLNode divides its inputs.  The third input is a Control input, used to
-// prevent hoisting the divide above an unsafe test.
-const Type* DivLNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type(in(1));
-  const Type* t2 = phase->type(in(2));
-  if (t1 == Type::TOP || t2 == Type::TOP) {
-    return Type::TOP;
-  }
-
-  if (t2 == TypeLong::ZERO) {
-    // this division will always throw an exception
-    return Type::TOP;
-  }
-
-  // x/x == 1 since we always generate the dynamic divisor check for 0.
-  if (in(1) == in(2)) {
-    return TypeLong::ONE;
-  }
-
-  const TypeLong* i1 = t1->is_long();
-  const TypeLong* i2 = t2->is_long();
-
-  return compute_signed_div_type<TypeLong>(i1, i2);
 }
 
 
