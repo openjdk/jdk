@@ -77,46 +77,6 @@ public class TestDisableAutoVectOpcodes {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD_REDUCTION_VF})
-    private static void testAddReductionVF() {
-        float result = 1;
-        for(int i = 0; i < SIZE; i++) {
-            result += (floata[i] + floatb[i]);
-        }
-        fresult += result;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.ADD_REDUCTION_VD})
-    private static void testAddReductionVD() {
-        double result = 1;
-        for(int i = 0; i < SIZE; i++) {
-            result += (doublea[i] + doubleb[i]);
-        }
-        dresult += result;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.MUL_REDUCTION_VF})
-    private static void testMulReductionVF() {
-        float result = 1;
-        for(int i = 0; i < SIZE; i++) {
-            result *= (floata[i] + floatb[i]);
-        }
-        fresult += result;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.MUL_REDUCTION_VD})
-    private static void testMulReductionVD() {
-        double result = 1;
-        for(int i = 0; i < SIZE; i++) {
-            result *= (doublea[i] + doubleb[i]);
-        }
-        dresult += result;
-    }
-
-    @Test
     @IR(failOn = {IRNode.COUNT_TRAILING_ZEROS_VL})
     public void testNumberOfTrailingZeros() {
         for (int i = 0; i < SIZE; ++i) {

@@ -50,8 +50,10 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD_REDUCTION_VF},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"},
+        phase = CompilePhase.PRINT_IDEAL)
     @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VF, ">=1"},
         failOn = {"no_strict_order"},
         applyIfCPUFeatureOr = {"sve", "true", "sse2", "true", "rvv", "true"},
@@ -65,8 +67,10 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD_REDUCTION_VD},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"},
+        phase = CompilePhase.PRINT_IDEAL)
     @IR(counts = {"requires_strict_order", ">=1", IRNode.ADD_REDUCTION_VD, ">=1"},
         failOn = {"no_strict_order"},
         applyIfCPUFeatureOr = {"sve", "true", "sse2", "true", "rvv", "true"},
@@ -80,8 +84,10 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(failOn = {IRNode.MUL_REDUCTION_VF},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"},
+        phase = CompilePhase.PRINT_IDEAL)
     @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
         failOn = {"no_strict_order"},
         applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
@@ -95,8 +101,10 @@ public class TestVectorFPReduction {
     }
 
     @Test
-    @IR(failOn = {IRNode.MUL_REDUCTION_VD},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
+        failOn = {"no_strict_order"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"},
+        phase = CompilePhase.PRINT_IDEAL)
     @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
         failOn = {"no_strict_order"},
         applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
