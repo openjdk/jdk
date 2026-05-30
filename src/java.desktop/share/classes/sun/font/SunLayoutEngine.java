@@ -64,10 +64,9 @@ public final class SunLayoutEngine {
     static {
         String prop = System.getProperty("sun.font.layout.ffm", "true");
         useFFM = "true".equals(prop);
-
     }
 
-    public static void layout(Font2D font, int script, FontStrikeDesc desc, float[] mat, float ptSize, int gmask,
+    public static void layout(Font2D font, int script, FontStrikeDesc desc, float[] mat, int gmask,
                        int baseIndex, TextRecord tr, int typo_flags,
                        Point2D.Float pt, GVData data) {
 
@@ -75,7 +74,7 @@ public final class SunLayoutEngine {
         if (useFFM) {
             MemorySegment face = HBShaper.getFace(font);
             if (face != null) {
-                HBShaper.shape(font, strike, ptSize, mat, face,
+                HBShaper.shape(font, strike, mat, face,
                         tr.text, data, script,
                         tr.start, tr.limit, baseIndex, pt,
                         typo_flags, gmask);
@@ -83,7 +82,7 @@ public final class SunLayoutEngine {
         } else {
             long pFace = getFacePtr(font);
             if (pFace != 0) {
-                shape(font, strike, ptSize, mat, pFace,
+                shape(font, strike, mat, pFace,
                     tr.text, data, script,
                     tr.start, tr.limit, baseIndex, pt,
                     typo_flags, gmask);
@@ -93,7 +92,7 @@ public final class SunLayoutEngine {
 
     /* Native method to invoke harfbuzz layout engine */
     private static native boolean
-        shape(Font2D font, FontStrike strike, float ptSize, float[] mat,
+        shape(Font2D font, FontStrike strike, float[] mat,
               long pFace,
               char[] chars, GVData data,
               int script, int offset, int limit,
