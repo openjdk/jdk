@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ typedef Elf32_Sym       Elf_Sym;
 #include "globalDefinitions.hpp"
 #include "jvm_md.h"
 #include "memory/allocation.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/quickSort.hpp"
@@ -82,11 +83,18 @@ typedef Elf32_Sym       Elf_Sym;
 #define DWARF_LOG_DEBUG(format, ...) DWARF_LOG_WITH_LEVEL(3, format, ##__VA_ARGS__)
 #define DWARF_LOG_TRACE(format, ...) DWARF_LOG_WITH_LEVEL(4, format, ##__VA_ARGS__)
 
-#define DWARF_LOG_WITH_LEVEL(level, format, ...) \
-    if (TraceDwarfLevel >= level) {         \
-      tty->print("[dwarf] ");               \
-      tty->print_cr(format, ##__VA_ARGS__); \
-    }
+#define DWARF_LOG_WITH_LEVEL(level, format, ...)                         \
+  do {                                                                   \
+    if (TraceDwarfLevel >= (level)) {                                    \
+      outputStream* log_stream = tty;                                    \
+      Thread* t = Thread::current_or_null();                             \
+      if (t != nullptr && t->dwarf_log_stream() != nullptr) {            \
+        log_stream = t->dwarf_log_stream();                              \
+      }                                                                  \
+      log_stream->print("[dwarf] ");                                     \
+      log_stream->print_cr(format, ##__VA_ARGS__);                       \
+    }                                                                    \
+  } while (0);
 #else
 #define DWARF_LOG_SUMMARY(format, ...)
 #define DWARF_LOG_ERROR(format, ...)

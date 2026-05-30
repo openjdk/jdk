@@ -630,6 +630,17 @@ protected:
 
  private:
   VMErrorCallback* _vm_error_callbacks;
+
+#ifdef ASSERT
+ private:
+  // Optional per-thread stream used to buffer DWARF logging while
+  // SharedDecoder_lock is held, to avoid potential deadlock.
+  outputStream* _dwarf_log_stream;
+
+ public:
+  outputStream* dwarf_log_stream() const { return _dwarf_log_stream; }
+  void set_dwarf_log_stream(outputStream* st) { _dwarf_log_stream = st; }
+#endif
 };
 
 class ThreadInAsgct {

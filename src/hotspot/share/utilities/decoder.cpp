@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,8 @@
 
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/vmError.hpp"
 
@@ -116,6 +118,33 @@ bool Decoder::get_source_info(address pc, char* filename, size_t filename_len, i
   if (VMError::is_error_reported_in_current_thread()) {
     return get_error_handler_instance()->get_source_info(pc, filename, filename_len, line, is_pc_after_call);
   } else {
+#ifdef ASSERT
+    if (TraceDwarfLevel > 0) {
+      ResourceMark rm;
+      stringStream log_buf;
+      Thread* t = Thread::current_or_null();
+      outputStream* saved = nullptr;
+      if (t != nullptr) {
+        saved = t->dwarf_log_stream();
+        t->set_dwarf_log_stream(&log_buf);
+      }
+
+      bool result;
+      {
+        MutexLocker locker(shared_decoder_lock(), Mutex::_no_safepoint_check_flag);
+        result = get_shared_instance()->get_source_info(pc, filename, filename_len, line, is_pc_after_call);
+      }
+
+      if (t != nullptr) {
+        t->set_dwarf_log_stream(saved);
+      }
+
+      if (log_buf.size() > 0) {
+        tty->print_raw(log_buf.base());
+      }
+      return result;
+    }
+#endif
     MutexLocker locker(shared_decoder_lock(), Mutex::_no_safepoint_check_flag);
     return get_shared_instance()->get_source_info(pc, filename, filename_len, line, is_pc_after_call);
   }
