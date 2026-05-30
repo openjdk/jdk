@@ -1486,7 +1486,7 @@ void VM_Version::configure_intrinsics() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-#if COMPILER2
+#ifdef COMPILER2
   if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma())  {
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
       FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
