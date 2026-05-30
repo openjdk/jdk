@@ -69,4 +69,18 @@ public:
   virtual uint match_edge(uint idx) const { return 0; }
 };
 
+
+class DeadPathNode : public RegionNode {
+public:
+  DeadPathNode() : RegionNode(1) {
+    set_req(0, nullptr);
+    assert(Compile::current()->dead_path() == nullptr, "only one");
+  }
+  virtual int   Opcode() const;
+  virtual const Type *bottom_type() const { return Type::BOTTOM; }
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
 #endif // SHARE_OPTO_ROOTNODE_HPP

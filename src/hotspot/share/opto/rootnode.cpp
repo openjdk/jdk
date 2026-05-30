@@ -90,3 +90,28 @@ const Type* HaltNode::Value(PhaseGVN* phase) const {
 const RegMask &HaltNode::out_RegMask() const {
   return RegMask::EMPTY;
 }
+
+Node* DeadPathNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  assert(unique_ctrl_out() == phase->C->root(), "");
+  assert(can_reshape, "");
+  bool modified = false;
+  for( uint i = 1; i < req(); i++ ) { // For all inputs
+    // Check for and remove dead inputs
+    if( phase->type(in(i)) == Type::TOP ) {
+      del_req(i--);             // Delete TOP inputs
+      modified = true;
+    }
+  }
+  if (req() == 1 && in(0) == this) {
+    assert(modified, "");
+    set_req(0, nullptr);
+  }
+  return modified ? this : nullptr;
+}
+
+const Type* DeadPathNode::Value(PhaseGVN* phase) const {
+  if (req() == 1) {
+    return Type::TOP;
+  }
+  return bottom_type();
+}

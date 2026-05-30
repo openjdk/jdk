@@ -82,6 +82,7 @@ class CountedLoopEndNode;
 class DecodeNarrowPtrNode;
 class DecodeNNode;
 class DecodeNKlassNode;
+class DivModIntegerNode;
 class EncodeNarrowPtrNode;
 class EncodePNode;
 class EncodePKlassNode;
@@ -829,8 +830,9 @@ public:
     DEFINE_CLASS_ID(LShift,   Node, 21)
     DEFINE_CLASS_ID(Neg,      Node, 22)
     DEFINE_CLASS_ID(ReachabilityFence, Node, 23)
+    DEFINE_CLASS_ID(DivModInteger, Node, 24)
 
-    _max_classes  = ClassMask_Neg
+    _max_classes  = ClassMask_DivModInteger
   };
   #undef DEFINE_CLASS_ID
 
@@ -947,6 +949,7 @@ public:
   DEFINE_CLASS_QUERY(DecodeNarrowPtr)
   DEFINE_CLASS_QUERY(DecodeN)
   DEFINE_CLASS_QUERY(DecodeNKlass)
+  DEFINE_CLASS_QUERY(DivModInteger)
   DEFINE_CLASS_QUERY(EncodeNarrowPtr)
   DEFINE_CLASS_QUERY(EncodeP)
   DEFINE_CLASS_QUERY(EncodePKlass)
@@ -1495,6 +1498,10 @@ public:
   uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
+  void make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str);
+
+  static void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str);
+  void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str);
 };
 
 inline bool not_a_node(const Node* n) {
@@ -2196,13 +2203,10 @@ public:
   virtual const Type *bottom_type() const;
   virtual       uint  ideal_reg() const;
 
-  void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str);
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
 #endif
-  void make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str);
-  void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const;
 };
 
 #include "opto/opcodes.hpp"

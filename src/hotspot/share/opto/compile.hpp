@@ -57,6 +57,7 @@ class CallStaticJavaNode;
 class CloneMap;
 class CompilationFailureInfo;
 class ConnectionGraph;
+class DeadPathNode;
 class IdealGraphPrinter;
 class InlineTree;
 class Matcher;
@@ -427,7 +428,7 @@ public:
 private:
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
   Node*                 _top;                   // Unique top node.  (Reset by various phases.)
-
+  DeadPathNode*         _dead_path;             // Unique DeadPath node
   Node*                 _immutable_memory;      // Initial memory state
 
   Node*                 _recent_alloc_obj;
@@ -897,6 +898,8 @@ public:
   Arena*       old_arena()                 { return (&_node_arena_one == _node_arena) ? &_node_arena_two : &_node_arena_one; }
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
+  DeadPathNode* dead_path() const          { return _dead_path; }
+  void         set_dead_path(DeadPathNode* dead_path) { assert(_dead_path == nullptr, ""); _dead_path = dead_path;}
   StartNode*   start() const;              // (Derived from root.)
   void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();

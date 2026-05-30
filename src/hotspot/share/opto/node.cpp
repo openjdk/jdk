@@ -597,6 +597,7 @@ void Node::setup_is_top() {
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
 void Node::destruct(PhaseValues* phase) {
+  assert(this != Compile::current()->dead_path(), "we want to keep the unique DeadPath node around");
   Compile* compile = (phase != nullptr) ? phase->C : Compile::current();
   if (phase != nullptr && phase->is_IterGVN()) {
     phase->is_IterGVN()->_worklist.remove(this);
@@ -735,7 +736,7 @@ void Node::out_grow(uint len) {
 //------------------------------is_dead----------------------------------------
 bool Node::is_dead() const {
   // Mach and pinch point nodes may look like dead.
-  if( is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) )
+  if( is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) || this == Compile::current()->dead_path())
     return false;
   for( uint i = 0; i < _max; i++ )
     if( _in[i] != nullptr )
@@ -3140,10 +3141,11 @@ uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
 
-void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
+void Node::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
   Node* c = ctrl_use->in(j);
-  if (igvn->type(c) != Type::TOP) {
-    igvn->replace_input_of(ctrl_use, j, igvn->C->top());
+  Node* top = igvn->C->top();
+  if (c != top) {
+    igvn->replace_input_of(ctrl_use, j, top);
     create_halt_path(igvn, c, loop, phase_str);
   }
 }
@@ -3155,14 +3157,18 @@ void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ct
 // constant folds and the control flow that leads to the Type node becomes unreachable. There are cases where that
 // doesn't happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead
 // paths. The dead paths are then replaced by a Halt node.
-void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
+void Node::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
   Unique_Node_List wq;
   wq.push(this);
   for (uint i = 0; i < wq.size(); ++i) {
     Node* n = wq.at(i);
+    if (n->is_CFG()) {
+      n->remove_dead_region(igvn, true);
+    }
     for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
       Node* u = n->fast_out(k);
       if (u->is_CFG()) {
+        wq.push(u);
         assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
         make_path_dead(igvn, loop, u, 0, phase_str);
       } else if (u->is_Phi()) {
@@ -3182,7 +3188,7 @@ void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loo
   }
 }
 
-void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const {
+void Node::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) {
   Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
   if (loop == nullptr) {
     igvn->register_new_node_with_optimizer(frame);
@@ -3203,13 +3209,5 @@ void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loo
 }
 
 Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-    Node* top = igvn->C->top();
-    ResourceMark rm;
-    make_paths_from_here_dead(igvn, nullptr, "igvn");
-    return top;
-  }
-
   return Node::Ideal(phase, can_reshape);
 }
