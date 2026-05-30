@@ -4904,6 +4904,11 @@ void StubGenerator::generate_compiler_stubs() {
     StubRoutines::_intpoly_assign = generate_intpoly_assign();
   }
 
+  if (UseIntPoly25519Intrinsics) {
+    StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
+    StubRoutines::_intpoly_square_25519 = generate_intpoly_square_25519();
+  }
+
   if (UseMD5Intrinsics) {
     StubRoutines::_md5_implCompress = generate_md5_implCompress(StubId::stubgen_md5_implCompress_id);
     StubRoutines::_md5_implCompressMB = generate_md5_implCompress(StubId::stubgen_md5_implCompressMB_id);

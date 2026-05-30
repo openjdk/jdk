@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,8 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _poly1305_processBlocks_Type;
   static const TypeFunc* _intpoly_montgomeryMult_P256_Type;
   static const TypeFunc* _intpoly_assign_Type;
+  static const TypeFunc* _intpoly_mult_25519_Type;
+  static const TypeFunc* _intpoly_square_25519_Type;
   static const TypeFunc* _updateBytesCRC32_Type;
   static const TypeFunc* _updateBytesCRC32C_Type;
   static const TypeFunc* _updateBytesAdler32_Type;
@@ -685,6 +687,18 @@ private:
   static inline const TypeFunc* intpoly_assign_Type() {
     assert(_intpoly_assign_Type != nullptr, "should be initialized");
     return _intpoly_assign_Type;
+  }
+
+  // IntegerPolynomial25519 multiply function
+  static inline const TypeFunc* intpoly_mult_25519_Type() {
+    assert(_intpoly_mult_25519_Type != nullptr, "should be initialized");
+    return _intpoly_mult_25519_Type;
+  }
+
+  // IntegerPolynomial25519 square function
+  static inline const TypeFunc* intpoly_square_25519_Type() {
+    assert(_intpoly_square_25519_Type != nullptr, "should be initialized");
+    return _intpoly_square_25519_Type;
   }
 
   /**
