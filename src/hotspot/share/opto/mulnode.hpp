@@ -181,28 +181,24 @@ public:
 };
 
 //-------------------------------MulHiLNode------------------------------------
-const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
-
 // Upper 64 bits of a 64 bit by 64 bit multiply
 class MulHiLNode : public Node {
 public:
-  MulHiLNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
+  MulHiLNode(Node* in1, Node* in2) : Node(nullptr, in1, in2) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type *bottom_type() const { return TypeLong::LONG; }
+  const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  friend const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
 };
 
 // Upper 64 bits of a 64 bit by 64 bit unsigned multiply
 class UMulHiLNode : public Node {
 public:
-  UMulHiLNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
+  UMulHiLNode(Node* in1, Node* in2) : Node(nullptr, in1, in2) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type *bottom_type() const { return TypeLong::LONG; }
+  const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  friend const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
 };
 
 //------------------------------AndINode---------------------------------------
