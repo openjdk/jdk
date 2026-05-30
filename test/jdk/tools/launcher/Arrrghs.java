@@ -497,6 +497,56 @@ public class Arrrghs extends TestHelper {
         TestResult tr = doExec(javaCmd, "-jar", elp.getAbsolutePath());
         tr.checkPositive();
         tr.contains("Hello from ELP");
+        if (!tr.testStatus) {
+            throw new RuntimeException("testLongPathJarFile failed:\n" + tr.status);
+        }
+    }
+
+    /*
+     * Tests -jar command where the path to the jar file is shorter than
+     * `MAX_PATH` (260 characters) but the absolute path to the file is longer
+     * than `MAX_PATH`
+     */
+
+    @Test
+    void testLongResolvedPathJarFile() throws IOException {
+        if (!isWindows) {
+            return;
+        }
+
+        final int MAX_PATH = 260;
+        String jarName = "elp.jar";
+        String dirSegment = "longpathtest_longpathtest/";
+        int cwdLen = Path.of(".").toAbsolutePath().normalize().toString().length();
+
+        // We want `cwdLen + 1 + relativeLen` to be longer than `MAX_PATH` and
+        // `relativeLen` to be shorter than `MAX_PATH`, where `relativeLen` is
+        // `repeats * dirSegment.length() + jarName.length()`.
+        int minRelative = MAX_PATH - cwdLen;
+        int repeats = (minRelative - jarName.length() + dirSegment.length() - 1) / dirSegment.length();
+        if (repeats < 1) repeats = 1;
+        int relativeLen = repeats * dirSegment.length() + jarName.length();
+        int absoluteLen = cwdLen + 1 + relativeLen;
+
+        if (relativeLen >= MAX_PATH || absoluteLen <= MAX_PATH) {
+            throw new RuntimeException("Error: invariant mismatch:"
+                + " cwdLen=" + cwdLen
+                + " relativeLen=" + relativeLen
+                + " absoluteLen=" + absoluteLen);
+        }
+
+        String longPathStr = dirSegment.repeat(repeats);
+        Path longPath = Paths.get(longPathStr);
+        Path jarPath = Files.createDirectories(longPath).resolve(jarName);
+        File elp = jarPath.toFile();
+        createJar(elp, new File("Foo"), "public static void main(String[] args){ System.out.println(\"Hello from ELP\"); }");
+
+        TestResult tr = doExec(javaCmd, "-jar", jarPath.toString());
+        tr.checkPositive();
+        tr.contains("Hello from ELP");
+        if (!tr.testStatus) {
+            throw new RuntimeException("testLongResolvedPathJarFile failed:\n" + tr.status);
+        }
     }
 
     /*
