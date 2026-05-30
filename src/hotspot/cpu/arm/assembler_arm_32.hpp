@@ -146,7 +146,7 @@ class RegisterSet {
 
   static RegisterSet from(RegSet set) {
     assert(set.size(), "RegSet must not be empty");
-    return RegisterSet(set.bits());
+    return RegisterSet(integer_cast<int>(set.bits()));
   }
 };
 

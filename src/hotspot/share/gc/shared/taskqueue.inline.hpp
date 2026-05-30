@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -278,10 +279,10 @@ typename GenericTaskQueue<E, MT, N>::PopResult GenericTaskQueue<E, MT, N>::pop_g
   t = _elems[oldAge.top()];
   // Increment top; if it wraps, also increment tag, to distinguish it
   // from any recent _age for the same top() index.
-  idx_t new_top = increment_index(oldAge.top());
+  idx_t new_top = integer_cast<idx_t>(increment_index(oldAge.top()));
   // Don't use bottom, since a pop_local might have decremented it.
   assert_not_underflow(localBot, new_top);
-  idx_t new_tag = oldAge.tag() + ((new_top == 0) ? 1 : 0);
+  idx_t new_tag = integer_cast<idx_t>(oldAge.tag() + ((new_top == 0) ? 1 : 0));
   Age newAge(new_top, new_tag);
   bool result = par_set_age(oldAge, newAge);
   return result ? PopResult::Success : PopResult::Contended;

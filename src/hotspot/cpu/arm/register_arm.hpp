@@ -341,7 +341,7 @@ inline Register AbstractRegSet<Register>::first() {
 
 template <>
 inline FloatRegister AbstractRegSet<FloatRegister>::first() {
-  uint32_t first = _bitset & -_bitset;
+  uint32_t first = static_cast<uint32_t>(_bitset & -_bitset);
   return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
 }
 
