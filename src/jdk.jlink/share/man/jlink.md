@@ -235,6 +235,27 @@ Options
 Description
 :   Generate CDS archive if the runtime image supports the CDS feature.
 
+### Plugin `security-properties`
+
+Options
+:   `--security-properties=props=`*filename*`:include=`*filename*
+
+Description
+:   The `props` option overrides the security properties in the
+    `conf/security/java.security` configuration file with the properties in
+    the specified *filename*. Security properties with the same name are
+    overridden and security properties not present are added to the end of the
+    `conf/security/java.security` configuration file.
+
+    The `include` option adds an `include` statement with the specified
+    *filename* to the end of the `conf/security/java.security` configuration
+    file. The filename does not need to exist at `jlink` time.
+
+    Each option can be specified at most once. If both options are specified,
+    the `include` statement is always added as the last line of the
+    `conf/security/java.security` configuration file, after any
+    new security properties that may have been added.
+
 ## jlink Examples
 
 The following command creates a runtime image in the directory `greetingsapp`.
