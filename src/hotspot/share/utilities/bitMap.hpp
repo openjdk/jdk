@@ -654,6 +654,9 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   bm_word_t* allocate(idx_t size_in_words) const;
   bm_word_t* reallocate(bm_word_t* old_map, size_t old_size_in_words, size_t new_size_in_words) const;
   void free(bm_word_t* map, idx_t size_in_words) const;
+
+  // Move other's map into this, invalidating other.
+  void swap(CHeapBitMap &other);
 };
 
 // Convenience class wrapping BitMap which provides multiple bits per slot.

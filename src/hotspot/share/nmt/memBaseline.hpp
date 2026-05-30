@@ -29,12 +29,12 @@
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/nmtHashTable.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/linkedlist.hpp"
 
 typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
-typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
 
 /*
  * Baseline a memory snapshot
@@ -74,7 +74,8 @@ class MemBaseline {
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order
-  LinkedListImpl<VirtualMemoryAllocationSite> _virtual_memory_sites;
+  VirtualMemoryAllocationSite* _virtual_memory_sites;
+  int                          _virtual_memory_sites_length;
 
   SortingOrder         _malloc_sites_order;
   SortingOrder         _virtual_memory_sites_order;
@@ -86,6 +87,7 @@ class MemBaseline {
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
     _vma_allocations(nullptr),
+    _virtual_memory_sites(nullptr), _virtual_memory_sites_length(0),
     _baseline_type(Not_baselined) {
   }
 
@@ -110,7 +112,10 @@ class MemBaseline {
   }
 
   MallocSiteIterator malloc_sites(SortingOrder order);
-  VirtualMemorySiteIterator virtual_memory_sites(SortingOrder order);
+  void sort_virtual_memory_sites(SortingOrder order);
+
+  VirtualMemoryAllocationSite* virtual_memory_sites()        { return _virtual_memory_sites; }
+  int                          virtual_memory_sites_length() { return _virtual_memory_sites_length; }
 
   // Virtual memory allocation iterator always returns in virtual memory
   // base address order.
@@ -188,7 +193,8 @@ class MemBaseline {
     _thread_count = 0;
 
     _malloc_sites.clear();
-    _virtual_memory_sites.clear();
+    os::free(_virtual_memory_sites);
+    _virtual_memory_sites_length = 0;
     delete _vma_allocations;
     _vma_allocations = nullptr;
   }
