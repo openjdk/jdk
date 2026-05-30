@@ -62,20 +62,20 @@
 // and stored in the PackSet.
 class PairSet : public StackObj {
 private:
+  const VTransform& _scalar_vtransform;
   const VLoop& _vloop;
-  const VLoopBody& _body;
 
   // Doubly-linked pairs. If not linked: -1
-  GrowableArray<int> _left_to_right; // bb_idx -> bb_idx
-  GrowableArray<int> _right_to_left; // bb_idx -> bb_idx
+  GrowableArray<int> _left_to_right; // vtn idx -> vtn idx
+  GrowableArray<int> _right_to_left; // vtn idx -> vtn idx
   // Example:
   //
   //   Pairs: (n1, n2) and (n2, n3)
-  //   bb_idx(n1) = 1
-  //   bb_idx(n2) = 3
-  //   bb_idx(n3) = 5
+  //   n1->_idx = 1
+  //   n2->_idx = 3
+  //   n3->_idx = 5
   //
-  //   index / bb_idx:   0   1   2   3   4   5   6
+  //   vtn idx:          0   1   2   3   4   5   6
   //
   //   left_to_right:  |   | 3 |   | 5 |   |   |   |
   //                         n1----->
@@ -85,73 +85,74 @@ private:
   //                          <------n2
   //                                  <------n3
   //
-  //   Nodes with bb_idx 0, 2, 4, and 6 are in no pair, they are thus neither left nor right elements,
+  //   Nodes with vtn idx 0, 2, 4, and 6 are in no pair, they are thus neither left nor right elements,
   //   and hence have no entries in the mapping.
   //
-  //   Nodes with bb_idx 1 and 3 (n1 and n2) are both a left element in some pair. Therefore, they both
+  //   Nodes with vtn idx 1 and 3 (n1 and n2) are both a left element in some pair. Therefore, they both
   //   have an entry in the left_to_right mapping. This mapping indicates which right element they are
-  //   paired with, namely the nodes with bb_idx 3 and 5 (n2 and n3), respectively.
+  //   paired with, namely the nodes with vtn idx 3 and 5 (n2 and n3), respectively.
   //
-  //   Nodes with bb_idx 3 and 5 (n2 and n4) are both a right element in some pair. Therefore, they both
+  //   Nodes with vtn idx 3 and 5 (n2 and n4) are both a right element in some pair. Therefore, they both
   //   have an entry in the right_to_left mapping. This mapping indicates which left element they are
-  //   paired with, namely the nodes with bb_idx 1 and 3 (n1 and n2), respectively.
+  //   paired with, namely the nodes with vtn idx 1 and 3 (n1 and n2), respectively.
   //
-  //   Node n1 with bb_idx 1 is not a right element in any pair, thus its right_to_left is empty.
+  //   Node n1 with vtn idx 1 is not a right element in any pair, thus its right_to_left is empty.
   //
-  //   Node n2 with bb_idx 3 is both a left element of pair (n2, n3), and a right element of pair (n1, n2).
+  //   Node n2 with vtn idx 3 is both a left element of pair (n2, n3), and a right element of pair (n1, n2).
   //   Thus it has entries in both left_to_right (mapping n2->n3) and right_to_left (mapping n2->n1).
   //
-  //   Node n3 with bb_idx 5 is not a left element in any pair, thus its left_to_right is empty.
+  //   Node n3 with vtn idx 5 is not a left element in any pair, thus its left_to_right is empty.
 
-  // List of all left elements bb_idx, in the order of pair addition.
+  // List of all left elements vtn idx, in the order of pair addition.
   GrowableArray<int> _lefts_in_insertion_order;
 
 public:
   // Initialize empty, i.e. all not linked (-1).
-  PairSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer) :
-    _vloop(vloop_analyzer.vloop()),
-    _body(vloop_analyzer.body()),
-    _left_to_right(arena, _body.body().length(), _body.body().length(), -1),
-    _right_to_left(arena, _body.body().length(), _body.body().length(), -1),
+  PairSet(Arena* arena, const VTransform& scalar_vtransform) :
+    _scalar_vtransform(scalar_vtransform),
+    _vloop(scalar_vtransform.vloop()),
+    _left_to_right(arena, _scalar_vtransform.graph().vtnodes().length(), _scalar_vtransform.graph().vtnodes().length(), -1),
+    _right_to_left(arena, _scalar_vtransform.graph().vtnodes().length(), _scalar_vtransform.graph().vtnodes().length(), -1),
     _lefts_in_insertion_order(arena, 8, 0, 0) {}
 
-  const VLoopBody& body() const { return _body; }
+  const VTransform& scalar_vtransform() const { return _scalar_vtransform; }
 
   bool is_empty() const { return _lefts_in_insertion_order.is_empty(); }
 
   bool is_left(int i)  const { return _left_to_right.at(i) != -1; }
   bool is_right(int i) const { return _right_to_left.at(i) != -1; }
-  bool is_left(const Node* n)  const { return _vloop.in_bb(n) && is_left( _body.bb_idx(n)); }
-  bool is_right(const Node* n) const { return _vloop.in_bb(n) && is_right(_body.bb_idx(n)); }
+  bool is_left(const VTransformNode* n)  const { return is_left(n->_idx); }
+  bool is_right(const VTransformNode* n)  const { return is_right(n->_idx); }
 
-  bool is_pair(const Node* n1, const Node* n2) const { return is_left(n1) && get_right_for(n1) == n2; }
+  bool is_pair(const VTransformNode* n1, const VTransformNode* n2) const { return is_left(n1) && get_right_for(n1) == n2; }
 
   bool is_left_in_a_left_most_pair(int i)   const { return is_left(i) && !is_right(i); }
   bool is_right_in_a_right_most_pair(int i) const { return !is_left(i) && is_right(i); }
-  bool is_left_in_a_left_most_pair(const Node* n)   const { return is_left_in_a_left_most_pair( _body.bb_idx(n)); }
-  bool is_right_in_a_right_most_pair(const Node* n) const { return is_right_in_a_right_most_pair(_body.bb_idx(n)); }
+  bool is_left_in_a_left_most_pair(const VTransformNode* n)   const { return is_left_in_a_left_most_pair(n->_idx); }
+  bool is_right_in_a_right_most_pair(const VTransformNode* n) const { return is_right_in_a_right_most_pair(n->_idx); }
 
   int get_right_for(int i) const { return _left_to_right.at(i); }
-  Node* get_right_for(const Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
-  Node* get_right_or_null_for(const Node* n) const { return is_left(n) ? get_right_for(n) : nullptr; }
+  const VTransformNode* get_right_for(const VTransformNode* n) const { return idx2vtn(get_right_for(n->_idx)); }
+  const VTransformNode* get_right_or_null_for(const VTransformNode* n) const { return is_left(n) ? get_right_for(n) : nullptr; }
 
   // To access elements in insertion order:
   int length() const { return _lefts_in_insertion_order.length(); }
-  Node* left_at_in_insertion_order(int i)  const { return _body.body().at(_lefts_in_insertion_order.at(i)); }
-  Node* right_at_in_insertion_order(int i) const { return _body.body().at(get_right_for(_lefts_in_insertion_order.at(i))); }
+  const VTransformNode* left_at_in_insertion_order(int i)  const { return idx2vtn(_lefts_in_insertion_order.at(i)); }
+  const VTransformNode* right_at_in_insertion_order(int i) const { return idx2vtn(get_right_for(_lefts_in_insertion_order.at(i))); }
 
-  void add_pair(Node* n1, Node* n2) {
+  void add_pair(const VTransformNode* n1, const VTransformNode* n2) {
     assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
-    assert(!is_left(n1) && !is_right(n2), "cannot be left twice, or right twice");
-    int bb_idx_1 = _body.bb_idx(n1);
-    int bb_idx_2 = _body.bb_idx(n2);
-    _left_to_right.at_put(bb_idx_1, bb_idx_2);
-    _right_to_left.at_put(bb_idx_2, bb_idx_1);
-    _lefts_in_insertion_order.append(bb_idx_1);
+    _left_to_right.at_put(n1->_idx, n2->_idx);
+    _right_to_left.at_put(n2->_idx, n1->_idx);
+    _lefts_in_insertion_order.append(n1->_idx);
     assert(is_left(n1) && is_right(n2), "must be set now");
   }
 
   NOT_PRODUCT(void print() const;)
+
+  // TODO: consider making some more methods above private...
+private:
+  const VTransformNode* idx2vtn(int idx) const { return _scalar_vtransform.idx2vtn(idx); }
 };
 
 // Iterate over the PairSet, pair-chain by pair-chain.
@@ -162,51 +163,51 @@ public:
 class PairSetIterator : public StackObj {
 private:
   const PairSet& _pairset;
-  const VLoopBody& _body;
 
-  int _chain_start_bb_idx; // bb_idx of left-element in the left-most pair.
-  int _current_bb_idx;     // bb_idx of left-element of the current pair.
-  const int _end_bb_idx;
+  int _chain_start_idx; // idx of left-element in the left-most pair.
+  int _current_idx;     // idx of left-element of the current pair.
+  const int _end_idx;
 
 public:
   PairSetIterator(const PairSet& pairset) :
     _pairset(pairset),
-    _body(pairset.body()),
-    _chain_start_bb_idx(-1),
-    _current_bb_idx(-1),
-    _end_bb_idx(_body.body().length())
+    _chain_start_idx(-1),
+    _current_idx(-1),
+    _end_idx(pairset.scalar_vtransform().graph().vtnodes().length())
   {
     next_chain();
   }
 
   bool done() const {
-    return _chain_start_bb_idx >= _end_bb_idx;
+    return _chain_start_idx >= _end_idx;
   }
 
-  Node* left() const {
-    return _body.body().at(_current_bb_idx);
+  const VTransformNode* left() const {
+    return idx2vtn(_current_idx);
   }
 
-  Node* right() const {
-    int bb_idx_2 = _pairset.get_right_for(_current_bb_idx);
-    return _body.body().at(bb_idx_2);
+  const VTransformNode* right() const {
+    int idx_2 = _pairset.get_right_for(_current_idx);
+    return idx2vtn(idx_2);
   }
 
   // Try to keep walking on the current pair-chain, else find a new pair-chain.
   void next() {
-    assert(_pairset.is_left(_current_bb_idx), "current was valid");
-    _current_bb_idx = _pairset.get_right_for(_current_bb_idx);
-    if (!_pairset.is_left(_current_bb_idx)) {
+    assert(_pairset.is_left(_current_idx), "current was valid");
+    _current_idx = _pairset.get_right_for(_current_idx);
+    if (!_pairset.is_left(_current_idx)) {
       next_chain();
     }
   }
 
 private:
+  const VTransformNode* idx2vtn(int idx) const { return _pairset.scalar_vtransform().idx2vtn(idx); }
+
   void next_chain() {
     do {
-      _chain_start_bb_idx++;
-    } while (!done() && !_pairset.is_left_in_a_left_most_pair(_chain_start_bb_idx));
-    _current_bb_idx = _chain_start_bb_idx;
+      _chain_start_idx++;
+    } while (!done() && !_pairset.is_left_in_a_left_most_pair(_chain_start_idx));
+    _current_idx = _chain_start_idx;
   }
 };
 
@@ -265,10 +266,10 @@ private:
     Split,     // The pack was split into two packs.           pack1        pack2
   };
   Kind _kind;
-  Node_List* _first_pack;
-  Node_List* _second_pack;
+  Pack* _first_pack;
+  Pack* _second_pack;
 
-  SplitStatus(Kind kind, Node_List* first_pack, Node_List* second_pack) :
+  SplitStatus(Kind kind, Pack* first_pack, Pack* second_pack) :
     _kind(kind), _first_pack(first_pack), _second_pack(second_pack)
   {
     assert(_kind != Unchanged || (first_pack != nullptr && second_pack == nullptr), "unchanged status conditions");
@@ -278,7 +279,7 @@ private:
   }
 
 public:
-  static SplitStatus make_unchanged(Node_List* old_pack) {
+  static SplitStatus make_unchanged(Pack* old_pack) {
     return SplitStatus(Unchanged, old_pack, nullptr);
   }
 
@@ -286,94 +287,89 @@ public:
     return SplitStatus(Rejected, nullptr, nullptr);
   }
 
-  static SplitStatus make_modified(Node_List* first_pack) {
+  static SplitStatus make_modified(Pack* first_pack) {
     return SplitStatus(Modified, first_pack, nullptr);
   }
 
-  static SplitStatus make_split(Node_List* first_pack, Node_List* second_pack) {
+  static SplitStatus make_split(Pack* first_pack, Pack* second_pack) {
     return SplitStatus(Split, first_pack, second_pack);
   }
 
   bool is_unchanged() const { return _kind == Unchanged; }
-  Node_List* first_pack() const { return _first_pack; }
-  Node_List* second_pack() const { return _second_pack; }
+  Pack* first_pack() const { return _first_pack; }
+  Pack* second_pack() const { return _second_pack; }
 };
 
 class PackSet : public StackObj {
 private:
+  const VTransform& _scalar_vtransform; // TODO: is it even needed?
   const VLoop& _vloop;
-  const VLoopBody& _body;
+  Arena* _arena;
 
   // Set of all packs:
-  GrowableArray<Node_List*> _packs;
+  GrowableArray<Pack*> _packs;
 
-  // Mapping from nodes to their pack: bb_idx -> pack
-  GrowableArray<Node_List*> _node_to_pack;
-
-  NOT_PRODUCT(const bool _trace_packset;)
-  NOT_PRODUCT(const bool _trace_rejections;)
+  // Mapping from nodes to their pack: vtn->idx -> pack
+  GrowableArray<Pack*> _node_to_pack;
 
 public:
   // Initialize empty, i.e. no packs, and unmapped (nullptr).
-  PackSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer
-          NOT_PRODUCT(COMMA bool trace_packset COMMA bool trace_rejections)
-          ) :
-    _vloop(vloop_analyzer.vloop()),
-    _body(vloop_analyzer.body()),
+  PackSet(Arena* arena, const VTransform& scalar_vtransform) :
+    _scalar_vtransform(scalar_vtransform),
+    _vloop(scalar_vtransform.vloop()),
+    _arena(arena),
     _packs(arena, 8, 0, nullptr),
-    _node_to_pack(arena, _body.body().length(), _body.body().length(), nullptr)
-    NOT_PRODUCT(COMMA _trace_packset(trace_packset))
-    NOT_PRODUCT(COMMA _trace_rejections(trace_rejections))
+    _node_to_pack(arena, _scalar_vtransform.graph().vtnodes().length(), _scalar_vtransform.graph().vtnodes().length(), nullptr)
     {}
 
   // Accessors to iterate over packs.
   int length() const { return _packs.length(); }
   bool is_empty() const { return _packs.is_empty(); }
-  Node_List* at(int i) const { return _packs.at(i); }
+  Pack* at(int i) const { return _packs.at(i); }
 
 private:
-  void map_node_in_pack(const Node* n, Node_List* new_pack) {
+  void map_node_in_pack(const VTransformNode* n, Pack* new_pack) {
     assert(get_pack(n) == nullptr, "was previously unmapped");
-    _node_to_pack.at_put(_body.bb_idx(n), new_pack);
+    _node_to_pack.at_put(n->_idx, new_pack);
   }
 
-  void remap_node_in_pack(const Node* n, Node_List* new_pack) {
+  void remap_node_in_pack(const VTransformNode* n, Pack* new_pack) {
     assert(get_pack(n) != nullptr && new_pack != nullptr && get_pack(n) != new_pack, "was previously mapped");
-    _node_to_pack.at_put(_body.bb_idx(n), new_pack);
+    _node_to_pack.at_put(n->_idx, new_pack);
   }
 
-  void unmap_node_in_pack(const Node* n) {
+  void unmap_node_in_pack(const VTransformNode* n) {
     assert(get_pack(n) != nullptr, "was previously mapped");
-    _node_to_pack.at_put(_body.bb_idx(n), nullptr);
+    _node_to_pack.at_put(n->_idx, nullptr);
   }
 
-  void unmap_all_nodes_in_pack(Node_List* old_pack) {
-    for (uint i = 0; i < old_pack->size(); i++) {
+  void unmap_all_nodes_in_pack(Pack* old_pack) {
+    for (int i = 0; i < old_pack->length(); i++) {
       unmap_node_in_pack(old_pack->at(i));
     }
   }
 public:
-  Node_List* get_pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
+  Pack* get_pack(const VTransformNode* n) const { return _node_to_pack.at(n->_idx); }
 
-  void add_pack(Node_List* pack) {
+  void add_pack(Pack* pack) {
     _packs.append(pack);
-    for (uint i = 0; i < pack->size(); i++) {
-      Node* n = pack->at(i);
+    for (int i = 0; i < pack->length(); i++) {
+      const VTransformNode* n = pack->at(i);
       map_node_in_pack(n, pack);
     }
   }
 
-  Node_List* strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const;
-  bool is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const;
-  Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
-  VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
+  Pack* strided_pack_input_at_index_or_null(const Pack* pack, const int index, const int stride, const int offset) const;
+  bool is_muladds2i_pack_with_pack_inputs(const Pack* pack) const;
+  Node* same_inputs_at_index_or_null(const Pack* pack, const int index) const;
+  VTransformBoolTest get_bool_test(const Pack* bool_pack) const;
 
-  Node_List* pack_input_at_index_or_null(const Node_List* pack, const int index) const {
+  Pack* pack_input_at_index_or_null(const Pack* pack, const int index) const {
     return strided_pack_input_at_index_or_null(pack, index, 1, 0);
   }
 
 private:
-  SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
+  SplitStatus split_pack(const char* split_name, Pack* pack, SplitTask task);
 public:
   template <typename SplitStrategy>
   void split_packs(const char* split_name, SplitStrategy strategy);
@@ -385,20 +381,19 @@ public:
 
   void clear() { _packs.clear(); }
 
-private:
-  NOT_PRODUCT(bool is_trace_superword_packset() const { return _trace_packset; })
-  NOT_PRODUCT(bool is_trace_superword_rejections() const { return _trace_rejections; })
 public:
   DEBUG_ONLY(void verify() const;)
   NOT_PRODUCT(void print() const;)
-  NOT_PRODUCT(static void print_pack(Node_List* pack);)
+  NOT_PRODUCT(static void print_pack(Pack* pack);)
 };
 
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  private:
-  const VLoopAnalyzer& _vloop_analyzer;
+  const VTransformAnalyzer& _scalar_vtransform_analyzer;
+  const VTransform&    _scalar_vtransform;
+  const VLoopAnalyzer& _vloop_analyzer; // TODO: consider not using it...
   const VLoop&         _vloop;
 
   // Arena for small data structures. Large data structures are allocated in
@@ -416,7 +411,7 @@ class SuperWord : public ResourceObj {
   int _aw_for_main_loop_alignment;
 
  public:
-  SuperWord(const VLoopAnalyzer &vloop_analyzer);
+  SuperWord(const VTransformAnalyzer& scalar_vtransform_analyzer);
 
   // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
   bool transform_loop();
@@ -434,12 +429,24 @@ class SuperWord : public ResourceObj {
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
   // VLoopReductions accessors
+  // TODO: rm?
   bool is_marked_reduction(const Node* n) const {
     return _vloop_analyzer.reductions().is_marked_reduction(n);
   }
 
+  bool is_marked_reduction(const VTransformNode* n) const {
+    // TODO: impl!
+    return false;
+  }
+
+  // TODO: rm?
   bool reduction(const Node* n1, const Node* n2) const {
     return _vloop_analyzer.reductions().is_marked_reduction_pair(n1, n2);
+  }
+
+  bool reduction(const VTransformNode* n1, const VTransformNode* n2) const {
+    // TODO: impl!
+    return false;
   }
 
   // VLoopMemorySlices accessors
@@ -478,25 +485,22 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.types().data_size(n);
   }
 
-  int vector_width(Node* n) const {
-    return _vloop_analyzer.types().vector_width(n);
-  }
-
-  int vector_width_in_bytes(const Node* n) const {
-    return _vloop_analyzer.types().vector_width_in_bytes(n);
-  }
-
   // VLoopDependencyGraph accessors
   const VLoopDependencyGraph& dependency_graph() const {
     return _vloop_analyzer.dependency_graph();
   }
 
+  // TODO: rm?
   bool independent(Node* n1, Node* n2) const {
     return _vloop_analyzer.dependency_graph().independent(n1, n2);
   }
 
-  bool mutually_independent(const Node_List* nodes) const {
-    return _vloop_analyzer.dependency_graph().mutually_independent(nodes);
+  bool independent(const VTransformNode* n1, const VTransformNode* n2) const {
+    return _scalar_vtransform_analyzer.dependency().independent(n1, n2);
+  }
+
+  bool mutually_independent(const Pack* pack) const {
+    return _scalar_vtransform_analyzer.dependency().mutually_independent(pack);
   }
 
   // VLoopVPointer accessors
@@ -504,48 +508,10 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.vpointers().vpointer(mem);
   }
 
-#ifndef PRODUCT
-  // TraceAutoVectorization and TraceSuperWord
-  bool is_trace_superword_adjacent_memops() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
-  }
-
-  bool is_trace_superword_rejections() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
-  }
-
-  bool is_trace_superword_packset() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET);
-  }
-
-  bool is_trace_superword_info() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
-  }
-
-  bool is_trace_superword_any() const {
-    return TraceSuperWord ||
-           is_trace_align_vector() ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
-  }
-
-  bool is_trace_align_vector() const {
-    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
-  }
-#endif
-
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const PackSet& packset() const { return _packset; }
-  Node_List* get_pack(const Node* n) const { return _packset.get_pack(n); }
+  Pack* get_pack(const VTransformNode* n) const { return _packset.get_pack(n); }
 
  private:
   bool           _do_vector_loop;  // whether to do vectorization/simd style
@@ -563,23 +529,19 @@ private:
   // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
   class MemOp : public StackObj {
   private:
-    MemNode* _mem;
-    const VPointer* _vpointer;
+    VTransformMemopScalarNode* _vtnode;
     int _original_index;
 
   public:
     // Empty, for GrowableArray
     MemOp() :
-      _mem(nullptr),
-      _vpointer(nullptr),
+      _vtnode(nullptr),
       _original_index(-1) {}
-    MemOp(MemNode* mem, const VPointer* vpointer, int original_index) :
-      _mem(mem),
-      _vpointer(vpointer),
+    MemOp(VTransformMemopScalarNode* vtnode, int original_index) :
+      _vtnode(vtnode),
       _original_index(original_index) {}
 
-    MemNode* mem() const { return _mem; }
-    const VPointer& vpointer() const { return *_vpointer; }
+    VTransformMemopScalarNode* vtnode() const { return _vtnode; }
     int original_index() const { return _original_index; }
 
     static int cmp_by_group(MemOp* a, MemOp* b);
@@ -600,24 +562,29 @@ private:
   void create_adjacent_memop_pairs_in_one_group(const GrowableArray<MemOp>& memops, const int group_start, int group_end);
 
   // Various methods to check if we can pack two nodes.
-  bool can_pack_into_pair(Node* s1, Node* s2);
+  bool can_pack_into_pair(Node* s1, Node* s2); // TODO: rm
+  bool can_pack_into_pair(const VTransformNode* s1, const VTransformNode* s2) const;
   // Is s1 immediately before s2 in memory?
-  bool are_adjacent_refs(Node* s1, Node* s2) const;
+  bool are_adjacent_refs(Node* s1, Node* s2) const; // TODO: rm
+  bool are_adjacent_refs(const VTransformNode* s1, const VTransformNode* s2) const;
   // Are s1 and s2 similar?
-  bool isomorphic(Node* s1, Node* s2);
+  bool isomorphic(Node* s1, Node* s2); // TODO: rm
+  //bool isomorphic(const VTransformNode* s1, const VTransformNode* s2) const;
   // Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
-  bool is_populate_index(const Node* n1, const Node* n2) const;
+  bool is_populate_index(const Node* n1, const Node* n2) const; // TODO: rm
+  bool is_populate_index(const VTransformNode* n1, const VTransformNode* n2) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
-  bool have_similar_inputs(Node* s1, Node* s2);
+  bool have_similar_inputs(Node* s1, Node* s2); // TODO: rm
+  bool have_similar_inputs(const VTransformNode* s1, const VTransformNode* s2) const;
 
   void extend_pairset_with_more_pairs_by_following_use_and_def();
-  bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);
-  bool extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2);
-  void order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2);
+  bool extend_pairset_with_more_pairs_by_following_def(const VTransformNode* s1, const VTransformNode* s2);
+  bool extend_pairset_with_more_pairs_by_following_use(const VTransformNode* s1, const VTransformNode* s2);
+  void order_inputs_of_all_use_pairs_to_match_def_pair(const VTransformNode* def1, const VTransformNode* def2);
   enum PairOrderStatus { Ordered, Unordered, Unknown };
-  PairOrderStatus order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2);
-  int estimate_cost_savings_when_packing_as_pair(const Node* s1, const Node* s2) const;
+  PairOrderStatus order_inputs_of_uses_to_match_def_pair(const VTransformNode* def1, const VTransformNode* def2, const VTransformNode* use1, const VTransformNode* use2);
+  int estimate_cost_savings_when_packing_as_pair(const VTransformNode* s1, const VTransformNode* s2) const;
 
   void combine_pairs_to_longer_packs();
 
@@ -628,30 +595,30 @@ private:
   void filter_packs_for_power_of_2_size();
   void filter_packs_for_mutual_independence();
   void filter_packs_for_alignment();
-  const AlignmentSolution* pack_alignment_solution(const Node_List* pack);
+  const AlignmentSolution* pack_alignment_solution(const Pack* pack);
   void filter_packs_for_implemented();
   void filter_packs_for_profitable();
 
   DEBUG_ONLY(void verify_packs() const;)
 
   // Can code be generated for the pack, restricted to size nodes?
-  bool implemented(const Node_List* pack, const uint size) const;
+  bool implemented(const Pack* pack, const int size) const;
   // Find the maximal implemented size smaller or equal to the packs size
-  uint max_implemented_size(const Node_List* pack);
+  uint max_implemented_size(const Pack* pack);
 
   // For pack p, are all operands and all uses (with in the block) vector?
-  bool profitable(const Node_List* p) const;
+  bool profitable(const Pack* p) const;
 
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
 
   // Check if n_super's pack uses are a superset of n_sub's pack uses.
-  bool has_use_pack_superset(const Node* n1, const Node* n2) const;
+  bool has_use_pack_superset(const VTransformNode* n1, const VTransformNode* n2) const;
   // Find a boundary in the pack, where left and right have different pack uses and defs.
-  uint find_use_def_boundary(const Node_List* pack) const;
+  uint find_use_def_boundary(const Pack* pack) const;
 
   // Is use->in(u_idx) a vector use?
-  bool is_vector_use(Node* use, int u_idx) const;
+  bool is_vector_use(const VTransformNode* use, int u_idx) const;
 
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def, const uint pack_size) const;
 

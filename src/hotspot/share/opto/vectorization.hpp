@@ -205,6 +205,50 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
+  bool is_trace_rejections() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::REJECTIONS);
+  }
+
+  bool is_trace_superword_adjacent_memops() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
+  }
+
+  bool is_trace_superword_packset() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET);
+  }
+
+  bool is_trace_superword_info() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO);
+  }
+
+  bool is_trace_superword_any() const {
+    return TraceSuperWord ||
+           is_trace_align_vector() ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::REJECTIONS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
+
+  bool is_trace_align_vector() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
+
+  bool is_trace_vtransform() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
+  }
+
+  bool is_trace_vtransform_verbose() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM_VERBOSE);
+  }
+
   bool is_trace_optimization() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
   }
@@ -597,16 +641,6 @@ public:
     return vt1 == vt2;
   }
 
-  int vector_width(const Node* n) const {
-    BasicType bt = velt_basic_type(n);
-    return MIN2(ABS(_vloop.iv_stride()), Matcher::max_vector_size(bt));
-  }
-
-  int vector_width_in_bytes(const Node* n) const {
-    BasicType bt = velt_basic_type(n);
-    return vector_width(n) * type2aelembytes(bt);
-  }
-
 private:
   void set_velt_type(Node* n, const Type* t) {
     assert(t != nullptr, "cannot set nullptr");
@@ -826,9 +860,10 @@ public:
   };
 };
 
-// Analyze the loop in preparation for auto-vectorization. This class is
+// Analyze the C2 loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
+// TODO: reference VTransformAnalyzer
 class VLoopAnalyzer : StackObj {
 private:
   static constexpr char const* FAILURE_NO_MAX_UNROLL         = "slp max unroll analysis required";
@@ -844,12 +879,12 @@ private:
   bool                 _success;
 
   // Submodules
-  VLoopReductions      _reductions;
+  VLoopReductions      _reductions;       // TODO: rm
   VLoopBody            _body;
   VLoopMemorySlices    _memory_slices;
-  VLoopTypes           _types;
+  VLoopTypes           _types;            // TODO: rm
   VLoopVPointers       _vpointers;
-  VLoopDependencyGraph _dependency_graph;
+  VLoopDependencyGraph _dependency_graph; // TODO: rm
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :

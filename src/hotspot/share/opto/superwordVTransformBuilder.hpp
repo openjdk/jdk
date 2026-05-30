@@ -27,27 +27,31 @@
 #ifndef SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
 #define SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
 
-// Facility class that builds a VTransform from a SuperWord PackSet.
+// Facility that produces a vectorized vtransfrom from the SuperWord PackSet:
+// The SuperWord Packset determined the packs we want to apply on the scalar vtransform.
+// Now we want to produce a vectorized vtransform that replaces the packed scalar vtnodes
+// into vector vtnodes.
 class SuperWordVTransformBuilder : public StackObj {
 private:
-  const VLoopAnalyzer& _vloop_analyzer;
+  const VLoopAnalyzer& _vloop_analyzer; // TODO: do we need this?
   const VLoop& _vloop;
   const PackSet& _packset;
-  VTransform& _vtransform;
+  VTransform& _vector_vtransform; // TODO: verify old vs new vtn with asserts?
 
-  HashTable</* Node::_idx*/ int, VTransformNode* /* or null*/> _idx_to_vtnode;
+  // TODO: I think this can now be a GrowableArray.
+  HashTable</* old->_idx*/ int, VTransformNode* /* or null*/> _idx_to_vtnode;
 
 public:
   SuperWordVTransformBuilder(const PackSet& packset,
-                             VTransform& vtransform) :
-      _vloop_analyzer(vtransform.vloop_analyzer()),
+                             VTransform& vector_vtransform) :
+      _vloop_analyzer(vector_vtransform.vloop_analyzer()),
       _vloop(_vloop_analyzer.vloop()),
       _packset(packset),
-      _vtransform(vtransform)
+      _vector_vtransform(vector_vtransform)
   {
-    assert(!_vtransform.has_graph(), "constructor is passed an empty vtransform");
+    assert(!_vector_vtransform.has_graph(), "constructor is passed an empty vtransform");
     build();
-    assert(_vtransform.has_graph(), "vtransform must contain some vtnodes now");
+    assert(_vector_vtransform.has_graph(), "vtransform must contain some vtnodes now");
   }
 
 private:
@@ -59,31 +63,31 @@ private:
   void build_uses_after_loop();
 
   // Helper methods for building VTransform.
-  VTransformNode* get_vtnode_or_null(Node* n) const {
-    VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
+  VTransformNode* get_vtnode_or_null(const VTransformNode* old) const {
+    VTransformNode** ptr = _idx_to_vtnode.get(old->_idx);
     return (ptr == nullptr) ? nullptr : *ptr;
   }
 
-  VTransformNode* get_vtnode(Node* n) const {
-    VTransformNode* vtn = get_vtnode_or_null(n);
+  VTransformNode* get_vtnode(const VTransformNode* old) const {
+    VTransformNode* vtn = get_vtnode_or_null(old);
     assert(vtn != nullptr, "expect non-null vtnode");
     return vtn;
   }
 
-  void map_node_to_vtnode(Node* n, VTransformNode* vtn) {
+  void map_node_to_vtnode(const VTransformNode* old, VTransformNode* vtn) {
     assert(vtn != nullptr, "only set non-null vtnodes");
-    _idx_to_vtnode.put_when_absent(n->_idx, vtn);
+    _idx_to_vtnode.put_when_absent(old->_idx, vtn);
   }
 
-  VTransformVectorNode* make_vector_vtnode_for_pack(const Node_List* pack) const;
-  VTransformNode* get_or_make_vtnode_vector_input_at_index(const Node_List* pack, const int index);
-  VTransformNode* get_vtnode_or_wrap_as_outer(Node* n);
-  void init_req_with_scalar(Node* n, VTransformNode* vtn, const int index);
-  void init_req_with_vector(const Node_List* pack, VTransformNode* vtn, const int index);
-  void init_all_req_with_scalars(Node* n, VTransformNode* vtn);
-  void init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn);
-  void add_memory_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies);
-  LoadNode::ControlDependency load_control_dependency(const Node_List* pack) const;
+  VTransformVectorNode* make_vector_vtnode_for_pack(const Pack* pack) const;
+  VTransformNode* get_or_make_vtnode_vector_input_at_index(const Pack* pack, const int index);
+  VTransformNode* get_vtnode_or_wrap_as_outer(const VTransformNode* old);
+  void init_req_with_scalar(const VTransformNode* old, VTransformNode* vtn, const int index);
+  void init_req_with_vector(const Pack* pack, VTransformNode* vtn, const int index);
+  void init_all_req_with_scalars(const VTransformNode* old, VTransformNode* vtn);
+  void init_all_req_with_vectors(const Pack* pack, VTransformNode* vtn);
+  void add_memory_dependencies_of_node_to_vtnode(const VTransformNode* old, VTransformNode* vtn, VectorSet& vtn_memory_dependencies);
+  LoadNode::ControlDependency load_control_dependency(const Pack* pack) const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP

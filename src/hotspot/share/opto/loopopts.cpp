@@ -37,10 +37,12 @@
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/scalarVTransformBuilder.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
+#include "opto/vtransform.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
@@ -4541,7 +4543,29 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
     return AutoVectorizeStatus::TriedAndFailed;
   }
 
-  SuperWord sw(vloop_analyzer);
+  // Capture the (scalar) C2 input graph.
+  VTransform scalar_vtransform(vloop_analyzer, nullptr, 1);
+  // TODO: consider different arguments for nullptr and 1.
+  {
+    ResourceMark rm;
+    ScalarVTransformBuilder builder(scalar_vtransform);
+  }
+  // TODO: optimze the scalar graph for vectorization:
+  // - subword
+  // - if-conversion
+  // - ...
+
+  // Some of the analysis below requires a linear order
+  // that respects all edges (incl. weak edges).
+  if (!scalar_vtransform.schedule()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
+
+  // Now that the scalar VTransform is ready for vectorization,
+  // analyze its structure (dependency graph etc.)
+  const VTransformAnalyzer vtransform_analyzer(scalar_vtransform);
+
+  SuperWord sw(scalar_vtransform);
   if (!sw.transform_loop()) {
     return AutoVectorizeStatus::TriedAndFailed;
   }
