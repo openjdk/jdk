@@ -503,6 +503,8 @@ class SerializeClosure;
   template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
   template(during_unsafe_access_name,                 "during_unsafe_access")                     \
   template(checkIndex_name,                           "checkIndex")                               \
+  template(checkFromToIndex_name,                     "checkFromToIndex")                         \
+  template(checkFromIndexSize_name,                   "checkFromIndexSize")                       \
   template(jfr_epoch_name,                            "jfr_epoch")                                \
   template(maxThawingSize_name,                       "maxThawingSize")                           \
   template(lockStackSize_name,                        "lockStackSize")                            \

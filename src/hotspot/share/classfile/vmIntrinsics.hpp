@@ -415,6 +415,13 @@ class methodHandle;
   do_intrinsic(_Preconditions_checkLongIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkLongIndex_signature, F_S)   \
    do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
+  do_intrinsic(_Preconditions_checkFromToIndex, jdk_internal_util_Preconditions, checkFromToIndex_name, IIIBiFunctionI_signature, F_S)  \
+  do_intrinsic(_Preconditions_checkFromIndexSize, jdk_internal_util_Preconditions, checkFromIndexSize_name, IIIBiFunctionI_signature, F_S)  \
+   do_signature(IIIBiFunctionI_signature,        "(IIILjava/util/function/BiFunction;)I")                               \
+  do_intrinsic(_Preconditions_checkLongFromToIndex, jdk_internal_util_Preconditions, checkFromToIndex_name, JJJBiFunctionJ_signature, F_S)  \
+  do_intrinsic(_Preconditions_checkLongFromIndexSize, jdk_internal_util_Preconditions, checkFromIndexSize_name, JJJBiFunctionJ_signature, F_S)  \
+   do_signature(JJJBiFunctionJ_signature,        "(JJJLjava/util/function/BiFunction;)J")                               \
+                                                                                                                        \
   do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
    do_name(     countPositives_name,                       "countPositives0")                                           \

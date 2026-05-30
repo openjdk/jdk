@@ -270,6 +270,18 @@ AddNode* AddNode::make_not(PhaseGVN* phase, Node* n, BasicType bt) {
   return nullptr;
 }
 
+AddNode* AddNode::make_or(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new OrINode(in1, in2);
+    case T_LONG:
+      return new OrLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {

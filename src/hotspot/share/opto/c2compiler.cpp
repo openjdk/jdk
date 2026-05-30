@@ -830,6 +830,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_isCompileConstant:
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
+  case vmIntrinsics::_Preconditions_checkFromToIndex:
+  case vmIntrinsics::_Preconditions_checkLongFromToIndex:
+  case vmIntrinsics::_Preconditions_checkFromIndexSize:
+  case vmIntrinsics::_Preconditions_checkLongFromIndexSize:
   case vmIntrinsics::_getObjectSize:
     break;
   case vmIntrinsics::_VectorCompressExpand:
