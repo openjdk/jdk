@@ -2653,17 +2653,17 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_i2b:
     // Sign extend
     a = pop();
-    a = Compile::narrow_value(T_BYTE, a, nullptr, &_gvn, true);
+    a = Compile::narrow_value(T_BYTE, a, TypeInt::BYTE, &_gvn, true);
     push(a);
     break;
   case Bytecodes::_i2s:
     a = pop();
-    a = Compile::narrow_value(T_SHORT, a, nullptr, &_gvn, true);
+    a = Compile::narrow_value(T_SHORT, a, TypeInt::SHORT, &_gvn, true);
     push(a);
     break;
   case Bytecodes::_i2c:
     a = pop();
-    a = Compile::narrow_value(T_CHAR, a, nullptr, &_gvn, true);
+    a = Compile::narrow_value(T_CHAR, a, TypeInt::CHAR, &_gvn, true);
     push(a);
     break;
 
