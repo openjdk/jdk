@@ -3475,30 +3475,34 @@ frame %{
   //    4 what apparently works and saves us some spills.
   return_addr(STACK 4);
 
-  // Location of native (C/C++) and interpreter return values. This
-  // is specified to be the same as Java. In the 32-bit VM, long
-  // values are actually returned from native calls in O0:O1 and
-  // returned to the interpreter in I0:I1. The copying to and from
-  // the register pairs is done by the appropriate call and epilog
-  // opcodes. This simplifies the register allocator.
-  c_return_value %{
-    assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
-            (ideal_reg == Op_RegN && CompressedOops::base() == nullptr && CompressedOops::shift() == 0),
-            "only return normal values");
-    // enum names from opcodes.hpp:    Op_Node Op_Set Op_RegN       Op_RegI       Op_RegP       Op_RegF       Op_RegD       Op_RegL
-    static int typeToRegLo[Op_RegL+1] = { 0,   0,     R3_num,   R3_num,   R3_num,   F1_num,   F1_num,   R3_num };
-    static int typeToRegHi[Op_RegL+1] = { 0,   0,     OptoReg::Bad, R3_H_num, R3_H_num, OptoReg::Bad, F1_H_num, R3_H_num };
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
-  %}
-
   // Location of compiled Java return values.  Same as C
   return_value %{
     assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
             (ideal_reg == Op_RegN && CompressedOops::base() == nullptr && CompressedOops::shift() == 0),
             "only return normal values");
-    // enum names from opcodes.hpp:    Op_Node Op_Set Op_RegN       Op_RegI       Op_RegP       Op_RegF       Op_RegD       Op_RegL
-    static int typeToRegLo[Op_RegL+1] = { 0,   0,     R3_num,   R3_num,   R3_num,   F1_num,   F1_num,   R3_num };
-    static int typeToRegHi[Op_RegL+1] = { 0,   0,     OptoReg::Bad, R3_H_num, R3_H_num, OptoReg::Bad, F1_H_num, R3_H_num };
+    // enum names from opcodes.hpp
+    static int typeToRegLo[Op_RegL+1] = {
+      0,              // Op_Node
+      0,              // Op_Set
+      R3_num,         // Op_RegN
+      R3_num,         // Op_RegI
+      R3_num,         // Op_RegP
+      F1_num,         // Op_RegF
+      F1_num,         // Op_RegD
+      R3_num,         // Op_RegL
+    };
+
+    static int typeToRegHi[Op_RegL+1] = {
+      0,              // Op_Node
+      0,              // Op_Set
+      OptoReg::Bad,   // Op_RegN
+      OptoReg::Bad,   // Op_RegI
+      R3_H_num,       // Op_RegP
+      OptoReg::Bad,   // Op_RegF
+      F1_H_num,       // Op_RegD
+      R3_H_num        // Op_RegL
+    };
+
     return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
   %}
 %}
