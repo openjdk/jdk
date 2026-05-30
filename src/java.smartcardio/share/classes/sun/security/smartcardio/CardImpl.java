@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 package sun.security.smartcardio;
 
 import jdk.internal.util.OperatingSystem;
+import jdk.internal.ref.CleanerFactory;
+import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 
 import javax.smartcardio.*;
 import static sun.security.smartcardio.PCSC.*;
@@ -43,9 +46,6 @@ final class CardImpl extends Card {
     // the terminal that created this card
     private final TerminalImpl terminal;
 
-    // the native SCARDHANDLE
-    final long cardId;
-
     // atr of this card
     private final ATR atr;
 
@@ -55,11 +55,44 @@ final class CardImpl extends Card {
     // the basic logical channel (channel 0)
     private final ChannelImpl basicChannel;
 
-    // state of this card connection
-    private volatile State state;
-
     // thread holding exclusive access to the card, or null
     private volatile Thread exclusiveThread;
+
+    /* State and code for cleanup */
+    static final class Context implements Runnable {
+        // the native SCARDHANDLE
+        final long cardId;
+
+        // state of this card connection
+        private volatile State state;
+
+        private Context(long cardId, State state) {
+            this.cardId = cardId;
+            this.state = state;
+        }
+
+        /**
+         * The cleaning action calls SCardDisconnect if the card state is OK,
+         * otherwise it does nothing.
+         */
+        public void run() {
+            if (state == State.OK) {
+                state = State.DISCONNECTED;
+                try {
+                    SCardDisconnect(cardId, SCARD_LEAVE_CARD);
+                } catch (PCSCException e) {
+                    // This will be swallowed if thrown when run by the Cleaner
+                    // thread, and never thrown if called via Cleanable.clean()
+                    // (only called if state != OK.)
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    final Context context;
+    private final Cleaner.Cleanable cleanable;
+
 
     CardImpl(TerminalImpl terminal, String protocol) throws PCSCException {
         this.terminal = terminal;
@@ -83,36 +116,49 @@ final class CardImpl extends Card {
         } else {
             throw new IllegalArgumentException("Unsupported protocol " + protocol);
         }
-        cardId = SCardConnect(terminal.contextId, terminal.name,
+        long localCardId = SCardConnect(terminal.contextId, terminal.name,
                     sharingMode, connectProtocol);
         byte[] status = new byte[2];
-        byte[] atrBytes = SCardStatus(cardId, status);
+        byte[] atrBytes = SCardStatus(localCardId, status);
         atr = new ATR(atrBytes);
         this.protocol = status[1] & 0xff;
         basicChannel = new ChannelImpl(this, 0);
-        state = State.OK;
+
+        this.context = new Context(localCardId, State.OK);
+        this.cleanable = CleanerFactory.cleaner().register(this, this.context);
     }
 
     void checkState()  {
-        State s = state;
-        if (s == State.DISCONNECTED) {
-            throw new IllegalStateException("Card has been disconnected");
-        } else if (s == State.REMOVED) {
-            throw new IllegalStateException("Card has been removed");
+        try {
+            State s = context.state;
+            if (s == State.DISCONNECTED) {
+                throw new IllegalStateException("Card has been disconnected");
+            } else if (s == State.REMOVED) {
+                throw new IllegalStateException("Card has been removed");
+            }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
     boolean isValid() {
-        if (state != State.OK) {
-            return false;
-        }
-        // ping card via SCardStatus
         try {
-            SCardStatus(cardId, new byte[2]);
-            return true;
-        } catch (PCSCException e) {
-            state = State.REMOVED;
-            return false;
+            if (context.state != State.OK) {
+                return false;
+            }
+            // ping card via SCardStatus
+            try {
+                SCardStatus(context.cardId, new byte[2]);
+                return true;
+            } catch (PCSCException e) {
+                context.state = State.REMOVED;
+                // state has been set != OK. The cleaning action is now a noop.
+                // Deregister from Cleaner to reduce reference tracking.
+                cleanable.clean();
+                return false;
+            }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -125,8 +171,15 @@ final class CardImpl extends Card {
     }
 
     void handleError(PCSCException e) {
-        if (e.code == SCARD_W_REMOVED_CARD) {
-            state = State.REMOVED;
+        try {
+            if (e.code == SCARD_W_REMOVED_CARD) {
+                context.state = State.REMOVED;
+                // state has been set != OK. The cleaning action is now a noop.
+                // Deregister from Cleaner to reduce reference tracking.
+                cleanable.clean();
+            }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -164,21 +217,25 @@ final class CardImpl extends Card {
     private static byte[] commandOpenChannel = new byte[] {0, 0x70, 0, 0, 1};
 
     public CardChannel openLogicalChannel() throws CardException {
-        checkSecurity("openLogicalChannel");
-        checkState();
-        checkExclusive();
         try {
-            byte[] response = SCardTransmit
-                (cardId, protocol, commandOpenChannel, 0, commandOpenChannel.length);
-            if ((response.length != 3) || (getSW(response) != 0x9000)) {
-                throw new CardException
-                        ("openLogicalChannel() failed, card response: "
-                        + PCSC.toString(response));
+            checkSecurity("openLogicalChannel");
+            checkState();
+            checkExclusive();
+            try {
+                byte[] response = SCardTransmit
+                    (context.cardId, protocol, commandOpenChannel, 0, commandOpenChannel.length);
+                if ((response.length != 3) || (getSW(response) != 0x9000)) {
+                    throw new CardException
+                            ("openLogicalChannel() failed, card response: "
+                            + PCSC.toString(response));
+                }
+                return new ChannelImpl(this, response[0]);
+            } catch (PCSCException e) {
+                handleError(e);
+                throw new CardException("openLogicalChannel() failed", e);
             }
-            return new ChannelImpl(this, response[0]);
-        } catch (PCSCException e) {
-            handleError(e);
-            throw new CardException("openLogicalChannel() failed", e);
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -193,87 +250,98 @@ final class CardImpl extends Card {
     }
 
     public synchronized void beginExclusive() throws CardException {
-        checkSecurity("exclusive");
-        checkState();
-        if (exclusiveThread != null) {
-            throw new CardException
-                    ("Exclusive access has already been assigned to Thread "
-                    + exclusiveThread.getName());
-        }
         try {
-            SCardBeginTransaction(cardId);
-        } catch (PCSCException e) {
-            handleError(e);
-            throw new CardException("beginExclusive() failed", e);
+            checkSecurity("exclusive");
+            checkState();
+            if (exclusiveThread != null) {
+                throw new CardException
+                        ("Exclusive access has already been assigned to Thread "
+                        + exclusiveThread.getName());
+            }
+            try {
+                SCardBeginTransaction(context.cardId);
+            } catch (PCSCException e) {
+                handleError(e);
+                throw new CardException("beginExclusive() failed", e);
+            }
+            exclusiveThread = Thread.currentThread();
+        } finally {
+            Reference.reachabilityFence(this);
         }
-        exclusiveThread = Thread.currentThread();
     }
 
     public synchronized void endExclusive() throws CardException {
-        checkState();
-        if (exclusiveThread != Thread.currentThread()) {
-            throw new IllegalStateException
-                    ("Exclusive access not assigned to current Thread");
-        }
         try {
-            SCardEndTransaction(cardId, SCARD_LEAVE_CARD);
-        } catch (PCSCException e) {
-            handleError(e);
-            throw new CardException("endExclusive() failed", e);
+            checkState();
+            if (exclusiveThread != Thread.currentThread()) {
+                throw new IllegalStateException
+                        ("Exclusive access not assigned to current Thread");
+            }
+            try {
+                SCardEndTransaction(context.cardId, SCARD_LEAVE_CARD);
+            } catch (PCSCException e) {
+                handleError(e);
+                throw new CardException("endExclusive() failed", e);
+            } finally {
+                exclusiveThread = null;
+            }
         } finally {
-            exclusiveThread = null;
+            Reference.reachabilityFence(this);
         }
     }
 
     public byte[] transmitControlCommand(int controlCode, byte[] command)
             throws CardException {
-        checkSecurity("transmitControl");
-        checkState();
-        checkExclusive();
-        if (command == null) {
-            throw new NullPointerException();
-        }
         try {
-            byte[] r = SCardControl(cardId, controlCode, command);
-            return r;
-        } catch (PCSCException e) {
-            handleError(e);
-            throw new CardException("transmitControlCommand() failed", e);
+            checkSecurity("transmitControl");
+            checkState();
+            checkExclusive();
+            if (command == null) {
+                throw new NullPointerException();
+            }
+            try {
+                byte[] r = SCardControl(context.cardId, controlCode, command);
+                return r;
+            } catch (PCSCException e) {
+                handleError(e);
+                throw new CardException("transmitControlCommand() failed", e);
+            }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
     public void disconnect(boolean reset) throws CardException {
-        if (reset) {
-            checkSecurity("reset");
-        }
-        if (state != State.OK) {
-            return;
-        }
-        checkExclusive();
         try {
-            SCardDisconnect(cardId, (reset ? SCARD_RESET_CARD : SCARD_LEAVE_CARD));
-        } catch (PCSCException e) {
-            throw new CardException("disconnect() failed", e);
+            if (reset) {
+                checkSecurity("reset");
+            }
+            if (context.state != State.OK) {
+                return;
+            }
+            checkExclusive();
+            try {
+                SCardDisconnect(context.cardId, (reset ? SCARD_RESET_CARD : SCARD_LEAVE_CARD));
+            } catch (PCSCException e) {
+                throw new CardException("disconnect() failed", e);
+            } finally {
+                context.state = State.DISCONNECTED;
+                exclusiveThread = null;
+                // state has been set != OK. The cleaning action is now a noop.
+                // Deregister from Cleaner to reduce reference tracking.
+                cleanable.clean();
+            }
         } finally {
-            state = State.DISCONNECTED;
-            exclusiveThread = null;
+            Reference.reachabilityFence(this);
         }
     }
 
     public String toString() {
-        return "PC/SC card in " + terminal.name
-            + ", protocol " + getProtocol() + ", state " + state;
-    }
-
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
         try {
-            if (state == State.OK) {
-                state = State.DISCONNECTED;
-                SCardDisconnect(cardId, SCARD_LEAVE_CARD);
-            }
+            return "PC/SC card in " + terminal.name
+                + ", protocol " + getProtocol() + ", state " + context.state;
         } finally {
-            super.finalize();
+            Reference.reachabilityFence(this);
         }
     }
 

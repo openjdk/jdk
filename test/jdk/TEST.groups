@@ -636,6 +636,7 @@ jdk_security_manual_no_input = \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java \
     sun/security/smartcardio/TestChannel.java \
+    sun/security/smartcardio/TestCleaner.java \
     sun/security/smartcardio/TestConnect.java \
     sun/security/smartcardio/TestConnectAgain.java \
     sun/security/smartcardio/TestControl.java \
