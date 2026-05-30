@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8259609 8276116
+ * @bug 8259609 8276116 8356184
  * @summary C2: optimize long range checks in long counted loops
  * @requires vm.compiler2.enabled
  * @requires vm.compMode != "Xcomp"
@@ -289,6 +289,28 @@ public class TestLongRangeCheck {
         test("testStrideNegScalePosNotOneInIntLoop2", 0, 100, 1090, 0);
 
         test("testStridePosScaleNegNotOneInIntLoop2", 0, 100, 1090, 1089);
+
+        test("testStridePosScalePosInIntLoop3", 0, 100, 100, 0);
+
+        test("testStrideNegScaleNegInIntLoop3", 0, 100, 100, 100);
+
+        test("testStrideNegScalePosInIntLoop3", 0, 100, 100, 0);
+
+        test("testStridePosScaleNegInIntLoop3", 0, 100, 100, 99);
+
+        test("testStridePosScalePosNotOneInIntLoop3", 0, 100, 1090, 0);
+
+        test("testStrideNegScaleNegNotOneInIntLoop3", 0, 100, 1090, 1100);
+
+        test("testStrideNegScalePosNotOneInIntLoop3", 0, 100, 1090, 0);
+
+        test("testStridePosScaleNegNotOneInIntLoop3", 0, 100, 1090, 1089);
+
+        // offset causes int overflow
+        testOverflow("testStridePosScalePosInIntLoop3", 0, 100, 100, 0, Integer.MAX_VALUE);
+        testOverflow("testStrideNegScaleNegInIntLoop3", 0, 100, 100, 100, Integer.MIN_VALUE);
+        testOverflow("testStrideNegScalePosInIntLoop3", 0, 100, 100, 0, Integer.MAX_VALUE);
+        testOverflow("testStridePosScaleNegInIntLoop3", 0, 100, 100, 99, Integer.MIN_VALUE);
 
         {
             Method m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod("testStridePosScalePosInIntLoopOverflow", long.class, long.class, long.class, long.class);
@@ -660,6 +682,86 @@ public class TestLongRangeCheck {
         final int stride = 1;
         for (int i = (int)start; i < (int)stop; i += stride) {
             Preconditions.checkIndex(scale * i + offset, length, null);
+        }
+    }
+
+    public static void testStridePosScalePosInIntLoop3(long start, long stop, long length, long offset) {
+        checkInputs(start, stop, offset);
+        final int scale = 1;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+        for (int i = (int)start; i < (int)stop; i += stride) {
+            Preconditions.checkIndex(scale * i + intOffset, length, null);
+        }
+    }
+
+    public static void testStrideNegScaleNegInIntLoop3(long start, long stop, long length, long offset) {
+        checkInputs(start, stop, offset);
+        final int scale = -1;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+        for (int i = (int)stop; i > (int)start; i -= stride) {
+            Preconditions.checkIndex(scale * i + intOffset, length, null);
+        }
+    }
+
+    public static void testStrideNegScalePosInIntLoop3(long start, long stop, long length, long offset) {
+        checkInputs(start, stop, offset);
+        final int scale = 1;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+        for (int i = (int)(stop-1); i >= (int)start; i -= stride) {
+            Preconditions.checkIndex(scale * i + intOffset, length, null);
+        }
+    }
+
+    public static void testStridePosScaleNegInIntLoop3(long start, long stop, long length, long offset) {
+        checkInputs(start, stop, offset);
+        final int scale = -1;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+        for (int i = (int)start; i < (int)stop; i += stride) {
+            Preconditions.checkIndex(scale * i + intOffset, length, null);
+        }
+    }
+
+    public static void testStridePosScalePosNotOneInIntLoop3(long start, long stop, long length, long offset) {
+        checkInputs(start, stop, offset);
+        final int scale = 11;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+        for (int i = (int)start; i < (int)stop; i += stride) {
+            Preconditions.checkIndex(scale * i + intOffset, length, null);
+        }
+    }
+
+    public static void testStrideNegScaleNegNotOneInIntLoop3(long start, long stop, long length, long offset) {
+        checkInputs(start, stop, offset);
+        final int scale = -11;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+        for (int i = (int)stop; i > (int)start; i -= stride) {
+            Preconditions.checkIndex(scale * i + intOffset, length, null);
+        }
+    }
+
+    public static void testStrideNegScalePosNotOneInIntLoop3(long start, long stop, long length, long offset) {
+        checkInputs(start, stop, offset);
+        final int scale = 11;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+        for (int i = (int)(stop-1); i >= (int)start; i -= stride) {
+            Preconditions.checkIndex(scale * i + intOffset, length, null);
+        }
+    }
+
+    public static void testStridePosScaleNegNotOneInIntLoop3(long start, long stop, long length, long offset) {
+        checkInputs(start, stop, offset);
+        final int scale = -11;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+        for (int i = (int)start; i < (int)stop; i += stride) {
+            Preconditions.checkIndex(scale * i + intOffset, length, null);
         }
     }
 
