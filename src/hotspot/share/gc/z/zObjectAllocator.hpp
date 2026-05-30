@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,29 +31,30 @@
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zValue.hpp"
+#include "runtime/atomic.hpp"
 
 class ZObjectAllocator {
 private:
   class PerAge {
   private:
-    const ZPageAge     _age;
-    const bool         _use_per_cpu_shared_small_pages;
-    ZPerCPU<ZPage*>    _shared_small_page;
-    ZContended<ZPage*> _shared_medium_page;
-    ZLock              _medium_page_alloc_lock;
+    const ZPageAge             _age;
+    const bool                 _use_per_cpu_shared_small_pages;
+    ZPerCPU<Atomic<ZPage*>>    _shared_small_page;
+    ZContended<Atomic<ZPage*>> _shared_medium_page;
+    ZLock                      _medium_page_alloc_lock;
 
   public:
     PerAge(ZPageAge age);
 
-    ZPage** shared_small_page_addr();
-    ZPage* const* shared_small_page_addr() const;
+    Atomic<ZPage*>& shared_small_page();
+    const Atomic<ZPage*>& shared_small_page() const;
 
     ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags);
     void undo_alloc_page(ZPage* page);
 
     // Allocate an object in a shared page. Allocate and
     // atomically install a new page if necessary.
-    zaddress alloc_object_in_shared_page(ZPage** shared_page,
+    zaddress alloc_object_in_shared_page(Atomic<ZPage*>& shared_page,
                                          ZPageType page_type,
                                          size_t page_size,
                                          size_t size,
