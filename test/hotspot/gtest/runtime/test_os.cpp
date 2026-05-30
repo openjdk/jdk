@@ -29,6 +29,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
 #include "testutils.hpp"
+#include "threadHelper.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -120,6 +121,82 @@ TEST_VM(os, page_size_for_region_unaligned) {
     size_t small_page = os::page_sizes().smallest();
     size_t actual = os::page_size_for_region_unaligned(small_page - 17, 1);
     ASSERT_EQ(small_page, actual);
+  }
+}
+
+TEST_VM(os, test_print_markword) {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+  oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
+  markWord m0 = obj->mark();
+  static markWord markWords[] = { markWord(0), m0, m0.set_age(2), m0.copy_set_hash(0x12345) };
+
+  static const char* expected[] = { "is null", "unknown", "age", "foo" };
+  outputStream* out = fdStream::stdout_stream();
+  int nmark = sizeof(markWords) / sizeof(int64_t);
+  int nresult = sizeof(expected) / sizeof(const char*);
+  assert(nmark == nresult, "misconfigured test/result arrays; sizes differ");
+  #ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    for (int i=0; i<nmark; i++ ) {
+      stringStream st;
+      os::print_location(&st, (intptr_t) markWords[i].to_pointer(), true);
+      out->print("\n====================\nword 0x%p, '%s' result:\n%s\n", markWords[i].to_pointer(), expected[i], st.base());
+      ASSERT_THAT(st.base(), testing::HasSubstr(expected[i]));
+    }
+  }
+  #endif
+}
+
+static void assert_test_pattern(oop& obj, const char* pattern, bool is_present=true) {
+  stringStream st;
+  os::print_location(&st, p2i(obj), true);
+  if (is_present) {
+    ASSERT_THAT(st.base(), testing::HasSubstr(pattern));
+  } else {
+    ASSERT_THAT(st.base(), testing::Not(testing::HasSubstr(pattern)));
+  }
+}
+
+TEST_VM(os, test_print_location) {
+
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
+
+  {
+    // wizard mode off, so don't print markword
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    assert_test_pattern(obj, "is_unlocked no_hash", WizardMode);
+  }
+
+  // WizardMode (not available in release mode) prints details
+#ifndef PRODUCT
+  FlagSetting fs(WizardMode, true);
+ #endif
+  HandleMark hm(THREAD);
+  Handle h_obj(THREAD, obj);
+
+  // Thread tries to lock it.
+  {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    ObjectLocker ol(h_obj, THREAD);
+    assert_test_pattern(obj, "locked");
+    assert_test_pattern(obj, "is_unlocked", false);
+  }
+
+  // Unlocked again
+  {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    assert_test_pattern(obj, "is_unlocked");
+  }
+
+  // Hash the object then print it.
+  {
+    intx hash = h_obj->identity_hash();
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    assert_test_pattern(obj, "is_unlocked hash=");
   }
 }
 

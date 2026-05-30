@@ -1339,8 +1339,18 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Compressed klass needs to be decoded first.
-  // Todo: questionable for COH - can we do this better?
 #ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    markWord mw = (markWord)(uintptr_t)(addr);
+    if (mw.has_no_hash() && Klass::is_valid(mw.klass_without_asserts()) ) {
+      st->print(PTR_FORMAT " is a valid markword: ", p2i(addr));
+      mw.print_on(st);
+      st->print(" ");
+      mw.klass()->print_on(st);
+      return;
+    }
+  }
+
   if (((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
     Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
