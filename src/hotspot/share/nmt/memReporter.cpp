@@ -22,6 +22,7 @@
  *
  */
 #include "cds/filemap.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -36,6 +37,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+
 
 #define INDENT_BY(num_chars, CODE) { \
   StreamIndentor si(out, num_chars); \
@@ -480,7 +482,7 @@ void MemDetailReporter::report_memory_file_allocations() {
   output()->print_raw(st.freeze());
 }
 
-void MemSummaryDiffReporter::report_diff() {
+void MemSummaryDiffReporter::report_diff() const {
   outputStream* out = output();
   out->cr();
   out->print_cr("Native Memory Tracking:");
@@ -797,7 +799,7 @@ void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
   out->print_cr(")");
 }
 
-void MemDetailDiffReporter::report_diff() {
+void MemDetailDiffReporter::report_diff() const {
   MemSummaryDiffReporter::report_diff();
   diff_malloc_sites();
   diff_virtual_memory_sites();
@@ -953,3 +955,838 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
   out->cr();
 }
 
+XmlMemSummaryReporter::XmlMemSummaryReporter(MemBaseline& baseline, outputStream* output, size_t scale) :
+ _malloc_snapshot(baseline.malloc_memory_snapshot()),
+ _vm_snapshot(baseline.virtual_memory_snapshot()),
+ _instance_class_count(baseline.instance_class_count()),
+ _array_class_count(baseline.array_class_count()) ,
+ _scale(scale) {
+  _xml_output = new (mtNMT) xmlStream(output);
+}
+
+XmlMemSummaryReporter::~XmlMemSummaryReporter() {
+  if(_xml_output != nullptr) {
+    _xml_output->flush();
+  }
+  delete _xml_output;
+}
+
+void XmlMemSummaryReporter::print_malloc(const MemoryCounter* c, MemTag mem_tag) const {
+  const size_t amount = amount_in_current_scale(c->size()).value;
+  const size_t count = c->count();
+  const size_t pk_amount = amount_in_current_scale(c->peak_size()).value;
+  XmlParentElement("malloc");
+  xml_element("memoryTag",  NMTUtil::tag_to_name(mem_tag));
+  xml_element(mem_tag == mtThreadStack ? "threadStack" : "malloc", amount);
+  xml_element("count", count);
+  xml_element("atPeak", pk_amount == amount ? "true" : "false");
+  xml_element("amountPeak", pk_amount);
+  xml_element("countPeak", c->peak_count());
+}
+
+void XmlMemSummaryReporter::print_virtual_memory(size_t reserved, size_t committed, size_t peak) const {
+  XmlParentElement("mmap");
+  xml_element("reserved", amount_in_current_scale(reserved));
+  xml_element("committed", amount_in_current_scale(committed));
+  xml_element("atPeak", peak == committed ? "true" : "false");
+  xml_element("peak", amount_in_current_scale(peak));
+}
+
+void XmlMemSummaryReporter::print_arena(const MemoryCounter* c) const {
+  const size_t amount = c->size();
+  const size_t count = c->count();
+  const size_t pk_amount = c->peak_size();
+  const size_t pk_count = c->peak_count();
+
+  XmlParentElement("arena");
+  xml_element("amount", amount_in_current_scale(amount));
+  xml_element("count", amount_in_current_scale(count));
+  xml_element("atPeak", pk_amount == amount ? "true" : "false");
+  xml_element("countPeak", amount_in_current_scale(pk_count));
+}
+
+void XmlMemSummaryReporter::print_virtual_memory_region(const char* type, address base, size_t size) const {
+  XmlParentElement("region");
+  xml_element("base", (AddressType)base);
+  xml_element("end", (AddressType)(base + size));
+  xml_element("size", amount_in_current_scale(size));
+  xml_element("state", type);
+}
+
+template <typename T>
+constexpr const char* format_v = "%s"; // Default
+
+template <> constexpr const char* format_v<int> = "%d";
+template <> constexpr const char* format_v<size_t> = "%zu";
+template <> constexpr const char* format_v<float> = "%2.2f";
+
+template<typename T>
+void XmlMemSummaryReporter::xml_element(const char* node, T value) const {
+  xmlStream* xs = xml_output();
+  XmlElemHelper xeh(xs, node);
+  if constexpr (std::is_same_v<T, ScaledAmount>)
+    xs->print("%zu", value.value);
+  else if constexpr (std::is_same_v<T, CounterDiff>)
+    xs->print("%+zd", value.value);
+  else if constexpr (std::is_same_v<T, ScaledDiff>)
+    xs->print(INT64_PLUS_FORMAT, value.value);
+  else if constexpr (std::is_same_v<T, AddressType>)
+    xs->print(PTR_FORMAT, p2i(value.value));
+  else
+    xs->print(format_v<T>, value);
+}
+
+void XmlMemSummaryReporter::report(bool summary_only) const {
+  xmlStream* xs = xml_output();
+  assert(xs != nullptr, "sanity");
+  const size_t total_malloced_bytes       = _malloc_snapshot->total();
+  const size_t total_mmap_reserved_bytes  = _vm_snapshot->total_reserved();
+  const size_t total_mmap_committed_bytes = _vm_snapshot->total_committed();
+  const size_t total_reserved_amount      = total_malloced_bytes + total_mmap_reserved_bytes;
+  const size_t total_committed_amount     = total_malloced_bytes + total_mmap_committed_bytes;
+
+  xs->head("nativeMemoryTracking scale=\"%s\"", current_scale());
+  xml_element("report", summary_only ? "Summary" : "Detail");
+  {
+    XmlParentElement("total");
+    xml_element("reserved", amount_in_current_scale(total_reserved_amount));
+    xml_element("committed", amount_in_current_scale(total_committed_amount));
+  }
+  {
+    XmlParentElement("malloc");
+    xml_element("size", amount_in_current_scale(total_malloced_bytes));
+    xml_element("count", _malloc_snapshot->total_count());
+    xml_element("sizePeak", amount_in_current_scale(_malloc_snapshot->total_peak()));
+    xml_element("countPeak", _malloc_snapshot->total_peak_count());
+  }
+  {
+    XmlParentElement("mmap");
+    xml_element("reserved", amount_in_current_scale(total_mmap_reserved_bytes));
+    xml_element("committed", amount_in_current_scale(total_mmap_committed_bytes));
+  }
+  {
+    XmlParentElement("memoryTags");
+    for (int index = 0; index < mt_number_of_tags; index ++) {
+      MemTag mem_tag = NMTUtil::index_to_tag(index);
+      if (mem_tag == mtThreadStack) continue;
+
+      MallocMemory* malloc_memory = _malloc_snapshot->by_tag(mem_tag);
+      VirtualMemory* virtual_memory = _vm_snapshot->by_tag(mem_tag);
+
+      report_summary_of_tag(mem_tag, malloc_memory, virtual_memory);
+    }
+  }
+  if (summary_only) {
+    xs->tail("nativeMemoryTracking");
+  }
+}
+
+void XmlMemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
+  MallocMemory* malloc_memory, VirtualMemory* virtual_memory) const {
+
+  size_t reserved_amount  = MemReporterBase::reserved_total (malloc_memory, virtual_memory);
+  size_t committed_amount = MemReporterBase::committed_total(malloc_memory, virtual_memory);
+
+  // Count thread's native stack in "Thread" category
+  if (mem_tag == mtThread) {
+    const VirtualMemory* thread_stack_usage =
+      (const VirtualMemory*)_vm_snapshot->by_tag(mtThreadStack);
+    reserved_amount  += thread_stack_usage->reserved();
+    committed_amount += thread_stack_usage->committed();
+  } else if (mem_tag == mtNMT) {
+    // Count malloc headers in "NMT" category
+    reserved_amount  += _malloc_snapshot->malloc_overhead();
+    committed_amount += _malloc_snapshot->malloc_overhead();
+  }
+
+  // Omit printing if the current reserved value as well as all historical peaks (malloc, mmap committed, arena)
+  // fall below scale threshold
+  const size_t pk_vm     = virtual_memory->peak_size();
+  const size_t pk_malloc = malloc_memory->malloc_peak_size();
+  const size_t pk_arena  = malloc_memory->arena_peak_size();
+
+  if (amount_in_current_scale(MAX4(reserved_amount, pk_vm, pk_malloc, pk_arena)).value == 0) {
+    return;
+  }
+
+  XmlParentElement("memoryTag");
+  xml_element("name", NMTUtil::tag_to_name(mem_tag));
+  {
+    XmlParentElement("total");
+    xml_element("reserved", amount_in_current_scale(reserved_amount));
+    xml_element("committed", amount_in_current_scale(committed_amount));
+  }
+
+#if INCLUDE_CDS
+  if (mem_tag == mtClassShared) {
+      size_t read_only_bytes = FileMapInfo::readonly_total();
+      xml_element("readonly", amount_in_current_scale(read_only_bytes));
+  }
+#endif
+
+  if (mem_tag == mtClass) {
+    // report class count
+    xml_element("classes", _instance_class_count + _array_class_count);
+    xml_element("instanceClasses", _instance_class_count);
+    xml_element("arrayClasses", _array_class_count);
+  } else if (mem_tag == mtThread) {
+    const VirtualMemory* thread_stack_usage =_vm_snapshot->by_tag(mtThreadStack);
+    // report thread count
+    xml_element("threads", ThreadStackTracker::thread_count());
+    {
+      XmlParentElement("threadStack");
+      xml_element("reserved", thread_stack_usage->reserved());
+      xml_element("committed", thread_stack_usage->committed());
+      xml_element("peak", thread_stack_usage->peak_size());
+    }
+  }
+
+   // report malloc'd memory
+  if (amount_in_current_scale(MAX2(malloc_memory->malloc_size(), pk_malloc)).value > 0) {
+    print_malloc(malloc_memory->malloc_counter(), mem_tag);
+  }
+
+  if (amount_in_current_scale(MAX2(virtual_memory->reserved(), pk_vm)).value > 0) {
+    print_virtual_memory(virtual_memory->reserved(), virtual_memory->committed(), virtual_memory->peak_size());
+  }
+
+  if (amount_in_current_scale(MAX2(malloc_memory->arena_size(), pk_arena)).value > 0) {
+    print_arena(malloc_memory->arena_counter());
+  }
+
+  if (mem_tag == mtNMT &&
+    amount_in_current_scale(_malloc_snapshot->malloc_overhead()).value > 0) {
+    xml_element("trackingOverhead", amount_in_current_scale(_malloc_snapshot->malloc_overhead()));
+  } else if (mem_tag == mtClass) {
+    // Metadata information
+    report_metadata(Metaspace::NonClassType);
+    CLASS_SPACE_ONLY(report_metadata(Metaspace::ClassType);)
+  }
+
+
+}
+
+void XmlMemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
+
+  // NMT reports may be triggered (as part of error handling) very early. Make sure
+  // Metaspace is already initialized.
+  if (!Metaspace::initialized()) {
+    return;
+  }
+
+  assert(type == Metaspace::NonClassType || type == Metaspace::ClassType, "Invalid metadata type");
+  const char* name = (type == Metaspace::NonClassType) ? "metadata" : "classSpace";
+
+  const MetaspaceStats stats = MetaspaceUtils::get_statistics(type);
+
+  size_t waste = stats.committed() - stats.used();
+  float waste_percentage = stats.committed() > 0 ? (((float)waste * 100)/(float)stats.committed()) : 0.0f;
+
+  XmlParentElement(name);
+  {
+    XmlParentElement("total");
+    xml_element("reserved", amount_in_current_scale(stats.reserved()));
+    xml_element("committed", amount_in_current_scale(stats.committed()));
+    xml_element("used", amount_in_current_scale(stats.used()));
+    xml_element("waste", amount_in_current_scale(waste));
+    xml_element("wastePercentage", waste_percentage);
+  }
+}
+
+void XmlMemDetailReporter::report() const {
+  XmlMemSummaryReporter::report(/*summary only*/false);
+  report_virtual_memory_map();
+  report_memory_file_allocations();
+  report_detail();
+  xml_output()->tail("nativeMemoryTracking");
+}
+
+void XmlMemDetailReporter::report_detail() const {
+  XmlParentElement("details");
+
+  OmittedAllocations malloc_omitted = report_malloc_sites();
+  OmittedAllocations vma_omitted = report_virtual_memory_allocation_sites();
+  {
+    XmlParentElement("omitted");
+    {
+      XmlParentElement("malloc");
+      xml_element("amount", malloc_omitted.amount);
+      xml_element("count", malloc_omitted.count);
+    }
+    {
+      XmlParentElement("virtualMemory");
+      xml_element("amount", vma_omitted.amount);
+      xml_element("count", vma_omitted.count);
+    }
+  }
+}
+
+XmlMemDetailReporter::OmittedAllocations XmlMemDetailReporter::report_malloc_sites() const {
+  MallocSiteIterator malloc_itr = _baseline.malloc_sites(MemBaseline::by_size);
+  OmittedAllocations omitted;
+  if (malloc_itr.is_empty()) return omitted;
+
+
+  const MallocSite* malloc_site;
+
+  XmlParentElement("mallocSites");
+  while ((malloc_site = malloc_itr.next()) != nullptr) {
+    // Omit printing if the current value and the historic peak value both fall below the reporting scale threshold
+    if (amount_in_current_scale(MAX2(malloc_site->size(), malloc_site->peak_size())).value == 0) {
+      omitted.count ++;
+      omitted.amount += malloc_site->size();
+      continue;
+    }
+    XmlParentElement("mallocSite");
+    {
+      XmlStackElement;
+      _stackprinter.print_stack(malloc_site->call_stack());
+
+    }
+    MemTag mem_tag = malloc_site->mem_tag();
+    assert(NMTUtil::tag_is_valid(mem_tag) && mem_tag != mtNone, "Must have a valid memory tag");
+    {
+      XmlParentElement("malloc");
+      print_malloc(malloc_site->counter(), mem_tag);
+    }
+  }
+  return omitted;
+}
+
+XmlMemDetailReporter::OmittedAllocations XmlMemDetailReporter::report_virtual_memory_allocation_sites() const {
+  VirtualMemorySiteIterator  virtual_memory_itr =
+    _baseline.virtual_memory_sites(MemBaseline::by_size);
+
+  OmittedAllocations omitted;
+  if (virtual_memory_itr.is_empty()) return omitted;
+
+  const VirtualMemoryAllocationSite*  virtual_memory_site;
+  XmlParentElement("virtualMemoryAllocationSites");
+  while ((virtual_memory_site = virtual_memory_itr.next()) != nullptr) {
+    // Don't report free sites; does not count toward omitted count.
+    if (virtual_memory_site->reserved() == 0) {
+      continue;
+    }
+    // Omit printing if the current value and the historic peak value both fall below the
+    // reporting scale threshold
+    if (amount_in_current_scale(MAX2(virtual_memory_site->reserved(),
+                                     virtual_memory_site->peak_size())).value == 0) {
+      omitted.count++;
+      omitted.amount += virtual_memory_site->reserved();
+      continue;
+    }
+    {
+      XmlParentElement("AllocSite");
+      {
+        XmlStackElement;
+        _stackprinter.print_stack(virtual_memory_site->call_stack());
+      }
+      {
+        XmlParentElement("total");
+        xml_element("reserved", virtual_memory_site->reserved());
+        xml_element("committed", virtual_memory_site->committed());
+        xml_element("memoryTag", NMTUtil::tag_to_name(virtual_memory_site->mem_tag()));
+      }
+    }
+  }
+  return omitted;
+}
+
+void XmlMemDetailReporter::report_virtual_memory_map() const{
+  XmlParentElement("virtualMemoryMap");
+  _baseline.virtual_memory_allocations()->visit_reserved_regions([&](VirtualMemoryRegion& rgn){
+    XmlParentElement("region");
+    report_virtual_memory_region(&rgn);
+    return true;
+  });
+}
+
+void XmlMemDetailReporter::report_virtual_memory_region(const VirtualMemoryRegion* reserved_rgn) const {
+  assert(reserved_rgn != nullptr, "null pointer");
+
+  // We don't bother about reporting peaks here.
+  // That is because peaks - in the context of virtual memory, peak of committed areas - make little sense
+  // when we report *by region*, which are identified by their location in memory. There is a philosophical
+  // question about identity here: e.g. a committed region that has been split into three regions by
+  // uncommitting a middle section of it, should that still count as "having peaked" before the split? If
+  // yes, which of the three new regions would be the spiritual successor? Rather than introducing more
+  // complexity, we avoid printing peaks altogether. Note that peaks should still be printed when reporting
+  // usage *by callsite*.
+
+  // Don't report if size is too small.
+  if (amount_in_current_scale(reserved_rgn->size()).value == 0) return;
+  const NativeCallStack*  stack = reserved_rgn->reserved_call_stack();
+  bool all_committed = reserved_rgn->size() == VirtualMemoryTracker::Instance::committed_size(reserved_rgn);
+  const char* region_type = (all_committed ? "reservedAndCommitted" : "reserved");
+
+  print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());
+
+  xml_element("memoryTag", NMTUtil::tag_to_name(reserved_rgn->mem_tag()));
+
+  {
+    XmlStackElement;
+    _stackprinter.print_stack(stack);
+  }
+
+  if (all_committed) {
+    bool reserved_and_committed = false;
+    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn,
+                                                                  [&](VirtualMemoryRegion& committed_rgn) {
+      if (committed_rgn.equals(*reserved_rgn)) {
+        // One region spanning the entire reserved region, with the same stack trace.
+        // Don't print this regions because the "reserved and committed" line above
+        // already indicates that the region is committed.
+        reserved_and_committed = true;
+        return false;
+      }
+      return true;
+    });
+
+    if (reserved_and_committed) {
+      return;
+    }
+  }
+  auto print_committed_rgn = [&](const VirtualMemoryRegion& crgn) {
+    XmlParentElement("committedRegion");
+
+    print_virtual_memory_region("committed", crgn.base(), crgn.size());
+    {
+      XmlStackElement;
+      _stackprinter.print_stack(crgn.committed_call_stack());
+    }
+  };
+
+  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn,
+                                                                 [&](VirtualMemoryRegion& crgn) {
+    print_committed_rgn(crgn);
+    return true;
+  });
+}
+
+void XmlMemDetailReporter::report_memory_file_allocations() const {
+  MemTracker::NmtVirtualMemoryLocker nvml;
+  MemoryFileTracker::Instance::print_all_reports_xml_on(xml_output(), scale());
+}
+
+void XmlMemSummaryDiffReporter::report_diff(bool summary_only) const {
+  xmlStream* xs = xml_output();
+  xs->head("nativeMemoryTracking scale=\"%s\"", current_scale());
+  xml_element("report", summary_only ? "Summary Diff" : "Detail Diff");
+
+  // Overall diff
+  {
+    XmlParentElement("total");
+    print_virtual_memory_diff(_current_baseline.total_reserved_memory(),
+                              _current_baseline.total_committed_memory(),
+                              _early_baseline.total_reserved_memory(),
+                              _early_baseline.total_committed_memory());
+  }
+
+  // malloc diff
+  const size_t early_malloced_bytes   =   _early_baseline.malloc_memory_snapshot()->total();
+  const size_t early_count            =   _early_baseline.malloc_memory_snapshot()->total_count();
+  const size_t current_malloced_bytes = _current_baseline.malloc_memory_snapshot()->total();
+  const size_t current_count          = _current_baseline.malloc_memory_snapshot()->total_count();
+  {
+    XmlParentElement("malloc");
+    print_malloc_diff(current_malloced_bytes,
+                      current_count,
+                      early_malloced_bytes,
+                      early_count, mtNone);
+  }
+  // mmap diff
+  {
+    XmlParentElement("virtualMemoryDiff");
+    print_virtual_memory_diff(_current_baseline.virtual_memory_snapshot()->total_reserved(),
+                              _current_baseline.virtual_memory_snapshot()->total_committed(),
+                              _early_baseline.virtual_memory_snapshot()->total_reserved(),
+                              _early_baseline.virtual_memory_snapshot()->total_committed());
+  }
+
+  // Summary diff by memory tag
+  for (int index = 0; index < mt_number_of_tags; index ++) {
+    MemTag mem_tag = NMTUtil::index_to_tag(index);
+    // thread stack is reported as part of thread category
+    if (mem_tag == mtThreadStack) continue;
+
+    {
+      XmlParentElement("memoryTag");
+      diff_summary_of_tag(mem_tag,
+        _early_baseline.malloc_memory(mem_tag),
+        _early_baseline.virtual_memory(mem_tag),
+        _early_baseline.metaspace_stats(),
+        _current_baseline.malloc_memory(mem_tag),
+        _current_baseline.virtual_memory(mem_tag),
+        _current_baseline.metaspace_stats());
+    }
+  }
+  if (summary_only) {
+    xs->tail("nativeMemoryTracking");
+  }
+}
+
+void XmlMemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t current_count,
+    size_t early_amount, size_t early_count, MemTag mem_tag) const {
+  XmlParentElement("mallocDiff");
+  xml_element("amount", amount_in_current_scale(current_amount));
+  // Report type only if it is valid and not under "thread" category
+  if (mem_tag != mtNone && mem_tag != mtThread) {
+    xml_element("memoryTag", NMTUtil::tag_to_name(mem_tag));
+  }
+
+  xml_element("amountDiff", diff_in_current_scale(current_amount, early_amount));
+  xml_element("count", current_count);
+  xml_element("countDiff", (CounterDiff)counter_diff(current_count, early_count));
+}
+
+void XmlMemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t current_count,
+  size_t early_amount, size_t early_count) const {
+  XmlParentElement("arenaDiff");
+  xml_element("amount", amount_in_current_scale(current_amount));
+  xml_element("amountDiff", diff_in_current_scale(current_amount, early_amount));
+  xml_element("count", current_count);
+  xml_element("countDiff", (CounterDiff)counter_diff(current_count, early_count));
+}
+
+void XmlMemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, size_t current_committed,
+    size_t early_reserved, size_t early_committed) const {
+
+  XmlParentElement("vmDiff");
+  xml_element("reservedCurrent", amount_in_current_scale(current_reserved));
+  xml_element("reservedDiff", diff_in_current_scale(current_reserved, early_reserved));
+  xml_element("committedCurrent", amount_in_current_scale(current_committed));
+  xml_element("committedDiff", diff_in_current_scale(current_committed, early_committed));
+}
+
+
+void XmlMemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
+  const MallocMemory* early_malloc, const VirtualMemory* early_vm,
+  const MetaspaceCombinedStats& early_ms,
+  const MallocMemory* current_malloc, const VirtualMemory* current_vm,
+  const MetaspaceCombinedStats& current_ms) const {
+
+  const char* scale = current_scale();
+  constexpr int indent = 28;
+
+  // Total reserved and committed memory in current baseline
+  size_t current_reserved_amount  = reserved_total (current_malloc, current_vm);
+  size_t current_committed_amount = committed_total(current_malloc, current_vm);
+
+  // Total reserved and committed memory in early baseline
+  size_t early_reserved_amount  = reserved_total(early_malloc, early_vm);
+  size_t early_committed_amount = committed_total(early_malloc, early_vm);
+
+  // Adjust virtual memory total
+  if (mem_tag == mtThread) {
+    const VirtualMemory* early_thread_stack_usage =
+      _early_baseline.virtual_memory(mtThreadStack);
+    const VirtualMemory* current_thread_stack_usage =
+      _current_baseline.virtual_memory(mtThreadStack);
+
+    early_reserved_amount  += early_thread_stack_usage->reserved();
+    early_committed_amount += early_thread_stack_usage->committed();
+
+    current_reserved_amount  += current_thread_stack_usage->reserved();
+    current_committed_amount += current_thread_stack_usage->committed();
+  } else if (mem_tag == mtNMT) {
+    early_reserved_amount  += _early_baseline.malloc_tracking_overhead();
+    early_committed_amount += _early_baseline.malloc_tracking_overhead();
+
+    current_reserved_amount  += _current_baseline.malloc_tracking_overhead();
+    current_committed_amount += _current_baseline.malloc_tracking_overhead();
+  }
+
+  if (amount_in_current_scale(current_reserved_amount).value > 0 ||
+      diff_in_current_scale(current_reserved_amount, early_reserved_amount).value != 0) {
+
+    // print summary line
+    xml_element("name", NMTUtil::tag_to_name(mem_tag));
+    print_virtual_memory_diff(current_reserved_amount, current_committed_amount,
+      early_reserved_amount, early_committed_amount);
+
+    // detail lines
+    if (mem_tag == mtClass) {
+      // report class count
+      {
+        XmlParentElement("classes");
+        xml_element("count",  _current_baseline.class_count());
+        xml_element("countDiff", (CounterDiff)counter_diff(_current_baseline.class_count(), _early_baseline.class_count()));
+      }
+      {
+        XmlParentElement("instanceClasses");
+        xml_element("count", _current_baseline.instance_class_count());
+        xml_element("countDiff", (CounterDiff)counter_diff(_current_baseline.instance_class_count(),
+                                              _early_baseline.instance_class_count()));
+      }
+      {
+        XmlParentElement("arrayClasses");
+        xml_element("count", _current_baseline.array_class_count());
+        xml_element("countDiff", (CounterDiff)counter_diff(_current_baseline.array_class_count(),
+                                              _early_baseline.array_class_count()));
+      }
+
+    } else if (mem_tag == mtThread) {
+      {
+        XmlParentElement("thread");
+        xml_element("count", _current_baseline.thread_count());
+        xml_element("countDiff", (CounterDiff)counter_diff(_current_baseline.thread_count(),
+                                              _early_baseline.thread_count()));
+      }
+      {
+        XmlParentElement("stackVirtualMemory");
+        const VirtualMemory* current_thread_stack = _current_baseline.virtual_memory(mtThreadStack);
+        const VirtualMemory* early_thread_stack   = _early_baseline.virtual_memory(mtThreadStack);
+
+        print_virtual_memory_diff(current_thread_stack->reserved(),
+                                  current_thread_stack->committed(),
+                                  early_thread_stack->reserved(),
+                                  early_thread_stack->committed());
+
+      }
+    }
+
+    // Report malloc'd memory
+    size_t current_malloc_amount = current_malloc->malloc_size();
+    size_t early_malloc_amount   = early_malloc->malloc_size();
+    if (amount_in_current_scale(current_malloc_amount).value > 0 ||
+        diff_in_current_scale(current_malloc_amount, early_malloc_amount).value != 0) {
+      XmlParentElement("mallocDiff");
+      print_malloc_diff(current_malloc_amount, (mem_tag == mtChunk) ? 0 : current_malloc->malloc_count(),
+        early_malloc_amount, early_malloc->malloc_count(), mtNone);
+    }
+
+    // Report virtual memory
+    if (amount_in_current_scale(current_vm->reserved()).value > 0 ||
+        diff_in_current_scale(current_vm->reserved(), early_vm->reserved()).value != 0) {
+      XmlParentElement("mmapDiff");
+      print_virtual_memory_diff(current_vm->reserved(), current_vm->committed(),
+        early_vm->reserved(), early_vm->committed());
+    }
+
+    // Report arena memory
+    if (amount_in_current_scale(current_malloc->arena_size()).value > 0 ||
+        diff_in_current_scale(current_malloc->arena_size(), early_malloc->arena_size()).value != 0) {
+      XmlParentElement("arenaDiff");
+      print_arena_diff(current_malloc->arena_size(), current_malloc->arena_count(),
+        early_malloc->arena_size(), early_malloc->arena_count());
+    }
+
+    // Report native memory tracking overhead
+    if (mem_tag == mtNMT) {
+      size_t current_tracking_overhead = amount_in_current_scale(_current_baseline.malloc_tracking_overhead()).value;
+      size_t early_tracking_overhead   = amount_in_current_scale(_early_baseline.malloc_tracking_overhead()).value;
+      ScaledDiff overhead_diff = diff_in_current_scale(_current_baseline.malloc_tracking_overhead(),
+                                                    _early_baseline.malloc_tracking_overhead());
+      XmlParentElement("trackingOverhead");
+      xml_element("amount", amount_in_current_scale(_current_baseline.malloc_tracking_overhead()));
+      xml_element("amountDiff", overhead_diff);
+
+    } else if (mem_tag == mtClass) {
+      XmlParentElement("metaspaceDiff");
+      print_metaspace_diff(current_ms, early_ms);
+    }
+  }
+}
+
+void XmlMemSummaryDiffReporter::print_metaspace_diff(const MetaspaceCombinedStats& current_ms,
+                                                  const MetaspaceCombinedStats& early_ms) const {
+  print_metaspace_diff("metadata", current_ms.non_class_space_stats(), early_ms.non_class_space_stats());
+#if INCLUDE_CLASS_SPACE
+  print_metaspace_diff("classSpace", current_ms.class_space_stats(), early_ms.class_space_stats());
+#endif
+}
+
+void XmlMemSummaryDiffReporter::print_metaspace_diff(const char* header,
+                                                  const MetaspaceStats& current_stats,
+                                                  const MetaspaceStats& early_stats) const {
+
+  const char* scale = current_scale();
+
+  XmlParentElement(header);
+  print_virtual_memory_diff(current_stats.reserved(),
+                            current_stats.committed(),
+                            early_stats.reserved(),
+                            early_stats.committed());
+
+  ScaledDiff diff_used = diff_in_current_scale(current_stats.used(),
+                                            early_stats.used());
+
+  size_t current_waste = current_stats.committed() - current_stats.used();
+  size_t early_waste = early_stats.committed() - early_stats.used();
+  ScaledDiff diff_waste = diff_in_current_scale(current_waste, early_waste);
+
+  // Diff used
+  xml_element("used", amount_in_current_scale(current_stats.used()));
+  xml_element("usedDiff", diff_used);
+
+  // Diff waste
+  const float waste_percentage = current_stats.committed() == 0 ? 0.0f :
+                                   ((float)current_waste * 100.0f) / (float)current_stats.committed();
+  xml_element("waste", amount_in_current_scale(current_waste));
+  xml_element("wastePercentage", waste_percentage);
+  xml_element("wasteDiff", diff_waste);
+}
+
+size_t XmlMemSummaryDiffReporter::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
+  return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
+}
+
+size_t XmlMemSummaryDiffReporter::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) {
+  return malloc->malloc_size() + malloc->arena_size() + vm->committed();
+}
+
+void XmlMemDetailDiffReporter::report_diff() const {
+  XmlMemSummaryDiffReporter::report_diff(/*summary only*/false);
+  diff_malloc_sites();
+  diff_virtual_memory_sites();
+  xml_output()->tail("nativeMemoryTracking");
+}
+
+void XmlMemDetailDiffReporter::diff_malloc_sites() const {
+  MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site_and_tag);
+  MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site_and_tag);
+
+  const MallocSite* early_site   = early_itr.next();
+  const MallocSite* current_site = current_itr.next();
+
+  while (early_site != nullptr || current_site != nullptr) {
+    if (early_site == nullptr) {
+      new_malloc_site(current_site);
+      current_site = current_itr.next();
+    } else if (current_site == nullptr) {
+      old_malloc_site(early_site);
+      early_site = early_itr.next();
+    } else {
+      int compVal = current_site->call_stack()->compare(*early_site->call_stack());
+      if (compVal < 0) {
+        new_malloc_site(current_site);
+        current_site = current_itr.next();
+      } else if (compVal > 0) {
+        old_malloc_site(early_site);
+        early_site = early_itr.next();
+      } else {
+        diff_malloc_site(early_site, current_site);
+        early_site   = early_itr.next();
+        current_site = current_itr.next();
+      }
+    }
+  }
+}
+
+void XmlMemDetailDiffReporter::diff_virtual_memory_sites() const {
+  VirtualMemorySiteIterator early_itr = _early_baseline.virtual_memory_sites(MemBaseline::by_site);
+  VirtualMemorySiteIterator current_itr = _current_baseline.virtual_memory_sites(MemBaseline::by_site);
+
+  const VirtualMemoryAllocationSite* early_site   = early_itr.next();
+  const VirtualMemoryAllocationSite* current_site = current_itr.next();
+
+  while (early_site != nullptr || current_site != nullptr) {
+    if (early_site == nullptr) {
+      new_virtual_memory_site(current_site);
+      current_site = current_itr.next();
+    } else if (current_site == nullptr) {
+      old_virtual_memory_site(early_site);
+      early_site = early_itr.next();
+    } else {
+      int compVal = current_site->call_stack()->compare(*early_site->call_stack());
+      if (compVal < 0) {
+        new_virtual_memory_site(current_site);
+        current_site = current_itr.next();
+      } else if (compVal > 0) {
+        old_virtual_memory_site(early_site);
+        early_site = early_itr.next();
+      } else if (early_site->mem_tag() != current_site->mem_tag()) {
+        // This site was originally allocated with one memory tag, then released,
+        // then re-allocated at the same site (as far as we can tell) with a different memory tag.
+        old_virtual_memory_site(early_site);
+        early_site = early_itr.next();
+        new_virtual_memory_site(current_site);
+        current_site = current_itr.next();
+      } else {
+        diff_virtual_memory_site(early_site, current_site);
+        early_site   = early_itr.next();
+        current_site = current_itr.next();
+      }
+    }
+  }
+}
+
+
+void XmlMemDetailDiffReporter::new_malloc_site(const MallocSite* malloc_site) const {
+  diff_malloc_site(malloc_site->call_stack(), malloc_site->size(), malloc_site->count(),
+    0, 0, malloc_site->mem_tag());
+}
+
+void XmlMemDetailDiffReporter::old_malloc_site(const MallocSite* malloc_site) const {
+  diff_malloc_site(malloc_site->call_stack(), 0, 0, malloc_site->size(),
+    malloc_site->count(), malloc_site->mem_tag());
+}
+
+void XmlMemDetailDiffReporter::diff_malloc_site(const MallocSite* early,
+  const MallocSite* current)  const {
+  if (early->mem_tag() != current->mem_tag()) {
+    // If malloc site type changed, treat it as deallocation of old type and
+    // allocation of new type.
+    old_malloc_site(early);
+    new_malloc_site(current);
+  } else {
+    diff_malloc_site(current->call_stack(), current->size(), current->count(),
+      early->size(), early->count(), early->mem_tag());
+  }
+}
+
+void XmlMemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_t current_size,
+  size_t current_count, size_t early_size, size_t early_count, MemTag mem_tag) const {
+
+  assert(stack != nullptr, "null stack");
+
+  if (diff_in_current_scale(current_size, early_size).value == 0) {
+      return;
+  }
+  XmlParentElement("mallocSiteDiff");
+  {
+    XmlStackElement;
+    _stackprinter.print_stack(stack);
+  }
+  {
+    XmlParentElement("mallocDiff");
+    print_malloc_diff(current_size, current_count, early_size, early_count, mem_tag);
+  }
+}
+
+
+void XmlMemDetailDiffReporter::new_virtual_memory_site(const VirtualMemoryAllocationSite* site) const {
+  diff_virtual_memory_site(site->call_stack(), site->reserved(), site->committed(), 0, 0, site->mem_tag());
+}
+
+void XmlMemDetailDiffReporter::old_virtual_memory_site(const VirtualMemoryAllocationSite* site) const {
+  diff_virtual_memory_site(site->call_stack(), 0, 0, site->reserved(), site->committed(), site->mem_tag());
+}
+
+void XmlMemDetailDiffReporter::diff_virtual_memory_site(const VirtualMemoryAllocationSite* early,
+  const VirtualMemoryAllocationSite* current) const {
+  diff_virtual_memory_site(current->call_stack(), current->reserved(), current->committed(),
+    early->reserved(), early->committed(), current->mem_tag());
+}
+
+void XmlMemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
+  size_t current_committed, size_t early_reserved, size_t early_committed, MemTag mem_tag) const  {
+
+  // no change
+  if (diff_in_current_scale(current_reserved, early_reserved).value == 0 &&
+      diff_in_current_scale(current_committed, early_committed).value == 0) {
+    return;
+  }
+  XmlParentElement("virtualMemorySiteDiff");
+  {
+    XmlStackElement;
+    _stackprinter.print_stack(stack);
+  }
+  {
+    XmlParentElement("mmapDiff");
+    print_virtual_memory_diff(current_reserved, current_committed, early_reserved, early_committed);
+    if (mem_tag != mtNone) {
+      xml_element("memoryTag", NMTUtil::tag_to_name(mem_tag));
+    }
+  }
+}

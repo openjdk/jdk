@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "runtime/handles.hpp"
 #include "utilities/ostream.hpp"
+
 
 class xmlStream;
 class defaultStream;
@@ -178,6 +179,42 @@ class xmlStream : public outputStream {
    */
 
 };
+
+class XmlElemHelper : public StackObj {
+  const char* _node;
+
+ protected:
+  xmlStream* xs;
+
+ public:
+  XmlElemHelper(xmlStream* st, const char* node): _node(node), xs(st) {
+    // We don't want \n after head of node, so we cannot use xs->head()
+    xs->write("<", 1);
+    xs->text()->print("%s", _node);
+    xs->write(">", 1);
+  }
+  ~XmlElemHelper() {
+    xs->write("</", 2);
+    xs->text()->print("%s", _node);
+    xs->write(">\n", 2);
+  }
+};
+
+class XmlCData : public XmlElemHelper {
+ public:
+  XmlCData(xmlStream* xs, const char* text) : XmlElemHelper(xs, text) {
+    xs->print_raw("<![CDATA[");
+  }
+  ~XmlCData() {
+    xs->print_raw("]]>");
+  }
+};
+
+#define XmlParentElement(txt) XmlElemHelper xml_parent ## __LINE__ (xml_output(), txt)
+#define XmlStackElement XmlCData xml_stack ## __LINE__ (xml_output(), "stack")
+#define XmlElementWithText(ename, format, ...) { XmlElemHelper xeh_ ## __LINE__ (xml_output(), ename); xml_output()->text()->print(format, ##__VA_ARGS__); }
+
+
 
 // Standard log file, null if no logging is happening.
 extern xmlStream* xtty;
