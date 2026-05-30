@@ -788,7 +788,10 @@ public interface Set<E> extends Collection<E> {
      * {@linkplain Object#hashCode() hashCode()}, and
      * {@linkplain Object#toString() toString()} methods may trigger initialization of
      * one or more lazy elements. If initialization fails for at least one element,
-     * the {@linkplain Object Object methods} may throw {@linkplain NoSuchElementException}.
+     * the {@linkplain Set#hashCode()} and {@linkplain Set#toString()} methods throw
+     * {@linkplain NoSuchElementException}, and the {@linkplain Set#equals(Object)}
+     * <em>may</em> throw {@linkplain NoSuchElementException} depending on which
+     * elements (if any) are compared.
      * <p>
      * The returned lazy set strongly references its underlying
      * computing function used to compute membership status at least as long as there are
