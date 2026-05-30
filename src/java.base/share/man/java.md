@@ -1148,8 +1148,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     option is disabled.
 
 [`-XX:FlightRecorderOptions=`]{#-XX_FlightRecorderOptions}*parameter*`=`*value* (or) `-XX:FlightRecorderOptions:`*parameter*`=`*value*
-:   Sets the parameters that control the behavior of JFR. Multiple parameters can be specified
-    by separating them with a comma.
+:   Sets the parameters that control the behavior of JFR.
+    `-XX:FlightRecorderOptions:help` prints the available options, default
+    redaction filters, and example command lines. Multiple parameters can be
+    specified by separating them with a comma.
 
     The following list contains the available JFR *parameter*`=`*value*
     entries:
@@ -1195,6 +1197,43 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     :   Specifies whether event classes should be retransformed using JVMTI. If
         false, instrumentation is added when event classes are loaded. By
         default, this parameter is enabled.
+
+    `redact-argument=`argument-filter
+    :   Replace command-line arguments that match a semicolon-separated list
+        of glob patterns, for example, `*secret*;password*`. Matching is
+        case-insensitive, and the supported wildcards are `*` and `?`. To redact
+        multiple arguments, use a literal space (`' '`) as a separator.
+        For example, to match the two arguments `--auth username:token`, use the
+        filter `--auth *:*`. Filters containing spaces must be quoted as a single
+        command-line argument, for example,
+        `-XX:FlightRecorderOptions='redact-argument=--auth *:*'`.
+        Arguments containing spaces might not be matched as expected. To load
+        patterns from a file (one per line) use `@<filename>`. To add to the
+        default patterns instead of replacing them, prefix the whole list with
+        `+`, for example, `+*foo*;@redact.txt`. Use `none` (lowercase) to disable
+        all redaction filters for command-line arguments. Redacted arguments will
+        be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
+        and applies only to command-line arguments in the `jdk.JVMInformation`
+        event and to the `java.command` system property in the
+        `jdk.InitialSystemProperty` event. Other events, such as `jdk.ProcessStart`
+        (child processes), are not redacted. Use `-XX:FlightRecorderOptions:help`
+        to see the default filters used by the `redact-argument` option.
+
+    `redact-key=`key-filter
+    :   Replace the value of environment variables and system properties
+        whose key matches a semicolon-separated list of glob patterns,
+        for example, `*password*;*token*`. Matching is case-insensitive, and
+        the supported wildcards are `*` and `?`. To load patterns from a file
+        (one per line), use `@<filename>`. To add to the default patterns
+        instead of replacing them, prefix the whole list with `+`,
+        for example, `+*cred*;@keys.txt`. Use `none` (lowercase) to
+        disable all redaction filters for key matching. Redacted values
+        will be replaced with `[REDACTED]`. The option `redact-key` is
+        best-effort and applies only to the `jdk.InitialSystemProperty`,
+        `jdk.InitialEnvironmentVariable` and `jdk.JVMInformation` (-Dkey=...)
+        events. Other events, such as `jdk.InitialSecurityProperty`, are not
+        redacted. Use `-XX:FlightRecorderOptions:help` to see the default filters
+        used by the `redact-key` option.
 
     `stackdepth=`*depth*
     :   Stack depth for stack traces. By default, the depth is set to 64 method

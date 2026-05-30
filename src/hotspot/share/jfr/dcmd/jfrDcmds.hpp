@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
     return "Low";
   }
   static int num_arguments() { return 10; }
+  static void print_help(outputStream* out, bool startup);
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;
 };
