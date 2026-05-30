@@ -135,6 +135,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Enable workaround for Neoverse N1 erratum 1542419")          \
   product(bool, UseSingleICacheInvalidation, false, DIAGNOSTIC,         \
           "Defer multiple ICache invalidation to single invalidation")  \
+  product(bool, UseStlrForStandaloneRelease, false,                     \
+          "Emit stlr for setRelease/putXRelease/putOrdered* stores "    \
+          "and elide the leading dmb ish")                              \
 
 // end of ARCH_FLAGS
 

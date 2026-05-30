@@ -1574,9 +1574,7 @@ bool unnecessary_release(const Node *n)
          "expecting a release membar");
 
   MemBarNode *barrier = n->as_MemBar();
-  if (!barrier->leading()) {
-    return false;
-  } else {
+  if (barrier->leading()) {
     Node* trailing = barrier->trailing_membar();
     MemBarNode* trailing_mb = trailing->as_MemBar();
     assert(trailing_mb->trailing(), "Not a trailing membar?");
@@ -1591,6 +1589,44 @@ bool unnecessary_release(const Node *n)
       assert(mem->is_LoadStore(), "");
       assert(trailing_mb->Opcode() == Op_MemBarAcquire, "");
       return is_CAS(mem->Opcode(), true);
+    }
+  } else if (UseStlrForStandaloneRelease && barrier->standalone()) {
+    // A standalone MemBarRelease appears in front of a release store
+    // created by C2AccessFence (setRelease / putXRelease / putOrdered*)
+    // and also at the end of a constructor that publishes final fields.
+    // In the first case the following store carries MO=release and can
+    // be emitted as stlr, so the dmb ish is redundant; in the second
+    // case the preceding stores are MO=unordered and the barrier must
+    // stay. Walk forward along the memory projection: if we reach a
+    // release store with no trailing membar, the dmb can be elided.
+    // MergeMem and MemBarCPUOrder carry no aarch64 ordering of their
+    // own and are traversed transparently. Memory Phi nodes are not
+    // traversed; a release store that is only reachable through a Phi
+    // (some non-trivial loop shapes) will keep its leading dmb ish.
+    Node* mem_proj = barrier->proj_out_or_null(TypeFunc::Memory);
+    if (mem_proj == nullptr) {
+      return false;
+    }
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(mem_proj);
+    for (uint i = 0; i < wq.size(); i++) {
+      Node* cur = wq.at(i);
+      for (DUIterator_Fast jmax, j = cur->fast_outs(jmax); j < jmax; j++) {
+        Node* u = cur->fast_out(j);
+        if (u->is_Store() && u->as_Store()->is_release() &&
+            u->as_Store()->trailing_membar() == nullptr) {
+          return true;
+        }
+        if (u->is_MergeMem()) {
+          wq.push(u);
+        } else if (u->Opcode() == Op_MemBarCPUOrder) {
+          Node* p = u->as_MemBar()->proj_out_or_null(TypeFunc::Memory);
+          if (p != nullptr) {
+            wq.push(p);
+          }
+        }
+      }
     }
   }
   return false;
@@ -1621,7 +1657,7 @@ bool needs_releasing_store(const Node *n)
 {
   // assert n->is_Store();
   StoreNode *st = n->as_Store();
-  return st->trailing_membar() != nullptr;
+  return st->trailing_membar() != nullptr || (UseStlrForStandaloneRelease && st->is_release());
 }
 
 // predicate controlling translation of CAS
