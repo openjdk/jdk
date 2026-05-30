@@ -36,6 +36,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.Arrays;
+import java.util.DoubleSummaryStatistics;
 import java.util.IntSummaryStatistics;
 import java.util.LongSummaryStatistics;
 import java.util.Random;
@@ -69,12 +70,22 @@ public class MinMaxVector
         int[] minIntB;
         long[] minLongA;
         long[] minLongB;
+        float[] minFloatA;
+        float[] minFloatB;
+        double[] minDoubleA;
+        double[] minDoubleB;
         int[] maxIntA;
         int[] maxIntB;
         long[] maxLongA;
         long[] maxLongB;
+        float[] maxFloatA;
+        float[] maxFloatB;
+        double[] maxDoubleA;
+        double[] maxDoubleB;
         int[] resultIntArray;
         long[] resultLongArray;
+        float[] resultFloatArray;
+        double[] resultDoubleArray;
 
         @Setup
         public void setup() {
@@ -83,12 +94,22 @@ public class MinMaxVector
             maxLongB = longs[1];
             maxIntA = toInts(maxLongA);
             maxIntB = toInts(maxLongB);
+            maxFloatA = toFloats(maxLongA);
+            maxFloatB = toFloats(maxLongB);
+            maxDoubleA = toDoubles(maxLongA);
+            maxDoubleB = toDoubles(maxLongB);
             minLongA = negate(maxLongA);
             minLongB = negate(maxLongB);
             minIntA = toInts(minLongA);
             minIntB = toInts(minLongB);
+            minFloatA = toFloats(minLongA);
+            minFloatB = toFloats(minLongB);
+            minDoubleA = toDoubles(minLongA);
+            minDoubleB = toDoubles(minLongB);
             resultIntArray = new int[size];
             resultLongArray = new long[size];
+            resultFloatArray = new float[size];
+            resultDoubleArray = new double[size];
         }
 
         static long[] negate(long[] nums) {
@@ -97,6 +118,18 @@ public class MinMaxVector
 
         static int[] toInts(long[] nums) {
             return Arrays.stream(nums).mapToInt(i -> (int) i).toArray();
+        }
+
+        static float[] toFloats(long[] nums) {
+            final float[] floats = new float[nums.length];
+            for (int i = 0; i < nums.length; i++) {
+                floats[i] = (float) nums[i];
+            }
+            return floats;
+        }
+
+        static double[] toDoubles(long[] nums) {
+            return Arrays.stream(nums).mapToDouble(i -> (double) i).toArray();
         }
 
         static long[][] distributeLongRandomIncrement(int size, int probability) {
@@ -166,10 +199,18 @@ public class MinMaxVector
         int[] resultInts;
         long[] longs;
         long[] resultLongs;
+        float[] floats;
+        float[] resultFloats;
+        double[] doubles;
+        double[] resultDoubles;
         int highestInt;
         int lowestInt;
         long highestLong;
         long lowestLong;
+        float highestFloat;
+        float lowestFloat;
+        double highestDouble;
+        double lowestDouble;
         Random r = new Random(seed);
 
         @Setup
@@ -178,10 +219,16 @@ public class MinMaxVector
             resultInts = new int[size];
             longs = new long[size];
             resultLongs = new long[size];
+            floats = new float[size];
+            resultFloats = new float[size];
+            doubles = new double[size];
+            resultDoubles = new double[size];
 
             for (int i = 0; i < size; i++) {
                 ints[i] = r.nextInt();
                 longs[i] = r.nextLong();
+                floats[i] = r.nextFloat();
+                doubles[i] = r.nextDouble();
             }
 
             final IntSummaryStatistics intStats = Arrays.stream(ints).summaryStatistics();
@@ -191,6 +238,19 @@ public class MinMaxVector
             final LongSummaryStatistics longStats = Arrays.stream(longs).summaryStatistics();
             highestLong = (longStats.getMax() * range) / 100;
             lowestLong = longStats.getMin() + (longStats.getMax() - highestLong);
+
+            float maxFloat = Float.MIN_VALUE;
+            float minFloat = Float.MAX_VALUE;
+            for (float f : floats) {
+                maxFloat = Math.max(maxFloat, f);
+                minFloat = Math.min(minFloat, f);
+            }
+            highestFloat = maxFloat * (range / 100f);
+            lowestFloat = minFloat + (maxFloat - highestFloat);
+
+            final DoubleSummaryStatistics doubleStats = Arrays.stream(doubles).summaryStatistics();
+            highestDouble = doubleStats.getMax() * (range / 100f);
+            lowestDouble = doubleStats.getMin() + (doubleStats.getMax() - highestDouble);
         }
     }
 
@@ -317,6 +377,134 @@ public class MinMaxVector
         long result = 0;
         for (int i = 0; i < state.size; i++) {
             final long v = state.maxLongA[i];
+            result = Math.max(v, result);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public float[] floatClippingRange(RangeState state) {
+        for (int i = 0; i < state.size; i++) {
+            state.resultFloats[i] = Math.min(Math.max(state.floats[i], state.lowestFloat), state.highestFloat);
+        }
+        return state.resultFloats;
+    }
+
+    @Benchmark
+    public float[] floatLoopMin(LoopState state) {
+        for (int i = 0; i < state.size; i++) {
+            state.resultFloatArray[i] = Math.min(state.minFloatA[i], state.minFloatB[i]);
+        }
+        return state.resultFloatArray;
+    }
+
+    @Benchmark
+    public float[] floatLoopMax(LoopState state) {
+        for (int i = 0; i < state.size; i++) {
+            state.resultFloatArray[i] = Math.max(state.maxFloatA[i], state.maxFloatB[i]);
+        }
+        return state.resultFloatArray;
+    }
+
+    @Benchmark
+    public float floatReductionMultiplyMin(LoopState state) {
+        float result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final float v = 11 * state.minFloatA[i];
+            result = Math.min(v, result);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public float floatReductionSimpleMin(LoopState state) {
+        float result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final float v = state.minFloatA[i];
+            result = Math.min(v, result);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public float floatReductionMultiplyMax(LoopState state) {
+        float result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final float v = 11 * state.maxFloatA[i];
+            result = Math.max(v, result);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public float floatReductionSimpleMax(LoopState state) {
+        float result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final float v = state.maxFloatA[i];
+            result = Math.max(v, result);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public double[] doubleClippingRange(RangeState state) {
+        for (int i = 0; i < state.size; i++) {
+            state.resultDoubles[i] = Math.min(Math.max(state.doubles[i], state.lowestDouble), state.highestDouble);
+        }
+        return state.resultDoubles;
+    }
+
+    @Benchmark
+    public double[] doubleLoopMin(LoopState state) {
+        for (int i = 0; i < state.size; i++) {
+            state.resultDoubleArray[i] = Math.min(state.minDoubleA[i], state.minDoubleB[i]);
+        }
+        return state.resultDoubleArray;
+    }
+
+    @Benchmark
+    public double[] doubleLoopMax(LoopState state) {
+        for (int i = 0; i < state.size; i++) {
+            state.resultDoubleArray[i] = Math.max(state.maxDoubleA[i], state.maxDoubleB[i]);
+        }
+        return state.resultDoubleArray;
+    }
+
+    @Benchmark
+    public double doubleReductionMultiplyMin(LoopState state) {
+        double result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final double v = 11 * state.minDoubleA[i];
+            result = Math.min(v, result);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public double doubleReductionSimpleMin(LoopState state) {
+        double result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final double v = state.minDoubleA[i];
+            result = Math.min(v, result);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public double doubleReductionMultiplyMax(LoopState state) {
+        double result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final double v = 11 * state.maxDoubleA[i];
+            result = Math.max(v, result);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public double doubleReductionSimpleMax(LoopState state) {
+        double result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final double v = state.maxDoubleA[i];
             result = Math.max(v, result);
         }
         return result;
