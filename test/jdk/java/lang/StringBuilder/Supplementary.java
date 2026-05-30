@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 4533872 4915683 4985217 5017280
+ * @bug 4533872 4915683 4985217 5017280 8364007
  * @summary Unit tests for supplementary character support (JSR-204)
  */
 
@@ -35,7 +35,8 @@ public class Supplementary {
         test2();        // Test for codePointBefore(int index)
         test3();        // Test for reverse()
         test4();        // Test for appendCodePoint(int codePoint)
-        test5();        // Test for codePointCount(int beginIndex, int endIndex)
+        testCodePointCountTwoArgs(); // Test for codePointCount(int beginIndex, int endIndex)
+        testCodePointCountNoArg(); // Test for codePointCount()
         test6();        // Test for offsetByCodePoints(int index, int offset)
         testDontReadOutOfBoundsTrailingSurrogate();
     }
@@ -221,7 +222,7 @@ public class Supplementary {
      * Character.codePointCount(CharSequence, int, int) works
      * correctly.
      */
-    static void test5() {
+    static void testCodePointCountTwoArgs() {
         for (int i = 0; i < input.length; i++) {
             String s = input[i];
             StringBuilder sb = new StringBuilder(s);
@@ -244,6 +245,24 @@ public class Supplementary {
             testCodePointCount(sb, -1, length, IndexOutOfBoundsException.class);
             testCodePointCount(sb, 0, length+1, IndexOutOfBoundsException.class);
             testCodePointCount(sb, length, length-1, IndexOutOfBoundsException.class);
+        }
+    }
+
+    /**
+     * Test codePointCount()
+     *
+     * This test case assumes that
+     * Character.codePointCount(CharSequence) works
+     * correctly.
+     */
+    static void testCodePointCountNoArg() {
+        for (int i = 0; i < input.length; i++) {
+            String s = input[i];
+            StringBuilder sb = new StringBuilder(s);
+
+            int result = sb.codePointCount();
+            int expected = Character.codePointCount(sb, 0, sb.length());
+            check(result != expected, "codePointCount()", result, expected);
         }
     }
 
