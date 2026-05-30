@@ -4891,18 +4891,24 @@ uint os::processor_id() {
   return 0;
 }
 
-void os::set_native_thread_name(const char *name) {
+void os::set_native_thread_name(const char *name, size_t len) {
   char buf[16]; // according to glibc manpage, 16 chars incl. '/0'
   // We may need to truncate the thread name. Since a common pattern
   // for thread names is to be both longer than 15 chars and have a
   // trailing number ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc),
   // we preserve the end of the thread name by truncating the middle
   // (e.g. "Dispatc..read21").
-  const size_t len = strlen(name);
-  if (len < sizeof(buf)) {
-    strcpy(buf, name);
+  if (len >= sizeof(buf)) {
+    // truncate: first 7 bytes, "..", 6 bytes from the end = 7+2+6 = 15, then NUL terminator
+    // Truncating directly like this is faster than using snprintf.
+    memcpy(buf, name, 7);
+    buf[7] = '.';
+    buf[8] = '.';
+    memcpy(buf + 9, name + len - 6, 6);
+    buf[15] = '\0';
   } else {
-    (void) os::snprintf(buf, sizeof(buf), "%.7s..%.6s", name, name + len - 6);
+    memcpy(buf, name, len);
+    buf[len] = '\0';
   }
   // Note: we use the system call here instead of calling pthread_setname_np
   // since this is the only way to make ASAN aware of our thread names. Even

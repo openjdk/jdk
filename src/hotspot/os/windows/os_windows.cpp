@@ -1063,7 +1063,13 @@ DEBUG_ONLY(static GetThreadDescriptionFnPtr _GetThreadDescription = nullptr;)
 // forward decl.
 static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
 
-void os::set_native_thread_name(const char *name) {
+void os::set_native_thread_name(const char *name, size_t len) {
+  // Windows APIs require NUL-terminated strings; the name pointer
+  // may not be NUL-terminated, so copy into a stringStream.
+  char stack_buf[256];
+  stringStream ss(stack_buf, sizeof(stack_buf));
+  ss.write(name, len);
+  const char* terminated = ss.base();
 
   // From Windows 10 and Windows 2016 server, we have a direct API
   // for setting the thread name/description:
@@ -1073,7 +1079,7 @@ void os::set_native_thread_name(const char *name) {
     // SetThreadDescription takes a PCWSTR but we have conversion routines that produce
     // LPWSTR. The only difference is that PCWSTR is a pointer to const WCHAR.
     LPWSTR unicode_name;
-    errno_t err = convert_to_unicode(name, &unicode_name);
+    errno_t err = convert_to_unicode(terminated, &unicode_name);
     if (err == ERROR_SUCCESS) {
       HANDLE current = GetCurrentThread();
       HRESULT hr = _SetThreadDescription(current, unicode_name);
@@ -1081,7 +1087,7 @@ void os::set_native_thread_name(const char *name) {
         log_debug(os, thread)("set_native_thread_name: SetThreadDescription failed - falling back to debugger method");
         FREE_C_HEAP_ARRAY(unicode_name);
       } else {
-        log_trace(os, thread)("set_native_thread_name: SetThreadDescription succeeded - new name: %s", name);
+        log_trace(os, thread)("set_native_thread_name: SetThreadDescription succeeded - new name: %s", terminated);
 
 #ifdef ASSERT
         // For verification purposes in a debug build we read the thread name back and check it.
@@ -1131,7 +1137,7 @@ void os::set_native_thread_name(const char *name) {
   } info;
 
   info.dwType = 0x1000;
-  info.szName = name;
+  info.szName = terminated;
   info.dwThreadID = -1;
   info.dwFlags = 0;
 

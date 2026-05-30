@@ -2234,7 +2234,7 @@ int os::Machine::active_processor_count() {
   return online_cpus;
 }
 
-void os::set_native_thread_name(const char *name) {
+void os::set_native_thread_name(const char *name, size_t len) {
   // Not yet implemented.
   return;
 }

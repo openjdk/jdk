@@ -412,7 +412,12 @@ class os: AllStatic {
   }
 
   // Give a name to the current thread.
-  static void set_native_thread_name(const char *name);
+  // The name pointer must remain valid for the duration of the call but
+  // need not be NUL-terminated; len specifies the number of bytes.
+  static void set_native_thread_name(const char *name, size_t len);
+  static inline void set_native_thread_name(const char *name) {
+    set_native_thread_name(name, strlen(name));
+  }
 
   // Interface for stack banging (predetect possible stack overflow for
   // exception processing)  There are guard pages, and above that shadow

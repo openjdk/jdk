@@ -2265,13 +2265,17 @@ uint os::processor_id() {
 #endif
 }
 
-void os::set_native_thread_name(const char *name) {
+void os::set_native_thread_name(const char *name, size_t len) {
 #if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
   // This is only supported in Snow Leopard and beyond
   if (name != nullptr) {
-    // Add a "Java: " prefix to the name
-    char buf[MAXTHREADNAMESIZE];
-    (void) os::snprintf(buf, sizeof(buf), "Java: %s", name);
+    // Add a "Java: " prefix to the name. Truncating directly like this is
+    // faster than using snprintf.
+    char buf[MAXTHREADNAMESIZE] = { 'J', 'a', 'v', 'a', ':', ' '};
+    const size_t prefix_len = 6;
+    size_t name_len = MIN2(len, sizeof(buf) - (prefix_len + 1));
+    memcpy(buf + prefix_len, name, name_len);
+    buf[prefix_len + name_len] = '\0';
     pthread_setname_np(buf);
   }
 #endif

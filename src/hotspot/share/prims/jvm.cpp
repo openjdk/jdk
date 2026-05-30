@@ -2927,9 +2927,22 @@ JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring na
     // Thread naming is only supported for the current thread and
     // we don't set the name of an attached thread to avoid stepping
     // on other programs.
-    ResourceMark rm(thread);
-    const char *thread_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
-    os::set_native_thread_name(thread_name);
+    oop name_oop = JNIHandles::resolve_non_null(name);
+    typeArrayOop value = java_lang_String::value(name_oop);
+    int len = java_lang_String::length(name_oop, value);
+    if (java_lang_String::is_latin1(name_oop)) {
+      // Latin-1 bytes are directly usable by the OS thread name APIs
+      // without any character conversion. Pass the raw byte array
+      // pointer and length directly, avoiding the UTF-8 conversion
+      // and ResourceMark allocation.
+      const char *bytes = (const char *)value->byte_at_addr(0);
+      os::set_native_thread_name(bytes, (size_t)len);
+    } else {
+      // UTF-16 strings need conversion (rare for thread names).
+      ResourceMark rm(thread);
+      const char *thread_name = java_lang_String::as_utf8_string(name_oop);
+      os::set_native_thread_name(thread_name);
+    }
   }
 JVM_END
 
