@@ -10109,10 +10109,6 @@ void MacroAssembler::load_aotrc_address(Register reg, address a) {
 }
 
 void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
-  if (VM_Version::supports_apx_f()) {
-    esetzucc(comparison, dst);
-  } else {
-    setb(comparison, dst);
-    movzbl(dst, dst);
-  }
+  setb(comparison, dst);
+  movzbl(dst, dst);
 }
