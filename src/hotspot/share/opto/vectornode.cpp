@@ -1168,6 +1168,32 @@ static bool is_commutative_vector_operation(int opcode) {
   }
 }
 
+static bool is_associative_and_commutative_vector_operation(int opcode) {
+  switch (opcode) {
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVL:
+    case Op_MaxV:
+    case Op_MinV:
+    case Op_UMinV:
+    case Op_UMaxV:
+    case Op_XorV:
+    case Op_OrV:
+    case Op_AndV:
+    case Op_AndVMask:
+    case Op_OrVMask:
+    case Op_XorVMask:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
   // Predicated vector operations are sensitive to ordering of inputs.
   // When the mask corresponding to a vector lane is false then
@@ -1299,7 +1325,7 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
   return cloned_parent;
 }
 
-// Try to reassociate commutative vector operations using the following ideal transformation,
+// Try to reassociate associative vector operations using the following ideal transformation,
 // this will facilitate strength reducing a vector operation with all replicated inputs to
 // a scalar operation.
 //
@@ -1312,8 +1338,8 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
     return nullptr;
   }
 
-  // Enable re-association for commutative vector operations.
-  if (!is_commutative_vector_operation(Opcode())) {
+  // Enable re-association only for associative and commutative vector operations.
+  if (!is_associative_and_commutative_vector_operation(Opcode())) {
     return nullptr;
   }
 
