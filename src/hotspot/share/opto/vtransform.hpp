@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,16 +205,13 @@ private:
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
-  int count_alive_vtnodes() const;
+  void collect_alive_vtnodes(GrowableArray<VTransformNode*>& alive_nodes);
   void mark_vtnodes_in_loop(VectorSet& in_loop) const;
+  bool is_ignored_backedge(VTransformNode* def, VTransformNode* use) const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;
   void print_schedule() const;
-  void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
-                            const VectorSet& pre_visited,
-                            const VectorSet& post_visited) const;
 #endif
 };
 
@@ -587,6 +585,7 @@ public:
   virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
   virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
   virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
+  virtual VTransformDataScalarNode* isa_DataScalar() { return nullptr; }
 
   virtual bool is_load_in_loop() const { return false; }
   virtual bool is_load_or_store_in_loop() const { return false; }
@@ -644,6 +643,7 @@ public:
     assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
   }
 
+  virtual VTransformDataScalarNode* isa_DataScalar() override { return this; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "DataScalar"; };)
@@ -975,5 +975,130 @@ public:
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
+
+// Scheduling order: scalar operations (loads/stores, address expressions, etc.),
+// followed by vector arithmetic, vector loads, vector stores, and finally others.
+enum VTransformNodeClass {
+  VTN_Scalar = 0,
+  VTN_ElementWise = 1,
+  VTN_VectorLoad = 2,
+  VTN_VectorStore = 3,
+  VTN_Other = 4
+};
+
+static inline VTransformNodeClass vtransform_node_class(VTransformNode* vtn) {
+  if (vtn->isa_DataScalar() != nullptr || vtn->isa_MemopScalar()) {
+    return VTN_Scalar;
+  }
+  if (vtn->isa_LoadVector() != nullptr) {
+    return VTN_VectorLoad;
+  }
+  if (vtn->isa_StoreVector() != nullptr) {
+    return VTN_VectorStore;
+  }
+  if (vtn->isa_ElementWiseVector() != nullptr) {
+    return VTN_ElementWise;
+  }
+  return VTN_Other;
+}
+
+struct VTransformNodeEntry : public ResourceObj {
+  VTransformNode* _node;
+  VTransformNodeClass _vtn_class;
+  int _weak_penalty;
+  const VPointer* _vp;
+  VTransformNodeIDX _idx;
+
+  VTransformNodeEntry(VTransformNode* n, int weak_penalty):
+    _node(n), _vtn_class(vtransform_node_class(n)),
+    _weak_penalty(weak_penalty),
+    _vp((n->isa_MemVector() != nullptr || n->isa_MemopScalar() != nullptr) ? &n->vpointer() : nullptr),
+    _idx(n->_idx) { }
+
+};
+
+  class VTransformPriorityQueue : public ResourceObj {
+   private:
+    GrowableArray<VTransformNodeEntry*> _data;
+
+    static int cmp(const VTransformNodeEntry* a, const VTransformNodeEntry* b) {
+      // Prefer nodes whose weak predecessors are already scheduled.
+      if (a->_weak_penalty != b->_weak_penalty) {
+        return a->_weak_penalty - b->_weak_penalty;
+      }
+
+      // Lower is better.
+      if (a->_vtn_class != b->_vtn_class) {
+        return (int)a->_vtn_class - (int)b->_vtn_class;
+      }
+
+      // For memory ops with valid address expressions, order by address
+      // (base/stride/offset) to group similar accesses.
+      if (a->_vp != nullptr && b->_vp != nullptr &&
+          a->_vp->is_valid() && b->_vp->is_valid()) {
+        return VPointer::cmp_summands_and_con(*(a->_vp), *(b->_vp));
+      }
+
+      // Stable sorting.
+      return a->_idx - b->_idx;
+    }
+
+    void swap(int i, int j) {
+      VTransformNodeEntry* tmp = _data.at(i);
+      _data.at_put(i, _data.at(j));
+      _data.at_put(j, tmp);
+    }
+
+    void sift_up(int idx) {
+      while (idx > 0) {
+        int parent = (idx - 1) / 2;
+        if (cmp(_data.at(idx), _data.at(parent)) >= 0) {
+          break;
+        }
+        swap(idx, parent);
+        idx = parent;
+      }
+    }
+
+    void sift_down(int idx) {
+      const int len = _data.length();
+      while (true) {
+        int left = 2 * idx + 1;
+        int right = left + 1;
+        int best = idx;
+
+        if (left < len && cmp(_data.at(left), _data.at(best)) < 0) {
+          best = left;
+        }
+        if (right < len && cmp(_data.at(right), _data.at(best)) < 0) {
+          best = right;
+        }
+        if (best == idx) {
+          break;
+        }
+        swap(idx, best);
+        idx = best;
+      }
+    }
+
+   public:
+    void push(VTransformNodeEntry* e) {
+      _data.push(e);
+      sift_up(_data.length() - 1);
+    }
+
+    VTransformNodeEntry* pop() {
+      assert(!_data.is_empty(), "empty");
+      VTransformNodeEntry* top = _data.at(0);
+      VTransformNodeEntry* last = _data.pop();
+      if (!_data.is_empty()) {
+        _data.at_put(0, last);
+        sift_down(0);
+      }
+      return top;
+    }
+
+    bool is_empty() const { return _data.is_empty(); }
+  };
 
 #endif // SHARE_OPTO_VTRANSFORM_HPP
