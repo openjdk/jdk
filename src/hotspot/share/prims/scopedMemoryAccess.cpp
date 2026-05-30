@@ -117,15 +117,10 @@ static bool is_accessing_session(JavaThread* jt, oop session, bool& in_scoped) {
   return is_accessing_session;
 }
 
-static frame get_last_frame(JavaThread* jt) {
+static frame get_last_frame(JavaThread* jt, RegisterMap* register_map) {
   frame last_frame = jt->last_frame();
-  RegisterMap register_map(jt,
-                            RegisterMap::UpdateMap::include,
-                            RegisterMap::ProcessFrames::include,
-                            RegisterMap::WalkContinuation::skip);
-
   if (last_frame.is_safepoint_blob_frame()) {
-    last_frame = last_frame.sender(&register_map);
+    last_frame = last_frame.sender(register_map);
   }
   return last_frame;
 }
@@ -213,7 +208,11 @@ public:
       OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
       jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error, _async_exceptions));
     } else if (!in_scoped) {
-      frame last_frame = get_last_frame(jt);
+      RegisterMap register_map(jt,
+                               RegisterMap::UpdateMap::include,
+                               RegisterMap::ProcessFrames::include,
+                               RegisterMap::WalkContinuation::skip);
+      frame last_frame = get_last_frame(jt, &register_map);
       if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
         // We are not at a safepoint that is 'in' an @Scoped method, but due to the compiler
         // moving code around/hoisting checks, we may be in a situation like this:
@@ -246,14 +245,34 @@ public:
         // the target thread will see it and throw an exception.
 
         nmethod* code = last_frame.cb()->as_nmethod();
-        if (code->has_scoped_access()) {
-          // We would like to deoptimize here only if last_frame::oops_do
-          // reports the session oop being live at this safepoint, but this
-          // currently isn't possible due to JDK-8290892
+        if (code->has_scoped_access() && is_session_live(last_frame, &register_map)) {
           Deoptimization::deoptimize(jt, last_frame);
         }
       }
     }
+  }
+
+  bool is_session_live(frame the_frame, const RegisterMap* register_map) {
+    struct OopFinder : public OopClosure {
+      bool _found;
+      oop _the_oop;
+      OopFinder(oop the_oop) : _found(false), _the_oop(the_oop) {}
+      void check(oop o) { if (o == _the_oop) { _found = true; } }
+      void do_oop(oop* p) { check(*p); }
+      void do_oop(narrowOop* p) { check(CompressedOops::decode(*p)); }
+    };
+
+    struct NMethodOopFinder : public NMethodClosure {
+      OopFinder* _oop_finder;
+      NMethodOopFinder(OopFinder* oop_finder) : _oop_finder(oop_finder) {}
+      void do_nmethod(nmethod* n) { n->oops_do(_oop_finder); }
+    };
+
+    OopFinder finder(JNIHandles::resolve(_session));
+    NMethodOopFinder nmof(&finder);
+    // TODO figure out if derived oops need some handling
+    the_frame.oops_do(&finder, &nmof, register_map);
+    return finder._found;
   }
 };
 
