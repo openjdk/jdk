@@ -1579,6 +1579,9 @@ single-argument form are permitted.
 barely used (if at all) in HotSpot, but there's no reason to artificially
 forbid this syntactic regularization in any such uses.
 
+* `std::invoke<>()`
+([n4169](http://wg21.link/n4169))
+
 ## Forbidden Features
 
 ### Structured Bindings
@@ -1957,9 +1960,6 @@ because pack manipulation without this can be complicated.
 Prefer named access to class objects, rather than indexed access
 to anonymous heterogeneous sequences.  In particular, a standard-layout
 class is preferred to a tuple.
-
-* `std::invoke<>()`
-([n4169](http://wg21.link/n4169))
 
 * [`<chrono>`](https://en.cppreference.com/w/cpp/header/chrono.html) &mdash;
 The argument for chrono is that our existing APIs aren't serving us well.
