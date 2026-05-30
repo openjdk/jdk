@@ -661,9 +661,12 @@ a.current-selection {
 }
 nav.toc a {
     display: block;
-    padding: 8px;
+    padding: 7px 8px;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-wrap: balance;
+    text-indent: 0.5em hanging;
+    line-height: 1.35;
 }
 nav.toc ol.toc-list ol.toc-list a {
     padding-left: 24px;
@@ -939,6 +942,9 @@ div.checkboxes > label > input {
 }
 .col-first, .col-second, .col-constructor-name {
     overflow: auto;
+}
+.col-constructor-name, .method-summary .col-second {
+    text-indent: 0.5em hanging;
 }
 body:not(.class-declaration-page) .col-first a:link,
 .col-summary-item-name a:link {
