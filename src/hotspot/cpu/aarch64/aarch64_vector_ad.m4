@@ -728,7 +728,8 @@ BINARY_OP_NEON_SVE_PAIRWISE(vmulI, MulVI, mulv, sve_mul, S)
 // vector mul - LONG
 
 instruct vmulL_neon(vReg dst, vReg src1, vReg src2) %{
-  predicate(UseSVE == 0);
+  predicate(UseSVE == 0 && !n->as_MulVL()->has_int_inputs() &&
+            !n->as_MulVL()->has_uint_inputs());
   match(Set dst (MulVL src1 src2));
   format %{ "vmulL_neon $dst, $src1, $src2\t# 2L" %}
   ins_encode %{
@@ -746,8 +747,47 @@ instruct vmulL_neon(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+dnl VMUL_L_NEON($1,     $2     )
+dnl VMUL_L_NEON(kind,   insn   )
+define(`VMUL_L_NEON', `dnl
+// Specialization of vmulL_$1_neon when both inputs are the same IR node
+// (e.g. v * v). Avoids one redundant xtn and saves one temporary register.
+instruct vmulL_$1_neon_same(vReg dst, vReg src, vReg tmp) %{
+  predicate(UseSVE == 0 && n->as_MulVL()->has_$1_inputs() &&
+            n->in(1) == n->in(2));
+  match(Set dst (MulVL src src));
+  effect(TEMP tmp);
+  format %{ "vmulL_$1_neon_same $dst, $src, $src\t# 2L. KILL $tmp" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 16, "must be");
+    __ xtn($tmp$$FloatRegister, __ T2S, $src$$FloatRegister, __ T2D);
+    __ $2($dst$$FloatRegister, __ T2S, $tmp$$FloatRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmulL_$1_neon(vReg dst, vReg src1, vReg src2, vReg tmp1, vReg tmp2) %{
+  predicate(UseSVE == 0 && n->as_MulVL()->has_$1_inputs() &&
+            n->in(1) != n->in(2));
+  match(Set dst (MulVL src1 src2));
+  effect(TEMP tmp1, TEMP tmp2);
+  format %{ "vmulL_$1_neon $dst, $src1, $src2\t# 2L. KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 16, "must be");
+    __ xtn($tmp1$$FloatRegister, __ T2S, $src1$$FloatRegister, __ T2D);
+    __ xtn($tmp2$$FloatRegister, __ T2S, $src2$$FloatRegister, __ T2D);
+    __ $2($dst$$FloatRegister, __ T2S, $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+')dnl
+VMUL_L_NEON(int,  smullv)
+VMUL_L_NEON(uint, umullv)
 instruct vmulL_sve(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE == 1 || (UseSVE == 2 && !n->as_MulVL()->has_int_inputs() &&
+            !n->as_MulVL()->has_uint_inputs()));
   match(Set dst_src1 (MulVL dst_src1 src2));
   format %{ "vmulL_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
@@ -756,6 +796,21 @@ instruct vmulL_sve(vReg dst_src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+dnl VMUL_L_SVE2($1,     $2        )
+dnl VMUL_L_SVE2(kind,   sve2_insn )
+define(`VMUL_L_SVE2', `dnl
+instruct vmulL_$1_sve2(vReg dst, vReg src1, vReg src2) %{
+  predicate(UseSVE == 2 && n->as_MulVL()->has_$1_inputs());
+  match(Set dst (MulVL src1 src2));
+  format %{ "vmulL_$1_sve2 $dst, $src1, $src2" %}
+  ins_encode %{
+    __ $2($dst$$FloatRegister, __ D, $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+')dnl
+VMUL_L_SVE2(int,  sve_smullb)
+VMUL_L_SVE2(uint, sve_umullb)
 // vector mul - floating-point
 BINARY_OP(vmulHF, MulVHF, fmul, sve_fmul, H)
 BINARY_OP(vmulF,  MulVF,  fmul, sve_fmul, S)
