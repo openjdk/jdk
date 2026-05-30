@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "runtime/globals_extension.hpp"
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
-  _use_adaptive_sizing(true), _min_desired_young_length(0), _max_desired_young_length(0) {
+  _use_adaptive_sizing(true), _min_desired_young_length(), _max_desired_young_length(0) {
 
   precond(!FLAG_IS_ERGO(NewRatio));
   precond(!FLAG_IS_ERGO(NewSize));
@@ -100,16 +100,16 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
   }
 
   if (user_specified_NewSize) {
-    _min_desired_young_length = MAX2((uint)(NewSize / G1HeapRegion::GrainBytes), 1U);
+    _min_desired_young_length.store_relaxed(MAX2((uint)(NewSize / G1HeapRegion::GrainBytes), 1U));
   }
 
   if (user_specified_MaxNewSize) {
-    _max_desired_young_length = MAX2((uint)(MaxNewSize / G1HeapRegion::GrainBytes), 1U);
+    _max_desired_young_length.store_relaxed(MAX2((uint)(MaxNewSize / G1HeapRegion::GrainBytes), 1U));
   }
 
   if (user_specified_NewSize && user_specified_MaxNewSize) {
     _sizer_kind = SizerMaxAndNewSize;
-    _use_adaptive_sizing = _min_desired_young_length != _max_desired_young_length;
+    _use_adaptive_sizing = min_desired_young_length() != max_desired_young_length();
   } else if (user_specified_NewSize) {
     _sizer_kind = SizerNewSizeOnly;
   } else {
@@ -159,20 +159,22 @@ void G1YoungGenSizer::recalculate_min_max_young_length(uint number_of_heap_regio
 }
 
 void G1YoungGenSizer::adjust_max_new_size(uint number_of_heap_regions) {
-
   // We need to pass the desired values because recalculation may not update these
   // values in some cases.
-  uint temp = _min_desired_young_length;
-  uint result = _max_desired_young_length;
-  recalculate_min_max_young_length(number_of_heap_regions, &temp, &result);
+  uint temp = min_desired_young_length();
+  uint new_max = max_desired_young_length();
+  recalculate_min_max_young_length(number_of_heap_regions, &temp, &new_max);
 
-  size_t max_young_size = result * G1HeapRegion::GrainBytes;
+  size_t max_young_size = new_max * G1HeapRegion::GrainBytes;
   if (max_young_size != MaxNewSize) {
     FLAG_SET_ERGO(MaxNewSize, max_young_size);
   }
 }
 
 void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
-  recalculate_min_max_young_length(new_number_of_heap_regions, &_min_desired_young_length,
-          &_max_desired_young_length);
+  uint min = min_desired_young_length();
+  uint max = max_desired_young_length();
+  recalculate_min_max_young_length(new_number_of_heap_regions, &min, &max);
+  _min_desired_young_length.store_relaxed(min);
+  _max_desired_young_length.store_relaxed(max);
 }

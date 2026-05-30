@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1YOUNGGENSIZER_HPP
 #define SHARE_GC_G1_G1YOUNGGENSIZER_HPP
 
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // There are three command line options related to the young gen size:
@@ -78,8 +79,8 @@ private:
   // true otherwise.
   bool _use_adaptive_sizing;
 
-  uint _min_desired_young_length;
-  uint _max_desired_young_length;
+  Atomic<uint> _min_desired_young_length;
+  Atomic<uint> _max_desired_young_length;
 
   uint calculate_default_min_length(uint new_number_of_heap_regions);
   uint calculate_default_max_length(uint new_number_of_heap_regions);
@@ -96,10 +97,10 @@ public:
 
   virtual void heap_size_changed(uint new_number_of_heap_regions);
   uint min_desired_young_length() const {
-    return _min_desired_young_length;
+    return _min_desired_young_length.load_relaxed();
   }
   uint max_desired_young_length() const {
-    return _max_desired_young_length;
+    return _max_desired_young_length.load_relaxed();
   }
 
   bool use_adaptive_young_list_length() const {
