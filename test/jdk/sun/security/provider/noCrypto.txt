@@ -1,0 +1,8 @@
+# This is the "test security properties file" for testing SUN no_crypto
+# config option
+
+#
+# List of providers and their preference orders
+#
+security.provider.1=SUN no_crypto
+security.provider.2=SunJCE
