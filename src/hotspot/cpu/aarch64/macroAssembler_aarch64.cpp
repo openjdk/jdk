@@ -2266,6 +2266,10 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
     bind(*retaddr);
 
   ldp(rscratch1, rmethod, Address(post(sp, 2 * wordSize)));
+
+  // Reinitialize the ptrue predicate register, in case the external runtime
+  // call clobbers ptrue reg, as we may return to SVE compiled code.
+  reinitialize_ptrue();
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {

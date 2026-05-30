@@ -707,9 +707,6 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
-    // Reinitialize the ptrue predicate register, in case the external runtime
-    // call clobbers ptrue reg, as we may return to SVE compiled code.
-    __ reinitialize_ptrue();
 
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
@@ -11351,9 +11348,6 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(r19, r0);
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
-
-      // Reinitialize the ptrue predicate register, in case the external runtime call clobbers ptrue reg, as we may return to SVE compiled code.
-      // __ reinitialize_ptrue();
 
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
 
