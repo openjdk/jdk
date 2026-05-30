@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public:
   ZHeap*                       _old_heap;
   ZGenerationOld*              _old_old;
   ZGenerationYoung*            _old_young;
-  ZAddressReserver             _zaddress_reserver;
+  ZTestAddressReserver         _zaddress_reserver;
   ZPhysicalMemoryBackingMocker _physical_backing;
   zoffset                      _page_offset;
 

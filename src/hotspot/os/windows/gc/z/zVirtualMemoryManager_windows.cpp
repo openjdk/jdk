@@ -35,8 +35,9 @@
 class ZVirtualMemoryReserverImpl : public CHeapObj<mtGC> {
 public:
   virtual void register_callbacks(ZVirtualMemoryRegistry* registry) {}
-  virtual bool reserve(zaddress_unsafe addr, size_t size) = 0;
-  virtual void unreserve(zaddress_unsafe addr, size_t size) = 0;
+  virtual bool reserve(uintptr_t addr, size_t size) = 0;
+  virtual void split_reserved(uintptr_t addr, size_t split_size, size_t size) = 0;
+  virtual void unreserve(uintptr_t addr, size_t size) = 0;
 };
 
 // Implements small pages (paged) support using placeholder reservation.
@@ -169,14 +170,18 @@ private:
     registry->register_callbacks(PlaceholderCallbacks::callbacks());
   }
 
-  virtual bool reserve(zaddress_unsafe addr, size_t size) {
-    const zaddress_unsafe res = ZMapper::reserve(addr, size);
+  virtual bool reserve(uintptr_t addr, size_t size) {
+    const uintptr_t res = ZMapper::reserve(addr, size);
 
-    assert(res == addr || untype(res) == 0, "Should not reserve other memory than requested");
+    assert(res == addr || res == 0, "Should not reserve other memory than requested");
     return res == addr;
   }
 
-  virtual void unreserve(zaddress_unsafe addr, size_t size) {
+  virtual void split_reserved(uintptr_t addr, size_t split_size, size_t /* size - unused */) {
+    ZMapper::split_placeholder_untyped(addr, split_size);
+  }
+
+  virtual void unreserve(uintptr_t addr, size_t size) {
     ZMapper::unreserve(addr, size);
   }
 };
@@ -188,14 +193,27 @@ HANDLE ZAWESection;
 
 class ZVirtualMemoryReserverLargePages : public ZVirtualMemoryReserverImpl {
 private:
-  virtual bool reserve(zaddress_unsafe addr, size_t size) {
-    const zaddress_unsafe res = ZMapper::reserve_for_shared_awe(ZAWESection, addr, size);
+  virtual bool reserve(uintptr_t addr, size_t size) {
+    const uintptr_t res = ZMapper::reserve_for_shared_awe(ZAWESection, addr, size);
 
-    assert(res == addr || untype(res) == 0, "Should not reserve other memory than requested");
+    assert(res == addr || res == 0, "Should not reserve other memory than requested");
     return res == addr;
   }
 
-  virtual void unreserve(zaddress_unsafe addr, size_t size) {
+  virtual void split_reserved(uintptr_t addr, size_t split_size, size_t size) {
+    // Does nothing
+  }
+
+  virtual void unreserve(uintptr_t addr, size_t size) {
+    // TODO: VirtualFree with MEM_RELEASE only works for the whole reservation
+    //       returned by VirtualAlloc2, and requires the base to be the same,
+    //       and size to be 0. As such this will not work when a split
+    //       reservation is unreserved. Currently we only unreserve all, where
+    //       this works, or the end, where this does not work, but is benign. We
+    //       do not currently unreserve start of a reservation where size is
+    //       less than the reserved size. But this means we may end up holding
+    //       on to virtual address space which we no longer account for in our
+    //       reserver or NMT. We might want to fix this in the future.
     ZMapper::unreserve_for_shared_awe(addr, size);
   }
 
@@ -217,14 +235,18 @@ void ZVirtualMemoryReserverImpl_initialize() {
   }
 }
 
-void ZVirtualMemoryReserver::pd_register_callbacks(ZVirtualMemoryRegistry* registry) {
+void ZVirtualMemoryReservation::pd_register_callbacks(ZVirtualMemoryRegistry* registry) {
   _impl->register_callbacks(registry);
 }
 
-bool ZVirtualMemoryReserver::pd_reserve(zaddress_unsafe addr, size_t size) {
+bool ZVirtualMemoryReserver::pd_reserve(uintptr_t addr, size_t size) {
   return _impl->reserve(addr, size);
 }
 
-void ZVirtualMemoryReserver::pd_unreserve(zaddress_unsafe addr, size_t size) {
+void ZVirtualMemoryReserver::pd_split_reserved(uintptr_t addr, size_t split_size, size_t size) {
+  return _impl->split_reserved(addr, split_size, size);
+}
+
+void ZVirtualMemoryReserver::pd_unreserve(uintptr_t addr, size_t size) {
   _impl->unreserve(addr, size);
 }
