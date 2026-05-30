@@ -724,6 +724,15 @@ private:
   static bool os_supports_avx_vectors();
   static bool os_supports_apx_egprs();
   static void get_processor_features();
+  static void set_vendor_agnostic_vm_config();
+  static void set_vendor_specific_vm_config();
+  static void set_config_dependent_on_vendor_config();
+  static void configure_intrinsics();
+  static void log_additional_cpu_info();
+
+  static void zx_config();
+  static void amd_config();
+  static void intel_config();
 
 public:
   // Offsets for cpuid asm stub

@@ -179,7 +179,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   /* for copy and fill which don't bail out early based on any */           \
   /* condition. When this value is set to zero clear operations that */     \
   /* work on memory blocks can also use AVX512 intrinsics. */               \
-  product(int, CopyAVX3Threshold, 4096, DIAGNOSTIC,                         \
+  product(int, CopyAVX3Threshold, AVX3Threshold, DIAGNOSTIC,                \
              "Minimum array size in bytes to use AVX512 intrinsics"         \
              "for copy and fill. When this value is set as zero"            \
              "clear operations can also use AVX512 intrinsics.")            \
