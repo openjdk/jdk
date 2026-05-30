@@ -28,6 +28,7 @@
 #include "opto/addnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/node.hpp"
+#include "runtime/timer.hpp"
 #include "utilities/growableArray.hpp"
 
 //
@@ -348,6 +349,8 @@ private:
   int              _invocation; // Current number of analysis invocation
   int        _build_iterations; // Number of iterations took to build graph
   double           _build_time; // Time (sec) took to build graph
+
+  elapsedTimer          _timer; // The timer that keeps track of how long EA has run
 
 public:
   JavaObjectNode* phantom_obj; // Unknown object

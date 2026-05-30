@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -42,6 +43,7 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
+#include "runtime/timer.hpp"
 #include "utilities/macros.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation) :
@@ -60,7 +62,11 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
   _invocation(invocation),
   _build_iterations(0),
   _build_time(0.),
+  _timer(),
   _node_map(C->comp_arena()) {
+  // timer to check for EscapeAnalysisTimeout
+  _timer.start();
+
   // Add unknown java object.
   add_java_object(C->top(), PointsToNode::GlobalEscape);
   phantom_obj = ptnode_adr(C->top()->_idx)->as_JavaObject();
@@ -2451,15 +2457,13 @@ bool ConnectionGraph::complete_connection_graph(
   int java_objects_length = java_objects_worklist.length();
   elapsedTimer build_time;
   build_time.start();
-  elapsedTimer time;
   bool timeout = false;
   int new_edges = 1;
   int iterations = 0;
   do {
     while ((new_edges > 0) &&
            (iterations++ < GRAPH_BUILD_ITER_LIMIT)) {
-      double start_time = time.seconds();
-      time.start();
+      double start_time = TimeHelper::counter_to_seconds(_timer.active_ticks());
       new_edges = 0;
       // Propagate references to phantom_object for nodes pushed on _worklist
       // by find_non_escaped_objects() and find_field_value().
@@ -2472,11 +2476,10 @@ bool ConnectionGraph::complete_connection_graph(
         if ((next % SAMPLE_SIZE) == 0) {
           // Each 4 iterations calculate how much time it will take
           // to complete graph construction.
-          time.stop();
           // Poll for requests from shutdown mechanism to quiesce compiler
           // because Connection graph construction may take long time.
           CompileBroker::maybe_block();
-          double stop_time = time.seconds();
+          double stop_time = TimeHelper::counter_to_seconds(_timer.active_ticks());
           double time_per_iter = (stop_time - start_time) / (double)SAMPLE_SIZE;
           double time_until_end = time_per_iter * (double)(java_objects_length - next);
           if ((start_time + time_until_end) >= EscapeAnalysisTimeout) {
@@ -2484,7 +2487,6 @@ bool ConnectionGraph::complete_connection_graph(
             break; // Timeout
           }
           start_time = stop_time;
-          time.start();
         }
 #undef SAMPLE_SIZE
 
@@ -2496,15 +2498,13 @@ bool ConnectionGraph::complete_connection_graph(
           return false; // Nothing to do.
         }
       }
-      time.stop();
-      if (time.seconds() >= EscapeAnalysisTimeout) {
+      if (TimeHelper::counter_to_seconds(_timer.active_ticks()) >= EscapeAnalysisTimeout) {
         timeout = true;
         break;
       }
       _compile->print_method(PHASE_EA_COMPLETE_CONNECTION_GRAPH_ITER, 5);
     }
     if ((iterations < GRAPH_BUILD_ITER_LIMIT) && !timeout) {
-      time.start();
       // Find fields which have unknown value.
       int fields_length = oop_fields_worklist.length();
       for (int next = 0; next < fields_length; next++) {
@@ -2515,8 +2515,7 @@ bool ConnectionGraph::complete_connection_graph(
           // Need an other cycle to propagate references to phantom_object.
         }
       }
-      time.stop();
-      if (time.seconds() >= EscapeAnalysisTimeout) {
+      if (TimeHelper::counter_to_seconds(_timer.active_ticks()) >= EscapeAnalysisTimeout) {
         timeout = true;
         break;
       }
@@ -4817,6 +4816,19 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 
   _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES_1, 5);
 
+  auto check_timeout = [&]() {
+    if (TimeHelper::counter_to_seconds(_timer.active_ticks()) < EscapeAnalysisTimeout) {
+      return false;
+    }
+
+    assert(ExitEscapeAnalysisOnTimeout, "split_unique_types reached time limit, num_alias_types = %u", new_index_end - new_index_start);
+    _compile->record_failure(_invocation > 0 ? C2Compiler::retry_no_iterative_escape_analysis() : C2Compiler::retry_no_escape_analysis());
+    return true;
+  };
+  if (check_timeout()) {
+    return;
+  }
+
   //  Phase 2:  Process MemNode's from memnode_worklist. compute new address type and
   //            compute new values for Memory inputs  (the Memory inputs are not
   //            actually updated until phase 4.)
@@ -4943,6 +4955,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   //            instance type to the input corresponding to its alias index.
   uint length = mergemem_worklist.length();
   for( uint next = 0; next < length; ++next ) {
+    if (check_timeout()) {
+      return;
+    }
+
     MergeMemNode* nmm = mergemem_worklist.at(next);
     assert(!visited.test_set(nmm->_idx), "should not be visited before");
     // Note: we don't want to use MergeMemStream here because we only want to
@@ -5025,6 +5041,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   }
 
   _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES_3, 5);
+
+  if (check_timeout()) {
+    return;
+  }
 
   //  Phase 4:  Update the inputs of non-instance memory Phis and
   //            the Memory input of memnodes
