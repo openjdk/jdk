@@ -164,6 +164,9 @@ vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 807
 vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t006/TestDescription.java 8372206 generic-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 
+vmTestbase/nsk/sysdict/vm/stress/btree/btree010/btree010.java 8298991 generic-all
+vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 generic-all
+
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
 
