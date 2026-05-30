@@ -360,10 +360,10 @@ public class FileInputStream extends InputStream
                 remaining -= n;
             } else if (n == 0) {
                 // Block until a byte is read or EOF is detected
-                byte b = (byte)read();
-                if (b == -1 )
+                int b = read();
+                if (b == -1)
                     break;
-                buf[nread++] = b;
+                buf[nread++] = (byte) b;
                 remaining--;
             }
         } while (n >= 0 && remaining > 0);
