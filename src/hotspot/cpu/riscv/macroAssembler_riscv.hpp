@@ -31,6 +31,7 @@
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
@@ -1019,7 +1020,7 @@ public:
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
         if (is_simm12(adr.offset())) {                                                             \
-          Assembler::NAME(Rd, adr.base(), adr.offset());                                           \
+          Assembler::NAME(Rd, adr.base(), integer_cast<int32_t>(adr.offset()));                    \
         } else {                                                                                   \
           int32_t offset = ((int32_t)adr.offset() << 20) >> 20;                                    \
           if (Rd == adr.base()) {                                                                  \
@@ -1078,7 +1079,7 @@ public:
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
         if (is_simm12(adr.offset())) {                                                             \
-          Assembler::NAME(Rd, adr.base(), adr.offset());                                           \
+          Assembler::NAME(Rd, adr.base(), integer_cast<int32_t>(adr.offset()));                    \
         } else {                                                                                   \
           int32_t offset = ((int32_t)adr.offset() << 20) >> 20;                                    \
           la(temp, Address(adr.base(), adr.offset() - offset));                                    \
@@ -1138,7 +1139,7 @@ public:
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
         if (is_simm12(adr.offset())) {                                                             \
-          Assembler::NAME(Rs, adr.base(), adr.offset());                                           \
+          Assembler::NAME(Rs, adr.base(), integer_cast<int32_t>(adr.offset()));                    \
         } else {                                                                                   \
           assert_different_registers(Rs, temp);                                                    \
           int32_t offset = ((int32_t)adr.offset() << 20) >> 20;                                    \
@@ -1183,7 +1184,7 @@ public:
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
         if (is_simm12(adr.offset())) {                                                             \
-          Assembler::NAME(Rs, adr.base(), adr.offset());                                           \
+          Assembler::NAME(Rs, adr.base(), integer_cast<int32_t>(adr.offset()));                    \
         } else {                                                                                   \
           int32_t offset = ((int32_t)adr.offset() << 20) >> 20;                                    \
           la(temp, Address(adr.base(), adr.offset() - offset));                                    \
