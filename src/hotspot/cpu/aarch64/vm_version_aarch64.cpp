@@ -454,6 +454,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
+     UseIntPolyIntrinsics = true;
+  }
+
   if (supports_feature(CPU_ASIMD)) {
       if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
           UseKyberIntrinsics = true;
