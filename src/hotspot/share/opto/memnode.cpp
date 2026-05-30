@@ -4394,6 +4394,36 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
   }
 }
 
+#ifndef PRODUCT
+void MemBarNode::dump_spec(outputStream* st) const {
+  switch (_kind) {
+  case Standalone:
+    st->print(" Standalone");
+    break;
+  case TrailingLoad:
+    st->print(" TrailingLoad");
+    break;
+  case TrailingStore:
+    st->print(" TrailingStore");
+    break;
+  case LeadingStore:
+    st->print(" LeadingStore");
+    break;
+  case TrailingLoadStore:
+    st->print(" TrailingLoadStore");
+    break;
+  case LeadingLoadStore:
+    st->print(" LeadingLoadStore");
+    break;
+  case TrailingExpandedArrayCopy:
+    st->print(" TrailingExpandedArrayCopy");
+    break;
+  default:
+    fatal("Unimplemented MemBar kind: %d", _kind);
+  }
+}
+#endif // !PRODUCT
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies

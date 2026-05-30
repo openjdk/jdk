@@ -1242,6 +1242,10 @@ public:
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);
 
   void remove(PhaseIterGVN *igvn);
+
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 };
 
 // "Acquire" - no following ref can move before (but earlier refs can
