@@ -882,7 +882,7 @@ void VM_Version::set_vendor_agnostic_vm_config() {
     }
   }
 
-#if COMPILER2
+#ifdef COMPILER2
   int max_vector_size = 0;
   if (UseAVX == 0 || !os_supports_avx_vectors()) {
     // 16 byte vectors (in XMM) are supported with SSE2+
