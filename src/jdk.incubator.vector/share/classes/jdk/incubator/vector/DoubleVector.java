@@ -2946,9 +2946,9 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
         return VectorSupport.loadWithMap(
             vectorType, null, LANE_TYPE_ORDINAL, vsp.laneCount(),
             isp.vectorType(), isp.length(),
-            a, ARRAY_BASE, vix, null, null, null, null,
+            a, ARRAY_BASE, vix, null,
             a, offset, indexMap, mapOffset, vsp,
-            (c, idx, iMap, idy, s, vm) ->
+            (c, idx, iMap, idy, s, vm, num) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
     }
 
@@ -3432,9 +3432,9 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
         return VectorSupport.loadWithMap(
             vectorType, maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             isp.vectorType(), isp.length(),
-            a, ARRAY_BASE, vix, null, null, null, m,
+            a, ARRAY_BASE, vix, m,
             a, offset, indexMap, mapOffset, vsp,
-            (c, idx, iMap, idy, s, vm) ->
+            (c, idx, iMap, idy, s, vm, num) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
     }
 
