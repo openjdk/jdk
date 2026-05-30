@@ -26,6 +26,8 @@
 #ifndef CPU_S390_ASSEMBLER_S390_HPP
 #define CPU_S390_ASSEMBLER_S390_HPP
 
+#include "utilities/integerCast.hpp"
+
 #undef  LUCY_DBG
 
 // Immediate is an abstraction to represent the various immediate
@@ -251,12 +253,12 @@ class Address {
   // Specific version for short displacement instructions.
   int      disp12() const {
     assert(is_disp12(), "displacement out of range for uimm12");
-    return _disp;
+    return integer_cast<int>(_disp);
   }
   // Specific version for long displacement instructions.
   int      disp20() const {
     assert(is_disp20(), "displacement out of range for simm20");
-    return _disp;
+    return integer_cast<int>(_disp);
   }
   intptr_t value() const { return _disp; }
 
@@ -1612,17 +1614,17 @@ class Assembler : public AbstractAssembler {
   }
 
   // Extract primary opcode from instruction.
-  static int z_inv_op(int  x) { return inv_u_field(x, 31, 24); }
-  static int z_inv_op(long x) { return inv_u_field(x, 47, 40); }
+  static int z_inv_op(int  x) { return integer_cast<int>(inv_u_field(x, 31, 24)); }
+  static int z_inv_op(long x) { return integer_cast<int>(inv_u_field(x, 47, 40)); }
 
-  static int inv_reg( long x, int s, int len) { return inv_u_field(x, (len-s)-1, (len-s)-4); }  // Regs are encoded in 4 bits.
-  static int inv_mask(long x, int s, int len) { return inv_u_field(x, (len-s)-1, (len-s)-8); }  // Mask is 8 bits long.
-  static int inv_simm16_48(long x) { return (inv_s_field(x, 31, 16)); }                         // 6-byte instructions only
-  static int inv_simm16(long x)    { return (inv_s_field(x, 15,  0)); }                         // 4-byte instructions only
-  static int inv_simm20(long x)    { return (inv_u_field(x, 27, 16) |                           // 6-byte instructions only
+  static int inv_reg( long x, int s, int len) { return integer_cast<int>(inv_u_field(x, (len-s)-1, (len-s)-4)); }  // Regs are encoded in 4 bits.
+  static int inv_mask(long x, int s, int len) { return integer_cast<int>(inv_u_field(x, (len-s)-1, (len-s)-8)); }  // Mask is 8 bits long.
+  static int inv_simm16_48(long x) { return integer_cast<int>(inv_s_field(x, 31, 16)); }                         // 6-byte instructions only
+  static int inv_simm16(long x)    { return integer_cast<int>(inv_s_field(x, 15,  0)); }                         // 4-byte instructions only
+  static int inv_simm20(long x)    { return integer_cast<int>(inv_u_field(x, 27, 16) |                           // 6-byte instructions only
                                              inv_s_field(x, 15, 8)<<12); }
-  static int inv_simm32(long x)    { return (inv_s_field(x, 31,  0)); }                         // 6-byte instructions only
-  static int inv_uimm12(long x)    { return (inv_u_field(x, 11,  0)); }                         // 4-byte instructions only
+  static int inv_simm32(long x)    { return integer_cast<int>(inv_s_field(x, 31,  0)); }                         // 6-byte instructions only
+  static int inv_uimm12(long x)    { return integer_cast<int>(inv_u_field(x, 11,  0)); }                         // 4-byte instructions only
 
   // NOTE: PLEASE DON'T USE IT NAKED UNTIL WE DROP SUPPORT FOR MACHINES OLDER THAN Z15!!!!
   inline void z_popcnt(Register r1, Register r2, int64_t m3);   // population count
@@ -1821,13 +1823,13 @@ class Assembler : public AbstractAssembler {
   static void set_imm32(address a, int64_t s) {
     assert(Immediate::is_simm32(s) || Immediate::is_uimm32(s), "to big");
     int* p = (int *) (a + 2);
-    *p = s;
+    *p = integer_cast<int>(s);
   }
 
   static void set_imm16(int* instr, int64_t s) {
     assert(Immediate::is_simm16(s) || Immediate::is_uimm16(s), "to big");
     short* p = ((short *)instr) + 1;
-    *p = s;
+    *p = integer_cast<short>(s);
   }
 
  public:

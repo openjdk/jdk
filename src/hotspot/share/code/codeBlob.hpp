@@ -32,6 +32,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "utilities/align.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/macros.hpp"
 
 class AOTCodeReader;
@@ -263,7 +264,7 @@ public:
   // It is needed to fix relocations of pc-relative loads when resizing the
   // the constant pool or moving it.
   S390_ONLY(address ctable_begin() const { return header_begin() + _ctable_offset; })
-  void set_ctable_begin(address ctable) { S390_ONLY(_ctable_offset = ctable - header_begin();) }
+  void set_ctable_begin(address ctable) { S390_ONLY(_ctable_offset = integer_cast<int>(ctable - header_begin());) }
 
   // Sizes
   int size() const               { return _size; }
