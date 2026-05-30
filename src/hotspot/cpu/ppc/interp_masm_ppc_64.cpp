@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2346,11 +2346,25 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
   if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
+    Label jvmti_post_done;
+
+    // if (thread->jvmti_thread_state() == nullptr) exit;
+    ld(R11_scratch1, in_bytes(JavaThread::jvmti_thread_state_offset()), R16_thread);
+    cmpdi(CR0, R11_scratch1, 0);
+    beq(CR0, jvmti_post_done);
+
+    // if (interp_only_mode() == false && frame_pop_cnt() == 0) exit;
+    lwz(R12_scratch2, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
+    lwz(R11_scratch1, in_bytes(JvmtiThreadState::frame_pop_cnt_offset()), R11_scratch1);
+    or_(R0, R11_scratch1, R12_scratch2);
+    beq(CR0, jvmti_post_done);
+
     if (!is_native_method) { push(state); } // Expose tos to GC.
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit), check_exceptions);
     if (!is_native_method) { pop(state); }
 
     align(32, 12);
+    bind(jvmti_post_done);
   }
 
   // Dtrace support not implemented.

@@ -895,7 +895,7 @@ public class Attr extends JCTree.Visitor {
             tree.type :
             attribType(tree, env);
         try {
-            return checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
+            return tree.type = checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
         } catch (CompletionFailure ex) {
             chk.completionError(tree.pos(), ex);
             return t;

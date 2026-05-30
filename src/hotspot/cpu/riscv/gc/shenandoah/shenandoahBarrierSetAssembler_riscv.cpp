@@ -985,7 +985,8 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
 
     // Go to runtime and handle the rest there.
     __ mv(c_rarg0, _obj);
-    __ rt_call(keepalive_runtime_entry_addr());
+    __ la(ra, RuntimeAddress(keepalive_runtime_entry_addr()));
+    __ jalr(ra);
   }
   if (L_done != nullptr) {
     __ j(*L_done);
@@ -1056,7 +1057,8 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     }
 
     // Go to runtime and handle the rest there.
-    __ rt_call(lrb_runtime_entry_addr());
+    __ la(ra, RuntimeAddress(lrb_runtime_entry_addr()));
+    __ jalr(ra);
 
     // Save the result where needed. Narrow entries return narrowOop (32 bits)
     // we need to zero the upper 32 bits of x10.

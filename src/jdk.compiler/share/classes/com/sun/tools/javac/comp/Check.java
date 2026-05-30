@@ -268,17 +268,17 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      *  @param required   An internationalized string describing the type tag
      *                    required.
-     *  @param found      The type that was found.
+     *  @param type       The type that was found.
      */
-    Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Object found) {
+    Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Type type) {
         // this error used to be raised by the parser,
         // but has been delayed to this point:
-        if (found instanceof Type type && type.hasTag(VOID)) {
+        if (type.hasTag(VOID)) {
             log.error(pos, Errors.IllegalStartOfType);
             return syms.errType;
         }
-        log.error(pos, Errors.TypeFoundReq(found, required));
-        return types.createErrorType(found instanceof Type type ? type : syms.errType);
+        log.error(pos, Errors.TypeFoundReq(asTypeParam(type), required));
+        return types.createErrorType(type);
     }
 
     /** Report duplicate declaration error.
@@ -645,7 +645,7 @@ public class Check {
         if (!t.hasTag(CLASS) && !t.hasTag(ARRAY) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
                                 diags.fragment(Fragments.TypeReqClassArray),
-                                asTypeParam(t));
+                                t);
         } else {
             return t;
         }
@@ -659,7 +659,7 @@ public class Check {
         if (!t.hasTag(CLASS) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
                                 diags.fragment(Fragments.TypeReqClass),
-                                asTypeParam(t));
+                                t);
         } else {
             return t;
         }
