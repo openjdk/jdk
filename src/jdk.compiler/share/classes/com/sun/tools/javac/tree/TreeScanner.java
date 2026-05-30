@@ -419,6 +419,11 @@ public class TreeScanner extends Visitor {
         scan(tree.expr);
     }
 
+    public void visitDerivedRecord(JCDerivedRecord tree) {
+        scan(tree.base);
+        scan(tree.block);
+    }
+
     public void visitTree(JCTree tree) {
         Assert.error();
     }

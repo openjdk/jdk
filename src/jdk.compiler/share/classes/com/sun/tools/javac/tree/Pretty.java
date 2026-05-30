@@ -1746,6 +1746,16 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
+    public void visitDerivedRecord(JCDerivedRecord tree) {
+        try {
+            printExpr(tree.base);
+            print(" with ");
+            printStat(tree.block);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public void visitModifiers(JCModifiers mods) {
         try {
             printAnnotations(mods.annotations);

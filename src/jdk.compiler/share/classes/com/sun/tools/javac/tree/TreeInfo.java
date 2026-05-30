@@ -628,6 +628,10 @@ public class TreeInfo {
                 JCBindingPattern node = (JCBindingPattern)tree;
                 return getStartPos(node.var);
             }
+            case DERIVEDRECORD: {
+                JCDerivedRecord node = (JCDerivedRecord)tree;
+                return getStartPos(node.base);
+            }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty()) {
@@ -721,7 +725,10 @@ public class TreeInfo {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty())
                     return getEndPos(node.errs.last());
+                break;
             }
+            case DERIVEDRECORD:
+                return getEndPos(((JCDerivedRecord) tree).block);
         }
         return Position.NOPOS;
     }

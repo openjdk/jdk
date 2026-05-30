@@ -443,6 +443,12 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCDerivedRecord DerivedRecord(JCExpression base, JCBlock block) {
+        JCDerivedRecord tree = new JCDerivedRecord(base, block);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCLambda Lambda(List<JCVariableDecl> params,
                            JCTree body)
     {

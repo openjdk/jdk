@@ -214,7 +214,7 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case PRIMITIVE_PATTERNS -> true;
+            case PRIMITIVE_PATTERNS, DERIVED_RECORD_CREATION -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.

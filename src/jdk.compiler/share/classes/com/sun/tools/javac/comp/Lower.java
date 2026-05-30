@@ -4266,6 +4266,34 @@ public class Lower extends TreeTranslator {
         result = tree;
     }
 
+    public void visitDerivedRecord(JCDerivedRecord tree) {
+        // Collect the override expressions from the with-block (already translated)
+        Map<Name, JCExpression> overrides = new LinkedHashMap<>();
+        for (JCTree s : tree.block.stats) {
+            if (s instanceof JCExpressionStatement es
+                    && es.expr instanceof JCAssign assign
+                    && assign.lhs instanceof JCIdent lhs) {
+                overrides.put(lhs.name, translate(assign.rhs));
+            }
+        }
+        ClassSymbol cs = (ClassSymbol) tree.type.tsym;
+        JCExpression translatedBase = translate(tree.base);
+        // Evaluate base exactly once; build new Record(override-or-accessor, ...)
+        result = abstractRval(translatedBase, tree.base.type, baseVar -> {
+            ListBuffer<JCExpression> args = new ListBuffer<>();
+            for (RecordComponent rc : cs.getRecordComponents()) {
+                JCExpression overrideExpr = overrides.get(rc.name);
+                if (overrideExpr != null) {
+                    args.append(overrideExpr);
+                } else {
+                    JCExpression call = make.App(make.Select(baseVar, rc.accessor));
+                    args.append(call);
+                }
+            }
+            return makeNewClass(tree.type, args.toList());
+        });
+    }
+
     public void visitSelect(JCFieldAccess tree) {
         // need to special case-access of the form C.super.x
         // these will always need an access method, unless C

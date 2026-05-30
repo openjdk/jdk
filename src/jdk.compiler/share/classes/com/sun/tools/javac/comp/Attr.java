@@ -3155,6 +3155,44 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
 
+    public void visitDerivedRecord(JCDerivedRecord tree) {
+        Type baseType = attribExpr(tree.base, env);
+        if (!(baseType.tsym instanceof ClassSymbol cs && cs.isRecord())) {
+            log.error(tree.base.pos(), Errors.NotARecordType(baseType));
+            result = tree.type = types.createErrorType(baseType);
+            return;
+        }
+        Map<Name, RecordComponent> componentMap = new LinkedHashMap<>();
+        for (RecordComponent rc : cs.getRecordComponents()) {
+            componentMap.put(rc.name, rc);
+        }
+        Set<Name> seen = new HashSet<>();
+        for (JCTree s : tree.block.stats) {
+            if (!(s instanceof JCExpressionStatement es && es.expr instanceof JCAssign assign)) {
+                log.error(s.pos(), Errors.InvalidWithStatement);
+                continue;
+            }
+            if (!(assign.lhs instanceof JCIdent lhs)) {
+                log.error(assign.lhs.pos(), Errors.InvalidWithStatement);
+                continue;
+            }
+            RecordComponent rc = componentMap.get(lhs.name);
+            if (rc == null) {
+                log.error(lhs.pos(), Errors.NotARecordComponent(lhs.name, baseType));
+                continue;
+            }
+            if (!seen.add(lhs.name)) {
+                log.error(lhs.pos(), Errors.DuplicateComponentInWith(lhs.name));
+                continue;
+            }
+            lhs.sym = rc;
+            lhs.type = rc.type;
+            assign.type = rc.type;
+            attribExpr(assign.rhs, env, rc.type);
+        }
+        result = check(tree, baseType, KindSelector.VAL, resultInfo);
+    }
+
     /*
      * A lambda expression can only be attributed when a target-type is available.
      * In addition, if the target-type is that of a functional interface whose
