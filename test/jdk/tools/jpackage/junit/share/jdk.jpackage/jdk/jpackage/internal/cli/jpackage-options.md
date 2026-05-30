@@ -19,14 +19,14 @@
 | --jlink-options | bundle |  |  |  | CONCATENATE |
 | --launcher-as-service | native-bundle | x | x | x | USE_LAST |
 | --license-file | bundle | x | x |  | USE_LAST |
-| --linux-app-category | linux-deb, linux-rpm | x | x |  | USE_LAST |
-| --linux-app-release | linux-deb, linux-rpm | x | x |  | USE_LAST |
+| --linux-app-category | linux-native-bundle | x | x |  | USE_LAST |
+| --linux-app-release | linux-native-bundle | x | x |  | USE_LAST |
 | --linux-deb-maintainer | linux-deb | x | x |  | USE_LAST |
-| --linux-menu-group | linux-deb, linux-rpm | x | x |  | USE_LAST |
-| --linux-package-deps | linux-deb, linux-rpm | x | x |  | USE_LAST |
-| --linux-package-name | linux-deb, linux-rpm | x | x |  | USE_LAST |
+| --linux-menu-group | linux-native-bundle | x | x |  | USE_LAST |
+| --linux-package-deps | linux-native-bundle | x | x |  | USE_LAST |
+| --linux-package-name | linux-native-bundle | x | x |  | USE_LAST |
 | --linux-rpm-license-type | linux-rpm | x | x |  | USE_LAST |
-| --linux-shortcut | linux-deb, linux-rpm | x | x | x | USE_LAST |
+| --linux-shortcut | linux-native-bundle | x | x | x | USE_LAST |
 | --mac-app-category | mac-bundle | x | x |  | USE_LAST |
 | --mac-app-image-sign-identity | mac | x | x |  | USE_LAST |
 | --mac-app-store | mac | x | x |  | USE_LAST |
@@ -52,13 +52,13 @@
 | --verbose | all | x | x |  | USE_LAST |
 | --version | all | x | x |  | USE_LAST |
 | --win-console | win |  |  | x | USE_LAST |
-| --win-dir-chooser | win-exe, win-msi | x | x |  | USE_LAST |
-| --win-help-url | win-exe, win-msi | x | x |  | USE_LAST |
-| --win-menu | win-exe, win-msi | x | x | x | USE_LAST |
-| --win-menu-group | win-exe, win-msi | x | x |  | USE_LAST |
-| --win-per-user-install | win-exe, win-msi | x | x |  | USE_LAST |
-| --win-shortcut | win-exe, win-msi | x | x | x | USE_LAST |
-| --win-shortcut-prompt | win-exe, win-msi | x | x |  | USE_LAST |
-| --win-update-url | win-exe, win-msi | x | x |  | USE_LAST |
-| --win-upgrade-uuid | win-exe, win-msi | x | x |  | USE_LAST |
-| --win-with-ui | win-exe, win-msi | x | x |  | USE_LAST |
+| --win-dir-chooser | win-native-bundle | x | x |  | USE_LAST |
+| --win-help-url | win-native-bundle | x | x |  | USE_LAST |
+| --win-menu | win-native-bundle | x | x | x | USE_LAST |
+| --win-menu-group | win-native-bundle | x | x |  | USE_LAST |
+| --win-per-user-install | win-native-bundle | x | x |  | USE_LAST |
+| --win-shortcut | win-native-bundle | x | x | x | USE_LAST |
+| --win-shortcut-prompt | win-native-bundle | x | x |  | USE_LAST |
+| --win-update-url | win-native-bundle | x | x |  | USE_LAST |
+| --win-upgrade-uuid | win-native-bundle | x | x |  | USE_LAST |
+| --win-with-ui | win-native-bundle | x | x |  | USE_LAST |

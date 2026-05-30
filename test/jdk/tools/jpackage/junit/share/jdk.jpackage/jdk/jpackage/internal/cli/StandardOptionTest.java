@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.internal.cli;
 
+import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.internal.cli.TestUtils.assertExceptionListEquals;
@@ -939,15 +940,18 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 StandardBundlingOperation.SIGN_MAC_APP_IMAGE, "mac-sign"
         );
 
-        private static final Map<Set<OptionScope>, String> KNOWN_SCOPES = Map.of(
-                Set.copyOf(StandardBundlingOperation.CREATE_APP_IMAGE), "app-image",
-                Set.copyOf(StandardBundlingOperation.WINDOWS), "win",
-                Set.copyOf(StandardBundlingOperation.MACOS), "mac",
-                Set.of(StandardBundlingOperation.CREATE_MAC_APP_IMAGE, StandardBundlingOperation.CREATE_MAC_DMG, StandardBundlingOperation.CREATE_MAC_PKG), "mac-bundle",
-                Set.copyOf(StandardBundlingOperation.LINUX), "linux",
-                Set.copyOf(StandardBundlingOperation.CREATE_NATIVE), "native-bundle",
-                Set.copyOf(StandardBundlingOperation.CREATE_BUNDLE), "bundle",
-                Set.of(StandardBundlingOperation.values()), "all"
+        private static final Map<Set<OptionScope>, String> KNOWN_SCOPES = Map.ofEntries(
+                entry(Set.copyOf(StandardBundlingOperation.CREATE_APP_IMAGE), "app-image"),
+                entry(Set.copyOf(StandardBundlingOperation.WINDOWS), "win"),
+                entry(Set.of(StandardBundlingOperation.CREATE_WIN_MSI, StandardBundlingOperation.CREATE_WIN_EXE), "win-native-bundle"),
+                entry(Set.copyOf(StandardBundlingOperation.MACOS), "mac"),
+                entry(Set.of(StandardBundlingOperation.CREATE_MAC_DMG, StandardBundlingOperation.CREATE_MAC_PKG), "mac-native-bundle"),
+                entry(Set.of(StandardBundlingOperation.CREATE_MAC_APP_IMAGE, StandardBundlingOperation.CREATE_MAC_DMG, StandardBundlingOperation.CREATE_MAC_PKG), "mac-bundle"),
+                entry(Set.copyOf(StandardBundlingOperation.LINUX), "linux"),
+                entry(Set.of(StandardBundlingOperation.CREATE_LINUX_DEB, StandardBundlingOperation.CREATE_LINUX_RPM), "linux-native-bundle"),
+                entry(Set.copyOf(StandardBundlingOperation.CREATE_NATIVE), "native-bundle"),
+                entry(Set.copyOf(StandardBundlingOperation.CREATE_BUNDLE), "bundle"),
+                entry(Set.of(StandardBundlingOperation.values()), "all")
         );
     }
 
