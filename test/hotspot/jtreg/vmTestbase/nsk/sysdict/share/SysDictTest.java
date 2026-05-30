@@ -34,6 +34,7 @@ import nsk.share.ClassUnloader;
 import nsk.share.TestFailure;
 import nsk.share.gc.ThreadedGCTest;
 import nsk.share.gc.gp.GarbageUtils;
+import nsk.share.gc.OOMStress;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.LocalRandom;
 
@@ -99,7 +100,7 @@ public abstract class SysDictTest extends ThreadedGCTest {
     }
     volatile ClassLoader[] currentClassLoaders;
 
-    class Worker implements Runnable {
+    class Worker implements Runnable, OOMStress {
 
         private ClassLoader loader;
         private String[] names;
