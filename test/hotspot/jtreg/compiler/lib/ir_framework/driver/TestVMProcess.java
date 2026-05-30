@@ -199,7 +199,8 @@ public class TestVMProcess {
             throw new TestFormatException(System.lineSeparator() + System.lineSeparator() + matcher.group());
         } else if (stdErr.contains("NoTestsRunException")) {
             throw new NoTestsRunException(">>> No tests run due to empty set specified with -DTest and/or -DExclude. " +
-                                          "Make sure to define a set of at least one @Test method");
+                                          "Make sure to define a set of at least one @Test method that is not " +
+                                          "skipped with @Skip");
         } else {
             throw new TestVMException(getExceptionInfo());
         }

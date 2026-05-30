@@ -60,6 +60,9 @@ A custom run test gives full control over the invocation of the `@Test` annotate
 
 More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/ir_framework/examples/CustomRunTestExample.java).
 
+#### Skipping a Test Completely When Encountering Problems
+When a test execution is failing due to a VM problem (crash, wrong execution etc.) without having an immediate fix, it is preferred to specify [@Skip](./Skip.java) at the `@Test`-method to disable the test over commenting the test out. This allows to still execute the skipped test by passing the property flag `-DIgnoreSkip=true`. This can be useful when trying to quickly verify if a disabled test is still failing or not.
+
 ### 2.2 IR Verification
 The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of `-XX:+PrintIdeal`, `-XX:+PrintOptoAssembly` and/or on specific compile phases emitted by the compile command `-XX:CompileCommand=PrintIdealPhase` which supports the same set of compile phases as the Ideal Graph Visualizer (IGV).
 
@@ -133,6 +136,11 @@ If a `@Test` annotated method has multiple preconditions (for example `applyIf` 
 
 Platform attributes are evaluated as a logical conjunction, and take precedence over VM Flag attributes. An example with both `applyIfPlatformXXX` and `applyIfXXX` can be found in [TestPreconditions](../../../testlibrary_tests/ir_framework/tests/TestPreconditions.java) (internal framework test).
 
+#### Disable IR Rules Due to Compiler Problems
+If an IR rule is failing due to compiler problems (e.g. not emitting the expected shape, compile phase wrongly skipped etc.) without having an immediate fix, it is preferred to additionally specify [@SkipIR](./SkipIR.java) together with the `@IR` annotations to disable IR matching for specific rules over commenting the IR rule out. This allows to still perform IR matching for the skipped IR rules by passing the property flag `-DIgnoreSkipIR=true`. This can be useful when trying to quickly verify if a disabled IR rule is still failing or not.
+
+One (e.g. `@SkipIR(2)`) or multiple (e.g. `@SkipIR({3, 4})`) IR rules can be disabled by specifying the IR rule number(s) as paremeter (note that the first IR rule is rule 1).
+
 #### Implicitly Skipping IR Verification
 An IR verification cannot always be performed. Certain VM flags explicitly disable IR verification, change the IR shape in unexpected ways letting IR rules fail or even make IR verification impossible:
 
@@ -189,6 +197,8 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT\_FOR\_COMPILATION](./CompLevel.java).
 - `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
 - `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags specified by the tests.
+- `-DIgnoreSkip=True`: Run all skipped tests (i.e. tests with a `@Skip` annotation).
+- `-DIgnoreSkipIR=True`: Perform IR matching for all skipped IR rules (i.e. tests with a `@SkipIR` annotation).
 
 ## 3. Test Framework Execution
 This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its `main()` method.

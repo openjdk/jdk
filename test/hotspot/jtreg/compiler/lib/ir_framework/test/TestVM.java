@@ -95,8 +95,9 @@ public class TestVM {
     private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes") || VERBOSE;
     public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
-    private static final String TESTLIST = System.getProperty("Test", "");
-    private static final String EXCLUDELIST = System.getProperty("Exclude", "");
+    private static final String TEST_LIST = System.getProperty("Test", "");
+    private static final String EXCLUDE_LIST = System.getProperty("Exclude", "");
+    private static final boolean IGNORE_SKIP = Boolean.parseBoolean(System.getProperty("IgnoreSkip", "false"));
     private static final boolean DUMP_REPLAY = Boolean.getBoolean("DumpReplay");
     private static final boolean GC_AFTER = Boolean.getBoolean("GCAfter");
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));
@@ -121,8 +122,8 @@ public class TestVM {
     private TestVM(Class<?> testClass) {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
-        this.testList = createTestFilterList(TESTLIST, testClass);
-        this.excludeList = createTestFilterList(EXCLUDELIST, testClass);
+        this.testList = createTestFilterList(TEST_LIST, testClass);
+        this.excludeList = createTestFilterList(EXCLUDE_LIST, testClass);
 
         if (PRINT_VALID_IR_RULES) {
             irMatchRulePrinter = new ApplicableIRRulesPrinter();
@@ -135,19 +136,20 @@ public class TestVM {
      * Parse "test1,test2,test3" into a list.
      */
     private static List<String> createTestFilterList(String list, Class<?> testClass) {
-        List<String> filterList = null;
-        if (!list.isEmpty()) {
-            String classPrefix = testClass.getSimpleName() + ".";
-            filterList = new ArrayList<>(Arrays.asList(list.split(",")));
-            for (int i = filterList.size() - 1; i >= 0; i--) {
-                String test = filterList.get(i);
-                if (test.indexOf(".") > 0) {
-                    if (test.startsWith(classPrefix)) {
-                        test = test.substring(classPrefix.length());
-                        filterList.set(i, test);
-                    } else {
-                        filterList.remove(i);
-                    }
+        if (list.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String classPrefix = testClass.getSimpleName() + ".";
+        List<String> filterList = new ArrayList<>(Arrays.asList(list.split(",")));
+        for (int i = filterList.size() - 1; i >= 0; i--) {
+            String test = filterList.get(i);
+            if (test.indexOf(".") > 0) {
+                if (test.startsWith(classPrefix)) {
+                    test = test.substring(classPrefix.length());
+                    filterList.set(i, test);
+                } else {
+                    filterList.remove(i);
                 }
             }
         }
@@ -291,7 +293,7 @@ public class TestVM {
                 try {
                     Arguments argumentsAnno = getAnnotation(m, Arguments.class);
                     TestFormat.check(argumentsAnno != null || m.getParameterCount() == 0, "Missing @Arguments annotation to define arguments of " + m);
-                    BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m.getName()));
+                    BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m));
                     allTests.add(baseTest);
                     if (PRINT_VALID_IR_RULES) {
                         irMatchRulePrinter.emitApplicableIRRules(m, baseTest.isSkipped());
@@ -304,17 +306,34 @@ public class TestVM {
     }
 
     /**
-     * Check if user wants to exclude this test by checking the -DTest and -DExclude lists.
+     * A test is excluded from execution if:
+     * - -DTest does not list the method
+     * - -DExclude lists the method
+     * - The method specifies a (temporary) @Skip annotation.
      */
-    private boolean shouldExcludeTest(String testName) {
-        boolean hasTestList = testList != null;
-        boolean hasExcludeList = excludeList != null;
-        if (hasTestList) {
-            return !testList.contains(testName) || (hasExcludeList && excludeList.contains(testName));
-        } else if (hasExcludeList) {
-            return excludeList.contains(testName);
+    private boolean shouldExcludeTest(Method testMethod) {
+        String testName = testMethod.getName();
+        return isNotOnTestList(testName) ||
+               isOnExcludeList(testName) ||
+               hasSkipAnnotation(testMethod);
+    }
+
+    private boolean isNotOnTestList(String testName) {
+        return !testList.isEmpty() && !testList.contains(testName);
+    }
+
+    private boolean isOnExcludeList(String testName) {
+        return excludeList.contains(testName);
+    }
+
+    private boolean hasSkipAnnotation(Method testMethod) {
+        boolean shouldSkip = getAnnotation(testMethod, Skip.class) != null;
+        if (shouldSkip && IGNORE_SKIP) {
+            TestVmSocket.send("Running @Skip-annotated method \"" + testMethod.getName() + "\"");
+            return false;
         }
-        return false;
+        return shouldSkip;
+
     }
 
     /**
@@ -537,7 +556,7 @@ public class TestVM {
     }
 
     /**
-     * Setup @Test annotated method an add them to the declaredTests map to have a convenient way of accessing them
+     * Setup @Test annotated method and add them to the declaredTests map to have a convenient way of accessing them
      * once setting up a framework test (base  checked, or custom run test).
      */
     private void setupDeclaredTests() {
@@ -551,6 +570,10 @@ public class TestVM {
                                             "Found @IR annotation on non-@Test method " + m);
                     TestFormat.checkNoThrow(!m.isAnnotationPresent(Warmup.class) || getAnnotation(m, Run.class) != null,
                                             "Found @Warmup annotation on non-@Test or non-@Run method " + m);
+                    TestFormat.checkNoThrow(!m.isAnnotationPresent(Skip.class) ,
+                                            "Found @Skip annotation on non-@Test method " + m);
+                    TestFormat.checkNoThrow(!m.isAnnotationPresent(SkipIR.class) ,
+                                            "Found @SkipIR annotation on non-@Test method " + m);
                 }
             } catch (TestFormatException e) {
                 // Failure logged. Continue and report later.
@@ -569,6 +592,13 @@ public class TestVM {
             TestFormat.checkNoThrow(warmupIterations >= 0, "Cannot have negative value for @Warmup at " + m);
         }
 
+        TestFormat.checkNoThrow(!m.isAnnotationPresent(Skip.class) ||
+                                !m.isAnnotationPresent(SkipIR.class),
+                                "@SkipIR is useless when @Skip is present at " + m);
+
+        TestFormat.checkNoThrow(!m.isAnnotationPresent(SkipIR.class) ||
+                                m.getAnnotationsByType(IR.class).length > 0,
+                                "@SkipIR cannot be used without @IR at " + m);
         if (!IGNORE_COMPILER_CONTROLS) {
             // Don't inline test methods by default. Do not apply this when -DIgnoreCompilerControls=true is set.
             WHITE_BOX.testSetDontInlineMethod(m, true);
@@ -689,7 +719,7 @@ public class TestVM {
                          + "checked test " + m);
         CheckedTest.Parameter parameter = getCheckedTestParameter(m, testMethod);
         dontCompileAndDontInlineMethod(m);
-        CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter, shouldExcludeTest(testMethod.getName()));
+        CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter, shouldExcludeTest(testMethod));
         allTests.add(checkedTest);
         if (PRINT_VALID_IR_RULES) {
             // Only need to emit IR verification information if IR verification is actually performed.
@@ -741,6 +771,7 @@ public class TestVM {
         checkRunMethod(m, runAnno);
         List<DeclaredTest> tests = new ArrayList<>();
         boolean shouldExcludeTest = true;
+        boolean shouldExcludeAtLeastOneTest = false;
         for (String testName : runAnno.test()) {
             try {
                 Method testMethod = testMethodMap.get(testName);
@@ -748,12 +779,18 @@ public class TestVM {
                 checkCustomRunTest(m, testName, testMethod, test, runAnno.mode());
                 test.setAttachedMethod(m);
                 tests.add(test);
-                // Only exclude custom run test if all test methods excluded
-                shouldExcludeTest &= shouldExcludeTest(testMethod.getName());
+                boolean shouldExclude = shouldExcludeTest(testMethod);
+                // Only exclude custom run test if all its associated test methods are excluded
+                shouldExcludeTest &= shouldExclude;
+                shouldExcludeAtLeastOneTest |= shouldExclude;
             } catch (TestFormatException e) {
                 // Logged, continue.
             }
         }
+        if (shouldExcludeAtLeastOneTest) {
+            checkAllWithSkipAnnotationOrNone(m, runAnno);
+        }
+
         if (tests.isEmpty()) {
             return; // There was a format violation. Return.
         }
@@ -797,6 +834,44 @@ public class TestVM {
         Warmup warmupAnno = getAnnotation(m, Warmup.class);
         TestFormat.checkNoThrow(warmupAnno == null || runAnno.mode() != RunMode.STANDALONE,
                                 "Cannot set @Warmup at @Run method " + m + " when used with RunMode.STANDALONE. The @Run method is only invoked once.");
+    }
+
+    private void checkAllWithSkipAnnotationOrNone(Method runMethod, Run runAnno) {
+        List<Method> testMethodsWithoutSkip = testMethodsWithoutSkipAnnotation(runAnno);
+        if (testMethodsWithoutSkip.isEmpty()) {
+            // All with @Skip
+            return;
+        }
+
+        if (testMethodsWithoutSkip.size() == runAnno.test().length) {
+            // No method with @Skip -> must be using -DTest/-DExclude
+            TestFramework.check(testFilterPresent(), "must be present in this case");
+            return;
+        }
+
+        reportNotAllTestsWithSkipAnnotation(runMethod, testMethodsWithoutSkip);
+    }
+
+    private List<Method> testMethodsWithoutSkipAnnotation(Run runAnno) {
+        List<Method> methodsWithoutSkip = new ArrayList<>();
+        String[] tests = runAnno.test();
+        for (String testName : tests) {
+            Method testMethod = testMethodMap.get(testName);
+            if (!hasSkipAnnotation(testMethod)) {
+                methodsWithoutSkip.add(testMethod);
+            }
+        }
+        return methodsWithoutSkip;
+    }
+
+    private void reportNotAllTestsWithSkipAnnotation(Method runMethod, List<Method> testMethodsWithoutSkip) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("@Run-methods with multiple tests can only skip either all or none methods with @Skip:")
+               .append(System.lineSeparator())
+               .append("   - @Run-method: ").append(runMethod);
+        testMethodsWithoutSkip.forEach(method -> builder.append(System.lineSeparator())
+                                                        .append("   - @Test without @Skip: ").append(method));
+        TestFormat.failNoThrow(builder.toString());
     }
 
     private static <T extends Annotation> T getAnnotation(AnnotatedElement element, Class<T> c) {
@@ -900,7 +975,7 @@ public class TestVM {
     }
 
     private boolean testFilterPresent() {
-        return testList != null || excludeList != null;
+        return !testList.isEmpty() || !excludeList.isEmpty();
     }
 
     enum TriState {

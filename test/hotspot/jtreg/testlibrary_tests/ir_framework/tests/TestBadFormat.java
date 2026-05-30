@@ -58,6 +58,9 @@ public class TestBadFormat {
         expectTestFormatException(BadRunTests.class);
         expectTestFormatException(BadSetupTest.class);
         expectTestFormatException(BadCheckTest.class);
+        expectTestFormatException(BadSkip.class);
+        expectTestFormatException(BadSkipIR.class);
+        expectTestFormatException(BadSkipIRAtIRMatching.class);
         expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadIRAnnotations.class);
         expectTestFormatException(BadIRAnnotationsAfterTestVM.class);
@@ -777,6 +780,115 @@ class BadCheckTest {
     public void invalidRunWithArgAnnotation(TestInfo info) {}
 }
 
+class BadSkip {
+    @NoFail
+    @Test
+    public void test() {}
+
+    @NoFail
+    @Test
+    public void test2() {}
+
+    @Skip
+    public void noTest() {}
+
+    @Run(test = "test")
+    @Skip
+    public void noTest2() {}
+
+    @Check(test = "test2")
+    @Skip
+    public void noTest3() {}
+
+    @Setup
+    @Skip
+    public void noTest4() {}
+
+    @NoFail
+    @Test
+    @Skip
+    public static void testSkipOnlyOneTestWithRunMultiple1() {}
+
+    @FailCount(0) // Combined with runTestSkipOnlyOneTestWithRunMultiple() below
+    @Test
+    public static void testSkipOnlyOneTestWithRunMultiple2() {}
+
+    @Run(test = {"testSkipOnlyOneTestWithRunMultiple1",
+                 "testSkipOnlyOneTestWithRunMultiple2"})
+    public static void runTestSkipOnlyOneTestWithRunMultiple() {}
+}
+
+
+class BadSkipIR {
+    @NoFail
+    @Test
+    public void test() {}
+
+    @NoFail
+    @Test
+    public void test2() {}
+
+    @SkipIR(1)
+    public void noTest() {}
+
+    @Run(test = "test")
+    @SkipIR(1)
+    public void noTest2() {}
+
+    @Check(test = "test2")
+    @SkipIR(1)
+    public void noTest3() {}
+
+    @Setup
+    @SkipIR(1)
+    public void noTest4() {}
+
+    @Test
+    @SkipIR(1)
+    public void noIR() {}
+
+    @Test
+    @Skip
+    @SkipIR(1)
+    @IR(failOn = IRNode.CALL)
+    public void noSkipAndSkipIR() {}
+}
+
+class BadSkipIRAtIRMatching {
+    @Test
+    @SkipIR(2)
+    @IR(failOn = IRNode.CALL)
+    public void invalidIndex() {}
+
+    @Test
+    @SkipIR(-1)
+    @IR(failOn = IRNode.CALL)
+    public void invalidIndex2() {}
+
+    @Test
+    @SkipIR({1, 1})
+    @IR(failOn = IRNode.CALL)
+    public void duplicatedIndex1() {}
+
+    @Test
+    @SkipIR({1, 1})
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void duplicatedIndex2() {}
+
+    @Test
+    @SkipIR({1, 2, 1})
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void duplicatedIndex3() {}
+
+    @FailCount(3)
+    @Test
+    @SkipIR({-1, 2, -1})
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void duplicatedIndexWrongIndex() {}
+}
 
 class BadIRAnnotationBeforeFlagVM {
 
