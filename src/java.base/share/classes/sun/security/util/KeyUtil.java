@@ -557,6 +557,7 @@ public final class KeyUtil {
             switch (o) {
                 case byte[] b -> Arrays.fill(b, (byte)0);
                 case char[] c -> Arrays.fill(c, (char)0);
+                case long[] v -> Arrays.fill(v, 0L);
                 case PKCS8Key p8 -> p8.clear();
                 case PKCS8EncodedKeySpec p8 ->
                     SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(p8);
