@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,20 @@
 
 package stream.XMLEventReaderTest;
 
-import java.io.StringReader;
+import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
+import java.io.StringReader;
 
 /*
  * @test
  * @bug 8153781
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventReaderTest.Bug8153781
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventReaderTest.Bug8153781
  * @summary Test if method skipDTD of class XMLDTDScannerImpl will correctly skip the DTD section,
  *          even if a call to XMLEntityScanner.scanData for skipping to the closing ']' returns true.
  */
@@ -54,10 +51,8 @@ public class Bug8153781 {
         xmlcontentbuilder.append("  <!ELEMENT dummy EMPTY>\r\n");
         xmlcontentbuilder.append("  <!--\r\n");
         int doctypelines = DOCTYPE_SECTION_LENGTH / 3;
-        for (int i = 0; i < doctypeoffset; i++)
-            xmlcontentbuilder.append('a');
-        for (int i = 0; i < doctypelines; i++)
-            xmlcontentbuilder.append("a\r\n");
+        xmlcontentbuilder.append("a".repeat(doctypeoffset));
+        xmlcontentbuilder.append("a\r\n".repeat(doctypelines));
         xmlcontentbuilder.append("  -->\r\n");
         xmlcontentbuilder.append("  ]\r\n");
         xmlcontentbuilder.append(">\r\n");
@@ -78,16 +73,11 @@ public class Bug8153781 {
     }
 
     @Test
-    public void test() {
-        try {
-            XMLInputFactory factory = XMLInputFactory.newInstance();
-            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-            for (int i = 0; i < 3; i++) {
-                runReader(factory, i);
-            }
-        } catch (XMLStreamException xe) {
-            xe.printStackTrace();
-            Assert.fail(xe.getMessage());
+    public void test() throws Exception {
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        for (int i = 0; i < 3; i++) {
+            runReader(factory, i);
         }
     }
 }

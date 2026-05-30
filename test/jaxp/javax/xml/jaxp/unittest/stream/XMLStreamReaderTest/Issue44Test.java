@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,27 @@
 
 package stream.XMLStreamReaderTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 6631262
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.Issue44Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.Issue44Test
  * @summary Test XMLStreamReader.getName() shall throw IllegalStateException if current event is not start/end element.
  */
 public class Issue44Test {
 
     @Test
-    public void testStartElement() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            // File file = new File("./tests/XMLStreamReader/sgml.xml");
-            // FileInputStream inputStream = new FileInputStream(file);
-            XMLStreamReader xsr = xif.createXMLStreamReader(this.getClass().getResourceAsStream("sgml.xml"));
-
-            xsr.getName();
-        } catch (IllegalStateException ise) {
-            // expected
-            System.out.println(ise.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+    public void testStartElement() throws XMLStreamException {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLStreamReader xsr = xif.createXMLStreamReader(this.getClass().getResourceAsStream("sgml.xml"));
+        assertThrows(IllegalStateException.class, xsr::getName);
     }
 }

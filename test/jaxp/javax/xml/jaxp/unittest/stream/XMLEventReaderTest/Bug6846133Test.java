@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,18 @@
 
 package stream.XMLEventReaderTest;
 
-import javax.xml.stream.XMLStreamException;
+import org.junit.jupiter.api.Test;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import java.io.ByteArrayInputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 6846133
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventReaderTest.Bug6846133Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventReaderTest.Bug6846133Test
  * @summary Test method getDocumentTypeDeclaration() of DTD Event returns a valid value.
  */
 public class Bug6846133Test {
@@ -40,42 +42,32 @@ public class Bug6846133Test {
             + "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">" + "<html><body><p>I am some simple html</p></body> </html>";
 
     @Test
-    public void test() {
-        try {
-            javax.xml.stream.XMLInputFactory factory = javax.xml.stream.XMLInputFactory.newInstance();
-            factory.setXMLResolver(new DTDResolver());
-            factory.setProperty(javax.xml.stream.XMLInputFactory.SUPPORT_DTD, true);
-            factory.setProperty(javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true);
-            java.io.ByteArrayInputStream is = new java.io.ByteArrayInputStream(xml.getBytes("UTF-8"));
+    public void test() throws Exception {
+        javax.xml.stream.XMLInputFactory factory = javax.xml.stream.XMLInputFactory.newInstance();
+        factory.setXMLResolver(new DTDResolver());
+        factory.setProperty(javax.xml.stream.XMLInputFactory.SUPPORT_DTD, true);
+        factory.setProperty(javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true);
+        ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes(UTF_8));
 
-            // createXMLEventReader (source) not supported
-            // javax.xml.transform.stream.StreamSource source = new
-            // javax.xml.transform.stream.StreamSource (is);
-            // javax.xml.stream.XMLEventReader reader =
-            // factory.createXMLEventReader (source);
+        // createXMLEventReader (source) not supported
+        // javax.xml.transform.stream.StreamSource source = new
+        // javax.xml.transform.stream.StreamSource (is);
+        // javax.xml.stream.XMLEventReader reader =
+        // factory.createXMLEventReader (source);
 
-            javax.xml.stream.XMLEventReader reader = factory.createXMLEventReader(is);
-            while (reader.hasNext()) {
-                javax.xml.stream.events.XMLEvent event = reader.nextEvent();
-                if (event.getEventType() == javax.xml.stream.XMLStreamConstants.DTD) {
-                    String temp = ((javax.xml.stream.events.DTD) event).getDocumentTypeDeclaration();
-                    if (temp.length() < 120) {
-                        Assert.fail("DTD truncated");
-                    }
-                    System.out.println(temp);
-                }
+        javax.xml.stream.XMLEventReader reader = factory.createXMLEventReader(is);
+        while (reader.hasNext()) {
+            javax.xml.stream.events.XMLEvent event = reader.nextEvent();
+            if (event.getEventType() == javax.xml.stream.XMLStreamConstants.DTD) {
+                String temp = ((javax.xml.stream.events.DTD) event).getDocumentTypeDeclaration();
+                assertTrue(temp.length() >= 120, "DTD truncated");
             }
-        } catch (XMLStreamException xe) {
-            Assert.fail(xe.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
-    class DTDResolver implements javax.xml.stream.XMLResolver {
-        public Object resolveEntity(String arg0, String arg1, String arg2, String arg3) throws XMLStreamException {
-            System.out.println("DTD is parsed");
-            return new java.io.ByteArrayInputStream(new byte[0]);
+    private static class DTDResolver implements javax.xml.stream.XMLResolver {
+        public Object resolveEntity(String arg0, String arg1, String arg2, String arg3) {
+            return new ByteArrayInputStream(new byte[0]);
         }
     }
 

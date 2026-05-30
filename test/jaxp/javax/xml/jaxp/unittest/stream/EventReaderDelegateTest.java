@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,208 +23,132 @@
 
 package stream;
 
-import org.testng.annotations.Test;
-import org.testng.Assert;
+import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
-import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.EventReaderDelegate;
+import java.io.FileInputStream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.EventReaderDelegateTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.EventReaderDelegateTest
  * @summary Test EventReaderDelegate.
  */
 public class EventReaderDelegateTest {
-
-    public EventReaderDelegateTest(String name) {
-    }
-
     @Test
-    public void testGetElementText() {
-        try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(new File(getClass().getResource("toys.xml").getFile())));
-            EventReaderDelegate delegate = new EventReaderDelegate(reader);
-            while (delegate.hasNext()) {
-                XMLEvent event = (XMLEvent) delegate.next();
-                switch (event.getEventType()) {
-                    case XMLStreamConstants.START_ELEMENT: {
-                        String name = event.asStartElement().getName().toString();
-                        if (name.equals("name") || name.equals("price")) {
-                            System.out.println(delegate.getElementText());
-                        } else {
-                            try {
-                                delegate.getElementText();
-                            } catch (XMLStreamException e) {
-                                System.out.println("Expected XMLStreamException in getElementText()");
-                            }
-                        }
-
+    public void testGetElementText() throws Exception {
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
+        EventReaderDelegate delegate = new EventReaderDelegate(reader);
+        while (delegate.hasNext()) {
+            XMLEvent event = (XMLEvent) delegate.next();
+            switch (event.getEventType()) {
+                case XMLStreamConstants.START_ELEMENT: {
+                    String name = event.asStartElement().getName().toString();
+                    if (name.equals("name") || name.equals("price")) {
+                        assertNotNull(delegate.getElementText());
+                    } else {
+                        assertThrows(XMLStreamException.class, delegate::getElementText);
                     }
                 }
             }
-            delegate.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testGetElementText()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            Assert.fail("XMLStreamException in testGetElementText()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testGetElementText()");
         }
-
+        delegate.close();
     }
 
     @Test
-    public void testRemove() {
-        try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(new File(getClass().getResource("toys.xml").getFile())));
-            EventReaderDelegate delegate = new EventReaderDelegate(reader);
-            delegate.remove();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testRemove()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            Assert.fail("XMLStreamException in testRemove()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testRemove()");
-        } catch (UnsupportedOperationException e) {
-            System.out.println("Expected exception in remove()");
-        }
-
+    public void testRemove() throws Exception {
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
+        EventReaderDelegate delegate = new EventReaderDelegate(reader);
+        assertThrows(UnsupportedOperationException.class, delegate::remove);
     }
 
     @Test
-    public void testPeek() {
-        try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(new File(getClass().getResource("toys.xml").getFile())));
-            EventReaderDelegate delegate = new EventReaderDelegate();
-            delegate.setParent(reader);
-            while (delegate.hasNext()) {
-                XMLEvent peekevent = delegate.peek();
-                XMLEvent event = (XMLEvent) delegate.next();
-                if (peekevent != event) {
-                    Assert.fail("peek() does not return same XMLEvent with next()");
+    public void testPeek() throws Exception {
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
+        EventReaderDelegate delegate = new EventReaderDelegate();
+        delegate.setParent(reader);
+        while (delegate.hasNext()) {
+            XMLEvent peekevent = delegate.peek();
+            XMLEvent event = (XMLEvent) delegate.next();
+            assertSame(peekevent, event, "peek() does not return same XMLEvent with next()");
+        }
+        delegate.close();
+    }
+
+    @Test
+    public void testNextTag() throws Exception {
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        ifac.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+        XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
+        EventReaderDelegate delegate = new EventReaderDelegate(reader);
+        assertEquals(Boolean.FALSE, delegate.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES));
+        while (delegate.hasNext()) {
+            XMLEvent event = delegate.peek();
+            if (event.isEndElement() || event.isStartElement()) {
+                XMLEvent nextevent = delegate.nextTag();
+                assertTrue(nextevent.getEventType() == XMLStreamConstants.START_ELEMENT || nextevent.getEventType() == XMLStreamConstants.END_ELEMENT);
+            } else {
+                delegate.next();
+            }
+        }
+        delegate.close();
+    }
+
+    @Test
+    public void testNextEvent() throws Exception {
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        ifac.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+        XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
+        EventReaderDelegate delegate = new EventReaderDelegate();
+        delegate.setParent(reader);
+
+        assertEquals(Boolean.FALSE, delegate.getParent().getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES));
+        assertEquals(Boolean.FALSE, delegate.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES));
+
+        while (delegate.hasNext()) {
+            XMLEvent event = delegate.nextEvent();
+            switch (event.getEventType()) {
+                case XMLStreamConstants.START_ELEMENT: {
+                    assertNotNull(event.asStartElement().getName());
+                    break;
+                }
+                case XMLStreamConstants.END_ELEMENT: {
+                    assertNotNull(event.asEndElement().getName());
+                    break;
+                }
+                case XMLStreamConstants.END_DOCUMENT: {
+                    assertTrue(event.isEndDocument());
+                    break;
+                }
+                case XMLStreamConstants.START_DOCUMENT: {
+                    assertTrue(event.isStartDocument());
+                    break;
+                }
+                case XMLStreamConstants.CHARACTERS: {
+                    assertNotNull(event.asCharacters().getData());
+                    break;
+                }
+                case XMLStreamConstants.COMMENT: {
+                    assertNotNull(event.toString());
+                    break;
                 }
             }
-            delegate.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testPeek()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            Assert.fail("XMLStreamException in testPeek()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testPeek()");
+
         }
-    }
-
-    @Test
-    public void testNextTag() {
-        try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            ifac.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-            XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(new File(getClass().getResource("toys.xml").getFile())));
-            EventReaderDelegate delegate = new EventReaderDelegate(reader);
-            if ((Boolean) (delegate.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES)) != Boolean.FALSE) {
-                Assert.fail("getProperty() does not return correct value");
-            }
-            while (delegate.hasNext()) {
-                XMLEvent event = delegate.peek();
-                if (event.isEndElement() || event.isStartElement()) {
-                    XMLEvent nextevent = delegate.nextTag();
-                    if (!(nextevent.getEventType() == XMLStreamConstants.START_ELEMENT || nextevent.getEventType() == XMLStreamConstants.END_ELEMENT)) {
-                        Assert.fail("nextTag() does not return correct event type");
-                    }
-                } else {
-                    delegate.next();
-                }
-            }
-            delegate.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testNextTag()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            Assert.fail("XMLStreamException in testNextTag()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testNextTag()");
-        }
-    }
-
-    @Test
-    public void testNextEvent() {
-        try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            ifac.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-            XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(new File(getClass().getResource("toys.xml").getFile())));
-            EventReaderDelegate delegate = new EventReaderDelegate();
-            delegate.setParent(reader);
-            if ((Boolean) (delegate.getParent().getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES)) != Boolean.FALSE) {
-                Assert.fail("XMLEventReader.getProperty() does not return correct value");
-            }
-            if ((Boolean) (delegate.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES)) != Boolean.FALSE) {
-                Assert.fail("EventReaderDelegate.getProperty() does not return correct value");
-            }
-            while (delegate.hasNext()) {
-                XMLEvent event = delegate.nextEvent();
-                switch (event.getEventType()) {
-                    case XMLStreamConstants.START_ELEMENT: {
-                        System.out.println(event.asStartElement().getName());
-                        break;
-                    }
-                    case XMLStreamConstants.END_ELEMENT: {
-                        System.out.println(event.asEndElement().getName());
-                        break;
-                    }
-                    case XMLStreamConstants.END_DOCUMENT: {
-                        System.out.println(event.isEndDocument());
-                        break;
-                    }
-                    case XMLStreamConstants.START_DOCUMENT: {
-                        System.out.println(event.isStartDocument());
-                        break;
-                    }
-                    case XMLStreamConstants.CHARACTERS: {
-                        System.out.println(event.asCharacters().getData());
-                        break;
-                    }
-                    case XMLStreamConstants.COMMENT: {
-                        System.out.println(event.toString());
-                        break;
-                    }
-                }
-
-            }
-            delegate.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testNextEvent()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            Assert.fail("XMLStreamException in testNextEvent()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testNextEvent()");
-        }
-
+        delegate.close();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,15 @@
 
 package stream.XMLStreamReaderTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.VoiceXMLDTDTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.VoiceXMLDTDTest
  * @summary Test parsing Voice XML DTD.
  */
 public class VoiceXMLDTDTest {
@@ -40,18 +39,13 @@ public class VoiceXMLDTDTest {
     private static final String INPUT_FILE1 = "voicexml.xml";
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         XMLInputFactory ifac = XMLInputFactory.newInstance();
 
-        try {
-            XMLStreamReader re = ifac.createXMLStreamReader(getClass().getResource(INPUT_FILE1).toExternalForm(),
-                    this.getClass().getResourceAsStream(INPUT_FILE1));
-            while (re.hasNext()) {
-                int event = re.next();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
+        XMLStreamReader re = ifac.createXMLStreamReader(getClass().getResource(INPUT_FILE1).toExternalForm(),
+                this.getClass().getResourceAsStream(INPUT_FILE1));
+        while (re.hasNext()) {
+            int event = re.next();
         }
     }
 }

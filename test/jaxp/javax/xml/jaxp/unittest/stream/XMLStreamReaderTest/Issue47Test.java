@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,66 +23,48 @@
 
 package stream.XMLStreamReaderTest;
 
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.StringReader;
 
-import org.testng.Assert;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 6631265
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.Issue47Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.Issue47Test
  * @summary Test XMLStreamReader.standaloneSet() presents if input document has a value for "standalone" attribute in xml declaration.
  */
 public class Issue47Test {
 
     @Test
-    public void testStandaloneSet() {
+    public void testStandaloneSet() throws XMLStreamException {
         final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><prefix:root xmlns=\"\" xmlns:null=\"\"></prefix:root>";
 
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            XMLStreamReader r = xif.createXMLStreamReader(new StringReader(xml));
-            Assert.assertTrue(!r.standaloneSet() && !r.isStandalone());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLStreamReader r = xif.createXMLStreamReader(new StringReader(xml));
+        assertTrue(!r.standaloneSet() && !r.isStandalone());
     }
 
     @Test
-    public void testStandaloneSet1() {
+    public void testStandaloneSet1() throws XMLStreamException {
         final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><prefix:root xmlns=\"\" xmlns:null=\"\"></prefix:root>";
 
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            XMLStreamReader r = xif.createXMLStreamReader(new StringReader(xml));
-            Assert.assertTrue(r.standaloneSet() && !r.isStandalone());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLStreamReader r = xif.createXMLStreamReader(new StringReader(xml));
+        assertTrue(r.standaloneSet() && !r.isStandalone());
     }
 
     @Test
-    public void testStandaloneSet2() {
+    public void testStandaloneSet2() throws XMLStreamException {
         final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><prefix:root xmlns=\"\" xmlns:null=\"\"></prefix:root>";
 
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            XMLStreamReader r = xif.createXMLStreamReader(new StringReader(xml));
-            AssertJUnit.assertTrue(r.standaloneSet() && r.isStandalone());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLStreamReader r = xif.createXMLStreamReader(new StringReader(xml));
+        assertTrue(r.standaloneSet() && r.isStandalone());
     }
 }

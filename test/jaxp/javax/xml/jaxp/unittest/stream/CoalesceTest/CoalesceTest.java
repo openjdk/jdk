@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,88 +22,54 @@
  */
 package stream.CoalesceTest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.InputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.CoalesceTest.CoalesceTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.CoalesceTest.CoalesceTest
  * @summary Test Coalesce property works.
  */
 public class CoalesceTest {
 
-    String countryElementContent = "START India  CS}}}}}} India END";
-    String descriptionElementContent = "a&b";
-    String fooElementContent = "&< cdatastart<><>>><>><<<<cdataend entitystart insert entityend";
+    private static final String countryElementContent = "START India  CS}}}}}} India END";
+    private static final String descriptionElementContent = "a&b";
+    private static final String fooElementContent = "&< cdatastart<><>>><>><<<<cdataend entitystart insert entityend";
 
     @Test
-    public void testCoalesceProperty() {
-        try {
-            XMLInputFactory xifactory = XMLInputFactory.newInstance();
-            xifactory.setProperty(XMLInputFactory.IS_COALESCING, new Boolean(true));
-            InputStream xml = this.getClass().getResourceAsStream("coalesce.xml");
-            XMLStreamReader streamReader = xifactory.createXMLStreamReader(xml);
-            while (streamReader.hasNext()) {
-                int eventType = streamReader.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT && streamReader.getLocalName().equals("country")) {
-                    eventType = streamReader.next();
-                    if (eventType == XMLStreamConstants.CHARACTERS) {
-                        String text = streamReader.getText();
-                        if (!text.equals(countryElementContent)) {
-                            System.out.println("String dont match");
-                            System.out.println("text = " + text);
-                            System.out.println("countryElementContent = " + countryElementContent);
-                        }
-                        // assertTrue(text.equals(countryElementContent));
-                    }
+    public void testCoalesceProperty() throws Exception {
+        XMLInputFactory xifactory = XMLInputFactory.newInstance();
+        xifactory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
+        InputStream xml = this.getClass().getResourceAsStream("coalesce.xml");
+        XMLStreamReader streamReader = xifactory.createXMLStreamReader(xml);
+        while (streamReader.hasNext()) {
+            int eventType = streamReader.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT && streamReader.getLocalName().equals("country")) {
+                eventType = streamReader.next();
+                if (eventType == XMLStreamConstants.CHARACTERS) {
+                    assertEquals(countryElementContent, streamReader.getText());
                 }
-                if (eventType == XMLStreamConstants.START_ELEMENT && streamReader.getLocalName().equals("description")) {
-                    eventType = streamReader.next();
-                    if (eventType == XMLStreamConstants.CHARACTERS) {
-                        String text = streamReader.getText();
-                        if (!text.equals(descriptionElementContent)) {
-                            System.out.println("String dont match");
-                            System.out.println("text = " + text);
-                            System.out.println("descriptionElementContent = " + descriptionElementContent);
-                        }
-                        Assert.assertTrue(text.equals(descriptionElementContent));
-                    }
-                }
-                if (eventType == XMLStreamConstants.START_ELEMENT && streamReader.getLocalName().equals("foo")) {
-                    eventType = streamReader.next();
-                    if (eventType == XMLStreamConstants.CHARACTERS) {
-                        String text = streamReader.getText();
-                        if (!text.equals(fooElementContent)) {
-                            System.out.println("String dont match");
-                            System.out.println("text = " + text);
-                            System.out.println("fooElementContent = " + fooElementContent);
-                        }
-
-                        Assert.assertTrue(text.equals(fooElementContent));
-                    }
-                }
-
             }
-        } catch (XMLStreamException ex) {
-
-            if (ex.getNestedException() != null) {
-                ex.getNestedException().printStackTrace();
+            if (eventType == XMLStreamConstants.START_ELEMENT && streamReader.getLocalName().equals("description")) {
+                eventType = streamReader.next();
+                if (eventType == XMLStreamConstants.CHARACTERS) {
+                    assertEquals(descriptionElementContent, streamReader.getText());
+                }
             }
-            // ex.printStackTrace() ;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+            if (eventType == XMLStreamConstants.START_ELEMENT && streamReader.getLocalName().equals("foo")) {
+                eventType = streamReader.next();
+                if (eventType == XMLStreamConstants.CHARACTERS) {
+                    assertEquals(fooElementContent, streamReader.getText());
+                }
+            }
         }
-
     }
 
 }

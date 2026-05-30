@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
 
 package stream.XMLStreamReaderTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 6218794
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.BOMTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.BOMTest
  * @summary Test XMLStreamReader parses BOM UTF-8 and BOM UTF-16 big endian stream.
  */
 public class BOMTest {
@@ -43,24 +42,17 @@ public class BOMTest {
     private static final String INPUT_FILE2 = "UTF16-BE.wsdl.data";
 
     @Test
-    public void testBOM() {
+    public void testBOM() throws Exception {
         XMLInputFactory ifac = XMLInputFactory.newInstance();
-        try {
-            XMLStreamReader re = ifac.createXMLStreamReader(this.getClass().getResource(INPUT_FILE1).toExternalForm(),
-                        util.BOMInputStream.createStream("UTF-8", this.getClass().getResourceAsStream(INPUT_FILE1)));
-            while (re.hasNext()) {
-                int event = re.next();
-            }
-            XMLStreamReader re2 = ifac.createXMLStreamReader(this.getClass().getResource(INPUT_FILE2).toExternalForm(),
-                        util.BOMInputStream.createStream("UTF-16BE", this.getClass().getResourceAsStream(INPUT_FILE2)));
-            while (re2.hasNext()) {
-
-                int event = re2.next();
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
+        XMLStreamReader re = ifac.createXMLStreamReader(this.getClass().getResource(INPUT_FILE1).toExternalForm(),
+                util.BOMInputStream.createStream("UTF-8", this.getClass().getResourceAsStream(INPUT_FILE1)));
+        while (re.hasNext()) {
+            int event = re.next();
+        }
+        XMLStreamReader re2 = ifac.createXMLStreamReader(this.getClass().getResource(INPUT_FILE2).toExternalForm(),
+                util.BOMInputStream.createStream("UTF-16BE", this.getClass().getResourceAsStream(INPUT_FILE2)));
+        while (re2.hasNext()) {
+            int event = re2.next();
         }
     }
 }

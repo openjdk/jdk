@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,39 @@
  */
 package stream.XMLInputFactoryTest;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 8276050
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLInputFactoryTest.InputFactoryTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLInputFactoryTest.InputFactoryTest
  * @summary Test XMLInputFactory functionalities.
  */
 public class InputFactoryTest {
-    @DataProvider(name = "AEProperties")
-    public Object[][] getAEProperties() throws Exception {
-        return new Object[][]{
-            {XMLConstants.ACCESS_EXTERNAL_DTD, "all", "all"},
-            {XMLConstants.ACCESS_EXTERNAL_SCHEMA, "all", "all"},
-            {XMLConstants.ACCESS_EXTERNAL_DTD, "", ""},
-            {XMLConstants.ACCESS_EXTERNAL_SCHEMA, "", ""},
+    public static Object[][] getAEProperties() {
+        return new Object[][] {
+                { XMLConstants.ACCESS_EXTERNAL_DTD, "all", "all" },
+                { XMLConstants.ACCESS_EXTERNAL_SCHEMA, "all", "all" },
+                { XMLConstants.ACCESS_EXTERNAL_DTD, "", "" },
+                { XMLConstants.ACCESS_EXTERNAL_SCHEMA, "", "" },
         };
     }
 
     /*
      * Verifies that the XMLInputFactory returns security properties correctly.
-    */
-    @Test(dataProvider = "AEProperties")
+     */
+    @ParameterizedTest
+    @MethodSource("getAEProperties")
     public void testProperty(String name, String value, String expected) {
         XMLInputFactory xif = XMLInputFactory.newInstance();
         xif.setProperty(name, value);
-        Assert.assertEquals(expected, (String)xif.getProperty(name));
+        assertEquals(expected, xif.getProperty(name));
     }
 }

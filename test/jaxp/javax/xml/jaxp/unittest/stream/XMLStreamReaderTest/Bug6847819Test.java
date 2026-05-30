@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,46 +23,29 @@
 
 package stream.XMLStreamReaderTest;
 
-import org.testng.annotations.Test;
-import org.testng.Assert;
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 6847819
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.Bug6847819Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.Bug6847819Test
  * @summary Test StAX parser shall throw XMLStreamException for illegal xml declaration.
  */
 public class Bug6847819Test {
 
     @Test
-    public void testIllegalDecl() throws XMLStreamException {
+    public void testIllegalDecl() {
         String xml = "<?xml ?><root>abc]]>xyz</root>";
-        String msg = "illegal declaration";
-        try {
-            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            inputFactory.createXMLStreamReader(new StringReader(xml));
-            Assert.fail("Expected an exception for " + msg);
-        } catch (XMLStreamException ex) { // good
-            System.out.println("Expected failure: '" + ex.getMessage() + "' " + "(matching message: '" + msg + "')");
-        } catch (Exception ex2) { // ok; iff links to XMLStreamException
-            Throwable t = ex2;
-            while (t.getCause() != null && !(t instanceof XMLStreamException)) {
-                t = t.getCause();
-            }
-            if (t instanceof XMLStreamException) {
-                System.out.println("Expected failure: '" + ex2.getMessage() + "' " + "(matching message: '" + msg + "')");
-            }
-            if (t == ex2) {
-                Assert.fail("Expected an XMLStreamException (either direct, or getCause() of a primary exception) for " + msg + ", got: " + ex2);
-            }
-            Assert.fail("Expected an XMLStreamException (either direct, or getCause() of a primary exception) for " + msg + ", got: " + ex2 + " (root: " + t + ")");
-        }
-
+        XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+        assertThrows(
+                XMLStreamException.class,
+                () -> inputFactory.createXMLStreamReader(new StringReader(xml)));
     }
-
 }

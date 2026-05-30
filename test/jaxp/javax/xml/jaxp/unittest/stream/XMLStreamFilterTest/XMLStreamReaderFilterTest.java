@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,25 @@
 
 package stream.XMLStreamFilterTest;
 
-import static org.testng.Assert.assertThrows;
-
-import java.io.Reader;
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
-* @test
-* @bug 8255918
-* @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
-* @run testng stream.XMLStreamFilterTest.XMLStreamReaderFilterTest
-* @summary Test the implementation of {@code XMLStreamReader} using a {@code StreamFilter}
-*/
+ * @test
+ * @bug 8255918
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run junit stream.XMLStreamFilterTest.XMLStreamReaderFilterTest
+ * @summary Test the implementation of {@code XMLStreamReader} using a {@code StreamFilter}
+ */
 public class XMLStreamReaderFilterTest {
 
     static final String XMLSOURCE1 = "<root>\n"

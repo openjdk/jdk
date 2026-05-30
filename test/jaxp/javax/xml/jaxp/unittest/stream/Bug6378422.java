@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,22 @@
 
 package stream;
 
-import javax.xml.stream.XMLInputFactory;
+import org.junit.jupiter.api.Test;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import javax.xml.stream.XMLInputFactory;
 
 /*
  * @test
  * @bug 6378422
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.Bug6378422
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.Bug6378422
  * @summary Test setting reuse-instance property on StAX factory.
  */
 public class Bug6378422 {
 
     @Test
     public void testReuseInstanceProp() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            xif.setProperty("reuse-instance", Boolean.valueOf(true));
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty("reuse-instance", true);
     }
 }

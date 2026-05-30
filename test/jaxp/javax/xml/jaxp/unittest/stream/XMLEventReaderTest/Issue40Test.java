@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,21 @@
 
 package stream.XMLEventReaderTest;
 
-import java.io.File;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.events.XMLEvent;
+import java.io.File;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventReaderTest.Issue40Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventReaderTest.Issue40Test
  * @summary Test XMLEventReader.getElementText() works after calling peek().
  */
 public class Issue40Test {
@@ -51,40 +51,28 @@ public class Issue40Test {
      * test without peek
      */
     @Test
-    public void testWOPeek() {
-        try {
-            XMLEventReader er = getReader();
-            XMLEvent e = er.nextEvent();
-            Assert.assertEquals(e.getEventType(), XMLStreamConstants.START_DOCUMENT);
-            // we have two start elements in this file
-            Assert.assertEquals(er.nextEvent().getEventType(), XMLStreamConstants.START_ELEMENT);
-            Assert.assertEquals(er.nextEvent().getEventType(), XMLStreamConstants.START_ELEMENT);
-            System.out.println(er.getElementText());
-
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+    public void testWOPeek() throws Exception {
+        XMLEventReader er = getReader();
+        XMLEvent e = er.nextEvent();
+        assertEquals(XMLStreamConstants.START_DOCUMENT, e.getEventType());
+        // we have two start elements in this file
+        assertEquals(XMLStreamConstants.START_ELEMENT, er.nextEvent().getEventType());
+        assertEquals(XMLStreamConstants.START_ELEMENT, er.nextEvent().getEventType());
     }
 
     /**
      * test with peek
      */
     @Test
-    public void testWPeek() {
-        try {
-            XMLEventReader er = getReader();
-            XMLEvent e = er.nextEvent();
-            Assert.assertEquals(e.getEventType(), XMLStreamConstants.START_DOCUMENT);
-            // we have two start elements in this file
-            while (er.peek().getEventType() == XMLStreamConstants.START_ELEMENT) {
-                e = er.nextEvent();
-            }
-            Assert.assertEquals(e.getEventType(), XMLStreamConstants.START_ELEMENT);
-            System.out.println(er.getElementText());
-
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
+    public void testWPeek() throws Exception {
+        XMLEventReader er = getReader();
+        XMLEvent e = er.nextEvent();
+        assertEquals(XMLStreamConstants.START_DOCUMENT, e.getEventType());
+        // we have two start elements in this file
+        while (er.peek().getEventType() == XMLStreamConstants.START_ELEMENT) {
+            e = er.nextEvent();
         }
+        assertEquals(XMLStreamConstants.START_ELEMENT, e.getEventType());
     }
 
     private XMLEventReader getReader() throws Exception {
@@ -92,8 +80,7 @@ public class Issue40Test {
         input = new File(getClass().getResource("play.xml").getFile());
 
         // Check if event reader returns the correct event
-        XMLEventReader er = inputFactory.createXMLEventReader(inputFactory.createXMLStreamReader(new java.io.FileInputStream(input), "UTF-8"));
-        return er;
+        return inputFactory.createXMLEventReader(
+                inputFactory.createXMLStreamReader(new java.io.FileInputStream(input), "UTF-8"));
     }
-
 }

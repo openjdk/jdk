@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,7 @@
 
 package stream.XMLStreamReaderTest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.StringReader;
-import java.util.List;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
@@ -36,14 +33,18 @@ import javax.xml.stream.events.DTD;
 import javax.xml.stream.events.EntityDeclaration;
 import javax.xml.stream.events.EntityReference;
 import javax.xml.stream.events.XMLEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.StringReader;
+import java.util.List;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.SupportDTDTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.SupportDTDTest
  * @summary Test SUPPORT_DTD and IS_REPLACING_ENTITY_REFERENCES.
  */
 
@@ -92,123 +93,111 @@ public class SupportDTDTest {
     final int ENTITY_EXTERNAL_ONLY = 2;
     final int ENTITY_BOTH = 3;
 
-    boolean _DTDReturned = false;
-    boolean _EntityEventReturned = false;
-    boolean _hasEntityDelaration = false;
-    boolean _exceptionThrown = false;
-
-    /** Creates a new instance of StreamReader */
-    public SupportDTDTest(String name) {
-    }
-
-    void reset() {
-        _DTDReturned = false;
-        _EntityEventReturned = false;
-        _hasEntityDelaration = false;
-        _exceptionThrown = false;
-    }
+    private boolean _DTDReturned = false;
+    private boolean _EntityEventReturned = false;
+    private boolean _hasEntityDelaration = false;
+    private boolean _exceptionThrown = false;
 
     // tests 1-4 test internal entities only
     @Test
-    public void test1() {
+    public void test1() throws Exception {
         supportDTD(true, true, ENTITY_INTERNAL_ONLY);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(true, _hasEntityDelaration);
-        Assert.assertEquals(false, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertTrue(_hasEntityDelaration);
+        assertFalse(_EntityEventReturned);
     }
 
     @Test
-    public void test2() {
+    public void test2() throws Exception {
         supportDTD(true, false, ENTITY_INTERNAL_ONLY);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(true, _hasEntityDelaration);
-        Assert.assertEquals(true, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertTrue(_hasEntityDelaration);
+        assertTrue(_EntityEventReturned);
     }
 
     @Test
-    public void test3() {
+    public void test3() throws Exception {
         supportDTD(false, true, ENTITY_INTERNAL_ONLY);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(false, _hasEntityDelaration);
-        Assert.assertEquals(true, _exceptionThrown);
+        assertTrue(_DTDReturned);
+        assertFalse(_hasEntityDelaration);
+        assertTrue(_exceptionThrown);
     }
 
     @Test
-    public void test4() {
+    public void test4() throws Exception {
         supportDTD(false, false, ENTITY_INTERNAL_ONLY);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(false, _hasEntityDelaration);
-        Assert.assertEquals(true, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertFalse(_hasEntityDelaration);
+        assertTrue(_EntityEventReturned);
     }
 
     // tests 5-8 test external entities only
     @Test
-    public void test5() {
+    public void test5() throws Exception {
         supportDTD(true, true, ENTITY_EXTERNAL_ONLY);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(true, _hasEntityDelaration);
-        Assert.assertEquals(false, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertTrue(_hasEntityDelaration);
+        assertFalse(_EntityEventReturned);
     }
 
     @Test
-    public void test6() {
+    public void test6() throws Exception {
         supportDTD(true, false, ENTITY_EXTERNAL_ONLY);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(true, _hasEntityDelaration);
-        Assert.assertEquals(true, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertTrue(_hasEntityDelaration);
+        assertTrue(_EntityEventReturned);
     }
 
     @Test
-    public void test7() {
+    public void test7() throws Exception {
         supportDTD(false, true, ENTITY_EXTERNAL_ONLY);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(false, _hasEntityDelaration);
-        Assert.assertEquals(true, _exceptionThrown);
+        assertTrue(_DTDReturned);
+        assertFalse(_hasEntityDelaration);
+        assertTrue(_exceptionThrown);
     }
 
     @Test
-    public void test8() {
+    public void test8() throws Exception {
         supportDTD(false, false, ENTITY_EXTERNAL_ONLY);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(false, _hasEntityDelaration);
-        Assert.assertEquals(true, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertFalse(_hasEntityDelaration);
+        assertTrue(_EntityEventReturned);
     }
 
     // tests 9-12 test both internal and external entities
     @Test
-    public void test9() {
+    public void test9() throws Exception {
         supportDTD(true, true, ENTITY_BOTH);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(true, _hasEntityDelaration);
-        Assert.assertEquals(false, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertTrue(_hasEntityDelaration);
+        assertFalse(_EntityEventReturned);
     }
 
     @Test
-    public void test10() {
+    public void test10() throws Exception {
         supportDTD(true, false, ENTITY_BOTH);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(true, _hasEntityDelaration);
-        Assert.assertEquals(true, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertTrue(_hasEntityDelaration);
+        assertTrue(_EntityEventReturned);
     }
 
     @Test
-    public void test11() {
+    public void test11() throws Exception {
         supportDTD(false, true, ENTITY_BOTH);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(false, _hasEntityDelaration);
-        Assert.assertEquals(true, _exceptionThrown);
+        assertTrue(_DTDReturned);
+        assertFalse(_hasEntityDelaration);
+        assertTrue(_exceptionThrown);
     }
 
     @Test
-    public void test12() {
+    public void test12() throws Exception {
         supportDTD(false, false, ENTITY_BOTH);
-        Assert.assertEquals(true, _DTDReturned);
-        Assert.assertEquals(false, _hasEntityDelaration);
-        Assert.assertEquals(true, _EntityEventReturned);
+        assertTrue(_DTDReturned);
+        assertFalse(_hasEntityDelaration);
+        assertTrue(_EntityEventReturned);
     }
 
-    public void supportDTD(boolean supportDTD, boolean replaceEntity, int inputType) {
-        reset();
+    public void supportDTD(boolean supportDTD, boolean replaceEntity, int inputType) throws Exception {
         print("\n");
         print((supportDTD ? "SupportDTD=true" : "SupportDTD=false") + ", " + (replaceEntity ? "replaceEntity=true" : "replaceEntity=false"));
         try {
@@ -265,14 +254,14 @@ public class SupportDTDTest {
     }
 
     void DisplayEntities(DTD event) {
-        List entities = event.getEntities();
+        List<EntityDeclaration> entities = event.getEntities();
         if (entities == null) {
             _hasEntityDelaration = false;
             print("No entity found.");
         } else {
             _hasEntityDelaration = true;
             for (int i = 0; i < entities.size(); i++) {
-                EntityDeclaration entity = (EntityDeclaration) entities.get(i);
+                EntityDeclaration entity = entities.get(i);
                 print(entity.getName());
             }
         }

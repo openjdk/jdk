@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,31 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.ByteArrayOutputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.ByteArrayOutputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 6600882
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.Bug6600882Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.Bug6600882Test
  * @summary Test toString(), hashCode() of XMLStreamWriter .
  */
 public class Bug6600882Test {
 
-
     @Test
-    public void test() {
-        try {
-            XMLOutputFactory of = XMLOutputFactory.newInstance();
-            XMLStreamWriter w = of.createXMLStreamWriter(new ByteArrayOutputStream());
-            XMLStreamWriter w1 = of.createXMLStreamWriter(new ByteArrayOutputStream());
-            System.out.println(w);
-            Assert.assertTrue(w.equals(w) && w.hashCode() == w.hashCode());
-            Assert.assertFalse(w1.equals(w));
-        } catch (Throwable ex) {
-            Assert.fail(ex.toString());
-        }
+    public void test() throws Exception {
+        XMLOutputFactory of = XMLOutputFactory.newInstance();
+        XMLStreamWriter w = of.createXMLStreamWriter(new ByteArrayOutputStream());
+        XMLStreamWriter w1 = of.createXMLStreamWriter(new ByteArrayOutputStream());
+        assertTrue(w.equals(w) && w.hashCode() == w.hashCode());
+        assertNotEquals(w1, w);
     }
 
 }

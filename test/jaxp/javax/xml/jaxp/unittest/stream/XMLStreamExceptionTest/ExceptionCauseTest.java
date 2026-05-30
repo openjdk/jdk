@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,17 @@
 
 package stream.XMLStreamExceptionTest;
 
-import java.io.IOException;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamExceptionTest.ExceptionCauseTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamExceptionTest.ExceptionCauseTest
  * @summary Test XMLStreamException constructor initializes chained exception
  */
 public class ExceptionCauseTest {
@@ -54,6 +53,6 @@ public class ExceptionCauseTest {
         XMLStreamException e = new XMLStreamException("message", location, cause);
 
         // Verify cause
-        Assert.assertSame(e.getCause(), cause, "XMLStreamException has the wrong cause");
+        assertSame(e.getCause(), cause, "XMLStreamException has the wrong cause");
     }
 }

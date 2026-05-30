@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,19 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.StringWriter;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.StringWriter;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /*
  * @test
  * @bug 6391922
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.NullUriDetectionTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.NullUriDetectionTest
  * @summary Test XMLStreamWriter can writeDefaultNamespace(null).
  */
 public class NullUriDetectionTest {
@@ -47,7 +48,6 @@ public class NullUriDetectionTest {
         XMLStreamWriter w = xof.createXMLStreamWriter(sw);
         w.writeStartDocument();
         w.writeStartElement("foo", "bar", "zot");
-        w.writeDefaultNamespace(null);
-        w.writeCharacters("---");
+        assertDoesNotThrow(() -> w.writeDefaultNamespace(null));
     }
 }

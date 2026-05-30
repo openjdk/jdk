@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,18 @@
 
 package stream.XMLStreamReaderTest;
 
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+import java.io.StringReader;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.IssueTracker24
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.IssueTracker24
  * @summary Test no prefix is represented by "", not null.
  */
 public class IssueTracker24 {
@@ -48,13 +48,13 @@ public class IssueTracker24 {
         r.require(XMLStreamReader.START_DOCUMENT, null, null);
         r.next();
         r.require(XMLStreamReader.START_ELEMENT, null, "root");
-        Assert.assertEquals(r.getPrefix(), "", "prefix should be empty string");
+        assertEquals("", r.getPrefix(), "prefix should be empty string");
         r.next();
         r.require(XMLStreamReader.START_ELEMENT, null, "child");
         r.next();
         r.next();
         r.require(XMLStreamReader.START_ELEMENT, null, "anotherchild");
-        Assert.assertEquals(r.getPrefix(), "", "prefix should be empty string");
+        assertEquals("", r.getPrefix(), "prefix should be empty string");
     }
 
 }

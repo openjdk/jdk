@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,26 @@
 
 package stream.XMLEventReaderTest;
 
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLEventReader;
-
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.Comment;
 import javax.xml.stream.events.StartDocument;
 import javax.xml.stream.events.StartElement;
+import java.io.StringReader;
 
-import static org.testng.Assert.assertTrue;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /*
  * @test
  * @bug 8201138
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventReaderTest.JDK8201138
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventReaderTest.JDK8201138
  * @summary Verifies a fix that set the type and data properly in the loop
  */
 public class JDK8201138 {
@@ -52,11 +53,11 @@ public class JDK8201138 {
         String xmlData = "<?xml version=\"1.0\"?><nextEvent><!-- peeked -->aaa<![CDATA[bbb]]>ccc</nextEvent>";
 
         XMLEventReader eventReader = XMLInputFactory.newFactory().createXMLEventReader(new StringReader(xmlData));
-        assertTrue(eventReader.nextEvent() instanceof StartDocument, "shall be StartDocument");
-        assertTrue(eventReader.nextEvent() instanceof StartElement, "shall be StartElement");
-        assertTrue(eventReader.peek() instanceof Comment, "shall be Comment");
+        assertInstanceOf(StartDocument.class, eventReader.nextEvent(), "shall be StartDocument");
+        assertInstanceOf(StartElement.class, eventReader.nextEvent(), "shall be StartElement");
+        assertInstanceOf(Comment.class, eventReader.peek(), "shall be Comment");
         // the following returns empty string before the fix
-        assertTrue(eventReader.getElementText().equals("aaabbbccc"), "The text shall be \"aaabbbccc\"");
+        assertEquals("aaabbbccc", eventReader.getElementText(), "The text shall be \"aaabbbccc\"");
 
         eventReader.close();
     }
@@ -67,11 +68,11 @@ public class JDK8201138 {
         String xmlData = "<?xml version=\"1.0\"?><nextEvent>aaa<!-- comment --></nextEvent>";
 
         XMLEventReader eventReader = XMLInputFactory.newFactory().createXMLEventReader(new StringReader(xmlData));
-        assertTrue(eventReader.nextEvent() instanceof StartDocument, "shall be StartDocument");
-        assertTrue(eventReader.nextEvent() instanceof StartElement, "shall be StartElement");
-        assertTrue(eventReader.peek() instanceof Characters, "shall be Characters");
+        assertInstanceOf(StartDocument.class, eventReader.nextEvent(), "shall be StartDocument");
+        assertInstanceOf(StartElement.class, eventReader.nextEvent(), "shall be StartElement");
+        assertInstanceOf(Characters.class, eventReader.peek(), "shall be Characters");
         // the following throws ClassCastException before the fix
-        assertTrue(eventReader.getElementText().equals("aaa"), "The text shall be \"aaa\"");
+        assertEquals("aaa", eventReader.getElementText(), "The text shall be \"aaa\"");
 
         eventReader.close();
     }

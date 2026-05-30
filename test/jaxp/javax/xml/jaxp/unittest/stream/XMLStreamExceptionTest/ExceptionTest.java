@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,25 @@
 
 package stream.XMLStreamExceptionTest;
 
-import java.io.IOException;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamExceptionTest.ExceptionTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamExceptionTest.ExceptionTest
  * @summary Test XMLStreamException contains the message of the wrapped exception.
  */
 public class ExceptionTest {
 
     @Test
     public void testException() {
-
-        final String EXPECTED_OUTPUT = "Test XMLStreamException";
-        try {
-            Exception ex = new IOException("Test XMLStreamException");
-            throw new XMLStreamException(ex);
-        } catch (XMLStreamException e) {
-            Assert.assertTrue(e.getMessage().contains(EXPECTED_OUTPUT), "XMLStreamException does not contain the message " + "of the wrapped exception");
-        }
+        String expectedOutput = "Test XMLStreamException";
+        XMLStreamException wrapped = new XMLStreamException(new IOException(expectedOutput));
+        assertTrue(wrapped.getMessage().contains(expectedOutput), "XMLStreamException does not contain the message of the wrapped exception");
     }
 }

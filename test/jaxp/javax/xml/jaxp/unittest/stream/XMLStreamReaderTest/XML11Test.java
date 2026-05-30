@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,24 @@
 
 package stream.XMLStreamReaderTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.XML11Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.XML11Test
  * @summary Test parsing xml 1.1.
  */
 public class XML11Test {
 
     @Test
-    public void test() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            XMLEventReader reader = xif.createXMLEventReader(this.getClass().getResourceAsStream("xml11.xml.data"));
-            while (reader.hasNext())
-                reader.next();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.toString());
-        }
+    public void test() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLEventReader reader = xif.createXMLEventReader(this.getClass().getResourceAsStream("xml11.xml.data"));
+        while (reader.hasNext())
+            reader.next();
     }
 }

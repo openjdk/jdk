@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,9 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-import org.testng.Assert;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Base class for all StaxTest unit test classes. Contains shared
@@ -55,22 +57,22 @@ public class BaseStAXUT implements XMLStreamConstants {
      */
     final static String PROP_REPORT_CDATA = "http://java.sun.com/xml/stream/properties/report-cdata-event";
 
-    final static HashMap mTokenTypes = new HashMap();
+    final static HashMap<Integer, String> mTokenTypes = new HashMap<>();
     static {
-        mTokenTypes.put(new Integer(START_ELEMENT), "START_ELEMENT");
-        mTokenTypes.put(new Integer(END_ELEMENT), "END_ELEMENT");
-        mTokenTypes.put(new Integer(START_DOCUMENT), "START_DOCUMENT");
-        mTokenTypes.put(new Integer(END_DOCUMENT), "END_DOCUMENT");
-        mTokenTypes.put(new Integer(CHARACTERS), "CHARACTERS");
-        mTokenTypes.put(new Integer(CDATA), "CDATA");
-        mTokenTypes.put(new Integer(COMMENT), "COMMENT");
-        mTokenTypes.put(new Integer(PROCESSING_INSTRUCTION), "PROCESSING_INSTRUCTION");
-        mTokenTypes.put(new Integer(DTD), "DTD");
-        mTokenTypes.put(new Integer(SPACE), "SPACE");
-        mTokenTypes.put(new Integer(ENTITY_REFERENCE), "ENTITY_REFERENCE");
-        mTokenTypes.put(new Integer(NAMESPACE), "NAMESPACE_DECLARATION");
-        mTokenTypes.put(new Integer(NOTATION_DECLARATION), "NOTATION_DECLARATION");
-        mTokenTypes.put(new Integer(ENTITY_DECLARATION), "ENTITY_DECLARATION");
+        mTokenTypes.put(START_ELEMENT, "START_ELEMENT");
+        mTokenTypes.put(END_ELEMENT, "END_ELEMENT");
+        mTokenTypes.put(START_DOCUMENT, "START_DOCUMENT");
+        mTokenTypes.put(END_DOCUMENT, "END_DOCUMENT");
+        mTokenTypes.put(CHARACTERS, "CHARACTERS");
+        mTokenTypes.put(CDATA, "CDATA");
+        mTokenTypes.put(COMMENT, "COMMENT");
+        mTokenTypes.put(PROCESSING_INSTRUCTION, "PROCESSING_INSTRUCTION");
+        mTokenTypes.put(DTD, "DTD");
+        mTokenTypes.put(SPACE, "SPACE");
+        mTokenTypes.put(ENTITY_REFERENCE, "ENTITY_REFERENCE");
+        mTokenTypes.put(NAMESPACE, "NAMESPACE_DECLARATION");
+        mTokenTypes.put(NOTATION_DECLARATION, "NOTATION_DECLARATION");
+        mTokenTypes.put(ENTITY_DECLARATION, "ENTITY_DECLARATION");
     }
 
     /*
@@ -146,7 +148,7 @@ public class BaseStAXUT implements XMLStreamConstants {
     protected static XMLStreamReader constructStreamReaderForFile(XMLInputFactory f, String filename) throws IOException, XMLStreamException {
         File inf = new File(filename);
         XMLStreamReader sr = f.createXMLStreamReader(inf.toURL().toString(), new FileReader(inf));
-        Assert.assertEquals(START_DOCUMENT, sr.getEventType());
+        assertEquals(START_DOCUMENT, sr.getEventType());
         return sr;
     }
 
@@ -168,19 +170,19 @@ public class BaseStAXUT implements XMLStreamConstants {
      * factory //////////////////////////////////////////////////
      */
 
-    protected static boolean isCoalescing(XMLInputFactory f) throws XMLStreamException {
-        return ((Boolean) f.getProperty(XMLInputFactory.IS_COALESCING)).booleanValue();
+    protected static boolean isCoalescing(XMLInputFactory f) {
+        return (Boolean) f.getProperty(XMLInputFactory.IS_COALESCING);
     }
 
     protected static void setCoalescing(XMLInputFactory f, boolean state) throws XMLStreamException {
         Boolean b = state ? Boolean.TRUE : Boolean.FALSE;
         f.setProperty(XMLInputFactory.IS_COALESCING, b);
         // Let's just double-check it...
-        Assert.assertEquals(state, isCoalescing(f));
+        assertEquals(state, isCoalescing(f));
     }
 
-    protected static boolean isValidating(XMLInputFactory f) throws XMLStreamException {
-        return ((Boolean) f.getProperty(XMLInputFactory.IS_VALIDATING)).booleanValue();
+    protected static boolean isValidating(XMLInputFactory f) {
+        return (Boolean) f.getProperty(XMLInputFactory.IS_VALIDATING);
     }
 
     protected static void setValidating(XMLInputFactory f, boolean state) throws XMLStreamException {
@@ -188,14 +190,14 @@ public class BaseStAXUT implements XMLStreamConstants {
             Boolean b = state ? Boolean.TRUE : Boolean.FALSE;
             f.setProperty(XMLInputFactory.IS_VALIDATING, b);
         } catch (IllegalArgumentException iae) {
-            Assert.fail("Could not set DTD validating mode to " + state + ": " + iae);
+            fail("Could not set DTD validating mode to " + state + ": " + iae);
             // throw new XMLStreamException(iae.getMessage(), iae);
         }
-        Assert.assertEquals(state, isValidating(f));
+        assertEquals(state, isValidating(f));
     }
 
-    protected static boolean isNamespaceAware(XMLInputFactory f) throws XMLStreamException {
-        return ((Boolean) f.getProperty(XMLInputFactory.IS_NAMESPACE_AWARE)).booleanValue();
+    protected static boolean isNamespaceAware(XMLInputFactory f) {
+        return (Boolean) f.getProperty(XMLInputFactory.IS_NAMESPACE_AWARE);
     }
 
     /**
@@ -222,24 +224,24 @@ public class BaseStAXUT implements XMLStreamConstants {
         }
     }
 
-    protected static void setReplaceEntities(XMLInputFactory f, boolean state) throws XMLStreamException {
+    protected static void setReplaceEntities(XMLInputFactory f, boolean state) {
         Boolean b = state ? Boolean.TRUE : Boolean.FALSE;
         f.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, b);
-        Assert.assertEquals(b, f.getProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES));
+        assertEquals(b, f.getProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES));
     }
 
-    protected static void setSupportDTD(XMLInputFactory f, boolean state) throws XMLStreamException {
+    protected static void setSupportDTD(XMLInputFactory f, boolean state) {
         Boolean b = state ? Boolean.TRUE : Boolean.FALSE;
         f.setProperty(XMLInputFactory.SUPPORT_DTD, b);
-        Assert.assertEquals(b, f.getProperty(XMLInputFactory.SUPPORT_DTD));
+        assertEquals(b, f.getProperty(XMLInputFactory.SUPPORT_DTD));
     }
 
-    protected static boolean setSupportExternalEntities(XMLInputFactory f, boolean state) throws XMLStreamException {
+    protected static boolean setSupportExternalEntities(XMLInputFactory f, boolean state) {
         Boolean b = state ? Boolean.TRUE : Boolean.FALSE;
         try {
             f.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, b);
             Object act = f.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES);
-            return (act instanceof Boolean) && ((Boolean) act).booleanValue() == state;
+            return (act instanceof Boolean) && (Boolean) act == state;
         } catch (IllegalArgumentException e) {
             /*
              * Let's assume, then, that the property (or specific value for it)
@@ -249,11 +251,11 @@ public class BaseStAXUT implements XMLStreamConstants {
         }
     }
 
-    protected static void setResolver(XMLInputFactory f, XMLResolver resolver) throws XMLStreamException {
+    protected static void setResolver(XMLInputFactory f, XMLResolver resolver) {
         f.setProperty(XMLInputFactory.RESOLVER, resolver);
     }
 
-    protected static boolean setReportCData(XMLInputFactory f, boolean state) throws XMLStreamException {
+    protected static boolean setReportCData(XMLInputFactory f, boolean state) {
 
         Boolean b = state ? Boolean.TRUE : Boolean.FALSE;
         if (f.isPropertySupported(PROP_REPORT_CDATA)) {
@@ -272,7 +274,7 @@ public class BaseStAXUT implements XMLStreamConstants {
      * Method that not only gets currently available text from the reader, but
      * also checks that its consistenly accessible using different StAX methods.
      */
-    protected static String getAndVerifyText(XMLStreamReader sr) throws XMLStreamException {
+    protected static String getAndVerifyText(XMLStreamReader sr) {
         String text = sr.getText();
 
         /*
@@ -282,7 +284,7 @@ public class BaseStAXUT implements XMLStreamConstants {
          */
         int type = sr.getEventType();
         if (type != ENTITY_REFERENCE && type != DTD) {
-            Assert.assertNotNull("getText() should never return null.", text);
+            assertNotNull(text, "getText() should never return null.");
             int expLen = sr.getTextLength();
             /*
              * Hmmh. Can only return empty text for CDATA (since empty blocks
@@ -296,14 +298,14 @@ public class BaseStAXUT implements XMLStreamConstants {
              */
             if (sr.getEventType() == CHARACTERS) {
                 if (expLen == 0) {
-                    Assert.fail("Stream reader should never return empty Strings.");
+                    fail("Stream reader should never return empty Strings.");
                 }
             }
-            Assert.assertEquals(expLen, text.length(), "Expected text length of " + expLen + ", got " + text.length());
+            assertEquals(expLen, text.length(), "Expected text length of " + expLen + ", got " + text.length());
             char[] textChars = sr.getTextCharacters();
             int start = sr.getTextStart();
             String text2 = new String(textChars, start, expLen);
-            Assert.assertEquals("Expected getText() and getTextCharacters() to return same value for event of type (" + tokenTypeDesc(sr.getEventType()) + ")",
+            assertEquals("Expected getText() and getTextCharacters() to return same value for event of type (" + tokenTypeDesc(sr.getEventType()) + ")",
                     text, text2);
         } else { // DTD or ENTITY_REFERENCE
             // not sure if null is legal for these either, but...
@@ -353,25 +355,25 @@ public class BaseStAXUT implements XMLStreamConstants {
         if (expType == actType) {
             return;
         }
-        Assert.fail("Expected token " + tokenTypeDesc(expType) + "; got " + tokenTypeDesc(actType) + ".");
+        fail("Expected token " + tokenTypeDesc(expType) + "; got " + tokenTypeDesc(actType) + ".");
     }
 
     protected static void assertTokenType(int expType, int actType, XMLStreamReader sr) {
         if (expType == actType) {
             return;
         }
-        Assert.fail("Expected token " + tokenTypeDesc(expType) + "; got " + tokenTypeDesc(actType, sr) + ".");
+        fail("Expected token " + tokenTypeDesc(expType) + "; got " + tokenTypeDesc(actType, sr) + ".");
     }
 
     protected static void assertTextualTokenType(int actType) {
         if (actType != CHARACTERS && actType != SPACE && actType != CDATA) {
-            Assert.fail("Expected textual token (CHARACTERS, SPACE or CDATA)" + "; got " + tokenTypeDesc(actType) + ".");
+            fail("Expected textual token (CHARACTERS, SPACE or CDATA)" + "; got " + tokenTypeDesc(actType) + ".");
         }
     }
 
     protected static void failStrings(String msg, String exp, String act) {
         // !!! TODO: Indicate position where Strings differ
-        Assert.fail(msg + ": expected " + quotedPrintable(exp) + ", got " + quotedPrintable(act));
+        fail(msg + ": expected " + quotedPrintable(exp) + ", got " + quotedPrintable(act));
     }
 
     /**
@@ -383,23 +385,23 @@ public class BaseStAXUT implements XMLStreamConstants {
      * 1.6 indicate, the current understanding is that <b>null</b> is the
      * ultimate right answer here.
      */
-    protected static void assertNoPrefix(XMLStreamReader sr) throws XMLStreamException {
+    protected static void assertNoPrefix(XMLStreamReader sr) {
         String prefix = sr.getPrefix();
         if (prefix != null) {
             if (prefix.length() != 0) {
-                Assert.fail("Current element should not have a prefix: got '" + prefix + "'");
+                fail("Current element should not have a prefix: got '" + prefix + "'");
             } else {
-                Assert.fail("Expected null to signify missing prefix (see XMLStreamReader#getPrefix() JavaDocs): got empty String");
+                fail("Expected null to signify missing prefix (see XMLStreamReader#getPrefix() JavaDocs): got empty String");
             }
         }
     }
 
-    protected static void assertNoAttrPrefix(String attrPrefix) throws XMLStreamException {
+    protected static void assertNoAttrPrefix(String attrPrefix) {
         if (attrPrefix != null) {
             if (attrPrefix.length() != 0) {
-                Assert.fail("Attribute should not have a prefix: got '" + attrPrefix + "'");
+                fail("Attribute should not have a prefix: got '" + attrPrefix + "'");
             } else {
-                Assert.fail("Expected null to signify missing attribute prefix (see XMLStreamReader#getAttributePrefix() JavaDocs): got empty String");
+                fail("Expected null to signify missing attribute prefix (see XMLStreamReader#getAttributePrefix() JavaDocs): got empty String");
             }
         }
     }
@@ -408,21 +410,21 @@ public class BaseStAXUT implements XMLStreamConstants {
      * Similar to {@link #assertNoPrefix}, but here we do know that unbound
      * namespace URI should be indicated as empty String.
      */
-    protected static void assertNoNsURI(XMLStreamReader sr) throws XMLStreamException {
+    protected static void assertNoNsURI(XMLStreamReader sr) {
         String uri = sr.getNamespaceURI();
         if (uri == null) {
-            Assert.fail("Expected empty String to indicate \"no namespace\": got null");
+            fail("Expected empty String to indicate \"no namespace\": got null");
         } else if (uri.length() != 0) {
-            Assert.fail("Expected empty String to indicate \"no namespace\": got '" + uri + "'");
+            fail("Expected empty String to indicate \"no namespace\": got '" + uri + "'");
         }
     }
 
-    protected static void assertNoAttrNamespace(String attrNsURI) throws XMLStreamException {
+    protected static void assertNoAttrNamespace(String attrNsURI) {
         if (attrNsURI == null) {
             // refer to 6903561; accept null for now.
             // fail("Expected empty String to indicate \"no namespace\" (for attribute): got null");
         } else if (attrNsURI.length() != 0) {
-            Assert.fail("Expected empty String to indicate \"no namespace\" (for attribute): got '" + attrNsURI + "'");
+            fail("Expected empty String to indicate \"no namespace\" (for attribute): got '" + attrNsURI + "'");
         }
     }
 
@@ -437,7 +439,7 @@ public class BaseStAXUT implements XMLStreamConstants {
      */
     protected static void assertNullOrEmpty(String str) {
         if (str != null && str.length() > 0) {
-            Assert.fail("Expected String to be empty or null; was '" + str + "' (length " + str.length() + ")");
+            fail("Expected String to be empty or null; was '" + str + "' (length " + str.length() + ")");
         }
     }
 
@@ -447,7 +449,7 @@ public class BaseStAXUT implements XMLStreamConstants {
      */
 
     protected static String tokenTypeDesc(int tt) {
-        String desc = (String) mTokenTypes.get(new Integer(tt));
+        String desc = (String) mTokenTypes.get(tt);
         if (desc == null) {
             return "[" + tt + "]";
         }

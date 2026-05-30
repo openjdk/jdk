@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,29 @@
 
 package stream;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 6380870
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.Bug6380870
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.Bug6380870
  * @summary Test StAX parser can parse VoiceXML DTD.
  */
 public class Bug6380870 {
 
-    private static String INPUT_FILE = "basic-form.vxml";
+    private static final String INPUT_FILE = "basic-form.vxml";
 
     @Test
-    public void testStreamReader() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            XMLStreamReader reader = xif.createXMLStreamReader(this.getClass().getResource(INPUT_FILE).toExternalForm(),
-                    this.getClass().getResourceAsStream(INPUT_FILE));
-            while (reader.hasNext())
-                reader.next();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
+    public void testStreamReader() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLStreamReader reader = xif.createXMLStreamReader(this.getClass().getResource(INPUT_FILE).toExternalForm(),
+                this.getClass().getResourceAsStream(INPUT_FILE));
+        while (reader.hasNext()) {
+            reader.next();
         }
     }
 }

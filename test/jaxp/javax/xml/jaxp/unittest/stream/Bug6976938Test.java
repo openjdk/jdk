@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,19 @@
 
 package stream;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.EventFilter;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 6976938
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.Bug6976938Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.Bug6976938Test
  * @summary Test StAX parser won't throw StackOverflowError while reading valid XML file, in case the text content of an XML element contains many lines like "&lt; ... &gt;".
  */
 public class Bug6976938Test {
@@ -49,50 +47,36 @@ public class Bug6976938Test {
     public static final QName ATTACHMENT_NAME = new QName(VF_GENERIC_TT_NAMESPACE, "attachment");
 
     @Test
-    public void testEventReader() {
+    public void testEventReader() throws Exception {
         XMLInputFactory xif = XMLInputFactory.newInstance();
         xif.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
         eventReaderTest(xif);
     }
 
     @Test
-    public void testEventReader1() {
+    public void testEventReader1() throws Exception {
         XMLInputFactory xif = XMLInputFactory.newInstance();
         eventReaderTest(xif);
     }
 
-    public void eventReaderTest(XMLInputFactory xif) {
-        XMLEventReader eventReader = null;
+    public void eventReaderTest(XMLInputFactory xif) throws Exception {
+        XMLEventReader eventReader = xif.createXMLEventReader(this.getClass().getResourceAsStream(INPUT_FILE));
         try {
-            eventReader = xif.createXMLEventReader(this.getClass().getResourceAsStream(INPUT_FILE));
             XMLEventReader filteredEventReader = xif.createFilteredReader(eventReader, new EventFilter() {
                 public boolean accept(XMLEvent event) {
                     if (!event.isStartElement()) {
                         return false;
                     }
                     QName elementQName = event.asStartElement().getName();
-                    if ((elementQName.getLocalPart().equals(ATTACHMENT_NAME.getLocalPart()) || elementQName.getLocalPart().equals("Attachment"))
-                            && elementQName.getNamespaceURI().equals(VF_GENERIC_TT_NAMESPACE)) {
-                        return true;
-                    }
-                    return false;
+                    return (elementQName.getLocalPart().equals(ATTACHMENT_NAME.getLocalPart()) || elementQName.getLocalPart().equals("Attachment"))
+                            && elementQName.getNamespaceURI().equals(VF_GENERIC_TT_NAMESPACE);
                 }
             });
             if (filteredEventReader.hasNext()) {
                 System.out.println("containsAttachments() returns true");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-
         } finally {
-            if (eventReader != null) {
-                try {
-                    eventReader.close();
-                } catch (XMLStreamException xse) {
-                    // Ignored by intention
-                }
-            }
+            eventReader.close();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,19 @@
 
 package stream;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.events.XMLEvent;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventLocationTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventLocationTest
  * @summary Test XMLEvent Location.
  */
 public class XMLEventLocationTest {
@@ -42,7 +44,7 @@ public class XMLEventLocationTest {
     public void testNonNullLocation() {
         XMLEventFactory factory = XMLEventFactory.newInstance();
         XMLEvent event = factory.createComment("some comment");
-        Assert.assertNotNull(event.getLocation());
+        assertNotNull(event.getLocation());
     }
 
     @Test
@@ -51,13 +53,10 @@ public class XMLEventLocationTest {
         Location loc = new MyLocation();
         factory.setLocation(loc);
         XMLEvent event = factory.createComment("some comment");
-        Assert.assertEquals(event.getLocation().getLineNumber(), 15);
+        assertEquals(15, event.getLocation().getLineNumber());
     }
 
-    class MyLocation implements Location {
-        public MyLocation() {
-        }
-
+    private static class MyLocation implements Location {
         public int getCharacterOffset() {
             return 5;
         }

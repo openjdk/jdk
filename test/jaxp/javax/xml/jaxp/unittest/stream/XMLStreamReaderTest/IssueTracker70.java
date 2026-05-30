@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,37 @@
 
 package stream.XMLStreamReaderTest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.function.Consumer;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+import java.io.File;
+import java.io.FileInputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.IssueTracker70
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.IssueTracker70
  * @summary Test it can retrieve attribute with null or empty name space.
  */
 public class IssueTracker70 {
 
-    static private final File testFile = new File(IssueTracker70.class.getResource("IssueTracker70.xml").getFile());
+    private static final File testFile = new File(IssueTracker70.class.getResource("IssueTracker70.xml").getFile());
 
     @Test
     public void testGetAttributeValueWithNullNs() throws Exception {
-        testGetAttributeValueWithNs(null, "attribute2", this::checkNull);
+        testGetAttributeValueWithNs(null, "attribute2");
     }
 
     @Test
     public void testGetAttributeValueWithEmptyNs() throws Exception {
-        testGetAttributeValueWithNs("", "attribute1", this::checkNull);
+        testGetAttributeValueWithNs("", "attribute1");
     }
 
 
-    private void testGetAttributeValueWithNs(String nameSpace, String attrName, Consumer<String> checker) throws Exception {
+    private void testGetAttributeValueWithNs(String nameSpace, String attrName) throws Exception {
         XMLInputFactory xif = XMLInputFactory.newInstance();
         XMLStreamReader xsr = xif.createXMLStreamReader(new FileInputStream(testFile));
 
@@ -63,13 +62,8 @@ public class IssueTracker70 {
             if (xsr.isStartElement()) {
                 String v;
                 v = xsr.getAttributeValue(nameSpace, attrName);
-                checker.accept(v);
+                assertNotNull(v, "should have attribute value");
             }
         }
-    }
-
-    private void checkNull(String value)
-    {
-        Assert.assertNotNull(value, "should have attribute value");
     }
 }

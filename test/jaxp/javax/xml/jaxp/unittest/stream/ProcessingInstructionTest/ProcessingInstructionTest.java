@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,44 +23,39 @@
 
 package stream.ProcessingInstructionTest;
 
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
+import java.io.InputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.ProcessingInstructionTest.ProcessingInstructionTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.ProcessingInstructionTest.ProcessingInstructionTest
  * @summary Test XMLStreamReader parses Processing Instruction.
  */
 public class ProcessingInstructionTest {
 
     @Test
-    public void testPITargetAndData() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            String PITarget = "soffice";
-            String PIData = "WebservicesArchitecture";
-            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<?" + PITarget + " " + PIData + "?>" + "<foo></foo>";
-            // System.out.println("XML = " + xml) ;
-            InputStream is = new java.io.ByteArrayInputStream(xml.getBytes());
-            XMLStreamReader sr = xif.createXMLStreamReader(is);
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.PROCESSING_INSTRUCTION) {
-                    String target = sr.getPITarget();
-                    String data = sr.getPIData();
-                    Assert.assertTrue(target.equals(PITarget) && data.equals(PIData));
-                }
+    public void testPITargetAndData() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        String PITarget = "soffice";
+        String PIData = "WebservicesArchitecture";
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<?" + PITarget + " " + PIData + "?>" + "<foo></foo>";
+        // System.out.println("XML = " + xml) ;
+        InputStream is = new java.io.ByteArrayInputStream(xml.getBytes());
+        XMLStreamReader sr = xif.createXMLStreamReader(is);
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.PROCESSING_INSTRUCTION) {
+                String target = sr.getPITarget();
+                String data = sr.getPIData();
+                assertTrue(target.equals(PITarget) && data.equals(PIData));
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
-
 }

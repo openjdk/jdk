@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,20 @@
 
 package stream.XMLStreamReaderTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 6440324
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.IsValidatingTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.IsValidatingTest
  * @summary Test StAX can accept non-existent DTD if IS_VALIDATING if false.
  */
 public class IsValidatingTest {
@@ -60,45 +62,30 @@ public class IsValidatingTest {
      * This is not required for DTD validation, but for entity resolution.
      * The XML specification allows the optional reading of an external DTD
      * even for non-validating processors.
-     *
      */
     @Test
-    public void testStAXIsValidatingFalse() {
+    public void testStAXIsValidatingFalse() throws Exception {
 
-        XMLStreamReader reader = null;
-        Boolean isValidating = null;
-        String propertyValues = null;
         boolean dtdEventOccured = false;
 
         XMLInputFactory xif = XMLInputFactory.newInstance();
         xif.setProperty(XMLInputFactory.IS_VALIDATING, Boolean.FALSE);
 
-        try {
-            reader = xif.createXMLStreamReader(this.getClass().getResource(INPUT_FILE).toExternalForm(), this.getClass().getResourceAsStream(INPUT_FILE));
+        XMLStreamReader reader = xif.createXMLStreamReader(
+                this.getClass().getResource(INPUT_FILE).toExternalForm(),
+                this.getClass().getResourceAsStream(INPUT_FILE));
 
-            isValidating = (Boolean) reader.getProperty(XMLInputFactory.IS_VALIDATING);
-            propertyValues = "IS_VALIDATING=" + isValidating;
+        assertEquals(Boolean.FALSE, reader.getProperty(XMLInputFactory.IS_VALIDATING));
 
-            while (reader.hasNext()) {
-                int e = reader.next();
-                if (e == XMLEvent.DTD) {
-                    dtdEventOccured = true;
-                    System.out.println("testStAXIsValidatingFalse(): " + "reader.getText() with Event == DTD: " + reader.getText());
-                }
+        while (reader.hasNext()) {
+            int e = reader.next();
+            if (e == XMLEvent.DTD) {
+                dtdEventOccured = true;
             }
-
-            // expected success
-
-            // should have see DTD Event
-            if (!dtdEventOccured) {
-                Assert.fail("Unexpected failure: did not see DTD event");
-            }
-        } catch (Exception e) {
-            // unexpected failure
-            System.err.println("Exception with reader.getEventType(): " + reader.getEventType());
-            e.printStackTrace();
-            Assert.fail("Unexpected failure with " + propertyValues + ", " + e.toString());
         }
+
+        // should have see DTD Event
+        assertTrue(dtdEventOccured, "did not see DTD event");
     }
 
     /**
@@ -108,11 +95,7 @@ public class IsValidatingTest {
      * Test should pass.
      */
     @Test
-    public void testStAXIsValidatingFalseInternalSubset() {
-
-        XMLStreamReader reader = null;
-        Boolean isValidating = null;
-        String propertyValues = null;
+    public void testStAXIsValidatingFalseInternalSubset() throws Exception {
         boolean dtdEventOccured = false;
         boolean entityReferenceEventOccured = false;
 
@@ -120,45 +103,32 @@ public class IsValidatingTest {
         xif.setProperty(XMLInputFactory.IS_VALIDATING, Boolean.FALSE);
         xif.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.FALSE);
 
-        try {
-            reader = xif.createXMLStreamReader(this.getClass().getResource(INPUT_FILE).toExternalForm(),
-                    this.getClass().getResourceAsStream(INPUT_FILE_INTERNAL_SUBSET));
+        XMLStreamReader reader = xif.createXMLStreamReader(
+                this.getClass().getResource(INPUT_FILE).toExternalForm(),
+                this.getClass().getResourceAsStream(INPUT_FILE_INTERNAL_SUBSET));
 
-            isValidating = (Boolean) reader.getProperty(XMLInputFactory.IS_VALIDATING);
-            propertyValues = "IS_VALIDATING=" + isValidating;
+        assertEquals(Boolean.FALSE, reader.getProperty(XMLInputFactory.IS_VALIDATING));
 
-            while (reader.hasNext()) {
-                int e = reader.next();
-                if (e == XMLEvent.DTD) {
-                    dtdEventOccured = true;
-                    System.out.println("testStAXIsValidatingFalseInternalSubset(): " + "reader.getText() with Event == DTD: " + reader.getText());
-                } else if (e == XMLEvent.ENTITY_REFERENCE) {
-                    // expected ENTITY_REFERENCE values?
-                    if (reader.getLocalName().equals("foo") && reader.getText().equals("bar")) {
-                        entityReferenceEventOccured = true;
-                    }
-
-                    System.out.println("testStAXIsValidatingFalseInternalSubset(): " + "reader.get(LocalName, Text)() with Event " + " == ENTITY_REFERENCE: "
-                            + reader.getLocalName() + " = " + reader.getText());
+        while (reader.hasNext()) {
+            int e = reader.next();
+            if (e == XMLEvent.DTD) {
+                dtdEventOccured = true;
+                System.out.println("testStAXIsValidatingFalseInternalSubset(): " + "reader.getText() with Event == DTD: " + reader.getText());
+            } else if (e == XMLEvent.ENTITY_REFERENCE) {
+                // expected ENTITY_REFERENCE values?
+                if (reader.getLocalName().equals("foo") && reader.getText().equals("bar")) {
+                    entityReferenceEventOccured = true;
                 }
-            }
 
-            // expected success
-
-            // should have see DTD Event
-            if (!dtdEventOccured) {
-                Assert.fail("Unexpected failure: did not see DTD event");
+                System.out.println("testStAXIsValidatingFalseInternalSubset(): " + "reader.get(LocalName, Text)() with Event " + " == ENTITY_REFERENCE: "
+                        + reader.getLocalName() + " = " + reader.getText());
             }
-
-            // should have seen an ENITY_REFERENCE Event
-            if (!entityReferenceEventOccured) {
-                Assert.fail("Unexpected failure: did not see ENTITY_REFERENCE event");
-            }
-        } catch (Exception e) {
-            // unexpected failure
-            System.err.println("Exception with reader.getEventType(): " + reader.getEventType());
-            e.printStackTrace();
-            Assert.fail("Unexpected failure with " + propertyValues + ", " + e.toString());
         }
+
+        // should have see DTD Event
+        assertTrue(dtdEventOccured, "did not see DTD event");
+
+        // should have seen an ENITY_REFERENCE Event
+        assertTrue(entityReferenceEventOccured, "did not see ENTITY_REFERENCE event");
     }
 }

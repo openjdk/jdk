@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,60 +23,53 @@
 
 package stream.XMLOutputFactoryTest;
 
-import java.io.ByteArrayOutputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayOutputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLOutputFactoryTest.DuplicateNSDeclarationTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLOutputFactoryTest.DuplicateNSDeclarationTest
  * @summary Test the writing of duplicate namespace declarations when IS_REPAIRING_NAMESPACES is ture.
  */
 public class DuplicateNSDeclarationTest {
 
     @Test
-    public void testDuplicateNSDeclaration() {
+    public void testDuplicateNSDeclaration() throws Exception {
 
         // expect only 1 Namespace Declaration
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<ns1:foo" + " xmlns:ns1=\"http://example.com/\">" + "</ns1:foo>";
 
         // have XMLOutputFactory repair Namespaces
         XMLOutputFactory ofac = XMLOutputFactory.newInstance();
-        ofac.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
+        ofac.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, true);
 
         // send output to a Stream
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         StreamResult sr = new StreamResult(buffer);
-        XMLStreamWriter w = null;
 
         // write a duplicate Namespace Declaration
-        try {
-            w = ofac.createXMLStreamWriter(sr);
-            w.writeStartDocument();
-            w.writeStartElement("ns1", "foo", "http://example.com/");
-            w.writeNamespace("ns1", "http://example.com/");
-            w.writeNamespace("ns1", "http://example.com/");
-            w.writeEndElement();
-            w.writeEndDocument();
-            w.close();
-        } catch (XMLStreamException xmlStreamException) {
-            xmlStreamException.printStackTrace();
-            Assert.fail(xmlStreamException.toString());
-        }
+        XMLStreamWriter w = ofac.createXMLStreamWriter(sr);
+        w.writeStartDocument();
+        w.writeStartElement("ns1", "foo", "http://example.com/");
+        w.writeNamespace("ns1", "http://example.com/");
+        w.writeNamespace("ns1", "http://example.com/");
+        w.writeEndElement();
+        w.writeEndDocument();
+        w.close();
 
         // debugging output for humans
         System.out.println();
-        System.out.println("actual:   \"" + buffer.toString() + "\"");
+        System.out.println("actual:   \"" + buffer + "\"");
         System.out.println("expected: \"" + EXPECTED_OUTPUT + "\"");
 
         // are results as expected?
-        Assert.assertEquals(EXPECTED_OUTPUT, buffer.toString());
+        assertEquals(EXPECTED_OUTPUT, buffer.toString());
     }
 }

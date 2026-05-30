@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,68 +23,52 @@
 
 package stream.XMLInputFactoryTest;
 
-import javax.xml.stream.XMLEventReader;
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLInputFactoryTest.IssueTracker38
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLInputFactoryTest.IssueTracker38
  * @summary Test createXMLEventReader from DOM or SAX source is unsupported.
  */
 public class IssueTracker38 {
 
     @Test
-    public void testXMLEventReaderFromDOMSource() throws Exception {
-        try {
-                createEventReaderFromSource(new DOMSource());
-            Assert.fail("Expected UnsupportedOperationException not thrown");
-        } catch (UnsupportedOperationException e) {
-        }
+    public void testXMLEventReaderFromDOMSource() {
+        assertThrows(UnsupportedOperationException.class, () -> createEventReaderFromSource(new DOMSource()));
     }
 
     @Test
-    public void testXMLStreamReaderFromDOMSource() throws Exception {
-        try {
-                createStreamReaderFromSource(new DOMSource());
-            Assert.fail("Expected UnsupportedOperationException not thrown");
-        } catch (UnsupportedOperationException oe) {
-        }
+    public void testXMLStreamReaderFromDOMSource() {
+        assertThrows(UnsupportedOperationException.class, () -> createStreamReaderFromSource(new DOMSource()));
     }
 
     @Test
-    public void testXMLEventReaderFromSAXSource() throws Exception {
-        try {
-                createEventReaderFromSource(new SAXSource());
-            Assert.fail("Expected UnsupportedOperationException not thrown");
-        } catch (UnsupportedOperationException e) {
-        }
+    public void testXMLEventReaderFromSAXSource() {
+        assertThrows(UnsupportedOperationException.class, () -> createEventReaderFromSource(new SAXSource()));
     }
 
     @Test
-    public void testXMLStreamReaderFromSAXSource() throws Exception {
-        try {
-                createStreamReaderFromSource(new SAXSource());
-            Assert.fail("Expected UnsupportedOperationException not thrown");
-        } catch (UnsupportedOperationException oe) {
-        }
+    public void testXMLStreamReaderFromSAXSource() {
+        assertThrows(UnsupportedOperationException.class, () -> createStreamReaderFromSource(new SAXSource()));
     }
 
     private void createEventReaderFromSource(Source source) throws Exception {
         XMLInputFactory xIF = XMLInputFactory.newInstance();
-        xIF.createXMLEventReader(source);
+        assertNotNull(xIF.createXMLEventReader(source));
     }
 
     private void createStreamReaderFromSource(Source source) throws Exception {
         XMLInputFactory xIF = XMLInputFactory.newInstance();
-        xIF.createXMLStreamReader(source);
+        assertNotNull(xIF.createXMLStreamReader(source));
     }
 
 

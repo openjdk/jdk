@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package stream.XMLStreamFilterTest;
 
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
@@ -33,15 +33,15 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
+import java.io.InputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 6481678
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamFilterTest.Bug6481678
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamFilterTest.Bug6481678
  * @summary Test Filtered XMLStreamReader parses namespace correctly.
  */
 public class Bug6481678 {
@@ -58,19 +58,14 @@ public class Bug6481678 {
     XMLInputFactory factory;
     InputStream is;
 
-    /** Creates a new instance of NamespaceTest */
-    public Bug6481678(java.lang.String testName) {
-        init();
-    }
-
-    private void init() {
+    public Bug6481678() {
         factory = XMLInputFactory.newInstance();
         factory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
         filter = createFilter();
     }
 
     String getXML() {
-        StringBuffer sbuffer = new StringBuffer();
+        StringBuilder sbuffer = new StringBuilder();
         sbuffer.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         sbuffer.append("<" + rootElement + " state=\"WA\"");
         sbuffer.append(" xmlns:" + prefixApple + "=\"" + namespaceURIApple + "\"");
@@ -85,7 +80,7 @@ public class Bug6481678 {
         return sbuffer.toString();
     }
 
-    public TypeFilter createFilter() {
+    TypeFilter createFilter() {
 
         TypeFilter f = new TypeFilter();
 
@@ -106,108 +101,88 @@ public class Bug6481678 {
      * testRootElementNamespace.
      */
     @Test
-    public void testReadingNamespace() {
+    public void testReadingNamespace() throws Exception {
         is = new java.io.ByteArrayInputStream(getXML().getBytes());
-        try {
-            XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), (StreamFilter) filter);
+        XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), filter);
 
-            while (sr.hasNext()) {
-                int eventType = sr.getEventType();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(rootElement)) {
-                        Assert.assertTrue(sr.getNamespacePrefix(0).equals(prefixApple) && sr.getNamespaceURI(0).equals(namespaceURIApple));
-                    }
+        while (sr.hasNext()) {
+            int eventType = sr.getEventType();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(rootElement)) {
+                    assertEquals(prefixApple, sr.getNamespacePrefix(0));
+                    assertEquals(namespaceURIApple, sr.getNamespaceURI(0));
                 }
-                eventType = sr.next();
             }
-        } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
+            sr.next();
         }
     }
 
     @Test
-    public void testRootElementNamespace() {
+    public void testRootElementNamespace() throws Exception {
         is = new java.io.ByteArrayInputStream(getXML().getBytes());
-        try {
-            XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), (StreamFilter) filter);
+        XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), filter);
 
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(rootElement)) {
-                        Assert.assertTrue(sr.getNamespacePrefix(0).equals(prefixApple) && sr.getNamespaceURI(0).equals(namespaceURIApple));
-                    }
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(rootElement)) {
+                    assertEquals(prefixApple, sr.getNamespacePrefix(0));
+                    assertEquals(namespaceURIApple, sr.getNamespaceURI(0));
                 }
             }
-        } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
         }
     }
 
     @Test
-    public void testChildElementNamespace() {
+    public void testChildElementNamespace() throws Exception {
         is = new java.io.ByteArrayInputStream(getXML().getBytes());
-        try {
-            XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), (StreamFilter) filter);
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(childElement)) {
-                        QName qname = sr.getName();
-                        Assert.assertTrue(qname.getPrefix().equals(prefixApple) && qname.getNamespaceURI().equals(namespaceURIApple)
-                                && qname.getLocalPart().equals(childElement));
-                    }
+        XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), filter);
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(childElement)) {
+                    QName qname = sr.getName();
+                    assertEquals(prefixApple, qname.getPrefix());
+                    assertEquals(namespaceURIApple, qname.getNamespaceURI());
+                    assertEquals(childElement, qname.getLocalPart());
                 }
             }
-        } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
         }
     }
 
     @Test
-    public void testNamespaceContext() {
+    public void testNamespaceContext() throws Exception {
         is = new java.io.ByteArrayInputStream(getXML().getBytes());
-        try {
-            XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), (StreamFilter) filter);
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(childElement)) {
-                        NamespaceContext context = sr.getNamespaceContext();
-                        Assert.assertTrue(context.getPrefix(namespaceURIApple).equals(prefixApple));
-                    }
+        XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), filter);
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(childElement)) {
+                    NamespaceContext context = sr.getNamespaceContext();
+                    assertEquals(context.getPrefix(namespaceURIApple), prefixApple);
                 }
             }
-        } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
         }
     }
 
     @Test
-    public void testNamespaceCount() {
+    public void testNamespaceCount() throws Exception {
         is = new java.io.ByteArrayInputStream(getXML().getBytes());
-        try {
-            XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), (StreamFilter) filter);
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(rootElement)) {
-                        int count = sr.getNamespaceCount();
-                        Assert.assertTrue(count == 3);
-                    }
+        XMLStreamReader sr = factory.createFilteredReader(factory.createXMLStreamReader(is), filter);
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(rootElement)) {
+                    int count = sr.getNamespaceCount();
+                    assertEquals(3, count);
                 }
             }
-        } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
         }
     }
 
-    class TypeFilter implements EventFilter, StreamFilter {
+    static class TypeFilter implements EventFilter, StreamFilter {
 
         protected boolean[] types = new boolean[20];
-
-        public TypeFilter() {
-        }
 
         public void addType(int type) {
             types[type] = true;

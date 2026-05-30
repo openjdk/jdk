@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,26 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.ByteArrayOutputStream;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.ByteArrayOutputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.NamespaceTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.NamespaceTest
  * @summary Test the writing of Namespaces.
  */
 public class NamespaceTest {
-
-    /** debug output? */
-    private static final boolean DEBUG = true;
-
     /** Factory to reuse. */
     XMLOutputFactory xmlOutputFactory = null;
 
@@ -54,8 +52,8 @@ public class NamespaceTest {
     /** OutputStream to reuse. */
     ByteArrayOutputStream byteArrayOutputStream = null;
 
-    @BeforeMethod
-    public void setUp() {
+    @BeforeEach
+    public void setUp() throws Exception {
 
         // want a Factory that repairs Namespaces
         xmlOutputFactory = XMLOutputFactory.newInstance();
@@ -65,72 +63,49 @@ public class NamespaceTest {
         byteArrayOutputStream = new ByteArrayOutputStream();
 
         // new Writer
-        try {
-            xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
-
-        } catch (XMLStreamException xmlStreamException) {
-            Assert.fail(xmlStreamException.toString());
-        }
+        xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
     }
 
     /**
      * Reset Writer for reuse.
      */
-    private void resetWriter() {
+    private void resetWriter() throws Exception {
         // reset the Writer
-        try {
-            byteArrayOutputStream.reset();
-            xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
-        } catch (XMLStreamException xmlStreamException) {
-            Assert.fail(xmlStreamException.toString());
-        }
+        byteArrayOutputStream.reset();
+        xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
     }
 
     @Test
-    public void testDoubleXmlNs() {
-        try {
-
-            xmlStreamWriter.writeStartDocument();
-            xmlStreamWriter.writeStartElement("foo");
-            xmlStreamWriter.writeNamespace("xml", XMLConstants.XML_NS_URI);
-            xmlStreamWriter.writeAttribute("xml", XMLConstants.XML_NS_URI, "lang", "ja_JP");
-            xmlStreamWriter.writeCharacters("Hello");
-            xmlStreamWriter.writeEndElement();
-            xmlStreamWriter.writeEndDocument();
-
-            xmlStreamWriter.flush();
-            String actualOutput = byteArrayOutputStream.toString();
-
-            if (DEBUG) {
-                System.out.println("testDoubleXmlNs(): actualOutput: " + actualOutput);
-            }
-
-            // there should be no xmlns:xml
-            Assert.assertTrue(actualOutput.split("xmlns:xml").length == 1, "Expected 0 xmlns:xml, actual output: " + actualOutput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
-    }
-
-    @Test
-    public void testDuplicateNamespaceURI() throws Exception {
-
+    public void testDoubleXmlNs() throws XMLStreamException {
         xmlStreamWriter.writeStartDocument();
-        xmlStreamWriter.writeStartElement(new String(""), "localName", new String("nsUri"));
-        xmlStreamWriter.writeNamespace(new String(""), new String("nsUri"));
+        xmlStreamWriter.writeStartElement("foo");
+        xmlStreamWriter.writeNamespace("xml", XMLConstants.XML_NS_URI);
+        xmlStreamWriter.writeAttribute("xml", XMLConstants.XML_NS_URI, "lang", "ja_JP");
+        xmlStreamWriter.writeCharacters("Hello");
         xmlStreamWriter.writeEndElement();
         xmlStreamWriter.writeEndDocument();
 
         xmlStreamWriter.flush();
         String actualOutput = byteArrayOutputStream.toString();
 
-        if (DEBUG) {
-            System.out.println("testDuplicateNamespaceURI(): actualOutput: " + actualOutput);
-        }
+        // there should be no xmlns:xml
+        assertEquals(1, actualOutput.split("xmlns:xml").length, "Expected 0 xmlns:xml, actual output: " + actualOutput);
+    }
+
+    @Test
+    public void testDuplicateNamespaceURI() throws Exception {
+
+        xmlStreamWriter.writeStartDocument();
+        xmlStreamWriter.writeStartElement("", "localName", "nsUri");
+        xmlStreamWriter.writeNamespace("", "nsUri");
+        xmlStreamWriter.writeEndElement();
+        xmlStreamWriter.writeEndDocument();
+
+        xmlStreamWriter.flush();
+        String actualOutput = byteArrayOutputStream.toString();
 
         // there must be only 1 xmlns=...
-        Assert.assertTrue(actualOutput.split("xmlns").length == 2, "Expected 1 xmlns=, actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split("xmlns").length, "Expected 1 xmlns=, actual output: " + actualOutput);
     }
 
     // TODO: test with both "" & null
@@ -172,12 +147,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("requires no fixup");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultEmptyPrefix(): actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -202,12 +172,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("generate xmlns:prefix");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultSpecifiedPrefix(): actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -234,13 +199,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("not necessary to generate a declaration");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultSpecifiedPrefixNoDeclarationGeneration(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testEmptyDefaultSpecifiedPrefixNoDeclarationGeneration():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -263,13 +222,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("generate xmlns");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultSpecifiedDefault(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testEmptyDefaultSpecifiedDefault():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -290,13 +243,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("requires no fixup");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultEmptyPrefixWriteAttribute(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testEmptyDefaultEmptyPrefixWriteAttribute():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -321,13 +268,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("generate xmlns:p=\"http://example.org/myURI\"");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultSpecifiedPrefixWriteAttribute(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testEmptyDefaultSpecifiedPrefixWriteAttribute():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -354,13 +295,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("not necessary to generate a declaration");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultSpecifiedPrefixWriteAttributeNoDeclarationGeneration(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testEmptyDefaultSpecifiedPrefixWriteAttributeNoDeclarationGeneration():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -394,19 +329,14 @@ public class NamespaceTest {
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
 
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultUnspecifiedPrefixWriteAttribute(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testEmptyDefaultUnspecifiedPrefixWriteAttribute():   actualOutput: " + actualOutput);
-        }
-
         // there must be one xmlns=
-        Assert.assertTrue(actualOutput.split("xmlns=").length == 2, "Expected 1 xmlns=, actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split("xmlns=").length, "Expected 1 xmlns=, actual output: " + actualOutput);
 
         // there must be one xmlns:{generated prefix}="..."
-        Assert.assertTrue(actualOutput.split("xmlns:").length == 2, "Expected 1 xmlns:{generated prefix}=\"\", actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split("xmlns:").length, "Expected 1 xmlns:{generated prefix}=\"\", actual output: " + actualOutput);
 
         // there must be one {generated prefix}:attrName="value"
-        Assert.assertTrue(actualOutput.split(":attrName=\"value\"").length == 2, "Expected 1 {generated prefix}:attrName=\"value\", actual output: "
+        assertEquals(2, actualOutput.split(":attrName=\"value\"").length, "Expected 1 {generated prefix}:attrName=\"value\", actual output: "
                 + actualOutput);
     }
 
@@ -441,13 +371,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("no prefix generation");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultEmptyPrefixSpecifiedNamespaceURIWriteAttributeNoPrefixGeneration(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testEmptyDefaultEmptyPrefixSpecifiedNamespaceURIWriteAttributeNoPrefixGeneration():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     // ---------------- Current default namespace is
@@ -488,13 +412,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("generate xmlns=\"\"");
 
         String actualOutput = endDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultEmptyPrefix(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultEmptyPrefix():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -519,13 +437,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("generate xmlns:p=\"http://example.org/myURI\"");
 
         String actualOutput = endDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultSpecifiedPrefix(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultSpecifiedPrefix():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -552,13 +464,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("not necessary to generate a declaration");
 
         String actualOutput = endDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixNoPrefixGeneration(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixNoPrefixGeneration():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -581,13 +487,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("generate xmlns=\"http://example.org/myURI\"");
 
         String actualOutput = endDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultEmptyPrefixSpecifiedNamespaceURI(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultEmptyPrefixSpecifiedNamespaceURI():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -609,13 +509,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("requires no fixup");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultEmptyPrefixWriteAttribute(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultEmptyPrefixWriteAttribute():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -643,13 +537,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("generate xmlns:p=\"http://example.org/myURI\"");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixWriteAttribute(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixWriteAttribute():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -677,13 +565,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("not necessary to generate a declaration");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixWriteAttributeNoDeclarationGeneration(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixWriteAttributeNoDeclarationGeneration():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /**
@@ -711,14 +593,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("requires no fixup");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixSpecifiedNamespaceURIWriteAttribute: expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixSpecifiedNamespaceURIWriteAttribute: expectedOutput: " + EXPECTED_OUTPUT_2);
-            System.out.println("testSpecifiedDefaultSpecifiedPrefixSpecifiedNamespaceURIWriteAttribute:   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertTrue(actualOutput.equals(EXPECTED_OUTPUT) || actualOutput.equals(EXPECTED_OUTPUT_2), "Expected: " + EXPECTED_OUTPUT + "\n" + "Actual: "
+        assertTrue(actualOutput.equals(EXPECTED_OUTPUT) || actualOutput.equals(EXPECTED_OUTPUT_2), "Expected: " + EXPECTED_OUTPUT + "\n" + "Actual: "
                 + actualOutput);
     }
 
@@ -753,19 +628,14 @@ public class NamespaceTest {
 
         String actualOutput = endDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
 
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultEmptyPrefixSpecifiedNamespaceURIWriteAttribute(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultEmptyPrefixSpecifiedNamespaceURIWriteAttribute():   actualOutput: " + actualOutput);
-        }
-
         // there must be one xmlns=
-        Assert.assertTrue(actualOutput.split("xmlns=").length == 2, "Expected 1 xmlns=, actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split("xmlns=").length, "Expected 1 xmlns=, actual output: " + actualOutput);
 
         // there must be one xmlns:{generated prefix}="..."
-        Assert.assertTrue(actualOutput.split("xmlns:").length == 2, "Expected 1 xmlns:{generated prefix}=\"\", actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split("xmlns:").length, "Expected 1 xmlns:{generated prefix}=\"\", actual output: " + actualOutput);
 
         // there must be one {generated prefix}:attrName="value"
-        Assert.assertTrue(actualOutput.split(":attrName=\"value\"").length == 2, "Expected 1 {generated prefix}:attrName=\"value\", actual output: "
+        assertEquals(2, actualOutput.split(":attrName=\"value\"").length, "Expected 1 {generated prefix}:attrName=\"value\", actual output: "
                 + actualOutput);
     }
 
@@ -800,13 +670,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("no prefix needs to be assigned");
 
         String actualOutput = endDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultEmptyPrefixSpecifiedNamespaceURIWriteAttributeNoPrefixGeneration(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultEmptyPrefixSpecifiedNamespaceURIWriteAttributeNoPrefixGeneration():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     // --------------- Serializations, sequences ---------------
@@ -829,7 +693,7 @@ public class NamespaceTest {
     @Test
     public void testSamePrefixDifferentURI() throws Exception {
 
-        /**
+        /*
          * writeAttribute("p", "http://example.org/URI-ONE", "attr1", "value");
          * writeAttribute("p", "http://example.org/URI-TWO", "attr2", "value");
          */
@@ -845,24 +709,18 @@ public class NamespaceTest {
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
 
-        if (DEBUG) {
-            System.out.println("testSamePrefixDifferentURI(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSamePrefixDifferentURI():   actualOutput: " + actualOutput);
-        }
-
         // there must be 1 xmlns=
-        Assert.assertTrue(actualOutput.split("xmlns=").length == 2, "Expected 1 xmlns=, actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split("xmlns=").length, "Expected 1 xmlns=, actual output: " + actualOutput);
 
         // there must be 2 xmlns:
-        Assert.assertTrue(actualOutput.split("xmlns:").length == 3, "Expected 2 xmlns:, actual output: " + actualOutput);
+        assertEquals(3, actualOutput.split("xmlns:").length, "Expected 2 xmlns:, actual output: " + actualOutput);
 
         // there must be 2 :attr
-        Assert.assertTrue(actualOutput.split(":attr").length == 3, "Expected 2 :attr, actual output: " + actualOutput);
+        assertEquals(3, actualOutput.split(":attr").length, "Expected 2 :attr, actual output: " + actualOutput);
 
-        /**
+        /*
          * writeStartElement("p", "localName", "http://example.org/URI-ONE");
-         * writeAttribute("p", "http://example.org/URI-TWO", "attrName",
-         * "value");
+         * writeAttribute("p", "http://example.org/URI-TWO", "attrName", "value");
          */
         final String EXPECTED_OUTPUT_2 = "<?xml version=\"1.0\" ?>" + "<root" + " xmlns=\"\">" + "<p:localName" + " xmlns:p=\"http://example.org/URI-ONE\""
                 + " xmlns:{generated prefix}=\"http://example.org/URI-TWO\"" + " {generated prefix}:attrName=\"value\">" + "</p:localName>" + "</root>";
@@ -876,27 +734,21 @@ public class NamespaceTest {
 
         actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
 
-        if (DEBUG) {
-            System.out.println("testSamePrefixDifferentURI(): expectedOutput: " + EXPECTED_OUTPUT_2);
-            System.out.println("testSamePrefixDifferentURI():   actualOutput: " + actualOutput);
-        }
-
         // there must be 1 xmlns=
-        Assert.assertTrue(actualOutput.split("xmlns=").length == 2, "Expected 1 xmlns=, actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split("xmlns=").length, "Expected 1 xmlns=, actual output: " + actualOutput);
 
         // there must be 2 xmlns:
-        Assert.assertTrue(actualOutput.split("xmlns:").length == 3, "Expected 2 xmlns:, actual output: " + actualOutput);
+        assertEquals(3, actualOutput.split("xmlns:").length, "Expected 2 xmlns:, actual output: " + actualOutput);
 
         // there must be 2 p:localName
-        Assert.assertTrue(actualOutput.split("p:localName").length == 3, "Expected 2 p:localName, actual output: " + actualOutput);
+        assertEquals(3, actualOutput.split("p:localName").length, "Expected 2 p:localName, actual output: " + actualOutput);
 
         // there must be 1 :attrName
-        Assert.assertTrue(actualOutput.split(":attrName").length == 2, "Expected 1 :attrName, actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split(":attrName").length, "Expected 1 :attrName, actual output: " + actualOutput);
 
-        /**
+        /*
          * writeNamespace("p", "http://example.org/URI-ONE");
-         * writeAttribute("p", "http://example.org/URI-TWO", "attrName",
-         * "value");
+         * writeAttribute("p", "http://example.org/URI-TWO", "attrName", "value");
          */
         final String EXPECTED_OUTPUT_3 = "<?xml version=\"1.0\" ?>" + "<root" + " xmlns=\"\"" + " xmlns:p=\"http://example.org/URI-ONE\""
                 + " xmlns:{generated prefix}=\"http://example.org/URI-TWO\"" + " {generated prefix}:attrName=\"value\">" + "</root>";
@@ -910,21 +762,16 @@ public class NamespaceTest {
 
         actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
 
-        if (DEBUG) {
-            System.out.println("testSamePrefixDifferentURI(): expectedOutput: " + EXPECTED_OUTPUT_3);
-            System.out.println("testSamePrefixDifferentURI():   actualOutput: " + actualOutput);
-        }
-
         // there must be 1 xmlns=
-        Assert.assertTrue(actualOutput.split("xmlns=").length == 2, "Expected 1 xmlns=, actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split("xmlns=").length, "Expected 1 xmlns=, actual output: " + actualOutput);
 
         // there must be 2 xmlns:
-        Assert.assertTrue(actualOutput.split("xmlns:").length == 3, "Expected 2 xmlns:, actual output: " + actualOutput);
+        assertEquals(3, actualOutput.split("xmlns:").length, "Expected 2 xmlns:, actual output: " + actualOutput);
 
         // there must be 1 :attrName
-        Assert.assertTrue(actualOutput.split(":attrName").length == 2, "Expected a :attrName, actual output: " + actualOutput);
+        assertEquals(2, actualOutput.split(":attrName").length, "Expected a :attrName, actual output: " + actualOutput);
 
-        /**
+        /*
          * writeNamespace("xmlns", ""); writeStartElement("", "localName",
          * "http://example.org/URI-TWO");
          */
@@ -942,19 +789,14 @@ public class NamespaceTest {
 
         actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
 
-        if (DEBUG) {
-            System.out.println("testSamePrefixDifferentURI(): expectedOutput: " + EXPECTED_OUTPUT_4);
-            System.out.println("testSamePrefixDifferentURI():   actualOutput: " + actualOutput);
-        }
-
         // there must be 2 xmlns=
-        Assert.assertTrue(actualOutput.split("xmlns=").length == 3, "Expected 2 xmlns=, actual output: " + actualOutput);
+        assertEquals(3, actualOutput.split("xmlns=").length, "Expected 2 xmlns=, actual output: " + actualOutput);
 
         // there must be 0 xmlns:
-        Assert.assertTrue(actualOutput.split("xmlns:").length == 1, "Expected 0 xmlns:, actual output: " + actualOutput);
+        assertEquals(1, actualOutput.split("xmlns:").length, "Expected 0 xmlns:, actual output: " + actualOutput);
 
         // there must be 0 :localName
-        Assert.assertTrue(actualOutput.split(":localName").length == 1, "Expected 0 :localName, actual output: " + actualOutput);
+        assertEquals(1, actualOutput.split(":localName").length, "Expected 0 :localName, actual output: " + actualOutput);
     }
 
     // ---------------- Misc ----------------
@@ -979,13 +821,7 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("never requires fixup");
 
         String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testEmptyDefaultEmptyPrefixEmptyNamespaceURIWriteAttribute(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testEmptyDefaultEmptyPrefixEmptyNamespaceURIWriteAttribute():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
@@ -1000,29 +836,14 @@ public class NamespaceTest {
         xmlStreamWriter.writeCharacters("never requires fixup");
 
         String actualOutput = endDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-
-        if (DEBUG) {
-            System.out.println("testSpecifiedDefaultEmptyPrefixEmptyNamespaceURIWriteAttribute(): expectedOutput: " + EXPECTED_OUTPUT);
-            System.out.println("testSpecifiedDefaultEmptyPrefixEmptyNamespaceURIWriteAttribute():   actualOutput: " + actualOutput);
-        }
-
-        Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /*--------------- Negative tests with isRepairingNamespaces as FALSE ---------------------- */
 
-    private void setUpForNoRepair() {
-
+    private void setUpForNoRepair() throws XMLStreamException {
         xmlOutputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, Boolean.FALSE);
-
-        // new Writer
-        try {
-            xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream);
-
-        } catch (XMLStreamException xmlStreamException) {
-            xmlStreamException.printStackTrace();
-            Assert.fail(xmlStreamException.toString());
-        }
+        xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream);
     }
 
     /*
@@ -1032,17 +853,12 @@ public class NamespaceTest {
      * "attrName", "value");
      */
     @Test
-    public void testEmptyDefaultEmptyPrefixSpecifiedURIWriteAttributeNoRepair() {
-        try {
-            setUpForNoRepair();
-            startDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            xmlStreamWriter.writeAttribute("", "http://example.org/myURI", "attrName", "value");
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            Assert.fail("XMLStreamException is expected, actualOutput: " + actualOutput);
-        } catch (Exception e) {
-            System.out.println("PASS: caught an expected exception" + e.getMessage());
-            e.printStackTrace();
-        }
+    public void testEmptyDefaultEmptyPrefixSpecifiedURIWriteAttributeNoRepair() throws XMLStreamException {
+        setUpForNoRepair();
+        startDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertThrows(
+                XMLStreamException.class,
+                () -> xmlStreamWriter.writeAttribute("", "http://example.org/myURI", "attrName", "value"));
     }
 
     /*
@@ -1052,17 +868,12 @@ public class NamespaceTest {
      * "http://example.org/myURI", "attrName", "value");
      */
     @Test
-    public void testSpecifiedDefaultEmptyPrefixSpecifiedURIWriteAttributeNoRepair() {
-        try {
-            setUpForNoRepair();
-            startDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-            xmlStreamWriter.writeAttribute("", "http://example.org/uniqueURI", "attrName", "value");
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            Assert.fail("XMLStreamException is expected, actualOutput: " + actualOutput);
-        } catch (Exception e) {
-            System.out.println("PASS: caught an expected exception" + e.getMessage());
-            e.printStackTrace();
-        }
+    public void testSpecifiedDefaultEmptyPrefixSpecifiedURIWriteAttributeNoRepair() throws XMLStreamException {
+        setUpForNoRepair();
+        startDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
+        assertThrows(
+                XMLStreamException.class,
+                () -> xmlStreamWriter.writeAttribute("", "http://example.org/uniqueURI", "attrName", "value"));
     }
 
     /*
@@ -1072,17 +883,12 @@ public class NamespaceTest {
      * "http://example.org/uniqueURI", "attrName", "value");
      */
     @Test
-    public void testSpecifiedDefaultEmptyPrefixSpecifiedDifferentURIWriteAttributeNoRepair() {
-        try {
-            setUpForNoRepair();
-            startDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-            xmlStreamWriter.writeAttribute("", "http://example.org/myURI", "attrName", "value");
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            Assert.fail("XMLStreamException is expected, actualOutput: " + actualOutput);
-        } catch (Exception e) {
-            System.out.println("PASS: caught an expected exception" + e.getMessage());
-            e.printStackTrace();
-        }
+    public void testSpecifiedDefaultEmptyPrefixSpecifiedDifferentURIWriteAttributeNoRepair() throws XMLStreamException {
+        setUpForNoRepair();
+        startDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
+        assertThrows(
+                XMLStreamException.class,
+                () -> xmlStreamWriter.writeAttribute("", "http://example.org/myURI", "attrName", "value"));
     }
 
     /*
@@ -1092,18 +898,13 @@ public class NamespaceTest {
      * "http://example.org/URI-TWO", "attr2", "value");
      */
     @Test
-    public void testSamePrefixDiffrentURIWriteAttributeNoRepair() {
-        try {
-            setUpForNoRepair();
-            startDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            xmlStreamWriter.writeAttribute("p", "http://example.org/URI-ONE", "attr1", "value");
-            xmlStreamWriter.writeAttribute("p", "http://example.org/URI-TWO", "attr2", "value");
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            Assert.fail("XMLStreamException is expected, actualOutput: " + actualOutput);
-        } catch (Exception e) {
-            System.out.println("PASS: caught an expected exception" + e.getMessage());
-            e.printStackTrace();
-        }
+    public void testSamePrefixDiffrentURIWriteAttributeNoRepair() throws XMLStreamException {
+        setUpForNoRepair();
+        startDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        xmlStreamWriter.writeAttribute("p", "http://example.org/URI-ONE", "attr1", "value");
+        assertThrows(
+                XMLStreamException.class,
+                () -> xmlStreamWriter.writeAttribute("p", "http://example.org/URI-TWO", "attr2", "value"));
     }
 
     /*
@@ -1113,19 +914,13 @@ public class NamespaceTest {
      * writeAttribute("p", "http://example.org/URI-TWO", "attrName", "value")
      */
     @Test
-    public void testSamePrefixDiffrentURIWriteElemAndWriteAttributeNoRepair() {
-        try {
-            setUpForNoRepair();
-            startDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/URI-ONE");
-            xmlStreamWriter.writeAttribute("p", "http://example.org/URI-TWO", "attrName", "value");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            Assert.fail("XMLStreamException is expected, actualOutput: " + actualOutput);
-        } catch (Exception e) {
-            System.out.println("PASS: caught an expected exception" + e.getMessage());
-            e.printStackTrace();
-        }
+    public void testSamePrefixDiffrentURIWriteElemAndWriteAttributeNoRepair() throws XMLStreamException {
+        setUpForNoRepair();
+        startDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/URI-ONE");
+        assertThrows(
+                XMLStreamException.class,
+                () -> xmlStreamWriter.writeAttribute("p", "http://example.org/URI-TWO", "attrName", "value"));
     }
 
     /*
@@ -1134,20 +929,12 @@ public class NamespaceTest {
      * />
      */
     @Test
-    public void testDefaultNamespaceDiffrentURIWriteElementNoRepair() {
-        try {
-            System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            setUpForNoRepair();
-            startDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
-            xmlStreamWriter.writeNamespace("", "http://example.org/myURI");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            Assert.fail("XMLStreamException is expected, actualOutput: " + actualOutput);
-        } catch (Exception e) {
-            System.out.println("PASS: caught an expected exception" + e.getMessage());
-            e.printStackTrace();
-        }
+    public void testDefaultNamespaceDiffrentURIWriteElementNoRepair() throws XMLStreamException {
+        setUpForNoRepair();
+        startDocumentSpecifiedDefaultNamespace(xmlStreamWriter);
+        assertThrows(
+                XMLStreamException.class,
+                () -> xmlStreamWriter.writeNamespace("", "http://example.org/myURI"));
     }
 
     /*--------------------------------------------------------------------------
@@ -1161,59 +948,41 @@ public class NamespaceTest {
     }
 
     @Test
-    public void testSpecifiedPrefixSpecifiedURIWriteElementNoRepair() {
-
+    public void testSpecifiedPrefixSpecifiedURIWriteElementNoRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root>" + "<p:localName></p:localName>" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Caught an unexpected exception" + e.getMessage());
-        }
+
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
-    public void testSpecifiedPrefixSpecifiedURIWriteAttributeNoRepair() {
-
+    public void testSpecifiedPrefixSpecifiedURIWriteAttributeNoRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root p:attrName=\"value\">" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.writeAttribute("p", "http://example.org/myURI", "attrName", "value");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Caught an unexpected exception" + e.getMessage());
-        }
+
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.writeAttribute("p", "http://example.org/myURI", "attrName", "value");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
-    public void testSpecifiedPrefixSpecifiedURISpecifiedNamespcaeWriteElementNoRepair() {
-
+    public void testSpecifiedPrefixSpecifiedURISpecifiedNamespcaeWriteElementNoRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root>" + "<p:localName xmlns:p=\"http://example.org/myURI\"></p:localName>" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
 
-            xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
-            xmlStreamWriter.writeNamespace("p", "http://example.org/myURI");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Caught an unexpected exception" + e.getMessage());
-        }
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+
+        xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
+        xmlStreamWriter.writeNamespace("p", "http://example.org/myURI");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /*
@@ -1224,210 +993,150 @@ public class NamespaceTest {
      */
 
     @Test
-    public void testSpecifiedPrefixSpecifiedURISpecifiedDifferentNamespcaeWriteElementNoRepair() {
-
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
-            xmlStreamWriter.writeNamespace("p", "http://example.org/uniqueURI");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.fail("XMLStreamException is expected as 'p' is rebinded to a different URI in same namespace context");
-        } catch (Exception e) {
-            System.out.println("Caught an expected exception" + e.getMessage());
-        }
+    public void testSpecifiedPrefixSpecifiedURISpecifiedDifferentNamespcaeWriteElementNoRepair() throws XMLStreamException {
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
+        assertThrows(
+                XMLStreamException.class,
+                () -> xmlStreamWriter.writeNamespace("p", "http://example.org/uniqueURI"));
     }
 
     @Test
-    public void testEmptyPrefixEmptyURIWriteAttributeNoRepair() {
+    public void testEmptyPrefixEmptyURIWriteAttributeNoRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root>" + "<localName attrName=\"value\"></localName>" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.writeStartElement("localName");
-            xmlStreamWriter.writeAttribute("", "", "attrName", "value");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Caught an unexpected exception" + e.getMessage());
-        }
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.writeStartElement("localName");
+        xmlStreamWriter.writeAttribute("", "", "attrName", "value");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
-    public void testEmptyPrefixNullURIWriteAttributeNoRepair() {
-        final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root>" + "<localName attrName=\"value\"></localName>" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.writeStartElement("localName");
-            xmlStreamWriter.writeAttribute(null, null, "attrName", "value");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.fail("XMLStreamException is expected, actualOutput: " + actualOutput);
-        } catch (Exception e) {
-            System.out.println("PASS: caught an expected exception" + e.getMessage());
-            e.printStackTrace();
-        }
+    public void testEmptyPrefixNullURIWriteAttributeNoRepair() throws XMLStreamException {
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.writeStartElement("localName");
+        assertThrows(
+                XMLStreamException.class,
+                () -> xmlStreamWriter.writeAttribute(null, null, "attrName", "value"));
     }
 
     @Test
-    public void testDoubleXmlNsNoRepair() {
-        try {
-            // reset to known state
-            setUpForNoRepair();
+    public void testDoubleXmlNsNoRepair() throws XMLStreamException {
+        // reset to known state
+        setUpForNoRepair();
 
-            xmlStreamWriter.writeStartDocument();
-            xmlStreamWriter.writeStartElement("foo");
-            xmlStreamWriter.writeNamespace("xml", XMLConstants.XML_NS_URI);
-            xmlStreamWriter.writeAttribute("xml", XMLConstants.XML_NS_URI, "lang", "ja_JP");
-            xmlStreamWriter.writeCharacters("Hello");
-            xmlStreamWriter.writeEndElement();
-            xmlStreamWriter.writeEndDocument();
+        xmlStreamWriter.writeStartDocument();
+        xmlStreamWriter.writeStartElement("foo");
+        xmlStreamWriter.writeNamespace("xml", XMLConstants.XML_NS_URI);
+        xmlStreamWriter.writeAttribute("xml", XMLConstants.XML_NS_URI, "lang", "ja_JP");
+        xmlStreamWriter.writeCharacters("Hello");
+        xmlStreamWriter.writeEndElement();
+        xmlStreamWriter.writeEndDocument();
 
-            xmlStreamWriter.flush();
-            String actualOutput = byteArrayOutputStream.toString();
-
-            if (DEBUG) {
-                System.out.println("testDoubleXmlNsNoRepair(): actualOutput: " + actualOutput);
-            }
-
-            // there should be no xmlns:xml
-            Assert.assertTrue(actualOutput.split("xmlns:xml").length == 1, "Expected 0 xmlns:xml, actual output: " + actualOutput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
+        xmlStreamWriter.flush();
+        String actualOutput = byteArrayOutputStream.toString();
+        // there should be no xmlns:xml
+        assertEquals(1, actualOutput.split("xmlns:xml").length, "Expected 0 xmlns:xml, actual output: " + actualOutput);
     }
 
     @Test
-    public void testSpecifiedURIWriteAttributeNoRepair() {
+    public void testSpecifiedURIWriteAttributeNoRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root>" + "<p:localName p:attrName=\"value\"></p:localName>" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
-            xmlStreamWriter.writeAttribute("http://example.org/myURI", "attrName", "value");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            System.out.println("Caught an expected exception" + e.getMessage());
-        }
+
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
+        xmlStreamWriter.writeAttribute("http://example.org/myURI", "attrName", "value");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
-    public void testSpecifiedURIWriteAttributeWithRepair() {
+    public void testSpecifiedURIWriteAttributeWithRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root>"
                 + "<p:localName xmlns:p=\"http://example.org/myURI\" p:attrName=\"value\"></p:localName>" + "</root>";
-        try {
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
-            xmlStreamWriter.writeNamespace("p", "http://example.org/myURI");
-            xmlStreamWriter.writeAttribute("http://example.org/myURI", "attrName", "value");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.writeStartElement("p", "localName", "http://example.org/myURI");
+        xmlStreamWriter.writeNamespace("p", "http://example.org/myURI");
+        xmlStreamWriter.writeAttribute("http://example.org/myURI", "attrName", "value");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
-    public void testSpecifiedDefaultInDifferentElementsNoRepair() {
+    public void testSpecifiedDefaultInDifferentElementsNoRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root>" + "<localName xmlns=\"http://example.org/myURI\">"
                 + "<child xmlns=\"http://example.org/uniqueURI\"></child>" + "</localName>" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.writeStartElement("localName");
-            xmlStreamWriter.writeDefaultNamespace("http://example.org/myURI");
-            xmlStreamWriter.writeStartElement("child");
-            xmlStreamWriter.writeDefaultNamespace("http://example.org/uniqueURI");
-            xmlStreamWriter.writeEndElement();
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.writeStartElement("localName");
+        xmlStreamWriter.writeDefaultNamespace("http://example.org/myURI");
+        xmlStreamWriter.writeStartElement("child");
+        xmlStreamWriter.writeDefaultNamespace("http://example.org/uniqueURI");
+        xmlStreamWriter.writeEndElement();
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /*------------- Tests for setPrefix() and setDefaultNamespace() methods --------------------*/
 
     @Test
-    public void testSetPrefixWriteNamespaceNoRepair() {
+    public void testSetPrefixWriteNamespaceNoRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root xmlns:p=\"http://example.org/myURI\">" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.setPrefix("p", "http://example.org/myURI");
-            xmlStreamWriter.writeNamespace("p", "http://example.org/myURI");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            System.out.println("Caught an expected exception" + e.getMessage());
-        }
+
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.setPrefix("p", "http://example.org/myURI");
+        xmlStreamWriter.writeNamespace("p", "http://example.org/myURI");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        System.out.println("actualOutput: " + actualOutput);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
-    public void testSetPrefixWriteNamespaceWithRepair() {
+    public void testSetPrefixWriteNamespaceWithRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root xmlns:p=\"http://example.org/myURI\">" + "</root>";
-        try {
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.setPrefix("p", "http://example.org/myURI");
-            xmlStreamWriter.writeNamespace("p", "http://example.org/myURI");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            System.out.println("Caught an expected exception" + e.getMessage());
-        }
+
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.setPrefix("p", "http://example.org/myURI");
+        xmlStreamWriter.writeNamespace("p", "http://example.org/myURI");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
-    public void testSetDefaultNamespaceWriteNamespaceNoRepair() {
+    public void testSetDefaultNamespaceWriteNamespaceNoRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root xmlns=\"http://example.org/myURI\">" + "</root>";
-        try {
-            setUpForNoRepair();
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.setDefaultNamespace("http://example.org/myURI");
-            xmlStreamWriter.writeNamespace("", "http://example.org/myURI");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            System.out.println("Caught an expected exception" + e.getMessage());
-        }
+
+        setUpForNoRepair();
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.setDefaultNamespace("http://example.org/myURI");
+        xmlStreamWriter.writeNamespace("", "http://example.org/myURI");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     @Test
-    public void testSetDefaultNamespaceWriteNamespaceWithRepair() {
+    public void testSetDefaultNamespaceWriteNamespaceWithRepair() throws XMLStreamException {
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root xmlns=\"http://example.org/myURI\">" + "</root>";
-        try {
-            startDocument(xmlStreamWriter);
-            xmlStreamWriter.setDefaultNamespace("http://example.org/myURI");
-            xmlStreamWriter.writeNamespace("", "http://example.org/myURI");
-            xmlStreamWriter.writeEndElement();
-            String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
-            System.out.println("actualOutput: " + actualOutput);
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            System.out.println("Caught an expected exception" + e.getMessage());
-        }
+
+        startDocument(xmlStreamWriter);
+        xmlStreamWriter.setDefaultNamespace("http://example.org/myURI");
+        xmlStreamWriter.writeNamespace("", "http://example.org/myURI");
+        xmlStreamWriter.writeEndElement();
+        String actualOutput = endDocumentEmptyDefaultNamespace(xmlStreamWriter);
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 }

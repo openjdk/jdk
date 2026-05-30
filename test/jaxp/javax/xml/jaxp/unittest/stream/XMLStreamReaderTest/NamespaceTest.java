@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,32 @@
 
 package stream.XMLStreamReaderTest;
 
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
+import java.io.InputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.NamespaceTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.NamespaceTest
  * @summary Test StAX parser processes namespace.
  */
 public class NamespaceTest {
 
-    String namespaceURI = "foobar.com";
-    String rootElement = "foo";
-    String childElement = "foochild";
-    String prefix = "a";
-
-    // Add test methods here, they have to start with 'test' name.
-    // for example:
-    // public void testHello() {}
+    private static final String namespaceURI = "foobar.com";
+    private static final String rootElement = "foo";
+    private static final String childElement = "foochild";
+    private static final String prefix = "a";
 
     String getXML() {
-        StringBuffer sbuffer = new StringBuffer();
+        StringBuilder sbuffer = new StringBuilder();
         sbuffer.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         sbuffer.append("<" + rootElement + " xmlns:");
         sbuffer.append(prefix);
@@ -66,87 +62,72 @@ public class NamespaceTest {
     }
 
     @Test
-    public void testRootElementNamespace() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
-            InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
-            XMLStreamReader sr = xif.createXMLStreamReader(is);
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(rootElement)) {
-                        Assert.assertTrue(sr.getNamespacePrefix(0).equals(prefix) && sr.getNamespaceURI(0).equals(namespaceURI));
-                    }
+    public void testRootElementNamespace() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
+        InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
+        XMLStreamReader sr = xif.createXMLStreamReader(is);
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(rootElement)) {
+                    assertEquals(prefix, sr.getNamespacePrefix(0));
+                    assertEquals(namespaceURI, sr.getNamespaceURI(0));
                 }
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 
     @Test
-    public void testChildElementNamespace() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
-            InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
-            XMLStreamReader sr = xif.createXMLStreamReader(is);
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(childElement)) {
-                        QName qname = sr.getName();
-                        Assert.assertTrue(qname.getPrefix().equals(prefix) && qname.getNamespaceURI().equals(namespaceURI)
-                                && qname.getLocalPart().equals(childElement));
-                    }
+    public void testChildElementNamespace() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
+        InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
+        XMLStreamReader sr = xif.createXMLStreamReader(is);
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(childElement)) {
+                    QName qname = sr.getName();
+                    assertEquals(prefix, qname.getPrefix());
+                    assertEquals(namespaceURI, qname.getNamespaceURI());
+                    assertEquals(childElement, qname.getLocalPart());
                 }
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 
     @Test
-    public void testNamespaceContext() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
-            InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
-            XMLStreamReader sr = xif.createXMLStreamReader(is);
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(childElement)) {
-                        NamespaceContext context = sr.getNamespaceContext();
-                        Assert.assertTrue(context.getPrefix(namespaceURI).equals(prefix));
-                    }
+    public void testNamespaceContext() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
+        InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
+        XMLStreamReader sr = xif.createXMLStreamReader(is);
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(childElement)) {
+                    NamespaceContext context = sr.getNamespaceContext();
+                    assertEquals(prefix, context.getPrefix(namespaceURI));
                 }
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 
     @Test
-    public void testNamespaceCount() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
-            InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
-            XMLStreamReader sr = xif.createXMLStreamReader(is);
-            while (sr.hasNext()) {
-                int eventType = sr.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    if (sr.getLocalName().equals(rootElement)) {
-                        int count = sr.getNamespaceCount();
-                        Assert.assertTrue(count == 1);
-                    }
+    public void testNamespaceCount() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
+        InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
+        XMLStreamReader sr = xif.createXMLStreamReader(is);
+        while (sr.hasNext()) {
+            int eventType = sr.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (sr.getLocalName().equals(rootElement)) {
+                    int count = sr.getNamespaceCount();
+                    assertEquals(1, count);
                 }
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
-
 }

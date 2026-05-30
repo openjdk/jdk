@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,123 +23,96 @@
 
 package stream;
 
-import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLOutputFactory;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Properties;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.FactoryFindTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.FactoryFindTest
  * @summary Test SaTX factory using factory property and using ContextClassLoader.
  */
 public class FactoryFindTest {
-
-    boolean myClassLoaderUsed = false;
-
     final static String FACTORY_KEY = "javax.xml.stream.XMLInputFactory";
 
-//    @BeforeClass
-//    public void setup(){
-//        policy.PolicyUtil.changePolicy(getClass().getResource("FactoryFindTest.policy").getFile());
-//    }
-
-    @Test(enabled=false) // due to 8156508
-    public void testFactoryFindUsingStaxProperties() {
+    @Test
+    @Disabled // due to 8156508
+    public void testFactoryFindUsingStaxProperties() throws Exception {
         // If property is defined, will take precendence so this test
         // is ignored :(
-        if (getSystemProperty(FACTORY_KEY) != null) {
-            return;
-        }
+        Assumptions.assumeTrue(System.getProperty(FACTORY_KEY) == null);
 
         Properties props = new Properties();
-        String configFile = getSystemProperty("java.home") + File.separator + "lib" + File.separator + "stax.properties";
+        String configFile = System.getProperty("java.home") + File.separator + "lib" + File.separator + "stax.properties";
 
         File f = new File(configFile);
         if (f.exists()) {
-            try {
-                FileInputStream fis = new FileInputStream(f);
+            try (FileInputStream fis = new FileInputStream(f)) {
                 props.load(fis);
-                fis.close();
-            } catch (FileNotFoundException e) {
-                return;
-            } catch (IOException e) {
-                return;
             }
         } else {
             props.setProperty(FACTORY_KEY, "com.sun.xml.internal.stream.XMLInputFactoryImpl");
-            try {
-                FileOutputStream fos = new FileOutputStream(f);
+            try (FileOutputStream fos = new FileOutputStream(f)) {
                 props.store(fos, null);
-                fos.close();
-                f.deleteOnExit();
-            } catch (FileNotFoundException e) {
-                return;
-            } catch (IOException e) {
-                return;
             }
+            f.deleteOnExit();
         }
 
         XMLInputFactory factory = XMLInputFactory.newInstance();
-        Assert.assertTrue(factory.getClass().getName().equals(props.getProperty(FACTORY_KEY)));
+        assertEquals(factory.getClass().getName(), props.getProperty(FACTORY_KEY));
     }
 
     @Test
     public void testFactoryFind() {
-        try {
-            // setSystemProperty("jaxp.debug", "true");
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        assertNull(factory.getClass().getClassLoader());
 
-            XMLInputFactory factory = XMLInputFactory.newInstance();
-            Assert.assertTrue(factory.getClass().getClassLoader() == null);
+        Thread.currentThread().setContextClassLoader(null);
+        factory = XMLInputFactory.newInstance();
+        assertNull(factory.getClass().getClassLoader());
 
-            Thread.currentThread().setContextClassLoader(null);
-            factory = XMLInputFactory.newInstance();
-            Assert.assertTrue(factory.getClass().getClassLoader() == null);
+        MyClassLoader clInput = new MyClassLoader();
+        Thread.currentThread().setContextClassLoader(clInput);
+        XMLInputFactory.newInstance();
+        // because it's decided by having sm or not in FactoryFind code
+        assertTrue(clInput.wasUsed);
 
-            Thread.currentThread().setContextClassLoader(new MyClassLoader());
-            factory = XMLInputFactory.newInstance();
-            // because it's decided by having sm or not in FactoryFind code
-            if (System.getSecurityManager() == null)
-                Assert.assertTrue(myClassLoaderUsed);
-            else
-                Assert.assertFalse(myClassLoaderUsed);
+        XMLOutputFactory ofactory = XMLOutputFactory.newInstance();
+        assertNull(ofactory.getClass().getClassLoader());
 
-            XMLOutputFactory ofactory = XMLOutputFactory.newInstance();
-            Assert.assertTrue(ofactory.getClass().getClassLoader() == null);
+        Thread.currentThread().setContextClassLoader(null);
+        ofactory = XMLOutputFactory.newInstance();
+        assertNull(ofactory.getClass().getClassLoader());
 
-            Thread.currentThread().setContextClassLoader(null);
-            ofactory = XMLOutputFactory.newInstance();
-            Assert.assertTrue(ofactory.getClass().getClassLoader() == null);
-
-            Thread.currentThread().setContextClassLoader(new MyClassLoader());
-            ofactory = XMLOutputFactory.newInstance();
-            if (System.getSecurityManager() == null)
-                Assert.assertTrue(myClassLoaderUsed);
-            else
-                Assert.assertFalse(myClassLoaderUsed);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        MyClassLoader clOutput = new MyClassLoader();
+        Thread.currentThread().setContextClassLoader(clOutput);
+        XMLOutputFactory.newInstance();
+        assertTrue(clOutput.wasUsed);
     }
 
-    class MyClassLoader extends URLClassLoader {
+    private static class MyClassLoader extends URLClassLoader {
+        boolean wasUsed = false;
 
         public MyClassLoader() {
             super(new URL[0]);
         }
 
-        public Class loadClass(String name) throws ClassNotFoundException {
-            myClassLoaderUsed = true;
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            wasUsed = true;
             return super.loadClass(name);
         }
     }

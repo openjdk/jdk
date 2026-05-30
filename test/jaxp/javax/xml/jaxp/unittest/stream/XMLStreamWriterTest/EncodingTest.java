@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,23 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.ByteArrayOutputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.EncodingTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.EncodingTest
  * @summary Test XMLStreamWriter writes a document with encoding setting.
  */
 public class EncodingTest {
@@ -45,30 +50,23 @@ public class EncodingTest {
      * Tests writing a document with UTF-8 encoding, by setting UTF-8 on writer.
      */
     @Test
-    public void testWriteStartDocumentUTF8() {
+    public void testWriteStartDocumentUTF8() throws Exception {
 
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root></root>";
         XMLStreamWriter writer = null;
         ByteArrayOutputStream byteArrayOutputStream = null;
 
-        try {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            writer = XML_OUTPUT_FACTORY.createXMLStreamWriter(byteArrayOutputStream, "UTF-8");
+        byteArrayOutputStream = new ByteArrayOutputStream();
+        writer = XML_OUTPUT_FACTORY.createXMLStreamWriter(byteArrayOutputStream, "UTF-8");
 
-            writer.writeStartDocument("UTF-8", "1.0");
-            writer.writeStartElement("root");
-            writer.writeEndElement();
-            writer.writeEndDocument();
-            writer.flush();
+        writer.writeStartDocument("UTF-8", "1.0");
+        writer.writeStartElement("root");
+        writer.writeEndElement();
+        writer.writeEndDocument();
+        writer.flush();
 
-            String actualOutput = byteArrayOutputStream.toString();
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.toString());
-        }
-
+        String actualOutput = byteArrayOutputStream.toString();
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 
     /*
@@ -76,34 +74,17 @@ public class EncodingTest {
      * This scenario should result in an exception as default encoding is ASCII.
      */
     @Test
-    public void testWriteStartDocumentUTF8Fail() {
-
-        XMLStreamWriter writer = null;
-        ByteArrayOutputStream byteArrayOutputStream = null;
-
+    public void testWriteStartDocumentUTF8Fail() throws Exception {
         // pick a different encoding to use v. default encoding
-        String defaultCharset = java.nio.charset.Charset.defaultCharset().name();
-        String useCharset = "UTF-8";
-        if (useCharset.equals(defaultCharset)) {
-            useCharset = "US-ASCII";
-        }
+        Charset defaultCharset = Charset.defaultCharset();
+        Charset useCharset = defaultCharset.equals(UTF_8) ? US_ASCII : UTF_8;
 
         System.out.println("defaultCharset = " + defaultCharset + ", useCharset = " + useCharset);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        XMLStreamWriter writer = XML_OUTPUT_FACTORY.createXMLStreamWriter(byteArrayOutputStream);
 
-        try {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            writer = XML_OUTPUT_FACTORY.createXMLStreamWriter(byteArrayOutputStream);
-
-            writer.writeStartDocument(useCharset, "1.0");
-            writer.writeStartElement("root");
-            writer.writeEndElement();
-            writer.writeEndDocument();
-            writer.flush();
-
-            Assert.fail("Expected XMLStreamException as default underlying stream encoding of " + defaultCharset
-                    + " differs from explicitly specified encoding of " + useCharset);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        assertThrows(XMLStreamException.class, () -> writer.writeStartDocument(useCharset.toString(), "1.0"),
+                "Expected XMLStreamException as default underlying stream encoding of " + defaultCharset
+                        + " differs from explicitly specified encoding of " + useCharset);
     }
 }
