@@ -222,18 +222,18 @@ ShenandoahFreeSetPartitionId ShenandoahFreeSet::prepare_to_promote_in_place(size
   return p;
 }
 
-inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
+bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
   const auto state = r->state();
   return ShenandoahHeapRegion::is_empty_state(state)
       || (ShenandoahHeapRegion::is_trash(state) && !_heap->is_concurrent_weak_root_in_progress());
 }
 
-inline bool ShenandoahFreeSet::can_allocate_from(size_t idx) const {
+bool ShenandoahFreeSet::can_allocate_from(size_t idx) const {
   ShenandoahHeapRegion* r = _heap->get_region(idx);
   return can_allocate_from(r);
 }
 
-inline size_t ShenandoahFreeSet::alloc_capacity(ShenandoahHeapRegion *r) const {
+size_t ShenandoahFreeSet::alloc_capacity(ShenandoahHeapRegion *r) const {
   if (r->is_trash()) {
     // This would be recycled on allocation path
     return ShenandoahHeapRegion::region_size_bytes();
@@ -242,12 +242,12 @@ inline size_t ShenandoahFreeSet::alloc_capacity(ShenandoahHeapRegion *r) const {
   }
 }
 
-inline size_t ShenandoahFreeSet::alloc_capacity(size_t idx) const {
+size_t ShenandoahFreeSet::alloc_capacity(size_t idx) const {
   ShenandoahHeapRegion* r = _heap->get_region(idx);
   return alloc_capacity(r);
 }
 
-inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const {
+bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const {
   return alloc_capacity(r) > 0;
 }
 
@@ -289,7 +289,48 @@ void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
   // else, old generation is already appropriately sized
 }
 
-inline idx_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId which_partition) const {
+void ShenandoahFreeSet::notify_allocation(ShenandoahFreeSetPartitionId partition, bool in_new_region) {
+  switch (partition) {
+  case ShenandoahFreeSetPartitionId::Mutator:
+    recompute_total_used</* UsedByMutatorChanged */ true,
+                         /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ false>();
+    if (in_new_region) {
+      recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
+                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
+    }
+    break;
+  case ShenandoahFreeSetPartitionId::Collector:
+    recompute_total_used</* UsedByMutatorChanged */ false,
+                         /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
+    if (in_new_region) {
+      recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ true,
+                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
+    }
+    break;
+  case ShenandoahFreeSetPartitionId::OldCollector:
+    recompute_total_used</* UsedByMutatorChanged */ false,
+                         /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
+    if (in_new_region) {
+      recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
+                                 /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ true>();
+    }
+    break;
+  case ShenandoahFreeSetPartitionId::NotFree:
+  default:
+    assert(false, "won't happen");
+  }
+}
+
+idx_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition < NumPartitions, "selected free partition must be valid");
   idx_t idx = _leftmosts[int(which_partition)];
   if (idx >= _max) {
@@ -302,7 +343,7 @@ inline idx_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId w
   }
 }
 
-inline idx_t ShenandoahRegionPartitions::rightmost(ShenandoahFreeSetPartitionId which_partition) const {
+idx_t ShenandoahRegionPartitions::rightmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition < NumPartitions, "selected free partition must be valid");
   idx_t idx = _rightmosts[int(which_partition)];
   // Cannot assert that membership[which_partition.is_set(idx) because this helper method may be used
@@ -793,12 +834,12 @@ inline bool ShenandoahRegionPartitions::partition_id_matches(idx_t idx, Shenando
 }
 #endif
 
-inline bool ShenandoahRegionPartitions::is_empty(ShenandoahFreeSetPartitionId which_partition) const {
+bool ShenandoahRegionPartitions::is_empty(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition < NumPartitions, "selected free partition must be valid");
   return (leftmost(which_partition) > rightmost(which_partition));
 }
 
-inline idx_t ShenandoahRegionPartitions::find_index_of_next_available_region(
+idx_t ShenandoahRegionPartitions::find_index_of_next_available_region(
   ShenandoahFreeSetPartitionId which_partition, idx_t start_index) const {
   idx_t rightmost_idx = rightmost(which_partition);
   idx_t leftmost_idx = leftmost(which_partition);
@@ -814,7 +855,7 @@ inline idx_t ShenandoahRegionPartitions::find_index_of_next_available_region(
   return result;
 }
 
-inline idx_t ShenandoahRegionPartitions::find_index_of_previous_available_region(
+idx_t ShenandoahRegionPartitions::find_index_of_previous_available_region(
   ShenandoahFreeSetPartitionId which_partition, idx_t last_index) const {
   idx_t rightmost_idx = rightmost(which_partition);
   idx_t leftmost_idx = leftmost(which_partition);
@@ -1187,7 +1228,7 @@ void ShenandoahRegionPartitions::assert_bounds() {
          "Mutator humongous waste must match");
 }
 
-inline void ShenandoahRegionPartitions::assert_bounds_sanity() {
+void ShenandoahRegionPartitions::assert_bounds_sanity() {
   for (uint8_t i = 0; i < UIntNumPartitions; i++) {
     ShenandoahFreeSetPartitionId partition = static_cast<ShenandoahFreeSetPartitionId>(i);
     assert(leftmost(partition) == _max || membership(leftmost(partition)) == partition, "Left most boundry must be sane");
