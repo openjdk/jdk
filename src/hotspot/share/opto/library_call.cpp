@@ -41,9 +41,11 @@
 #include "opto/convertnode.hpp"
 #include "opto/countbitsnode.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/int128tnode.hpp"
 #include "opto/library_call.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/multnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
@@ -722,6 +724,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_minD_strict:
   case vmIntrinsics::_maxD_strict:
     return inline_min_max(intrinsic_id());
+
+  case vmIntrinsics::_addInt128TLo:
+  case vmIntrinsics::_addInt128THi:
+  case vmIntrinsics::_subInt128TLo:
+  case vmIntrinsics::_subInt128THi:
+    return inline_int128t_addsub(intrinsic_id());
 
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
@@ -2074,6 +2082,29 @@ bool LibraryCallKit::inline_math_multiplyHigh() {
 
 bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
   set_result(_gvn.transform(new UMulHiLNode(argument(0), argument(2))));
+  return true;
+}
+
+bool LibraryCallKit::inline_int128t_addsub(vmIntrinsicID id) {
+  Node* lo1 = argument(0);
+  Node* hi1 = argument(2);
+  Node* lo2 = argument(4);
+  Node* hi2 = argument(6);
+  Node* multi;
+  if (id == vmIntrinsics::_addInt128TLo || id == vmIntrinsics::_addInt128THi) {
+    multi = _gvn.transform(new AddI128TNode(lo1, hi1, lo2, hi2));
+  } else {
+    assert(id == vmIntrinsics::_subInt128TLo || id == vmIntrinsics::_subInt128THi, "unexpected input %s", vmIntrinsics::name_at(id));
+    multi = _gvn.transform(new SubI128TNode(lo1, hi1, lo2, hi2));
+  }
+
+  Node* result;
+  if (id == vmIntrinsics::_addInt128TLo || id == vmIntrinsics::_subInt128TLo) {
+    result = _gvn.transform(new ProjNode(multi, Int128TBinaryNode::lo_proj_num));
+  } else {
+    result = _gvn.transform(new ProjNode(multi, Int128TBinaryNode::hi_proj_num));
+  }
+  set_result(result);
   return true;
 }
 

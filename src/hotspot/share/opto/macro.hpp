@@ -30,6 +30,7 @@
 class  AllocateNode;
 class  AllocateArrayNode;
 class  CallNode;
+class  Int128TBinaryNode;
 class  SubTypeCheckNode;
 class  Node;
 class  PhaseIterGVN;
@@ -191,6 +192,8 @@ private:
   void expand_arraycopy_node(ArrayCopyNode *ac);
 
   void expand_subtypecheck_node(SubTypeCheckNode *check);
+
+  void expand_add_sub_i128_node(Int128TBinaryNode* addsub);
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);

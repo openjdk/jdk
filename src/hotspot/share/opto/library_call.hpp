@@ -27,6 +27,7 @@
 
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
@@ -229,6 +230,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_subtractExactI(bool is_decrement);
   bool inline_math_subtractExactL(bool is_decrement);
   bool inline_min_max(vmIntrinsics::ID id);
+  bool inline_int128t_addsub(vmIntrinsics::ID id);
   bool inline_notify(vmIntrinsics::ID id);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);

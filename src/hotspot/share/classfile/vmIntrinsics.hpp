@@ -990,6 +990,17 @@ class methodHandle;
    do_name(     getAndSetReference_name,                                "getAndSetReference")                                         \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
                                                                                                                              \
+  do_class(jdk_internal_misc_Int128T,                                   "jdk/internal/misc/Int128T")                         \
+  do_signature(int128t_addsub_signature,                                "(JJJJ)J")                                           \
+  do_intrinsic(_addInt128TLo,             jdk_internal_misc_Int128T,    addInt128TLo_name, int128t_addsub_signature, F_S)    \
+   do_name(     addInt128TLo_name,                                      "addLo")                                             \
+  do_intrinsic(_addInt128THi,             jdk_internal_misc_Int128T,    addInt128THi_name, int128t_addsub_signature, F_S)    \
+   do_name(     addInt128THi_name,                                      "addHi")                                             \
+  do_intrinsic(_subInt128TLo,             jdk_internal_misc_Int128T,    subInt128TLo_name, int128t_addsub_signature, F_S)    \
+   do_name(     subInt128TLo_name,                                      "subLo")                                             \
+  do_intrinsic(_subInt128THi,             jdk_internal_misc_Int128T,    subInt128THi_name, int128t_addsub_signature, F_S)    \
+   do_name(     subInt128THi_name,                                      "subHi")                                             \
+                                                                                                                             \
   /* Float16Math API intrinsification support */                                                                             \
   /* Float16 signatures */                                                                                                   \
   do_signature(float16_unary_math_op_sig, "(Ljava/lang/Class;"                                                               \

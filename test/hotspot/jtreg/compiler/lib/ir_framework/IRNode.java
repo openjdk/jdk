@@ -3047,6 +3047,16 @@ public class IRNode {
         vectorNode(EXPAND_VD, "ExpandV", TYPE_DOUBLE);
     }
 
+    public static final String ADD_I128T = PREFIX + "ADD_I128T" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_I128T, "AddI128T");
+    }
+
+    public static final String SUB_I128T = PREFIX + "SUB_I128T" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SUB_I128T, "SubI128T");
+    }
+
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
     static {
         String regex = START + "zLoadP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
