@@ -480,7 +480,9 @@ final class HttpsClient extends HttpClient
                             )) {
                         // Fully qualified DNS hostname of the server, as per section 3, RFC 6066
                         // Literal IPv4 and IPv6 addresses are not permitted in "HostName".
-                        parameters.setServerNames(List.of(new SNIHostName(host)));
+                        @SuppressWarnings("deprecation")
+                        var hostName = new SNIHostName(host);
+                        parameters.setServerNames(List.of(hostName));
                     }
                     s.setSSLParameters(parameters);
 

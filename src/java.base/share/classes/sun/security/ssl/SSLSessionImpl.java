@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,7 +363,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         if (b.length == 0) {
             serverNameIndication = null;
         } else {
-            serverNameIndication = new SNIHostName(b);
+            @SuppressWarnings("deprecation")
+            var hostName = new SNIHostName(b);
+            serverNameIndication = hostName;
         }
 
         // List of SNIServerName
@@ -374,7 +376,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             requestedServerNames = new ArrayList<>();
             while (len > 0) {
                 b = Record.getBytes8(buf);
-                requestedServerNames.add(new SNIHostName(new String(b)));
+                @SuppressWarnings("deprecation")
+                var hostName = new SNIHostName(new String(b));
+                requestedServerNames.add(hostName);
                 len--;
             }
         }

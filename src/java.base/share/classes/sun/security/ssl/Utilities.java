@@ -113,7 +113,9 @@ final class Utilities {
                 !IPAddressUtil.isIPv6LiteralAddress(hostname)) {
 
             try {
-                return new SNIHostName(hostname);
+                @SuppressWarnings("deprecation")
+                var sni = new SNIHostName(hostname);
+                return sni;
             } catch (IllegalArgumentException iae) {
                 // don't bother to handle illegal host_name
                 if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {

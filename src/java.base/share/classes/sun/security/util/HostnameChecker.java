@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,8 @@ public class HostnameChecker {
         // Check that the expected name is a valid domain name.
         try {
             // Using the checking implemented in SNIHostName
-            SNIHostName sni = new SNIHostName(expectedName);
+            @SuppressWarnings("deprecation")
+            var _ = new SNIHostName(expectedName);
         } catch (IllegalArgumentException iae) {
             throw new CertificateException(
                 "Illegal given domain name: " + expectedName, iae);
@@ -288,7 +289,8 @@ public class HostnameChecker {
             // the domain name template validity.
             //
             // Using the checking implemented in SNIHostName
-            new SNIHostName(template.replace('*', 'z'));
+            @SuppressWarnings("deprecation")
+            var _ = new SNIHostName(template.replace('*', 'z'));
         } catch (IllegalArgumentException iae) {
             // It would be nice to add debug log if not matching.
             return false;
