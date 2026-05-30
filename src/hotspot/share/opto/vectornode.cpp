@@ -1393,6 +1393,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
   if (should_swap_inputs_to_help_global_value_numbering()) {
     swap_edges(1, 2);
+    return this;
   }
 
   n = push_through_replicate(phase);

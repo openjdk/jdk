@@ -877,7 +877,7 @@ void PhaseIterGVN::shuffle_worklist() {
 
 #ifndef PRODUCT
 void PhaseIterGVN::verify_step(Node* n) {
-  if (is_verify_def_use()) {
+  if (is_verify_per_iteration()) {
     ResourceMark rm;
     VectorSet visited;
     Node_List worklist;
@@ -991,7 +991,7 @@ void PhaseIterGVN::verify_PhaseIterGVN(bool deep_revisit_converged) {
 #endif
 
   C->verify_graph_edges();
-  if (is_verify_def_use() && PrintOpto) {
+  if (is_verify_per_iteration() && PrintOpto) {
     if (_verify_counter == _verify_full_passes) {
       tty->print_cr("VerifyIterativeGVN: %d transforms and verify passes",
                     (int) _verify_full_passes);
@@ -2202,7 +2202,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
 #ifdef ASSERT
-  if (is_verify_def_use()) {
+  if (is_verify_per_iteration()) {
     assert(!_table.find_index(n->_idx), "found duplicate entry in table");
   }
 #endif
@@ -2218,12 +2218,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
   C->remove_modified_node(k);
 #ifndef PRODUCT
-  uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
+  uint hash_before = is_verify_per_iteration() ? k->hash() : 0;
 #endif
   Node* i = apply_ideal(k, /*can_reshape=*/true);
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
 #ifndef PRODUCT
-  if (is_verify_Ideal_return()) {
+  if (is_verify_per_iteration()) {
     assert(k->outcnt() == 0 || i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
   }
   verify_step(k);
@@ -2253,12 +2253,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     DEBUG_ONLY(is_new = (k->outcnt() == 0);)
     C->remove_modified_node(k);
 #ifndef PRODUCT
-    uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
+    uint hash_before = is_verify_per_iteration() ? k->hash() : 0;
 #endif
     i = apply_ideal(k, /*can_reshape=*/true);
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
 #ifndef PRODUCT
-    if (is_verify_Ideal_return()) {
+    if (is_verify_per_iteration()) {
       assert(k->outcnt() == 0 || i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
     }
     verify_step(k);
@@ -2466,7 +2466,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
     _worklist.push(nn);
   }
 #ifndef PRODUCT
-  if (is_verify_def_use()) {
+  if (is_verify_per_iteration()) {
     for ( int i = 0; i < _verify_window_size; i++ ) {
       if ( _verify_window[i] == old )
         _verify_window[i] = nn;

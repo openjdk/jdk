@@ -28,12 +28,12 @@ package compiler.c2.igvn;
  * @bug 8373251
  * @summary In Ideal of shift nodes, we call mask_and_replace_shift_amount to reduce the
  *          shift amount. We need to make sure that Ideal returns something if this is
- *          the only modification taking place. Use -XX:VerifyIterativeGVN=100000 to
+ *          the only modification taking place. Use -XX:VerifyIterativeGVN=1 to
  *          verify the return value of Ideal if the hash has changed.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,${test.main.class}::test*
- *      -XX:VerifyIterativeGVN=100000
+ *      -XX:VerifyIterativeGVN=1
  *      ${test.main.class}
  * @run main ${test.main.class}
  *

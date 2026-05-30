@@ -744,7 +744,7 @@ bool Node::is_dead() const {
 }
 
 bool Node::is_not_dead(const Node* n) {
-  return n == nullptr || !PhaseIterGVN::is_verify_def_use() || !(n->is_dead());
+  return n == nullptr || !PhaseIterGVN::is_verify_per_iteration() || !(n->is_dead());
 }
 
 bool Node::is_reachable_from_root() const {
