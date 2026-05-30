@@ -140,6 +140,29 @@ public:
       Instruction_aarch64::extract(insn, 23, 23) == 0b0 &&
       Instruction_aarch64::extract(insn, 26, 25) == 0b00;
   }
+
+  static bool is_neon_vector_mov_alias(uint32_t insn) {
+    if (Instruction_aarch64::extract(insn, 31, 31) != 0 ||
+        Instruction_aarch64::extract(insn, 29, 21) != 0b001110101 ||
+        Instruction_aarch64::extract(insn, 15, 10) != 0b000111) {
+      return false;
+    }
+    return Instruction_aarch64::extract(insn, 9, 5) ==
+           Instruction_aarch64::extract(insn, 20, 16);
+  }
+
+  static bool is_sve_vector_mov_alias(uint32_t insn) {
+    if (Instruction_aarch64::extract(insn, 31, 21) != 0b00000100011 ||
+        Instruction_aarch64::extract(insn, 15, 10) != 0b001100) {
+      return false;
+    }
+    return Instruction_aarch64::extract(insn, 9, 5) ==
+           Instruction_aarch64::extract(insn, 20, 16);
+  }
+
+  static uint32_t encode_sve_movprfx(uint32_t dst, uint32_t src) {
+    return 0x1082f << 10 | (src << 5) | dst;
+  }
 };
 
 inline NativeInstruction* nativeInstruction_at(address address) {
