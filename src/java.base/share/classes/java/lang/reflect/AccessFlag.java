@@ -25,6 +25,8 @@
 
 package java.lang.reflect;
 
+import jdk.internal.reflect.AccessFlagSet;
+
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
@@ -35,18 +37,10 @@ import java.lang.classfile.attribute.ModuleExportInfo;
 import java.lang.classfile.attribute.ModuleOpenInfo;
 import java.lang.classfile.attribute.ModuleRequireInfo;
 import java.lang.module.ModuleDescriptor;
-import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-
-import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.reflect.ClassFileFormatVersion.*;
@@ -353,7 +347,7 @@ public enum AccessFlag {
      * the current class file format version.
      */
     public Set<Location> locations() {
-        return locations;
+        return locations(latest());
     }
 
     /**
@@ -381,14 +375,7 @@ public enum AccessFlag {
      * @throws NullPointerException if {@code location} is {@code null}
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
-        var definition = findDefinition(location);  // null checks location
-        int unmatchedMask = mask & (~location.flagsMask());
-        if (unmatchedMask != 0) {
-            throw new IllegalArgumentException("Unmatched bit position 0x" +
-                    Integer.toHexString(unmatchedMask) +
-                    " for location " + location);
-        }
-        return new AccessFlagSet(definition, mask);
+        return maskToAccessFlags(mask, location, latest());
     }
 
     /**
@@ -404,15 +391,15 @@ public enum AccessFlag {
      * @since 25
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location, ClassFileFormatVersion cffv) {
-        var definition = findDefinition(location);  // null checks location
-        int unmatchedMask = mask & (~location.flagsMask(cffv));  // null checks cffv
+        var definition = AccessFlagSet.findDefinition(location, cffv);  // null checks location
+        int unmatchedMask = mask & (~location.flagsMask(cffv));
         if (unmatchedMask != 0) {
             throw new IllegalArgumentException("Unmatched bit position 0x" +
                     Integer.toHexString(unmatchedMask) +
                     " for location " + location +
                     " for class file format " + cffv);
         }
-        return new AccessFlagSet(definition, mask);
+        return AccessFlagSet.ofValidated(definition, mask);
     }
 
     /**
@@ -494,9 +481,9 @@ public enum AccessFlag {
                     ACC_STATIC | ACC_FINAL | ACC_INTERFACE | ACC_ABSTRACT |
                     ACC_SYNTHETIC | ACC_ANNOTATION | ACC_ENUM,
                     List.of(Map.entry(RELEASE_4, // no synthetic, annotation, enum
-                            ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED |
-                            ACC_STATIC | ACC_FINAL | ACC_INTERFACE |
-                            ACC_ABSTRACT),
+                                      ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED |
+                                      ACC_STATIC | ACC_FINAL | ACC_INTERFACE |
+                                      ACC_ABSTRACT),
                             Map.entry(RELEASE_0, 0))), // did not exist
 
         /**
@@ -612,7 +599,7 @@ public enum AccessFlag {
         // These 2 utilities reside in Location because Location must be initialized before AccessFlag
         private static <T> List<Map.Entry<ClassFileFormatVersion, T>> ensureHistoryOrdered(
                 List<Map.Entry<ClassFileFormatVersion, T>> history) {
-            ClassFileFormatVersion lastVersion = ClassFileFormatVersion.latest();
+            ClassFileFormatVersion lastVersion = latest();
             for (var e : history) {
                 var historyVersion = e.getKey();
                 if (lastVersion.compareTo(historyVersion) <= 0) {
@@ -646,7 +633,7 @@ public enum AccessFlag {
          * @since 25
          */
         public int flagsMask() {
-            return flagsMask;
+            return flagsMask(latest());
         }
 
         /**
@@ -674,7 +661,7 @@ public enum AccessFlag {
          * @since 25
          */
         public Set<AccessFlag> flags() {
-            return new AccessFlagSet(findDefinition(this), flagsMask());
+            return flags(latest());
         }
 
         /**
@@ -689,136 +676,8 @@ public enum AccessFlag {
          * @since 25
          */
         public Set<AccessFlag> flags(ClassFileFormatVersion cffv) {
-            // implicit null check cffv
-            return new AccessFlagSet(findDefinition(this), flagsMask(cffv));
-        }
-    }
-
-    private static AccessFlag[] createDefinition(AccessFlag... known) {
-        var ret = new AccessFlag[Character.SIZE];
-        for (var flag : known) {
-            var mask = flag.mask;
-            int pos = Integer.numberOfTrailingZeros(mask);
-            assert ret[pos] == null : ret[pos] + " " + flag;
-            ret[pos] = flag;
-        }
-        return ret;
-    }
-
-    // Will take extra args in the future for valhalla switch
-    private static AccessFlag[] findDefinition(Location location) {
-        return switch (location) {
-            case CLASS -> CLASS_FLAGS;
-            case FIELD -> FIELD_FLAGS;
-            case METHOD -> METHOD_FLAGS;
-            case INNER_CLASS -> INNER_CLASS_FLAGS;
-            case METHOD_PARAMETER -> METHOD_PARAMETER_FLAGS;
-            case MODULE -> MODULE_FLAGS;
-            case MODULE_REQUIRES -> MODULE_REQUIRES_FLAGS;
-            case MODULE_EXPORTS -> MODULE_EXPORTS_FLAGS;
-            case MODULE_OPENS -> MODULE_OPENS_FLAGS;
-        };
-    }
-
-    private static final @Stable AccessFlag[] // Can use stable array and lazy init in the future
-            CLASS_FLAGS = createDefinition(PUBLIC, FINAL, SUPER, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM, MODULE),
-            FIELD_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, VOLATILE, TRANSIENT, SYNTHETIC, ENUM),
-            METHOD_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, SYNCHRONIZED, BRIDGE, VARARGS, NATIVE, ABSTRACT, STRICT, SYNTHETIC),
-            INNER_CLASS_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM),
-            METHOD_PARAMETER_FLAGS = createDefinition(FINAL, SYNTHETIC, MANDATED),
-            MODULE_FLAGS = createDefinition(OPEN, SYNTHETIC, MANDATED),
-            MODULE_REQUIRES_FLAGS = createDefinition(TRANSITIVE, STATIC_PHASE, SYNTHETIC, MANDATED),
-            MODULE_EXPORTS_FLAGS = createDefinition(SYNTHETIC, MANDATED),
-            MODULE_OPENS_FLAGS = createDefinition(SYNTHETIC, MANDATED);
-
-    private static int undefinedMask(AccessFlag[] definition, int mask) {
-        assert definition.length == Character.SIZE;
-        int definedMask = 0;
-        for (int i = 0; i < Character.SIZE; i++) {
-            if (definition[i] != null) {
-                definedMask |= 1 << i;
-            }
-        }
-        return mask & ~definedMask;
-    }
-
-    private static final class AccessFlagSet extends AbstractSet<AccessFlag> {
-        private final @Stable AccessFlag[] definition;
-        private final int mask;
-
-        // all mutating methods throw UnsupportedOperationException
-        @Override public boolean add(AccessFlag e) { throw uoe(); }
-        @Override public boolean addAll(Collection<? extends AccessFlag> c) { throw uoe(); }
-        @Override public void    clear() { throw uoe(); }
-        @Override public boolean remove(Object o) { throw uoe(); }
-        @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
-        @Override public boolean removeIf(Predicate<? super AccessFlag> filter) { throw uoe(); }
-        @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
-        private static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
-
-        private AccessFlagSet(AccessFlag[] definition, int mask) {
-            assert undefinedMask(definition, mask) == 0 : mask;
-            this.definition = definition;
-            this.mask = mask;
-        }
-
-        @Override
-        public Iterator<AccessFlag> iterator() {
-            return new AccessFlagIterator(definition, mask);
-        }
-
-        @Override
-        public void forEach(Consumer<? super AccessFlag> action) {
-            Objects.requireNonNull(action); // in case of empty
-            for (int i = 0; i < Character.SIZE; i++) {
-                if ((mask & (1 << i)) != 0) {
-                    action.accept(definition[i]);
-                }
-            }
-        }
-
-        private static final class AccessFlagIterator implements Iterator<AccessFlag> {
-            private final @Stable AccessFlag[] definition;
-            private int remainingMask;
-
-            private AccessFlagIterator(AccessFlag[] definition, int remainingMask) {
-                this.definition = definition;
-                this.remainingMask = remainingMask;
-            }
-
-            @Override
-            public boolean hasNext() {
-                return remainingMask != 0;
-            }
-
-            @Override
-            public AccessFlag next() {
-                int flagBit = Integer.lowestOneBit(remainingMask);
-                if (flagBit == 0) {
-                    throw new NoSuchElementException();
-                }
-                remainingMask &= ~flagBit;
-                return definition[Integer.numberOfTrailingZeros(flagBit)];
-            }
-        }
-
-        @Override
-        public int size() {
-            return Integer.bitCount(mask);
-        }
-
-        @Override
-        public boolean contains(Object o) {
-            if (Objects.requireNonNull(o) instanceof AccessFlag flag) {
-                int bit = flag.mask;
-                return (bit & mask) != 0 && definition[Integer.numberOfTrailingZeros(bit)] == flag;
-            }
-            return false;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return mask == 0;
+            // flagsMask null checks cffv and always returns valid mask
+            return AccessFlagSet.ofValidated(AccessFlagSet.findDefinition(this, cffv), flagsMask(cffv));
         }
     }
 }

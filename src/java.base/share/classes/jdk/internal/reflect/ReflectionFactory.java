@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.io.Serializable;
-import java.lang.classfile.ClassFile;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.*;
@@ -511,31 +510,6 @@ public class ReflectionFactory {
         } catch (ReflectiveOperationException e) {
             return null;
         }
-    }
-
-    public final Set<AccessFlag> parseAccessFlags(int mask, AccessFlag.Location location, Class<?> classFile) {
-        var cffv = classFileFormatVersion(classFile);
-        return cffv == null ?
-                AccessFlag.maskToAccessFlags(mask, location) :
-                AccessFlag.maskToAccessFlags(mask, location, cffv);
-    }
-
-    private final ClassFileFormatVersion classFileFormatVersion(Class<?> cl) {
-        int raw = SharedSecrets.getJavaLangAccess().classFileVersion(cl);
-
-        int major = raw & 0xFFFF;
-        int minor = raw >>> Character.SIZE;
-
-        assert VM.isSupportedClassFileVersion(major, minor) : major + "." + minor;
-
-        if (major >= ClassFile.JAVA_12_VERSION) {
-            if (minor == 0)
-                return ClassFileFormatVersion.fromMajor(raw);
-            return null; // preview or old preview, fallback to default handling
-        } else if (major == ClassFile.JAVA_1_VERSION) {
-            return minor < 3 ? ClassFileFormatVersion.RELEASE_0 : ClassFileFormatVersion.RELEASE_1;
-        }
-        return ClassFileFormatVersion.fromMajor(major);
     }
 
     //--------------------------------------------------------------------------

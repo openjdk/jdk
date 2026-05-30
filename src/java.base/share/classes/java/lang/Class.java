@@ -74,6 +74,7 @@ import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.module.Resources;
+import jdk.internal.reflect.AccessFlagSet;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.ConstantPool;
@@ -1387,17 +1388,15 @@ public final class Class<T> implements java.io.Serializable,
      * @since 20
      */
     public Set<AccessFlag> accessFlags() {
-        // Location.CLASS allows SUPER and AccessFlag.MODULE which
-        // INNER_CLASS forbids. INNER_CLASS allows PRIVATE, PROTECTED,
-        // and STATIC, which are not allowed on Location.CLASS.
-        // Use getClassFileAccessFlags to expose SUPER status.
-        // Arrays need to use PRIVATE/PROTECTED from its component modifiers.
-        var location = (isMemberClass() || isLocalClass() ||
-                        isAnonymousClass() || isArray()) ?
-            AccessFlag.Location.INNER_CLASS :
-            AccessFlag.Location.CLASS;
-        return getReflectionFactory().parseAccessFlags((location == AccessFlag.Location.CLASS) ?
-                        getClassFileAccessFlags() : getModifiers(), location, this);
+        // INNER_CLASS_FLAGS exclusively defines PRIVATE, PROTECTED, and STATIC.
+        // CLASS_FLAGS exclusively defines SUPER and MODULE.
+        // Nested classes and interfaces need to report PRIVATE/PROTECTED/STATIC.
+        // Arrays need to report PRIVATE/PROTECTED.
+        // Top-level classes need to report SUPER, using getClassFileAccessFlags.
+        // Module descriptors do not have Class objects so nothing reports MODULE.
+        return (isArray() || getEnclosingClass() != null)
+                ? AccessFlagSet.ofValidated(AccessFlagSet.INNER_CLASS_FLAGS, getModifiers())
+                : AccessFlagSet.ofValidated(AccessFlagSet.CLASS_FLAGS, getClassFileAccessFlags());
     }
 
     /**

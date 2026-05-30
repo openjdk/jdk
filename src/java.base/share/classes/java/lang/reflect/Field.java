@@ -37,6 +37,7 @@ import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
+import jdk.internal.reflect.AccessFlagSet;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.FieldAccessor;
 import jdk.internal.reflect.Reflection;
@@ -246,7 +247,7 @@ class Field extends AccessibleObject implements Member {
      */
     @Override
     public Set<AccessFlag> accessFlags() {
-        return reflectionFactory.parseAccessFlags(getModifiers(), AccessFlag.Location.FIELD, getDeclaringClass());
+        return AccessFlagSet.ofValidated(AccessFlagSet.FIELD_FLAGS, getModifiers());
     }
 
     /**
