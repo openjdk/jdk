@@ -156,10 +156,12 @@ public class DeflaterInputStream extends FilterInputStream {
                 if (usesDefaultDeflater) {
                     def.end();
                 }
-
-                in.close();
             } finally {
-                in = null;
+                try {
+                    in.close();
+                } finally {
+                    in = null;
+                }
             }
         }
     }

@@ -264,23 +264,26 @@ public class CipherOutputStream extends FilterOutputStream {
         closed = true;
         ensureCapacity(0);
         try {
-            int ostored;
-            if (obuffer != null && obuffer.length > 0) {
-                ostored = cipher.doFinal(obuffer, 0);
-            } else {
-                obuffer = cipher.doFinal();
-                ostored = (obuffer != null) ? obuffer.length : 0;
+            try {
+                int ostored;
+                if (obuffer != null && obuffer.length > 0) {
+                    ostored = cipher.doFinal(obuffer, 0);
+                } else {
+                    obuffer = cipher.doFinal();
+                    ostored = (obuffer != null) ? obuffer.length : 0;
+                }
+                if (ostored > 0) {
+                    output.write(obuffer, 0, ostored);
+                }
+            } catch (IllegalBlockSizeException | BadPaddingException
+                    | ShortBufferException e) {
             }
-            if (ostored > 0) {
-                output.write(obuffer, 0, ostored);
-            }
-        } catch (IllegalBlockSizeException | BadPaddingException
-                | ShortBufferException e) {
+            obuffer = null;
+            try {
+                flush();
+            } catch (IOException ignored) {}
+        } finally {
+            output.close();
         }
-        obuffer = null;
-        try {
-            flush();
-        } catch (IOException ignored) {}
-        output.close();
     }
 }

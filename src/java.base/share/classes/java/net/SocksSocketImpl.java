@@ -507,10 +507,13 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
 
     @Override
     protected void close() throws IOException {
-        if (cmdsock != null)
-            cmdsock.close();
-        cmdsock = null;
-        delegate.close();
+        try {
+            if (cmdsock != null)
+                cmdsock.close();
+        } finally {
+            cmdsock = null;
+            delegate.close();
+        }
     }
 
     private String getUserName() {

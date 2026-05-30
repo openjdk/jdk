@@ -696,9 +696,12 @@ public class ObjectOutputStream
      */
     @Override
     public void close() throws IOException {
-        flush();
-        clear();
-        bout.close();
+        try {
+            flush();
+        } finally {
+            clear();
+            bout.close();
+        }
     }
 
     /**
