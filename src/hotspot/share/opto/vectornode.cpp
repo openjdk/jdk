@@ -2701,9 +2701,7 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
   // Transformations for predicated vectors are not supported for now.
-  if (is_predicated_vector() ||
-      in1->is_predicated_vector() ||
-      in2->is_predicated_vector()) {
+  if (is_predicated_vector()) {
     return nullptr;
   }
 
@@ -2727,6 +2725,7 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   }
   if (in1->Opcode() != Op_VectorMaskCmp ||
       in1->outcnt() != 1 ||
+      in1->is_predicated_vector() ||
       !in1->as_VectorMaskCmp()->predicate_can_be_negated() ||
       !VectorNode::is_all_ones_vector(in2)) {
     return nullptr;
