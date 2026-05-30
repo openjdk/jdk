@@ -2763,11 +2763,26 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
   return 0;
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()) + 7 /* Big Endian */);
-  // Armed page has poll_bit set.
-  z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
-  z_brnaz(slow_path);
+void MacroAssembler::safepoint_poll(Label& slow_path, Register tmp_reg, bool at_return, bool in_nmethod) {
+  const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()));
+
+  if (at_return) {
+    if (in_nmethod) {
+      z_clg(Z_SP, poll_byte_addr);
+      branch_optimized(Assembler::bcondHigh, slow_path);
+    } else {
+      // Frame still on stack, need to get fp.
+      Register fp = tmp_reg;
+      z_lg(fp, _z_abi(callers_sp), Z_SP);
+      z_clg(fp, poll_byte_addr);
+      branch_optimized(Assembler::bcondHigh, slow_path);
+    }
+  } else {
+    // Armed page has poll_bit set.
+    z_lg(tmp_reg, poll_byte_addr);
+    z_tmll(tmp_reg, SafepointMechanism::poll_bit());
+    branch_optimized(Assembler::bcondNotAllZero, slow_path);
+  }
 }
 
 // Don't rely on register locking, always use Z_R1 as scratch register instead.

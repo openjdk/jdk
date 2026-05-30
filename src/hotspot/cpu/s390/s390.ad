@@ -848,6 +848,8 @@ definitions %{
 
 source %{
 
+#include "opto/c2_CodeStubs.hpp"
+
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str)
 #define BIND(label)        __ bind(label)
@@ -1177,7 +1179,7 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
   os->print_cr("epilog");
   os->print("\t");
   if (do_polling() && ra_->C->is_method_compilation()) {
-    os->print_cr("load_from_polling_page Z_R1_scratch");
+    os->print_cr("safepoint poll");
     os->print("\t");
   }
 }
@@ -1199,11 +1201,15 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   // Touch the polling page.
   if (need_polling) {
-    __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::polling_page_offset()));
-    // We need to mark the code position where the load from the safepoint
-    // polling page was emitted as relocInfo::poll_return_type here.
-    __ relocate(relocInfo::poll_return_type);
-    __ load_from_polling_page(Z_R1_scratch);
+      Label dummy_label;
+      Label* code_stub = &dummy_label;
+      if (!C->output()->in_scratch_emit_size()) {
+        C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+        C->output()->add_stub(stub);
+        code_stub = &stub->entry();
+        __ relocate(relocInfo::poll_return_type);
+      }
+      __ safepoint_poll(*code_stub, Z_R0_scratch, true /* at_return */, true /* in_nmethod */);
   }
 }
 

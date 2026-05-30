@@ -646,7 +646,7 @@ class MacroAssembler: public Assembler {
   static uint get_poll_register(address instr_loc);
 
   // Check if safepoint requested and if so branch
-  void safepoint_poll(Label& slow_path, Register temp_reg);
+  void safepoint_poll(Label& slow_path, Register temp_reg, bool is_return, bool in_nmethod);
 
   // Stack overflow checking
   void bang_stack_with_offset(int offset);
