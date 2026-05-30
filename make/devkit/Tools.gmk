@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -185,10 +185,8 @@ RPM_LIST := \
 ################################################################################
 # Define common directories and files
 
-# Ensure we have 32-bit libs also for x64. We enable mixed-mode.
 ifeq (x86_64,$(ARCH))
-  LIBDIRS := lib64 lib
-  CFLAGS_lib := -m32
+  LIBDIRS := lib64
 else
   LIBDIRS := lib
 endif
@@ -203,9 +201,6 @@ SRCDIR := $(OUTPUT_ROOT)/src
 
 # Marker file for unpacking rpms
 RPMS := $(SYSROOT)/rpms_unpacked
-
-# Need to patch libs that are linker scripts to use non-absolute paths
-LIBS := $(SYSROOT)/libs_patched
 
 ################################################################################
 # Download RPMs
@@ -265,12 +260,7 @@ $(foreach dep,$(DEPENDENCIES),$(eval $(call DownloadVerify,$(dep))))
 # Unpack RPMS
 
 RPM_ARCHS := $(ARCH) noarch
-ifeq ($(ARCH),x86_64)
-  # Enable mixed mode.
-  RPM_ARCHS += i386 i686
-else ifeq ($(ARCH),i686)
-  RPM_ARCHS += i386
-else ifeq ($(ARCH), armhfp)
+ifeq ($(ARCH), armhfp)
   RPM_ARCHS += armv7hl
 endif
 
@@ -299,26 +289,6 @@ endef
 	touch $@
 
 $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
-
-################################################################################
-
-# Note: MUST create a <sysroot>/usr/lib even if not really needed.
-# gcc will use a path relative to it to resolve lib64. (x86_64).
-# we're creating multi-lib compiler with 32bit libc as well, so we should
-# have it anyway, but just to make sure...
-# Patch libc.so and libpthread.so to force linking against libraries in sysroot
-# and not the ones installed on the build machine.
-$(LIBS) : $(RPMS)
-	@echo Patching libc and pthreads
-	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-	  (cat $$f | sed -e 's|/usr/lib64/||g' \
-	      -e 's|/usr/lib/||g' \
-	      -e 's|/lib64/||g' \
-	      -e 's|/lib/||g' ) > $$f.tmp ; \
-	  mv $$f.tmp $$f ; \
-	done)
-	@mkdir -p $(SYSROOT)/usr/lib
-	@touch $@
 
 ################################################################################
 # Create links for ffi header files so that they become visible by default when using the
@@ -426,6 +396,11 @@ ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
   LINKER_CONFIG := --enable-gold=default
 endif
 
+# --enable-multilib would be specified to other than x86_64
+ifneq (x86_64, $(ARCH))
+  BINUTILS_CFG += --enable-multilib
+endif
+
 # Makefile creation. Simply run configure in build dir.
 # Setting CFLAGS to -O2 generates a much faster ld.
 $(BFDMAKES) \
@@ -442,7 +417,6 @@ $(BUILDDIR)/$(BINUTILS_VER)/Makefile \
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
 	      --program-prefix=$(TARGET)- \
-	      --enable-multilib \
 	      --enable-threads \
 	      --enable-plugins \
 	) > $(@D)/log.config 2>&1
@@ -506,7 +480,7 @@ ifeq ($(ARCH), armhfp)
   $(BUILDDIR)/$(GCC_VER)/Makefile : CONFIG +=  --with-float=hard
 endif
 
-ifneq ($(filter riscv64 ppc64le s390x, $(ARCH)), )
+ifneq ($(filter riscv64 ppc64le s390x x86_64, $(ARCH)), )
   # We only support 64-bit on these platforms anyway
   CONFIG += --disable-multilib
 endif
@@ -514,7 +488,6 @@ endif
 # Want:
 # c,c++
 # shared libs
-# multilib (-m32/-m64 on x64)
 # skip native language.
 # and link and assemble with the binutils we created
 # earlier, so --with-gnu*
@@ -700,8 +673,7 @@ MISSING_LINKS += $(PREFIX)/lib/bfd-plugins/liblto_plugin.so
 bfdlib : $(BFDLIB)
 binutils : $(BINUTILS)
 rpms : $(RPMS)
-libs : $(LIBS)
-sysroot : rpms libs
+sysroot : rpms
 gcc : sysroot $(GCC) $(GCC_PATCHED)
 gdb : $(GDB)
 all : binutils gcc bfdlib $(PREFIX)/devkit.info $(MISSING_LINKS) $(SYSROOT_LINKS) \
@@ -710,4 +682,4 @@ all : binutils gcc bfdlib $(PREFIX)/devkit.info $(MISSING_LINKS) $(SYSROOT_LINKS
 # this is only built for host. so separate.
 ccache : $(CCACHE)
 
-.PHONY : gcc all binutils bfdlib link_libs rpms libs sysroot
+.PHONY : gcc all binutils bfdlib link_libs rpms sysroot
