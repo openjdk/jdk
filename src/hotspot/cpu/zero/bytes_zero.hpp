@@ -96,27 +96,27 @@ class Bytes: AllStatic {
   }
 
   static inline void put_Java_u2(address p, u2 x) {
-    p[0] = x >> 8;
-    p[1] = x;
+    p[0] = static_cast<u1>(x >> 8);
+    p[1] = static_cast<u1>(x);
   }
   static inline void put_Java_u4(address p, u4 x) {
-    p[0] = x >> 24;
-    p[1] = x >> 16;
-    p[2] = x >> 8;
-    p[3] = x;
+    p[0] = static_cast<u1>(x >> 24);
+    p[1] = static_cast<u1>(x >> 16);
+    p[2] = static_cast<u1>(x >> 8);
+    p[3] = static_cast<u1>(x);
   }
   static inline void put_Java_u8(address p, u8 x) {
     u4 hi, lo;
-    lo = x;
-    hi = x >> 32;
-    p[0] = hi >> 24;
-    p[1] = hi >> 16;
-    p[2] = hi >> 8;
-    p[3] = hi;
-    p[4] = lo >> 24;
-    p[5] = lo >> 16;
-    p[6] = lo >> 8;
-    p[7] = lo;
+    lo = static_cast<u4>(x);
+    hi = static_cast<u4>(x >> 32);
+    p[0] = static_cast<u1>(hi >> 24);
+    p[1] = static_cast<u1>(hi >> 16);
+    p[2] = static_cast<u1>(hi >> 8);
+    p[3] = static_cast<u1>(hi);
+    p[4] = static_cast<u1>(lo >> 24);
+    p[5] = static_cast<u1>(lo >> 16);
+    p[6] = static_cast<u1>(lo >> 8);
+    p[7] = static_cast<u1>(lo);
   }
 #else
   // No byte-order reversal is needed

@@ -72,10 +72,10 @@ class ZeroStack {
     _sp = new_sp;
   }
 
-  int total_words() const {
+  size_t total_words() const {
     return _top - _base;
   }
-  int available_words() const {
+  size_t available_words() const {
     return _sp - _base;
   }
 
@@ -89,7 +89,7 @@ class ZeroStack {
   }
 
   void *alloc(size_t size) {
-    int count = align_up(size, wordSize) >> LogBytesPerWord;
+    size_t count = align_up(size, wordSize) >> LogBytesPerWord;
     assert(count <= available_words(), "stack overflow");
     return _sp -= count;
   }
