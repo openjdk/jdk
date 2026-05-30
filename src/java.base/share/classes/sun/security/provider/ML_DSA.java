@@ -616,7 +616,7 @@ public class ML_DSA {
         return new ML_DSA_PublicKey(sk.rho, t1);
     }
 
-    public ML_DSA_Signature signInternal(byte[] message, byte[] rnd, byte[] skBytes) {
+    public ML_DSA_Signature signInternal(boolean externalMu, byte[] message, byte[] rnd, byte[] skBytes) {
         //Decode private key and initialize hash function
         ML_DSA_PrivateKey sk = skDecode(skBytes);
         var hash = new SHAKE256(0);
@@ -627,11 +627,17 @@ public class ML_DSA {
         mlDsaVectorNtt(sk.t0());
         int[][][] aHat = generateA(sk.rho());
 
-        //Compute mu
-        hash.update(sk.tr());
-        hash.update(message);
-        byte[] mu = hash.squeeze(MU_LEN);
-        hash.reset();
+        byte[] mu;
+        if (externalMu) {
+            assert message.length == MU_LEN;
+            mu = message;
+        } else {
+            //Compute mu
+            hash.update(sk.tr());
+            hash.update(message);
+            mu = hash.squeeze(MU_LEN);
+            hash.reset();
+        }
 
         //Compute rho'
         hash.update(sk.k());
@@ -707,7 +713,7 @@ public class ML_DSA {
         }
     }
 
-    public boolean verifyInternal(byte[] pkBytes, byte[] message, byte[] sigBytes)
+    public boolean verifyInternal(byte[] pkBytes, boolean externalMu, byte[] message, byte[] sigBytes)
             throws SignatureException {
         //Decode sig and initialize hash
         ML_DSA_Signature sig = sigDecode(sigBytes);
@@ -724,11 +730,17 @@ public class ML_DSA {
         byte[] tr = hash.squeeze(TR_LEN);
         hash.reset();
 
-        //Generate mu
-        hash.update(tr);
-        hash.update(message);
-        byte[] mu = hash.squeeze(MU_LEN);
-        hash.reset();
+        byte[] mu;
+        if (externalMu) {
+            assert message.length == MU_LEN;
+            mu = message;
+        } else {
+            //Generate mu
+            hash.update(tr);
+            hash.update(message);
+            mu = hash.squeeze(MU_LEN);
+            hash.reset();
+        }
 
         //Get verifiers challenge
         int[] cHat = new int[ML_DSA_N];
