@@ -2637,6 +2637,46 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
     }
 
+    public static final String VECTOR_REINTERPRET_B = VECTOR_PREFIX + "VECTOR_REINTERPRET_B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_B, "VectorReinterpret", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_REINTERPRET_C = VECTOR_PREFIX + "VECTOR_REINTERPRET_C" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_C, "VectorReinterpret", TYPE_CHAR);
+    }
+
+    public static final String VECTOR_REINTERPRET_S = VECTOR_PREFIX + "VECTOR_REINTERPRET_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_S, "VectorReinterpret", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_REINTERPRET_I = VECTOR_PREFIX + "VECTOR_REINTERPRET_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_I, "VectorReinterpret", TYPE_INT);
+    }
+
+    public static final String VECTOR_REINTERPRET_L = VECTOR_PREFIX + "VECTOR_REINTERPRET_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_L, "VectorReinterpret", TYPE_LONG);
+    }
+
+    public static final String VECTOR_REINTERPRET_F = VECTOR_PREFIX + "VECTOR_REINTERPRET_F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_F, "VectorReinterpret", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_REINTERPRET_D = VECTOR_PREFIX + "VECTOR_REINTERPRET_D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_D, "VectorReinterpret", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_REINTERPRET_Z = VECTOR_PREFIX + "VECTOR_REINTERPRET_Z" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_Z, "VectorReinterpret", TYPE_BOOLEAN);
+    }
+
     public static final String VECTOR_UCAST_B2S = VECTOR_PREFIX + "VECTOR_UCAST_B2S" + POSTFIX;
     static {
         vectorNode(VECTOR_UCAST_B2S, "VectorUCastB2X", TYPE_SHORT);
