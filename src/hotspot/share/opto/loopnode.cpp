@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4537,41 +4538,26 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
 }
 
 //---------------------------replace_parallel_iv-------------------------------
-// Replace parallel induction variable (parallel to trip counter)
-// This optimization looks for patterns similar to:
+// Replace parallel IV phi2 (e.g. "a") in:
+//    for (iv = init; iv < limit; iv += stride) { a += inc; }
+// where inc is loop-invariant.
 //
-//    int a = init2;
-//    for (int iv = init; iv < limit; iv += stride_con) {
-//      a += stride_con2;
-//    }
+// Result: a = init2 + iterations * inc  (for a -= inc, Sub replaces Add)
 //
-// and transforms it to:
+// Sinkable: all uses outside the loop AND their dom_lca also outside.
+// dom_lca is only computed for expensive strides (not power of 2).
 //
-//    int iv2 = init2
-//    int iv = init
-//    loop:
-//      if (iv >= limit) goto exit
-//      iv += stride_con
-//      iv2 = init2 + (iv - init) * (stride_con2 / stride_con)
-//      goto loop
-//    exit:
-//    ...
+// iterations (first match wins):
+//  * stride > 0, is_power_of_2:           (iv - init) >>> log2(stride)
+//  * stride < 0, is_power_of_2(-stride):  (init - iv) >>> log2(-stride)
+//  * sinkable:                            DivL(iv - init, stride)
+//  * inc constant, inc % stride == 0:     (iv - init) / stride, with * inc from result constant folded
+//  * otherwise:                           no change
 //
-// Such transformation introduces more optimization opportunities. In this
-// particular example, the loop can be eliminated entirely given that
-// `stride_con2 / stride_con` is exact  (i.e., no remainder). Checks are in
-// place to only perform this optimization if such a division is exact. This
-// example will be transformed into its semantic equivalence:
-//
-//     int iv2 = (iv * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
-//
-// which corresponds to the structure of transformed subgraph.
-//
-// However, if there is a mismatch between types of the loop and the parallel
-// induction variable (e.g., a long-typed IV in an int-typed loop), type
-// conversions are required:
-//
-//     long iv2 = ((long) iv * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
+// The unsigned shift is valid because iv - init (or init - iv for negative
+// stride) is always non-negative. DivL (instead of DivI) is used because
+// iv - init can overflow int; since only T_INT counted loops are handled
+// here, widening to long is safe.
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
@@ -4597,51 +4583,43 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     PhiNode* phi2 = out->as_Phi();
     Node* incr2 = phi2->in(LoopNode::LoopBackControl);
-    // Look for induction variables of the form:  X += constant
-    if (phi2->region() != loop->_head ||
-        incr2->req() != 3 ||
-        incr2->in(1)->uncast() != phi2 ||
-        incr2 == incr ||
-        (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
-        !incr2->in(2)->is_Con()) {
+    if (phi2->region() != loop->_head || incr2->req() != 3 || incr2 == incr) {
       continue;
     }
 
-    if (incr2->in(1)->is_ConstraintCast() &&
-        !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
-      // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
+    int opc = incr2->Opcode();
+    bool is_add = (opc == Op_AddI || opc == Op_AddL);
+    if (!is_add && opc != Op_SubI && opc != Op_SubL) {
       continue;
     }
-    // Check for parallel induction variable (parallel to trip counter)
-    // via an affine function.  In particular, count-down loops with
-    // count-up array indices are common. We only RCE references off
-    // the trip-counter, so we need to convert all these to trip-counter
-    // expressions.
+
+    // Determine which input is the phi (self-reference) and which is the
+    // increment value. For commutative Add, phi2 can be in either position.
+    // For non-commutative Sub, phi2 must be in(1).
+    int phi_idx, inc_idx;
+    if (incr2->in(1)->uncast() == phi2) {
+      phi_idx = 1; inc_idx = 2;
+    } else if (is_add && incr2->in(2)->uncast() == phi2) {
+      phi_idx = 2; inc_idx = 1;
+    } else {
+      continue;
+    }
+
+    if (incr2->in(phi_idx)->is_ConstraintCast() &&
+        !(incr2->in(phi_idx)->in(0)->is_IfProj() && incr2->in(phi_idx)->in(0)->in(0)->is_RangeCheck())) {
+      // Skip AddI/SubI->CastII->Phi case if CastII is not controlled by local RangeCheck
+      continue;
+    }
+
+    Node* inc_val = incr2->in(inc_idx);
+    if (!loop->is_invariant(inc_val)) {
+      continue;
+    }
+
+    // Determine the basic type of the increment (and the iv being incremented).
+    BasicType bt = (opc == Op_AddI || opc == Op_SubI) ? T_INT : T_LONG;
+
     Node* init2 = phi2->in(LoopNode::EntryControl);
-
-    // Determine the basic type of the stride constant (and the iv being incremented).
-    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
-    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
-
-    // The ratio of the two strides cannot be represented as an int
-    // if stride_con2 is min_jint (or min_jlong, respectively) and
-    // stride_con is -1.
-    if (stride_con2 == min_signed_integer(stride_con2_bt) && stride_con == -1) {
-      continue;
-    }
-
-    // The general case here gets a little tricky.  We want to find the
-    // GCD of all possible parallel IV's and make a new IV using this
-    // GCD for the loop.  Then all possible IVs are simple multiples of
-    // the GCD.  In practice, this will cover very few extra loops.
-    // Instead we require 'stride_con2' to be a multiple of 'stride_con',
-    // where +/-1 is the common case, but other integer multiples are
-    // also easy to handle.
-    jlong ratio_con = stride_con2 / stride_con;
-
-    if ((ratio_con * stride_con) != stride_con2) { // Check for exact (no remainder)
-        continue;
-    }
 
 #ifndef PRODUCT
     if (TraceLoopOpts) {
@@ -4650,37 +4628,145 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     }
 #endif
 
-    // Convert to using the trip counter.  The parallel induction
-    // variable differs from the trip counter by a loop-invariant
-    // amount, the difference between their respective initial values.
-    // It is scaled by the 'ratio_con'.
-    Node* ratio = integercon(ratio_con, stride_con2_bt);
+    bool cheap_stride = is_power_of_2(stride_con) || is_power_of_2(-stride_con);
+    if (!cheap_stride) {
+      // Expensive stride: the rewrite introduces a Div, so it is only worth
+      // doing if the result is sinkable out of the loop. Sinkable means the
+      // dom_lca of all real uses is outside the loop. (A loop with multiple
+      // exits can have every individual use outside yet their LCA inside,
+      // which is why we cannot just check use-by-use loop membership.)
+      Node* use_lca = nullptr;
+      for (DUIterator j = phi2->outs(); phi2->has_out(j); j++) {
+        Node* use = phi2->out(j);
+        if (use == incr2 || use == cl || (use->is_CallStaticJava() && use->as_CallStaticJava()->is_uncommon_trap())) {
+          continue;
+        }
+        Node* uc = ctrl_or_self(use);
+        use_lca = (use_lca == nullptr) ? uc : dom_lca(use_lca, uc);
+      }
+      bool sinkable = (use_lca == nullptr) || !loop->is_member(get_loop(use_lca));
+      if (!sinkable) {
+        // Not sinkable with expensive stride: use ratio approach for constant Add
+        // increments that are exact multiples of stride.
+        if (!is_add || !inc_val->is_Con()) {
+          NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (not sinkable): %d", phi2->_idx);)
+          continue;
+        }
+        jlong stride_con2 = inc_val->get_integer_as_long(bt);
+        jlong ratio_con = stride_con2 / stride_con;
+        if ((ratio_con * stride_con) != stride_con2) {
+          NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (no exact ratio): %d", phi2->_idx);)
+          continue;
+        }
 
-    Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
-    Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
+        NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> exact ratio (not sinkable): %d", phi2->_idx);)
+        Node* ratio = integercon(ratio_con, bt);
+        Node* init_c = insert_convert_node_if_needed(bt, init);
+        Node* phi_c = insert_convert_node_if_needed(bt, phi);
+        Node* ratio_init = MulNode::make(init_c, ratio, bt);
+        _igvn.register_new_node_with_optimizer(ratio_init, init_c);
+        set_early_ctrl(ratio_init, false);
 
-    Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
-    set_early_ctrl(ratio_init, false);
+        Node* diff = SubNode::make(init2, ratio_init, bt);
+        _igvn.register_new_node_with_optimizer(diff, init2);
+        set_early_ctrl(diff, false);
 
-    Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(diff, init2);
-    set_early_ctrl(diff, false);
+        Node* ratio_idx = MulNode::make(phi_c, ratio, bt);
+        _igvn.register_new_node_with_optimizer(ratio_idx, phi_c);
+        set_ctrl(ratio_idx, cl);
 
-    Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
-    set_ctrl(ratio_idx, cl);
-
-    Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(add);
-    set_ctrl(add, cl);
-
-    _igvn.replace_node( phi2, add );
-    // Sometimes an induction variable is unused
-    if (add->outcnt() == 0) {
-      _igvn.remove_dead_node(add, PhaseIterGVN::NodeOrigin::Graph);
+        Node* result = AddNode::make(ratio_idx, diff, bt);
+        _igvn.register_new_node_with_optimizer(result, phi2);
+        set_ctrl(result, cl);
+        _igvn.replace_node(phi2, result);
+        if (result->outcnt() == 0) { _igvn.remove_dead_node(result, PhaseIterGVN::NodeOrigin::Graph); }
+        --i;
+        continue;
+      }
+      NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> sinkable: %d", phi2->_idx);)
+    } else {
+      NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> cheap stride: %d", phi2->_idx);)
     }
-    --i; // deleted this phi; rescan starting with next position
+
+    // Iterations approach: phi2 = init2 + iterations * inc_val
+    // (for Sub, SubNode replaces AddNode).
+
+    // Compute iterations = (iv - init) / stride_con.
+    // The division is always exact (iv - init = k * stride_con at iteration k).
+    // For positive strides, iv >= init so iv - init is non-negative;
+    // for negative strides, init >= iv so init - iv is non-negative.
+    // This allows using URShift for power-of-2 strides.
+    // For non-power-of-2 strides, iv - init may overflow the signed int
+    // range; since this function only handles T_INT counted loops (line
+    // 4555), widening to long is safe and avoids the overflow.
+    //
+    // For power-of-2 strides iterations is computed as int and ConvI2L'd
+    // for long parallel IVs, so mixed-type IVs in the same loop share the
+    // SubI/URShiftI via GVN. The widening uses an unsigned ConvI2L
+    // (AndL with 0xFFFFFFFFL) so that the int subtract's wrap (when the
+    // trip count exceeds INT_MAX, only possible at |stride|=1) is
+    // zero-extended rather than sign-extended; for shift >= 1 the URShift
+    // already clears the high bit and IGVN folds the mask away.
+    Node* iterations;
+    if (is_power_of_2(stride_con) || is_power_of_2(-stride_con)) {
+      // Positive stride: iv >= init, so iv - init is non-negative.
+      // Negative stride: init >= iv, so init - iv is non-negative.
+      Node* diff = (stride_con > 0) ? (Node*) new SubINode(phi, init)
+                                    : (Node*) new SubINode(init, phi);
+      int shift = exact_log2(stride_con > 0 ? stride_con : -stride_con);
+      if (shift == 0) {
+        iterations = diff;
+      } else {
+        _igvn.register_new_node_with_optimizer(diff);
+        set_ctrl(diff, cl);
+        iterations = new URShiftINode(diff, integercon(shift, T_INT));
+      }
+      if (bt == T_LONG) {
+        // Unsigned widen: ConvI2L would sign-extend a wrapped SubI at
+        // shift==0 (only possible when |stride|=1 and the trip count
+        // exceeds INT_MAX). The AndL mask preserves the unsigned 32-bit
+        // value; for shift >= 1 the URShift's output type proves the
+        // high bit clear and IGVN folds the mask.
+        _igvn.register_new_node_with_optimizer(iterations);
+        set_ctrl(iterations, cl);
+        iterations = new ConvI2LNode(iterations);
+        _igvn.register_new_node_with_optimizer(iterations);
+        set_ctrl(iterations, cl);
+        iterations = new AndLNode(iterations, integercon(0xFFFFFFFFL, T_LONG));
+      }
+    } else {
+      // Widen to long because int SubI(phi, init) can overflow,
+      // and DivL of an overflowed value would be wrong.
+      Node* phi_long = insert_convert_node_if_needed(T_LONG, phi);
+      Node* init_long = insert_convert_node_if_needed(T_LONG, init);
+      Node* diff = SubNode::make(phi_long, init_long, T_LONG);
+      _igvn.register_new_node_with_optimizer(diff);
+      set_ctrl(diff, cl);
+      Node* stride_node = integercon(stride_con, T_LONG);
+      iterations = new DivLNode(nullptr, diff, stride_node);
+      if (bt == T_INT) {
+        _igvn.register_new_node_with_optimizer(iterations);
+        set_ctrl(iterations, cl);
+        iterations = new ConvL2INode(iterations);
+      }
+    }
+    _igvn.register_new_node_with_optimizer(iterations);
+    set_ctrl(iterations, cl);
+
+    Node* scaled = MulNode::make(iterations, inc_val, bt);
+    _igvn.register_new_node_with_optimizer(scaled);
+    set_ctrl(scaled, cl);
+
+    Node* result = is_add ? (Node*)AddNode::make(init2, scaled, bt)
+                          : (Node*)SubNode::make(init2, scaled, bt);
+    _igvn.register_new_node_with_optimizer(result, phi2);
+    set_ctrl(result, cl);
+
+    _igvn.replace_node(phi2, result);
+    if (result->outcnt() == 0) {
+      _igvn.remove_dead_node(result, PhaseIterGVN::NodeOrigin::Graph);
+    }
+    --i;
   }
 }
 
