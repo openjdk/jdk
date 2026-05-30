@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/z/zArray.hpp"
 #include "gc/z/zValue.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZMarkStackListNode;
@@ -34,9 +35,9 @@ class ZMarkStackListNode;
 class ZMarkingSMR: public CHeapObj<mtGC> {
 private:
   struct ZWorkerState {
-    ZMarkStackListNode* volatile _hazard_ptr;
-    ZArray<ZMarkStackListNode*>  _scanned_hazards;
-    ZArray<ZMarkStackListNode*>  _freeing;
+    Atomic<ZMarkStackListNode*> _hazard_ptr;
+    ZArray<ZMarkStackListNode*> _scanned_hazards;
+    ZArray<ZMarkStackListNode*> _freeing;
   };
 
   ZPerWorker<ZWorkerState> _worker_states;
@@ -47,7 +48,7 @@ public:
   void free();
   ZMarkStackListNode* allocate_stack();
   void free_node(ZMarkStackListNode* stack);
-  ZMarkStackListNode* volatile* hazard_ptr();
+  Atomic<ZMarkStackListNode*>& hazard_ptr();
 };
 
 #endif // SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP
