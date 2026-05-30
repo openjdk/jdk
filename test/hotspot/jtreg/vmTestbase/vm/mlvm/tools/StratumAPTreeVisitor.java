@@ -115,7 +115,7 @@ public class StratumAPTreeVisitor extends TreePathScanner<Object, Trees> {
         String stratumLine = label.substring(stratumLineEndPos + 1);
 
         CompilationUnitTree unit = getCurrentPath().getCompilationUnit();
-        int javaLineNum = (int) unit.getLineMap().getLineNumber(p.getSourcePositions().getStartPosition(unit, node));
+        int javaLineNum = (int) unit.getLineMap().getLineNumber(p.getSourcePositions().getStartPosition(node));
 
         Set<StratumLineInfo> stratumLines = this.strata.get(stratumName);
         if ( stratumLines == null ) {
