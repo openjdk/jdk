@@ -306,17 +306,17 @@ public class TableBlockParser extends AbstractBlockParser {
         @Override
         public BlockStart tryStart(ParserState state, MatchedBlockParser matchedBlockParser) {
             List<SourceLine> paragraphLines = matchedBlockParser.getParagraphLines().getLines();
-            if (paragraphLines.size() == 1 && Characters.find('|', paragraphLines.get(0).getContent(), 0) != -1) {
+            if (paragraphLines.size() >= 1 && Characters.find('|', paragraphLines.get(paragraphLines.size() - 1).getContent(), 0) != -1) {
                 SourceLine line = state.getLine();
                 SourceLine separatorLine = line.substring(state.getIndex(), line.getContent().length());
                 List<TableCellInfo> columns = parseSeparator(separatorLine.getContent());
                 if (columns != null && !columns.isEmpty()) {
-                    SourceLine paragraph = paragraphLines.get(0);
+                    SourceLine paragraph = paragraphLines.get(paragraphLines.size() - 1);
                     List<SourceLine> headerCells = split(paragraph);
                     if (columns.size() >= headerCells.size()) {
                         return BlockStart.of(new TableBlockParser(columns, paragraph))
                                 .atIndex(state.getIndex())
-                                .replaceActiveBlockParser();
+                                .replaceParagraphLines(1);
                     }
                 }
             }

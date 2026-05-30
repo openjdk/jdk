@@ -32,7 +32,7 @@
 
 package jdk.internal.org.commonmark.internal.util;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,7 +81,7 @@ public class Escaping {
                     sb.append(input, 1, input.length());
                 }
             } else {
-                byte[] bytes = input.getBytes(Charset.forName("UTF-8"));
+                byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
                 for (byte b : bytes) {
                     sb.append('%');
                     sb.append(HEX_DIGITS[(b >> 4) & 0xF]);
@@ -146,11 +146,11 @@ public class Escaping {
     public static String normalizeLabelContent(String input) {
         String trimmed = input.trim();
 
-        // This is necessary to correctly case fold "\u1e9e" to "SS":
-        // "\u1e9e".toLowerCase(Locale.ROOT)  -> "\u00df"
-        // "\u00df".toUpperCase(Locale.ROOT)  -> "SS"
+        // This is necessary to correctly case fold "\u1E9E" (LATIN CAPITAL LETTER SHARP S) to "SS":
+        // "\u1E9E".toLowerCase(Locale.ROOT)  -> "\u00DF" (LATIN SMALL LETTER SHARP S)
+        // "\u00DF".toUpperCase(Locale.ROOT)  -> "SS"
         // Note that doing upper first (or only upper without lower) wouldn't work because:
-        // "\u1e9e".toUpperCase(Locale.ROOT)  -> "\u1e9e"
+        // "\u1E9E".toUpperCase(Locale.ROOT)  -> "\u1E9E"
         String caseFolded = trimmed.toLowerCase(Locale.ROOT).toUpperCase(Locale.ROOT);
 
         return WHITESPACE.matcher(caseFolded).replaceAll(" ");

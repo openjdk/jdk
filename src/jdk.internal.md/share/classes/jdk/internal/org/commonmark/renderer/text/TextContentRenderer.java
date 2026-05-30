@@ -46,12 +46,12 @@ import java.util.List;
  */
 public class TextContentRenderer implements Renderer {
 
-    private final boolean stripNewlines;
+    private final LineBreakRendering lineBreakRendering;
 
     private final List<TextContentNodeRendererFactory> nodeRendererFactories;
 
     private TextContentRenderer(Builder builder) {
-        this.stripNewlines = builder.stripNewlines;
+        this.lineBreakRendering = builder.lineBreakRendering;
 
         this.nodeRendererFactories = new ArrayList<>(builder.nodeRendererFactories.size() + 1);
         this.nodeRendererFactories.addAll(builder.nodeRendererFactories);
@@ -75,7 +75,7 @@ public class TextContentRenderer implements Renderer {
 
     @Override
     public void render(Node node, Appendable output) {
-        RendererContext context = new RendererContext(new TextContentWriter(output));
+        RendererContext context = new RendererContext(new TextContentWriter(output, lineBreakRendering));
         context.render(node);
     }
 
@@ -91,8 +91,8 @@ public class TextContentRenderer implements Renderer {
      */
     public static class Builder {
 
-        private boolean stripNewlines = false;
         private List<TextContentNodeRendererFactory> nodeRendererFactories = new ArrayList<>();
+        private LineBreakRendering lineBreakRendering = LineBreakRendering.COMPACT;
 
         /**
          * @return the configured {@link TextContentRenderer}
@@ -102,14 +102,28 @@ public class TextContentRenderer implements Renderer {
         }
 
         /**
+         * Configure how line breaks (newlines) are rendered, see {@link LineBreakRendering}.
+         * The default is {@link LineBreakRendering#COMPACT}.
+         *
+         * @param lineBreakRendering the mode to use
+         * @return {@code this}
+         */
+        public Builder lineBreakRendering(LineBreakRendering lineBreakRendering) {
+            this.lineBreakRendering = lineBreakRendering;
+            return this;
+        }
+
+        /**
          * Set the value of flag for stripping new lines.
          *
          * @param stripNewlines true for stripping new lines and render text as "single line",
          *                      false for keeping all line breaks
          * @return {@code this}
+         * @deprecated Use {@link #lineBreakRendering(LineBreakRendering)} with {@link LineBreakRendering#STRIP} instead
          */
+        @Deprecated
         public Builder stripNewlines(boolean stripNewlines) {
-            this.stripNewlines = stripNewlines;
+            this.lineBreakRendering = stripNewlines ? LineBreakRendering.STRIP : LineBreakRendering.COMPACT;
             return this;
         }
 
@@ -158,17 +172,21 @@ public class TextContentRenderer implements Renderer {
         private RendererContext(TextContentWriter textContentWriter) {
             this.textContentWriter = textContentWriter;
 
-            // The first node renderer for a node type "wins".
-            for (int i = nodeRendererFactories.size() - 1; i >= 0; i--) {
-                TextContentNodeRendererFactory nodeRendererFactory = nodeRendererFactories.get(i);
-                NodeRenderer nodeRenderer = nodeRendererFactory.create(this);
-                nodeRendererMap.add(nodeRenderer);
+            for (var factory : nodeRendererFactories) {
+                var renderer = factory.create(this);
+                nodeRendererMap.add(renderer);
             }
         }
 
         @Override
+        public LineBreakRendering lineBreakRendering() {
+            return lineBreakRendering;
+        }
+
+        @Override
+        @Deprecated
         public boolean stripNewlines() {
-            return stripNewlines;
+            return lineBreakRendering == LineBreakRendering.STRIP;
         }
 
         @Override

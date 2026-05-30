@@ -118,6 +118,9 @@ public abstract class Node {
         this.prev = null;
     }
 
+    /**
+     * Inserts the {@code sibling} node after {@code this} node.
+     */
     public void insertAfter(Node sibling) {
         sibling.unlink();
         sibling.next = this.next;
@@ -132,6 +135,9 @@ public abstract class Node {
         }
     }
 
+    /**
+     * Inserts the {@code sibling} node before {@code this} node.
+     */
     public void insertBefore(Node sibling) {
         sibling.unlink();
         sibling.prev = this.prev;
@@ -146,13 +152,12 @@ public abstract class Node {
         }
     }
 
-
     /**
      * @return the source spans of this node if included by the parser, an empty list otherwise
      * @since 0.16.0
      */
     public List<SourceSpan> getSourceSpans() {
-        return sourceSpans != null ? Collections.unmodifiableList(sourceSpans) : Collections.<SourceSpan>emptyList();
+        return sourceSpans != null ? Collections.unmodifiableList(sourceSpans) : List.of();
     }
 
     /**

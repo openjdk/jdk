@@ -35,9 +35,9 @@ package jdk.internal.org.commonmark.internal.inline;
 import jdk.internal.org.commonmark.node.Link;
 import jdk.internal.org.commonmark.node.Text;
 import jdk.internal.org.commonmark.parser.SourceLines;
-import jdk.internal.org.commonmark.parser.beta.Position;
-import jdk.internal.org.commonmark.parser.beta.Scanner;
+import jdk.internal.org.commonmark.parser.beta.*;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -77,5 +77,17 @@ public class AutolinkInlineParser implements InlineContentParser {
             }
         }
         return ParsedInline.none();
+    }
+
+    public static class Factory implements InlineContentParserFactory {
+        @Override
+        public Set<Character> getTriggerCharacters() {
+            return Set.of('<');
+        }
+
+        @Override
+        public InlineContentParser create() {
+            return new AutolinkInlineParser();
+        }
     }
 }

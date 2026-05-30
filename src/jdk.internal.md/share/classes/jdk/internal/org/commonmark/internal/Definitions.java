@@ -30,54 +30,37 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.util;
+package jdk.internal.org.commonmark.internal;
 
-import java.util.BitSet;
+import jdk.internal.org.commonmark.node.DefinitionMap;
 
-public class AsciiMatcher implements CharMatcher {
-    private final BitSet set;
+import java.util.HashMap;
+import java.util.Map;
 
-    private AsciiMatcher(Builder builder) {
-        this.set = builder.set;
+public class Definitions {
+
+    private final Map<Class<?>, DefinitionMap<?>> definitionsByType = new HashMap<>();
+
+    public <D> void addDefinitions(DefinitionMap<D> definitionMap) {
+        var existingMap = getMap(definitionMap.getType());
+        if (existingMap == null) {
+            definitionsByType.put(definitionMap.getType(), definitionMap);
+        } else {
+            existingMap.addAll(definitionMap);
+        }
     }
 
-    @Override
-    public boolean matches(char c) {
-        return set.get(c);
+    public <V> V getDefinition(Class<V> type, String label) {
+        var definitionMap = getMap(type);
+        if (definitionMap == null) {
+            return null;
+        }
+        return definitionMap.get(label);
     }
 
-    public Builder newBuilder() {
-        return new Builder((BitSet) set.clone());
-    }
-
-    public static Builder builder() {
-        return new Builder(new BitSet());
-    }
-
-    public static class Builder {
-        private final BitSet set;
-
-        private Builder(BitSet set) {
-            this.set = set;
-        }
-
-        public Builder c(char c) {
-            if (c > 127) {
-                throw new IllegalArgumentException("Can only match ASCII characters");
-            }
-            set.set(c);
-            return this;
-        }
-
-        public Builder range(char from, char toInclusive) {
-            for (char c = from; c <= toInclusive; c++) {
-                c(c);
-            }
-            return this;
-        }
-
-        public AsciiMatcher build() {
-            return new AsciiMatcher(this);
-        }
+    @SuppressWarnings("unchecked")
+    private <V> DefinitionMap<V> getMap(Class<V> type) {
+        //noinspection unchecked
+        return (DefinitionMap<V>) definitionsByType.get(type);
     }
 }
