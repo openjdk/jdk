@@ -31,6 +31,11 @@ void Metadata::set_on_stack(const bool value) {
   // Can't inline because this materializes the vtable on some C++ compilers.
 }
 
+// Keep the vtable alive under LTGC dead-section removal / LTO
+Metadata::Metadata() {
+  NOT_PRODUCT(_valid = 0;)
+}
+
 void Metadata::print_on(outputStream* st) const {
   ResourceMark rm;
   // print title

@@ -34,7 +34,9 @@ class Metadata : public MetaspaceObj {
   // Debugging hook to check that the metadata has not been deleted.
   NOT_PRODUCT(int _valid;)
  public:
-  NOT_PRODUCT(Metadata() : _valid(0) {})
+  // Keep the vtable alive under LTGC dead-section removal / LTO
+  NOINLINE Metadata();
+
   NOT_PRODUCT(bool is_valid() const { return _valid == 0; })
 
   int identity_hash()                { return (int)(uintptr_t)this; }
