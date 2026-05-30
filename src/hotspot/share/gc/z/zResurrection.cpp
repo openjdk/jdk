@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,19 @@
  */
 
 #include "gc/z/zResurrection.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
-volatile bool ZResurrection::_blocked = false;
+Atomic<bool> ZResurrection::_blocked{false};
 
 void ZResurrection::block() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  _blocked = true;
+  _blocked.store_relaxed(true);
 }
 
 void ZResurrection::unblock() {
   // No need for anything stronger than a relaxed store here.
   // The preceding handshake makes sure that all non-strong
   // oops have already been healed at this point.
-  AtomicAccess::store(&_blocked, false);
+  _blocked.store_relaxed(false);
 }
