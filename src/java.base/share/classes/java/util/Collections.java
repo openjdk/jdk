@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1516,15 +1516,15 @@ public final class Collections {
         }
         public int indexOf(Object o)            {return list.indexOf(o);}
         public int lastIndexOf(Object o)        {return list.lastIndexOf(o);}
+
         public boolean addAll(int index, Collection<? extends E> c) {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public void replaceAll(UnaryOperator<E> operator) {
             throw new UnsupportedOperationException();
         }
-        @Override
+
         public void sort(Comparator<? super E> c) {
             throw new UnsupportedOperationException();
         }
@@ -1553,7 +1553,6 @@ public final class Collections {
                     throw new UnsupportedOperationException();
                 }
 
-                @Override
                 public void forEachRemaining(Consumer<? super E> action) {
                     i.forEachRemaining(action);
                 }
@@ -1562,6 +1561,10 @@ public final class Collections {
 
         public List<E> subList(int fromIndex, int toIndex) {
             return new UnmodifiableList<>(list.subList(fromIndex, toIndex));
+        }
+
+        public List<E> reversed() {
+            return ReverseOrderListView.of(this, false);
         }
 
         /**
