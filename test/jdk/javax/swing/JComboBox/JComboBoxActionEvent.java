@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,18 +35,23 @@ import java.awt.FlowLayout;
 
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class JComboBoxActionEvent {
-    private static final String instructionsText = " Click the arrow to display the menu.\n" +
-         "While the menu is displayed, edit the text to create a new value.\n" +
-         "Type return.\n" +
-         "If a dialog appears with \"ActionCommand received\"\n" +
-         "press Pass, else Fail";
+    private static final String instructionsText = """
+                Please look at the 'Test Editable Combo Box' test frame.
+
+                1. Click the arrow button of the editable JComboBox to open its drop-down list.
+                2. While the drop-down list is visible, edit the text in the editable JComboBox and enter a new value.
+                3. Press Return.
+
+                Pass condition: a JOptionPane appears containing the message ActionCommand received.
+                Fail condition: the JOptionPane does not appear, or it does not contain the expected message.
+            """;
+
 
     private static JFrame frame;
 
@@ -82,7 +87,7 @@ public class JComboBoxActionEvent {
 
         UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
 
-        PassFailJFrame pfjFrame = new PassFailJFrame("JScrollPane "
+        PassFailJFrame pfjFrame = new PassFailJFrame("JComboBoxActionEvent "
                 + "Test Instructions", instructionsText, 5);
 
         createAndShowGUI();
@@ -90,3 +95,4 @@ public class JComboBoxActionEvent {
         pfjFrame.awaitAndCheck();
     }
 }
+
