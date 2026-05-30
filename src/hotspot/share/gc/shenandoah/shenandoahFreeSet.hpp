@@ -664,10 +664,8 @@ public:
   // Handles bias direction, trash recycling, and affiliation setup for new (empty) regions.
   // Returns nullptr if no suitable region found. Sets in_new_region if the returned region was empty.
   // Caller must hold the heap lock.
-  ShenandoahHeapRegion* find_region_for_alloc(ShenandoahFreeSetPartitionId partition,
-                                              size_t min_size_words,
-                                              ShenandoahAffiliation affiliation,
-                                              bool& in_new_region);
+  template<ShenandoahFreeSetPartitionId PARTITION>
+  ShenandoahHeapRegion* find_region_for_alloc(size_t min_size_words, bool& in_new_region);
 
   // Steal an empty region from the Mutator partition for the given collector partition.
   // Flips the region, sets up affiliation, and returns it ready for allocation.

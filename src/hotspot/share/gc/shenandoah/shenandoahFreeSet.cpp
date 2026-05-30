@@ -348,16 +348,17 @@ size_t ShenandoahFreeSet::retire_region(ShenandoahFreeSetPartitionId partition, 
   return _partitions.retire_from_partition(partition, idx, used_bytes);
 }
 
-ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(ShenandoahFreeSetPartitionId partition,
-                                                               size_t min_size_words,
-                                                               ShenandoahAffiliation affiliation,
-                                                               bool& in_new_region) {
+template<ShenandoahFreeSetPartitionId PARTITION>
+ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(size_t min_size_words, bool& in_new_region) {
   shenandoah_assert_heaplocked();
   update_allocation_bias();
 
-  if (_partitions.is_empty(partition)) {
+  if (_partitions.is_empty(PARTITION)) {
     return nullptr;
   }
+
+  constexpr ShenandoahAffiliation affiliation =
+    (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) ? OLD_GENERATION : YOUNG_GENERATION;
 
   ShenandoahHeapRegion* result = nullptr;
   ShenandoahHeapRegion* free_region = nullptr;
@@ -377,17 +378,19 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(ShenandoahFreeSet
     }
   };
 
-  if (_partitions.alloc_from_left_bias(partition)) {
-    ShenandoahLeftRightIterator iterator(&_partitions, partition);
+  if (_partitions.alloc_from_left_bias(PARTITION)) {
+    ShenandoahLeftRightIterator iterator(&_partitions, PARTITION);
     search(iterator);
   } else {
-    ShenandoahRightLeftIterator iterator(&_partitions, partition);
+    ShenandoahRightLeftIterator iterator(&_partitions, PARTITION);
     search(iterator);
   }
 
   // For collector partitions: fall back to any free (empty) region if no affiliated region found.
-  if (result == nullptr && free_region != nullptr && partition != ShenandoahFreeSetPartitionId::Mutator) {
-    result = free_region;
+  if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+    if (result == nullptr && free_region != nullptr) {
+      result = free_region;
+    }
   }
 
   if (result == nullptr) {
@@ -399,7 +402,7 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(ShenandoahFreeSet
   if (in_new_region) {
     assert(!result->is_affiliated(), "New region should be unaffiliated");
     result->set_affiliation(affiliation);
-    if (result->is_old()) {
+    if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
       result->end_preemptible_coalesce_and_fill();
     }
 #ifdef ASSERT
@@ -410,6 +413,11 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(ShenandoahFreeSet
   }
   return result;
 }
+
+// Explicit instantiations for find_region_for_alloc.
+template ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc<ShenandoahFreeSetPartitionId::Mutator>(size_t, bool&);
+template ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc<ShenandoahFreeSetPartitionId::Collector>(size_t, bool&);
+template ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc<ShenandoahFreeSetPartitionId::OldCollector>(size_t, bool&);
 
 ShenandoahHeapRegion* ShenandoahFreeSet::steal_from_mutator(ShenandoahFreeSetPartitionId target_partition,
                                                             ShenandoahAllocRequest& req,

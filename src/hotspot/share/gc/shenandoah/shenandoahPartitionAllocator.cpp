@@ -62,10 +62,8 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
   }
 
   // Ask FreeSet to find a suitable region.
-  ShenandoahAffiliation affiliation = (PARTITION == ShenandoahFreeSetPartitionId::OldCollector)
-                                      ? OLD_GENERATION : YOUNG_GENERATION;
   size_t min_size_words = req.is_lab_alloc() ? req.min_size() : req.size();
-  ShenandoahHeapRegion* r = _free_set->find_region_for_alloc(PARTITION, min_size_words, affiliation, in_new_region);
+  ShenandoahHeapRegion* r = _free_set->find_region_for_alloc<PARTITION>(min_size_words, in_new_region);
 
   if (r != nullptr) {
     HeapWord* result = try_allocate_in(r, req, in_new_region);
