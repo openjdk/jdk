@@ -28,161 +28,178 @@
 
 #define __ _masm->
 
+const int term = 19;
+const int limbs = 5;
+const int bpl = 51;
+const int rem = 64 - bpl;
+const long MASK = 0x7FFFFFFFFFFFF;
+const long CARRY_ADD = 0x4000000000000;
+
+// Multiplication operation for polynomial arithmetic in Curve25519.
+//
+// This is the same algorithm as used in Java, except we use pseudo-Mersenne
+// reduction to reduce register pressure instead of using the full 10 columns
+// in Java.
 void multiply_25519_scalar(const Register aLimbs, const Register bLimbs, const Register rLimbs, Register c[], Register bArg, Register d, Register b, Register mask, MacroAssembler* _masm) {
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < limbs; i++) {
     __ xorq(c[i], c[i]);
   }
-  __ mov64(mask, 0x7FFFFFFFFFFFF);
+  __ mov64(mask, MASK);
   __ movq(bArg, bLimbs);
 
   // Perform high/low multiplication with signed 5x51 bit limbs
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < limbs; i++) {
     __ movq(b, Address(bArg, i * 8));
-    for (int j = 0; j < 5; j++) {
+    for (int j = 0; j < limbs; j++) {
       __ movq(rax, Address(aLimbs, j * 8));
       __ imulq(b);  // rdx:rax = a * b
       __ movq(d, rax);
       __ andq(d, mask);
-      __ shrq(rax, 51);
-      __ shlq(rdx, 13);
+      __ shrq(rax, bpl);
+      __ shlq(rdx, rem);
       __ orq(rax, rdx);
       // Fold in pseudo-Mersenne reduction
-      if ((i + j + 1) > 4) {
-        __ imulq(rax, rax, 19);
+      if ((i + j + 1) >= limbs) {
+        __ imulq(rax, rax, term);
       }
-      if ((i + j) > 4) {
-        __ imulq(d, d, 19);
+      if ((i + j) >= limbs) {
+        __ imulq(d, d, term);
       }
-      __ addq(c[(i + j) % 5], d);
-      __ addq(c[(i + j + 1) % 5], rax);
+      __ addq(c[(i + j) % limbs], d);
+      __ addq(c[(i + j + 1) % limbs], rax);
     }
   }
 
   // Carry-add with reduction from high limb
   Register carry = bArg;
-  __ mov64(mask, 0x4000000000000);
+  __ mov64(mask, CARRY_ADD);
   __ movq(carry, mask);
 
   // Limb 3
   __ addq(carry, c[3]);
-  __ sarq(carry, 51);
+  __ sarq(carry, bpl);
   __ addq(c[4], carry);
-  __ shlq(carry, 51);
+  __ shlq(carry, bpl);
   __ subq(c[3], carry);
 
   // Limb 4
   __ movq(carry, mask);
   __ addq(carry, c[4]);
-  __ sarq(carry, 51);
+  __ sarq(carry, bpl);
 
   // Reduce high order limb and fold back into low order limb
-  __ mov64(rax, 0x13);
+  __ mov64(rax, term);
   __ imulq(carry);
   __ addq(c[0], rax);
 
-  __ shlq(carry, 51);
+  __ shlq(carry, bpl);
   __ subq(c[4], carry);
 
   // Limbs 0 - 3
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < (limbs - 1); i++) {
     __ movq(carry, mask);
     __ addq(carry, c[i]);
-    __ sarq(carry, 51);
+    __ sarq(carry, bpl);
     __ addq(c[i + 1], carry);
-    __ shlq(carry, 51);
+    __ shlq(carry, bpl);
     __ subq(c[i], carry);
   }
 
   __ pop_ppx(rdx);
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < limbs; i++) {
     __ movq(Address(rLimbs, i * 8), c[i]);
   }
 }
 
+// Squaring operation for polynomial arithmetic in Curve25519.
+//
+// This is the same algorithm as used in Java, except we use pseudo-Mersenne
+// reduction to reduce register pressure instead of using the full 10 columns
+// in Java.
 void square_25519_scalar(const Register aLimbs, const Register rLimbs, Register c[], Register aArg, Register d, Register carry, Register mask, MacroAssembler* _masm) {
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < limbs; i++) {
     __ xorq(c[i], c[i]);
   }
-  __ mov64(mask, 0x7FFFFFFFFFFFF);
+  __ mov64(mask, MASK);
 
   // Perform high/low multiplication with signed 5x51 bit limbs
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < limbs; i++) {
     __ movq(aArg, Address(aLimbs, i * 8));
     __ movq(rax, aArg);
     __ imulq(aArg);   // rdx:rax = a * a
     __ movq(d, rax);
     __ andq(d, mask);
-    __ shrq(rax, 51);
-    __ shlq(rdx, 13);
+    __ shrq(rax, bpl);
+    __ shlq(rdx, rem);
     __ orq(rax, rdx); // rax = dd
-    if ((i * 2 + 1) > 4) {
-      __ imulq(rax, rax, 19);
+    if ((i * 2 + 1) >= limbs) {
+      __ imulq(rax, rax, term);
     }
-    if ((i * 2) > 4) {
-      __ imulq(d, d, 19);
+    if ((i * 2) >= limbs) {
+      __ imulq(d, d, term);
     }
-    __ addq(c[(i * 2) % 5], d);
-    __ addq(c[(i * 2 + 1) % 5], rax);
-    for (int j = i + 1; j < 5; j++) {
+    __ addq(c[(i * 2) % limbs], d);
+    __ addq(c[(i * 2 + 1) % limbs], rax);
+    for (int j = i + 1; j < limbs; j++) {
       __ movq(rax, Address(aLimbs, j * 8));
       __ imulq(aArg);   // rdx:rax = a * a
       __ movq(d, rax);
       __ andq(d, mask);
       __ shlq(d, 1);
-      __ shrq(rax, 51);
-      __ shlq(rdx, 13);
+      __ shrq(rax, bpl);
+      __ shlq(rdx, rem);
       __ orq(rax, rdx); // rax = dd
       __ shlq(rax, 1);
-      if ((j + i + 1) > 4) {
-        __ imulq(rax, rax, 19);
+      if ((j + i + 1) >= limbs) {
+        __ imulq(rax, rax, term);
       }
-      if ((j + i) > 4) {
-        __ imulq(d, d, 19);
+      if ((j + i) >= limbs) {
+        __ imulq(d, d, term);
       }
-      __ addq(c[(i + j) % 5], d);
-      __ addq(c[(i + j + 1) % 5], rax);
+      __ addq(c[(i + j) % limbs], d);
+      __ addq(c[(i + j + 1) % limbs], rax);
     }
   }
 
   // Carry-add with reduction from high limb
   // Limb 3
-  __ mov64(mask, 0x4000000000000);
+  __ mov64(mask, CARRY_ADD);
   __ movq(carry, mask);
   __ addq(carry, c[3]);
-  __ sarq(carry, 51);
+  __ sarq(carry, bpl);
   __ addq(c[4], carry);
-  __ shlq(carry, 51);
+  __ shlq(carry, bpl);
   __ subq(c[3], carry);
 
   // Limb 4
   __ movq(carry, mask);
   __ addq(carry, c[4]);
-  __ sarq(carry, 51);
+  __ sarq(carry, bpl);
 
   // Reduce high order limb and fold back into low order limb
-  __ mov64(rax, 0x13);
+  __ mov64(rax, term);
   __ imulq(carry);
   __ addq(c[0], rax);
 
-  __ shlq(carry, 51);
+  __ shlq(carry, bpl);
   __ subq(c[4], carry);
 
   // Limbs 0 - 3
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < (limbs - 1); i++) {
     __ movq(carry, mask);
     __ addq(carry, c[i]);
-    __ sarq(carry, 51);
+    __ sarq(carry, bpl);
     __ addq(c[i + 1], carry);
-    __ shlq(carry, 51);
+    __ shlq(carry, bpl);
     __ subq(c[i], carry);
   }
 
   __ pop_ppx(rdx);
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < limbs; i++) {
     __ movq(Address(rLimbs, i * 8), c[i]);
   }
 }
