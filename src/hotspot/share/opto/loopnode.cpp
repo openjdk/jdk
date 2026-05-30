@@ -5592,6 +5592,10 @@ void PhaseIdealLoop::build_and_optimize() {
     }
     C->set_major_progress();
   }
+
+  if (!C->major_progress()) {
+    reassociate_reduction_chains();
+  }
 }
 
 #ifndef PRODUCT
