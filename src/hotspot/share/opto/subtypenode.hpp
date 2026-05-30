@@ -35,8 +35,8 @@ public:
     SuperKlass
   };
 
-  SubTypeCheckNode(Compile* C, Node* obj_or_subklass, Node* superklass, ciMethod* method, int bci)
-    : CmpNode(obj_or_subklass, superklass), _method(method), _bci(bci) {
+  SubTypeCheckNode(Compile* C, Node* obj_or_subklass, Node* superklass, ciMethod* method, ciMethodData* md, int bci)
+    : CmpNode(obj_or_subklass, superklass), _method(method), _method_data(md), _bci(bci) {
     init_class_id(Class_SubTypeCheck);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -50,6 +50,7 @@ public:
   const Type* bottom_type() const { return TypeInt::CC; }
 
   ciMethod* method() const { return _method; }
+  ciMethodData* method_data() const { return _method_data; }
   int bci() const { return _bci; }
 
   uint size_of() const;
@@ -60,8 +61,9 @@ public:
 #endif
 
 private:
-  // method/bci for this subtype check so profile data can be retrieved after parsing is over
+  // method/method_data/bci for this subtype check so profile data can be retrieved after parsing is over
   ciMethod* _method;
+  ciMethodData* _method_data;
   int _bci;
 #ifdef ASSERT
   bool verify(PhaseGVN* phase);

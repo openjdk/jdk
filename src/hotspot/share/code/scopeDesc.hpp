@@ -48,6 +48,7 @@ class SimpleScopeDesc : public StackObj {
     DebugInfoReadStream buffer(code, pc_desc->scope_decode_offset());
     int ignore_sender = buffer.read_int();
     _method           = buffer.read_method();
+    buffer.read_method_data();
     _bci              = buffer.read_bci();
   }
 
@@ -68,6 +69,7 @@ class ScopeDesc : public ResourceObj {
 
   // JVM state
   Method* method()      const { return _method; }
+  MethodData* specialized_method_data()      const { return _specialized_method_data; }
   int          bci()      const { return _bci;    }
   bool should_reexecute() const { return _reexecute; }
   bool rethrow_exception() const { return _rethrow_exception; }
@@ -101,6 +103,7 @@ class ScopeDesc : public ResourceObj {
 
   // JVM state
   Method*       _method;
+  MethodData*   _specialized_method_data;     // Specialized method data or null
   int           _bci;
   bool          _reexecute;
   bool          _rethrow_exception;

@@ -237,7 +237,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   // However currently the conversion to implicit null checks in
   // Block::implicit_null_check() only looks for loads and stores, not calls.
   ciMethod *caller = kit.method();
-  ciMethodData *caller_md = (caller == nullptr) ? nullptr : caller->method_data();
+  ciMethodData *caller_md = kit.method_data();
   if (!UseInlineCaches || !ImplicitNullChecks || !os::zero_page_read_protected() ||
        ((ImplicitNullCheckThreshold > 0) && caller_md &&
        (caller_md->trap_count(Deoptimization::Reason_null_check)
@@ -1014,8 +1014,7 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
       return cg;
     }
   }
-  int bci = jvms->bci();
-  ciCallProfile profile = caller->call_profile_at_bci(bci);
+  ciCallProfile profile = caller->call_profile_at_bci(jvms->bci(), jvms->method_data());
   int call_site_count = caller->scale_count(profile.count());
 
   if (IncrementalInlineMH && call_site_count > 0 &&

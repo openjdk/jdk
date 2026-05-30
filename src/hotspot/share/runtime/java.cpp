@@ -148,6 +148,10 @@ static void print_method_profiling_data() {
         ss.print_cr("------------------------------------------------------------------------");
         m->print_invocation_count(&ss);
         ss.print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
+        int specialized_size = m->method_data()->specialized_size_in_bytes();
+        if (specialized_size != 0) {
+          ss.print_cr("  specialized mdo size: %d bytes", specialized_size);
+        }
         ss.cr();
         // Dump data on parameters if any
         if (m->method_data() != nullptr && m->method_data()->parameters_type_data() != nullptr) {
@@ -158,6 +162,7 @@ static void print_method_profiling_data() {
         m->print_codes_on(&ss, ClassPrinter::PRINT_METHOD_DATA, false);
         tty->print("%s", ss.as_string()); // print all at once
         total_size += m->method_data()->size_in_bytes();
+        total_size += specialized_size;
       }
       tty->print_cr("------------------------------------------------------------------------");
       tty->print_cr("Total MDO size: %d bytes", total_size);

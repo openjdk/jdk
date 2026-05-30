@@ -29,6 +29,7 @@
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_ValueType.hpp"
 #include "ci/ciField.hpp"
+#include "ci/ciMethodData.hpp"
 
 // Predefined classes
 class ciField;
@@ -955,6 +956,7 @@ LEAF(StoreIndexed, AccessIndexed)
   Value       _value;
 
   ciMethod* _profiled_method;
+  ciMethodData*   _md;
   int       _profiled_bci;
   bool      _check_boolean;
 
@@ -963,7 +965,7 @@ LEAF(StoreIndexed, AccessIndexed)
   StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value, ValueStack* state_before,
                bool check_boolean, bool mismatched = false)
   : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
-  , _value(value), _profiled_method(nullptr), _profiled_bci(0), _check_boolean(check_boolean)
+  , _value(value), _profiled_method(nullptr), _md(nullptr), _profiled_bci(0), _check_boolean(check_boolean)
   {
     ASSERT_VALUES
     pin();
@@ -975,9 +977,11 @@ LEAF(StoreIndexed, AccessIndexed)
   // Helpers for MethodData* profiling
   void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
   void set_profiled_method(ciMethod* method)         { _profiled_method = method;   }
+  void set_md(ciMethodData* md)         { _md = md;   }
   void set_profiled_bci(int bci)                     { _profiled_bci = bci;         }
   bool      should_profile() const                   { return check_flag(ProfileMDOFlag); }
   ciMethod* profiled_method() const                  { return _profiled_method;     }
+  ciMethodData* md() const                  { return _md;     }
   int       profiled_bci() const                     { return _profiled_bci;        }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessIndexed::input_values_do(f); f->visit(&_value); }
@@ -2231,6 +2235,8 @@ LEAF(UnsafeGetAndSet, UnsafeOp)
 LEAF(ProfileCall, Instruction)
  private:
   ciMethod*        _method;
+  ciMethodData*    _md;
+  ciMethodData*    _callee_md;
   int              _bci_of_invoke;
   ciMethod*        _callee;         // the method that is called at the given bci
   Value            _recv;
@@ -2240,9 +2246,11 @@ LEAF(ProfileCall, Instruction)
   bool             _inlined;        // Are we profiling a call that is inlined
 
  public:
-  ProfileCall(ciMethod* method, int bci, ciMethod* callee, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined)
+  ProfileCall(ciMethod* method, int bci, ciMethodData* md, ciMethod* callee, ciMethodData* callee_md, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined)
     : Instruction(voidType)
     , _method(method)
+    , _md(md)
+    , _callee_md(callee_md)
     , _bci_of_invoke(bci)
     , _callee(callee)
     , _recv(recv)
@@ -2257,6 +2265,8 @@ LEAF(ProfileCall, Instruction)
   ciMethod* method()             const { return _method; }
   int bci_of_invoke()            const { return _bci_of_invoke; }
   ciMethod* callee()             const { return _callee; }
+  ciMethodData* md()             const { return _md; }
+  ciMethodData* callee_md()      const { return _callee_md; }
   Value recv()                   const { return _recv; }
   ciKlass* known_holder()        const { return _known_holder; }
   int nb_profiled_args()         const { return _obj_args == nullptr ? 0 : _obj_args->length(); }
@@ -2283,14 +2293,16 @@ LEAF(ProfileCall, Instruction)
 LEAF(ProfileReturnType, Instruction)
  private:
   ciMethod*        _method;
+  ciMethodData*        _md;
   ciMethod*        _callee;
   int              _bci_of_invoke;
   Value            _ret;
 
  public:
-  ProfileReturnType(ciMethod* method, int bci, ciMethod* callee, Value ret)
+  ProfileReturnType(ciMethod* method, ciMethodData* md, int bci, ciMethod* callee, Value ret)
     : Instruction(voidType)
     , _method(method)
+    , _md(md)
     , _callee(callee)
     , _bci_of_invoke(bci)
     , _ret(ret)
@@ -2301,6 +2313,7 @@ LEAF(ProfileReturnType, Instruction)
   }
 
   ciMethod* method()             const { return _method; }
+  ciMethodData* md()             const { return _md; }
   ciMethod* callee()             const { return _callee; }
   int bci_of_invoke()            const { return _bci_of_invoke; }
   Value ret()                    const { return _ret; }

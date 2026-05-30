@@ -5507,11 +5507,11 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
 // initialization.
 JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp) {
   if (alloc != nullptr) {
-    ciMethod* trap_method = alloc->jvms()->method();
+    ciMethodData* trap_md = alloc->jvms()->method_data();
     int trap_bci = alloc->jvms()->bci();
 
-    if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) &&
-        !C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_null_check)) {
+    if (!C->too_many_traps(trap_md, trap_bci, Deoptimization::Reason_intrinsic) &&
+        !C->too_many_traps(trap_md, trap_bci, Deoptimization::Reason_null_check)) {
       // Make sure there's no store between the allocation and the
       // arraycopy otherwise visible side effects could be rexecuted
       // in case of deoptimization and cause incorrect execution.
@@ -6032,16 +6032,16 @@ bool LibraryCallKit::inline_arraycopy() {
     }
   }
 
-  ciMethod* trap_method = method();
+  ciMethodData* trap_md = method_data();
   int trap_bci = bci();
   if (saved_jvms_before_guards != nullptr) {
-    trap_method = alloc->jvms()->method();
+    trap_md = alloc->jvms()->method_data();
     trap_bci = alloc->jvms()->bci();
   }
 
   bool negative_length_guard_generated = false;
 
-  if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) &&
+  if (!C->too_many_traps(trap_md, trap_bci, Deoptimization::Reason_intrinsic) &&
       can_emit_guards &&
       !src->is_top() && !dest->is_top()) {
     // validate arguments: enables transformation the ArrayCopyNode

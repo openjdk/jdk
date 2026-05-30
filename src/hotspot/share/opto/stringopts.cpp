@@ -922,7 +922,7 @@ bool StringConcat::validate_control_flow() {
   // safe to transform the graph as we would expect.
 
   // Check to see if this resulted in too many uncommon traps previously
-  if (Compile::current()->too_many_traps(_begin->jvms()->method(), _begin->jvms()->bci(),
+  if (Compile::current()->too_many_traps(_begin->jvms()->method_data(), _begin->jvms()->bci(),
                         Deoptimization::Reason_intrinsic)) {
     return false;
   }

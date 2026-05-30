@@ -29,6 +29,7 @@
 #include "code/location.hpp"
 #include "code/nmethod.hpp"
 #include "code/oopRecorder.hpp"
+#include "oops/methodData.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -383,6 +384,12 @@ class DebugInfoReadStream : public CompressedReadStream {
   oop read_oop();
   Method* read_method() {
     Method* o = (Method*)(code()->metadata_at(read_int()));
+    // is_metadata() is a faster check than is_metaspace_object()
+    assert(o == nullptr || o->is_metadata(), "meta data only");
+    return o;
+  }
+  MethodData* read_method_data() {
+    MethodData* o = (MethodData*)(code()->metadata_at(read_int()));
     // is_metadata() is a faster check than is_metaspace_object()
     assert(o == nullptr || o->is_metadata(), "meta data only");
     return o;

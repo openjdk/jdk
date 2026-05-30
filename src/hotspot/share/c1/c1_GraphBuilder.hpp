@@ -204,6 +204,7 @@ class GraphBuilder {
   void              set_state(ValueStack* state) { _state = state; }
   IRScope*          scope() const                { return scope_data()->scope(); }
   ciMethod*         method() const               { return scope()->method(); }
+  ciMethodData*     method_data() const          { return scope()->method_data(); }
   ciBytecodeStream* stream() const               { return scope_data()->stream(); }
   Instruction*      last() const                 { return _last; }
   Bytecodes::Code   code() const                 { return stream()->cur_bc(); }
@@ -346,11 +347,11 @@ class GraphBuilder {
   void inline_sync_entry(Value lock, BlockBegin* sync_handler);
   void fill_sync_handler(Value lock, BlockBegin* sync_handler, bool default_handler = false);
 
-  void build_graph_for_intrinsic(ciMethod* callee, bool ignore_return);
+  void build_graph_for_intrinsic(ciMethod* callee, ciMethodData* callee_md, bool ignore_return);
 
   // inliners
   bool try_inline(           ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = nullptr);
-  bool try_inline_intrinsics(ciMethod* callee, bool ignore_return = false);
+  bool try_inline_intrinsics(ciMethod* callee, ciMethodData* callee_md, bool ignore_return = false);
   bool try_inline_full(      ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = nullptr);
   bool try_inline_jsr(int jsr_dest_bci);
 
@@ -368,7 +369,7 @@ class GraphBuilder {
   void clear_inline_bailout();
   ValueStack* state_at_entry();
   void push_root_scope(IRScope* scope, BlockList* bci2block, BlockBegin* start);
-  void push_scope(ciMethod* callee, BlockBegin* continuation);
+  void push_scope(ciMethod* callee, ciMethodData* method_data, BlockBegin* continuation);
   void push_scope_for_jsr(BlockBegin* jsr_continuation, int jsr_dest_bci);
   void pop_scope();
   void pop_scope_for_jsr();
@@ -382,8 +383,8 @@ class GraphBuilder {
 
   void print_inlining(ciMethod* callee, const char* msg, bool success = true);
 
-  void profile_call(ciMethod* callee, Value recv, ciKlass* predicted_holder, Values* obj_args, bool inlined);
-  void profile_return_type(Value ret, ciMethod* callee, ciMethod* m = nullptr, int bci = -1);
+  void profile_call(ciMethod* callee, ciMethodData* callee_md, Value recv, ciKlass* predicted_holder, Values* obj_args, bool inlined);
+  void profile_return_type(Value ret, ciMethod* callee, ciMethod* m = nullptr, ciMethodData* md = nullptr, int bci = -1);
   void profile_invocation(ciMethod* inlinee, ValueStack* state);
 
   // Shortcuts to profiling control.
@@ -396,8 +397,8 @@ class GraphBuilder {
   bool profile_arguments()     { return _compilation->profile_arguments();     }
   bool profile_return()        { return _compilation->profile_return();        }
 
-  Values* args_list_for_profiling(ciMethod* target, int& start, bool may_have_receiver);
-  Values* collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver);
+  Values* args_list_for_profiling(ciMethodData* target_md, int& start, bool may_have_receiver);
+  Values* collect_args_for_profiling(Values* args, ciMethodData* target_md, bool may_have_receiver);
   void check_args_for_profiling(Values* obj_args, int expected);
 
  public:

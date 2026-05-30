@@ -183,6 +183,7 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
   DebugInfoReadStream buffer(nm(), decode_offset);
   _sender_decode_offset = buffer.read_int();
   _method               = buffer.read_method();
+  buffer.read_method_data();
   _bci                  = buffer.read_bci();
 
   assert(_method->is_method(), "checking type of decoded method");

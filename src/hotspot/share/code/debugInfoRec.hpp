@@ -102,6 +102,7 @@ class DebugInformationRecorder: public ResourceObj {
   void describe_scope(int         pc_offset,
                       const methodHandle& methodH,
                       ciMethod*   method,
+                      ciMethodData* md,
                       int         bci,
                       bool        reexecute,
                       bool        rethrow_exception = false,

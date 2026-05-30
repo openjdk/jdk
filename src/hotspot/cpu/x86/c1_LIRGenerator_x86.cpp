@@ -261,11 +261,11 @@ void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp)
   __ store(item, new LIR_Address(FrameMap::rsp_opr, in_bytes(offset_from_sp), type));
 }
 
-void LIRGenerator::array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo* store_check_info, ciMethod* profiled_method, int profiled_bci) {
+void LIRGenerator::array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo* store_check_info, ciMethod* profiled_method, ciMethodData* md, int profiled_bci) {
   LIR_Opr tmp1 = new_register(objectType);
   LIR_Opr tmp2 = new_register(objectType);
   LIR_Opr tmp3 = new_register(objectType);
-  __ store_check(value, array, tmp1, tmp2, tmp3, store_check_info, profiled_method, profiled_bci);
+  __ store_check(value, array, tmp1, tmp2, tmp3, store_check_info, profiled_method, md, profiled_bci);
 }
 
 //----------------------------------------------------------------------
@@ -1295,7 +1295,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   __ checkcast(reg, obj.result(), x->klass(),
                new_register(objectType), new_register(objectType), tmp3,
                x->direct_compare(), info_for_exception, patching_info, stub,
-               x->profiled_method(), x->profiled_bci());
+               x->profiled_method(), x->scope()->method_data(), x->profiled_bci());
 }
 
 
@@ -1314,7 +1314,7 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   tmp3 = new_register(objectType);
   __ instanceof(reg, obj.result(), x->klass(),
                 new_register(objectType), new_register(objectType), tmp3,
-                x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
+                x->direct_compare(), patching_info, x->profiled_method(), x->scope()->method_data(), x->profiled_bci());
 }
 
 // Intrinsic for Class::isInstance

@@ -36,9 +36,11 @@
 #include "compiler/compilerThread.hpp"
 #include "oops/methodData.hpp"
 #include "runtime/javaThread.hpp"
+#include "utilities/pair.hpp"
 
 class CompileTask;
 class OopMapSet;
+class JVMState;
 
 // ciEnv
 //
@@ -515,6 +517,19 @@ public:
   void process_invokedynamic(const constantPoolHandle &cp, int index, JavaThread* thread);
   void process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread);
   void find_dynamic_call_sites();
+
+  // Creates or returns existing callee`s specialized method data
+  // With SpecializedMethodData disabled acts as callee->ensure_method_data()
+  bool ensure_specialized_method_data(ciMethod* callee, ciMethodData* caller_md, int bci);
+
+  // Returns callee`s specialized method data
+  // With SpecializedMethodData disabled acts as callee->method_data()
+  ciMethodData* specialized_method_data(ciMethod* callee, ciMethodData* caller_md, int bci);
+
+  // Finds most accurate callee`s specialized method data based on inline path
+  // If none exist returns main md
+  // With SpecializedMethodData disabled acts as callee->method_data()
+  ciMethodData* specialized_method_data(ciMethod* callee, JVMState* caller);
 };
 
 #endif // SHARE_CI_CIENV_HPP

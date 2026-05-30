@@ -1511,6 +1511,7 @@ class LIR_OpTypeCheck: public LIR_Op {
   CodeEmitInfo* _info_for_exception;
   CodeStub*     _stub;
   ciMethod*     _profiled_method;
+  ciMethodData*     _md;
   int           _profiled_bci;
   bool          _should_profile;
   bool          _fast_check;
@@ -1535,9 +1536,11 @@ public:
 
   // MethodData* profiling
   void set_profiled_method(ciMethod *method)     { _profiled_method = method; }
+  void set_md(ciMethodData *md)     { _md = md; }
   void set_profiled_bci(int bci)                 { _profiled_bci = bci;       }
   void set_should_profile(bool b)                { _should_profile = b;       }
   ciMethod* profiled_method() const              { return _profiled_method;   }
+  ciMethodData* md() const              { return _md;   }
   int       profiled_bci() const                 { return _profiled_bci;      }
   bool      should_profile() const               { return _should_profile;    }
 
@@ -1936,6 +1939,7 @@ class LIR_OpProfileCall : public LIR_Op {
 
  private:
   ciMethod* _profiled_method;
+  ciMethodData* _md;
   int       _profiled_bci;
   ciMethod* _profiled_callee;
   LIR_Opr   _mdo;
@@ -1945,9 +1949,10 @@ class LIR_OpProfileCall : public LIR_Op {
 
  public:
   // Destroys recv
-  LIR_OpProfileCall(ciMethod* profiled_method, int profiled_bci, ciMethod* profiled_callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* known_holder)
+  LIR_OpProfileCall(ciMethod* profiled_method, ciMethodData* md, int profiled_bci, ciMethod* profiled_callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* known_holder)
     : LIR_Op(lir_profile_call, LIR_OprFact::illegalOpr, nullptr)  // no result, no info
     , _profiled_method(profiled_method)
+    , _md(md)
     , _profiled_bci(profiled_bci)
     , _profiled_callee(profiled_callee)
     , _mdo(mdo)
@@ -1956,6 +1961,7 @@ class LIR_OpProfileCall : public LIR_Op {
     , _known_holder(known_holder)                { }
 
   ciMethod* profiled_method() const              { return _profiled_method;  }
+  ciMethodData* md() const              { return _md;  }
   int       profiled_bci()    const              { return _profiled_bci;     }
   ciMethod* profiled_callee() const              { return _profiled_callee;  }
   LIR_Opr   mdo()             const              { return _mdo;              }
@@ -2293,16 +2299,16 @@ class LIR_List: public CompilationResourceObj {
 
   void update_crc32(LIR_Opr crc, LIR_Opr val, LIR_Opr res)  { append(new LIR_OpUpdateCRC32(crc, val, res)); }
 
-  void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci);
-  void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci);
+  void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, ciMethodData* md, int profiled_bci);
+  void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception, ciMethod* profiled_method, ciMethodData* md, int profiled_bci);
 
   void checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
                   LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check,
                   CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
-                  ciMethod* profiled_method, int profiled_bci);
+                  ciMethod* profiled_method, ciMethodData* md, int profiled_bci);
   // MethodData* profiling
-  void profile_call(ciMethod* method, int bci, ciMethod* callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* cha_klass) {
-    append(new LIR_OpProfileCall(method, bci, callee, mdo, recv, t1, cha_klass));
+  void profile_call(ciMethod* method, ciMethodData* md, int bci, ciMethod* callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* cha_klass) {
+    append(new LIR_OpProfileCall(method, md, bci, callee, mdo, recv, t1, cha_klass));
   }
   void profile_type(LIR_Address* mdp, LIR_Opr obj, ciKlass* exact_klass, intptr_t current_klass, LIR_Opr tmp, bool not_null, bool no_conflict) {
     append(new LIR_OpProfileType(LIR_OprFact::address(mdp), obj, exact_klass, current_klass, tmp, not_null, no_conflict));

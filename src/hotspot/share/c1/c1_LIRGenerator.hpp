@@ -317,7 +317,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 #endif
 
   // specific implementations
-  void array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo* store_check_info, ciMethod* profiled_method, int profiled_bci);
+  void array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo* store_check_info, ciMethod* profiled_method, ciMethodData* md, int profiled_bci);
 
   static LIR_Opr result_register_for(ValueType* type, bool callee = false);
 

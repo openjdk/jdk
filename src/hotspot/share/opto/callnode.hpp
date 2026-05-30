@@ -215,6 +215,7 @@ private:
   int               _bci;       // Byte Code Index of this JVM point
   ReexecuteState    _reexecute; // Whether this bytecode need to be re-executed
   ciMethod*         _method;    // Method Pointer
+  ciMethodData*     _method_data;    // Method Data Pointer (specialized if exists)
   ciInstance*       _receiver_info; // Constant receiver instance for compiled lambda forms
   SafePointNode*    _map;       // Map node associated with this scope
 public:
@@ -258,6 +259,7 @@ public:
   bool  is_reexecute_undefined() const { return _reexecute==Reexecute_Undefined; }
   bool              has_method() const { return _method != nullptr; }
   ciMethod*             method() const { assert(has_method(), ""); return _method; }
+  ciMethodData*         method_data() const { assert(has_method(), ""); return _method_data; }
   ciInstance*    receiver_info() const { assert(has_method(), ""); return _receiver_info; }
   JVMState*             caller() const { return _caller; }
   SafePointNode*           map() const { return _map; }

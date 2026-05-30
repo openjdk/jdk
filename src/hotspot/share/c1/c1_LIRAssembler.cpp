@@ -417,7 +417,7 @@ void LIR_Assembler::record_non_safepoint_debug_info() {
     IRScope* scope = s->scope();
     //Always pass false for reexecute since these ScopeDescs are never used for deopt
     methodHandle null_mh;
-    debug_info->describe_scope(pc_offset, null_mh, scope->method(), s->bci(), false/*reexecute*/);
+    debug_info->describe_scope(pc_offset, null_mh, scope->method(), scope->method_data(), s->bci(), false/*reexecute*/);
   }
 
   debug_info->end_non_safepoint(pc_offset);

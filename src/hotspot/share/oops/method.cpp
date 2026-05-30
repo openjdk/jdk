@@ -657,11 +657,34 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
   if (install_training_method_data(method)) {
     return;
   }
+
+  MethodData* method_data = Method::create_profiling_method_data(method, THREAD);
+
+  // Do not profile the method if metaspace has hit an OOM
+  if (method_data == nullptr) {
+    return;   // return the exception (which is cleared)
+  }
+
+  if (!AtomicAccess::replace_if_null(&method->_method_data, method_data)) {
+    MetadataFactory::free_metadata(method->method_holder()->class_loader_data(), method_data);
+    return;
+  }
+
+  if (PrintMethodData && (Verbose || WizardMode)) {
+    ResourceMark rm(THREAD);
+    tty->print("build_profiling_method_data for ");
+    method->print_name(tty);
+    tty->cr();
+    // At the end of the run, the MDO, full of data, will be dumped.
+  }
+}
+
+MethodData* Method::create_profiling_method_data(const methodHandle& method, TRAPS) {
   // Do not profile the method if metaspace has hit an OOM previously
   // allocating profiling data. Callers clear pending exception so don't
   // add one here.
   if (ClassLoaderDataGraph::has_metaspace_oom()) {
-    return;
+    return nullptr;
   }
 
   ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
@@ -669,17 +692,30 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     CompileBroker::log_metaspace_failure();
     ClassLoaderDataGraph::set_metaspace_oom(true);
+    return nullptr;   // return the exception (which is cleared)
+  }
+
+  return method_data;
+}
+
+// Build a MethodData* object to hold profiling information collected on this
+// method on specific call when requested.
+void Method::build_specialized_profiling_method_data(const methodHandle& method, MethodDataEntry* md_entry, TRAPS) {
+  MethodData* method_data = Method::create_profiling_method_data(method, THREAD);
+
+  // Do not profile the method if metaspace has hit an OOM
+  if (method_data == nullptr) {
     return;   // return the exception (which is cleared)
   }
 
-  if (!AtomicAccess::replace_if_null(&method->_method_data, method_data)) {
-    MetadataFactory::free_metadata(loader_data, method_data);
+  if (!md_entry->set_method_data(method_data)) {
+    MetadataFactory::free_metadata(method->method_holder()->class_loader_data(), method_data);
     return;
   }
 
   if (PrintMethodData && (Verbose || WizardMode)) {
     ResourceMark rm(THREAD);
-    tty->print("build_profiling_method_data for ");
+    tty->print("build_specialized_profiling_method_data for ");
     method->print_name(tty);
     tty->cr();
     // At the end of the run, the MDO, full of data, will be dumped.

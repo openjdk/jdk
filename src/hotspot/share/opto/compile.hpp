@@ -1025,18 +1025,18 @@ public:
   // Report if there were too many traps at a current method and bci.
   // Report if a trap was recorded, and/or PerMethodTrapLimit was exceeded.
   // If there is no MDO at all, report no trap unless told to assume it.
-  bool too_many_traps(ciMethod* method, int bci, Deoptimization::DeoptReason reason);
+  bool too_many_traps(ciMethodData* md, int bci, Deoptimization::DeoptReason reason);
   // This version, unspecific to a particular bci, asks if
   // PerMethodTrapLimit was exceeded for all inlined methods seen so far.
   bool too_many_traps(Deoptimization::DeoptReason reason,
                       // Privately used parameter for logging:
                       ciMethodData* logmd = nullptr);
   // Report if there were too many recompiles at a method and bci.
-  bool too_many_recompiles(ciMethod* method, int bci, Deoptimization::DeoptReason reason);
+  bool too_many_recompiles(ciMethodData* md, int bci, Deoptimization::DeoptReason reason);
   // Report if there were too many traps or recompiles at a method and bci.
-  bool too_many_traps_or_recompiles(ciMethod* method, int bci, Deoptimization::DeoptReason reason) {
-    return too_many_traps(method, bci, reason) ||
-           too_many_recompiles(method, bci, reason);
+  bool too_many_traps_or_recompiles(ciMethodData* md, int bci, Deoptimization::DeoptReason reason) {
+    return too_many_traps(md, bci, reason) ||
+           too_many_recompiles(md, bci, reason);
   }
   // Return a bitset with the reasons where deoptimization is allowed,
   // i.e., where there were not too many uncommon traps.

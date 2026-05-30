@@ -2759,6 +2759,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
       DebugInfoReadStream stream(nm, decode_offset);
       decode_offset = stream.read_int();
       method = (Method*)nm->metadata_at(stream.read_int());
+      stream.read_int();
       bci = stream.read_bci();
     } else {
       if (fr.is_first_frame()) break;

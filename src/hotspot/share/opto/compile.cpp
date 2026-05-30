@@ -4129,10 +4129,9 @@ bool Compile::final_graph_reshaping() {
 //-----------------------------too_many_traps----------------------------------
 // Report if there are too many traps at the current method and bci.
 // Return true if there was a trap, and/or PerMethodTrapLimit is exceeded.
-bool Compile::too_many_traps(ciMethod* method,
+bool Compile::too_many_traps(ciMethodData* md,
                              int bci,
                              Deoptimization::DeoptReason reason) {
-  ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only
     // because of a transient condition during start-up in the interpreter.
@@ -4178,10 +4177,9 @@ bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
 // Consults PerBytecodeRecompilationCutoff and PerMethodRecompilationCutoff.
 // Is not eager to return true, since this will cause the compiler to use
 // Action_none for a trap point, to avoid too many recompilations.
-bool Compile::too_many_recompiles(ciMethod* method,
+bool Compile::too_many_recompiles(ciMethodData* md,
                                   int bci,
                                   Deoptimization::DeoptReason reason) {
-  ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only
     // because of a transient condition during start-up in the interpreter.

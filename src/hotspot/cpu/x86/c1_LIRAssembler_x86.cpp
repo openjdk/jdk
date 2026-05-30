@@ -1303,7 +1303,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     ciMethod* method = op->profiled_method();
     assert(method != nullptr, "Should have method");
     int bci = op->profiled_bci();
-    md = method->method_data_or_null();
+    md = op->md();
     assert(md != nullptr, "Sanity");
     data = md->bci_to_data(bci);
     assert(data != nullptr,                "need data for type check");
@@ -1422,7 +1422,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       ciMethod* method = op->profiled_method();
       assert(method != nullptr, "Should have method");
       int bci = op->profiled_bci();
-      md = method->method_data_or_null();
+      md = op->md();
       assert(md != nullptr, "Sanity");
       data = md->bci_to_data(bci);
       assert(data != nullptr,                "need data for type check");
@@ -2746,10 +2746,10 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
   ciMethod* callee = op->profiled_callee();
+  ciMethodData* md = op->md();
   Register tmp_load_klass = rscratch1;
 
   // Update counter for all call types
-  ciMethodData* md = method->method_data_or_null();
   assert(md != nullptr, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
   assert(data != nullptr && data->is_CounterData(), "need CounterData for calls");

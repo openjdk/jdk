@@ -535,7 +535,7 @@ Node* PhaseIdealLoop::loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, 
 // Add a Parse Predicate with an uncommon trap on the failing/false path. Normal control will continue on the true path.
 void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop,
                                          SafePointNode* sfpt) {
-  if (!C->too_many_traps(sfpt->jvms()->method(), sfpt->jvms()->bci(), reason)) {
+  if (!C->too_many_traps(sfpt->jvms()->method_data(), sfpt->jvms()->bci(), reason)) {
     ParsePredicateNode* parse_predicate = new ParsePredicateNode(inner_head->in(LoopNode::EntryControl), reason, &_igvn);
     register_control(parse_predicate, loop, inner_head->in(LoopNode::EntryControl));
     Node* if_false = new IfFalseNode(parse_predicate);
@@ -4112,7 +4112,7 @@ static float estimate_path_freq( Node *n ) {
       Node *call = n->in(0)->in(0)->in(0);
       assert( call->is_Call(), "expect a call here" );
       const JVMState *jvms = ((CallNode*)call)->jvms();
-      ciMethodData* methodData = jvms->method()->method_data();
+      ciMethodData* methodData = jvms->method_data();
       if (!methodData->is_mature())  return 0.0f; // No call-site data
       ciProfileData* data = methodData->bci_to_data(jvms->bci());
       if ((data == nullptr) || !data->is_CounterData()) {

@@ -900,9 +900,7 @@ LIR_Opr LIRGenerator::force_to_spill(LIR_Opr value, BasicType t) {
 
 void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
   if (if_instr->should_profile()) {
-    ciMethod* method = if_instr->profiled_method();
-    assert(method != nullptr, "method should be set if branch is profiled");
-    ciMethodData* md = method->method_data_or_null();
+    ciMethodData* md = if_instr->state()->scope()->method_data();
     assert(md != nullptr, "Sanity");
     ciProfileData* data = md->bci_to_data(if_instr->profiled_bci());
     assert(data != nullptr, "must have profiling data");
@@ -1654,7 +1652,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
 
   if (GenerateArrayStoreCheck && needs_store_check) {
     CodeEmitInfo* store_check_info = new CodeEmitInfo(range_check_info);
-    array_store_check(value.result(), array.result(), store_check_info, x->profiled_method(), x->profiled_bci());
+    array_store_check(value.result(), array.result(), store_check_info, x->profiled_method(), x->md(), x->profiled_bci());
   }
 
   DecoratorSet decorators = IN_HEAP | IS_ARRAY;
@@ -2226,8 +2224,7 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   LIR_Opr value = tag.result();
 
   if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
-    ciMethod* method = x->state()->scope()->method();
-    ciMethodData* md = method->method_data_or_null();
+    ciMethodData* md = x->state()->scope()->method_data();
     assert(md != nullptr, "Sanity");
     ciProfileData* data = md->bci_to_data(x->state()->bci());
     assert(data != nullptr, "must have profiling data");
@@ -2284,8 +2281,7 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
   int len = x->length();
 
   if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
-    ciMethod* method = x->state()->scope()->method();
-    ciMethodData* md = method->method_data_or_null();
+    ciMethodData* md = x->state()->scope()->method_data();
     assert(md != nullptr, "Sanity");
     ciProfileData* data = md->bci_to_data(x->state()->bci());
     assert(data != nullptr, "must have profiling data");
@@ -2353,9 +2349,7 @@ void LIRGenerator::do_Goto(Goto* x) {
 
   // Gotos can be folded Ifs, handle this case.
   if (x->should_profile()) {
-    ciMethod* method = x->profiled_method();
-    assert(method != nullptr, "method should be set if branch is profiled");
-    ciMethodData* md = method->method_data_or_null();
+    ciMethodData* md = x->state()->scope()->method_data();
     assert(md != nullptr, "Sanity");
     ciProfileData* data = md->bci_to_data(x->profiled_bci());
     assert(data != nullptr, "must have profiling data");
@@ -2924,7 +2918,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 void LIRGenerator::profile_arguments(ProfileCall* x) {
   if (compilation()->profile_arguments()) {
     int bci = x->bci_of_invoke();
-    ciMethodData* md = x->method()->method_data_or_null();
+    ciMethodData* md = x->md();
     assert(md != nullptr, "Sanity");
     ciProfileData* data = md->bci_to_data(bci);
     if (data != nullptr) {
@@ -2980,7 +2974,7 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
 // profile parameters on entry to an inlined method
 void LIRGenerator::profile_parameters_at_call(ProfileCall* x) {
   if (compilation()->profile_parameters() && x->inlined()) {
-    ciMethodData* md = x->callee()->method_data_or_null();
+    ciMethodData* md = x->callee_md();
     if (md != nullptr) {
       ciParametersTypeData* parameters_type_data = md->parameters_type_data();
       if (parameters_type_data != nullptr) {
@@ -3056,12 +3050,12 @@ void LIRGenerator::do_ProfileCall(ProfileCall* x) {
     recv = new_register(T_OBJECT);
     __ move(value.result(), recv);
   }
-  __ profile_call(x->method(), x->bci_of_invoke(), x->callee(), mdo, recv, tmp, x->known_holder());
+  __ profile_call(x->method(), x->md(), x->bci_of_invoke(), x->callee(), mdo, recv, tmp, x->known_holder());
 }
 
 void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
   int bci = x->bci_of_invoke();
-  ciMethodData* md = x->method()->method_data_or_null();
+  ciMethodData* md = x->md();
   assert(md != nullptr, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
   if (data != nullptr) {
@@ -3165,7 +3159,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     counter_holder = new_register(T_METADATA);
     offset = in_bytes(backedge ? MethodData::backedge_counter_offset() :
                                  MethodData::invocation_counter_offset());
-    ciMethodData* md = method->method_data_or_null();
+    ciMethodData* md = info->scope()->method_data();
     assert(md != nullptr, "Sanity");
     __ metadata2reg(md->constant_encoding(), counter_holder);
   } else {

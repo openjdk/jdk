@@ -118,6 +118,7 @@ class ciMethod : public ciMetadata {
   void load_code();
 
   bool ensure_method_data(const methodHandle& h_m);
+  bool ensure_specialized_method_data(const methodHandle& h_m, ciMethodDataEntry* entry, MethodDataEntry* mdo_entry);
 
   void code_at_put(int bci, Bytecodes::Code code) {
     Bytecodes::check(code);
@@ -142,6 +143,11 @@ class ciMethod : public ciMetadata {
   ciInstanceKlass* holder() const                { return _holder; }
   ciMethodData* method_data();
   ciMethodData* method_data_or_null();
+
+  // Specialized md access
+  bool specialized_method_data_compatible(ciMethodData* caller_md, int bci);
+  ciMethodData* specialized_method_data(ciMethodData* caller_md, int bci);
+  ciMethodData* specialized_method_data_or_null(ciMethodData* caller_md, int bci);
 
   // Signature information.
   ciSignature* signature() const                 { return _signature; }
@@ -263,12 +269,12 @@ class ciMethod : public ciMetadata {
 
   ciTypeFlow*   get_flow_analysis();
   ciTypeFlow*   get_osr_flow_analysis(int osr_bci);  // alternate entry point
-  ciCallProfile call_profile_at_bci(int bci);
+  ciCallProfile call_profile_at_bci(int bci, ciMethodData* md);
 
   // Does type profiling provide any useful information at this point?
-  bool          argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
-  bool          parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
-  bool          return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind);
+  bool          argument_profiled_type(int bci, int i, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind);
+  bool          parameter_profiled_type(int i, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind);
+  bool          return_profiled_type(int bci, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind);
 
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);
@@ -315,6 +321,7 @@ class ciMethod : public ciMetadata {
   bool is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved) const;
   bool check_call(int refinfo_index, bool is_static) const;
   bool ensure_method_data();  // make sure it exists in the VM also
+  bool ensure_specialized_method_data(ciMethodData* caller_md, int bci);  // make sure it exists in the VM also
   MethodCounters* ensure_method_counters();
 
   int inline_instructions_size();

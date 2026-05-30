@@ -1763,9 +1763,10 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     methodHandle profiled_method;
     profiled_method = trap_method;
-
-    MethodData* trap_mdo =
-      get_method_data(current, profiled_method, create_if_missing);
+    MethodData* trap_mdo = trap_scope->specialized_method_data();
+    if (trap_mdo == nullptr) {
+      trap_mdo = get_method_data(current, profiled_method, create_if_missing);
+    }
 
     Symbol* class_name = nullptr;
     bool unresolved = false;
@@ -2013,7 +2014,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
                               Mutex::_no_safepoint_check_flag);
     ProfileData* pdata = nullptr;
     if (ProfileTraps && CompilerConfig::is_c2_enabled() && update_trap_state && trap_mdo != nullptr) {
-      assert(trap_mdo == get_method_data(current, profiled_method, false), "sanity");
       uint this_trap_count = 0;
       bool maybe_prior_trap = false;
       bool maybe_prior_recompile = false;

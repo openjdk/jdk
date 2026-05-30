@@ -423,7 +423,7 @@ void Parse::do_tableswitch() {
     return;
   }
 
-  ciMethodData* methodData = method()->method_data();
+  ciMethodData* methodData = method_data();
   ciMultiBranchData* profile = nullptr;
   if (methodData->is_mature() && UseSwitchProfiling) {
     ciProfileData* data = methodData->bci_to_data(bci());
@@ -431,7 +431,7 @@ void Parse::do_tableswitch() {
       profile = (ciMultiBranchData*)data;
     }
   }
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps(method_data(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
   int rnum = len+2;
@@ -497,7 +497,7 @@ void Parse::do_lookupswitch() {
     return;
   }
 
-  ciMethodData* methodData = method()->method_data();
+  ciMethodData* methodData = method_data();
   ciMultiBranchData* profile = nullptr;
   if (methodData->is_mature() && UseSwitchProfiling) {
     ciProfileData* data = methodData->bci_to_data(bci());
@@ -505,7 +505,7 @@ void Parse::do_lookupswitch() {
       profile = (ciMultiBranchData*)data;
     }
   }
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps(method_data(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
   jint* table = NEW_RESOURCE_ARRAY(jint, len*3);
@@ -753,7 +753,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   // Are jumptables supported
   if (!Matcher::has_match_rule(Op_Jump))  return false;
 
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps(method_data(), bci(), Deoptimization::Reason_unstable_if);
 
   // Decide if a guard is needed to lop off big ranges at either (or
   // both) end(s) of the input set. We'll call this the default target
@@ -877,7 +877,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
     }
   }
 
-  ciMethodData* methodData = method()->method_data();
+  ciMethodData* methodData = method_data();
   ciMultiBranchData* profile = nullptr;
   if (methodData->is_mature()) {
     ciProfileData* data = methodData->bci_to_data(bci());
@@ -908,7 +908,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 //----------------------------jump_switch_ranges-------------------------------
 void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, int switch_depth) {
   Block* switch_block = block();
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps(method_data(), bci(), Deoptimization::Reason_unstable_if);
 
   if (switch_depth == 0) {
     // Do special processing for the top-level call.
@@ -1232,7 +1232,7 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   if (use_mdo) {
     // Use MethodData information if it is available
     // FIXME: free the ProfileData structure
-    ciMethodData* methodData = method()->method_data();
+    ciMethodData* methodData = method_data();
     if (!methodData->is_mature())  return PROB_UNKNOWN;
     ciProfileData* data = methodData->bci_to_data(bci());
     if (data == nullptr) {
@@ -1327,7 +1327,7 @@ float Parse::branch_prediction(float& cnt,
       // Since it's an OSR, we probably have profile data, but since
       // branch_prediction returned PROB_UNKNOWN, the counts are too small.
       // Let's make a special check here for completely zero counts.
-      ciMethodData* methodData = method()->method_data();
+      ciMethodData* methodData = method_data();
       if (!methodData->is_empty()) {
         ciProfileData* data = methodData->bci_to_data(bci());
         // Only stop for truly zero counts, which mean an unknown part
@@ -1639,7 +1639,7 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
     return false;
   }
   return seems_never_taken(prob) &&
-         !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+         !C->too_many_traps(method_data(), bci(), Deoptimization::Reason_unstable_if);
 }
 
 void Parse::maybe_add_predicate_after_if(Block* path) {
@@ -2733,7 +2733,7 @@ void Parse::do_one_bytecode() {
     // See if we can get some profile data and hand it off to the next block
     Block *target_block = block()->successor_for_bci(target_bci);
     if (target_block->pred_count() != 1)  break;
-    ciMethodData* methodData = method()->method_data();
+    ciMethodData* methodData = method_data();
     if (!methodData->is_mature())  break;
     ciProfileData* data = methodData->bci_to_data(bci());
     assert(data != nullptr && data->is_JumpData(), "need JumpData for taken branch");

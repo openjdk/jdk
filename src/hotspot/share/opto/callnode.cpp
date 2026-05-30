@@ -264,6 +264,7 @@ uint TailJumpNode::match_edge(uint idx) const {
 //=============================================================================
 JVMState::JVMState(ciMethod* method, JVMState* caller) :
   _method(method),
+  _method_data(ciEnv::current()->specialized_method_data(method, caller)),
   _receiver_info(nullptr) {
   assert(method != nullptr, "must be valid call site");
   _bci = InvocationEntryBci;
@@ -281,6 +282,7 @@ JVMState::JVMState(ciMethod* method, JVMState* caller) :
 }
 JVMState::JVMState(int stack_size) :
   _method(nullptr),
+  _method_data(nullptr),
   _receiver_info(nullptr) {
   _bci = InvocationEntryBci;
   _reexecute = Reexecute_Undefined;

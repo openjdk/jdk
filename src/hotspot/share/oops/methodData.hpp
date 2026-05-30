@@ -127,7 +127,8 @@ public:
     call_type_data_tag,
     virtual_call_type_data_tag,
     parameters_type_data_tag,
-    speculative_trap_data_tag
+    speculative_trap_data_tag,
+    call_data_tag
   };
 
   enum {
@@ -287,8 +288,9 @@ class     CounterData;
 class       ReceiverTypeData;
 class         VirtualCallData;
 class           VirtualCallTypeData;
+class       CallData;
+class         CallTypeData;
 class       RetData;
-class       CallTypeData;
 class   JumpData;
 class     BranchData;
 class   ArrayData;
@@ -305,6 +307,7 @@ class ProfileData : public ResourceObj {
   friend class TypeEntries;
   friend class ReturnTypeEntry;
   friend class TypeStackSlotEntries;
+  friend class MethodDataEntry;
 private:
   enum {
     tab_width_one = 16,
@@ -422,6 +425,7 @@ public:
   virtual bool is_VirtualCallTypeData()const { return false; }
   virtual bool is_ParametersTypeData() const { return false; }
   virtual bool is_SpeculativeTrapData()const { return false; }
+  virtual bool is_CallData()        const { return false; }
 
 
   BitData* as_BitData() const {
@@ -479,6 +483,10 @@ public:
   SpeculativeTrapData* as_SpeculativeTrapData() const {
     assert(is_SpeculativeTrapData(), "wrong type");
     return is_SpeculativeTrapData() ? (SpeculativeTrapData*)this : nullptr;
+  }
+  CallData* as_CallData() const {
+    assert(is_CallData(), "wrong type");
+    return is_CallData() ? (CallData*)this : nullptr;
   }
 
 
@@ -925,6 +933,81 @@ public:
   void print_data_on(outputStream* st) const;
 };
 
+// Method Data entry used to store specialized callee profile data. A single cell to record the
+// mdo pointer.
+class MethodDataEntry {
+
+private:
+  enum {
+    method_data_entry,
+    md_entry_cell_count
+  };
+
+  // offset within the ProfileData object where the entry is
+  const int _offset;
+
+  void set_intptr_at(int index, intptr_t value) const {
+    _pd->set_intptr_at(_offset + index, value);
+  }
+
+  intptr_t* intptr_at_adr(int index) const {
+    return _pd->intptr_at_adr(_offset + index);
+  }
+
+  intptr_t intptr_at(int index) const {
+    return _pd->intptr_at(_offset + index);
+  }
+
+protected:
+  // ProfileData object this entry is part of
+  ProfileData* _pd;
+
+  intptr_t data() const {
+    return intptr_at(method_data_entry);
+  }
+
+  void set_data(intptr_t data) {
+    set_intptr_at(method_data_entry, data);
+  }
+
+public:
+  MethodDataEntry(int offset)
+    : _offset(offset), _pd(nullptr) {}
+
+  void set_profile_data(ProfileData* pd) {
+    _pd = pd;
+  }
+
+  MethodData* method_data() const {
+    return (MethodData*)data();
+  }
+
+  bool set_method_data(MethodData* md) {
+    MethodData** m = (MethodData**)intptr_at_adr(method_data_entry);
+    return AtomicAccess::replace_if_null(m, md);
+  }
+
+  void clear_method_data() {
+    set_data((intptr_t)nullptr);
+  }
+
+  static int static_cell_count() {
+    return md_entry_cell_count;
+  }
+
+  static ByteSize size() {
+    return in_ByteSize(static_cell_count() * DataLayout::cell_size);
+  }
+
+  // GC support
+  void clean_weak_klass_links(bool always_clean);
+
+  // CDS support
+  void metaspace_pointers_do(MetaspaceClosure* it);
+
+  void print_data_on(outputStream* st) const;
+};
+
 // Entries to collect type information at a call: contains arguments
 // (TypeStackSlotEntries), a return type (ReturnTypeEntry) and a
 // number of cells. Because the number of cells for the return type is
@@ -985,12 +1068,75 @@ public:
 
 };
 
+// CallData
+//
+// A CallData is used to access profiling information about a non
+// virtual call for which we collect callee`s profile in specialized mdo.
+class CallData : public CounterData {
+private:
+  // entry for callee`s specialized method data if any
+  MethodDataEntry _callee_md;
+
+public:
+  CallData(DataLayout* layout) :
+    CounterData(layout),
+    _callee_md(CounterData::static_cell_count())
+  {
+    assert(layout->tag() == DataLayout::call_type_data_tag ||
+           layout->tag() == DataLayout::call_data_tag, "wrong type");
+    // Some compilers (VC++) don't want this passed in member initialization list
+    _callee_md.set_profile_data(this);
+  }
+
+  const MethodDataEntry* callee_md() const {
+    return &_callee_md;
+  }
+
+  MethodDataEntry* updatable_callee_md() {
+    return &_callee_md;
+  }
+
+  void clear_method_data() {
+    _callee_md.clear_method_data();
+  }
+
+  virtual bool is_CallData() const { return true; }
+
+  static int static_cell_count() {
+    return CounterData::static_cell_count() + MethodDataEntry::static_cell_count();
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  // Direct accessors
+  static ByteSize call_data_size() {
+    return cell_offset(static_cell_count());
+  }
+
+  // GC support
+  virtual void clean_weak_klass_links(bool always_clean) {
+    _callee_md.clean_weak_klass_links(always_clean);
+  }
+
+  // CDS support
+  virtual void metaspace_pointers_do(MetaspaceClosure* it) {
+    _callee_md.metaspace_pointers_do(it);
+  }
+
+  void print_md_entry_on(outputStream* st) const {
+    _callee_md.print_data_on(st);
+  }
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
+};
+
 // CallTypeData
 //
 // A CallTypeData is used to access profiling information about a non
 // virtual call for which we collect type information about arguments
 // and return value.
-class CallTypeData : public CounterData {
+class CallTypeData : public CallData {
 private:
   // entries for arguments if any
   TypeStackSlotEntries _args;
@@ -998,7 +1144,7 @@ private:
   ReturnTypeEntry _ret;
 
   int cell_count_global_offset() const {
-    return CounterData::static_cell_count() + TypeEntriesAtCall::cell_count_local_offset();
+    return CallData::static_cell_count() + TypeEntriesAtCall::cell_count_local_offset();
   }
 
   // number of cells not counting the header
@@ -1012,8 +1158,8 @@ private:
 
 public:
   CallTypeData(DataLayout* layout) :
-    CounterData(layout),
-    _args(CounterData::static_cell_count()+TypeEntriesAtCall::header_cell_count(), number_of_arguments()),
+    CallData(layout),
+    _args(CallData::static_cell_count() + TypeEntriesAtCall::header_cell_count(), number_of_arguments()),
     _ret(cell_count() - ReturnTypeEntry::static_cell_count())
   {
     assert(layout->tag() == DataLayout::call_type_data_tag, "wrong type");
@@ -1039,17 +1185,17 @@ public:
   }
 
   static int compute_cell_count(BytecodeStream* stream) {
-    return CounterData::static_cell_count() + TypeEntriesAtCall::compute_cell_count(stream);
+    return CallData::static_cell_count() + TypeEntriesAtCall::compute_cell_count(stream);
   }
 
   static void initialize(DataLayout* dl, int cell_count) {
-    TypeEntriesAtCall::initialize(dl, CounterData::static_cell_count(), cell_count);
+    TypeEntriesAtCall::initialize(dl, CallData::static_cell_count(), cell_count);
   }
 
   virtual void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
   virtual int cell_count() const {
-    return CounterData::static_cell_count() +
+    return CallData::static_cell_count() +
       TypeEntriesAtCall::header_cell_count() +
       int_at_unchecked(cell_count_global_offset());
   }
@@ -1092,7 +1238,7 @@ public:
 
   // Code generation support
   static ByteSize args_data_offset() {
-    return cell_offset(CounterData::static_cell_count()) + TypeEntriesAtCall::args_data_offset();
+    return cell_offset(CallData::static_cell_count()) + TypeEntriesAtCall::args_data_offset();
   }
 
   ByteSize argument_type_offset(int i) {
@@ -1105,6 +1251,7 @@ public:
 
   // GC support
   virtual void clean_weak_klass_links(bool always_clean) {
+    CallData::clean_weak_klass_links(always_clean);
     if (has_arguments()) {
       _args.clean_weak_klass_links(always_clean);
     }
@@ -1115,6 +1262,7 @@ public:
 
   // CDS support
   virtual void metaspace_pointers_do(MetaspaceClosure* it) {
+    CallData::metaspace_pointers_do(it);
     if (has_arguments()) {
       _args.metaspace_pointers_do(it);
     }
@@ -1156,7 +1304,7 @@ public:
   virtual bool is_ReceiverTypeData() const { return true; }
 
   static int static_cell_count() {
-    return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count;
+    return counter_cell_count + (uint)TypeProfileWidth * receiver_type_row_cell_count;
   }
 
   virtual int cell_count() const {
@@ -1244,20 +1392,24 @@ public:
 // VirtualCallData
 //
 // A VirtualCallData is used to access profiling information about a
-// virtual call.  For now, it has nothing more than a ReceiverTypeData.
+// virtual call.
 class VirtualCallData : public ReceiverTypeData {
+private:
+  // entry for callee`s specialized method data if any
+  MethodDataEntry _callee_md;
+
 public:
-  VirtualCallData(DataLayout* layout) : ReceiverTypeData(layout) {
+  VirtualCallData(DataLayout* layout) : ReceiverTypeData(layout), _callee_md(ReceiverTypeData::static_cell_count()) {
     assert(layout->tag() == DataLayout::virtual_call_data_tag ||
            layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
+    _callee_md.set_profile_data(this);
   }
 
   virtual bool is_VirtualCallData() const { return true; }
 
   static int static_cell_count() {
     // At this point we could add more profile state, e.g., for arguments.
-    // But for now it's the same size as the base record type.
-    return ReceiverTypeData::static_cell_count();
+    return ReceiverTypeData::static_cell_count() + MethodDataEntry::static_cell_count();
   }
 
   virtual int cell_count() const {
@@ -1269,6 +1421,27 @@ public:
     return cell_offset(static_cell_count());
   }
 
+  const MethodDataEntry* callee_md() const {
+    return &_callee_md;
+  }
+
+  MethodDataEntry* updatable_callee_md() {
+    return &_callee_md;
+  }
+
+  void clear_method_data() {
+    _callee_md.clear_method_data();
+  }
+
+  // GC support
+  virtual void clean_weak_klass_links(bool always_clean);
+
+  // CDS support
+  virtual void metaspace_pointers_do(MetaspaceClosure* it);
+
+  void print_md_entry_on(outputStream* st) const {
+    _callee_md.print_data_on(st);
+  }
   void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
@@ -1392,7 +1565,7 @@ public:
 
   // GC support
   virtual void clean_weak_klass_links(bool always_clean) {
-    ReceiverTypeData::clean_weak_klass_links(always_clean);
+    VirtualCallData::clean_weak_klass_links(always_clean);
     if (has_arguments()) {
       _args.clean_weak_klass_links(always_clean);
     }
@@ -1403,7 +1576,7 @@ public:
 
   // CDS support
   virtual void metaspace_pointers_do(MetaspaceClosure* it) {
-    ReceiverTypeData::metaspace_pointers_do(it);
+    VirtualCallData::metaspace_pointers_do(it);
     if (has_arguments()) {
       _args.metaspace_pointers_do(it);
     }
@@ -2199,6 +2372,7 @@ public:
   // My size
   int size_in_bytes() const { return _size; }
   int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
+  int specialized_size_in_bytes() const;
 
   int invocation_count() {
     if (invocation_counter()->carry()) {
@@ -2483,6 +2657,8 @@ public:
   void clean_weak_method_links();
   Mutex* extra_data_lock();
   void check_extra_data_locked() const NOT_DEBUG_RETURN;
+
+  void free_specialized_method_datas(ClassLoaderData* loader_data);
 };
 
 #endif // SHARE_OOPS_METHODDATA_HPP

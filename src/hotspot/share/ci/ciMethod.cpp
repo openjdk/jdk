@@ -47,6 +47,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/trainingData.hpp"
 #include "prims/methodHandles.hpp"
@@ -460,13 +461,13 @@ int ciMethod::check_overflow(int c, Bytecodes::Code code) {
 // ------------------------------------------------------------------
 // ciMethod::call_profile_at_bci
 //
-// Get the ciCallProfile for the invocation of this method.
+// Get the ciCallProfile for the invocation of this method from provided method data.
 // Also reports receiver types for non-call type checks (if TypeProfileCasts).
-ciCallProfile ciMethod::call_profile_at_bci(int bci) {
+ciCallProfile ciMethod::call_profile_at_bci(int bci, ciMethodData* md) {
   ResourceMark rm;
   ciCallProfile result;
-  if (method_data() != nullptr && method_data()->is_mature()) {
-    ciProfileData* data = method_data()->bci_to_data(bci);
+  if (md != nullptr && md->is_mature()) {
+    ciProfileData* data = md->bci_to_data(bci);
     if (data != nullptr && data->is_CounterData()) {
       // Every profiled call site has a counter.
       int count = check_overflow(data->as_CounterData()->count(), java_code_at_bci(bci));
@@ -572,14 +573,15 @@ void ciMethod::assert_call_type_ok(int bci) {
  *
  * @param [in]bci         bci of the call
  * @param [in]i           argument number
+ * @param [in]md          method data of this method
  * @param [out]type       profiled type of argument, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind) {
-  if (MethodData::profile_parameters() && method_data() != nullptr && method_data()->is_mature()) {
-    ciProfileData* data = method_data()->bci_to_data(bci);
+bool ciMethod::argument_profiled_type(int bci, int i, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind) {
+  if (MethodData::profile_parameters() && md != nullptr && md->is_mature()) {
+    ciProfileData* data = md->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_VirtualCallTypeData()) {
         assert_virtual_call_type_ok(bci);
@@ -610,14 +612,15 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtr
  * the call at bci bci
  *
  * @param [in]bci         bci of the call
+ * @param [in]md          method data of this method
  * @param [out]type       profiled type of argument, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind) {
-  if (MethodData::profile_return() && method_data() != nullptr && method_data()->is_mature()) {
-    ciProfileData* data = method_data()->bci_to_data(bci);
+bool ciMethod::return_profiled_type(int bci, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind) {
+  if (MethodData::profile_return() && md != nullptr && md->is_mature()) {
+    ciProfileData* data = md->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_VirtualCallTypeData()) {
         assert_virtual_call_type_ok(bci);
@@ -645,14 +648,15 @@ bool ciMethod::return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr
  * Check whether profiling provides a type for the parameter i
  *
  * @param [in]i           parameter number
+ * @param [in]md          method data of this method
  * @param [out]type       profiled type of parameter, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind) {
-  if (MethodData::profile_parameters() && method_data() != nullptr && method_data()->is_mature()) {
-    ciParametersTypeData* parameters = method_data()->parameters_type_data();
+bool ciMethod::parameter_profiled_type(int i, ciMethodData* md, ciKlass*& type, ProfilePtrKind& ptr_kind) {
+  if (MethodData::profile_parameters() && md != nullptr && md->is_mature()) {
+    ciParametersTypeData* parameters = md->parameters_type_data();
     if (parameters != nullptr && i < parameters->number_of_parameters()) {
       type = parameters->valid_parameter_type(i);
       ptr_kind = parameters->parameter_ptr_kind(i);
@@ -1002,7 +1006,7 @@ bool ciMethod::has_member_arg() const {
 // ------------------------------------------------------------------
 // ciMethod::ensure_method_data
 //
-// Generate new MethodData* objects at compile time.
+// Generate new MethodData* objects at compile time for default method profile.
 // Return true if allocation was successful or no MDO is required.
 bool ciMethod::ensure_method_data(const methodHandle& h_m) {
   EXCEPTION_CONTEXT;
@@ -1036,6 +1040,53 @@ bool ciMethod::ensure_method_data() {
   return result;
 }
 
+// ------------------------------------------------------------------
+// ciMethod::ensure_specialized_method_data
+//
+// Generate new MethodData* objects at compile time for specialized profiles at MethodDataEntry.
+// Return true if allocation was successful or no MDO is required.
+bool ciMethod::ensure_specialized_method_data(const methodHandle& h_m, ciMethodDataEntry* entry, MethodDataEntry* mdo_entry) {
+  EXCEPTION_CONTEXT;
+  if (is_native() || is_abstract() || h_m()->is_accessor()) {
+    return true;
+  }
+  if (mdo_entry->method_data() == nullptr) {
+    Method::build_specialized_profiling_method_data(h_m, mdo_entry, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+    }
+  }
+  if (mdo_entry->method_data() != nullptr) {
+    entry->translate_method_data_from(mdo_entry);
+    return entry->method_data()->load_data();
+  } else {
+    return false;
+  }
+}
+
+// public, retroactive version
+bool ciMethod::ensure_specialized_method_data(ciMethodData* caller_md, int bci) {
+  assert(caller_md != nullptr, "caller method data should not be null");
+  ciMethodDataEntry* entry = caller_md->bci_to_md_entry(bci);
+  assert(entry != nullptr, "missing specialized method data entry at bci");
+
+  bool result = true;
+  if (entry->method_data()->is_empty()) {
+    GUARDED_VM_ENTRY({
+      MethodDataEntry* mdo_entry = nullptr;
+      {
+        MethodData* caller_mdo = (MethodData*)(caller_md->constant_encoding());
+        MutexLocker ml(caller_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+        ProfileData* mdo_data = caller_mdo->bci_to_data(bci);
+        mdo_entry = mdo_data->is_CallData() ? ((CallData*)mdo_data)->updatable_callee_md() : ((VirtualCallData*)mdo_data)->updatable_callee_md();
+      }
+
+      methodHandle mh(Thread::current(), get_Method());
+      result = ensure_specialized_method_data(mh, entry, mdo_entry);
+    });
+  }
+  return result;
+}
 
 // ------------------------------------------------------------------
 // ciMethod::method_data
@@ -1065,6 +1116,52 @@ ciMethodData* ciMethod::method_data() {
 // null otherwise.
 ciMethodData* ciMethod::method_data_or_null() {
   ciMethodData *md = method_data();
+  if (md->is_empty()) {
+    return nullptr;
+  }
+  return md;
+}
+
+bool ciMethod::specialized_method_data_compatible(ciMethodData* caller_md, int bci) {
+  ciMethodDataEntry* entry = caller_md->bci_to_md_entry(bci);
+  if (entry == nullptr || entry->method_data()->constant_encoding() == nullptr) {
+    return false;
+  }
+
+  MethodData* mdo = (MethodData*)entry->method_data()->constant_encoding();
+  return mdo->method() == get_Method();
+}
+
+// ------------------------------------------------------------------
+// ciMethod::specialized_method_data
+//
+ciMethodData* ciMethod::specialized_method_data(ciMethodData* caller_md, int bci) {
+  assert(caller_md != nullptr, "caller method data should not be null");
+  assert(specialized_method_data_compatible(caller_md, bci), "specialized method data entry doesn`t exist or incompatible with current method");
+  ciMethodDataEntry* entry = caller_md->bci_to_md_entry(bci);
+  ciMethodData* md = entry->method_data();
+
+  if (!entry->load_required()) {
+    return md;
+  }
+  VM_ENTRY_MARK;
+  ciEnv* env = CURRENT_ENV;
+  Thread* my_thread = JavaThread::current();
+  methodHandle h_m(my_thread, get_Method());
+
+  md->load_data();
+  return md;
+}
+
+// ------------------------------------------------------------------
+// ciMethod::specialized_method_data_or_null
+// Returns a pointer to ciMethodData if specialized MDO exists on the VM side,
+// null otherwise.
+ciMethodData* ciMethod::specialized_method_data_or_null(ciMethodData* caller_md, int bci) {
+  if (!specialized_method_data_compatible(caller_md, bci)) {
+    return nullptr;
+  }
+  ciMethodData *md = specialized_method_data(caller_md, bci);
   if (md->is_empty()) {
     return nullptr;
   }

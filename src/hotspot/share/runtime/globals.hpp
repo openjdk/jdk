@@ -1182,6 +1182,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintMethodData, false, DIAGNOSTIC,                         \
           "Print the results of +ProfileInterpreter at end of run")         \
                                                                             \
+  product(bool, SpecializedMethodData, false, EXPERIMENTAL,                 \
+          "Enables use of individual profiles for inlined calls")           \
+                                                                            \
   develop(bool, VerifyDataPointer, trueInDebug,                             \
           "Verify the method data pointer during interpreter profiling")    \
                                                                             \

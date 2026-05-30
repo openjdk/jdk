@@ -28,6 +28,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMethod.hpp"
+#include "ci/ciMethodData.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbols.hpp"
@@ -1696,4 +1697,72 @@ void ciEnv::dump_inline_data(int compile_id) {
 
 void ciEnv::dump_replay_data_version(outputStream* out) {
   out->print_cr("version %d", REPLAY_VERSION);
+}
+
+bool ciEnv::ensure_specialized_method_data(ciMethod* callee, ciMethodData* caller_md, int bci) {
+  assert(callee != nullptr, "callee should not be null");
+
+  if (!SpecializedMethodData) {
+    return callee->ensure_method_data();
+  }
+
+  return callee->ensure_specialized_method_data(caller_md, bci);
+}
+
+ciMethodData* ciEnv::specialized_method_data(ciMethod* callee, ciMethodData* caller_md, int bci) {
+  assert(callee != nullptr, "callee should not be null");
+
+  if (!SpecializedMethodData) {
+    return callee->method_data();
+  }
+
+  if (callee->specialized_method_data_compatible(caller_md, bci)) {
+    return callee->specialized_method_data(caller_md, bci);
+  }
+  return callee->method_data();
+}
+
+ciMethodData* ciEnv::specialized_method_data(ciMethod* callee, JVMState* caller) {
+  assert(callee != nullptr, "callee should not be null");
+
+  if (!SpecializedMethodData) {
+    return callee->method_data();
+  }
+
+  if (caller == nullptr || !caller->has_method()) {
+    return callee->method_data();
+  }
+
+  GrowableArray<Pair<ciMethod*, int>> call_sites(caller->depth());
+  for (JVMState* jvms = caller; jvms != nullptr && jvms->has_method(); jvms = jvms->caller()) {
+    call_sites.append({jvms->method(), jvms->bci()});
+  }
+
+  for (int spec_depth = call_sites.length(); spec_depth > 0; spec_depth--) {
+    ciMethodData* caller_md = call_sites.at(spec_depth - 1).first->method_data_or_null();
+    int caller_bci = call_sites.at(spec_depth - 1).second;
+
+    if (caller_md == nullptr) {
+      continue;
+    }
+
+    for (int i = spec_depth - 2; i >= 0; i--) {
+      caller_md = call_sites.at(i).first->specialized_method_data_or_null(caller_md, caller_bci);
+      caller_bci = call_sites.at(i).second;
+
+      if (caller_md == nullptr) {
+        break;
+      }
+    }
+    if (caller_md == nullptr) {
+      continue;
+    }
+
+    ciMethodData* md = callee->specialized_method_data_or_null(caller_md, caller_bci);
+    if (md != nullptr && md->is_mature()) {
+      return md;
+    }
+  }
+
+  return callee->method_data();
 }

@@ -1164,6 +1164,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
     // Make method available for all Safepoints
     ciMethod* scope_method = method ? method : C->method();
+    ciMethodData* scope_md = jvms->has_method() ? jvms->method_data() : nullptr;
     // Describe the scope here
     assert(jvms->bci() >= InvocationEntryBci && jvms->bci() <= 0x10000, "must be a valid or entry BCI");
     assert(!jvms->should_reexecute() || depth == max_depth, "reexecute allowed only for the youngest");
@@ -1174,6 +1175,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       safepoint_pc_offset,
       null_mh,
       scope_method,
+      scope_md,
       jvms->bci(),
       jvms->should_reexecute(),
       rethrow_exception,
@@ -1265,9 +1267,10 @@ void NonSafepointEmitter::emit_non_safepoint() {
   for (int depth = 1; depth <= max_depth; depth++) {
     JVMState* jvms = youngest_jvms->of_depth(depth);
     ciMethod* method = jvms->has_method() ? jvms->method() : nullptr;
+    ciMethodData* md = jvms->has_method() ? jvms->method_data() : nullptr;
     assert(!jvms->should_reexecute() || depth==max_depth, "reexecute allowed only for the youngest");
     methodHandle null_mh;
-    debug_info->describe_scope(pc_offset, null_mh, method, jvms->bci(), jvms->should_reexecute());
+    debug_info->describe_scope(pc_offset, null_mh, method, md, jvms->bci(), jvms->should_reexecute());
   }
 
   // Mark the end of the scope set.
