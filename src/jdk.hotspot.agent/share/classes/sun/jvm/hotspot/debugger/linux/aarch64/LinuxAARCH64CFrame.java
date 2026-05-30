@@ -128,6 +128,11 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
         return getFrameFromReg(linuxDbg(), r -> LinuxAARCH64ThreadContext.getRegFromSignalTrampoline(sp(), r.intValue()));
       }
 
+      if (hasNativeLibrary() && dwarf() == null) {
+        // Cannot find a sender frame if DWARF is missing even though PC in native library.
+        return null;
+      }
+
       if (senderPC == null) {
         // Use getSenderPC() if current frame is Java because we cannot rely on lr in this case.
         senderPC = dwarf() == null ? getSenderPC(null) : lr;
@@ -184,8 +189,11 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
             return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf);
           }
 
-          // We cannot unwind anymore without appropriate DWARF.
-          return null;
+          // Returns CFrame if the sender is native frame even though it does not have DWARF,
+          // otherwise returns null because we cannot unwind anymore.
+          return linuxDbg().findLibPtrByAddress(senderPC) != null
+            ? new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null /* no CFA */, senderPC, null /* no DWARF */)
+            : null;
         }
       }
 
