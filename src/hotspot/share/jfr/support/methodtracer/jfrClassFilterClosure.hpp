@@ -25,11 +25,11 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
 
-#include "jni.h"
-#include "memory/iterator.hpp"
 #include "jfr/support/methodtracer/jfrInstrumentedClass.hpp"
 #include "jfr/utilities/jfrRelation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jni.h"
+#include "memory/iterator.hpp"
 
 class JavaThread;
 class JfrFilter;

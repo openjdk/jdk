@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,22 +46,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.testng.annotations.Test;
-
 import jdk.test.lib.RandomFactory;
 
 import static java.lang.String.format;
 import static java.nio.file.StandardOpenOption.*;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm/timeout=180 -Xmx1280m TransferTo
+ * @run junit/othervm/timeout=180 -Xmx1280m TransferTo
  * @bug 8279283 8294541
  * @summary Tests whether java.io.BufferedInputStream.transferTo conforms to the
  *          InputStream.transferTo specification
@@ -183,7 +183,7 @@ public class TransferTo {
             int count = inBytes.length - posIn;
             int expected = count - bufferBytes;
 
-            assertEquals(reported, expected,
+            assertEquals(expected, reported,
                     format("transferred %d bytes but should report %d", reported, expected));
 
             byte[] outBytes = recorder.get().get();
@@ -198,7 +198,7 @@ public class TransferTo {
                 reported = in.transferTo(out);
                 expected = count - bufferBytes;
 
-                assertEquals(reported, expected,
+                assertEquals(expected, reported,
                         format("replayed %d bytes but should report %d", reported, expected));
 
                 outBytes = recorder.get().get();

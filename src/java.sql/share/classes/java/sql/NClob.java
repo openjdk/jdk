@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ package java.sql;
  * An SQL {@code NCLOB} is a built-in type
  * that stores a Character Large Object using the National Character Set
  *  as a column value in a row of  a database table.
- * <P>The {@code NClob} interface extends the {@code Clob} interface
+ * <P>
+ * The {@code NClob} interface extends the {@code Clob} interface
  * which provides methods for getting the
  * length of an SQL {@code NCLOB} value,
  * for materializing a {@code NCLOB} value on the client, and for
@@ -44,6 +45,12 @@ package java.sql;
  * access an SQL {@code NCLOB} value.  In addition, this interface
  * has methods for updating a {@code NCLOB} value.
  * <p>
+ * To release resources used by the {@code NClob} object, applications must call
+ * either the {@link #free()} or the {@link #close()} method.  Any attempt to
+ * invoke a method other than {@link #free()} or {@link #close()} after the
+ * {@code NClob} object has been closed, will result in a {@link SQLException}
+ * being thrown.
+ * <P>
  * All methods on the {@code NClob} interface must be fully implemented if the
  * JDBC driver supports the data type.
  *

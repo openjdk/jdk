@@ -31,7 +31,7 @@
 
 void ShenandoahGenerationalMode::initialize_flags() const {
 
-#if !(defined AARCH64 || defined AMD64 || defined IA32 || defined PPC64 || defined RISCV64)
+#if !(defined AARCH64 || defined AMD64 || defined PPC64 || defined RISCV64)
   vm_exit_during_initialization("Shenandoah Generational GC is not supported on this platform.");
 #endif
 

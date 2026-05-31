@@ -35,6 +35,7 @@ import java.lang.foreign.*;
 /*
  * @test id=byte-buffer-direct
  * @bug 8323582
+ * @key randomness
  * @summary Test vectorization of loops over MemorySegment, with native memory where the address is not always aligned.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegmentUnalignedAddress ByteBufferDirect

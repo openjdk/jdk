@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
@@ -41,11 +41,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-void* ArrayKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, true, THREAD);
-}
-
-ArrayKlass::ArrayKlass() {
+ArrayKlass::ArrayKlass() : _dimension() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
@@ -92,9 +88,9 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
   return super()->uncached_lookup_method(name, signature, OverpassLookupMode::skip, private_mode);
 }
 
-ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
+ArrayKlass::ArrayKlass(int n, Symbol* name, KlassKind kind) :
   Klass(kind),
-  _dimension(1),
+  _dimension(n),
   _higher_dimension(nullptr),
   _lower_dimension(nullptr) {
   // Arrays don't add any new methods, so their vtable is the same size as
@@ -103,7 +99,8 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
   set_name(name);
   set_super(Universe::is_bootstrapping() ? nullptr : vmClasses::Object_klass());
   set_layout_helper(Klass::_lh_neutral_value);
-  set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
+  // All arrays are considered to be cloneable (See JLS 20.1.5)
+  set_is_cloneable_fast();
   JFR_ONLY(INIT_ID(this);)
   log_array_class_load(this);
 }
@@ -187,16 +184,6 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
   return nullptr;
 }
 
-objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_ARRAY), CHECK_NULL);
-  size_t size = objArrayOopDesc::object_size(length);
-  ArrayKlass* ak = array_klass(n + dimension(), CHECK_NULL);
-  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
-                                                                /* do_zero */ true, CHECK_NULL);
-  // initialization to null not necessary, area already cleared
-  return o;
-}
-
 // JVMTI support
 
 jint ArrayKlass::jvmti_class_status() const {
@@ -259,9 +246,9 @@ void ArrayKlass::log_array_class_load(Klass* k) {
     LogStream ls(lt);
     ResourceMark rm;
     ls.print("%s", k->name()->as_klass_external_name());
-    if (MetaspaceShared::is_shared_dynamic((void*)k)) {
+    if (AOTMetaspace::in_aot_cache_dynamic_region((void*)k)) {
       ls.print(" source: shared objects file (top)");
-    } else if (MetaspaceShared::is_shared_static((void*)k)) {
+    } else if (AOTMetaspace::in_aot_cache_static_region((void*)k)) {
       ls.print(" source: shared objects file");
     }
     ls.cr();

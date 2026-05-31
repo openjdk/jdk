@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -164,15 +164,16 @@ class StubGenerator: public StubCodeGenerator {
 
       // Save non-volatile registers to ABI of caller frame.
       BLOCK_COMMENT("save registers, push frame {");
-      __ z_stmg(Z_R6, Z_R14, 16, Z_SP);
-      __ z_std(Z_F8, 96, Z_SP);
-      __ z_std(Z_F9, 104, Z_SP);
-      __ z_std(Z_F10, 112, Z_SP);
-      __ z_std(Z_F11, 120, Z_SP);
-      __ z_std(Z_F12, 128, Z_SP);
-      __ z_std(Z_F13, 136, Z_SP);
-      __ z_std(Z_F14, 144, Z_SP);
-      __ z_std(Z_F15, 152, Z_SP);
+      __ save_return_pc();
+      __ z_stmg(Z_R6, Z_R13, 16, Z_SP);
+      __ z_std(Z_F8, 80, Z_SP);
+      __ z_std(Z_F9, 88, Z_SP);
+      __ z_std(Z_F10, 96, Z_SP);
+      __ z_std(Z_F11, 104, Z_SP);
+      __ z_std(Z_F12, 112, Z_SP);
+      __ z_std(Z_F13, 120, Z_SP);
+      __ z_std(Z_F14, 128, Z_SP);
+      __ z_std(Z_F15, 136, Z_SP);
 
       //
       // Push ENTRY_FRAME including arguments:
@@ -337,15 +338,16 @@ class StubGenerator: public StubCodeGenerator {
       __ z_lg(r_arg_result_type, result_type_offset, r_entryframe_fp);
 
       // Restore non-volatiles.
-      __ z_lmg(Z_R6, Z_R14, 16, Z_SP);
-      __ z_ld(Z_F8, 96, Z_SP);
-      __ z_ld(Z_F9, 104, Z_SP);
-      __ z_ld(Z_F10, 112, Z_SP);
-      __ z_ld(Z_F11, 120, Z_SP);
-      __ z_ld(Z_F12, 128, Z_SP);
-      __ z_ld(Z_F13, 136, Z_SP);
-      __ z_ld(Z_F14, 144, Z_SP);
-      __ z_ld(Z_F15, 152, Z_SP);
+      __ restore_return_pc();
+      __ z_lmg(Z_R6, Z_R13, 16, Z_SP);
+      __ z_ld(Z_F8, 80, Z_SP);
+      __ z_ld(Z_F9, 88, Z_SP);
+      __ z_ld(Z_F10, 96, Z_SP);
+      __ z_ld(Z_F11, 104, Z_SP);
+      __ z_ld(Z_F12, 112, Z_SP);
+      __ z_ld(Z_F13, 120, Z_SP);
+      __ z_ld(Z_F14, 128, Z_SP);
+      __ z_ld(Z_F15, 136, Z_SP);
       BLOCK_COMMENT("} restore");
 
       //
@@ -3359,7 +3361,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubRoutines::zarch::_partial_subtype_check            = generate_partial_subtype_check();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     // Generate AES intrinsics code.
     if (UseAESIntrinsics) {
       if (VM_Version::has_Crypto_AES()) {
@@ -3403,7 +3405,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(StubId::stubgen_sha512_implCompressMB_id);
     }
 
-#ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
@@ -3415,12 +3416,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
-#endif
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   }
 
  public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {
     switch(blob_id) {
     case BlobId::stubgen_preuniverse_id:
       generate_preuniverse_stubs();
@@ -3477,6 +3477,6 @@ class StubGenerator: public StubCodeGenerator {
 
 };
 
-void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
-  StubGenerator g(code, blob_id);
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
+  StubGenerator g(code, blob_id, stub_data);
 }

@@ -24,9 +24,10 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
+import static jdk.jpackage.internal.util.PathUtils.mapNullablePath;
 
 import java.nio.file.Path;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.util.CompositeProxy;
 
@@ -40,7 +41,25 @@ interface LinuxApplicationLayout extends ApplicationLayout, LinuxApplicationLayo
 
     @Override
     default LinuxApplicationLayout resolveAt(Path root) {
-        return create(ApplicationLayout.super.resolveAt(root),
-                resolveNullablePath(root, libAppLauncher()));
+        return (LinuxApplicationLayout)ApplicationLayout.super.resolveAt(root);
+    }
+
+    @Override
+    default LinuxApplicationLayout unresolve() {
+        return (LinuxApplicationLayout)ApplicationLayout.super.unresolve();
+    }
+
+    @Override
+    default LinuxApplicationLayout resetRootDirectory() {
+        if (isResolved()) {
+            return create(ApplicationLayout.super.resetRootDirectory(), libAppLauncher());
+        } else {
+            return this;
+        }
+    }
+
+    @Override
+    default LinuxApplicationLayout map(UnaryOperator<Path> mapper) {
+        return create(ApplicationLayout.super.map(mapper), mapNullablePath(mapper, libAppLauncher()));
     }
 }

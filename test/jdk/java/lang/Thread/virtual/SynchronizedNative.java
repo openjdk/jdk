@@ -28,7 +28,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native --enable-native-access=ALL-UNNAMED SynchronizedNative
+ * @run junit/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED SynchronizedNative
  */
 
 /*
@@ -36,7 +36,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xint --enable-native-access=ALL-UNNAMED SynchronizedNative
+ * @run junit/othervm/native/timeout=480 -Xint --enable-native-access=ALL-UNNAMED SynchronizedNative
  */
 
 /*
@@ -44,7 +44,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED SynchronizedNative
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED SynchronizedNative
  */
 
 /*
@@ -52,7 +52,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED SynchronizedNative
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED SynchronizedNative
  */
 
 import java.util.concurrent.CountDownLatch;

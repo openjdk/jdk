@@ -24,9 +24,10 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
+import static jdk.jpackage.internal.util.PathUtils.mapNullablePath;
 
 import java.nio.file.Path;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.util.CompositeProxy;
 
@@ -35,12 +36,32 @@ interface MacApplicationLayout extends ApplicationLayout, MacApplicationLayoutMi
     static MacApplicationLayout create(ApplicationLayout layout, Path runtimeRootDir) {
         return CompositeProxy.build()
                 .invokeTunnel(CompositeProxyTunnel.INSTANCE)
-                .create(MacApplicationLayout.class, layout, new MacApplicationLayoutMixin.Stub(runtimeRootDir));
+                .create(MacApplicationLayout.class, layout,
+                        new MacApplicationLayoutMixin.Stub(runtimeRootDir));
     }
 
     @Override
     default MacApplicationLayout resolveAt(Path root) {
-        return create(ApplicationLayout.super.resolveAt(root),
-                resolveNullablePath(root, runtimeRootDirectory()));
+        return (MacApplicationLayout)ApplicationLayout.super.resolveAt(root);
     }
+
+    @Override
+    default MacApplicationLayout unresolve() {
+        return (MacApplicationLayout)ApplicationLayout.super.unresolve();
+    }
+
+    @Override
+    default MacApplicationLayout resetRootDirectory() {
+        if (isResolved()) {
+            return create(ApplicationLayout.super.resetRootDirectory(), runtimeRootDirectory());
+        } else {
+            return this;
+        }
+    }
+
+    @Override
+    default MacApplicationLayout map(UnaryOperator<Path> mapper) {
+        return create(ApplicationLayout.super.map(mapper), mapNullablePath(mapper, runtimeRootDirectory()));
+    }
+
 }

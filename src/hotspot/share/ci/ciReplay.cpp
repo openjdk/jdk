@@ -600,7 +600,7 @@ class CompileReplay : public StackObj {
         _nesting.check(); // Check if a reallocation in the resource arena is safe
         int new_length = _buffer_length * 2;
         // Next call will throw error in case of OOM.
-        _buffer = REALLOC_RESOURCE_ARRAY(char, _buffer, _buffer_length, new_length);
+        _buffer = REALLOC_RESOURCE_ARRAY(_buffer, _buffer_length, new_length);
         _buffer_length = new_length;
       }
       if (c == '\n') {
@@ -1572,7 +1572,7 @@ oop ciReplay::obj_field(oop obj, Symbol* name) {
 
   do {
     if (!ik->has_nonstatic_fields()) {
-      ik = ik->java_super();
+      ik = ik->super();
       continue;
     }
 
@@ -1591,7 +1591,7 @@ oop ciReplay::obj_field(oop obj, Symbol* name) {
       }
     }
 
-    ik = ik->java_super();
+    ik = ik->super();
   } while (ik != nullptr);
   return nullptr;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,17 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteOrder;
+import java.util.function.IntUnaryOperator;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
-
-import java.lang.foreign.ValueLayout;
-import java.lang.reflect.Array;
-import java.nio.ByteOrder;
-import java.util.Objects;
-import java.util.function.IntUnaryOperator;
 
 import static jdk.incubator.vector.VectorOperators.*;
 
 @SuppressWarnings("cast")
-abstract class AbstractVector<E> extends Vector<E> {
+abstract sealed class AbstractVector<E> extends Vector<E>
+        permits ByteVector, DoubleVector, FloatVector, IntVector, LongVector, ShortVector {
     /**
      * The order of vector bytes when stored in natural,
      * array elements of the same lane type.
@@ -83,6 +78,9 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     /*package-private*/
     abstract AbstractSpecies<E> vspecies();
+
+    /*package-private*/
+    abstract int laneTypeOrdinal();
 
     @Override
     @ForceInline
@@ -182,7 +180,44 @@ abstract class AbstractVector<E> extends Vector<E> {
     final AbstractVector<?> asVectorRawTemplate(LaneType laneType) {
         // NOTE:  This assumes that convert0('X')
         // respects REGISTER_ENDIAN order.
-        return convert0('X', vspecies().withLanes(laneType));
+        return convert0('X', vspecies().withLanes(laneType)).swapIfNeeded(vspecies());
+    }
+
+    @ForceInline
+    static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
+        final int lanes = targetSpecies.laneCount();
+
+        if ((lanes % subLanesPerSrc) != 0) {
+            throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
+        }
+
+        // Each group corresponds to one source lane.
+        // For each group, reverse the lanes inside that group.
+        final int groups = lanes / subLanesPerSrc;
+        int[] map = new int[lanes];
+        for (int g = 0; g < groups; ++g) {
+            int base = g * subLanesPerSrc;
+            for (int j = 0; j < subLanesPerSrc; ++j) {
+                 map[base + j] = base + (subLanesPerSrc - 1 - j);
+            }
+        }
+        return VectorShuffle.fromArray(targetSpecies, map, 0);
+    }
+
+    @ForceInline
+    final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
+        if (java.nio.ByteOrder.nativeOrder() != ByteOrder.BIG_ENDIAN) {
+            return -1;
+        }
+        int sBytes = srcSpecies.elementSize();
+        int tBytes = vspecies().elementSize();
+
+        // No lane reordering needed for same size or widening reinterprets
+        if (sBytes == tBytes || (sBytes % tBytes) != 0) {
+            return -1;
+        }
+        int subLanesPerSrc = sBytes / tBytes;
+        return subLanesPerSrc;
     }
 
     /*package-private*/
@@ -199,9 +234,9 @@ abstract class AbstractVector<E> extends Vector<E> {
     /*package-private*/
     @ForceInline
     final <F> VectorShuffle<F> bitsToShuffleTemplate(AbstractSpecies<F> dsp) {
-        Class<?> etype = vspecies().elementType();
+        int etype = vspecies().laneTypeOrdinal();
         Class<?> dvtype = dsp.shuffleType();
-        Class<?> dtype = dsp.asIntegral().elementType();
+        int dtype = dsp.asIntegral().laneTypeOrdinal();
         int dlength = dsp.dummyVector().length();
         return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
                                      getClass(), etype, length(),
@@ -241,6 +276,9 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     /*package-private*/
     abstract AbstractVector<E> maybeSwap(ByteOrder bo);
+
+    /*package-private*/
+    abstract AbstractVector<?> swapIfNeeded(AbstractSpecies<?> srcSpecies);
 
     /*package-private*/
     @ForceInline
@@ -350,14 +388,14 @@ abstract class AbstractVector<E> extends Vector<E> {
         AbstractSpecies<F> rsp = (AbstractSpecies<F>) toSpecies;
         AbstractSpecies<E> vsp = vspecies();
         if (part == 0) {
-            // Works the same for in-place, expand, or contract.
+            // Works the same for in-place, selection (truncation) and insertion (padding)
             return convert0('X', rsp);
         } else {
             int origin = shapeChangeOrigin(vsp, rsp, false, part);
             //System.out.println("*** origin = "+origin+", part = "+part+", reinterpret");
-            if (part > 0) {  // Expansion: slice first then cast.
+            if (part > 0) {  // Selection (truncation): slice first then cast.
                 return slice(origin).convert0('X', rsp);
-            } else {  // Contraction: cast first then unslice.
+            } else {  // Insertion (padding): cast first then unslice.
                 return rsp.zero().slice(rsp.laneCount() - origin,
                                         convert0('X', rsp));
             }
@@ -383,7 +421,7 @@ abstract class AbstractVector<E> extends Vector<E> {
         AbstractSpecies<E> vsp = vspecies();
         char kind = c.kind();
         switch (kind) {
-        case 'C': // Regular cast conversion, known to the JIT.
+        case 'C': // Regular cast conversion.
             break;
         case 'I':  // Identity conversion => reinterpret.
             assert(c.sizeChangeLog2() == 0);
@@ -406,14 +444,14 @@ abstract class AbstractVector<E> extends Vector<E> {
         vsp.check(c.domain());  // apply dynamic check to conv
         rsp.check(c.range());   // apply dynamic check to conv
         if (part == 0) {
-            // Works the same for in-place, expand, or contract.
+            // Works the same for in-place, selection (truncation) and insertion (padding)
             return convert0(kind, rsp);
         } else {
             int origin = shapeChangeOrigin(vsp, rsp, true, part);
             //System.out.println("*** origin = "+origin+", part = "+part+", lanewise");
-            if (part > 0) {  // Expansion: slice first then cast.
+            if (part > 0) {  // Selection (truncation): slice first then cast.
                 return slice(origin).convert0(kind, rsp);
-            } else {  // Contraction: cast first then unslice.
+            } else {  // Insertion (padding): cast first then unslice.
                 return rsp.zero().slice(rsp.laneCount() - origin,
                                         convert0(kind, rsp));
             }
@@ -423,15 +461,15 @@ abstract class AbstractVector<E> extends Vector<E> {
     /**
      * Check a part number and return it multiplied by the appropriate
      * block factor to yield the origin of the operand block, as a
-     * lane number.  For expansions the origin is reckoned in the
-     * domain vector, since the domain vector has too much information
-     * and must be sliced.  For contractions the origin is reckoned in
-     * the range vector, since the range vector has too many lanes and
-     * the result must be unsliced at the same position as the inverse
-     * expansion.  If the conversion is lanewise, then lane sizes may
-     * be changing as well.  This affects the logical size of the
-     * result, and so the domain size is multiplied or divided by the
-     * lane size change.
+     * lane number.  For selection (truncation) the origin is reckoned
+     * in the domain vector, since the domain vector has too much
+     * information and must be sliced.  For insertion (padding) the
+     * origin is reckoned in the range vector, since the range vector
+     * has too many lanes and the result must be unsliced at the same
+     * position as the inverse selection.  If the conversion is lanewise,
+     * then lane sizes may be changing as well.  This affects the logical
+     * size of the result, and so the domain size is multiplied or
+     * divided by the lane size change.
      */
     /*package-private*/
     @ForceInline
@@ -440,38 +478,65 @@ abstract class AbstractVector<E> extends Vector<E> {
                           AbstractSpecies<?> rsp,
                           boolean lanewise,
                           int part) {
+        // domain / input:          X        -> ETYPE
+        // logical result:          f(X)     -> FTYPE
+        // range / physical output: Y        -> FTYPE
         int domSizeLog2 = dsp.vectorShape.vectorBitSizeLog2;
         int phySizeLog2 = rsp.vectorShape.vectorBitSizeLog2;
+        // Logical expansion ratio = ML
+        //   lanewise=true  (logical lanewise conversion)
+        //   -> ML = phyElementSize / domElementSize
+        //   lanewise=false (reinterpret)
+        //   -> ML = 1
         int laneChangeLog2 = 0;
         if (lanewise) {
             laneChangeLog2 = (rsp.laneType.elementSizeLog2 -
                               dsp.laneType.elementSizeLog2);
         }
+        // ML = |f(X)| / |X|
+        // -> |f(X)| = |X| * ML
         int resSizeLog2 = domSizeLog2 + laneChangeLog2;
-        // resSizeLog2 = 0 => 1-lane vector shrinking to 1-byte lane-size
-        // resSizeLog2 < 0 => small vector shrinking by more than a lane-size
+        // resSizeLog2 = 0 => logical result only has a single byte
+        //                    e.g. cast L64 (1-element long) to B8 (1-element byte)
+        // resSizeLog2 < 0 => logical result has less than a byte -> impossible!
+        //                    currently, all vectors start with at least 8 bytes,
+        //                    and we can contract by at most a factor of 8.
         assert(resSizeLog2 >= 0);
-        // Expansion ratio: expansionLog2 = resSizeLog2 - phySizeLog2;
         if (!partInRange(resSizeLog2, phySizeLog2, part)) {
             // fall through...
         } else if (resSizeLog2 > phySizeLog2) {
-            // Expansion by M means we must slice a block from the domain.
-            // What is that block size?  It is 1/M of the domain.
-            // Let's compute the log2 of that block size, as 's'.
-            //s = (dsp.laneCountLog2() - expansionLog2);
-            //s = ((domSizeLog2 - dsp.laneType.elementSizeLog2) - expansionLog2);
-            //s = (domSizeLog2 - expansionLog2 - dsp.laneType.elementSizeLog2);
+            // Selection (truncation).
+            // Output selection ratio:
+            //   MS = |f(X)| / |Y|
+            //
+            // We must slice one of MS blocks from the domain.
+            // The block has L lanes:
+            //   L = X.length        / MS
+            //     = (|X| / |ETYPE|) / MS
+            //     = (|X| / |ETYPE|) / (|f(X)| / |Y|)
+            //     = |Y| / (|f(X)| / |X|) / |ETYPE|
+            //     = |Y| / ML             / |ETYPE|
+            //
+            //   origin = part * L
+            //
             int s = phySizeLog2 - laneChangeLog2 - dsp.laneType.elementSizeLog2;
             // Scale the part number by the input block size, in input lanes.
             if ((s & 31) == s)  // sanity check
                 return part << s;
         } else {
-            // Contraction by M means we must drop a block into the range.
-            // What is that block size?  It is 1/M of the range.
-            // Let's compute the log2 of that block size, as 's'.
-            //s = (rsp.laneCountLog2() + expansionLog2);
-            //s = ((phySizeLog2 - rsp.laneType.elementSizeLog2) + expansionLog2);
-            //s = (phySizeLog2 + expansionLog2 - rsp.laneType.elementSizeLog2);
+            // Insertion (padding).
+            // Output expansion ratio:
+            //   MO = |Y| / |f(X)|
+            //
+            // We must drop the logical result into one of MO blocks of the range.
+            // The block has L lanes:
+            //   L = Y.length        / MO
+            //     = (|Y| / |FTYPE|) / MO
+            //     = (|Y| / |FTYPE|) / (|Y| / |f(X)|)
+            //     = |f(X)| / |FTYPE|
+            //
+            //   origin = -part * L
+            //
             int s = resSizeLog2 - rsp.laneType.elementSizeLog2;
             // Scale the part number by the output block size, in output lanes.
             if ((s & 31) == s)  // sanity check
@@ -499,14 +564,23 @@ abstract class AbstractVector<E> extends Vector<E> {
     }
 
     private static boolean partInRangeSlow(int resSizeLog2, int phySizeLog2, int part) {
-        if (resSizeLog2 > phySizeLog2) {  // expansion
-            int limit = 1 << (resSizeLog2 - phySizeLog2);
-            return part >= 0 && part < limit;
-        } else if (resSizeLog2 < phySizeLog2) {  // contraction
-            int limit = 1 << (phySizeLog2 - resSizeLog2);
-            return part > -limit && part <= 0;
-        } else {
+        int limit = partLimit(resSizeLog2, phySizeLog2);
+        if (limit > 0) {  // selection (output is truncation of logical result)
+            return 0 <= part && part < limit;
+        } else if (limit < 0) {  // insertion (output is logical result with padding)
+            return limit < part && part <= 0;
+        } else { // in-place
             return (part == 0);
+        }
+    }
+
+    private static int partLimit(int resSizeLog2, int phySizeLog2) {
+        if (resSizeLog2 > phySizeLog2) {  // selection (truncation)
+            return 1 << (resSizeLog2 - phySizeLog2);
+        } else if (resSizeLog2 < phySizeLog2) {  // insertion (padding)
+            return -1 << (phySizeLog2 - resSizeLog2);
+        } else { // in-place
+            return 0;
         }
     }
 
@@ -516,20 +590,63 @@ abstract class AbstractVector<E> extends Vector<E> {
               AbstractSpecies<?> rsp,
               boolean lanewise,
               int part) {
-        String laneChange = "";
-        String converting = "converting";
-        int dsize = dsp.elementSize(), rsize = rsp.elementSize();
-        if (!lanewise) {
-            converting = "reinterpreting";
-        } else if (dsize < rsize) {
-            laneChange = String.format(" (lanes are expanding by %d)",
-                                       rsize / dsize);
-        } else if (dsize > rsize) {
-            laneChange = String.format(" (lanes are contracting by %d)",
-                                       dsize / rsize);
+        // domain / input:          X        -> ETYPE
+        // logical result:          f(X)     -> FTYPE
+        // range / physical output: Y        -> FTYPE
+        int domSizeLog2 = dsp.vectorShape.vectorBitSizeLog2;
+        int phySizeLog2 = rsp.vectorShape.vectorBitSizeLog2;
+
+        // ------------------- Logical Expansion ----------------
+        int laneChangeLog2 = 0;
+        String logicalOp = null;
+        if (lanewise) {
+            // Logical lanewise conversion
+            //   ML = |FTYPE| / |ETYPE| = phyElementSize / domElementSize
+            laneChangeLog2 = (rsp.laneType.elementSizeLog2 -
+                              dsp.laneType.elementSizeLog2);
+            if (laneChangeLog2 > 0) {
+                String ML = String.format("%d", 1 << laneChangeLog2);
+                logicalOp = String.format("conversion lanewise expanding by ML=%s", ML);
+            } else if (laneChangeLog2 < 0) {
+                String ML = String.format("1/%d", 1 << -laneChangeLog2);
+                logicalOp = String.format("conversion lanewise contracting by ML=%s", ML);
+            } else {
+                logicalOp = "conversion lanewise in-place (ML=1)";
+            }
+        } else {
+            // Logical reinterpret
+            laneChangeLog2 = 0;
+            logicalOp = "reinterpreting (ML=1)";
         }
-        String msg = String.format("bad part number %d %s %s -> %s%s",
-                                   part, converting, dsp, rsp, laneChange);
+
+        // ------------------- Physical Expansion ----------------
+        String physicalOp = null;
+        if (domSizeLog2 < phySizeLog2) {
+            String MP = String.format("%d", 1 << (phySizeLog2 - domSizeLog2));
+            physicalOp = String.format("expansion by MP=%s", MP);
+        } else if (phySizeLog2 < domSizeLog2) {
+            String MP = String.format("1/%d", 1 << (domSizeLog2 - phySizeLog2));
+            physicalOp = String.format("contraction by MP=%s", MP);
+        } else {
+            physicalOp = "shape-invariant (MP=1)";
+        }
+
+        // ---------- Output Expansion (Select/Insert) ------------
+        int limit = partLimit(domSizeLog2 + laneChangeLog2, phySizeLog2);
+        String outputOp = null;
+        String partRange = null;
+        if (limit < -1) {
+            outputOp = String.format("output insertion with MO=%d", -limit);
+            partRange = String.format("in [%d..0]", limit+1);
+        } else if (limit > 1) {
+            outputOp = String.format("output selection with MS=%d", limit);
+            partRange = String.format("in [0..%d]", limit-1);
+        } else {
+            outputOp = "output in-place (MO=MS=1)";
+            partRange = "0";
+        }
+        String msg = String.format("bad part number %d should be %s, %s; logical: %s; physical: %s; %s -> %s.",
+                                   part, partRange, outputOp, logicalOp, physicalOp, dsp, rsp);
         return new ArrayIndexOutOfBoundsException(msg);
     }
 
@@ -722,10 +839,10 @@ abstract class AbstractVector<E> extends Vector<E> {
     AbstractVector<F> convert0(char kind, AbstractSpecies<F> rsp) {
         // Derive some JIT-time constants:
         Class<?> vtype;
-        Class<?> etype;   // fill in after switch (constant)
+        int etype;        // fill in after switch (constant)
         int vlength;      // fill in after switch (mark type profile?)
         Class<?> rvtype;  // fill in after switch (mark type profile)
-        Class<?> rtype;
+        int rtype;
         int rlength;
         switch (kind) {
         case 'Z':  // lane-wise size change, maybe with sign clip
@@ -733,9 +850,9 @@ abstract class AbstractVector<E> extends Vector<E> {
             AbstractSpecies<?> vsp = this.vspecies();
             AbstractSpecies<?> vspi = vsp.asIntegral();
             AbstractVector<?> biti = vspi == vsp ? this : this.convert0('X', vspi);
-            rtype = rspi.elementType();
+            rtype = rspi.laneTypeOrdinal();
             rlength = rspi.laneCount();
-            etype = vspi.elementType();
+            etype = vspi.laneTypeOrdinal();
             vlength = vspi.laneCount();
             rvtype = rspi.dummyVector().getClass();
             vtype = vspi.dummyVector().getClass();
@@ -747,9 +864,9 @@ abstract class AbstractVector<E> extends Vector<E> {
                     AbstractVector::defaultUCast);
             return (rspi == rsp ? bitv.check0(rsp) : bitv.convert0('X', rsp));
         case 'C':  // lane-wise cast (but not identity)
-            rtype = rsp.elementType();
+            rtype = rsp.laneTypeOrdinal();
             rlength = rsp.laneCount();
-            etype = this.elementType(); // (profile)
+            etype = this.vspecies().laneTypeOrdinal(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();
@@ -759,9 +876,9 @@ abstract class AbstractVector<E> extends Vector<E> {
                     this, rsp,
                     AbstractVector::defaultCast);
         case 'X':  // reinterpret cast, not lane-wise if lane sizes differ
-            rtype = rsp.elementType();
+            rtype = rsp.laneTypeOrdinal();
             rlength = rsp.laneCount();
-            etype = this.elementType(); // (profile)
+            etype = this.vspecies().laneTypeOrdinal(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();

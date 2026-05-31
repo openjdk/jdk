@@ -46,3 +46,7 @@ uint32_t ZNUMA::memory_id(uintptr_t addr) {
   // NUMA support not enabled, assume everything belongs to node zero
   return 0;
 }
+
+int ZNUMA::numa_id_to_node(uint32_t numa_id) {
+  ShouldNotCallThis();
+}

@@ -191,31 +191,17 @@
 //
 // C2 stub blob/field names
 //
-// C2 stubs are provided with names in the format "C2 Runtime
-// <stubname> _blob".
+// C2 stubs are provided with names in the format "<stubname>_blob (C2 runtime)".
 //
 // A stub creation method OptoRuntime::generate(ciEnv* env) is
 // generated which invokes the C2 compiler to generate each stub in
 // declaration order.
 
 #ifdef COMPILER2
-// do_jvmti_stub(name)
-#if INCLUDE_JVMTI
-#define C2_JVMTI_STUBS_DO(do_jvmti_stub)                               \
-  do_jvmti_stub(notify_jvmti_vthread_start)                            \
-  do_jvmti_stub(notify_jvmti_vthread_end)                              \
-  do_jvmti_stub(notify_jvmti_vthread_mount)                            \
-  do_jvmti_stub(notify_jvmti_vthread_unmount)                          \
-
-#else
-#define C2_JVMTI_STUBS_DO(do_jvmti_stub)
-#endif // INCLUDE_JVMTI
-
 // client macro to operate on c2 stubs
 //
 // do_blob(name, type)
 // do_stub(name, fancy_jump, pass_tls, return_pc)
-// do_jvmti_stub(name)
 //
 // do_blob is used for stubs that are generated via direct invocation
 // of the assembler to write into a blob of the appropriate type
@@ -225,10 +211,8 @@
 // in the IR graph employ a special type of jump (0, 1 or 2) or
 // provide access to TLS and the return pc.
 //
-// do_jvmti_stub generates a JVMTI stub as an IR intrinsic which
-// employs jump 0, and requires no special access
 
-#define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)                   \
+#define C2_STUBS_DO(do_blob, do_stub)                                  \
   do_blob(uncommon_trap, UncommonTrapBlob)                             \
   do_blob(exception, ExceptionBlob)                                    \
   do_stub(new_instance, 0, true, false)                                \
@@ -239,16 +223,19 @@
   do_stub(multianewarray4, 0, true, false)                             \
   do_stub(multianewarray5, 0, true, false)                             \
   do_stub(multianewarrayN, 0, true, false)                             \
-  C2_JVMTI_STUBS_DO(do_jvmti_stub)                                     \
   do_stub(complete_monitor_locking, 0, false, false)                   \
   do_stub(monitor_notify, 0, false, false)                             \
   do_stub(monitor_notifyAll, 0, false, false)                          \
   do_stub(rethrow, 2, true, true)                                      \
   do_stub(slow_arraycopy, 0, false, false)                             \
   do_stub(register_finalizer, 0, false, false)                         \
+  do_stub(vthread_end_first_transition, 0, false, false)               \
+  do_stub(vthread_start_final_transition, 0, false, false)             \
+  do_stub(vthread_start_transition, 0, false, false)                   \
+  do_stub(vthread_end_transition, 0, false, false)                     \
 
 #else
-#define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)
+#define C2_STUBS_DO(do_blob, do_stub)
 #endif
 
 // Stubgen stub declarations
@@ -552,18 +539,19 @@
 // generated.
 //
 // Architecture-specific entries need to be declared using the
-// do_arch_entry template
+// do_arch_entry templates
 //
 // do_arch_entry(arch, blob_name, stub_name, field_name, getter_name)
 //
 // do_arch_entry_init(arch, blob_name, stub_name, field_name,
 //                    getter_name, init_function)
 //
+// do_arch_entry_array(arch, blob_name, stub_name, field_name,
+//                     getter_name, count)
+//
 // The only difference between these templates and the generic ones is
 // that they receive an extra argument which identifies the current
 // architecture e.g. x86, aarch64 etc.
-//
-// Currently there is no support for a do_arch_array_entry template.
 
 // Include arch-specific stub and entry declarations and make sure the
 // relevant template macros have been defined
@@ -611,7 +599,8 @@
                                      do_entry, do_entry_init,           \
                                      do_entry_array,                    \
                                      do_arch_blob,                      \
-                                     do_arch_entry, do_arch_entry_init) \
+                                     do_arch_entry, do_arch_entry_init, \
+                                     do_arch_entry_array)               \
   do_blob(preuniverse)                                                  \
   do_stub(preuniverse, fence)                                           \
   do_entry(preuniverse, fence, fence_entry, fence_entry)                \
@@ -628,7 +617,8 @@
            atomic_cmpxchg_long_entry)                                   \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub, do_arch_blob,              \
-                                    do_arch_entry, do_arch_entry_init)  \
+                                    do_arch_entry, do_arch_entry_init,  \
+                                    do_arch_entry_array)                \
   end_blob(preuniverse)                                                 \
 
 #define STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                     \
@@ -636,7 +626,8 @@
                                  do_entry, do_entry_init,               \
                                  do_entry_array,                        \
                                  do_arch_blob,                          \
-                                 do_arch_entry, do_arch_entry_init)     \
+                                 do_arch_entry, do_arch_entry_init,     \
+                                 do_arch_entry_array)                   \
   do_blob(initial)                                                      \
   do_stub(initial, call_stub)                                           \
   do_entry(initial, call_stub, call_stub_entry, call_stub_entry)        \
@@ -680,19 +671,10 @@
   do_entry(initial, dcbrt, dcbrt, dcbrt)                                \
   do_stub(initial, fmod)                                                \
   do_entry(initial, fmod, fmod, fmod)                                   \
-  /* following generic entries should really be x86_32 only */          \
-  do_stub(initial, dlibm_sin_cos_huge)                                  \
-  do_entry(initial, dlibm_sin_cos_huge, dlibm_sin_cos_huge,             \
-           dlibm_sin_cos_huge)                                          \
-  do_stub(initial, dlibm_reduce_pi04l)                                  \
-  do_entry(initial, dlibm_reduce_pi04l, dlibm_reduce_pi04l,             \
-           dlibm_reduce_pi04l)                                          \
-  do_stub(initial, dlibm_tan_cot_huge)                                  \
-  do_entry(initial, dlibm_tan_cot_huge, dlibm_tan_cot_huge,             \
-           dlibm_tan_cot_huge)                                          \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub, do_arch_blob,                  \
-                                do_arch_entry, do_arch_entry_init)      \
+                                do_arch_entry, do_arch_entry_init,      \
+                                do_arch_entry_array)                    \
   end_blob(initial)                                                     \
 
 
@@ -702,7 +684,8 @@
                                       do_entry_array,                   \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
   do_blob(continuation)                                                 \
   do_stub(continuation, cont_thaw)                                      \
   do_entry(continuation, cont_thaw, cont_thaw, cont_thaw)               \
@@ -717,7 +700,8 @@
            cont_returnBarrierExc)                                       \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub, do_arch_blob,             \
-                                     do_arch_entry, do_arch_entry_init) \
+                                     do_arch_entry, do_arch_entry_init, \
+                                     do_arch_entry_array)               \
   end_blob(continuation)                                                \
 
 
@@ -726,7 +710,8 @@
                                   do_entry, do_entry_init,              \
                                   do_entry_array,                       \
                                   do_arch_blob,                         \
-                                  do_arch_entry, do_arch_entry_init)    \
+                                  do_arch_entry, do_arch_entry_init,    \
+                                  do_arch_entry_array)                  \
   do_blob(compiler)                                                     \
   do_stub(compiler, array_sort)                                         \
   do_entry(compiler, array_sort, array_sort, select_arraysort_function) \
@@ -845,6 +830,8 @@
            sha3_implCompress)                                           \
   do_stub(compiler, double_keccak)                                      \
   do_entry(compiler, double_keccak, double_keccak, double_keccak)       \
+  do_stub(compiler, quad_keccak)                                        \
+  do_entry(compiler, quad_keccak, quad_keccak, quad_keccak)             \
   do_stub(compiler, sha3_implCompressMB)                                \
   do_entry(compiler, sha3_implCompressMB, sha3_implCompressMB,          \
            sha3_implCompressMB)                                         \
@@ -871,7 +858,8 @@
            bigIntegerLeftShiftWorker, bigIntegerLeftShift)              \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub, do_arch_blob,                 \
-                                     do_arch_entry, do_arch_entry_init) \
+                                 do_arch_entry, do_arch_entry_init,     \
+                                 do_arch_entry_array)                   \
   end_blob(compiler)                                                    \
 
 
@@ -880,7 +868,8 @@
                                do_entry, do_entry_init,                 \
                                do_entry_array,                          \
                                do_arch_blob,                            \
-                               do_arch_entry, do_arch_entry_init)       \
+                               do_arch_entry, do_arch_entry_init,       \
+                               do_arch_entry_array)                     \
   do_blob(final)                                                        \
   do_stub(final, verify_oop)                                            \
   do_entry(final, verify_oop, verify_oop_subroutine_entry,              \
@@ -891,18 +880,28 @@
   do_stub(final, jbyte_arraycopy)                                       \
   do_entry_init(final, jbyte_arraycopy, jbyte_arraycopy,                \
                 jbyte_arraycopy, StubRoutines::jbyte_copy)              \
+  do_entry(final, jbyte_arraycopy, jbyte_arraycopy_nopush,              \
+            jbyte_arraycopy_nopush)                                     \
   do_stub(final, jshort_arraycopy)                                      \
   do_entry_init(final, jshort_arraycopy, jshort_arraycopy,              \
                 jshort_arraycopy, StubRoutines::jshort_copy)            \
+  do_entry(final, jshort_arraycopy, jshort_arraycopy_nopush,            \
+            jshort_arraycopy_nopush)                                    \
   do_stub(final, jint_arraycopy)                                        \
   do_entry_init(final, jint_arraycopy, jint_arraycopy,                  \
                 jint_arraycopy, StubRoutines::jint_copy)                \
+  do_entry(final, jint_arraycopy, jint_arraycopy_nopush,                \
+            jint_arraycopy_nopush)                                      \
   do_stub(final, jlong_arraycopy)                                       \
   do_entry_init(final, jlong_arraycopy, jlong_arraycopy,                \
                 jlong_arraycopy, StubRoutines::jlong_copy)              \
+  do_entry(final, jlong_arraycopy, jlong_arraycopy_nopush,              \
+            jlong_arraycopy_nopush)                                     \
   do_stub(final, oop_arraycopy)                                         \
   do_entry_init(final, oop_arraycopy, oop_arraycopy,                    \
                 oop_arraycopy_entry, StubRoutines::oop_copy)            \
+  do_entry(final, oop_arraycopy, oop_arraycopy_nopush,                  \
+            oop_arraycopy_nopush)                                       \
   do_stub(final, oop_arraycopy_uninit)                                  \
   do_entry_init(final, oop_arraycopy_uninit, oop_arraycopy_uninit,      \
                 oop_arraycopy_uninit_entry,                             \
@@ -911,26 +910,44 @@
   do_entry_init(final, jbyte_disjoint_arraycopy,                        \
                 jbyte_disjoint_arraycopy, jbyte_disjoint_arraycopy,     \
                 StubRoutines::jbyte_copy)                               \
+  do_entry(final, jbyte_disjoint_arraycopy,                             \
+           jbyte_disjoint_arraycopy_nopush,                             \
+           jbyte_disjoint_arraycopy_nopush)                             \
   do_stub(final, jshort_disjoint_arraycopy)                             \
   do_entry_init(final, jshort_disjoint_arraycopy,                       \
                 jshort_disjoint_arraycopy, jshort_disjoint_arraycopy,   \
                 StubRoutines::jshort_copy)                              \
+  do_entry(final, jshort_disjoint_arraycopy,                            \
+           jshort_disjoint_arraycopy_nopush,                            \
+           jshort_disjoint_arraycopy_nopush)                            \
   do_stub(final, jint_disjoint_arraycopy)                               \
   do_entry_init(final, jint_disjoint_arraycopy,                         \
                 jint_disjoint_arraycopy, jint_disjoint_arraycopy,       \
                 StubRoutines::jint_copy)                                \
+  do_entry(final, jint_disjoint_arraycopy,                              \
+           jint_disjoint_arraycopy_nopush,                              \
+           jint_disjoint_arraycopy_nopush)                              \
   do_stub(final, jlong_disjoint_arraycopy)                              \
   do_entry_init(final, jlong_disjoint_arraycopy,                        \
                 jlong_disjoint_arraycopy, jlong_disjoint_arraycopy,     \
                 StubRoutines::jlong_copy)                               \
+  do_entry(final, jlong_disjoint_arraycopy,                             \
+           jlong_disjoint_arraycopy_nopush,                             \
+           jlong_disjoint_arraycopy_nopush)                             \
   do_stub(final, oop_disjoint_arraycopy)                                \
   do_entry_init(final, oop_disjoint_arraycopy, oop_disjoint_arraycopy,  \
                 oop_disjoint_arraycopy_entry, StubRoutines::oop_copy)   \
+  do_entry(final, oop_disjoint_arraycopy,                               \
+           oop_disjoint_arraycopy_nopush,                               \
+           oop_disjoint_arraycopy_nopush)                               \
   do_stub(final, oop_disjoint_arraycopy_uninit)                         \
   do_entry_init(final, oop_disjoint_arraycopy_uninit,                   \
                 oop_disjoint_arraycopy_uninit,                          \
                 oop_disjoint_arraycopy_uninit_entry,                    \
                 StubRoutines::oop_copy_uninit)                          \
+  do_entry(final, oop_disjoint_arraycopy_uninit,                        \
+           oop_disjoint_arraycopy_uninit_nopush,                        \
+           oop_disjoint_arraycopy_uninit_nopush)                        \
   do_stub(final, arrayof_jbyte_arraycopy)                               \
   do_entry_init(final, arrayof_jbyte_arraycopy,                         \
                 arrayof_jbyte_arraycopy, arrayof_jbyte_arraycopy,       \
@@ -947,9 +964,15 @@
   do_entry_init(final, arrayof_jlong_arraycopy,                         \
                 arrayof_jlong_arraycopy, arrayof_jlong_arraycopy,       \
                 StubRoutines::arrayof_jlong_copy)                       \
+  do_entry(final, arrayof_jlong_arraycopy,                             \
+            arrayof_jlong_arraycopy_nopush,                             \
+            arrayof_jlong_arraycopy_nopush)                             \
   do_stub(final, arrayof_oop_arraycopy)                                 \
   do_entry_init(final, arrayof_oop_arraycopy, arrayof_oop_arraycopy,    \
                 arrayof_oop_arraycopy, StubRoutines::arrayof_oop_copy)  \
+  do_entry(final, arrayof_oop_arraycopy,                                \
+           arrayof_oop_arraycopy_nopush,                                \
+           arrayof_oop_arraycopy_nopush)                                \
   do_stub(final, arrayof_oop_arraycopy_uninit)                          \
   do_entry_init(final, arrayof_oop_arraycopy_uninit,                    \
                 arrayof_oop_arraycopy_uninit,                           \
@@ -960,34 +983,54 @@
                 arrayof_jbyte_disjoint_arraycopy,                       \
                 arrayof_jbyte_disjoint_arraycopy,                       \
                 StubRoutines::arrayof_jbyte_copy)                       \
+  do_entry(final, arrayof_jbyte_disjoint_arraycopy,                     \
+           arrayof_jbyte_disjoint_arraycopy_nopush,                     \
+           arrayof_jbyte_disjoint_arraycopy_nopush)                     \
   do_stub(final, arrayof_jshort_disjoint_arraycopy)                     \
   do_entry_init(final, arrayof_jshort_disjoint_arraycopy,               \
                 arrayof_jshort_disjoint_arraycopy,                      \
                 arrayof_jshort_disjoint_arraycopy,                      \
                 StubRoutines::arrayof_jshort_copy)                      \
+  do_entry(final, arrayof_jshort_disjoint_arraycopy,                    \
+           arrayof_jshort_disjoint_arraycopy_nopush,                    \
+           arrayof_jshort_disjoint_arraycopy_nopush)                    \
   do_stub(final, arrayof_jint_disjoint_arraycopy)                       \
   do_entry_init(final, arrayof_jint_disjoint_arraycopy,                 \
                 arrayof_jint_disjoint_arraycopy,                        \
                 arrayof_jint_disjoint_arraycopy,                        \
                 StubRoutines::arrayof_jint_copy)                        \
+  do_entry(final, arrayof_jint_disjoint_arraycopy,                      \
+           arrayof_jint_disjoint_arraycopy_nopush,                      \
+           arrayof_jint_disjoint_arraycopy_nopush)                      \
   do_stub(final, arrayof_jlong_disjoint_arraycopy)                      \
   do_entry_init(final, arrayof_jlong_disjoint_arraycopy,                \
                 arrayof_jlong_disjoint_arraycopy,                       \
                 arrayof_jlong_disjoint_arraycopy,                       \
                 StubRoutines::arrayof_jlong_copy)                       \
+  do_entry(final, arrayof_jlong_disjoint_arraycopy,                     \
+           arrayof_jlong_disjoint_arraycopy_nopush,                     \
+           arrayof_jlong_disjoint_arraycopy_nopush)                     \
   do_stub(final, arrayof_oop_disjoint_arraycopy)                        \
   do_entry_init(final, arrayof_oop_disjoint_arraycopy,                  \
                 arrayof_oop_disjoint_arraycopy,                         \
                 arrayof_oop_disjoint_arraycopy_entry,                   \
                 StubRoutines::arrayof_oop_copy)                         \
+  do_entry(final, arrayof_oop_disjoint_arraycopy,                       \
+           arrayof_oop_disjoint_arraycopy_nopush,                       \
+           arrayof_oop_disjoint_arraycopy_nopush)                       \
   do_stub(final, arrayof_oop_disjoint_arraycopy_uninit)                 \
   do_entry_init(final, arrayof_oop_disjoint_arraycopy_uninit,           \
                 arrayof_oop_disjoint_arraycopy_uninit,                  \
                 arrayof_oop_disjoint_arraycopy_uninit_entry,            \
                 StubRoutines::arrayof_oop_copy_uninit)                  \
+  do_entry(final, arrayof_oop_disjoint_arraycopy_uninit,                \
+           arrayof_oop_disjoint_arraycopy_uninit_nopush,                \
+           arrayof_oop_disjoint_arraycopy_uninit_nopush)                \
   do_stub(final, checkcast_arraycopy)                                   \
   do_entry(final, checkcast_arraycopy, checkcast_arraycopy,             \
            checkcast_arraycopy_entry)                                   \
+  do_entry(final, checkcast_arraycopy, checkcast_arraycopy_nopush,      \
+            checkcast_arraycopy_nopush)                                 \
   do_stub(final, checkcast_arraycopy_uninit)                            \
   do_entry(final, checkcast_arraycopy_uninit,                           \
            checkcast_arraycopy_uninit,                                  \
@@ -1038,7 +1081,8 @@
            lookup_secondary_supers_table_slow_path_stub)                \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,  do_arch_blob,                   \
-                              do_arch_entry, do_arch_entry_init)        \
+                              do_arch_entry, do_arch_entry_init,        \
+                              do_arch_entry_array)                      \
   end_blob(final)                                                       \
 
 
@@ -1051,37 +1095,43 @@
                        do_entry, do_entry_init,                         \
                        do_entry_array,                                  \
                        do_arch_blob,                                    \
-                       do_arch_entry, do_arch_entry_init)               \
+                       do_arch_entry, do_arch_entry_init,               \
+                       do_arch_entry_array)                             \
   STUBGEN_PREUNIVERSE_BLOBS_DO(do_blob, end_blob,                       \
                                do_stub,                                 \
                                do_entry, do_entry_init,                 \
                                do_entry_array,                          \
                                do_arch_blob,                            \
-                               do_arch_entry, do_arch_entry_init)       \
+                               do_arch_entry, do_arch_entry_init,       \
+                               do_arch_entry_array)                     \
   STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                           \
                            do_stub,                                     \
                            do_entry, do_entry_init,                     \
                            do_entry_array,                              \
                            do_arch_blob,                                \
-                           do_arch_entry, do_arch_entry_init)           \
+                           do_arch_entry, do_arch_entry_init,           \
+                           do_arch_entry_array)                         \
   STUBGEN_CONTINUATION_BLOBS_DO(do_blob, end_blob,                      \
                                 do_stub,                                \
                                 do_entry, do_entry_init,                \
                                 do_entry_array,                         \
                                 do_arch_blob,                           \
-                                do_arch_entry, do_arch_entry_init)      \
+                                do_arch_entry, do_arch_entry_init,      \
+                                do_arch_entry_array)                    \
   STUBGEN_COMPILER_BLOBS_DO(do_blob, end_blob,                          \
                             do_stub,                                    \
                             do_entry, do_entry_init,                    \
                             do_entry_array,                             \
                             do_arch_blob,                               \
-                            do_arch_entry, do_arch_entry_init)          \
+                            do_arch_entry, do_arch_entry_init,          \
+                            do_arch_entry_array)                        \
   STUBGEN_FINAL_BLOBS_DO(do_blob, end_blob,                             \
                          do_stub,                                       \
                          do_entry, do_entry_init,                       \
                          do_entry_array,                                \
                          do_arch_blob,                                  \
-                         do_arch_entry, do_arch_entry_init)             \
+                         do_arch_entry, do_arch_entry_init,             \
+                         do_arch_entry_array)                           \
 
 // Convenience macros for use by template implementations
 
@@ -1131,6 +1181,9 @@
 #define STUBGEN_COUNT5(_1, _2, _3, _4, count)   \
   + count
 
+#define STUBGEN_COUNT6(_1, _2, _3, _4, _5, count)        \
+  + count
+
 // Convenience templates that emit nothing
 
 // ignore do_blob(blob_name, type) declarations
@@ -1141,9 +1194,6 @@
 
 // ignore do_stub(name, fancy_jump, pass_tls, return_pc) declarations
 #define DO_STUB_EMPTY4(name, fancy_jump, pass_tls, return_pc)
-
-// ignore do_jvmti_stub(name) declarations
-#define DO_JVMTI_STUB_EMPTY1(stub_name)
 
 // ignore do_stub(blob_name, stub_name) declarations
 #define DO_STUB_EMPTY2(blob_name, stub_name)
@@ -1172,7 +1222,8 @@
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6,            \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macro to operate only on StubGenerator stubs
 
@@ -1182,7 +1233,8 @@
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6,            \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macros to operate only on StubGenerator blobs and stubs
 
@@ -1192,18 +1244,21 @@
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 DO_ARCH_ENTRY_EMPTY5,DO_ARCH_ENTRY_EMPTY6)             \
+                 DO_ARCH_ENTRY_EMPTY5,DO_ARCH_ENTRY_EMPTY6,             \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macro to operate only on StubGenerator generci and arch entries
 
 #define STUBGEN_ALL_ENTRIES_DO(do_entry, do_entry_init, do_entry_array, \
-                               do_arch_entry, do_arch_entry_init)       \
+                               do_arch_entry, do_arch_entry_init,       \
+                               do_arch_entry_array)                     \
   STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
                  DO_STUB_EMPTY2,                                        \
                  do_entry, do_entry_init,                               \
                  do_entry_array,                                        \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 do_arch_entry, do_arch_entry_init)                     \
+                 do_arch_entry, do_arch_entry_init,                     \
+                 do_arch_entry_array)                                   \
 
 // client macro to operate only on StubGenerator entries
 
@@ -1213,7 +1268,8 @@
                  do_entry, do_entry_init,                               \
                  do_entry_array,                                        \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6,            \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macro to operate only on StubGenerator arch blobs
 
@@ -1223,16 +1279,19 @@
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  do_arch_blob,                                          \
-                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6,            \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macro to operate only on StubGenerator arch entries
 
-#define STUBGEN_ARCH_ENTRIES_DO(do_arch_entry, do_arch_entry_init)      \
+#define STUBGEN_ARCH_ENTRIES_DO(do_arch_entry, do_arch_entry_init,      \
+                                do_arch_entry_array)                    \
   STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
                  DO_STUB_EMPTY2,                                        \
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 do_arch_entry, do_arch_entry_init)                     \
+                 do_arch_entry, do_arch_entry_init,                     \
+                 do_arch_entry_array)                                   \
 
 #endif // SHARE_RUNTIME_STUBDECLARATIONS_HPP

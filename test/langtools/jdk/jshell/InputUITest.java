@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8356165 8358552
+ * @bug 8356165 8358552 8378251
  * @summary Check user input works properly
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
@@ -35,14 +35,13 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @compile InputUITest.java
- * @run testng/othervm -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
+ * @run junit/othervm -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
  */
 
 import java.util.Map;
 import java.util.function.Function;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class InputUITest extends UITesting {
 
     static final String LINE_SEPARATOR = System.getProperty("line.separator");
@@ -53,6 +52,7 @@ public class InputUITest extends UITesting {
         super(true);
     }
 
+    @Test
     public void testUserInputWithSurrogates() throws Exception {
         Function<Integer, String> genSnippet =
                 realCharsToRead -> "new String(System.in.readNBytes(" +
@@ -68,6 +68,7 @@ public class InputUITest extends UITesting {
         }, false);
     }
 
+    @Test
     public void testCloseInputSinkWhileReadingUserInputSimulatingCtrlD() throws Exception {
         var snippets = Map.of(
                 "System.in.read()",                 " ==> -1",
@@ -85,6 +86,7 @@ public class InputUITest extends UITesting {
         }
     }
 
+    @Test
     public void testUserInputWithCtrlDAndMultipleSnippets() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("IO.readln()\n" + CTRL_D);
@@ -95,6 +97,36 @@ public class InputUITest extends UITesting {
             waitOutput(out, patternQuote("==> -1"));
             inputSink.write("System.in.read()\nA\n");
             waitOutput(out, patternQuote("==> 65"));
+        }, false);
+    }
+
+    @Test
+    public void testAltBackspaceDeletesPreviousWord() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("int x = 12 24" + ESC_DEL + "\n");
+            waitOutput(out, "int x = 12 24\u001B\\[2D\u001B\\[K\n" +
+                            "\u001B\\[\\?2004lx ==> 12\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
+            inputSink.write("System.in" + ESC_DEL + "out.println(x)\n");
+            waitOutput(out, "System.in\u001B\\[2D\u001B\\[Kout.println\\(x\\)\u001B\\[3D\u001B\\[3C\n" +
+                            "\u001B\\[\\?2004l12\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
+        }, false);
+    }
+
+    @Test
+    public void testAltDDeletesNextWord() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("int x = 12 24" + ESC_B + ESC_D + "\n");
+            waitOutput(out, "int x = 12 24\u001B\\[2D\u001B\\[K\n" +
+                            "\u001B\\[\\?2004lx ==> 12\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
+            inputSink.write("System.in.println" + ESC_B + ESC_B + ESC_D +
+                            "out" + ESC_F + ESC_F + "(x)\n");
+            waitOutput(out, "System.in.println\u001B\\[7D\u001B\\[3D\u001B\\[2P" +
+                            "\u001B\\[1@o\u001B\\[1@u\u001B\\[1@t\u001B\\[C\u001B\\[7C\\(x\\)\u001B\\[3D\u001B\\[3C\n" +
+                            "\u001B\\[\\?2004l12\n" +
+                            "\u001B\\[\\?2004h" + PROMPT);
         }, false);
     }
 }

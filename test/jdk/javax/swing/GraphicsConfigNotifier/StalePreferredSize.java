@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,8 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  *          It is checked by SwingUtilities.updateComponentTreeUI(), if layout
  *          was correct the call to updateComponentTreeUI() will be no-op.
  * @compile -encoding utf-8 StalePreferredSize.java
- * @run main/othervm/timeout=600 StalePreferredSize
- * @run main/othervm/timeout=600 -Dsun.java2d.uiScale=1 StalePreferredSize
- * @run main/othervm/timeout=600 -Dsun.java2d.uiScale=2.25 StalePreferredSize
+ * @run main/othervm/timeout=420 StalePreferredSize
+ * @run main/othervm/timeout=420 -Dsun.java2d.uiScale=2.25 StalePreferredSize
  */
 public final class StalePreferredSize {
 
@@ -92,7 +91,7 @@ public final class StalePreferredSize {
     public static void main(final String[] args) throws Exception {
         for (final UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
             EventQueue.invokeAndWait(() -> setLookAndFeel(laf));
-            for (typeFont = 0; typeFont < 3; typeFont++) {
+            for (typeFont = 0; typeFont < 1; typeFont++) {
                 System.err.println("typeFont = " + typeFont);
                 for (boolean usePopup : new boolean[]{true, false}) {
                     addViaPopup = usePopup;

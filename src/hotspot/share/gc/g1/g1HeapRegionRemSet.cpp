@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -63,7 +62,7 @@ G1HeapRegionRemSet::G1HeapRegionRemSet(G1HeapRegion* hr) :
   _state(Untracked) { }
 
 G1HeapRegionRemSet::~G1HeapRegionRemSet() {
-  assert(!is_added_to_cset_group(), "Still assigned to a CSet group");
+  assert(!has_cset_group(), "Still assigned to a CSet group");
 }
 
 void G1HeapRegionRemSet::clear_fcc() {
@@ -76,7 +75,7 @@ void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
   }
   clear_fcc();
 
-  if (is_added_to_cset_group()) {
+  if (has_cset_group()) {
     card_set()->clear();
     assert(card_set()->occupied() == 0, "Should be clear.");
   }
@@ -90,13 +89,13 @@ void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
 
 void G1HeapRegionRemSet::reset_table_scanner() {
   _code_roots.reset_table_scanner();
-  if (is_added_to_cset_group()) {
+  if (has_cset_group()) {
     card_set()->reset_table_scanner();
   }
 }
 
 G1MonotonicArenaMemoryStats G1HeapRegionRemSet::card_set_memory_stats() const {
-  assert(is_added_to_cset_group(), "pre-condition");
+  assert(has_cset_group(), "pre-condition");
   return cset_group()->card_set_memory_stats();
 }
 

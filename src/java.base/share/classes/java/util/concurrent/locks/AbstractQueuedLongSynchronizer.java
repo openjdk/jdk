@@ -652,7 +652,7 @@ public abstract class AbstractQueuedLongSynchronizer
 
     /**
      * Acquires in exclusive mode, aborting if interrupted.
-     * Implemented by first checking interrupt status, then invoking
+     * Implemented by first checking interrupted status, then invoking
      * at least once {@link #tryAcquire}, returning on
      * success.  Otherwise the thread is queued, possibly repeatedly
      * blocking and unblocking, invoking {@link #tryAcquire}
@@ -674,7 +674,7 @@ public abstract class AbstractQueuedLongSynchronizer
     /**
      * Attempts to acquire in exclusive mode, aborting if interrupted,
      * and failing if the given timeout elapses.  Implemented by first
-     * checking interrupt status, then invoking at least once {@link
+     * checking interrupted status, then invoking at least once {@link
      * #tryAcquire}, returning on success.  Otherwise, the thread is
      * queued, possibly repeatedly blocking and unblocking, invoking
      * {@link #tryAcquire} until success or the thread is interrupted
@@ -741,7 +741,7 @@ public abstract class AbstractQueuedLongSynchronizer
 
     /**
      * Acquires in shared mode, aborting if interrupted.  Implemented
-     * by first checking interrupt status, then invoking at least once
+     * by first checking interrupted status, then invoking at least once
      * {@link #tryAcquireShared}, returning on success.  Otherwise the
      * thread is queued, possibly repeatedly blocking and unblocking,
      * invoking {@link #tryAcquireShared} until success or the thread
@@ -763,7 +763,7 @@ public abstract class AbstractQueuedLongSynchronizer
     /**
      * Attempts to acquire in shared mode, aborting if interrupted, and
      * failing if the given timeout elapses.  Implemented by first
-     * checking interrupt status, then invoking at least once {@link
+     * checking interrupted status, then invoking at least once {@link
      * #tryAcquireShared}, returning on success.  Otherwise, the
      * thread is queued, possibly repeatedly blocking and unblocking,
      * invoking {@link #tryAcquireShared} until success or the thread

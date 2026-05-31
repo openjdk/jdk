@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,14 +106,26 @@ public class DocPaths {
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
+    /** The name of the downwards pointing angle icon. */
+    public static final DocPath DOWN_SVG = DocPath.create("down.svg");
+
     /** The name of the left pointing angle icon. */
     public static final DocPath LEFT_SVG = DocPath.create("left.svg");
 
     /** The name of the link icon file. */
     public static final DocPath LINK_SVG = DocPath.create("link.svg");
 
+    /** The name of the table of contents toggle icon file. */
+    public static final DocPath SORT_A_Z_SVG = DocPath.create("sort-a-z.svg");
+
     /** The name of the right pointing angle icon. */
     public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
+
+    /** The name of the moon icon for the dark theme. */
+    public static final DocPath MOON_SVG = DocPath.create("moon.svg");
+
+    /** The name of the sun icon for the light theme. */
+    public static final DocPath SUN_SVG = DocPath.create("sun.svg");
 
     /** The name of the syntax highlighting style sheet. */
     public static final DocPath HIGHLIGHT_CSS = DocPath.create("highlight.css");
@@ -121,20 +133,8 @@ public class DocPaths {
     /** The name of the syntax highlighting script file. */
     public static final DocPath HIGHLIGHT_JS = DocPath.create("highlight.js");
 
-    /** The name of the default jQuery directory. */
-    public static final DocPath JQUERY_DIR = DocPath.create("jquery");
-
-    /** The name of the default jQuery javascript file. */
-    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.7.1.min.js");
-
-    /** The name of the default jQuery UI stylesheet file. */
-    public static final DocPath JQUERY_UI_CSS = DocPath.create("jquery-ui.min.css");
-
-    /** The name of the default jQuery UI javascript file. */
-    public static final DocPath JQUERY_UI_JS = DocPath.create("jquery-ui.min.js");
-
-    /** The name of the default jQuery file for legal notices. */
-    public static final DocPath JQUERY_MD = DocPath.create("jquery.md");
+    /** The name of the dejavu file for legal notices. */
+    public static final DocPath DEJAVU_MD = DocPath.create("dejavufonts.md");
 
     /** The name of the directory for legal files. */
     public static final DocPath LEGAL = DocPath.create("legal");
@@ -329,9 +329,6 @@ public class DocPaths {
 
     /** The name of the template for the search javascript file. */
     public static final DocPath SEARCH_JS_TEMPLATE = DocPath.create("search.js.template");
-
-    /** The name of the search javascript file. */
-    public static final DocPath SEARCH_PAGE_JS = DocPath.create("search-page.js");
 
     /** The name of the file for the serialized form info. */
     public static final DocPath SERIALIZED_FORM = DocPath.create("serialized-form.html");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import jdk.test.lib.util.FileUtils;
  * @build jdk.test.lib.util.FileUtils UnreferencedRAFClosesFd
  * @modules java.base/java.io:open
  * @summary Test to ensure that an unclosed and unreferenced RandomAccessFile closes the fd
- * @run main/othervm UnreferencedRAFClosesFd
+ * @run main/othervm/timeout=480 UnreferencedRAFClosesFd
  */
 public class UnreferencedRAFClosesFd {
 

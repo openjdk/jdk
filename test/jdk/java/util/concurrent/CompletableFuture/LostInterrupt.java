@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import static java.util.concurrent.TimeUnit.DAYS;
  * @test
  * @bug 8254350
  * @run main LostInterrupt
- * @summary CompletableFuture.get may swallow interrupt status
+ * @summary CompletableFuture.get may swallow interrupted status
  * @key randomness
  */
 
@@ -38,9 +38,9 @@ import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * Submits a task that completes immediately, then invokes CompletableFuture.get
- * with the interrupt status set. CompletableFuture.get should either complete
- * immediately with the interrupt status set, or else throw InterruptedException
- * with the interrupt status cleared.
+ * with the interrupted status set. CompletableFuture.get should either complete
+ * immediately with the interrupted status set, or else throw InterruptedException
+ * with the interrupted status cleared.
  */
 public class LostInterrupt {
     static final int ITERATIONS = 10_000;
@@ -63,7 +63,7 @@ public class LostInterrupt {
                 } catch (InterruptedException expected) {
                     if (Thread.interrupted())
                         throw new AssertionError(
-                            "interrupt status not cleared, run=" + i);
+                            "interrupted status not cleared, run=" + i);
                 }
             }
         } finally {

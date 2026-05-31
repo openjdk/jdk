@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ runs:
       shell: bash
 
     - name: 'Upload bundles artifact'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}${{ inputs.bundle-suffix }}
         path: bundles

@@ -27,8 +27,8 @@
 
 #include "gc/z/zDeferredConstructed.hpp"
 
-#include <new>
-#include <type_traits>
+#include "cppstdlib/new.hpp"
+#include "cppstdlib/type_traits.hpp"
 
 template <typename T>
 inline ZDeferredConstructed<T>::ZDeferredConstructed()

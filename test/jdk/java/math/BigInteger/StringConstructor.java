@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 4489146 5017980
  * @summary tests String constructors of BigInteger
- * @author Joseph D. Darcy
  */
 import java.math.*;
 

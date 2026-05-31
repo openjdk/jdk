@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
@@ -51,9 +51,9 @@ CompileLog::CompileLog(const char* file_name, FILE* fp, intx thread_id)
 
   // link into the global list
   while (true) {
-    CompileLog* head = Atomic::load_acquire(&_list_head);
+    CompileLog* head = AtomicAccess::load_acquire(&_list_head);
     _next = head;
-    if (Atomic::cmpxchg(&_list_head, head, this) == head) {
+    if (AtomicAccess::cmpxchg(&_list_head, head, this) == head) {
       break;
     }
   }
@@ -64,8 +64,8 @@ CompileLog::~CompileLog() {
   _out = nullptr;
   // Remove partial file after merging in CompileLog::finish_log_on_error
   unlink(_file);
-  FREE_C_HEAP_ARRAY(char, _identities);
-  FREE_C_HEAP_ARRAY(char, _file);
+  FREE_C_HEAP_ARRAY(_identities);
+  FREE_C_HEAP_ARRAY(_file);
 }
 
 
@@ -96,7 +96,7 @@ int CompileLog::identify(ciBaseObject* obj) {
   if (id >= _identities_capacity) {
     int new_cap = _identities_capacity * 2;
     if (new_cap <= id)  new_cap = id + 100;
-    _identities = REALLOC_C_HEAP_ARRAY(char, _identities, new_cap, mtCompiler);
+    _identities = REALLOC_C_HEAP_ARRAY(_identities, new_cap, mtCompiler);
     _identities_capacity = new_cap;
   }
   while (id >= _identities_limit) {
@@ -206,7 +206,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
   if (called_exit)  return;
   called_exit = true;
 
-  CompileLog* log = Atomic::load_acquire(&_list_head);
+  CompileLog* log = AtomicAccess::load_acquire(&_list_head);
   while (log != nullptr) {
     log->flush();
     const char* partial_file = log->file();
@@ -294,7 +294,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
     delete log; // Removes partial file
     log = next_log;
   }
-  Atomic::store(&_list_head, (CompileLog*)nullptr);
+  AtomicAccess::store(&_list_head, (CompileLog*)nullptr);
 }
 
 // ------------------------------------------------------------------

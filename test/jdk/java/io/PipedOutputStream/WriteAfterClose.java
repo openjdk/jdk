@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,34 @@
  */
 
 /* @test
-   @bug 4143704
-   @summary Test if write throws exception after reader
-            closes the pipe.
-*/
+ * @bug 4143704 8367943
+ * @summary Test if write throws exception after reader closes the pipe.
+ */
 
-
-
-import java.io.*;
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 
 public class WriteAfterClose {
     public static void main(String argv[]) throws Exception {
-        PipedInputStream in = new PipedInputStream();
-        PipedOutputStream out = new PipedOutputStream(in);
+        try (PipedInputStream in = new PipedInputStream();
+             PipedOutputStream out = new PipedOutputStream(in)) {
+            in.close();
+            try {
+                out.write('a');
+                throw new Exception("Should not allow write after close");
+            } catch (IOException e) {
+            }
+        }
 
-        in.close();
-        try {
-            out.write('a');
-            throw new Exception("Should not allow write after close");
-        } catch (IOException e) {
+        try (PipedInputStream in = new PipedInputStream();
+             PipedOutputStream out = new PipedOutputStream(in)) {
+            out.close();
+            try {
+                out.write(new byte[7], 3, 0);
+            } catch (IOException e) {
+                throw new Exception("Should not fail 0-length write after close");
+            }
         }
     }
 }

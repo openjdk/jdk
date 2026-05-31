@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,33 +112,30 @@ class G1ConcPhaseTimer : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc,
 
 void G1ConcurrentMarkThread::run_service() {
   while (wait_for_next_cycle()) {
-    assert(in_progress(), "must be");
+    assert(is_in_progress(), "must be");
 
     GCIdMark gc_id_mark;
-    FormatBuffer<128> title("Concurrent %s Cycle", _state == FullMark ? "Mark" : "Undo");
+    FormatBuffer<128> title("Concurrent %s Cycle", is_in_full_concurrent_cycle() ? "Mark" : "Undo");
     GCTraceConcTime(Info, gc) tt(title);
 
     concurrent_cycle_start();
 
-    if (_state == FullMark) {
+    if (_state == FullCycleMarking) {
       concurrent_mark_cycle_do();
     } else {
-      assert(_state == UndoMark, "Must do undo mark but is %d", _state);
+      assert(_state == UndoCycleResetForNextCycle, "Must do undo mark but is %d", _state);
       concurrent_undo_cycle_do();
     }
 
-    concurrent_cycle_end(_state == FullMark && !_cm->has_aborted());
+    concurrent_cycle_end(is_in_full_concurrent_cycle() && !_cm->has_aborted());
 
     update_perf_counter_cpu_time();
   }
-  _cm->root_regions()->cancel_scan();
 }
 
 void G1ConcurrentMarkThread::stop_service() {
-  if (in_progress()) {
-    // We are not allowed to abort the marking threads during root region scan.
-    // Needs to be done separately.
-    _cm->root_region_scan_abort_and_wait();
+  if (is_in_progress()) {
+    _cm->abort_root_region_scan();
 
     _cm->abort_marking_threads();
   }
@@ -149,7 +146,7 @@ void G1ConcurrentMarkThread::stop_service() {
 
 bool G1ConcurrentMarkThread::wait_for_next_cycle() {
   MonitorLocker ml(G1CGC_lock, Mutex::_no_safepoint_check_flag);
-  while (!in_progress() && !should_terminate()) {
+  while (!is_in_progress() && !should_terminate()) {
     ml.wait();
   }
 
@@ -164,7 +161,7 @@ bool G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
 
 bool G1ConcurrentMarkThread::phase_scan_root_regions() {
   G1ConcPhaseTimer p(_cm, "Concurrent Scan Root Regions");
-  _cm->scan_root_regions();
+  _cm->scan_root_regions_concurrently();
   update_perf_counter_cpu_time();
   return _cm->has_aborted();
 }
@@ -265,23 +262,6 @@ void G1ConcurrentMarkThread::concurrent_cycle_start() {
 void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   HandleMark hm(Thread::current());
   ResourceMark rm;
-
-  // We have to ensure that we finish scanning the root regions
-  // before the next GC takes place. To ensure this we have to
-  // make sure that we do not join the STS until the root regions
-  // have been scanned. If we did then it's possible that a
-  // subsequent GC could block us from joining the STS and proceed
-  // without the root regions have been scanned which would be a
-  // correctness issue.
-  //
-  // So do not return before the scan root regions phase as a GC waits for a
-  // notification from it.
-  //
-  // For the same reason ConcurrentGCBreakpoints (in the phase methods) before
-  // here risk deadlock, because a young GC must wait for root region scanning.
-  //
-  // We can not easily abort before root region scan either because of the
-  // reasons mentioned in G1CollectedHeap::abort_concurrent_cycle().
 
   // Phase 1: Scan root regions.
   if (phase_scan_root_regions()) return;

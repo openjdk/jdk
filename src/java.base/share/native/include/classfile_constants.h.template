@@ -111,7 +111,7 @@ enum {
     JVM_CONSTANT_InvokeDynamic          = 18,
     JVM_CONSTANT_Module                 = 19,
     JVM_CONSTANT_Package                = 20,
-    JVM_CONSTANT_ExternalMax            = 20 
+    JVM_CONSTANT_ExternalMax            = 20
 };
 
 /* JVM_CONSTANT_MethodHandle subtypes */

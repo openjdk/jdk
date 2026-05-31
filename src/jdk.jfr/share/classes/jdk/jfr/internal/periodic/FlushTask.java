@@ -25,7 +25,6 @@
 package jdk.jfr.internal.periodic;
 
 import jdk.jfr.internal.JVM;
-import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.util.Utils;

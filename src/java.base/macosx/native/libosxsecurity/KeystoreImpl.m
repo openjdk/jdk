@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,24 +64,9 @@ errOut:
 
 static jlong getModDateFromItem(JNIEnv *env, SecKeychainItemRef inItem)
 {
-    OSStatus status;
-    SecKeychainAttribute itemAttrs[] = { { kSecModDateItemAttr, 0, NULL } };
-    SecKeychainAttributeList attrList = { sizeof(itemAttrs) / sizeof(itemAttrs[0]), itemAttrs };
-    jlong returnValue = 0;
-
-    status = SecKeychainItemCopyContent(inItem, NULL, &attrList, NULL, NULL);
-
-    if(status) {
-        // This is almost always missing, so don't dump an error.
-        // cssmPerror("getModDateFromItem: SecKeychainItemCopyContent", status);
-        goto errOut;
-    }
-
-    memcpy(&returnValue, itemAttrs[0].data, itemAttrs[0].length);
-
-errOut:
-    SecKeychainItemFreeContent(&attrList, NULL);
-    return returnValue;
+    // SecKeychainItemCopyContent on kSecModDateItemAttr fails
+    // with errSecNoSuchAttr: The attribute does not exist.
+    return 0;
 }
 
 static void setLabelForItem(NSString *inLabel, SecKeychainItemRef inItem)
@@ -134,10 +119,11 @@ static OSStatus completeCertChain(
     CFArrayAppendValue(certArray, identity);
 
     /* the single element in certs-to-be-evaluated comes from the identity */
-       ortn = SecIdentityCopyCertificate(identity, &certRef);
-    if(ortn) {
+    ortn = SecIdentityCopyCertificate(identity, &certRef);
+    if (ortn) {
         /* should never happen */
         cssmPerror("SecIdentityCopyCertificate", ortn);
+        CFRelease(certArray);
         return ortn;
     }
 
@@ -283,6 +269,7 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
     OSStatus err = SecIdentitySearchCreate(NULL, 0, &identitySearch);
     SecIdentityRef theIdentity = NULL;
     OSErr searchResult = noErr;
+    CFArrayRef certChain = NULL;
 
     do {
         searchResult = SecIdentitySearchCopyNext(identitySearch, &theIdentity);
@@ -290,8 +277,10 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
         if (searchResult == noErr) {
             // Get the cert from the identity, then generate a chain.
             SecCertificateRef certificate;
-            SecIdentityCopyCertificate(theIdentity, &certificate);
-            CFArrayRef certChain = NULL;
+            OSStatus res = SecIdentityCopyCertificate(theIdentity, &certificate);
+            if (res != errSecSuccess) {
+                goto errOut;
+            }
 
             // *** Should do something with this error...
             err = completeCertChain(theIdentity, NULL, TRUE, &certChain);
@@ -301,18 +290,21 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             // Make a java array of certificate data from the chain.
             jclass byteArrayClass = (*env)->FindClass(env, "[B");
             if (byteArrayClass == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
             jobjectArray javaCertArray = (*env)->NewObjectArray(env, certCount, byteArrayClass, NULL);
             // Cleanup first then check for a NULL return code
             (*env)->DeleteLocalRef(env, byteArrayClass);
             if (javaCertArray == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
 
             // And, make an array of the certificate refs.
             jlongArray certRefArray = (*env)->NewLongArray(env, certCount);
             if (certRefArray == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
 
@@ -321,10 +313,12 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             for (i = 0; i < certCount; i++) {
                 CSSM_DATA currCertData;
 
-                if (i == 0)
+                if (i == 0) {
                     currCertRef = certificate;
-                else
+                } else {
                     currCertRef = (SecCertificateRef)CFArrayGetValueAtIndex(certChain, i);
+                    CFRetain(currCertRef);
+                }
 
                 bzero(&currCertData, sizeof(CSSM_DATA));
                 err = SecCertificateGetData(currCertRef, &currCertData);
@@ -341,10 +335,14 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             // Get the private key.  When needed we'll export the data from it later.
             SecKeyRef privateKeyRef;
             err = SecIdentityCopyPrivateKey(theIdentity, &privateKeyRef);
+            if (err != errSecSuccess) {
+                goto errOut;
+            }
 
             // Find the label.  It's a 'blob', but we interpret as characters.
             jstring alias = getLabelFromItem(env, (SecKeychainItemRef)certificate);
             if (alias == NULL) {
+                CFRelease(privateKeyRef);
                 goto errOut;
             }
 
@@ -357,12 +355,20 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             if ((*env)->ExceptionCheck(env)) {
                 goto errOut;
             }
+
+            if (certChain != NULL) {
+                CFRelease(certChain);
+                certChain = NULL;
+            }
         }
     } while (searchResult == noErr);
 
 errOut:
     if (identitySearch != NULL) {
         CFRelease(identitySearch);
+    }
+    if (certChain != NULL) {
+        CFRelease(certChain);
     }
 }
 

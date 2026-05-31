@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Trace.hpp"
@@ -52,19 +53,20 @@ void VM_G1CollectFull::doit() {
   GCCauseSetter x(g1h, _gc_cause);
   bool clear_all_soft_refs = _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
                              _gc_cause == GCCause::_wb_full_gc;
-  g1h->do_full_collection(clear_all_soft_refs /* clear_all_soft_refs */,
-                          false /* do_maximal_compaction */,
-                          size_t(0) /* allocation_word_size */);
+  g1h->do_full_collection(size_t(0) /* allocation_word_size */,
+                          clear_all_soft_refs,
+                          false /* do_maximal_compaction */);
 }
 
-VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
+VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(size_t allocation_word_size,
+                                                   uint gc_count_before,
                                                    GCCause::Cause gc_cause) :
   VM_GC_Collect_Operation(gc_count_before, gc_cause),
+  _word_size(allocation_word_size),
   _transient_failure(false),
   _mark_in_progress(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
-  _terminating(false),
   _gc_succeeded(false)
 {}
 
@@ -83,19 +85,11 @@ void VM_G1TryInitiateConcMark::doit() {
 
   GCCauseSetter x(g1h, _gc_cause);
 
-  // Record for handling by caller.
-  _terminating = g1h->concurrent_mark_is_terminating();
+  G1CollectorState* state = g1h->collector_state();
+  _mark_in_progress = state->is_in_marking();
+  _cycle_already_in_progress =  state->is_in_concurrent_cycle();
 
-  _mark_in_progress = g1h->collector_state()->mark_in_progress();
-  _cycle_already_in_progress = g1h->concurrent_mark()->cm_thread()->in_progress();
-
-  if (_terminating && GCCause::is_user_requested_gc(_gc_cause)) {
-    // When terminating, the request to initiate a concurrent cycle will be
-    // ignored by do_collection_pause_at_safepoint; instead it will just do
-    // a young-only or mixed GC (depending on phase).  For a user request
-    // there's no point in even doing that much, so done.  For some non-user
-    // requests the alternative GC might still be needed.
-  } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
+  if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
     // there is already a concurrent marking cycle in progress. Flags to indicate
     // that were already set, so return immediately.
@@ -107,22 +101,21 @@ void VM_G1TryInitiateConcMark::doit() {
     // we've rejected this request.
     _whitebox_attached = true;
   } else {
-    g1h->do_collection_pause_at_safepoint();
+    g1h->do_collection_pause_at_safepoint(_word_size);
     _gc_succeeded = true;
   }
 }
 
-VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
-                                                     uint           gc_count_before,
+VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t word_size,
+                                                     uint gc_count_before,
                                                      GCCause::Cause gc_cause) :
   VM_CollectForAllocation(word_size, gc_count_before, gc_cause) {}
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  g1h->do_collection_pause_at_safepoint();
+  g1h->do_collection_pause_at_safepoint(_word_size);
 
   if (_word_size > 0) {
     // An allocation had been requested. Do it, eventually trying a stronger
@@ -156,6 +149,15 @@ void VM_G1PauseConcurrent::doit() {
 
 bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (g1h->is_shutting_down()) {
+    Heap_lock->unlock();
+    // JVM shutdown has started. Abort concurrent marking to ensure that any further
+    // concurrent VM operations will not try to start and interfere with the shutdown
+    // process.
+    g1h->concurrent_mark()->abort_marking_threads();
+    return false;
+  }
   return true;
 }
 
@@ -167,11 +169,11 @@ void VM_G1PauseConcurrent::doit_epilogue() {
 }
 
 void VM_G1PauseRemark::work() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  g1h->concurrent_mark()->remark();
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  cm->remark();
 }
 
 void VM_G1PauseCleanup::work() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  g1h->concurrent_mark()->cleanup();
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  cm->cleanup();
 }

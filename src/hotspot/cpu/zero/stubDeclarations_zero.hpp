@@ -29,36 +29,41 @@
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
                                           do_arch_entry,                \
-                                          do_arch_entry_init)           \
+                                          do_arch_entry_init,           \
+                                          do_arch_entry_array)          \
   do_arch_blob(preuniverse, 0)                                          \
 
 
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
-  do_arch_blob(initial, 32)                                             \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
+  do_arch_blob(initial, 0)                                              \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
                                            do_arch_blob,                \
                                            do_arch_entry,               \
-                                           do_arch_entry_init)          \
+                                           do_arch_entry_init,          \
+                                           do_arch_entry_array)         \
   do_arch_blob(continuation, 0)                                         \
 
 
 #define STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,                         \
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
-                                       do_arch_entry_init)              \
+                                       do_arch_entry_init,              \
+                                       do_arch_entry_array)             \
   do_arch_blob(compiler, 0)                                             \
 
 
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
-                                    do_arch_entry_init)                 \
-  do_arch_blob(final, 32)                                               \
+                                    do_arch_entry_init,                 \
+                                    do_arch_entry_array)                \
+  do_arch_blob(final, 0)                                                \
 
 
 #endif // CPU_ZERO_STUBDECLARATIONS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -258,7 +258,8 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
       case Bytecodes::_invokedynamic: {
         assert(invoke_bc.has_index_u4(code), "sanity");
         int method_index = invoke_bc.get_index_u4(code);
-        return cpool->resolved_indy_entry_at(method_index)->is_resolved();
+        bool is_resolved = cpool->resolved_indy_entry_at(method_index)->is_resolved();
+        return !is_resolved;
       }
       case Bytecodes::_invokevirtual:   // fall-through
       case Bytecodes::_invokeinterface: // fall-through
@@ -424,11 +425,11 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
 address AbstractInterpreter::deopt_reexecute_entry(Method* method, address bcp) {
   assert(method->contains(bcp), "just checkin'");
   Bytecodes::Code code   = Bytecodes::java_code_at(method, bcp);
-#if defined(COMPILER1) || INCLUDE_JVMCI
+#if defined(COMPILER1)
   if(code == Bytecodes::_athrow ) {
     return Interpreter::rethrow_exception_entry();
   }
-#endif /* COMPILER1 || INCLUDE_JVMCI */
+#endif // COMPILER1
   return Interpreter::deopt_entry(vtos, 0);
 }
 

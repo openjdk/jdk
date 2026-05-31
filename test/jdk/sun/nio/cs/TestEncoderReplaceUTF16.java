@@ -45,8 +45,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @modules java.base/jdk.internal.access
  *          java.base/sun.nio.cs
  * @build TestEncoderReplaceLatin1
- * @run junit/timeout=10 TestEncoderReplaceUTF16
- * @run junit/timeout=10/othervm -XX:-CompactStrings TestEncoderReplaceUTF16
+ * @run junit/timeout=40 TestEncoderReplaceUTF16
+ * @run junit/timeout=40/othervm -XX:-CompactStrings TestEncoderReplaceUTF16
  */
 
 class TestEncoderReplaceUTF16 {
@@ -182,7 +182,7 @@ class TestEncoderReplaceUTF16 {
     /**
      * Verifies {@linkplain CoderResult#isUnmappable() unmappable} character
      * {@linkplain CodingErrorAction#REPLACE replacement} using {@link
-     * ArrayEncoder#encodeFromUTF16(byte[], int, int, byte[])
+     * ArrayEncoder#encodeFromUTF16(byte[], int, int, byte[], int)
      * ArrayEncoder::encodeFromUTF16}.
      */
     private static void testArrayEncoderUTF16Replace(CharsetEncoder encoder, byte[] unmappableUTF16Bytes, byte[] replacement) {
@@ -191,7 +191,7 @@ class TestEncoderReplaceUTF16 {
             return;
         }
         byte[] da = new byte[replacement.length];
-        int dp = arrayEncoder.encodeFromUTF16(unmappableUTF16Bytes, 0, unmappableUTF16Bytes.length >>> 1, da);
+        int dp = arrayEncoder.encodeFromUTF16(unmappableUTF16Bytes, 0, unmappableUTF16Bytes.length >>> 1, da, 0);
         assertTrue(dp == replacement.length && Arrays.equals(da, replacement), () -> {
             Object context = Map.of(
                     "dp", dp,

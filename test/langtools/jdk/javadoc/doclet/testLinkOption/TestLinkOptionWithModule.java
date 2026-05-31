@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("com.ex2/com/ex2/B.html", true,
                 """
-                    <a href="../../../../out1a/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
+                    <a href="../../../../out1a/com.ex1/com/ex1/A.html" title="class in com.ex1" class="external-link">A</a>""");
     }
 
     @Test
@@ -98,7 +98,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("com/ex2/B.html", true,
                 """
-                    <a href="../../../out2a/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
+                    <a href="../../../out2a/com/ex1/A.html" title="class in com.ex1" class="external-link">A</a>""");
     }
 
     @Test
@@ -121,7 +121,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 + "in ../out3a/ are in the unnamed module");
         checkOutput("com.ex2/com/ex2/B.html", true,
                 """
-                    <a href="../../../../out3a/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
+                    <a href="../../../../out3a/com/ex1/A.html" title="class in com.ex1" class="external-link">A</a>""");
     }
 
     @Test
@@ -143,7 +143,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 + "in ../out4a/ are in named modules");
         checkOutput("com/ex2/B.html", true,
                 """
-                    <a href="../../../out4a/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
+                    <a href="../../../out4a/com.ex1/com/ex1/A.html" title="class in com.ex1" class="external-link">A</a>""");
     }
 
     @Test
@@ -167,7 +167,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                         + "in ../out5a/ are in the unnamed module");
         checkOutput("com.ex2/com/ex2/B.html", true,
                 """
-                    <a href="../../../../out5a/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
+                    <a href="../../../../out5a/com/ex1/A.html" title="class in com.ex1" class="external-link">A</a>""");
     }
 
     @Test
@@ -193,7 +193,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                         + "in ../out6a/ are in named modules");
         checkOutput("com/ex2/B.html", true,
                 """
-                    <a href="../../../out6a/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
+                    <a href="../../../out6a/com.ex1/com/ex1/A.html" title="class in com.ex1" class="external-link">A</a>""");
     }
 
     void initModulesAndPackages() throws Exception{

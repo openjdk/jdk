@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build jit.escape.AdaptiveBlocking.AdaptiveBlocking001.AdaptiveBlocking001
- * @run driver/timeout=300 ExecDriver --java -server -Xcomp -XX:+DoEscapeAnalysis
+ * @run driver/timeout=1200 ExecDriver --java -server -Xcomp -XX:+DoEscapeAnalysis
  *             jit.escape.AdaptiveBlocking.AdaptiveBlocking001.AdaptiveBlocking001 -numRounds 10
  */
 

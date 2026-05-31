@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.spi.FileTypeDetector;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -348,8 +349,32 @@ public abstract class UnixFileSystemProvider
         return access(file, X_OK) == 0;
     }
 
+    // find the key of the last accessible link in the chain
+    private UnixFileKey lastFileKey(UnixPath path) throws UnixException {
+        var fileKeys = new HashSet<UnixFileKey>();
+        UnixFileKey lastFileKey = null;
+        while (path != null) {
+            UnixFileAttributes attrs = UnixFileAttributes.getIfExists(path, false);
+            if (attrs == null) {
+                break;
+            }
+            UnixFileKey fileKey = attrs.fileKey();
+            if (!attrs.isSymbolicLink()) {
+                break;
+            }
+            if (!fileKeys.add(fileKey)) {
+                throw new UnixException(ELOOP);
+            }
+            lastFileKey = fileKey;
+            byte[] target = readlink(path);
+            path = new UnixPath(theFileSystem, target);
+        }
+        return lastFileKey;
+    }
+
     @Override
     public boolean isSameFile(Path obj1, Path obj2) throws IOException {
+        // toUnixPath verifies its argument is a non-null UnixPath
         UnixPath file1 = UnixPath.toUnixPath(obj1);
         if (file1.equals(obj2))
             return true;
@@ -358,21 +383,28 @@ public abstract class UnixFileSystemProvider
         if (!(obj2 instanceof UnixPath file2))
             return false;
 
-        UnixFileAttributes attrs1;
-        UnixFileAttributes attrs2;
+        UnixFileKey key1;
         try {
-             attrs1 = UnixFileAttributes.get(file1, true);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(file1);
-            return false;    // keep compiler happy
+            UnixFileAttributes attrs = UnixFileAttributes.getIfExists(file1);
+            key1 = (attrs != null) ? attrs.fileKey() : lastFileKey(file1);
+        } catch (UnixException e) {
+            e.rethrowAsIOException(file1);
+            return false;
         }
+
+        if (key1 == null)
+            return false;
+
+        UnixFileKey key2;
         try {
-            attrs2 = UnixFileAttributes.get(file2, true);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(file2);
-            return false;    // keep compiler happy
+            UnixFileAttributes attrs = UnixFileAttributes.getIfExists(file2);
+            key2 = (attrs != null) ? attrs.fileKey() : lastFileKey(file2);
+        } catch (UnixException e) {
+            e.rethrowAsIOException(file2);
+            return false;
         }
-        return attrs1.isSameFile(attrs2);
+
+        return key1.equals(key2);
     }
 
     @Override

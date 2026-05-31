@@ -36,7 +36,7 @@ StringArrayArgument::StringArrayArgument() {
 
 StringArrayArgument::~StringArrayArgument() {
   for (int i=0; i<_array->length(); i++) {
-    FREE_C_HEAP_ARRAY(char, _array->at(i));
+    FREE_C_HEAP_ARRAY(_array->at(i));
   }
   delete _array;
 }
@@ -183,7 +183,7 @@ template <> void DCmdArgument<bool>::init_value(TRAPS) {
 template <> void DCmdArgument<bool>::destroy_value() { }
 
 template <> void DCmdArgument<char*>::destroy_value() {
-  FREE_C_HEAP_ARRAY(char, _value);
+  FREE_C_HEAP_ARRAY(_value);
   set_value(nullptr);
 }
 
@@ -194,14 +194,14 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
   } else {
     // Use realloc as we may have a default set.
     if (strcmp(type(), "FILE") == 0) {
-      _value = REALLOC_C_HEAP_ARRAY(char, _value, JVM_MAXPATHLEN, mtInternal);
+      _value = REALLOC_C_HEAP_ARRAY(_value, JVM_MAXPATHLEN, mtInternal);
       if (!Arguments::copy_expand_pid(str, len, _value, JVM_MAXPATHLEN)) {
         stringStream error_msg;
         error_msg.print("File path invalid or too long: %s", str);
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());
       }
     } else {
-      _value = REALLOC_C_HEAP_ARRAY(char, _value, len + 1, mtInternal);
+      _value = REALLOC_C_HEAP_ARRAY(_value, len + 1, mtInternal);
       int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
       assert((size_t)n <= len, "Unexpected number of characters in string");
     }

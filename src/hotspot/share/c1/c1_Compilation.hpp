@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,6 @@ class Compilation: public StackObj {
   bool               _has_unsafe_access;
   bool               _has_irreducible_loops;
   bool               _would_profile;
-  bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   bool               _has_reserved_stack_access;
   bool               _has_monitors; // Fastpath monitors detection for Continuations
   bool               _has_scoped_access; // For shared scope closure
@@ -180,10 +179,6 @@ class Compilation: public StackObj {
   // Statistics gathering
   void notice_inlined_method(ciMethod* method);
 
-  // JSR 292
-  bool     has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
-
   bool     has_reserved_stack_access() const { return _has_reserved_stack_access; }
   void set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }
 
@@ -261,7 +256,7 @@ class Compilation: public StackObj {
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
   bool is_optimistic() {
-    return CompilerConfig::is_c1_only_no_jvmci() && !is_profiling() &&
+    return CompilerConfig::is_c1_only() && !is_profiling() &&
       (RangeCheckElimination || UseLoopInvariantCodeMotion) &&
       method()->method_data()->trap_count(Deoptimization::Reason_none) == 0;
   }

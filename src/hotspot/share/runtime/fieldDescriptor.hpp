@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,8 @@ class fieldDescriptor {
 
   bool is_trusted_final()         const;
 
+  bool is_mutable_static_final()  const;
+
   inline void set_is_field_access_watched(const bool value);
   inline void set_is_field_modification_watched(const bool value);
   inline void set_has_initialized_final_update(const bool value);
@@ -109,6 +111,7 @@ class fieldDescriptor {
   void print() const;
   void print_on(outputStream* st) const;
   void print_on_for(outputStream* st, oop obj);
+  void print_access_flags(outputStream* st) const;
 };
 
 #endif // SHARE_RUNTIME_FIELDDESCRIPTOR_HPP

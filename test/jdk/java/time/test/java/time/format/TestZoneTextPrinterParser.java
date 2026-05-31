@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 package test.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.DateFormatSymbols;
 import java.time.ZoneId;
@@ -46,20 +46,22 @@ import java.util.Set;
 import java.util.TimeZone;
 import jdk.test.lib.RandomFactory;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
  * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434 8346948
- *      8174269
+ *      8174269 8371842
  * @key randomness
  */
 
 /**
  * Test ZoneTextPrinterParser
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
     private static final Locale[] SAMPLE_LOCALES = {
@@ -73,6 +75,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                                              .withDecimalStyle(DecimalStyle.of(locale));
     }
 
+    @Test
     public void test_printText() {
         Random r = RandomFactory.getRandom();
         int N = 8;
@@ -89,10 +92,16 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                 }
                 zdt = zdt.withZoneSameLocal(ZoneId.of(zid));
                 TimeZone tz = TimeZone.getTimeZone(zid);
-                boolean isDST = tz.inDaylightTime(new Date(zdt.toInstant().toEpochMilli()));
+                long epochMilli = zdt.toInstant().toEpochMilli();
+                boolean isDST = tz.inDaylightTime(new Date(epochMilli));
+                // Some zones now use an explicit daylight offset in CLDR without java.util.TimeZone
+                // reporting DST for the instant, so prefer the daylight name when the effective
+                // offset is greater than the raw standard offset.
+                boolean useDaylightName = isDST
+                        || (tz.getDSTSavings() == 0 && tz.getOffset(epochMilli) > tz.getRawOffset());
                 for (Locale locale : SAMPLE_LOCALES) {
-                    String longDisplayName = tz.getDisplayName(isDST, TimeZone.LONG, locale);
-                    String shortDisplayName = tz.getDisplayName(isDST, TimeZone.SHORT, locale);
+                    String longDisplayName = tz.getDisplayName(useDaylightName, TimeZone.LONG, locale);
+                    String shortDisplayName = tz.getDisplayName(useDaylightName, TimeZone.SHORT, locale);
                     if ((longDisplayName.startsWith("GMT+") && shortDisplayName.startsWith("GMT+"))
                             || (longDisplayName.startsWith("GMT-") && shortDisplayName.startsWith("GMT-"))) {
                         // exclude ROOT
@@ -104,9 +113,9 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                         continue;
                     }
                     printText(locale, zdt, TextStyle.FULL, tz,
-                            tz.getDisplayName(isDST, TimeZone.LONG, locale));
+                            tz.getDisplayName(useDaylightName, TimeZone.LONG, locale));
                     printText(locale, zdt, TextStyle.SHORT, tz,
-                            tz.getDisplayName(isDST, TimeZone.SHORT, locale));
+                            tz.getDisplayName(useDaylightName, TimeZone.SHORT, locale));
                 }
             }
         }
@@ -123,9 +132,10 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
             System.out.printf("[%-5s, %5s] :[%s]%n", locale.toString(), style.toString(),result);
             System.out.printf(" %5s, %5s  :[%s] %s%n", "", "", expected, zone);
         }
-        assertEquals(result, expected);
+        assertEquals(expected, result);
     }
 
+    @Test
     public void test_ParseText() {
         Set<String> zids = ZoneRulesProvider.getAvailableZoneIds();
         for (Locale locale : SAMPLE_LOCALES) {
@@ -153,7 +163,6 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
     private static Set<ZoneId> none = new HashSet<>();
 
-    @DataProvider(name="preferredZones")
     Object[][] data_preferredZones() {
         return new Object[][] {
             {"America/New_York", "Eastern Standard Time", none,      Locale.ENGLISH, TextStyle.FULL},
@@ -178,7 +187,8 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
        };
     }
 
-    @Test(dataProvider="preferredZones")
+    @ParameterizedTest
+    @MethodSource("data_preferredZones")
     public void test_ParseText(String expected, String text, Set<ZoneId> preferred, Locale locale, TextStyle style) {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder().appendZoneText(style, preferred)
                                                               .toFormatter(locale)
@@ -191,7 +201,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                           style == TextStyle.FULL ? " full" :"short",
                           text, ret, expected);
 
-        assertEquals(ret, expected);
+        assertEquals(expected, ret);
 
     }
 
@@ -246,7 +256,6 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                  .withDecimalStyle(DecimalStyle.of(locale));
     }
 
-    @DataProvider(name="roundTripAtOverlap")
     Object[][] data_roundTripAtOverlap() {
         return new Object[][] {
             {"yyyy-MM-dd HH:mm:ss.SSS z",       "2021-10-31 02:30:00.000 CET"},
@@ -265,10 +274,11 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="roundTripAtOverlap")
+    @ParameterizedTest
+    @MethodSource("data_roundTripAtOverlap")
     public void test_roundTripAtOverlap(String pattern, String input) {
         var dtf = DateTimeFormatter.ofPattern(pattern, Locale.US);
-        assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
+        assertEquals(input, dtf.format(ZonedDateTime.parse(input, dtf)));
         var lc = input.toLowerCase(Locale.ROOT);
         try {
             ZonedDateTime.parse(lc, dtf);
@@ -276,7 +286,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         } catch (DateTimeParseException ignore) {}
 
         dtf = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(pattern).toFormatter(Locale.US);
-        assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
-        assertEquals(dtf.format(ZonedDateTime.parse(lc, dtf)), input);
+        assertEquals(input, dtf.format(ZonedDateTime.parse(input, dtf)));
+        assertEquals(input, dtf.format(ZonedDateTime.parse(lc, dtf)));
     }
 }

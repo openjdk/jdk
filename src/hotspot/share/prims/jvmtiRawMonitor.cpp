@@ -22,13 +22,15 @@
  *
  */
 
+#include "cds/aotThread.hpp"
 #include "memory/allocation.inline.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
 
 JvmtiRawMonitor::QNode::QNode(Thread* thread) : _next(nullptr), _prev(nullptr),
                                                 _event(thread->_ParkEvent),
@@ -39,10 +41,15 @@ GrowableArray<JvmtiRawMonitor*>* JvmtiPendingMonitors::_monitors =
   new (mtServiceability) GrowableArray<JvmtiRawMonitor*>(1, mtServiceability);
 
 void JvmtiPendingMonitors::transition_raw_monitors() {
-  assert((Threads::number_of_threads()==1),
-         "Java thread has not been created yet or more than one java thread "
-         "is running. Raw monitor transition will not work");
   JavaThread* current_java_thread = JavaThread::current();
+
+#ifdef ASSERT
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
+    assert(thread == current_java_thread || thread->is_aot_thread(),
+           "Didn't expect concurrent application threads at this point");
+  }
+#endif
+
   {
     ThreadToNativeFromVM ttnfvm(current_java_thread);
     for (int i = 0; i < count(); i++) {
@@ -122,7 +129,7 @@ JvmtiRawMonitor::is_valid() {
 
 void JvmtiRawMonitor::simple_enter(Thread* self) {
   for (;;) {
-    if (Atomic::replace_if_null(&_owner, self)) {
+    if (AtomicAccess::replace_if_null(&_owner, self)) {
       if (self->is_Java_thread()) {
         Continuation::pin(JavaThread::cast(self));
       }
@@ -137,7 +144,7 @@ void JvmtiRawMonitor::simple_enter(Thread* self) {
     node._next = _entry_list;
     _entry_list = &node;
     OrderAccess::fence();
-    if (_owner == nullptr && Atomic::replace_if_null(&_owner, self)) {
+    if (_owner == nullptr && AtomicAccess::replace_if_null(&_owner, self)) {
       _entry_list = node._next;
       RawMonitor_lock->unlock();
       if (self->is_Java_thread()) {
@@ -154,7 +161,7 @@ void JvmtiRawMonitor::simple_enter(Thread* self) {
 
 void JvmtiRawMonitor::simple_exit(Thread* self) {
   guarantee(_owner == self, "invariant");
-  Atomic::release_store(&_owner, (Thread*)nullptr);
+  AtomicAccess::release_store(&_owner, (Thread*)nullptr);
   OrderAccess::fence();
   if (self->is_Java_thread()) {
     Continuation::unpin(JavaThread::cast(self));
@@ -324,7 +331,7 @@ void JvmtiRawMonitor::ExitOnSuspend::operator()(JavaThread* current) {
 
 // JavaThreads will enter here with state _thread_in_native.
 void JvmtiRawMonitor::raw_enter(Thread* self) {
-  // TODO Atomic::load on _owner field
+  // TODO AtomicAccess::load on _owner field
   if (_owner == self) {
     _recursions++;
     return;

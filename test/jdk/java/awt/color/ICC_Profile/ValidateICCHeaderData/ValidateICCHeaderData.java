@@ -161,8 +161,8 @@ public class ValidateICCHeaderData {
         testProfileCreation(false);
         System.out.println("CASE 14: Passed \n");
 
-        System.out.println("CASE 15: Testing Deserialization of ICC_Profile ...");
-        testDeserialization();
+        System.out.println("CASE 15: Testing loading of ICC_Profile from file ...");
+        testLoading();
         System.out.println("CASE 15: Passed \n");
 
         System.out.println("Successfully completed testing all 15 cases. Test Passed !!");
@@ -261,9 +261,9 @@ public class ValidateICCHeaderData {
         }
     }
 
-    private static void testDeserialization() throws IOException {
-        //invalidSRGB.icc is serialized on older version of JDK
-        //Upon deserialization, the invalid profile is expected to throw IAE
+    private static void testLoading() throws IOException {
+        // invalidSRGB.icc is a profile file that was produced by an older JDK
+        // When attempting to load it, the current JDK is expected to throw IAE
         try {
             ICC_Profile.getInstance("./invalidSRGB.icc");
             throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");

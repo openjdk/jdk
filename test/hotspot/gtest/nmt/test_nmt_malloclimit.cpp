@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "nmt/mallocLimit.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
@@ -42,8 +43,8 @@ static bool compare_limits(const malloclimit* a, const malloclimit* b) {
 static bool compare_sets(const MallocLimitSet* a, const MallocLimitSet* b) {
   if (compare_limits(a->global_limit(), b->global_limit())) {
     for (int i = 0; i < mt_number_of_tags; i++) {
-      if (!compare_limits(a->category_limit(NMTUtil::index_to_tag(i)),
-                          b->category_limit(NMTUtil::index_to_tag(i)))) {
+      if (!compare_limits(a->mem_tag_limit(NMTUtil::index_to_tag(i)),
+                          b->mem_tag_limit(NMTUtil::index_to_tag(i)))) {
         return false;
       }
     }
@@ -92,7 +93,7 @@ TEST(NMT, MallocLimitPerCategory) {
   test("metaspace:1m,compiler:2m:oom,thread:3m:oom,threadstack:4m:oom,class:5m,classshared:6m", expected);
 }
 
-TEST(NMT, MallocLimitCategoryEnumNames) {
+TEST(NMT, MallocLimitMemTagEnumNames) {
   MallocLimitSet expected;
   stringStream option;
   for (int i = 0; i < mt_number_of_tags; i++) {
@@ -154,4 +155,15 @@ TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnStrDup, ".*MallocLimit: reach
   for (int i = 0; i < 100000; i++) {
     char* p = os::strdup("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", mtTest);
   }
+}
+
+TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnArenaGrow, ".*MallocLimit in Arena::grow.*") {
+  // We fake the correct assert if NMT is off to make the test pass (there is no way to execute a death test conditionally)
+  if (!MemTracker::enabled()) {
+    fatal("Fake message please ignore: MallocLimit in Arena::grow");
+  }
+  // the real test
+  MallocLimitHandler::initialize("test:10m:oom");
+  Arena ar(mtTest);
+  ar.Amalloc(10 * M, AllocFailStrategy::EXIT_OOM);
 }

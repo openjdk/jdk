@@ -38,6 +38,7 @@ import jdk.test.lib.Utils;
 /**
  * @test
  * @bug 8320725
+ * @key randomness
  * @library /test/lib /
  * @summary Verify non-strictly ordered AddReductionVF/VD and MulReductionVF/VD
  *          nodes are generated in VectorAPI

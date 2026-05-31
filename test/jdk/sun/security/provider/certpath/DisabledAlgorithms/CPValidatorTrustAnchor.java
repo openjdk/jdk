@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,34 @@
  * @summary Disable MD2 support
  *          new CertPathValidatorException.BasicReason enum constant for
  *     constrained algorithm
+ * @enablePreview
  * @run main/othervm CPValidatorTrustAnchor
  * @author Xuelei Fan
  */
 
-import java.io.*;
-import java.net.SocketException;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.security.PEMDecoder;
 import java.security.Security;
-import java.security.cert.*;
-import java.security.cert.CertPathValidatorException.*;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 public class CPValidatorTrustAnchor {
+
+    private static final PEMDecoder pemDecoder = java.security.PEMDecoder.of();
 
     static String selfSignedCertStr = null;
 
@@ -104,33 +120,26 @@ public class CPValidatorTrustAnchor {
 
     private static CertPath generateCertificatePath()
             throws CertificateException {
-        // generate certificate from cert strings
+
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        ByteArrayInputStream is;
-
-        is = new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        Certificate selfSignedCert = cf.generateCertificate(is);
+        // generate certificate from cert strings
+        Certificate selfSignedCert = pemDecoder.decode(selfSignedCertStr, X509Certificate.class);
 
         // generate certification path
-        List<Certificate> list = Arrays.asList(new Certificate[] {
-                        selfSignedCert});
+        List<Certificate> list = Collections.singletonList(selfSignedCert);
 
         return cf.generateCertPath(list);
     }
 
-    private static Set<TrustAnchor> generateTrustAnchors()
-            throws CertificateException {
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    private static Set<TrustAnchor> generateTrustAnchors() {
 
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        Certificate selfSignedCert = cf.generateCertificate(is);
+        // generate certificate from cert string
+        X509Certificate selfSignedCert = pemDecoder.decode(selfSignedCertStr, X509Certificate.class);
 
         // generate a trust anchor
         TrustAnchor anchor =
-            new TrustAnchor((X509Certificate)selfSignedCert, null);
+            new TrustAnchor(selfSignedCert, null);
 
         return Collections.singleton(anchor);
     }
@@ -164,7 +173,7 @@ public class CPValidatorTrustAnchor {
     }
 
     private static void validate(String trustAnchor)
-            throws CertPathValidatorException, Exception {
+            throws Exception {
         selfSignedCertStr = trustAnchor;
 
         CertPath path = generateCertificatePath();
@@ -176,7 +185,11 @@ public class CPValidatorTrustAnchor {
         params.setRevocationEnabled(false);
 
         // set the validation time
-        params.setDate(new Date(109, 9, 1));   // 2009-09-01
+        final Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, 2009);
+        calendar.set(Calendar.MONTH, 9);
+        calendar.set(Calendar.DATE, 1);
+        params.setDate(calendar.getTime());   // 2009-09-01
 
         CertPathValidator validator = CertPathValidator.getInstance("PKIX");
 

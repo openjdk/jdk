@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,16 +121,16 @@ public class Scenario {
     }
 
     /**
-     * Get the test VM output (stdout + stderr) of this scenario from the last execution of the framework.
+     * Get the Test VM output (stdout + stderr) of this scenario from the last execution of the framework.
      *
-     * @return the test VM output.
+     * @return the Test VM output.
      */
     public String getTestVMOutput() {
         return testVMOutput;
     }
 
     /**
-     * Set the test VM output, called by the framework.
+     * Set the Test VM output, called by the framework.
      */
     void setTestVMOutput(String testVMOutput) {
         this.testVMOutput = testVMOutput;

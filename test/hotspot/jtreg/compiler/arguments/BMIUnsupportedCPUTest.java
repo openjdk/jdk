@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.lib.cli.CommandLineOptionTest;
  * specific options and that values of these options processed correctly.
  * In order to do that test launch a new VM with tested options, the same
  * flavor-specific flag as one that was used for parent VM (-client, -server,
- * -minimal, -graal) and '-version'.
+ * -minimal) and '-version'.
  */
 public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
 

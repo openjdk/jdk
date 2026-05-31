@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class DepChange;
 // finding nmethods which might need to be deoptimized.
 //
 class nmethodBucket: public CHeapObj<mtClass> {
-  friend class VMStructs;
  private:
   nmethod*       _nmethod;
   nmethodBucket* volatile _next;
@@ -68,7 +67,6 @@ class nmethodBucket: public CHeapObj<mtClass> {
 // and uint64_t integer recording the safepoint counter at the last cleanup.
 //
 class DependencyContext : public StackObj {
-  friend class VMStructs;
   friend class TestDependencyContext;
  private:
   nmethodBucket* volatile* _dependency_context_addr;

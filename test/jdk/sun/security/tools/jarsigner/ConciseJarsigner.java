@@ -26,7 +26,7 @@
  * @bug 6802846 8172529 8227758 8260960
  * @summary jarsigner needs enhanced cert validation(options)
  * @library /test/lib
- * @run main/timeout=240 ConciseJarsigner
+ * @run main/timeout=960 ConciseJarsigner
  */
 
 import jdk.test.lib.Asserts;

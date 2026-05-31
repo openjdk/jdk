@@ -31,16 +31,7 @@
 elapsedTimer AdaptiveSizePolicy::_minor_timer;
 elapsedTimer AdaptiveSizePolicy::_major_timer;
 
-// The throughput goal is implemented as
-//      _throughput_goal = 1 - ( 1 / (1 + gc_cost_ratio))
-// gc_cost_ratio is the ratio
-//      application cost / gc cost
-// For example a gc_cost_ratio of 4 translates into a
-// throughput goal of .80
-
-AdaptiveSizePolicy::AdaptiveSizePolicy(double gc_pause_goal_sec,
-                                       uint gc_cost_ratio) :
-  _throughput_goal(1.0 - double(1.0 / (1.0 + (double) gc_cost_ratio))),
+AdaptiveSizePolicy::AdaptiveSizePolicy(double gc_pause_goal_sec) :
   _gc_distance_timer(),
   _gc_distance_seconds_seq(seq_default_alpha_value),
   _trimmed_minor_gc_time_seconds(NumOfGCSample, seq_default_alpha_value),
@@ -52,8 +43,7 @@ AdaptiveSizePolicy::AdaptiveSizePolicy(double gc_pause_goal_sec,
   _peak_old_used_bytes_seq(seq_default_alpha_value),
   _minor_pause_young_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
   _threshold_tolerance_percent(1.0 + ThresholdTolerance/100.0),
-  _gc_pause_goal_sec(gc_pause_goal_sec),
-  _young_gen_policy_is_ready(false) {}
+  _gc_pause_goal_sec(gc_pause_goal_sec) {}
 
 void AdaptiveSizePolicy::minor_collection_begin() {
   _minor_timer.reset();
@@ -69,12 +59,6 @@ void AdaptiveSizePolicy::minor_collection_end(size_t eden_capacity_in_bytes) {
 
   record_gc_duration(minor_pause_in_seconds);
   _trimmed_minor_gc_time_seconds.add(minor_pause_in_seconds);
-
-  if (!_young_gen_policy_is_ready) {
-    // The policy does not have enough data until at least some
-    // young collections have been done.
-    _young_gen_policy_is_ready = GCId::current() >= AdaptiveSizePolicyReadyThreshold;
-  }
 
   {
     double eden_size_in_mbytes = ((double)eden_capacity_in_bytes)/((double)M);

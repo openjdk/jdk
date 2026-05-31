@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * @see LDC
  * @see INVOKEVIRTUAL
  *
- * @LastModified: Jan 2020
+ * @LastModified: Sept 2025
  */
 public abstract class CPInstruction extends Instruction implements TypedInstruction, IndexedInstruction {
 
@@ -104,7 +104,7 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
     }
 
     /**
-     * Set the index to constant pool.
+     * Sets the index to constant pool.
      *
      * @param index in constant pool.
      */

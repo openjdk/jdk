@@ -51,7 +51,7 @@ void VectorSet::grow(uint new_word_capacity) {
   assert(new_word_capacity < (1U << 30), "");
   uint x = next_power_of_2(new_word_capacity);
   if (x > _data_size) {
-    _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, x);
+    _data = REALLOC_ARENA_ARRAY(_set_arena, _data, _size, x);
     _data_size = x;
   }
   Copy::zero_to_bytes(_data + _size, (x - _size) * sizeof(uint32_t));

@@ -34,17 +34,21 @@ package sun.util.locale;
 import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 
 // List fields are unmodifiable
-public record LanguageTag(String language, String script, String region, String privateuse,
-                          List<String> extlangs, List<String> variants, List<String> extensions) {
+public record LanguageTag(String language,
+                          String script,
+                          String region,
+                          String privateuse,
+                          List<String> extlangs,
+                          List<String> variants,
+                          List<String> extensions) {
 
     public static final String SEP = "-";
     public static final String PRIVATEUSE = "x";
@@ -52,78 +56,6 @@ public record LanguageTag(String language, String script, String region, String 
     public static final String PRIVUSE_VARIANT_PREFIX = "lvariant";
     private static final String EMPTY_SUBTAG = "";
     private static final List<String> EMPTY_SUBTAGS = List.of();
-
-    // Map contains legacy language tags and its preferred mappings from
-    // http://www.ietf.org/rfc/rfc5646.txt
-    // Keys are lower-case strings.
-    private static final Map<String, String[]> LEGACY;
-
-    static {
-        // grandfathered = irregular           ; non-redundant tags registered
-        //               / regular             ; during the RFC 3066 era
-        //
-        // irregular     = "en-GB-oed"         ; irregular tags do not match
-        //               / "i-ami"             ; the 'langtag' production and
-        //               / "i-bnn"             ; would not otherwise be
-        //               / "i-default"         ; considered 'well-formed'
-        //               / "i-enochian"        ; These tags are all valid,
-        //               / "i-hak"             ; but most are deprecated
-        //               / "i-klingon"         ; in favor of more modern
-        //               / "i-lux"             ; subtags or subtag
-        //               / "i-mingo"           ; combination
-        //               / "i-navajo"
-        //               / "i-pwn"
-        //               / "i-tao"
-        //               / "i-tay"
-        //               / "i-tsu"
-        //               / "sgn-BE-FR"
-        //               / "sgn-BE-NL"
-        //               / "sgn-CH-DE"
-        //
-        // regular       = "art-lojban"        ; these tags match the 'langtag'
-        //               / "cel-gaulish"       ; production, but their subtags
-        //               / "no-bok"            ; are not extended language
-        //               / "no-nyn"            ; or variant subtags: their meaning
-        //               / "zh-guoyu"          ; is defined by their registration
-        //               / "zh-hakka"          ; and all of these are deprecated
-        //               / "zh-min"            ; in favor of a more modern
-        //               / "zh-min-nan"        ; subtag or sequence of subtags
-        //               / "zh-xiang"
-
-        final String[][] entries = {
-          //{"tag",         "preferred"},
-            {"art-lojban",  "jbo"},
-            {"cel-gaulish", "xtg-x-cel-gaulish"},   // fallback
-            {"en-GB-oed",   "en-GB-x-oed"},         // fallback
-            {"i-ami",       "ami"},
-            {"i-bnn",       "bnn"},
-            {"i-default",   "en-x-i-default"},      // fallback
-            {"i-enochian",  "und-x-i-enochian"},    // fallback
-            {"i-hak",       "hak"},
-            {"i-klingon",   "tlh"},
-            {"i-lux",       "lb"},
-            {"i-mingo",     "see-x-i-mingo"},       // fallback
-            {"i-navajo",    "nv"},
-            {"i-pwn",       "pwn"},
-            {"i-tao",       "tao"},
-            {"i-tay",       "tay"},
-            {"i-tsu",       "tsu"},
-            {"no-bok",      "nb"},
-            {"no-nyn",      "nn"},
-            {"sgn-BE-FR",   "sfb"},
-            {"sgn-BE-NL",   "vgt"},
-            {"sgn-CH-DE",   "sgg"},
-            {"zh-guoyu",    "cmn"},
-            {"zh-hakka",    "hak"},
-            {"zh-min",      "nan-x-zh-min"},        // fallback
-            {"zh-min-nan",  "nan"},
-            {"zh-xiang",    "hsn"},
-        };
-        LEGACY = HashMap.newHashMap(entries.length);
-        for (String[] e : entries) {
-            LEGACY.put(LocaleUtils.toLowerString(e[0]), e);
-        }
-    }
 
     /*
      * BNF in RFC5646
@@ -175,14 +107,10 @@ public record LanguageTag(String language, String script, String region, String 
         StringTokenIterator itr;
         var errorMsg = new StringBuilder();
 
-        // Check if the tag is a legacy language tag
-        String[] gfmap = LEGACY.get(LocaleUtils.toLowerString(languageTag));
-        if (gfmap != null) {
-            // use preferred mapping
-            itr = new StringTokenIterator(gfmap[1], SEP);
-        } else {
-            itr = new StringTokenIterator(languageTag, SEP);
-        }
+        // Check if the tag is a legacy tag
+        var pref = legacyToPreferred(LocaleUtils.toLowerString(languageTag));
+        // If legacy use preferred mapping, otherwise use the tag as is
+        itr = new StringTokenIterator(Objects.requireNonNullElse(pref, languageTag), SEP);
 
         String language = parseLanguage(itr, pp);
         List<String> extlangs;
@@ -400,15 +328,24 @@ public record LanguageTag(String language, String script, String region, String 
 
     public static String caseFoldTag(String tag) {
         parse(tag, new ParsePosition(0), false);
+        StringBuilder bldr = new StringBuilder(tag.length());
+        String[] subtags = tag.split(SEP);
 
         // Legacy tags
-        String potentialLegacy = tag.toLowerCase(Locale.ROOT);
-        if (LEGACY.containsKey(potentialLegacy)) {
-            return LEGACY.get(potentialLegacy)[0];
+        if (legacyToPreferred(tag.toLowerCase(Locale.ROOT)) != null) {
+            // Fold the legacy tag
+            for (int i = 0; i < subtags.length ; i++) {
+                // 2 ALPHA Region subtag(s) are upper, all other subtags are lower
+                if (i > 0 && subtags[i].length() == 2) {
+                    bldr.append(LocaleUtils.toUpperString(subtags[i])).append(SEP);
+                } else {
+                    bldr.append(LocaleUtils.toLowerString(subtags[i])).append(SEP);
+                }
+            }
+            bldr.setLength(bldr.length() - 1); // Remove trailing '-'
+            return bldr.toString();
         }
         // Non-legacy tags
-        StringBuilder bldr = new StringBuilder(tag.length());
-        String[] subtags = tag.split("-");
         boolean privateFound = false;
         boolean singletonFound = false;
         boolean privUseVarFound = false;
@@ -435,7 +372,7 @@ public record LanguageTag(String language, String script, String region, String 
                 bldr.append(subtag.toLowerCase(Locale.ROOT));
             }
             if (i != subtags.length-1) {
-                bldr.append("-");
+                bldr.append(SEP);
             }
         }
         return bldr.substring(0);
@@ -565,6 +502,47 @@ public record LanguageTag(String language, String script, String region, String 
 
         // extlangs always empty for locale parse
         return new LanguageTag(language, script, region, privateuse, EMPTY_SUBTAGS, variants, extensions);
+    }
+
+    /*
+     * Converts a legacy tag to its preferred mapping if it exists, otherwise null.
+     * The keys are mapped and stored as lower case. (Folded on demand).
+     * See http://www.ietf.org/rfc/rfc5646.txt Section 2.1 and 2.2.8 for the
+     * full syntax and case accurate legacy tags.
+     */
+    private static String legacyToPreferred(String tag) {
+        if (tag.length() < 5) {
+            return null;
+        }
+        return switch (tag) {
+            case "art-lojban" ->  "jbo";
+            case "cel-gaulish" -> "xtg-x-cel-gaulish";   // fallback
+            case "en-gb-oed" ->   "en-GB-x-oed";         // fallback
+            case "i-ami" ->       "ami";
+            case "i-bnn" ->       "bnn";
+            case "i-default" ->   "en-x-i-default";      // fallback
+            case "i-enochian" ->  "und-x-i-enochian";    // fallback
+            case "i-hak",
+                 "zh-hakka" ->    "hak";
+            case "i-klingon" ->   "tlh";
+            case "i-lux" ->       "lb";
+            case "i-mingo" ->     "see-x-i-mingo";       // fallback
+            case "i-navajo" ->    "nv";
+            case "i-pwn" ->       "pwn";
+            case "i-tao" ->       "tao";
+            case "i-tay" ->       "tay";
+            case "i-tsu" ->       "tsu";
+            case "no-bok" ->      "nb";
+            case "no-nyn" ->      "nn";
+            case "sgn-be-fr" ->   "sfb";
+            case "sgn-be-nl" ->   "vgt";
+            case "sgn-ch-de" ->   "sgg";
+            case "zh-guoyu" ->    "cmn";
+            case "zh-min" ->      "nan-x-zh-min";        // fallback
+            case "zh-min-nan" ->  "nan";
+            case "zh-xiang" ->    "hsn";
+            default -> null;
+        };
     }
 
     //

@@ -47,10 +47,10 @@ public class NonTieredLevelsTest extends CompLevelsTest {
     private static final int AVAILABLE_COMP_LEVEL;
     private static final IntPredicate IS_AVAILABLE_COMPLEVEL;
     static {
-        if (Platform.isServer() && !Platform.isEmulatedClient()) {
+        if (Platform.isServer()) {
             AVAILABLE_COMP_LEVEL = COMP_LEVEL_FULL_OPTIMIZATION;
             IS_AVAILABLE_COMPLEVEL = x -> x == COMP_LEVEL_FULL_OPTIMIZATION;
-        } else if (Platform.isClient() || Platform.isMinimal() || Platform.isEmulatedClient()) {
+        } else if (Platform.isClient() || Platform.isMinimal()) {
             AVAILABLE_COMP_LEVEL = COMP_LEVEL_SIMPLE;
             IS_AVAILABLE_COMPLEVEL = x -> x == COMP_LEVEL_SIMPLE;
         } else {

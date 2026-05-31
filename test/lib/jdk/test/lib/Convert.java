@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,26 +38,6 @@ public class Convert {
     public static byte[] byteToByteArray(byte v, int length) {
         byte[] result = new byte[length];
         result[0] = v;
-        return result;
-    }
-
-    /*
-     * Convert a hexadecimal string to the corresponding little-ending number
-     * as a BigInteger. The clearHighBit argument determines whether the most
-     * significant bit of the highest byte should be set to 0 in the result.
-     */
-    public static
-    BigInteger hexStringToBigInteger(boolean clearHighBit, String str) {
-        BigInteger result = BigInteger.ZERO;
-        for (int i = 0; i < str.length() / 2; i++) {
-            int curVal = Character.digit(str.charAt(2 * i), 16);
-            curVal <<= 4;
-            curVal += Character.digit(str.charAt(2 * i + 1), 16);
-            if (clearHighBit && i == str.length() / 2 - 1) {
-                curVal &= 0x7F;
-            }
-            result = result.add(BigInteger.valueOf(curVal).shiftLeft(8 * i));
-        }
         return result;
     }
 

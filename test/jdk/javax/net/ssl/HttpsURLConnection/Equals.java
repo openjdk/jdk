@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules jdk.httpserver
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run main/othervm -Djavax.net.debug=ssl,handshake,record Equals
+ * @run main/othervm Equals
  */
 import com.sun.net.httpserver.*;
 import java.net.*;
@@ -38,9 +38,24 @@ import jdk.test.lib.net.SimpleSSLContext;
 
 public class Equals {
 
-    static SSLContext ctx;
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl,handshake,record
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
 
     public static void main(String[] args) throws Exception {
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl,handshake,record");
+        }
+
         HttpsServer s2 = null;
         ExecutorService executor = null;
         try {
@@ -50,7 +65,6 @@ public class Equals {
             HttpContext c2 = s2.createContext("/test1", h);
             executor = Executors.newCachedThreadPool();
             s2.setExecutor(executor);
-            ctx = new SimpleSSLContext().get();
             s2.setHttpsConfigurator(new HttpsConfigurator(ctx));
             s2.start();
             int httpsport = s2.getAddress().getPort();

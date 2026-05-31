@@ -79,6 +79,8 @@ public sealed interface LineNumberTableAttribute
      * order instead.
      *
      * @param lines the line number descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static LineNumberTableAttribute of(List<LineNumberInfo> lines) {
         return new UnboundAttribute.UnboundLineNumberTableAttribute(lines);

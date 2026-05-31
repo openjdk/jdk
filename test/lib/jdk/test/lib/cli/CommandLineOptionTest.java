@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,6 @@ public abstract class CommandLineOptionTest {
         List<String> finalOptions = new ArrayList<>();
         if (addTestVMOptions) {
             Collections.addAll(finalOptions, InputArguments.getVmInputArgs());
-            Collections.addAll(finalOptions, Utils.getTestJavaOpts());
         }
         Collections.addAll(finalOptions, options);
         finalOptions.add("-version");
@@ -201,10 +200,6 @@ public abstract class CommandLineOptionTest {
         List<String> finalOptions = new ArrayList<>();
         if (!Platform.isStatic()) {
             finalOptions.add(CommandLineOptionTest.getVMTypeOption());
-        }
-        String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
-        if (extraFlagForEmulated != null) {
-            finalOptions.add(extraFlagForEmulated);
         }
         Collections.addAll(finalOptions, options);
 
@@ -402,10 +397,6 @@ public abstract class CommandLineOptionTest {
         if (!Platform.isStatic()) {
             finalOptions.add(CommandLineOptionTest.getVMTypeOption());
         }
-        String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
-        if (extraFlagForEmulated != null) {
-            finalOptions.add(extraFlagForEmulated);
-        }
         Collections.addAll(finalOptions, additionalVMOpts);
 
         CommandLineOptionTest.verifyOptionValue(optionName, expectedValue,
@@ -511,18 +502,6 @@ public abstract class CommandLineOptionTest {
             return "-zero";
         }
         throw new RuntimeException("Unknown VM mode.");
-    }
-
-    /**
-     * @return addtional VMoptions(Emulated related) required to start a new VM with the same type as current.
-     */
-    private static String getVMTypeOptionForEmulated() {
-        if (Platform.isServer() && !Platform.isEmulatedClient()) {
-            return "-XX:-NeverActAsServerClassMachine";
-        } else if (Platform.isEmulatedClient()) {
-            return "-XX:+NeverActAsServerClassMachine";
-        }
-        return null;
     }
 
     private final BooleanSupplier predicate;

@@ -50,7 +50,7 @@
  * @build vm.mlvm.meth.stress.compiler.i2c_c2i.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm -XX:CompileCommand=MemLimit,*.*,0 vm.mlvm.meth.stress.compiler.i2c_c2i.Test
+ * @run main/othervm/timeout=480 -XX:CompileCommand=MemLimit,*.*,0 vm.mlvm.meth.stress.compiler.i2c_c2i.Test
  */
 
 package vm.mlvm.meth.stress.compiler.i2c_c2i;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,9 @@
  */
 
 #include "asm/assembler.inline.hpp"
-#include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
@@ -68,12 +69,13 @@ unsigned int  VM_Version::_Icache_lineSize                             = DEFAULT
 //   z14:  2017-09
 //   z15:  2019-09
 //   z16:  2022-05
+//   z17:  2025-04
 
-static const char* z_gen[]      = {"  ", "G1",         "G2",         "G3",         "G4",         "G5",         "G6",         "G7",         "G8",         "G9",         "G10" };
-static const char* z_machine[]  = {"  ", "2064",       "2084",       "2094",       "2097",       "2817",       "2827",       "2964",       "3906",       "8561",       "3931" };
-static const char* z_name[]     = {"  ", "z900",       "z990",       "z9 EC",      "z10 EC",     "z196 EC",    "ec12",       "z13",        "z14",        "z15",        "z16" };
-static const char* z_WDFM[]     = {"  ", "2006-06-30", "2008-06-30", "2010-06-30", "2012-06-30", "2014-06-30", "2016-12-31", "2019-06-30", "2021-06-30", "2024-12-31", "tbd" };
-static const char* z_EOS[]      = {"  ", "2014-12-31", "2014-12-31", "2017-10-31", "2019-12-31", "2021-12-31", "2023-12-31", "2024-12-31", "tbd",        "tbd",        "tbd" };
+static const char* z_gen[]      = {"  ", "G1",         "G2",         "G3",         "G4",         "G5",         "G6",         "G7",         "G8",         "G9",         "G10",         "G11" };
+static const char* z_machine[]  = {"  ", "2064",       "2084",       "2094",       "2097",       "2817",       "2827",       "2964",       "3906",       "8561",       "3931",        "9175" };
+static const char* z_name[]     = {"  ", "z900",       "z990",       "z9 EC",      "z10 EC",     "z196 EC",    "ec12",       "z13",        "z14",        "z15",        "z16",         "z17" };
+static const char* z_WDFM[]     = {"  ", "2006-06-30", "2008-06-30", "2010-06-30", "2012-06-30", "2014-06-30", "2016-12-31", "2019-06-30", "2021-06-30", "2024-12-31", "tbd",         "tbd" };
+static const char* z_EOS[]      = {"  ", "2014-12-31", "2014-12-31", "2017-10-31", "2019-12-31", "2021-12-31", "2023-12-31", "2024-12-31", "tbd",        "tbd",        "tbd",         "tbd" };
 static const char* z_features[] = {"  ",
                                    "system-z, g1-z900, ldisp",
                                    "system-z, g2-z990, ldisp_fast",
@@ -85,7 +87,9 @@ static const char* z_features[] = {"  ",
                                    "system-z, g8-z14, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1",
                                    "system-z, g9-z15, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, venh2",
                                    "system-z, g10-z16, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, venh2,"
-                                       "bear_enh, sort_enh, nnpa_assist, storage_key_removal, vpack_decimal_enh"
+                                       "bear_enh, sort_enh, nnpa_assist, storage_key_removal, vpack_decimal_enh",
+                                   "system-z, g11-z17, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, venh2,"
+                                       "bear_enh, sort_enh, nnpa_assist, storage_key_removal, vpack_decimal_enh, concurrent_function"
                                   };
 
 void VM_Version::initialize() {
@@ -102,7 +106,7 @@ void VM_Version::initialize() {
   int model_ix = get_model_index();
 
   if ( model_ix >= 7 ) {
-    if (FLAG_IS_DEFAULT(SuperwordUseVX)) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVX) && CompilerConfig::is_c2_enabled()) {
       FLAG_SET_ERGO(SuperwordUseVX, true);
     }
     if (model_ix > 7 && FLAG_IS_DEFAULT(UseSFPV) && SuperwordUseVX) {
@@ -286,10 +290,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
   if (UseSecondarySupersTable && VM_Version::get_model_index() < 5 /* z196/z11 */) {
     if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
       warning("UseSecondarySupersTable requires z196 or later.");
@@ -339,6 +339,11 @@ int VM_Version::get_model_index() {
   //      is the index of the oldest detected model.
   int ambiguity = 0;
   int model_ix  = 0;
+  if (is_z17()) {
+    model_ix = 11;
+    ambiguity++;
+  }
+
   if (is_z16()) {
     model_ix = 10;
     ambiguity++;
@@ -1541,7 +1546,7 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "s390 %s", VM_Version::get_model_string());
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "s390 %s", cpu_info_string());
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "s390 %s", VM_Version::get_model_string());
+  os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "s390 %s", cpu_info_string());
   _initialized = true;
 }

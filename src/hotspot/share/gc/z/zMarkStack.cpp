@@ -25,7 +25,7 @@
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -72,12 +72,12 @@ ZMarkStackList::ZMarkStackList()
     _length() {}
 
 bool ZMarkStackList::is_empty() const {
-  return Atomic::load(&_head) == nullptr;
+  return AtomicAccess::load(&_head) == nullptr;
 }
 
 void ZMarkStackList::push(ZMarkStack* stack) {
   ZMarkStackListNode* const node = new ZMarkStackListNode(stack);
-  ZMarkStackListNode* head = Atomic::load(&_head);
+  ZMarkStackListNode* head = AtomicAccess::load(&_head);
   for (;;) {
     node->set_next(head);
     // Between reading the head and the linearizing CAS that pushes
@@ -87,13 +87,13 @@ void ZMarkStackList::push(ZMarkStack* stack) {
     // situation and run this loop one more time, we would end up
     // having the same side effects: set the next pointer to the same
     // head again, and CAS the head link.
-    ZMarkStackListNode* prev = Atomic::cmpxchg(&_head, head, node, memory_order_release);
+    ZMarkStackListNode* prev = AtomicAccess::cmpxchg(&_head, head, node, memory_order_release);
 
     if (prev == head) {
       // Success
 
       // Bookkeep the population count
-      Atomic::inc(&_length, memory_order_relaxed);
+      AtomicAccess::inc(&_length, memory_order_relaxed);
       return;
     }
 
@@ -105,7 +105,7 @@ void ZMarkStackList::push(ZMarkStack* stack) {
 ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
   ZMarkStackListNode* volatile* const hazard_ptr = marking_smr->hazard_ptr();
 
-  ZMarkStackListNode* head = Atomic::load(&_head);
+  ZMarkStackListNode* head = AtomicAccess::load(&_head);
   for (;;) {
     if (head == nullptr) {
       // Stack is empty
@@ -115,7 +115,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
     // Establish what the head is and publish a hazard pointer denoting
     // that the head is not safe to concurrently free while we are in the
     // middle of popping it and finding out that we lost the race.
-    Atomic::store(hazard_ptr, head);
+    AtomicAccess::store(hazard_ptr, head);
 
     // A full fence is needed to ensure the store and subsequent load do
     // not reorder. If they did reorder, the second head load could happen
@@ -127,7 +127,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
     // the next pointer load below observes the next pointer published
     // with the releasing CAS for the push operation that published the
     // marking stack.
-    ZMarkStackListNode* const head_after_publish = Atomic::load_acquire(&_head);
+    ZMarkStackListNode* const head_after_publish = AtomicAccess::load_acquire(&_head);
     if (head_after_publish != head) {
       // Race during hazard pointer publishing
       head = head_after_publish;
@@ -141,7 +141,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
 
     // Popping entries from the list does not require any particular memory
     // ordering.
-    ZMarkStackListNode* const prev = Atomic::cmpxchg(&_head, head, next, memory_order_relaxed);
+    ZMarkStackListNode* const prev = AtomicAccess::cmpxchg(&_head, head, next, memory_order_relaxed);
 
     if (prev == head) {
       // Success
@@ -149,10 +149,10 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
       // The ABA hazard is gone after the CAS. We use release_store to ensure
       // that the relinquishing of the hazard pointer becomes observable after
       // the unlinking CAS.
-      Atomic::release_store(hazard_ptr, (ZMarkStackListNode*)nullptr);
+      AtomicAccess::release_store(hazard_ptr, (ZMarkStackListNode*)nullptr);
 
       // Perform bookkeeping of the population count.
-      Atomic::dec(&_length, memory_order_relaxed);
+      AtomicAccess::dec(&_length, memory_order_relaxed);
 
       ZMarkStack* result = head->stack();
 
@@ -167,7 +167,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
 }
 
 size_t ZMarkStackList::length() const {
-  const ssize_t result = Atomic::load(&_length);
+  const ssize_t result = AtomicAccess::load(&_length);
 
   if (result < 0) {
     return 0;
@@ -221,7 +221,7 @@ bool ZMarkStripeSet::try_set_nstripes(size_t old_nstripes, size_t new_nstripes) 
 
   // Mutators may read these values concurrently. It doesn't matter
   // if they see the old or new values.
-  if (Atomic::cmpxchg(&_nstripes_mask, old_nstripes_mask, new_nstripes_mask) == old_nstripes_mask) {
+  if (AtomicAccess::cmpxchg(&_nstripes_mask, old_nstripes_mask, new_nstripes_mask) == old_nstripes_mask) {
     log_debug(gc, marking)("Using %zu mark stripes", new_nstripes);
     return true;
   }
@@ -230,7 +230,7 @@ bool ZMarkStripeSet::try_set_nstripes(size_t old_nstripes, size_t new_nstripes) 
 }
 
 size_t ZMarkStripeSet::nstripes() const {
-  return Atomic::load(&_nstripes_mask) + 1;
+  return AtomicAccess::load(&_nstripes_mask) + 1;
 }
 
 bool ZMarkStripeSet::is_empty() const {
@@ -258,7 +258,7 @@ bool ZMarkStripeSet::is_crowded() const {
 }
 
 ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
-  const size_t mask = Atomic::load(&_nstripes_mask);
+  const size_t mask = AtomicAccess::load(&_nstripes_mask);
   const size_t nstripes = mask + 1;
 
   const size_t spillover_limit = (nworkers / nstripes) * nstripes;

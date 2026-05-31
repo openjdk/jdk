@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -124,7 +124,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
                                         THREAD);
 #if INCLUDE_CDS
   if (!HAS_PENDING_EXCEPTION && CDSConfig::is_dumping_archive()) {
-    if (_pool->pool_holder()->is_shared()) {
+    if (_pool->pool_holder()->in_aot_cache()) {
       assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
       // We are linking a shared class from the base archive. This
       // class won't be written into the dynamic archive, so there's no
@@ -567,8 +567,8 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 
 void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
 #if INCLUDE_CDS
-  if (klass->is_shared()) {
-    assert(!klass->is_rewritten(), "rewritten shared classes cannot be rewritten again");
+  if (klass->in_aot_cache()) {
+    assert(!klass->is_rewritten(), "rewritten classes in the AOT cache cannot be rewritten again");
   }
 #endif // INCLUDE_CDS
   ResourceMark rm(THREAD);
