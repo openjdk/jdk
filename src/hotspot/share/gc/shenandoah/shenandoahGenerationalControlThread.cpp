@@ -189,9 +189,10 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
   request.generation = _heap->global_generation();
   global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
-  global_heuristics->accept_trigger();
+  // In generational mode, we do not accept trigger here because we do not want to penalize the triggering heuristic if
+  // the explicit GC degenerates. The heuristic was planning for a young GC. It cannot be held accountable if a global
+  // GC takes longer than it was anticipating for a young GC.
   global_heuristics->record_requested_gc();
- global_heuristics->cancel_trigger_request();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
     return stw_full;
