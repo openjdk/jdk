@@ -30,38 +30,44 @@ import sun.security.util.ObjectIdentifier;
 
 import java.io.IOException;
 
+/**
+ * This class consists static utility methods that can be used to extract,
+ * check, and modify arbitrary inner DerValue objects inside the DER or BER
+ * encoding of an ASN.1 encoding.
+ * <p>
+ * The location of the inner DerValue is expressed as a string, in which
+ * each character is a step from the outer DerValue into the inner one.
+ * If it's a number n, the n'th element (starting from 0) of a sequence
+ * is the next step. If it's 'c', the content of an OctetString parsed
+ * as a DerValue is the next step. Note that n cannot be bigger than 9.
+ * <p>
+ * For example, here is a PKCS #12 file:
+ * <pre>
+ * 0000:0845  [] SEQUENCE
+ * 0004:0003  [0]     INTEGER 3
+ * 0007:07FE  [1]     SEQUENCE
+ * 000B:000B  [10]         OID 1.2.840.113549.1.7.1 (data)
+ * 0016:07EF  [11]         cont [0]
+ * 001A:07EB  [110]             OCTET STRING
+ * ...
+ * </pre>
+ * and the content of OCTET string at offset 001A can be parsed as another
+ * DerValue which is:
+ * <pre>
+ * 0000:07E7  [] SEQUENCE
+ * 0004:0303  [0]     SEQUENCE
+ * 0008:000B  [00]         OID 1.2.840.113549.1.7.1 (data)
+ * ....
+ * </pre>
+ * Then the OID is {@code innerDerValue(data, "110c00").getOID()}.
+ * <p>
+ * The location for an inner DerValue can be found using
+ * {@link jdk.test.lib.hexdump.ASN1Formatter ASN1Formatter}. It is shown
+ * as the path at the beginning of the annotation for each inner DerValue.
+ */
 public class DerUtils {
     /**
      * Returns a DerValue (deep) inside another DerValue.
-     * <p>
-     * The location of the inner DerValue is expressed as a string, in which
-     * each character is a step from the outer DerValue into the inner one.
-     * If it's a number n, the n'th element (starting from 0) of a sequence
-     * is the next step. If it's 'c', the content of an OctetString parsed
-     * as a DerValue is the next step. Note that n cannot be bigger than 9.
-     * <p>
-     * Attention: do not reuse the return value. DerValue is mutable and
-     * reading it advances a pointer inside.
-     * <p>
-     * For example, here is a PKCS #12 file:
-     * <pre>
-     * 0000:0845  [] SEQUENCE
-     * 0004:0003  [0]     INTEGER 3
-     * 0007:07FE  [1]     SEQUENCE
-     * 000B:000B  [10]         OID 1.2.840.113549.1.7.1 (data)
-     * 0016:07EF  [11]         cont [0]
-     * 001A:07EB  [110]             OCTET STRING
-     * ...
-     * </pre>
-     * and the content of OCTET string at offset 001A can be parsed as another
-     * DerValue which is:
-     * <pre>
-     * 0000:07E7  [] SEQUENCE
-     * 0004:0303  [0]     SEQUENCE
-     * 0008:000B  [00]         OID 1.2.840.113549.1.7.1 (data)
-     * ....
-     * </pre>
-     * Then the OID is {@code innerDerValue(data, "110c00").getOID()}.
      *
      * @param data the outer DerValue. We choose byte[] instead of DerValue
      *             because DerValue is mutable and cannot be reused.
