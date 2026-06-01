@@ -48,7 +48,7 @@ class CmovTester {
       _masm.mv(c_rarg0, c_rarg2);
       _masm.ret();
     }
-    _masm.flush(); // icache invalidate
+    _masm.invalidate_icache(); // icache invalidate
     int64_t ret = ((zicond_func)entry)(a0, a1, a2, a3);
     ASSERT_EQ(ret, result);
     BufferBlob::free(bb);
@@ -175,7 +175,7 @@ class CmpxchgTester {
       _masm.ret();
       _func = ((cmpxchg_func)entry);
     }
-    _masm.flush(); // icache invalidate
+    _masm.invalidate_icache(); // icache invalidate
   }
 
   ~CmpxchgTester() {
@@ -594,7 +594,7 @@ class WeakCmpxchgTester {
       _masm.ret();
       _weak = ((weak_cmpxchg_func)entry);
     }
-    _masm.flush(); // icache invalidate
+    _masm.invalidate_icache(); // icache invalidate
   }
 
   TESTSIZE weak_cmpxchg(intptr_t addr, TESTSIZE expected, TESTSIZE new_value) {

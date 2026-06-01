@@ -330,7 +330,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ publish_instruction();
+  __ invalidate_icache();
 
 #ifndef PRODUCT
   stringStream ss;
