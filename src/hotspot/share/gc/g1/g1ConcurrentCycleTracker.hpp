@@ -27,86 +27,78 @@
 
 #include "gc/g1/g1CollectorState.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-struct G1MutatorPeriodStatsBytes {
-  size_t _non_hum_allocated;
-  size_t _hum_allocated;
-  size_t _total_hum_before;
-  size_t _total_hum_after;
+struct G1AllocationIntervalStats;
 
-  G1MutatorPeriodStatsBytes(size_t non_hum_allocated,
-                            size_t hum_allocated,
-                            size_t total_hum_before,
-                            size_t total_hum_after)
-    : _non_hum_allocated(non_hum_allocated),
-      _hum_allocated(hum_allocated),
-      _total_hum_before(total_hum_before),
-      _total_hum_after(total_hum_after)
-    { }
-
-  void record_humongous_allocation(size_t humongous_allocation_bytes) {
-    _hum_allocated += humongous_allocation_bytes;
-    _total_hum_after += humongous_allocation_bytes;
-  }
-};
-
-// The Concurrent Cycle is the interval After the Concurrent-Start-GC until
-// the first Mixed-GC.
+// The sampling interval for G1ConcurrentCycleTracker covers the concurrent cycle
+// from the end of the Concurrent Start GC to start of the first Mixed GC.
 struct G1ConcurrentCycleStats {
   double _cycle_duration_s;
-  size_t _non_hum_allocated_bytes;
-  size_t _peak_extra_humongous_allocated;
+  size_t _non_humongous_allocated_bytes;
+  size_t _peak_extra_humongous_reserve_bytes;
 
   G1ConcurrentCycleStats(double cycle_duration_s,
-                         size_t non_hum_allocated_bytes,
-                         size_t peak_extra_humongous_allocated)
+                         size_t non_humongous_allocated_bytes,
+                         size_t peak_extra_humongous_reserve_bytes)
   : _cycle_duration_s(cycle_duration_s),
-    _non_hum_allocated_bytes(non_hum_allocated_bytes),
-    _peak_extra_humongous_allocated(peak_extra_humongous_allocated)
+    _non_humongous_allocated_bytes(non_humongous_allocated_bytes),
+    _peak_extra_humongous_reserve_bytes(peak_extra_humongous_reserve_bytes)
   { }
 };
 
-class G1ConcurrentCycleTracker{
+class G1ConcurrentCycleTracker {
+  friend class G1IHOPTestController;
+
   using Pause = G1CollectorState::Pause;
 
   enum class CycleState {
-    InActive,
+    Inactive,
     Active,
     Complete,
   };
 
   CycleState _state;
-  double _cycle_start_time;
-  double _cycle_end_time;
-  double _total_gc_pauses_in_cycle;
+  double _cycle_start_time_s;
+  double _cycle_end_time_s;
+  double _total_pause_time_s;
 
   // allocation accounting
-  size_t _hum_bytes_at_start;
-  size_t _non_hum_bytes_allocated;
+  size_t _humongous_bytes_at_start;
+  size_t _non_humongous_allocated_bytes;
   intptr_t _peak_extra_humongous_reserve_bytes;
-private:
 
   void reset();
 
   bool is_active() const {
     return _state == CycleState::Active;
   }
-  void update_mutator_stats(double pause_duration, G1MutatorPeriodStatsBytes period_stats);
+  void update_allocation_stats(G1AllocationIntervalStats interval_stats);
+
+  void add_pause(double pause_duration_s) {
+    _total_pause_time_s += pause_duration_s;
+  }
+
+  void record_cycle_start(double cycle_start_time_s, size_t humongous_bytes_after_pause);
+
+  void complete_cycle(double cycle_end_time_s);
+
+  size_t non_humongous_allocated_bytes() const {
+    return _non_humongous_allocated_bytes;
+  }
+
+  size_t peak_extra_humongous_reserve_bytes() const {
+    return checked_cast<size_t>(_peak_extra_humongous_reserve_bytes);
+  }
 
  public:
   G1ConcurrentCycleTracker();
 
-  void record_cycle_start(double start_time, size_t humongous_bytes_after_gc);
-
-  void record_mutator_period(Pause gc_type,
-                             bool is_periodic_gc,
-                             double start,
-                             double end,
-                             G1MutatorPeriodStatsBytes period_stats);
-
-  void complete_cycle(double cycle_end_time, double mixed_gc_duration);
+  void record_allocation_interval(Pause pause_type,
+                                  bool is_periodic_gc,
+                                  double pause_start_time_s,
+                                  double pause_end_time_s,
+                                  G1AllocationIntervalStats interval_stats);
 
   void abort_cycle() {
     reset();
@@ -117,14 +109,6 @@ private:
   }
 
   G1ConcurrentCycleStats get_and_reset_cycle_stats();
-
-  size_t non_hum_bytes_allocated() const {
-    return _non_hum_bytes_allocated;
-  }
-
-  size_t peak_extra_humongous_reserve_bytes() const {
-    return checked_cast<size_t>(_peak_extra_humongous_reserve_bytes);
-  }
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTCYCLETRACKER_HPP

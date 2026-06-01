@@ -1032,8 +1032,8 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
            marking_to_mixed_time);
     if (marking_to_mixed_time > min_valid_time) {
       _ihop_control->record_concurrent_cycle(marking_to_mixed_time,
-                                             cycle_stats._non_hum_allocated_bytes,
-                                             cycle_stats._peak_extra_humongous_allocated);
+                                             cycle_stats._non_humongous_allocated_bytes,
+                                             cycle_stats._peak_extra_humongous_reserve_bytes);
       report = true;
     }
   }
@@ -1372,17 +1372,18 @@ void G1Policy::record_pause(Pause gc_type,
 
   update_gc_pause_time_ratios(gc_type, start, end);
 
-  G1MutatorPeriodStatsBytes period_stats = _old_gen_alloc_tracker.end_mutator_period(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
+  size_t humongous_bytes = _g1h->humongous_regions_count() * G1HeapRegion::GrainBytes;
+  G1AllocationIntervalStats alloc_interval_stats = _old_gen_alloc_tracker.end_allocation_interval(humongous_bytes);
   bool is_periodic_gc = _g1h->gc_cause() == GCCause::_g1_periodic_collection;
 
   if (humongous_allocation_bytes > 0) {
     // Record the humongous allocation that triggered the GC. This allocation
-    // is attributed to the ending mutator period. We account for it eagerly
+    // is attributed to the ending allocation interval. We account for it eagerly
     // before the actual allocation because any subsequent allocation failure
     // will reset the G1ConcurrentCycleTracker.
-    period_stats.record_humongous_allocation(humongous_allocation_bytes);
+    alloc_interval_stats.record_humongous_allocation(humongous_allocation_bytes);
   }
-  _concurrent_cycle_tracker.record_mutator_period(gc_type, is_periodic_gc, start, end, period_stats);
+  _concurrent_cycle_tracker.record_allocation_interval(gc_type, is_periodic_gc, start, end, alloc_interval_stats);
 
   double elapsed_gc_cpu_time = _analytics->gc_cpu_time_ms();
   _analytics->set_gc_cpu_time_at_pause_end_ms(elapsed_gc_cpu_time);

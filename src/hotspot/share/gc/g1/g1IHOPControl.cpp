@@ -100,7 +100,7 @@ void G1IHOPControl::record_concurrent_cycle(double marking_start_to_mixed_time_s
                                             size_t peak_extra_humongous_reserve_bytes) {
   assert(marking_start_to_mixed_time_s > 0.0, "Invalid concurrent cycle duration: %.3f", marking_start_to_mixed_time_s);
 
-  double non_humongous_rate =  non_humongous_bytes / marking_start_to_mixed_time_s;
+  double non_humongous_rate = non_humongous_bytes / marking_start_to_mixed_time_s;
   _marking_start_to_mixed_time_s.add(marking_start_to_mixed_time_s);
   _old_non_humongous_alloc_rate.add(non_humongous_rate);
   _peak_humongous_allocated_in_mark_cycle.add(peak_extra_humongous_reserve_bytes);

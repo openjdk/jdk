@@ -71,7 +71,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   G1ConcurrentCycleTracker _concurrent_cycle_tracker;
   // Tracking the allocation in the old generation between
-  // two GCs.
+  // two pauses.
   G1OldGenAllocationTracker _old_gen_alloc_tracker;
   G1IHOPControl* _ihop_control;
 
