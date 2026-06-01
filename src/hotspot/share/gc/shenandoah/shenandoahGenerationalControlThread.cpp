@@ -634,7 +634,7 @@ static int cause_priority(GCCause::Cause cause) {
   if (cause == GCCause::_shenandoah_concurrent_gc)             return 1;
   if (cause == GCCause::_no_gc)                                return 0;
   // Unanticipated gc causes are treated as an allocation failure and cannot be
-  // preempted by
+  // preempted by regulator requests
   return 2;
 }
 
