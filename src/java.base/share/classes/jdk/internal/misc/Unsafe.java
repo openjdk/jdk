@@ -1795,7 +1795,7 @@ public final class Unsafe {
      * instructions than byte testing against zero.
      *
      * <p>A number of Unsafe methods load boolean values as bytes,
-     * truncate them to least-significant bit, and then test
+     * truncate them to the least-significant bit, and then test
      * against zero. It is uniformly performed for both Java heap
      * and non-Java heap accesses.
      *
