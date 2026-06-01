@@ -48,8 +48,8 @@ struct Anchor
   }
 
   public:
-  FWORD		xCoordinate;
-  FWORD		yCoordinate;
+  FWORD         xCoordinate;
+  FWORD         yCoordinate;
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -61,8 +61,8 @@ struct ankr
   static constexpr hb_tag_t tableTag = HB_AAT_TAG_ankr;
 
   const Anchor &get_anchor (hb_codepoint_t glyph_id,
-			    unsigned int i,
-			    unsigned int num_glyphs) const
+                            unsigned int i,
+                            unsigned int num_glyphs) const
   {
     const NNOffset16To<GlyphAnchors> *offset = (this+lookupTable).get_value (glyph_id, num_glyphs);
     if (!offset)
@@ -75,19 +75,19 @@ struct ankr
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  hb_barrier () &&
-			  version == 0 &&
-			  c->check_range (this, anchorData) &&
-			  lookupTable.sanitize (c, this, &(this+anchorData))));
+                          hb_barrier () &&
+                          version == 0 &&
+                          c->check_range (this, anchorData) &&
+                          lookupTable.sanitize (c, this, &(this+anchorData))));
   }
 
   protected:
-  HBUINT16	version;	/* Version number (set to zero) */
-  HBUINT16	flags;		/* Flags (currently unused; set to zero) */
+  HBUINT16      version;        /* Version number (set to zero) */
+  HBUINT16      flags;          /* Flags (currently unused; set to zero) */
   Offset32To<Lookup<NNOffset16To<GlyphAnchors>>>
-		lookupTable;	/* Offset to the table's lookup table */
+                lookupTable;    /* Offset to the table's lookup table */
   NNOffset32To<HBUINT8>
-		anchorData;	/* Offset to the glyph data table */
+                anchorData;     /* Offset to the glyph data table */
 
   public:
   DEFINE_SIZE_STATIC (12);

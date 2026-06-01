@@ -91,12 +91,12 @@ set_khmer_properties (hb_glyph_info_t &info)
 
 static bool
 setup_syllables_khmer (const hb_ot_shape_plan_t *plan,
-		       hb_font_t *font,
-		       hb_buffer_t *buffer);
+                       hb_font_t *font,
+                       hb_buffer_t *buffer);
 static bool
 reorder_khmer (const hb_ot_shape_plan_t *plan,
-	       hb_font_t *font,
-	       hb_buffer_t *buffer);
+               hb_font_t *font,
+               hb_buffer_t *buffer);
 
 static void
 collect_features_khmer (hb_ot_shape_planner_t *plan)
@@ -159,7 +159,7 @@ data_create_khmer (const hb_ot_shape_plan_t *plan)
 
   for (unsigned int i = 0; i < ARRAY_LENGTH (khmer_plan->mask_array); i++)
     khmer_plan->mask_array[i] = (khmer_features[i].flags & F_GLOBAL) ?
-				 0 : plan->map.get_1_mask (khmer_features[i].tag);
+                                 0 : plan->map.get_1_mask (khmer_features[i].tag);
 
   return khmer_plan;
 }
@@ -172,8 +172,8 @@ data_destroy_khmer (void *data)
 
 static void
 setup_masks_khmer (const hb_ot_shape_plan_t *plan HB_UNUSED,
-		   hb_buffer_t              *buffer,
-		   hb_font_t                *font HB_UNUSED)
+                   hb_buffer_t              *buffer,
+                   hb_font_t                *font HB_UNUSED)
 {
   HB_BUFFER_ALLOCATE_VAR (buffer, khmer_category);
 
@@ -188,8 +188,8 @@ setup_masks_khmer (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
 static bool
 setup_syllables_khmer (const hb_ot_shape_plan_t *plan HB_UNUSED,
-		       hb_font_t *font HB_UNUSED,
-		       hb_buffer_t *buffer)
+                       hb_font_t *font HB_UNUSED,
+                       hb_buffer_t *buffer)
 {
   HB_BUFFER_ALLOCATE_VAR (buffer, syllable);
   find_syllables_khmer (buffer);
@@ -204,9 +204,9 @@ setup_syllables_khmer (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
 static void
 reorder_consonant_syllable (const hb_ot_shape_plan_t *plan,
-			    hb_face_t *face HB_UNUSED,
-			    hb_buffer_t *buffer,
-			    unsigned int start, unsigned int end)
+                            hb_face_t *face HB_UNUSED,
+                            hb_buffer_t *buffer,
+                            unsigned int start, unsigned int end)
 {
   const khmer_shape_plan_t *khmer_plan = (const khmer_shape_plan_t *) plan->data;
   hb_glyph_info_t *info = buffer->info;
@@ -215,8 +215,8 @@ reorder_consonant_syllable (const hb_ot_shape_plan_t *plan,
   {
     /* Post-base */
     hb_mask_t mask = khmer_plan->mask_array[KHMER_BLWF] |
-		     khmer_plan->mask_array[KHMER_ABVF] |
-		     khmer_plan->mask_array[KHMER_PSTF];
+                     khmer_plan->mask_array[KHMER_ABVF] |
+                     khmer_plan->mask_array[KHMER_PSTF];
     for (unsigned int i = start + 1; i < end; i++)
       info[i].mask  |= mask;
   }
@@ -242,28 +242,28 @@ reorder_consonant_syllable (const hb_ot_shape_plan_t *plan,
 
       if (info[i + 1].khmer_category() == K_Cat(Ra))
       {
-	for (unsigned int j = 0; j < 2; j++)
-	  info[i + j].mask |= khmer_plan->mask_array[KHMER_PREF];
+        for (unsigned int j = 0; j < 2; j++)
+          info[i + j].mask |= khmer_plan->mask_array[KHMER_PREF];
 
-	/* Move the Coeng,Ro sequence to the start. */
-	buffer->merge_clusters (start, i + 2);
-	hb_glyph_info_t t0 = info[i];
-	hb_glyph_info_t t1 = info[i + 1];
-	memmove (&info[start + 2], &info[start], (i - start) * sizeof (info[0]));
-	info[start] = t0;
-	info[start + 1] = t1;
+        /* Move the Coeng,Ro sequence to the start. */
+        buffer->merge_clusters (start, i + 2);
+        hb_glyph_info_t t0 = info[i];
+        hb_glyph_info_t t1 = info[i + 1];
+        memmove (&info[start + 2], &info[start], (i - start) * sizeof (info[0]));
+        info[start] = t0;
+        info[start + 1] = t1;
 
-	/* Mark the subsequent stuff with 'cfar'.  Used in Khmer.
-	 * Read the feature spec.
-	 * This allows distinguishing the following cases with MS Khmer fonts:
-	 * U+1784,U+17D2,U+179A,U+17D2,U+1782
-	 * U+1784,U+17D2,U+1782,U+17D2,U+179A
-	 */
-	if (khmer_plan->mask_array[KHMER_CFAR])
-	  for (unsigned int j = i + 2; j < end; j++)
-	    info[j].mask |= khmer_plan->mask_array[KHMER_CFAR];
+        /* Mark the subsequent stuff with 'cfar'.  Used in Khmer.
+         * Read the feature spec.
+         * This allows distinguishing the following cases with MS Khmer fonts:
+         * U+1784,U+17D2,U+179A,U+17D2,U+1782
+         * U+1784,U+17D2,U+1782,U+17D2,U+179A
+         */
+        if (khmer_plan->mask_array[KHMER_CFAR])
+          for (unsigned int j = i + 2; j < end; j++)
+            info[j].mask |= khmer_plan->mask_array[KHMER_CFAR];
 
-	num_coengs = 2; /* Done. */
+        num_coengs = 2; /* Done. */
       }
     }
 
@@ -281,9 +281,9 @@ reorder_consonant_syllable (const hb_ot_shape_plan_t *plan,
 
 static void
 reorder_syllable_khmer (const hb_ot_shape_plan_t *plan,
-			hb_face_t *face,
-			hb_buffer_t *buffer,
-			unsigned int start, unsigned int end)
+                        hb_face_t *face,
+                        hb_buffer_t *buffer,
+                        unsigned int start, unsigned int end)
 {
   khmer_syllable_type_t syllable_type = (khmer_syllable_type_t) (buffer->info[start].syllable() & 0x0F);
   switch (syllable_type)
@@ -300,16 +300,16 @@ reorder_syllable_khmer (const hb_ot_shape_plan_t *plan,
 
 static bool
 reorder_khmer (const hb_ot_shape_plan_t *plan,
-	       hb_font_t *font,
-	       hb_buffer_t *buffer)
+               hb_font_t *font,
+               hb_buffer_t *buffer)
 {
   bool ret = false;
   if (buffer->message (font, "start reordering khmer"))
   {
     if (hb_syllabic_insert_dotted_circles (font, buffer,
-					   khmer_broken_cluster,
-					   K_Cat(DOTTEDCIRCLE),
-					   (unsigned) -1))
+                                           khmer_broken_cluster,
+                                           K_Cat(DOTTEDCIRCLE),
+                                           (unsigned) -1))
       ret = true;
 
     foreach_syllable (buffer, start, end)
@@ -324,9 +324,9 @@ reorder_khmer (const hb_ot_shape_plan_t *plan,
 
 static bool
 decompose_khmer (const hb_ot_shape_normalize_context_t *c,
-		 hb_codepoint_t  ab,
-		 hb_codepoint_t *a,
-		 hb_codepoint_t *b)
+                 hb_codepoint_t  ab,
+                 hb_codepoint_t *a,
+                 hb_codepoint_t *b)
 {
   switch (ab)
   {
@@ -347,9 +347,9 @@ decompose_khmer (const hb_ot_shape_normalize_context_t *c,
 
 static bool
 compose_khmer (const hb_ot_shape_normalize_context_t *c,
-	       hb_codepoint_t  a,
-	       hb_codepoint_t  b,
-	       hb_codepoint_t *ab)
+               hb_codepoint_t  a,
+               hb_codepoint_t  b,
+               hb_codepoint_t *ab)
 {
   /* Avoid recomposing split matras. */
   if (HB_UNICODE_GENERAL_CATEGORY_IS_MARK (c->unicode->general_category (a)))

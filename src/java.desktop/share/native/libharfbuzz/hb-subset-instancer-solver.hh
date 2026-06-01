@@ -52,8 +52,8 @@ struct Triple
   bool operator == (const Triple &o) const
   {
     return minimum == o.minimum &&
-	   middle  == o.middle  &&
-	   maximum == o.maximum;
+           middle  == o.middle  &&
+           maximum == o.maximum;
   }
 
   bool operator != (const Triple o) const
@@ -106,9 +106,9 @@ HB_INTERNAL double renormalizeValue (double v, const Triple &triple,
  * be always-enabled (called "gain").
  */
 HB_INTERNAL void rebase_tent (Triple tent,
-			      Triple axisLimit,
-			      TripleDistances axis_triple_distances,
-			      rebase_tent_result_t &out,
-			      rebase_tent_result_t &scratch);
+                              Triple axisLimit,
+                              TripleDistances axis_triple_distances,
+                              rebase_tent_result_t &out,
+                              rebase_tent_result_t &scratch);
 
 #endif /* HB_SUBSET_INSTANCER_SOLVER_HH */

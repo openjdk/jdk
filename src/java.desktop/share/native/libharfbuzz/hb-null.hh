@@ -43,7 +43,7 @@ template <typename T, typename>
 struct _hb_has_min_size : hb_false_type {};
 template <typename T>
 struct _hb_has_min_size<T, hb_void_t<decltype (T::min_size)>>
-	: hb_true_type {};
+        : hb_true_type {};
 template <typename T>
 using hb_has_min_size = _hb_has_min_size<T, void>;
 #define hb_has_min_size(T) hb_has_min_size<T>::value
@@ -52,7 +52,7 @@ template <typename T, typename>
 struct _hb_has_null_size : hb_false_type {};
 template <typename T>
 struct _hb_has_null_size<T, hb_void_t<decltype (T::null_size)>>
-	: hb_true_type {};
+        : hb_true_type {};
 template <typename T>
 using hb_has_null_size = _hb_has_null_size<T, void>;
 #define hb_has_null_size(T) hb_has_null_size<T>::value
@@ -71,8 +71,8 @@ template <typename T, typename>
 struct _hb_null_size : hb_integral_constant<unsigned, sizeof (T)> {};
 template <typename T>
 struct _hb_null_size<T, hb_void_t<decltype (T::min_size)>>
-	: hb_integral_constant<unsigned,
-			       (sizeof (T) > T::null_size ? sizeof (T) : T::null_size)> {};
+        : hb_integral_constant<unsigned,
+                               (sizeof (T) > T::null_size ? sizeof (T) : T::null_size)> {};
 template <typename T>
 using hb_null_size = _hb_null_size<T, void>;
 #define hb_null_size(T) hb_null_size<T>::value
@@ -125,42 +125,42 @@ struct NullHelper
 
 /* Specializations for arbitrary-content Null objects expressed in bytes. */
 #define DECLARE_NULL_NAMESPACE_BYTES(Namespace, Type) \
-	} /* Close namespace. */ \
-	extern HB_INTERNAL const unsigned char _hb_Null_##Namespace##_##Type[hb_null_size (Namespace::Type)]; \
-	template <> \
-	struct Null<Namespace::Type> { \
-	  static Namespace::Type const & get_null () { \
-	    return *reinterpret_cast<const Namespace::Type *> (_hb_Null_##Namespace##_##Type); \
-	  } \
-	}; \
-	namespace Namespace { \
-	static_assert (true, "") /* Require semicolon after. */
+        } /* Close namespace. */ \
+        extern HB_INTERNAL const unsigned char _hb_Null_##Namespace##_##Type[hb_null_size (Namespace::Type)]; \
+        template <> \
+        struct Null<Namespace::Type> { \
+          static Namespace::Type const & get_null () { \
+            return *reinterpret_cast<const Namespace::Type *> (_hb_Null_##Namespace##_##Type); \
+          } \
+        }; \
+        namespace Namespace { \
+        static_assert (true, "") /* Require semicolon after. */
 #define DECLARE_NULL_NAMESPACE_BYTES_TEMPLATE1(Namespace, Type, Size) \
-	} /* Close namespace. */ \
-	extern HB_INTERNAL const unsigned char _hb_Null_##Namespace##_##Type[Size]; \
-	template <typename Spec> \
-	struct Null<Namespace::Type<Spec>> { \
-	  static Namespace::Type<Spec> const & get_null () { \
-	    return *reinterpret_cast<const Namespace::Type<Spec> *> (_hb_Null_##Namespace##_##Type); \
-	  } \
-	}; \
-	namespace Namespace { \
-	static_assert (true, "") /* Require semicolon after. */
+        } /* Close namespace. */ \
+        extern HB_INTERNAL const unsigned char _hb_Null_##Namespace##_##Type[Size]; \
+        template <typename Spec> \
+        struct Null<Namespace::Type<Spec>> { \
+          static Namespace::Type<Spec> const & get_null () { \
+            return *reinterpret_cast<const Namespace::Type<Spec> *> (_hb_Null_##Namespace##_##Type); \
+          } \
+        }; \
+        namespace Namespace { \
+        static_assert (true, "") /* Require semicolon after. */
 #define DEFINE_NULL_NAMESPACE_BYTES(Namespace, Type) \
-	const unsigned char _hb_Null_##Namespace##_##Type[sizeof (_hb_Null_##Namespace##_##Type)]
+        const unsigned char _hb_Null_##Namespace##_##Type[sizeof (_hb_Null_##Namespace##_##Type)]
 
 /* Specializations for arbitrary-content Null objects expressed as struct initializer. */
 #define DECLARE_NULL_INSTANCE(Type) \
-	extern HB_INTERNAL const Type _hb_Null_##Type; \
-	template <> \
-	struct Null<Type> { \
-	  static Type const & get_null () { \
-	    return _hb_Null_##Type; \
-	  } \
-	}; \
-	static_assert (true, "") /* Require semicolon after. */
+        extern HB_INTERNAL const Type _hb_Null_##Type; \
+        template <> \
+        struct Null<Type> { \
+          static Type const & get_null () { \
+            return _hb_Null_##Type; \
+          } \
+        }; \
+        static_assert (true, "") /* Require semicolon after. */
 #define DEFINE_NULL_INSTANCE(Type) \
-	const Type _hb_Null_##Type
+        const Type _hb_Null_##Type
 
 /* Global writable pool.  Enlarge as necessary. */
 

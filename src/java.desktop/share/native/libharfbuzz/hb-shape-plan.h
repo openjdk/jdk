@@ -39,7 +39,7 @@ HB_BEGIN_DECLS
 /**
  * hb_shape_plan_t:
  *
- * Data type for holding a shaping plan. 
+ * Data type for holding a shaping plan.
  *
  * Shape plans contain information about how HarfBuzz will shape a
  * particular text segment, based on the segment's properties and the
@@ -54,35 +54,35 @@ typedef struct hb_shape_plan_t hb_shape_plan_t;
 
 HB_EXTERN hb_shape_plan_t *
 hb_shape_plan_create (hb_face_t                     *face,
-		      const hb_segment_properties_t *props,
-		      const hb_feature_t            *user_features,
-		      unsigned int                   num_user_features,
-		      const char * const            *shaper_list);
+                      const hb_segment_properties_t *props,
+                      const hb_feature_t            *user_features,
+                      unsigned int                   num_user_features,
+                      const char * const            *shaper_list);
 
 HB_EXTERN hb_shape_plan_t *
 hb_shape_plan_create_cached (hb_face_t                     *face,
-			     const hb_segment_properties_t *props,
-			     const hb_feature_t            *user_features,
-			     unsigned int                   num_user_features,
-			     const char * const            *shaper_list);
+                             const hb_segment_properties_t *props,
+                             const hb_feature_t            *user_features,
+                             unsigned int                   num_user_features,
+                             const char * const            *shaper_list);
 
 HB_EXTERN hb_shape_plan_t *
 hb_shape_plan_create2 (hb_face_t                     *face,
-		       const hb_segment_properties_t *props,
-		       const hb_feature_t            *user_features,
-		       unsigned int                   num_user_features,
-		       const int                     *coords,
-		       unsigned int                   num_coords,
-		       const char * const            *shaper_list);
+                       const hb_segment_properties_t *props,
+                       const hb_feature_t            *user_features,
+                       unsigned int                   num_user_features,
+                       const int                     *coords,
+                       unsigned int                   num_coords,
+                       const char * const            *shaper_list);
 
 HB_EXTERN hb_shape_plan_t *
 hb_shape_plan_create_cached2 (hb_face_t                     *face,
-			      const hb_segment_properties_t *props,
-			      const hb_feature_t            *user_features,
-			      unsigned int                   num_user_features,
-			      const int                     *coords,
-			      unsigned int                   num_coords,
-			      const char * const            *shaper_list);
+                              const hb_segment_properties_t *props,
+                              const hb_feature_t            *user_features,
+                              unsigned int                   num_user_features,
+                              const int                     *coords,
+                              unsigned int                   num_coords,
+                              const char * const            *shaper_list);
 
 
 HB_EXTERN hb_shape_plan_t *
@@ -96,22 +96,22 @@ hb_shape_plan_destroy (hb_shape_plan_t *shape_plan);
 
 HB_EXTERN hb_bool_t
 hb_shape_plan_set_user_data (hb_shape_plan_t    *shape_plan,
-			     hb_user_data_key_t *key,
-			     void *              data,
-			     hb_destroy_func_t   destroy,
-			     hb_bool_t           replace);
+                             hb_user_data_key_t *key,
+                             void *              data,
+                             hb_destroy_func_t   destroy,
+                             hb_bool_t           replace);
 
 HB_EXTERN void *
 hb_shape_plan_get_user_data (const hb_shape_plan_t *shape_plan,
-			     hb_user_data_key_t    *key);
+                             hb_user_data_key_t    *key);
 
 
 HB_EXTERN hb_bool_t
 hb_shape_plan_execute (hb_shape_plan_t    *shape_plan,
-		       hb_font_t          *font,
-		       hb_buffer_t        *buffer,
-		       const hb_feature_t *features,
-		       unsigned int        num_features);
+                       hb_font_t          *font,
+                       hb_buffer_t        *buffer,
+                       const hb_feature_t *features,
+                       unsigned int        num_features);
 
 HB_EXTERN const char *
 hb_shape_plan_get_shaper (hb_shape_plan_t *shape_plan);

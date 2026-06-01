@@ -102,10 +102,10 @@ hb_style_get_value (hb_font_t *font, hb_style_tag_t style_tag)
   {
     unsigned int lower, design, upper;
     return face->table.OS2->v5 ().get_optical_size (&lower, &upper)
-	   ? (float) (lower + upper) / 2.f
-	   : hb_ot_layout_get_size_params (face, &design, nullptr, nullptr, nullptr, nullptr)
-	   ? design / 10.f
-	   : 12.f;
+           ? (float) (lower + upper) / 2.f
+           : hb_ot_layout_get_size_params (face, &design, nullptr, nullptr, nullptr, nullptr)
+           ? design / 10.f
+           : 12.f;
   }
   case HB_STYLE_TAG_SLANT_ANGLE:
   {
@@ -118,14 +118,14 @@ hb_style_get_value (hb_font_t *font, hb_style_tag_t style_tag)
   }
   case HB_STYLE_TAG_WIDTH:
     return face->table.OS2->has_data ()
-	   ? face->table.OS2->get_width ()
-	   : (face->table.head->is_condensed () ? 75 :
-	      face->table.head->is_expanded () ? 125 :
-	      100);
+           ? face->table.OS2->get_width ()
+           : (face->table.head->is_condensed () ? 75 :
+              face->table.head->is_expanded () ? 125 :
+              100);
   case HB_STYLE_TAG_WEIGHT:
     return face->table.OS2->has_data ()
-	   ? face->table.OS2->usWeightClass
-	   : (face->table.head->is_bold () ? 700 : 400);
+           ? face->table.OS2->usWeightClass
+           : (face->table.head->is_bold () ? 700 : 400);
   default:
     return 0;
   }

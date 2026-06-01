@@ -124,22 +124,22 @@ struct hb_sanitize_context_t :
        hb_dispatch_context_t<hb_sanitize_context_t, bool, HB_DEBUG_SANITIZE>
 {
   hb_sanitize_context_t (const char *start_ = nullptr, const char *end_ = nullptr) :
-	start (start_), end (end_),
-	length (0),
-	max_ops (0), max_subtables (0),
+        start (start_), end (end_),
+        length (0),
+        max_ops (0), max_subtables (0),
         recursion_depth (0),
-	writable (false),
-	blob (nullptr),
-	num_glyphs (65536),
-	num_glyphs_set (false),
-	lazy_some_gpos (false) {}
+        writable (false),
+        blob (nullptr),
+        num_glyphs (65536),
+        num_glyphs_set (false),
+        lazy_some_gpos (false) {}
 
   const char *get_name () { return "SANITIZE"; }
   template <typename T, typename F>
   bool may_dispatch (const T *obj HB_UNUSED, const F *format)
   {
     return format->sanitize (this) &&
-	   hb_barrier ();
+           hb_barrier ();
   }
   static return_t default_return_value () { return true; }
   static return_t no_dispatch_return_value () { return false; }
@@ -237,22 +237,22 @@ struct hb_sanitize_context_t :
       this->max_ops = HB_SANITIZE_MAX_OPS_MAX;
     else
       this->max_ops = hb_clamp (m,
-				(unsigned) HB_SANITIZE_MAX_OPS_MIN,
-				(unsigned) HB_SANITIZE_MAX_OPS_MAX);
+                                (unsigned) HB_SANITIZE_MAX_OPS_MIN,
+                                (unsigned) HB_SANITIZE_MAX_OPS_MAX);
     this->debug_depth = 0;
     this->recursion_depth = 0;
 
     DEBUG_MSG_LEVEL (SANITIZE, start, 0, +1,
-		     "start [%p..%p] (%lu bytes)",
-		     this->start, this->end,
-		     (unsigned long) (this->end - this->start));
+                     "start [%p..%p] (%lu bytes)",
+                     this->start, this->end,
+                     (unsigned long) (this->end - this->start));
   }
 
   void end_processing ()
   {
     DEBUG_MSG_LEVEL (SANITIZE, this->start, 0, -1,
-		     "end [%p..%p]",
-		     this->start, this->end);
+                     "end [%p..%p]",
+                     this->start, this->end);
 
     hb_blob_destroy (this->blob);
     this->blob = nullptr;
@@ -276,19 +276,19 @@ struct hb_sanitize_context_t :
   HB_ALWAYS_INLINE
 #endif
   bool check_range (const void *base,
-		    unsigned int len) const
+                    unsigned int len) const
   {
     const char *p = (const char *) base;
     bool ok = (uintptr_t) (p - this->start) <= this->length &&
-	      (unsigned int) (this->end - p) >= len &&
-	      ((this->max_ops -= len) > 0);
+              (unsigned int) (this->end - p) >= len &&
+              ((this->max_ops -= len) > 0);
 
     DEBUG_MSG_LEVEL (SANITIZE, p, this->debug_depth+1, 0,
-		     "check_range [%p..%p]"
-		     " (%u bytes) in [%p..%p] -> %s",
-		     p, p + len, len,
-		     this->start, this->end,
-		     ok ? "OK" : "OUT-OF-RANGE");
+                     "check_range [%p..%p]"
+                     " (%u bytes) in [%p..%p] -> %s",
+                     p, p + len, len,
+                     this->start, this->end,
+                     ok ? "OK" : "OUT-OF-RANGE");
 
     return likely (ok);
   }
@@ -296,18 +296,18 @@ struct hb_sanitize_context_t :
   HB_ALWAYS_INLINE
 #endif
   bool check_range_fast (const void *base,
-			 unsigned int len) const
+                         unsigned int len) const
   {
     const char *p = (const char *) base;
     bool ok = ((uintptr_t) (p - this->start) <= this->length &&
-	       (unsigned int) (this->end - p) >= len);
+               (unsigned int) (this->end - p) >= len);
 
     DEBUG_MSG_LEVEL (SANITIZE, p, this->debug_depth+1, 0,
-		     "check_range_fast [%p..%p]"
-		     " (%u bytes) in [%p..%p] -> %s",
-		     p, p + len, len,
-		     this->start, this->end,
-		     ok ? "OK" : "OUT-OF-RANGE");
+                     "check_range_fast [%p..%p]"
+                     " (%u bytes) in [%p..%p] -> %s",
+                     p, p + len, len,
+                     this->start, this->end,
+                     ok ? "OK" : "OUT-OF-RANGE");
 
     return likely (ok);
   }
@@ -321,34 +321,34 @@ struct hb_sanitize_context_t :
     bool ok = (uintptr_t) (p - this->start) <= this->length;
 
     DEBUG_MSG_LEVEL (SANITIZE, p, this->debug_depth+1, 0,
-		     "check_point [%p]"
-		     " in [%p..%p] -> %s",
-		     p,
-		     this->start, this->end,
-		     ok ? "OK" : "OUT-OF-RANGE");
+                     "check_point [%p]"
+                     " in [%p..%p] -> %s",
+                     p,
+                     this->start, this->end,
+                     ok ? "OK" : "OUT-OF-RANGE");
 
     return likely (ok);
   }
 
   template <typename T>
   bool check_range (const T *base,
-		    unsigned int a,
-		    unsigned int b) const
+                    unsigned int a,
+                    unsigned int b) const
   {
     unsigned m;
     return !hb_unsigned_mul_overflows (a, b, &m) &&
-	   this->check_range (base, m);
+           this->check_range (base, m);
   }
 
   template <typename T>
   bool check_range (const T *base,
-		    unsigned int a,
-		    unsigned int b,
-		    unsigned int c) const
+                    unsigned int a,
+                    unsigned int b,
+                    unsigned int c) const
   {
     unsigned m;
     return !hb_unsigned_mul_overflows (a, b, &m) &&
-	   this->check_range (base, m, c);
+           this->check_range (base, m, c);
   }
 
   template <typename T>
@@ -358,7 +358,7 @@ struct hb_sanitize_context_t :
     if (len_size >= 4)
     {
       if (unlikely (hb_unsigned_mul_overflows (len, hb_static_size (T), &len)))
-	return false;
+        return false;
     }
     else
       len = len * hb_static_size (T);
@@ -373,8 +373,8 @@ struct hb_sanitize_context_t :
 
   template <typename T>
   bool check_array (const T *base,
-		    unsigned int a,
-		    unsigned int b) const
+                    unsigned int a,
+                    unsigned int b) const
   {
     return this->check_range (base, hb_static_size (T), a, b);
   }

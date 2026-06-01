@@ -304,9 +304,9 @@ struct ValueFormat : HBUINT16
     return *static_cast<const Offset16To<Device, ValueBase> *> (value);
   }
   static inline const Device& get_device (const Value* value,
-					  bool *worked,
-					  const ValueBase *base,
-					  hb_sanitize_context_t &c)
+                                          bool *worked,
+                                          const ValueBase *base,
+                                          hb_sanitize_context_t &c)
   {
     if (worked) *worked |= bool (*value);
     auto &offset = *static_cast<const Offset16To<Device> *> (value);

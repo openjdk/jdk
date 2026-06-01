@@ -46,7 +46,7 @@ HB_INTERNAL bool iup_delta_optimize (const contour_point_vector_t& contour_point
                                      const hb_vector_t<int>& x_deltas,
                                      const hb_vector_t<int>& y_deltas,
                                      hb_vector_t<bool>& opt_indices, /* OUT */
-				     iup_scratch_t &scratch,
+                                     iup_scratch_t &scratch,
                                      double tolerance = 0.0);
 
 #endif /* HB_SUBSET_INSTANCER_IUP_HH */

@@ -155,10 +155,10 @@ _hb_face_builder_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void 
 
 static unsigned
 _hb_face_builder_get_table_tags (const hb_face_t *face HB_UNUSED,
-				 unsigned int start_offset,
-				 unsigned int *table_count,
-				 hb_tag_t *table_tags,
-				 void *user_data)
+                                 unsigned int start_offset,
+                                 unsigned int *table_count,
+                                 hb_tag_t *table_tags,
+                                 void *user_data)
 {
   hb_face_builder_data_t *data = (hb_face_builder_data_t *) user_data;
 
@@ -213,13 +213,13 @@ hb_face_builder_create ()
   if (unlikely (!data)) return hb_face_get_empty ();
 
   hb_face_t *face = hb_face_create_for_tables (_hb_face_builder_reference_table,
-					       data,
-					       _hb_face_builder_data_destroy);
+                                               data,
+                                               _hb_face_builder_data_destroy);
 
   hb_face_set_get_table_tags_func (face,
-				   _hb_face_builder_get_table_tags,
-				   data,
-				   nullptr);
+                                   _hb_face_builder_get_table_tags,
+                                   data,
+                                   nullptr);
 
   return face;
 }

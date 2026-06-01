@@ -105,9 +105,9 @@ struct hb_extents_t
     double y1 = round ((double) ymax);
 
     if (unlikely (!std::isfinite (x0) ||
-		  !std::isfinite (y0) ||
-		  !std::isfinite (x1) ||
-		  !std::isfinite (y1)))
+                  !std::isfinite (y0) ||
+                  !std::isfinite (x1) ||
+                  !std::isfinite (y1)))
       return hb_glyph_extents_t {0, 0, 0, 0};
 
     return hb_glyph_extents_t {
@@ -127,8 +127,8 @@ struct hb_extents_t
   clamp_to_hb_position (double v)
   {
     return (hb_position_t) hb_clamp (v,
-				     (double) hb_int_min (hb_position_t),
-				     (double) hb_int_max (hb_position_t));
+                                     (double) hb_int_min (hb_position_t),
+                                     (double) hb_int_max (hb_position_t));
   }
 };
 
@@ -137,20 +137,20 @@ struct hb_transform_t
 {
   hb_transform_t () {}
   hb_transform_t (Float xx, Float yx,
-		  Float xy, Float yy,
-		  Float x0, Float y0) :
+                  Float xy, Float yy,
+                  Float x0, Float y0) :
     xx (xx), yx (yx), xy (xy), yy (yy), x0 (x0), y0 (y0) {}
 
   bool is_identity () const
   {
     return xx == 1 && yx == 0 &&
-	   xy == 0 && yy == 1 &&
-	   x0 == 0 && y0 == 0;
+           xy == 0 && yy == 1 &&
+           x0 == 0 && y0 == 0;
   }
   bool is_translation () const
   {
     return xx == 1 && yx == 0 &&
-	   xy == 0 && yy == 1;
+           xy == 0 && yy == 1;
   }
 
   void multiply (const hb_transform_t &o, bool before=false)
@@ -223,7 +223,7 @@ struct hb_transform_t
     else
     {
       if (x == 0 && y == 0)
-	return;
+        return;
 
       x0 += xx * x + xy * y;
       y0 += yx * x + yy * y;
@@ -247,8 +247,8 @@ struct hb_transform_t
   static hb_transform_t scaling_around_center (Float scaleX, Float scaleY, Float center_x, Float center_y)
   {
     return {scaleX, 0, 0, scaleY,
-	    center_x ? (1 - scaleX) * center_x : 0,
-	    center_y ? (1 - scaleY) * center_y : 0};
+            center_x ? (1 - scaleX) * center_x : 0,
+            center_y ? (1 - scaleY) * center_y : 0};
   }
   void scale_around_center (Float scaleX, Float scaleY, Float center_x, Float center_y)
   {
@@ -308,15 +308,15 @@ struct hb_transform_t
     skewX = skewX ? tanf (skewX) : 0;
     skewY = skewY ? tanf (skewY) : 0;
     return {
-	    1, skewY, skewX, 1,
-	    center_y ? -skewX * center_y : 0,
-	    center_x ? -skewY * center_x : 0
+            1, skewY, skewX, 1,
+            center_y ? -skewX * center_y : 0,
+            center_x ? -skewY * center_x : 0
     };
   }
   void skew_around_center (Float skewX, Float skewY, Float center_x, Float center_y)
   {
     if (skewX == 0 && skewY == 0)
-	    return;
+            return;
 
     transform (skewing_around_center (skewX, skewY, center_x, center_y));
   }
@@ -351,7 +351,7 @@ struct hb_bounds_t
     else if (o.status == BOUNDED)
     {
       if (status == EMPTY)
-	*this = o;
+        *this = o;
       else if (status == BOUNDED)
         extents.union_ (o.extents);
     }
@@ -364,12 +364,12 @@ struct hb_bounds_t
     else if (o.status == BOUNDED)
     {
       if (status == UNBOUNDED)
-	*this = o;
+        *this = o;
       else if (status == BOUNDED)
       {
         extents.intersect (o.extents);
-	if (extents.is_empty ())
-	  status = EMPTY;
+        if (extents.is_empty ())
+          status = EMPTY;
       }
     }
   }
@@ -394,10 +394,10 @@ struct hb_transform_decomposed_t
   operator bool () const
   {
     return translateX || translateY ||
-	   rotation ||
-	   scaleX != 1 || scaleY != 1 ||
-	   skewX || skewY ||
-	   tCenterX || tCenterY;
+           rotation ||
+           scaleX != 1 || scaleY != 1 ||
+           skewX || skewY ||
+           tCenterX || tCenterY;
   }
 
   hb_transform_t<Float> to_transform () const

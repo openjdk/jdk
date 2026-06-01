@@ -51,10 +51,10 @@ struct hb_blob_t
   }
 
   void replace_buffer (const char       *new_data,
-		       unsigned          new_length,
-		       hb_memory_mode_t  new_mode,
-		       void             *new_user_data,
-		       hb_destroy_func_t new_destroy)
+                       unsigned          new_length,
+                       hb_memory_mode_t  new_mode,
+                       void             *new_user_data,
+                       hb_destroy_func_t new_destroy)
   {
     if (new_data != data)
       destroy_user_data ();
@@ -119,9 +119,9 @@ struct hb_blob_t
    * nullptr on allocation failure. */
   static inline char *
   recycle_acquire (hb_blob_t *recycled,
-		   unsigned   needed,
-		   unsigned  *out_capacity,
-		   char     **out_replaced_buf)
+                   unsigned   needed,
+                   unsigned  *out_capacity,
+                   char     **out_replaced_buf)
   {
     *out_replaced_buf = nullptr;
 
@@ -130,21 +130,21 @@ struct hb_blob_t
       auto *bd = (recycle_data_t *) recycled->user_data;
       if (bd->capacity >= needed)
       {
-	*out_capacity = bd->capacity;
-	return bd->buf;
+        *out_capacity = bd->capacity;
+        return bd->buf;
       }
       /* Grow with a 1.5x ramp to amortize repeated growth. */
       unsigned alloc_bytes = needed;
       if (unlikely (hb_unsigned_add_overflows (needed, needed / 2,
-					       &alloc_bytes)))
-	alloc_bytes = needed;
+                                               &alloc_bytes)))
+        alloc_bytes = needed;
       char *new_buf = (char *) hb_realloc (bd->buf, alloc_bytes);
       if (new_buf)
       {
-	bd->buf = new_buf;
-	bd->capacity = alloc_bytes;
-	*out_capacity = alloc_bytes;
-	return new_buf;
+        bd->buf = new_buf;
+        bd->capacity = alloc_bytes;
+        *out_capacity = alloc_bytes;
+        return new_buf;
       }
       /* Realloc failed.  Fall through to a fresh hb_malloc and stash
        * the old buf for the caller to free after recycle_finalize. */
@@ -164,16 +164,16 @@ struct hb_blob_t
    * recycle_acquire(). */
   static inline hb_blob_t *
   recycle_finalize (char      *buf,
-		    unsigned   capacity,
-		    unsigned   length,
-		    hb_blob_t *recycled,
-		    char      *replaced_recycled_buf)
+                    unsigned   capacity,
+                    unsigned   length,
+                    hb_blob_t *recycled,
+                    char      *replaced_recycled_buf)
   {
     if (recycled && recycled->destroy == recycle_data_destroy)
     {
       auto *bd = (recycle_data_t *) recycled->user_data;
       if (replaced_recycled_buf && replaced_recycled_buf != buf)
-	hb_free (replaced_recycled_buf);
+        hb_free (replaced_recycled_buf);
       bd->buf = buf;
       bd->capacity = capacity;
       recycled->data = (const char *) buf;
@@ -193,8 +193,8 @@ struct hb_blob_t
     bd->capacity = capacity;
 
     return hb_blob_create ((const char *) buf, length,
-			   HB_MEMORY_MODE_WRITABLE,
-			   bd, recycle_data_destroy);
+                           HB_MEMORY_MODE_WRITABLE,
+                           bd, recycle_data_destroy);
   }
 
   /* Discard @buf returned by recycle_acquire without committing to

@@ -56,17 +56,17 @@ hb_ot_layout_has_cross_kerning (hb_face_t *face);
 
 HB_INTERNAL void
 hb_ot_layout_kern (const hb_ot_shape_plan_t *plan,
-		   hb_font_t *font,
-		   hb_buffer_t  *buffer);
+                   hb_font_t *font,
+                   hb_buffer_t  *buffer);
 
 
 /* Private API corresponding to hb-ot-layout.h: */
 
 HB_INTERNAL bool
 hb_ot_layout_table_find_feature (hb_face_t    *face,
-				 hb_tag_t      table_tag,
-				 hb_tag_t      feature_tag,
-				 unsigned int *feature_index);
+                                 hb_tag_t      table_tag,
+                                 hb_tag_t      feature_tag,
+                                 unsigned int *feature_index);
 
 
 /*
@@ -76,18 +76,18 @@ hb_ot_layout_table_find_feature (hb_face_t    *face,
 enum hb_ot_layout_glyph_props_flags_t
 {
   /* The following three match LookupFlags::Ignore* numbers. */
-  HB_OT_LAYOUT_GLYPH_PROPS_BASE_GLYPH	= 0x02u,
-  HB_OT_LAYOUT_GLYPH_PROPS_LIGATURE	= 0x04u,
-  HB_OT_LAYOUT_GLYPH_PROPS_MARK		= 0x08u,
+  HB_OT_LAYOUT_GLYPH_PROPS_BASE_GLYPH   = 0x02u,
+  HB_OT_LAYOUT_GLYPH_PROPS_LIGATURE     = 0x04u,
+  HB_OT_LAYOUT_GLYPH_PROPS_MARK         = 0x08u,
 
   /* The following are used internally; not derived from GDEF. */
-  HB_OT_LAYOUT_GLYPH_PROPS_SUBSTITUTED	= 0x10u,
-  HB_OT_LAYOUT_GLYPH_PROPS_LIGATED	= 0x20u,
-  HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED	= 0x40u,
+  HB_OT_LAYOUT_GLYPH_PROPS_SUBSTITUTED  = 0x10u,
+  HB_OT_LAYOUT_GLYPH_PROPS_LIGATED      = 0x20u,
+  HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED   = 0x40u,
 
   HB_OT_LAYOUT_GLYPH_PROPS_PRESERVE     = HB_OT_LAYOUT_GLYPH_PROPS_SUBSTITUTED |
-					  HB_OT_LAYOUT_GLYPH_PROPS_LIGATED |
-					  HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED
+                                          HB_OT_LAYOUT_GLYPH_PROPS_LIGATED |
+                                          HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED
 };
 HB_MARK_AS_FLAG_T (hb_ot_layout_glyph_props_flags_t);
 
@@ -100,7 +100,7 @@ HB_MARK_AS_FLAG_T (hb_ot_layout_glyph_props_flags_t);
 /* Should be called before all the substitute_lookup's are done. */
 HB_INTERNAL void
 hb_ot_layout_substitute_start (hb_font_t    *font,
-			       hb_buffer_t  *buffer);
+                               hb_buffer_t  *buffer);
 
 namespace OT {
   struct hb_ot_apply_context_t;
@@ -114,24 +114,24 @@ namespace GSUB_impl {
 
 HB_INTERNAL void
 hb_ot_layout_substitute_lookup (OT::hb_ot_apply_context_t *c,
-				const OT::Layout::GSUB_impl::SubstLookup &lookup,
-				const OT::hb_ot_layout_lookup_accelerator_t &accel);
+                                const OT::Layout::GSUB_impl::SubstLookup &lookup,
+                                const OT::hb_ot_layout_lookup_accelerator_t &accel);
 
 
 /* Should be called before all the position_lookup's are done. */
 HB_INTERNAL void
 hb_ot_layout_position_start (hb_font_t    *font,
-			     hb_buffer_t  *buffer);
+                             hb_buffer_t  *buffer);
 
 /* Should be called after all the position_lookup's are done, to fini advances. */
 HB_INTERNAL void
 hb_ot_layout_position_finish_advances (hb_font_t    *font,
-				       hb_buffer_t  *buffer);
+                                       hb_buffer_t  *buffer);
 
 /* Should be called after hb_ot_layout_position_finish_advances, to fini offsets. */
 HB_INTERNAL void
 hb_ot_layout_position_finish_offsets (hb_font_t    *font,
-				      hb_buffer_t  *buffer);
+                                      hb_buffer_t  *buffer);
 
 
 /*
@@ -139,12 +139,12 @@ hb_ot_layout_position_finish_offsets (hb_font_t    *font,
  */
 
 /* buffer var allocations, used during the entire shaping process */
-#define unicode_props()		var2.u16[0]
+#define unicode_props()         var2.u16[0]
 
 /* buffer var allocations, used during the GSUB/GPOS processing */
-#define glyph_props()		var1.u16[0] /* GDEF glyph properties */
-#define lig_props()		var1.u8[2] /* GSUB/GPOS ligature tracking */
-#define syllable()		var1.u8[3] /* GSUB/GPOS shaping boundaries */
+#define glyph_props()           var1.u16[0] /* GDEF glyph properties */
+#define lig_props()             var1.u8[2] /* GSUB/GPOS ligature tracking */
+#define syllable()              var1.u8[3] /* GSUB/GPOS shaping boundaries */
 
 
 /* Loop over syllables. Based on foreach_cluster(). */
@@ -194,16 +194,16 @@ _hb_next_syllable (hb_buffer_t *buffer, unsigned int start)
  */
 
 enum hb_unicode_props_flags_t {
-  UPROPS_MASK_GEN_CAT	= 0x001Fu,
-  UPROPS_MASK_IGNORABLE	= 0x0020u,
-  UPROPS_MASK_HIDDEN	= 0x0040u, /* MONGOLIAN FREE VARIATION SELECTOR 1..4, or TAG characters, or CGJ sometimes */
+  UPROPS_MASK_GEN_CAT   = 0x001Fu,
+  UPROPS_MASK_IGNORABLE = 0x0020u,
+  UPROPS_MASK_HIDDEN    = 0x0040u, /* MONGOLIAN FREE VARIATION SELECTOR 1..4, or TAG characters, or CGJ sometimes */
   UPROPS_MASK_CONTINUATION=0x0080u,
 
   /* If GEN_CAT=FORMAT, top byte masks: */
-  UPROPS_MASK_Cf_ZWJ	= 0x0100u,
-  UPROPS_MASK_Cf_ZWNJ	= 0x0200u,
-  UPROPS_MASK_Cf_VS	= 0x0400u,
-  UPROPS_MASK_Cf_AAT_DELETED	= 0x0800u
+  UPROPS_MASK_Cf_ZWJ    = 0x0100u,
+  UPROPS_MASK_Cf_ZWNJ   = 0x0200u,
+  UPROPS_MASK_Cf_VS     = 0x0400u,
+  UPROPS_MASK_Cf_AAT_DELETED    = 0x0800u
 };
 HB_MARK_AS_FLAG_T (hb_unicode_props_flags_t);
 
@@ -238,8 +238,8 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
        * https://github.com/harfbuzz/harfbuzz/issues/554 */
       else if (unlikely (u == 0x034Fu))
       {
-	buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_CGJ;
-	props |= UPROPS_MASK_HIDDEN;
+        buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_CGJ;
+        props |= UPROPS_MASK_HIDDEN;
       }
     }
 
@@ -256,7 +256,7 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
 
 static inline void
 _hb_glyph_info_set_general_category (hb_glyph_info_t *info,
-				     hb_unicode_general_category_t gen_cat)
+                                     hb_unicode_general_category_t gen_cat)
 {
   /* Clears top-byte. */
   info->unicode_props() = (unsigned int) gen_cat | (info->unicode_props() & (0xFF & ~UPROPS_MASK_GEN_CAT));
@@ -275,7 +275,7 @@ _hb_glyph_info_is_unicode_mark (const hb_glyph_info_t *info)
 }
 static inline void
 _hb_glyph_info_set_modified_combining_class (hb_glyph_info_t *info,
-					     unsigned int modified_class)
+                                             unsigned int modified_class)
 {
   if (unlikely (!_hb_glyph_info_is_unicode_mark (info)))
     return;
@@ -292,7 +292,7 @@ static inline bool
 _hb_glyph_info_is_unicode_space (const hb_glyph_info_t *info)
 {
   return _hb_glyph_info_get_general_category (info) ==
-	 HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR;
+         HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR;
 }
 static inline void
 _hb_glyph_info_set_unicode_space_fallback_type (hb_glyph_info_t *info, hb_unicode_funcs_t::space_t s)
@@ -305,15 +305,15 @@ static inline hb_unicode_funcs_t::space_t
 _hb_glyph_info_get_unicode_space_fallback_type (const hb_glyph_info_t *info)
 {
   return _hb_glyph_info_is_unicode_space (info) ?
-	 (hb_unicode_funcs_t::space_t) (info->unicode_props()>>8) :
-	 hb_unicode_funcs_t::NOT_SPACE;
+         (hb_unicode_funcs_t::space_t) (info->unicode_props()>>8) :
+         hb_unicode_funcs_t::NOT_SPACE;
 }
 static inline bool
 _hb_glyph_info_is_variation_selector (const hb_glyph_info_t *info)
 {
   return _hb_glyph_info_get_general_category (info) ==
-	 HB_UNICODE_GENERAL_CATEGORY_FORMAT &&
-	 (info->unicode_props() & UPROPS_MASK_Cf_VS);
+         HB_UNICODE_GENERAL_CATEGORY_FORMAT &&
+         (info->unicode_props() & UPROPS_MASK_Cf_VS);
 }
 static inline void
 _hb_glyph_info_set_variation_selector (hb_glyph_info_t *info, bool customize)
@@ -336,7 +336,7 @@ static inline bool
 _hb_glyph_info_is_default_ignorable (const hb_glyph_info_t *info)
 {
   return (info->unicode_props() & UPROPS_MASK_IGNORABLE) &&
-	 !_hb_glyph_info_substituted (info);
+         !_hb_glyph_info_substituted (info);
 }
 static inline void
 _hb_glyph_info_set_default_ignorable (hb_glyph_info_t *info)
@@ -378,11 +378,11 @@ _hb_glyph_info_is_continuation (const hb_glyph_info_t *info)
 
 static inline bool
 _hb_grapheme_group_func (const hb_glyph_info_t& a HB_UNUSED,
-			 const hb_glyph_info_t& b)
+                         const hb_glyph_info_t& b)
 { return _hb_glyph_info_is_continuation (&b); }
 
 #define foreach_grapheme(buffer, start, end) \
-	foreach_group (buffer, start, end, _hb_grapheme_group_func)
+        foreach_group (buffer, start, end, _hb_grapheme_group_func)
 
 static inline void
 _hb_ot_layout_reverse_graphemes (hb_buffer_t *buffer)
@@ -390,14 +390,14 @@ _hb_ot_layout_reverse_graphemes (hb_buffer_t *buffer)
   // MONOTONE_GRAPHEMES was already applied and is taken care of by _hb_grapheme_group_func.
   // So we just check for MONOTONE_CHARACTERS here.
   buffer->reverse_groups (_hb_grapheme_group_func,
-			  buffer->cluster_level == HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
+                          buffer->cluster_level == HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
 }
 
 static inline bool
 _hb_glyph_info_is_unicode_format (const hb_glyph_info_t *info)
 {
   return _hb_glyph_info_get_general_category (info) ==
-	 HB_UNICODE_GENERAL_CATEGORY_FORMAT;
+         HB_UNICODE_GENERAL_CATEGORY_FORMAT;
 }
 static inline bool
 _hb_glyph_info_is_zwnj (const hb_glyph_info_t *info)
@@ -457,16 +457,16 @@ _hb_glyph_info_clear_lig_props (hb_glyph_info_t *info)
 
 static inline void
 _hb_glyph_info_set_lig_props_for_ligature (hb_glyph_info_t *info,
-					   unsigned int lig_id,
-					   unsigned int lig_num_comps)
+                                           unsigned int lig_id,
+                                           unsigned int lig_num_comps)
 {
   info->lig_props() = (lig_id << 5) | IS_LIG_BASE | (lig_num_comps & 0x0F);
 }
 
 static inline void
 _hb_glyph_info_set_lig_props_for_mark (hb_glyph_info_t *info,
-				       unsigned int lig_id,
-				       unsigned int lig_comp)
+                                       unsigned int lig_id,
+                                       unsigned int lig_comp)
 {
   info->lig_props() = (lig_id << 5) | (lig_comp & 0x0F);
 }
@@ -577,7 +577,7 @@ static inline void
 _hb_glyph_info_clear_ligated_and_multiplied (hb_glyph_info_t *info)
 {
   info->glyph_props() &= ~(HB_OT_LAYOUT_GLYPH_PROPS_LIGATED |
-			   HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED);
+                           HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED);
 }
 
 static inline void
@@ -588,8 +588,8 @@ _hb_glyph_info_clear_substituted (hb_glyph_info_t *info)
 
 static inline bool
 _hb_clear_substitution_flags (const hb_ot_shape_plan_t *plan HB_UNUSED,
-			      hb_font_t *font HB_UNUSED,
-			      hb_buffer_t *buffer)
+                              hb_font_t *font HB_UNUSED,
+                              hb_buffer_t *buffer)
 {
   hb_glyph_info_t *info = buffer->info;
   unsigned int count = buffer->len;
@@ -647,9 +647,9 @@ _hb_buffer_assert_gsubgpos_vars (hb_buffer_t *buffer)
 
 static inline void
 _hb_collect_glyph_alternates_add (hb_codepoint_t from,
-				  hb_codepoint_t to,
-				  hb_map_t *alternate_count,
-				  hb_map_t *alternate_glyphs)
+                                  hb_codepoint_t to,
+                                  hb_map_t *alternate_count,
+                                  hb_map_t *alternate_glyphs)
 {
   hb_codepoint_t zero = 0;
   hb_codepoint_t *i = &zero;

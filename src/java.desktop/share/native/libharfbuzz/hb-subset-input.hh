@@ -145,9 +145,9 @@ struct hb_subset_input_t
 
     return axes_location.in_error ()
 #ifdef HB_EXPERIMENTAL_API
-	|| name_table_overrides.in_error ()
+        || name_table_overrides.in_error ()
 #endif
-	;
+        ;
   }
 };
 

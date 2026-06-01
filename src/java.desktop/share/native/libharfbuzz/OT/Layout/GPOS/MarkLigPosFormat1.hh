@@ -115,8 +115,8 @@ struct MarkLigPosFormat1_2
       auto match = skippy_iter.match (buffer->info[j - 1]);
       if (match == skippy_iter.MATCH)
       {
-	c->last_base = (signed) j - 1;
-	break;
+        c->last_base = (signed) j - 1;
+        break;
       }
     }
     c->last_base_until = buffer->idx;
@@ -196,14 +196,14 @@ struct MarkLigPosFormat1_2
       return_trace (false);
 
     if (unlikely (!out->markArray.serialize_subset (c, markArray, this,
-						    (this+markCoverage).iter (),
-						    &klass_mapping)))
+                                                    (this+markCoverage).iter (),
+                                                    &klass_mapping)))
       return_trace (false);
 
     hb_sorted_vector_t<hb_codepoint_t> new_lig_coverage;
     if (!out->ligatureArray.serialize_subset (c, ligatureArray, this,
-					      hb_iter (this+ligatureCoverage),
-					      classCount, &klass_mapping, new_lig_coverage))
+                                              hb_iter (this+ligatureCoverage),
+                                              classCount, &klass_mapping, new_lig_coverage))
       return_trace (false);
 
     return_trace (out->ligatureCoverage.serialize_serialize (c->serializer, new_lig_coverage.iter ()));

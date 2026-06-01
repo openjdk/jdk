@@ -52,8 +52,8 @@ struct OS2V1Tail
   }
 
   public:
-  HBUINT32	ulCodePageRange1;
-  HBUINT32	ulCodePageRange2;
+  HBUINT32      ulCodePageRange1;
+  HBUINT32      ulCodePageRange2;
   public:
   DEFINE_SIZE_STATIC (8);
 };
@@ -72,11 +72,11 @@ struct OS2V2Tail
   }
 
   public:
-  HBINT16	sxHeight;
-  HBINT16	sCapHeight;
-  HBUINT16	usDefaultChar;
-  HBUINT16	usBreakChar;
-  HBUINT16	usMaxContext;
+  HBINT16       sxHeight;
+  HBINT16       sCapHeight;
+  HBUINT16      usDefaultChar;
+  HBUINT16      usBreakChar;
+  HBUINT16      usMaxContext;
   public:
   DEFINE_SIZE_STATIC (10);
 };
@@ -90,8 +90,8 @@ struct OS2V5Tail
 
     /* Per https://docs.microsoft.com/en-us/typography/opentype/spec/os2#lps */
     if (lower_optical_size < upper_optical_size &&
-	lower_optical_size >= 1 && lower_optical_size <= 0xFFFE &&
-	upper_optical_size >= 2 && upper_optical_size <= 0xFFFF)
+        lower_optical_size >= 1 && lower_optical_size <= 0xFFFE &&
+        upper_optical_size >= 2 && upper_optical_size <= 0xFFFF)
     {
       *lower = lower_optical_size;
       *upper = upper_optical_size;
@@ -107,8 +107,8 @@ struct OS2V5Tail
   }
 
   public:
-  HBUINT16	usLowerOpticalPointSize;
-  HBUINT16	usUpperOpticalPointSize;
+  HBUINT16      usLowerOpticalPointSize;
+  HBUINT16      usUpperOpticalPointSize;
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -124,16 +124,16 @@ struct OS2
   const OS2V5Tail &v5 () const { return version >= 5 ? v5X : Null (OS2V5Tail); }
 
   enum selection_flag_t {
-    ITALIC		= 1u<<0,
-    UNDERSCORE		= 1u<<1,
-    NEGATIVE		= 1u<<2,
-    OUTLINED		= 1u<<3,
-    STRIKEOUT		= 1u<<4,
-    BOLD		= 1u<<5,
-    REGULAR		= 1u<<6,
-    USE_TYPO_METRICS	= 1u<<7,
-    WWS			= 1u<<8,
-    OBLIQUE		= 1u<<9
+    ITALIC              = 1u<<0,
+    UNDERSCORE          = 1u<<1,
+    NEGATIVE            = 1u<<2,
+    OUTLINED            = 1u<<3,
+    STRIKEOUT           = 1u<<4,
+    BOLD                = 1u<<5,
+    REGULAR             = 1u<<6,
+    USE_TYPO_METRICS    = 1u<<7,
+    WWS                 = 1u<<8,
+    OBLIQUE             = 1u<<9
   };
 
   bool        is_italic () const { return fsSelection & ITALIC; }
@@ -141,15 +141,15 @@ struct OS2
   bool use_typo_metrics () const { return fsSelection & USE_TYPO_METRICS; }
 
   enum width_class_t {
-    FWIDTH_ULTRA_CONDENSED	= 1, /* 50% */
-    FWIDTH_EXTRA_CONDENSED	= 2, /* 62.5% */
-    FWIDTH_CONDENSED		= 3, /* 75% */
-    FWIDTH_SEMI_CONDENSED	= 4, /* 87.5% */
-    FWIDTH_NORMAL		= 5, /* 100% */
-    FWIDTH_SEMI_EXPANDED	= 6, /* 112.5% */
-    FWIDTH_EXPANDED		= 7, /* 125% */
-    FWIDTH_EXTRA_EXPANDED	= 8, /* 150% */
-    FWIDTH_ULTRA_EXPANDED	= 9  /* 200% */
+    FWIDTH_ULTRA_CONDENSED      = 1, /* 50% */
+    FWIDTH_EXTRA_CONDENSED      = 2, /* 62.5% */
+    FWIDTH_CONDENSED            = 3, /* 75% */
+    FWIDTH_SEMI_CONDENSED       = 4, /* 87.5% */
+    FWIDTH_NORMAL               = 5, /* 100% */
+    FWIDTH_SEMI_EXPANDED        = 6, /* 112.5% */
+    FWIDTH_EXPANDED             = 7, /* 125% */
+    FWIDTH_EXTRA_EXPANDED       = 8, /* 150% */
+    FWIDTH_ULTRA_EXPANDED       = 9  /* 200% */
   };
 
   float get_width () const
@@ -157,14 +157,14 @@ struct OS2
     switch (usWidthClass) {
     case FWIDTH_ULTRA_CONDENSED:return 50.f;
     case FWIDTH_EXTRA_CONDENSED:return 62.5f;
-    case FWIDTH_CONDENSED:	return 75.f;
-    case FWIDTH_SEMI_CONDENSED:	return 87.5f;
+    case FWIDTH_CONDENSED:      return 75.f;
+    case FWIDTH_SEMI_CONDENSED: return 87.5f;
     default:
-    case FWIDTH_NORMAL:		return 100.f;
-    case FWIDTH_SEMI_EXPANDED:	return 112.5f;
-    case FWIDTH_EXPANDED:	return 125.f;
-    case FWIDTH_EXTRA_EXPANDED:	return 150.f;
-    case FWIDTH_ULTRA_EXPANDED:	return 200.f;
+    case FWIDTH_NORMAL:         return 100.f;
+    case FWIDTH_SEMI_EXPANDED:  return 112.5f;
+    case FWIDTH_EXPANDED:       return 125.f;
+    case FWIDTH_EXTRA_EXPANDED: return 150.f;
+    case FWIDTH_ULTRA_EXPANDED: return 200.f;
     }
   }
 
@@ -296,7 +296,7 @@ struct OS2
   }
 
   void _update_unicode_ranges (const hb_set_t *codepoints,
-			       HBUINT32 ulUnicodeRange[4]) const
+                               HBUINT32 ulUnicodeRange[4]) const
   {
     HBUINT32 newBits[4];
     for (unsigned int i = 0; i < 4; i++)
@@ -310,17 +310,17 @@ struct OS2
       unsigned int bit = _hb_ot_os2_get_unicode_range_bit (cp);
       if (bit < 128)
       {
-	unsigned int block = bit / 32;
-	unsigned int bit_in_block = bit % 32;
-	unsigned int mask = 1 << bit_in_block;
-	newBits[block] = newBits[block] | mask;
+        unsigned int block = bit / 32;
+        unsigned int bit_in_block = bit % 32;
+        unsigned int mask = 1 << bit_in_block;
+        newBits[block] = newBits[block] | mask;
       }
       if (cp >= 0x10000 && cp <= 0x110000)
       {
-	/* the spec says that bit 57 ("Non Plane 0") implies that there's
-	   at least one codepoint beyond the BMP; so I also include all
-	   the non-BMP codepoints here */
-	newBits[1] = newBits[1] | (1 << 25);
+        /* the spec says that bit 57 ("Non Plane 0") implies that there's
+           at least one codepoint beyond the BMP; so I also include all
+           the non-BMP codepoints here */
+        newBits[1] = newBits[1] | (1 << 25);
       }
     }
 
@@ -332,14 +332,14 @@ struct OS2
    * https://docs.microsoft.com/en-us/typography/legacy/legacy_arabic_fonts */
   enum font_page_t
   {
-    FONT_PAGE_NONE		= 0,
-    FONT_PAGE_HEBREW		= 0xB100, /* Hebrew Windows 3.1 font page */
-    FONT_PAGE_SIMP_ARABIC	= 0xB200, /* Simplified Arabic Windows 3.1 font page */
-    FONT_PAGE_TRAD_ARABIC	= 0xB300, /* Traditional Arabic Windows 3.1 font page */
-    FONT_PAGE_OEM_ARABIC	= 0xB400, /* OEM Arabic Windows 3.1 font page */
-    FONT_PAGE_SIMP_FARSI	= 0xBA00, /* Simplified Farsi Windows 3.1 font page */
-    FONT_PAGE_TRAD_FARSI	= 0xBB00, /* Traditional Farsi Windows 3.1 font page */
-    FONT_PAGE_THAI		= 0xDE00  /* Thai Windows 3.1 font page */
+    FONT_PAGE_NONE              = 0,
+    FONT_PAGE_HEBREW            = 0xB100, /* Hebrew Windows 3.1 font page */
+    FONT_PAGE_SIMP_ARABIC       = 0xB200, /* Simplified Arabic Windows 3.1 font page */
+    FONT_PAGE_TRAD_ARABIC       = 0xB300, /* Traditional Arabic Windows 3.1 font page */
+    FONT_PAGE_OEM_ARABIC        = 0xB400, /* OEM Arabic Windows 3.1 font page */
+    FONT_PAGE_SIMP_FARSI        = 0xBA00, /* Simplified Farsi Windows 3.1 font page */
+    FONT_PAGE_TRAD_FARSI        = 0xBB00, /* Traditional Farsi Windows 3.1 font page */
+    FONT_PAGE_THAI              = 0xDE00  /* Thai Windows 3.1 font page */
   };
   font_page_t get_font_page () const
   { return (font_page_t) (version == 0 ? fsSelection & 0xFF00 : 0); }
@@ -365,36 +365,36 @@ struct OS2
   }
 
   public:
-  HBUINT16	version;
-  HBINT16	xAvgCharWidth;
-  HBUINT16	usWeightClass;
-  HBUINT16	usWidthClass;
-  HBUINT16	fsType;
-  HBINT16	ySubscriptXSize;
-  HBINT16	ySubscriptYSize;
-  HBINT16	ySubscriptXOffset;
-  HBINT16	ySubscriptYOffset;
-  HBINT16	ySuperscriptXSize;
-  HBINT16	ySuperscriptYSize;
-  HBINT16	ySuperscriptXOffset;
-  HBINT16	ySuperscriptYOffset;
-  HBINT16	yStrikeoutSize;
-  HBINT16	yStrikeoutPosition;
-  HBINT16	sFamilyClass;
-  HBUINT8	panose[10];
-  HBUINT32	ulUnicodeRange[4];
-  Tag		achVendID;
-  HBUINT16	fsSelection;
-  HBUINT16	usFirstCharIndex;
-  HBUINT16	usLastCharIndex;
-  HBINT16	sTypoAscender;
-  HBINT16	sTypoDescender;
-  HBINT16	sTypoLineGap;
-  HBUINT16	usWinAscent;
-  HBUINT16	usWinDescent;
-  OS2V1Tail	v1X;
-  OS2V2Tail	v2X;
-  OS2V5Tail	v5X;
+  HBUINT16      version;
+  HBINT16       xAvgCharWidth;
+  HBUINT16      usWeightClass;
+  HBUINT16      usWidthClass;
+  HBUINT16      fsType;
+  HBINT16       ySubscriptXSize;
+  HBINT16       ySubscriptYSize;
+  HBINT16       ySubscriptXOffset;
+  HBINT16       ySubscriptYOffset;
+  HBINT16       ySuperscriptXSize;
+  HBINT16       ySuperscriptYSize;
+  HBINT16       ySuperscriptXOffset;
+  HBINT16       ySuperscriptYOffset;
+  HBINT16       yStrikeoutSize;
+  HBINT16       yStrikeoutPosition;
+  HBINT16       sFamilyClass;
+  HBUINT8       panose[10];
+  HBUINT32      ulUnicodeRange[4];
+  Tag           achVendID;
+  HBUINT16      fsSelection;
+  HBUINT16      usFirstCharIndex;
+  HBUINT16      usLastCharIndex;
+  HBINT16       sTypoAscender;
+  HBINT16       sTypoDescender;
+  HBINT16       sTypoLineGap;
+  HBUINT16      usWinAscent;
+  HBUINT16      usWinDescent;
+  OS2V1Tail     v1X;
+  OS2V2Tail     v2X;
+  OS2V5Tail     v5X;
   public:
   DEFINE_SIZE_MIN (78);
 };

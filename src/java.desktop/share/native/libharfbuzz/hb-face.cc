@@ -128,8 +128,8 @@ DEFINE_NULL_INSTANCE (hb_face_t) =
  **/
 hb_face_t *
 hb_face_create_for_tables (hb_reference_table_func_t  reference_table_func,
-			   void                      *user_data,
-			   hb_destroy_func_t          destroy)
+                           void                      *user_data,
+                           hb_destroy_func_t          destroy)
 {
   hb_face_t *face;
 
@@ -202,10 +202,10 @@ _hb_face_for_data_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void
 
 static unsigned
 _hb_face_for_data_get_table_tags (const hb_face_t *face HB_UNUSED,
-				  unsigned int start_offset,
-				  unsigned int *table_count,
-				  hb_tag_t *table_tags,
-				  void *user_data)
+                                  unsigned int start_offset,
+                                  unsigned int *table_count,
+                                  hb_tag_t *table_tags,
+                                  void *user_data)
 {
   hb_face_for_data_closure_t *data = (hb_face_for_data_closure_t *) user_data;
 
@@ -242,7 +242,7 @@ _hb_face_for_data_get_table_tags (const hb_face_t *face HB_UNUSED,
  **/
 hb_face_t *
 hb_face_create (hb_blob_t    *blob,
-		unsigned int  index)
+                unsigned int  index)
 {
   hb_face_t *face;
 
@@ -260,12 +260,12 @@ hb_face_create (hb_blob_t    *blob,
   }
 
   face = hb_face_create_for_tables (_hb_face_for_data_reference_table,
-				    closure,
-				    _hb_face_for_data_closure_destroy);
+                                    closure,
+                                    _hb_face_for_data_closure_destroy);
   hb_face_set_get_table_tags_func (face,
-				   _hb_face_for_data_get_table_tags,
-				   closure,
-				   nullptr);
+                                   _hb_face_for_data_get_table_tags,
+                                   closure,
+                                   nullptr);
 
   face->index = index;
 
@@ -287,7 +287,7 @@ hb_face_create (hb_blob_t    *blob,
  **/
 hb_face_t *
 hb_face_create_or_fail (hb_blob_t    *blob,
-			unsigned int  index)
+                        unsigned int  index)
 {
   unsigned num_faces = hb_face_count (blob);
   if (index >= num_faces)
@@ -316,7 +316,7 @@ hb_face_create_or_fail (hb_blob_t    *blob,
  **/
 HB_EXTERN hb_face_t *
 hb_face_create_from_file_or_fail (const char   *file_name,
-				  unsigned int  index)
+                                  unsigned int  index)
 {
   hb_blob_t *blob = hb_blob_create_from_file_or_fail (file_name);
   if (unlikely (!blob))
@@ -329,9 +329,9 @@ hb_face_create_from_file_or_fail (const char   *file_name,
 }
 
 static const struct supported_face_loaders_t {
-	char name[16];
-	hb_face_t * (*from_file) (const char *font_file, unsigned face_index);
-	hb_face_t * (*from_blob) (hb_blob_t *blob, unsigned face_index);
+        char name[16];
+        hb_face_t * (*from_file) (const char *font_file, unsigned face_index);
+        hb_face_t * (*from_blob) (hb_blob_t *blob, unsigned face_index);
 } supported_face_loaders[] =
 {
   {"ot",
@@ -398,8 +398,8 @@ static const char *get_default_loader_name ()
  **/
 hb_face_t *
 hb_face_create_from_file_or_fail_using (const char   *file_name,
-					unsigned int  index,
-					const char   *loader_name)
+                                        unsigned int  index,
+                                        const char   *loader_name)
 {
   // Duplicated in hb_face_create_or_fail_using
   bool retry = false;
@@ -448,8 +448,8 @@ retry:
  **/
 hb_face_t *
 hb_face_create_or_fail_using (hb_blob_t    *blob,
-			      unsigned int  index,
-			      const char   *loader_name)
+                              unsigned int  index,
+                              const char   *loader_name)
 {
   // Duplicated in hb_face_create_from_file_or_fail_using
   bool retry = false;
@@ -482,7 +482,7 @@ static inline void free_static_face_loader_list ();
 static const char * const nil_face_loader_list[] = {nullptr};
 
 static struct hb_face_loader_list_lazy_loader_t : hb_lazy_loader_t<const char *,
-								  hb_face_loader_list_lazy_loader_t>
+                                                                  hb_face_loader_list_lazy_loader_t>
 {
   static const char ** create ()
   {
@@ -616,10 +616,10 @@ hb_face_destroy (hb_face_t *face)
  **/
 hb_bool_t
 hb_face_set_user_data (hb_face_t          *face,
-		       hb_user_data_key_t *key,
-		       void *              data,
-		       hb_destroy_func_t   destroy,
-		       hb_bool_t           replace)
+                       hb_user_data_key_t *key,
+                       void *              data,
+                       hb_destroy_func_t   destroy,
+                       hb_bool_t           replace)
 {
   return hb_object_set_user_data (face, key, data, destroy, replace);
 }
@@ -638,7 +638,7 @@ hb_face_set_user_data (hb_face_t          *face,
  **/
 void *
 hb_face_get_user_data (const hb_face_t    *face,
-		       hb_user_data_key_t *key)
+                       hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (face, key);
 }
@@ -692,7 +692,7 @@ hb_face_is_immutable (hb_face_t *face)
  **/
 hb_blob_t *
 hb_face_reference_table (const hb_face_t *face,
-			 hb_tag_t tag)
+                         hb_tag_t tag)
 {
   if (unlikely (tag == HB_TAG_NONE))
     return hb_blob_get_empty ();
@@ -733,15 +733,15 @@ hb_face_reference_blob (hb_face_t *face)
       for (unsigned offset = 0; offset < total_count; offset += count)
       {
         hb_face_get_table_tags (face, offset, &count, tags);
-	if (unlikely (!count))
-	  break; // Allocation error
+        if (unlikely (!count))
+          break; // Allocation error
         for (unsigned i = 0; i < count; i++)
         {
-	  if (unlikely (!tags[i]))
-	    continue;
-	  hb_blob_t *table = hb_face_reference_table (face, tags[i]);
-	  hb_face_builder_add_table (builder, tags[i], table);
-	  hb_blob_destroy (table);
+          if (unlikely (!tags[i]))
+            continue;
+          hb_blob_t *table = hb_face_reference_table (face, tags[i]);
+          hb_face_builder_add_table (builder, tags[i], table);
+          hb_blob_destroy (table);
         }
       }
 
@@ -768,7 +768,7 @@ hb_face_reference_blob (hb_face_t *face)
  **/
 void
 hb_face_set_index (hb_face_t    *face,
-		   unsigned int  index)
+                   unsigned int  index)
 {
   if (hb_object_is_immutable (face))
     return;
@@ -807,7 +807,7 @@ hb_face_get_index (const hb_face_t *face)
  **/
 void
 hb_face_set_upem (hb_face_t    *face,
-		  unsigned int  upem)
+                  unsigned int  upem)
 {
   if (hb_object_is_immutable (face))
     return;
@@ -847,7 +847,7 @@ hb_face_get_upem (const hb_face_t *face)
  **/
 void
 hb_face_set_glyph_count (hb_face_t    *face,
-			 unsigned int  glyph_count)
+                         unsigned int  glyph_count)
 {
   if (hb_object_is_immutable (face))
     return;
@@ -884,9 +884,9 @@ hb_face_get_glyph_count (const hb_face_t *face)
  */
 HB_EXTERN void
 hb_face_set_get_table_tags_func (hb_face_t *face,
-				 hb_get_table_tags_func_t func,
-				 void                    *user_data,
-				 hb_destroy_func_t        destroy)
+                                 hb_get_table_tags_func_t func,
+                                 void                    *user_data,
+                                 hb_destroy_func_t        destroy)
 {
   if (hb_object_is_immutable (face))
   {
@@ -920,9 +920,9 @@ hb_face_set_get_table_tags_func (hb_face_t *face,
  **/
 unsigned int
 hb_face_get_table_tags (const hb_face_t *face,
-			unsigned int  start_offset,
-			unsigned int *table_count, /* IN/OUT */
-			hb_tag_t     *table_tags /* OUT */)
+                        unsigned int  start_offset,
+                        unsigned int *table_count, /* IN/OUT */
+                        hb_tag_t     *table_tags /* OUT */)
 {
   if (!face->get_table_tags_func)
   {
@@ -953,7 +953,7 @@ hb_face_get_table_tags (const hb_face_t *face,
  */
 void
 hb_face_collect_unicodes (hb_face_t *face,
-			  hb_set_t  *out)
+                          hb_set_t  *out)
 {
   face->table.cmap->collect_unicodes (out, face->get_num_glyphs ());
 }
@@ -970,8 +970,8 @@ hb_face_collect_unicodes (hb_face_t *face,
  */
 void
 hb_face_collect_nominal_glyph_mapping (hb_face_t *face,
-				       hb_map_t  *mapping,
-				       hb_set_t  *unicodes)
+                                       hb_map_t  *mapping,
+                                       hb_set_t  *unicodes)
 {
   hb_set_t stack_unicodes;
   if (!unicodes)
@@ -990,7 +990,7 @@ hb_face_collect_nominal_glyph_mapping (hb_face_t *face,
  */
 void
 hb_face_collect_variation_selectors (hb_face_t *face,
-				     hb_set_t  *out)
+                                     hb_set_t  *out)
 {
   face->table.cmap->collect_variation_selectors (out);
 }
@@ -1007,8 +1007,8 @@ hb_face_collect_variation_selectors (hb_face_t *face,
  */
 void
 hb_face_collect_variation_unicodes (hb_face_t *face,
-				    hb_codepoint_t variation_selector,
-				    hb_set_t  *out)
+                                    hb_codepoint_t variation_selector,
+                                    hb_set_t  *out)
 {
   face->table.cmap->collect_variation_unicodes (variation_selector, out);
 }

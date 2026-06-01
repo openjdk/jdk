@@ -271,8 +271,8 @@ static const uint16_t shaping_table[][4] =
   {0x0000u, 0x0000u, 0xFBB1u, 0xFBB0u}, /* U+06D3 ARABIC LETTER YEH BARREE WITH HAMZA ABOVE */
 };
 
-#define SHAPING_TABLE_FIRST	0x0621u
-#define SHAPING_TABLE_LAST	0x06D3u
+#define SHAPING_TABLE_FIRST     0x0621u
+#define SHAPING_TABLE_LAST      0x06D3u
 
 
 static const struct ligature_set_t {

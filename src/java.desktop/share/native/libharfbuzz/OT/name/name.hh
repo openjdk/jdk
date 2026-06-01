@@ -38,8 +38,8 @@ namespace OT {
 template <typename in_utf_t, typename out_utf_t>
 inline unsigned int
 hb_ot_name_convert_utf (hb_bytes_t                       bytes,
-			unsigned int                    *text_size /* IN/OUT */,
-			typename out_utf_t::codepoint_t *text /* OUT */)
+                        unsigned int                    *text_size /* IN/OUT */,
+                        typename out_utf_t::codepoint_t *text /* OUT */)
 {
   unsigned int src_len = bytes.length / sizeof (typename in_utf_t::codepoint_t);
   const typename in_utf_t::codepoint_t *src = (const typename in_utf_t::codepoint_t *) bytes.arrayZ;
@@ -60,7 +60,7 @@ hb_ot_name_convert_utf (hb_bytes_t                       bytes,
       const typename in_utf_t::codepoint_t *src_next = in_utf_t::next (src, src_end, &unicode, replacement);
       typename out_utf_t::codepoint_t *dst_next = out_utf_t::encode (dst, dst_end, unicode);
       if (dst_next == dst)
-	break; /* Out-of-room. */
+        break; /* Out-of-room. */
 
       dst = dst_next;
       src = src_next;
@@ -90,7 +90,7 @@ hb_ot_name_convert_utf (hb_bytes_t                       bytes,
  */
 #define HB_OT_TAG_name HB_TAG('n','a','m','e')
 
-#define UNSUPPORTED	42
+#define UNSUPPORTED     42
 
 struct NameRecord
 {
@@ -146,7 +146,7 @@ struct NameRecord
 #ifdef HB_EXPERIMENTAL_API
                     , const hb_hashmap_t<hb_ot_name_record_ids_t, hb_bytes_t> *name_table_overrides
 #endif
-		    ) const
+                    ) const
   {
     TRACE_SERIALIZE (this);
     HB_UNUSED auto snap = c->snapshot ();
@@ -213,7 +213,7 @@ struct NameRecord
     unsigned int e = encodingID;
 
     return (p == 0 ||
-	    (p == 3 && (e == 0 || e == 1 || e == 10)));
+            (p == 3 && (e == 0 || e == 1 || e == 10)));
   }
 
   static int cmp (const void *pa, const void *pb)
@@ -243,17 +243,17 @@ struct NameRecord
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  offset.sanitize (c, base, length));
+                  hb_barrier () &&
+                  offset.sanitize (c, base, length));
   }
 
-  HBUINT16	platformID;	/* Platform ID. */
-  HBUINT16	encodingID;	/* Platform-specific encoding ID. */
-  HBUINT16	languageID;	/* Language ID. */
-  HBUINT16	nameID;		/* Name ID. */
-  HBUINT16	length;		/* String length (in bytes). */
+  HBUINT16      platformID;     /* Platform ID. */
+  HBUINT16      encodingID;     /* Platform-specific encoding ID. */
+  HBUINT16      languageID;     /* Language ID. */
+  HBUINT16      nameID;         /* Name ID. */
+  HBUINT16      length;         /* String length (in bytes). */
   NNOffset16To<UnsizedArrayOf<HBUINT8>>
-		offset;		/* String offset from start of storage area (in bytes). */
+                offset;         /* String offset from start of storage area (in bytes). */
   public:
   DEFINE_SIZE_STATIC (12);
 };
@@ -316,15 +316,15 @@ struct name
   { return min_size + count * nameRecordZ.item_size; }
 
   template <typename Iterator,
-	    hb_requires (hb_is_source_of (Iterator, const NameRecord &))>
+            hb_requires (hb_is_source_of (Iterator, const NameRecord &))>
   bool serialize (hb_serialize_context_t *c,
-		  Iterator it,
-		  const void *src_string_pool
+                  Iterator it,
+                  const void *src_string_pool
 #ifdef HB_EXPERIMENTAL_API
                   , const hb_vector_t<hb_ot_name_record_ids_t>& insert_name_records
-		  , const hb_hashmap_t<hb_ot_name_record_ids_t, hb_bytes_t> *name_table_overrides
+                  , const hb_hashmap_t<hb_ot_name_record_ids_t, hb_bytes_t> *name_table_overrides
 #endif
-		  )
+                  )
   {
     TRACE_SERIALIZE (this);
 
@@ -369,11 +369,11 @@ struct name
     records.qsort ();
 
     c->copy_all (records,
-		 src_string_pool
+                 src_string_pool
 #ifdef HB_EXPERIMENTAL_API
-		 , name_table_overrides
+                 , name_table_overrides
 #endif
-		 );
+                 );
     hb_free (records.arrayZ);
 
 
@@ -448,12 +448,12 @@ struct name
 #endif
 
     return name_prime->serialize (c->serializer, it,
-				  std::addressof (this + stringOffset)
+                                  std::addressof (this + stringOffset)
 #ifdef HB_EXPERIMENTAL_API
-				  , insert_name_records
-				  , name_table_overrides
+                                  , insert_name_records
+                                  , name_table_overrides
 #endif
-				  );
+                                  );
   }
 
   bool sanitize_records (hb_sanitize_context_t *c) const
@@ -467,11 +467,11 @@ struct name
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  likely (format == 0 || format == 1) &&
-		  c->check_array (nameRecordZ.arrayZ, count) &&
-		  c->check_range (this, stringOffset) &&
-		  sanitize_records (c));
+                  hb_barrier () &&
+                  likely (format == 0 || format == 1) &&
+                  c->check_array (nameRecordZ.arrayZ, count) &&
+                  c->check_range (this, stringOffset) &&
+                  sanitize_records (c));
   }
 
   struct accelerator_t
@@ -483,18 +483,18 @@ struct name
       this->pool = (const char *) (const void *) (this->table+this->table->stringOffset);
       this->pool_len = this->table.get_length () - this->table->stringOffset;
       const hb_array_t<const NameRecord> all_names (this->table->nameRecordZ.arrayZ,
-						    this->table->count);
+                                                    this->table->count);
 
       this->names.alloc_exact (all_names.length);
 
       for (unsigned int i = 0; i < all_names.length; i++)
       {
-	hb_ot_name_entry_t *entry = this->names.push ();
+        hb_ot_name_entry_t *entry = this->names.push ();
 
-	entry->name_id = all_names[i].nameID;
-	entry->language = all_names[i].language (face);
-	entry->entry_score =  all_names[i].score ();
-	entry->entry_index = i;
+        entry->name_id = all_names[i].nameID;
+        entry->language = all_names[i].language (face);
+        entry->entry_score =  all_names[i].score ();
+        entry->entry_index = i;
       }
 
       this->names.qsort (_hb_ot_name_entry_cmp);
@@ -503,14 +503,14 @@ struct name
       unsigned int j = 0;
       for (unsigned int i = 0; i < this->names.length; i++)
       {
-	if (this->names[i].entry_score == UNSUPPORTED ||
-	    this->names[i].language == HB_LANGUAGE_INVALID)
-	  continue;
-	if (i &&
-	    this->names[i - 1].name_id  == this->names[i].name_id &&
-	    this->names[i - 1].language == this->names[i].language)
-	  continue;
-	this->names[j++] = this->names[i];
+        if (this->names[i].entry_score == UNSUPPORTED ||
+            this->names[i].language == HB_LANGUAGE_INVALID)
+          continue;
+        if (i &&
+            this->names[i - 1].name_id  == this->names[i].name_id &&
+            this->names[i - 1].language == this->names[i].language)
+          continue;
+        this->names[j++] = this->names[i];
       }
       this->names.resize (j);
     }
@@ -520,30 +520,30 @@ struct name
     }
 
     int get_index (hb_ot_name_id_t  name_id,
-		   hb_language_t    language,
-		   unsigned int    *width=nullptr) const
+                   hb_language_t    language,
+                   unsigned int    *width=nullptr) const
     {
       const hb_ot_name_entry_t key = {name_id, {0}, language};
       const hb_ot_name_entry_t *entry = hb_bsearch (key, (const hb_ot_name_entry_t *) this->names,
-						    this->names.length,
-						    sizeof (hb_ot_name_entry_t),
-						    _hb_ot_name_entry_cmp_key,
-						    true);
+                                                    this->names.length,
+                                                    sizeof (hb_ot_name_entry_t),
+                                                    _hb_ot_name_entry_cmp_key,
+                                                    true);
 
       if (!entry)
       {
-	entry = hb_bsearch (key, (const hb_ot_name_entry_t *) this->names,
-			    this->names.length,
-			    sizeof (hb_ot_name_entry_t),
-			    _hb_ot_name_entry_cmp_key,
-			    false);
+        entry = hb_bsearch (key, (const hb_ot_name_entry_t *) this->names,
+                            this->names.length,
+                            sizeof (hb_ot_name_entry_t),
+                            _hb_ot_name_entry_cmp_key,
+                            false);
       }
 
       if (!entry)
-	return -1;
+        return -1;
 
       if (width)
-	*width = entry->entry_score < 10 ? 2 : 1;
+        *width = entry->entry_score < 10 ? 2 : 1;
 
       return entry->entry_index;
     }
@@ -566,12 +566,12 @@ struct name
 
   public:
   /* We only implement format 0 for now. */
-  HBUINT16	format;		/* Format selector (=0/1). */
-  HBUINT16	count;		/* Number of name records. */
+  HBUINT16      format;         /* Format selector (=0/1). */
+  HBUINT16      count;          /* Number of name records. */
   NNOffset16To<UnsizedArrayOf<HBUINT8>>
-		stringOffset;	/* Offset to start of string storage (from start of table). */
+                stringOffset;   /* Offset to start of string storage (from start of table). */
   UnsizedArrayOf<NameRecord>
-		nameRecordZ;	/* The name records where count is the number of records. */
+                nameRecordZ;    /* The name records where count is the number of records. */
   public:
   DEFINE_SIZE_ARRAY (6, nameRecordZ);
 };

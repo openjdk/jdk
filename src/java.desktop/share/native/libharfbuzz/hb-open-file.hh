@@ -68,11 +68,11 @@ typedef struct TableRecord
     return_trace (c->check_struct (this));
   }
 
-  Tag		tag;		/* 4-byte identifier. */
-  CheckSum	checkSum;	/* CheckSum for this table. */
-  Offset32	offset;		/* Offset from beginning of TrueType font
-				 * file. */
-  HBUINT32	length;		/* Length of this table. */
+  Tag           tag;            /* 4-byte identifier. */
+  CheckSum      checkSum;       /* CheckSum for this table. */
+  Offset32      offset;         /* Offset from beginning of TrueType font
+                                 * file. */
+  HBUINT32      length;         /* Length of this table. */
   public:
   DEFINE_SIZE_STATIC (16);
 } OpenTypeTable;
@@ -85,8 +85,8 @@ typedef struct OpenTypeOffsetTable
   const TableRecord& get_table (unsigned int i) const
   { return tables[i]; }
   unsigned int get_table_tags (unsigned int  start_offset,
-			       unsigned int *table_count, /* IN/OUT */
-			       hb_tag_t     *table_tags /* OUT */) const
+                               unsigned int *table_count, /* IN/OUT */
+                               hb_tag_t     *table_tags /* OUT */) const
   {
     if (table_count)
     {
@@ -119,10 +119,10 @@ typedef struct OpenTypeOffsetTable
   public:
 
   template <typename Iterator,
-	    hb_requires ((hb_is_source_of<Iterator, hb_pair_t<hb_tag_t, hb_blob_t *>>::value))>
+            hb_requires ((hb_is_source_of<Iterator, hb_pair_t<hb_tag_t, hb_blob_t *>>::value))>
   bool serialize (hb_serialize_context_t *c,
-		  hb_tag_t sfnt_tag,
-		  Iterator it)
+                  hb_tag_t sfnt_tag,
+                  Iterator it)
   {
     TRACE_SERIALIZE (this);
     /* Alloc 12 for the OTHeader. */
@@ -153,23 +153,23 @@ typedef struct OpenTypeOffsetTable
       rec.length = len;
       rec.offset = 0;
       if (unlikely (!c->check_assign (rec.offset,
-				      (unsigned) ((char *) start - (char *) this),
-				      HB_SERIALIZE_ERROR_OFFSET_OVERFLOW)))
+                                      (unsigned) ((char *) start - (char *) this),
+                                      HB_SERIALIZE_ERROR_OFFSET_OVERFLOW)))
         return_trace (false);
 
       if (likely (len))
-	hb_memcpy (start, blob->data, len);
+        hb_memcpy (start, blob->data, len);
 
       /* 4-byte alignment. */
       c->align (4);
       const char *end = (const char *) c->head;
 
       if (entry.first == HB_OT_TAG_head &&
-	  (unsigned) (end - start) >= head::static_size)
+          (unsigned) (end - start) >= head::static_size)
       {
-	head *h = (head *) start;
-	checksum_adjustment = &h->checkSumAdjustment;
-	*checksum_adjustment = 0;
+        head *h = (head *) start;
+        checksum_adjustment = &h->checkSumAdjustment;
+        *checksum_adjustment = 0;
       }
 
       rec.checkSum.set_for_data (start, end - start);
@@ -187,8 +187,8 @@ typedef struct OpenTypeOffsetTable
       checksum.set_for_data (this, dir_end - (const char *) this);
       for (unsigned int i = 0; i < num_items; i++)
       {
-	TableRecord &rec = tables.arrayZ[i];
-	checksum = checksum + rec.checkSum;
+        TableRecord &rec = tables.arrayZ[i];
+        checksum = checksum + rec.checkSum;
       }
 
       *checksum_adjustment = 0xB1B0AFBAu - checksum;
@@ -204,9 +204,9 @@ typedef struct OpenTypeOffsetTable
   }
 
   protected:
-  Tag		sfnt_version;	/* '\0\001\0\00' if TrueType / 'OTTO' if CFF */
+  Tag           sfnt_version;   /* '\0\001\0\00' if TrueType / 'OTTO' if CFF */
   BinSearchArrayOf<TableRecord>
-		tables;
+                tables;
   public:
   DEFINE_SIZE_ARRAY (12, tables);
 } OpenTypeFontFace;
@@ -230,12 +230,12 @@ struct TTCHeaderVersion1
   }
 
   protected:
-  Tag		ttcTag;		/* TrueType Collection ID string: 'ttcf' */
-  FixedVersion<>version;	/* Version of the TTC Header (1.0),
-				 * 0x00010000u */
+  Tag           ttcTag;         /* TrueType Collection ID string: 'ttcf' */
+  FixedVersion<>version;        /* Version of the TTC Header (1.0),
+                                 * 0x00010000u */
   Array32Of<Offset32To<OpenTypeOffsetTable>>
-		table;		/* Array of offsets to the OffsetTable for each font
-				 * from the beginning of the file */
+                table;          /* Array of offsets to the OffsetTable for each font
+                                 * from the beginning of the file */
   public:
   DEFINE_SIZE_ARRAY (12, table);
 };
@@ -278,11 +278,11 @@ struct TTCHeader
   protected:
   union {
   struct {
-  Tag		ttcTag;		/* TrueType Collection ID string: 'ttcf' */
-  FixedVersion<>version;	/* Version of the TTC Header (1.0 or 2.0),
-				 * 0x00010000u or 0x00020000u */
-  }			header;
-  TTCHeaderVersion1	version1;
+  Tag           ttcTag;         /* TrueType Collection ID string: 'ttcf' */
+  FixedVersion<>version;        /* Version of the TTC Header (1.0 or 2.0),
+                                 * 0x00010000u or 0x00020000u */
+  }                     header;
+  TTCHeaderVersion1     version1;
   } u;
 };
 
@@ -298,24 +298,24 @@ struct ResourceRecord
   { return * reinterpret_cast<const OpenTypeFontFace *> ((data_base+offset).arrayZ); }
 
   bool sanitize (hb_sanitize_context_t *c,
-		 const void *data_base) const
+                 const void *data_base) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  offset.sanitize (c, data_base) &&
-		  hb_barrier () &&
-		  get_face (data_base).sanitize (c));
+                  offset.sanitize (c, data_base) &&
+                  hb_barrier () &&
+                  get_face (data_base).sanitize (c));
   }
 
   protected:
-  HBUINT16	id;		/* Resource ID. */
-  HBINT16	nameOffset;	/* Offset from beginning of resource name list
-				 * to resource name, -1 means there is none. */
-  HBUINT8	attrs;		/* Resource attributes */
+  HBUINT16      id;             /* Resource ID. */
+  HBINT16       nameOffset;     /* Offset from beginning of resource name list
+                                 * to resource name, -1 means there is none. */
+  HBUINT8       attrs;          /* Resource attributes */
   NNOffset24To<Array32Of<HBUINT8>>
-		offset;		/* Offset from beginning of data block to
-				 * data for this resource */
-  HBUINT32	reserved;	/* Reserved for handle to resource */
+                offset;         /* Offset from beginning of data block to
+                                 * data for this resource */
+  HBUINT32      reserved;       /* Reserved for handle to resource */
   public:
   DEFINE_SIZE_STATIC (12);
 };
@@ -330,27 +330,27 @@ struct ResourceTypeRecord
   bool is_sfnt () const { return tag == HB_TAG_sfnt; }
 
   const ResourceRecord& get_resource_record (unsigned int i,
-					     const void *type_base) const
+                                             const void *type_base) const
   { return (type_base+resourcesZ).as_array (get_resource_count ())[i]; }
 
   bool sanitize (hb_sanitize_context_t *c,
-		 const void *type_base,
-		 const void *data_base) const
+                 const void *type_base,
+                 const void *data_base) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  resourcesZ.sanitize (c, type_base,
-				       get_resource_count (),
-				       data_base));
+                  hb_barrier () &&
+                  resourcesZ.sanitize (c, type_base,
+                                       get_resource_count (),
+                                       data_base));
   }
 
   protected:
-  Tag		tag;		/* Resource type. */
-  HBUINT16	resCountM1;	/* Number of resources minus 1. */
+  Tag           tag;            /* Resource type. */
+  HBUINT16      resCountM1;     /* Number of resources minus 1. */
   NNOffset16To<UnsizedArrayOf<ResourceRecord>>
-		resourcesZ;	/* Offset from beginning of resource type list
-				 * to reference item list for this type. */
+                resourcesZ;     /* Offset from beginning of resource type list
+                                 * to reference item list for this type. */
   public:
   DEFINE_SIZE_STATIC (8);
 };
@@ -364,13 +364,13 @@ struct ResourceMap
     {
       const ResourceTypeRecord& type = get_type_record (i);
       if (type.is_sfnt ())
-	return type.get_resource_count ();
+        return type.get_resource_count ();
     }
     return 0;
   }
 
   const OpenTypeFontFace& get_face (unsigned int idx,
-				    const void *data_base) const
+                                    const void *data_base) const
   {
     unsigned int count = get_type_count ();
     for (unsigned int i = 0; i < count; i++)
@@ -379,7 +379,7 @@ struct ResourceMap
       /* The check for idx < count is here because ResourceRecord is NOT null-safe.
        * Because an offset of 0 there does NOT mean null. */
       if (type.is_sfnt () && idx < type.get_resource_count ())
-	return type.get_resource_record (idx, &(this+typeList)).get_face (data_base);
+        return type.get_resource_record (idx, &(this+typeList)).get_face (data_base);
     }
     return Null (OpenTypeFontFace);
   }
@@ -388,10 +388,10 @@ struct ResourceMap
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  typeList.sanitize (c, this,
-				     &(this+typeList),
-				     data_base));
+                  hb_barrier () &&
+                  typeList.sanitize (c, this,
+                                     &(this+typeList),
+                                     data_base));
   }
 
   private:
@@ -401,15 +401,15 @@ struct ResourceMap
   { return (this+typeList)[i]; }
 
   protected:
-  HBUINT8	reserved0[16];	/* Reserved for copy of resource header */
-  HBUINT32	reserved1;	/* Reserved for handle to next resource map */
-  HBUINT16	resreved2;	/* Reserved for file reference number */
-  HBUINT16	attrs;		/* Resource fork attribute */
+  HBUINT8       reserved0[16];  /* Reserved for copy of resource header */
+  HBUINT32      reserved1;      /* Reserved for handle to next resource map */
+  HBUINT16      resreved2;      /* Reserved for file reference number */
+  HBUINT16      attrs;          /* Resource fork attribute */
   NNOffset16To<ArrayOfM1<ResourceTypeRecord>>
-		typeList;	/* Offset from beginning of map to
-				 * resource type list */
-  Offset16	nameList;	/* Offset from beginning of map to
-				 * resource name list */
+                typeList;       /* Offset from beginning of map to
+                                 * resource type list */
+  Offset16      nameList;       /* Offset from beginning of map to
+                                 * resource name list */
   public:
   DEFINE_SIZE_STATIC (28);
 };
@@ -420,7 +420,7 @@ struct ResourceForkHeader
   { return (this+map).get_face_count (); }
 
   const OpenTypeFontFace& get_face (unsigned int idx,
-				    unsigned int *base_offset = nullptr) const
+                                    unsigned int *base_offset = nullptr) const
   {
     const OpenTypeFontFace &face = (this+map).get_face (idx, &(this+data));
     if (base_offset)
@@ -432,20 +432,20 @@ struct ResourceForkHeader
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  data.sanitize (c, this, dataLen) &&
-		  map.sanitize (c, this, &(this+data)));
+                  hb_barrier () &&
+                  data.sanitize (c, this, dataLen) &&
+                  map.sanitize (c, this, &(this+data)));
   }
 
   protected:
   NNOffset32To<UnsizedArrayOf<HBUINT8>>
-		data;		/* Offset from beginning of resource fork
-				 * to resource data */
+                data;           /* Offset from beginning of resource fork
+                                 * to resource data */
   NNOffset32To<ResourceMap >
-		map;		/* Offset from beginning of resource fork
-				 * to resource map */
-  HBUINT32	dataLen;	/* Length of resource data */
-  HBUINT32	mapLen;		/* Length of resource map */
+                map;            /* Offset from beginning of resource fork
+                                 * to resource map */
+  HBUINT32      dataLen;        /* Length of resource data */
+  HBUINT32      mapLen;         /* Length of resource map */
   public:
   DEFINE_SIZE_STATIC (16);
 };
@@ -457,12 +457,12 @@ struct ResourceForkHeader
 struct OpenTypeFontFile
 {
   enum {
-    CFFTag		= HB_TAG ('O','T','T','O'), /* OpenType with Postscript outlines */
-    TrueTypeTag		= HB_TAG ( 0 , 1 , 0 , 0 ), /* OpenType with TrueType outlines */
-    TTCTag		= HB_TAG ('t','t','c','f'), /* TrueType Collection */
-    DFontTag		= HB_TAG ( 0 , 0 , 1 , 0 ), /* DFont Mac Resource Fork */
-    TrueTag		= HB_TAG ('t','r','u','e'), /* Obsolete Apple TrueType */
-    Typ1Tag		= HB_TAG ('t','y','p','1')  /* Obsolete Apple Type1 font in SFNT container */
+    CFFTag              = HB_TAG ('O','T','T','O'), /* OpenType with Postscript outlines */
+    TrueTypeTag         = HB_TAG ( 0 , 1 , 0 , 0 ), /* OpenType with TrueType outlines */
+    TTCTag              = HB_TAG ('t','t','c','f'), /* TrueType Collection */
+    DFontTag            = HB_TAG ( 0 , 0 , 1 , 0 ), /* DFont Mac Resource Fork */
+    TrueTag             = HB_TAG ('t','r','u','e'), /* Obsolete Apple TrueType */
+    Typ1Tag             = HB_TAG ('t','y','p','1')  /* Obsolete Apple Type1 font in SFNT container */
   };
 
   hb_tag_t get_tag () const { return u.tag.v; }
@@ -470,13 +470,13 @@ struct OpenTypeFontFile
   unsigned int get_face_count () const
   {
     switch (u.tag.v) {
-    case CFFTag:	/* All the non-collection tags */
+    case CFFTag:        /* All the non-collection tags */
     case TrueTag:
     case Typ1Tag:
-    case TrueTypeTag:	return 1;
-    case TTCTag:	return u.ttcHeader.get_face_count ();
-    case DFontTag:	return u.rfHeader.get_face_count ();
-    default:		return 0;
+    case TrueTypeTag:   return 1;
+    case TTCTag:        return u.ttcHeader.get_face_count ();
+    case DFontTag:      return u.rfHeader.get_face_count ();
+    default:            return 0;
     }
   }
   const OpenTypeFontFace& get_face (unsigned int i, unsigned int *base_offset = nullptr) const
@@ -487,21 +487,21 @@ struct OpenTypeFontFile
     /* Note: for non-collection SFNT data we ignore index.  This is because
      * Apple dfont container is a container of SFNT's.  So each SFNT is a
      * non-TTC, but the index is more than zero. */
-    case CFFTag:	/* All the non-collection tags */
+    case CFFTag:        /* All the non-collection tags */
     case TrueTag:
     case Typ1Tag:
-    case TrueTypeTag:	return u.fontFace;
-    case TTCTag:	return u.ttcHeader.get_face (i);
-    case DFontTag:	return u.rfHeader.get_face (i, base_offset);
-    default:		return Null (OpenTypeFontFace);
+    case TrueTypeTag:   return u.fontFace;
+    case TTCTag:        return u.ttcHeader.get_face (i);
+    case DFontTag:      return u.rfHeader.get_face (i, base_offset);
+    default:            return Null (OpenTypeFontFace);
     }
   }
 
   template <typename Iterator,
-	    hb_requires ((hb_is_source_of<Iterator, hb_pair_t<hb_tag_t, hb_blob_t *>>::value))>
+            hb_requires ((hb_is_source_of<Iterator, hb_pair_t<hb_tag_t, hb_blob_t *>>::value))>
   bool serialize_single (hb_serialize_context_t *c,
-			 hb_tag_t sfnt_tag,
-			 Iterator items)
+                         hb_tag_t sfnt_tag,
+                         Iterator items)
   {
     TRACE_SERIALIZE (this);
     assert (sfnt_tag != TTCTag);
@@ -515,22 +515,22 @@ struct OpenTypeFontFile
     if (unlikely (!u.tag.v.sanitize (c))) return_trace (false);
     hb_barrier ();
     switch (u.tag.v) {
-    case CFFTag:	/* All the non-collection tags */
+    case CFFTag:        /* All the non-collection tags */
     case TrueTag:
     case Typ1Tag:
-    case TrueTypeTag:	return_trace (u.fontFace.sanitize (c));
-    case TTCTag:	return_trace (u.ttcHeader.sanitize (c));
-    case DFontTag:	return_trace (u.rfHeader.sanitize (c));
-    default:		return_trace (true);
+    case TrueTypeTag:   return_trace (u.fontFace.sanitize (c));
+    case TTCTag:        return_trace (u.ttcHeader.sanitize (c));
+    case DFontTag:      return_trace (u.rfHeader.sanitize (c));
+    default:            return_trace (true);
     }
   }
 
   protected:
   union {
-  struct { Tag v; }	tag;		/* 4-byte identifier. */
-  OpenTypeFontFace	fontFace;
-  TTCHeader		ttcHeader;
-  ResourceForkHeader	rfHeader;
+  struct { Tag v; }     tag;            /* 4-byte identifier. */
+  OpenTypeFontFace      fontFace;
+  TTCHeader             ttcHeader;
+  ResourceForkHeader    rfHeader;
   } u;
   public:
   DEFINE_SIZE_UNION (4, tag.v);

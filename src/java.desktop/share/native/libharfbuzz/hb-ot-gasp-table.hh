@@ -48,9 +48,9 @@ struct GaspRange
   }
 
   public:
-  HBUINT16	rangeMaxPPEM;	/* Upper limit of range, in PPEM */
-  HBUINT16	rangeGaspBehavior;
-				/* Flags describing desired rasterizer behavior. */
+  HBUINT16      rangeMaxPPEM;   /* Upper limit of range, in PPEM */
+  HBUINT16      rangeGaspBehavior;
+                                /* Flags describing desired rasterizer behavior. */
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -66,14 +66,14 @@ struct gasp
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  gaspRanges.sanitize (c));
+                  gaspRanges.sanitize (c));
   }
 
   protected:
-  HBUINT16	version;	/* Version number (set to 1) */
+  HBUINT16      version;        /* Version number (set to 1) */
   Array16Of<GaspRange>
-		gaspRanges;	/* Number of records to follow
-				 * Sorted by ppem */
+                gaspRanges;     /* Number of records to follow
+                                 * Sorted by ppem */
   public:
   DEFINE_SIZE_ARRAY (4, gaspRanges);
 };

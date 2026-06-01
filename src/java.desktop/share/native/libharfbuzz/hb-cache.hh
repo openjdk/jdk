@@ -58,23 +58,23 @@
  */
 
 template <unsigned int key_bits=16,
-	 unsigned int value_bits=8 + 32 - key_bits,
-	 unsigned int cache_bits=8,
-	 bool thread_safe=true>
+         unsigned int value_bits=8 + 32 - key_bits,
+         unsigned int cache_bits=8,
+         bool thread_safe=true>
 struct hb_cache_t
 {
   using item_t = typename std::conditional<thread_safe,
-					   typename std::conditional<key_bits + value_bits - cache_bits <= 8,
-								     hb_atomic_t<unsigned char>,
-								     typename std::conditional<key_bits + value_bits - cache_bits <= 16,
-											       hb_atomic_t<unsigned short>,
-											       hb_atomic_t<unsigned int>>::type>::type,
-					   typename std::conditional<key_bits + value_bits - cache_bits <= 8,
-								     unsigned char,
-								     typename std::conditional<key_bits + value_bits - cache_bits <= 16,
-											       unsigned short,
-											       unsigned int>::type>::type
-					  >::type;
+                                           typename std::conditional<key_bits + value_bits - cache_bits <= 8,
+                                                                     hb_atomic_t<unsigned char>,
+                                                                     typename std::conditional<key_bits + value_bits - cache_bits <= 16,
+                                                                                               hb_atomic_t<unsigned short>,
+                                                                                               hb_atomic_t<unsigned int>>::type>::type,
+                                           typename std::conditional<key_bits + value_bits - cache_bits <= 8,
+                                                                     unsigned char,
+                                                                     typename std::conditional<key_bits + value_bits - cache_bits <= 16,
+                                                                                               unsigned short,
+                                                                                               unsigned int>::type>::type
+                                          >::type;
 
   static_assert ((key_bits >= cache_bits), "");
   static_assert ((key_bits + value_bits <= cache_bits + 8 * sizeof (item_t)), "");
@@ -95,7 +95,7 @@ struct hb_cache_t
     unsigned int k = key & ((1u<<cache_bits)-1);
     unsigned int v = values[k];
     if ((key_bits + value_bits - cache_bits == 8 * sizeof (item_t) && (item_t) v == (item_t) -1) ||
-	(v >> value_bits) != (key >> cache_bits))
+        (v >> value_bits) != (key >> cache_bits))
       return false;
     *value = v & ((1u<<value_bits)-1);
     return true;

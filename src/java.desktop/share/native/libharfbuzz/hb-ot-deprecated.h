@@ -70,24 +70,24 @@ HB_BEGIN_DECLS
 HB_DEPRECATED_FOR (hb_ot_layout_table_select_script)
 HB_EXTERN hb_bool_t
 hb_ot_layout_table_choose_script (hb_face_t      *face,
-				  hb_tag_t        table_tag,
-				  const hb_tag_t *script_tags,
-				  unsigned int   *script_index,
-				  hb_tag_t       *chosen_script);
+                                  hb_tag_t        table_tag,
+                                  const hb_tag_t *script_tags,
+                                  unsigned int   *script_index,
+                                  hb_tag_t       *chosen_script);
 
 HB_DEPRECATED_FOR (hb_ot_layout_script_select_language)
 HB_EXTERN hb_bool_t
 hb_ot_layout_script_find_language (hb_face_t    *face,
-				   hb_tag_t      table_tag,
-				   unsigned int  script_index,
-				   hb_tag_t      language_tag,
-				   unsigned int *language_index);
+                                   hb_tag_t      table_tag,
+                                   unsigned int  script_index,
+                                   hb_tag_t      language_tag,
+                                   unsigned int *language_index);
 
 HB_DEPRECATED_FOR (hb_ot_tags_from_script_and_language)
 HB_EXTERN void
 hb_ot_tags_from_script (hb_script_t  script,
-			hb_tag_t    *script_tag_1,
-			hb_tag_t    *script_tag_2);
+                        hb_tag_t    *script_tag_1,
+                        hb_tag_t    *script_tag_2);
 
 HB_DEPRECATED_FOR (hb_ot_tags_from_script_and_language)
 HB_EXTERN hb_tag_t
@@ -102,7 +102,7 @@ hb_ot_tag_from_language (hb_language_t language);
  * Since: 1.4.2
  * Deprecated: 2.2.0
  */
-#define HB_OT_VAR_NO_AXIS_INDEX		0xFFFFFFFFu
+#define HB_OT_VAR_NO_AXIS_INDEX         0xFFFFFFFFu
 
 /**
  * hb_ot_var_axis_t:
@@ -128,16 +128,16 @@ typedef struct hb_ot_var_axis_t {
 HB_DEPRECATED_FOR (hb_ot_var_get_axis_infos)
 HB_EXTERN unsigned int
 hb_ot_var_get_axes (hb_face_t        *face,
-		    unsigned int      start_offset,
-		    unsigned int     *axes_count /* IN/OUT */,
-		    hb_ot_var_axis_t *axes_array /* OUT */);
+                    unsigned int      start_offset,
+                    unsigned int     *axes_count /* IN/OUT */,
+                    hb_ot_var_axis_t *axes_array /* OUT */);
 
 HB_DEPRECATED_FOR (hb_ot_var_find_axis_info)
 HB_EXTERN hb_bool_t
 hb_ot_var_find_axis (hb_face_t        *face,
-		     hb_tag_t          axis_tag,
-		     unsigned int     *axis_index,
-		     hb_ot_var_axis_t *axis_info);
+                     hb_tag_t          axis_tag,
+                     unsigned int     *axis_index,
+                     hb_ot_var_axis_t *axis_info);
 
 
 #endif

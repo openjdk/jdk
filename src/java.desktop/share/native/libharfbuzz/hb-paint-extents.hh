@@ -104,22 +104,22 @@ struct hb_paint_extents_context_t
     switch ((int) mode)
     {
       case HB_PAINT_COMPOSITE_MODE_CLEAR:
-	backdrop_bounds.status = hb_bounds_t<>::EMPTY;
-	break;
+        backdrop_bounds.status = hb_bounds_t<>::EMPTY;
+        break;
       case HB_PAINT_COMPOSITE_MODE_SRC:
       case HB_PAINT_COMPOSITE_MODE_SRC_OUT:
-	backdrop_bounds = src_bounds;
-	break;
+        backdrop_bounds = src_bounds;
+        break;
       case HB_PAINT_COMPOSITE_MODE_DEST:
       case HB_PAINT_COMPOSITE_MODE_DEST_OUT:
-	break;
+        break;
       case HB_PAINT_COMPOSITE_MODE_SRC_IN:
       case HB_PAINT_COMPOSITE_MODE_DEST_IN:
-	backdrop_bounds.intersect (src_bounds);
-	break;
+        backdrop_bounds.intersect (src_bounds);
+        break;
       default:
-	backdrop_bounds.union_ (src_bounds);
-	break;
+        backdrop_bounds.union_ (src_bounds);
+        break;
      }
   }
 

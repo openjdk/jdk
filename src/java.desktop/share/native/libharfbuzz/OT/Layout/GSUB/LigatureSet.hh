@@ -15,7 +15,7 @@ struct LigatureSet
   Array16OfOffset16To<Ligature<Types>>
                 ligature;               /* Array LigatureSet tables
                                          * ordered by preference */
-  
+
   DEFINE_SIZE_ARRAY (2, ligature);
 
   bool sanitize (hb_sanitize_context_t *c) const
@@ -39,7 +39,7 @@ struct LigatureSet
     return
     + hb_iter (ligature)
     | hb_map (hb_add (this))
-    | hb_map ([glyphs] (const Ligature<Types> &_) { 
+    | hb_map ([glyphs] (const Ligature<Types> &_) {
       return _.intersects_lig_glyph (glyphs) && _.intersects (glyphs);
     })
     | hb_any
@@ -94,8 +94,8 @@ struct LigatureSet
     slow:
       for (unsigned int i = 0; i < num_ligs; i++)
       {
-	const auto &lig = this+ligature.arrayZ[i];
-	if (lig.apply (c)) return_trace (true);
+        const auto &lig = this+ligature.arrayZ[i];
+        if (lig.apply (c)) return_trace (true);
       }
       return_trace (false);
     }
@@ -119,8 +119,8 @@ struct LigatureSet
 
       if (skippy_iter.may_skip (c->buffer->info[skippy_iter.idx]))
       {
-	/* Can't use the fast path if eg. the next char is a default-ignorable
-	 * or other skippable. */
+        /* Can't use the fast path if eg. the next char is a default-ignorable
+         * or other skippable. */
         goto slow;
       }
     }
@@ -134,14 +134,14 @@ struct LigatureSet
     {
       const auto &lig = this+ligature.arrayZ[i];
       if (unlikely (lig.component.lenP1 <= 1) ||
-	  lig.component.arrayZ[0] == second)
+          lig.component.arrayZ[0] == second)
       {
-	if (lig.apply (c))
-	{
-	  if (unsafe_to_concat)
-	    c->buffer->unsafe_to_concat (c->buffer->idx, unsafe_to);
-	  return_trace (true);
-	}
+        if (lig.apply (c))
+        {
+          if (unsafe_to_concat)
+            c->buffer->unsafe_to_concat (c->buffer->idx, unsafe_to);
+          return_trace (true);
+        }
       }
       else if (likely (lig.component.lenP1 > 1))
         unsafe_to_concat = true;

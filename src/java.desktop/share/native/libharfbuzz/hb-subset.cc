@@ -184,7 +184,7 @@ _is_table_present (hb_face_t *source, hb_tag_t tag)
   {
     for (unsigned i = 0; i < num_tables; ++i)
       if (table_tags[i] == tag)
-	return true;
+        return true;
     offset += num_tables;
   }
   return false;
@@ -254,8 +254,8 @@ _dependencies_satisfied (hb_subset_plan_t *plan, hb_tag_t tag,
 
 static bool
 _subset_table (hb_subset_plan_t *plan,
-	       hb_vector_t<char> &buf,
-	       hb_tag_t tag)
+               hb_vector_t<char> &buf,
+               hb_tag_t tag)
 {
   if (plan->no_subset_tables.has (tag)) {
     return _hb_subset_table_passthrough (plan, tag);
@@ -408,37 +408,37 @@ hb_subset_plan_execute_or_fail (hb_subset_plan_t *plan)
     while (!pending_subset_tags.is_empty ())
     {
       if (subsetted_tags.in_error ()
-	  || pending_subset_tags.in_error ()) {
-	success = false;
-	goto end;
+          || pending_subset_tags.in_error ()) {
+        success = false;
+        goto end;
       }
 
       bool made_changes = false;
       for (hb_tag_t tag : pending_subset_tags)
       {
-	if (!_dependencies_satisfied (plan, tag,
-				      subsetted_tags,
-				      pending_subset_tags))
-	{
-	  // delayed subsetting for some tables since they might have dependency on other tables
-	  // in some cases: e.g: during instantiating glyf tables, hmetrics/vmetrics are updated
-	  // and saved in subset plan, hmtx/vmtx subsetting need to use these updated metrics values
-	  continue;
-	}
+        if (!_dependencies_satisfied (plan, tag,
+                                      subsetted_tags,
+                                      pending_subset_tags))
+        {
+          // delayed subsetting for some tables since they might have dependency on other tables
+          // in some cases: e.g: during instantiating glyf tables, hmetrics/vmetrics are updated
+          // and saved in subset plan, hmtx/vmtx subsetting need to use these updated metrics values
+          continue;
+        }
 
-	pending_subset_tags.del (tag);
-	subsetted_tags.add (tag);
-	made_changes = true;
+        pending_subset_tags.del (tag);
+        subsetted_tags.add (tag);
+        made_changes = true;
 
-	success = _subset_table (plan, buf, tag);
-	if (unlikely (!success)) goto end;
+        success = _subset_table (plan, buf, tag);
+        if (unlikely (!success)) goto end;
       }
 
       if (!made_changes)
       {
-	DEBUG_MSG (SUBSET, nullptr, "Table dependencies unable to be satisfied. Subset failed.");
-	success = false;
-	goto end;
+        DEBUG_MSG (SUBSET, nullptr, "Table dependencies unable to be satisfied. Subset failed.");
+        success = false;
+        goto end;
       }
     }
   }

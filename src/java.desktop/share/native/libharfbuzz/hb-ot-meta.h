@@ -48,11 +48,11 @@ HB_BEGIN_DECLS
  **/
 typedef enum {
 /*
-   HB_OT_META_TAG_APPL		= HB_TAG ('a','p','p','l'),
-   HB_OT_META_TAG_BILD		= HB_TAG ('b','i','l','d'),
+   HB_OT_META_TAG_APPL          = HB_TAG ('a','p','p','l'),
+   HB_OT_META_TAG_BILD          = HB_TAG ('b','i','l','d'),
 */
-  HB_OT_META_TAG_DESIGN_LANGUAGES	= HB_TAG ('d','l','n','g'),
-  HB_OT_META_TAG_SUPPORTED_LANGUAGES	= HB_TAG ('s','l','n','g'),
+  HB_OT_META_TAG_DESIGN_LANGUAGES       = HB_TAG ('d','l','n','g'),
+  HB_OT_META_TAG_SUPPORTED_LANGUAGES    = HB_TAG ('s','l','n','g'),
 
   /*< private >*/
   _HB_OT_META_TAG_MAX_VALUE = HB_TAG_MAX_SIGNED /*< skip >*/
@@ -60,9 +60,9 @@ typedef enum {
 
 HB_EXTERN unsigned int
 hb_ot_meta_get_entry_tags (hb_face_t        *face,
-			   unsigned int      start_offset,
-			   unsigned int     *entries_count, /* IN/OUT.  May be NULL. */
-			   hb_ot_meta_tag_t *entries        /* OUT.     May be NULL. */);
+                           unsigned int      start_offset,
+                           unsigned int     *entries_count, /* IN/OUT.  May be NULL. */
+                           hb_ot_meta_tag_t *entries        /* OUT.     May be NULL. */);
 
 HB_EXTERN hb_blob_t *
 hb_ot_meta_reference_entry (hb_face_t *face, hb_ot_meta_tag_t meta_tag);

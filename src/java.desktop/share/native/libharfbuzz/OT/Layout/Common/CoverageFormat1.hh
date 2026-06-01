@@ -81,7 +81,7 @@ struct CoverageFormat1_3
     {
       for (auto g : *glyphs)
         if (get_coverage (g) != NOT_COVERED)
-	  return true;
+          return true;
       return false;
     }
 
@@ -94,7 +94,7 @@ struct CoverageFormat1_3
   { return glyphs->has (glyphArray[index]); }
 
   template <typename IterableOut,
-	    hb_requires (hb_is_sink_of (IterableOut, hb_codepoint_t))>
+            hb_requires (hb_is_sink_of (IterableOut, hb_codepoint_t))>
   void intersect_set (const hb_set_t &glyphs, IterableOut&& intersect_glyphs) const
   {
     unsigned count = glyphArray.len;

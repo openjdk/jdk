@@ -89,7 +89,7 @@ struct hb_free_pool_t
     T* thread ()
     {
       for (unsigned i = 0; i < ARRAY_LENGTH (arrayZ) - 1; i++)
-	* (T**) &arrayZ[i] = &arrayZ[i + 1];
+        * (T**) &arrayZ[i] = &arrayZ[i + 1];
 
       * (T**) &arrayZ[ARRAY_LENGTH (arrayZ) - 1] = nullptr;
 

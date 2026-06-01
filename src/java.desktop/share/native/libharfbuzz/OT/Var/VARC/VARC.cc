@@ -23,10 +23,10 @@ struct hb_transforming_pen_context_t
 
 static void
 hb_transforming_pen_move_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
-			     void *data,
-			     hb_draw_state_t *st,
-			     float to_x, float to_y,
-			     void *user_data HB_UNUSED)
+                             void *data,
+                             hb_draw_state_t *st,
+                             float to_x, float to_y,
+                             void *user_data HB_UNUSED)
 {
   hb_transforming_pen_context_t *c = (hb_transforming_pen_context_t *) data;
 
@@ -37,10 +37,10 @@ hb_transforming_pen_move_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
 
 static void
 hb_transforming_pen_line_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
-			     void *data,
-			     hb_draw_state_t *st,
-			     float to_x, float to_y,
-			     void *user_data HB_UNUSED)
+                             void *data,
+                             hb_draw_state_t *st,
+                             float to_x, float to_y,
+                             void *user_data HB_UNUSED)
 {
   hb_transforming_pen_context_t *c = (hb_transforming_pen_context_t *) data;
 
@@ -51,11 +51,11 @@ hb_transforming_pen_line_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
 
 static void
 hb_transforming_pen_quadratic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
-				  void *data,
-				  hb_draw_state_t *st,
-				  float control_x, float control_y,
-				  float to_x, float to_y,
-				  void *user_data HB_UNUSED)
+                                  void *data,
+                                  hb_draw_state_t *st,
+                                  float control_x, float control_y,
+                                  float to_x, float to_y,
+                                  void *user_data HB_UNUSED)
 {
   hb_transforming_pen_context_t *c = (hb_transforming_pen_context_t *) data;
 
@@ -67,12 +67,12 @@ hb_transforming_pen_quadratic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
 
 static void
 hb_transforming_pen_cubic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
-			      void *data,
-			      hb_draw_state_t *st,
-			      float control1_x, float control1_y,
-			      float control2_x, float control2_y,
-			      float to_x, float to_y,
-			      void *user_data HB_UNUSED)
+                              void *data,
+                              hb_draw_state_t *st,
+                              float control1_x, float control1_y,
+                              float control2_x, float control2_y,
+                              float to_x, float to_y,
+                              void *user_data HB_UNUSED)
 {
   hb_transforming_pen_context_t *c = (hb_transforming_pen_context_t *) data;
 
@@ -85,9 +85,9 @@ hb_transforming_pen_cubic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
 
 static void
 hb_transforming_pen_close_path (hb_draw_funcs_t *dfuncs HB_UNUSED,
-				void *data,
-				hb_draw_state_t *st,
-				void *user_data HB_UNUSED)
+                                void *data,
+                                hb_draw_state_t *st,
+                                void *user_data HB_UNUSED)
 {
   hb_transforming_pen_context_t *c = (hb_transforming_pen_context_t *) data;
 
@@ -130,11 +130,11 @@ hb_transforming_pen_get_funcs ()
 
 hb_ubytes_t
 VarComponent::get_path_at (const hb_varc_context_t &c,
-			   hb_codepoint_t parent_gid,
-			   hb_array_t<const int> coords,
-			   hb_transform_t<> total_transform,
-			   hb_ubytes_t total_record,
-			   hb_scalar_cache_t *cache) const
+                           hb_codepoint_t parent_gid,
+                           hb_array_t<const int> coords,
+                           hb_transform_t<> total_transform,
+                           hb_ubytes_t total_record,
+                           hb_scalar_cache_t *cache) const
 {
   const unsigned char *end = total_record.arrayZ + total_record.length;
   const unsigned char *record = total_record.arrayZ;
@@ -227,31 +227,31 @@ VarComponent::get_path_at (const hb_varc_context_t &c,
     READ_UINT32VAR (transformVarIdx);
 
 #define PROCESS_TRANSFORM_COMPONENTS \
-	HB_STMT_START { \
-	PROCESS_TRANSFORM_COMPONENT ( 0, FWORD, HAVE_TRANSLATE_X, translateX); \
-	PROCESS_TRANSFORM_COMPONENT ( 0, FWORD, HAVE_TRANSLATE_Y, translateY); \
-	PROCESS_TRANSFORM_COMPONENT (12, F4DOT12, HAVE_ROTATION, rotation); \
-	PROCESS_TRANSFORM_COMPONENT (10, F6DOT10, HAVE_SCALE_X, scaleX); \
-	PROCESS_TRANSFORM_COMPONENT (10, F6DOT10, HAVE_SCALE_Y, scaleY); \
-	PROCESS_TRANSFORM_COMPONENT (12, F4DOT12, HAVE_SKEW_X, skewX); \
-	PROCESS_TRANSFORM_COMPONENT (12, F4DOT12, HAVE_SKEW_Y, skewY); \
-	PROCESS_TRANSFORM_COMPONENT ( 0, FWORD, HAVE_TCENTER_X, tCenterX); \
-	PROCESS_TRANSFORM_COMPONENT ( 0, FWORD, HAVE_TCENTER_Y, tCenterY); \
-	} HB_STMT_END
+        HB_STMT_START { \
+        PROCESS_TRANSFORM_COMPONENT ( 0, FWORD, HAVE_TRANSLATE_X, translateX); \
+        PROCESS_TRANSFORM_COMPONENT ( 0, FWORD, HAVE_TRANSLATE_Y, translateY); \
+        PROCESS_TRANSFORM_COMPONENT (12, F4DOT12, HAVE_ROTATION, rotation); \
+        PROCESS_TRANSFORM_COMPONENT (10, F6DOT10, HAVE_SCALE_X, scaleX); \
+        PROCESS_TRANSFORM_COMPONENT (10, F6DOT10, HAVE_SCALE_Y, scaleY); \
+        PROCESS_TRANSFORM_COMPONENT (12, F4DOT12, HAVE_SKEW_X, skewX); \
+        PROCESS_TRANSFORM_COMPONENT (12, F4DOT12, HAVE_SKEW_Y, skewY); \
+        PROCESS_TRANSFORM_COMPONENT ( 0, FWORD, HAVE_TCENTER_X, tCenterX); \
+        PROCESS_TRANSFORM_COMPONENT ( 0, FWORD, HAVE_TCENTER_Y, tCenterY); \
+        } HB_STMT_END
 
   hb_transform_decomposed_t<> transform;
 
   // Read transform components
 #define PROCESS_TRANSFORM_COMPONENT(shift, type, flag, name) \
-	if (flags & (unsigned) flags_t::flag) \
-	{ \
-	  static_assert (type::static_size == HBINT16::static_size, ""); \
-	  if (unlikely (unsigned (end - record) < HBINT16::static_size)) \
-	    return hb_ubytes_t (); \
-	  hb_barrier (); \
-	  transform.name = * (const HBINT16 *) record; \
-	  record += HBINT16::static_size; \
-	}
+        if (flags & (unsigned) flags_t::flag) \
+        { \
+          static_assert (type::static_size == HBINT16::static_size, ""); \
+          if (unlikely (unsigned (end - record) < HBINT16::static_size)) \
+            return hb_ubytes_t (); \
+          hb_barrier (); \
+          transform.name = * (const HBINT16 *) record; \
+          record += HBINT16::static_size; \
+        }
   PROCESS_TRANSFORM_COMPONENTS;
 #undef PROCESS_TRANSFORM_COMPONENT
 
@@ -281,23 +281,23 @@ VarComponent::get_path_at (const hb_varc_context_t &c,
       float transformValues[9];
       unsigned numTransformValues = 0;
 #define PROCESS_TRANSFORM_COMPONENT(shift, type, flag, name) \
-	  if (flags & (unsigned) flags_t::flag) \
-	    transformValues[numTransformValues++] = transform.name;
+          if (flags & (unsigned) flags_t::flag) \
+            transformValues[numTransformValues++] = transform.name;
       PROCESS_TRANSFORM_COMPONENTS;
 #undef PROCESS_TRANSFORM_COMPONENT
       varStore.get_delta (transformVarIdx, coords, hb_array (transformValues, numTransformValues), cache);
       numTransformValues = 0;
 #define PROCESS_TRANSFORM_COMPONENT(shift, type, flag, name) \
-	  if (flags & (unsigned) flags_t::flag) \
-	    transform.name = transformValues[numTransformValues++];
+          if (flags & (unsigned) flags_t::flag) \
+            transform.name = transformValues[numTransformValues++];
       PROCESS_TRANSFORM_COMPONENTS;
 #undef PROCESS_TRANSFORM_COMPONENT
     }
 
     // Divide them by their divisors
 #define PROCESS_TRANSFORM_COMPONENT(shift, type, flag, name) \
-	  if (shift && (flags & (unsigned) flags_t::flag)) \
-	     transform.name *= 1.f / (1 << shift);
+          if (shift && (flags & (unsigned) flags_t::flag)) \
+             transform.name *= 1.f / (1 << shift);
     PROCESS_TRANSFORM_COMPONENTS;
 #undef PROCESS_TRANSFORM_COMPONENT
 
@@ -311,13 +311,13 @@ VarComponent::get_path_at (const hb_varc_context_t &c,
     total_transform.transform (transform.to_transform ());
 
     bool same_coords = component_coords.length == coords.length &&
-		       component_coords.arrayZ == coords.arrayZ;
+                       component_coords.arrayZ == coords.arrayZ;
 
     c.depth_left--;
     VARC.get_path_at (c, gid,
-		      component_coords, total_transform,
-		      parent_gid,
-		      same_coords ? cache : nullptr);
+                      component_coords, total_transform,
+                      parent_gid,
+                      same_coords ? cache : nullptr);
     c.depth_left++;
   }
 
@@ -329,16 +329,16 @@ VarComponent::get_path_at (const hb_varc_context_t &c,
 
 bool
 VARC::get_path_at (const hb_varc_context_t &c,
-		   hb_codepoint_t glyph,
-		   hb_array_t<const int> coords,
-		   hb_transform_t<> transform,
-		   hb_codepoint_t parent_glyph,
-		   hb_scalar_cache_t *parent_cache) const
+                   hb_codepoint_t glyph,
+                   hb_array_t<const int> coords,
+                   hb_transform_t<> transform,
+                   hb_codepoint_t parent_glyph,
+                   hb_scalar_cache_t *parent_cache) const
 {
   // Don't recurse on the same glyph.
   unsigned idx = glyph == parent_glyph ?
-		 NOT_COVERED :
-		 (this+coverage).get_coverage (glyph);
+                 NOT_COVERED :
+                 (this+coverage).get_coverage (glyph);
   if (idx == NOT_COVERED)
   {
     if (c.draw_session)
@@ -350,9 +350,9 @@ VARC::get_path_at (const hb_varc_context_t &c,
       // Build a transforming pen to apply the transform.
       hb_draw_funcs_t *transformer_funcs = hb_transforming_pen_get_funcs ();
       hb_transforming_pen_context_t context {leaf_transform,
-					     c.draw_session->funcs,
-					     c.draw_session->draw_data,
-					     &c.draw_session->st};
+                                             c.draw_session->funcs,
+                                             c.draw_session->draw_data,
+                                             &c.draw_session->st};
       hb_draw_session_t transformer_session {transformer_funcs, &context};
       hb_draw_session_t &shape_draw_session = leaf_transform.is_identity () ? *c.draw_session : transformer_session;
 
@@ -371,7 +371,7 @@ VARC::get_path_at (const hb_varc_context_t &c,
       if (!c.font->face->table.cff2->get_extents_at (c.font, glyph, &glyph_extents, coords))
       if (!c.font->face->table.cff1->get_extents (c.font, glyph, &glyph_extents)) // Doesn't have variations
 #endif
-	return false;
+        return false;
 
       hb_extents_t<> comp_extents (glyph_extents);
       hb_transform_t<> leaf_transform = transform;
@@ -398,14 +398,14 @@ VARC::get_path_at (const hb_varc_context_t &c,
 
   hb_scalar_cache_t static_cache;
   hb_scalar_cache_t *cache = parent_cache ?
-				  parent_cache :
-				  (this+varStore).create_cache (&static_cache);
+                                  parent_cache :
+                                  (this+varStore).create_cache (&static_cache);
 
   VarCompositeGlyph::get_path_at (c,
-				  glyph,
-				  coords, transform,
-				  record,
-				  cache);
+                                  glyph,
+                                  coords, transform,
+                                  record,
+                                  cache);
 
   if (cache != parent_cache)
     (this+varStore).destroy_cache (cache, &static_cache);

@@ -52,50 +52,50 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-macros"
-#define B	USE(B)	/* BASE */
-#define CGJ	USE(CGJ)	/* CGJ */
-#define CS	USE(CS)	/* CONS_WITH_STACKER */
-#define G	USE(G)	/* HIEROGLYPH */
-#define GB	USE(GB)	/* BASE_OTHER */
-#define H	USE(H)	/* HALANT */
-#define HM	USE(HM)	/* HIEROGLYPH_MOD */
-#define HN	USE(HN)	/* HALANT_NUM */
-#define HR	USE(HR)	/* HIEROGLYPH_MIRROR */
-#define HVM	USE(HVM)	/* HALANT_OR_VOWEL_MODIFIER */
-#define IS	USE(IS)	/* INVISIBLE_STACKER */
-#define J	USE(J)	/* HIEROGLYPH_JOINER */
-#define N	USE(N)	/* BASE_NUM */
-#define O	USE(O)	/* OTHER */
-#define R	USE(R)	/* REPHA */
-#define RK	USE(RK)	/* REORDERING_KILLER */
-#define SB	USE(SB)	/* HIEROGLYPH_SEGMENT_BEGIN */
-#define SE	USE(SE)	/* HIEROGLYPH_SEGMENT_END */
-#define SUB	USE(SUB)	/* CONS_SUB */
-#define Sk	USE(Sk)	/* SAKOT */
-#define WJ	USE(WJ)	/* Word_Joiner */
-#define ZWNJ	USE(ZWNJ)	/* ZWNJ */
-#define CMAbv	USE(CMAbv)
-#define CMBlw	USE(CMBlw)
-#define FAbv	USE(FAbv)
-#define FBlw	USE(FBlw)
-#define FPst	USE(FPst)
-#define FMAbv	USE(FMAbv)
-#define FMBlw	USE(FMBlw)
-#define FMPst	USE(FMPst)
-#define MAbv	USE(MAbv)
-#define MBlw	USE(MBlw)
-#define MPst	USE(MPst)
-#define MPre	USE(MPre)
-#define SMAbv	USE(SMAbv)
-#define SMBlw	USE(SMBlw)
-#define VAbv	USE(VAbv)
-#define VBlw	USE(VBlw)
-#define VPst	USE(VPst)
-#define VPre	USE(VPre)
-#define VMAbv	USE(VMAbv)
-#define VMBlw	USE(VMBlw)
-#define VMPst	USE(VMPst)
-#define VMPre	USE(VMPre)
+#define B       USE(B)  /* BASE */
+#define CGJ     USE(CGJ)        /* CGJ */
+#define CS      USE(CS) /* CONS_WITH_STACKER */
+#define G       USE(G)  /* HIEROGLYPH */
+#define GB      USE(GB) /* BASE_OTHER */
+#define H       USE(H)  /* HALANT */
+#define HM      USE(HM) /* HIEROGLYPH_MOD */
+#define HN      USE(HN) /* HALANT_NUM */
+#define HR      USE(HR) /* HIEROGLYPH_MIRROR */
+#define HVM     USE(HVM)        /* HALANT_OR_VOWEL_MODIFIER */
+#define IS      USE(IS) /* INVISIBLE_STACKER */
+#define J       USE(J)  /* HIEROGLYPH_JOINER */
+#define N       USE(N)  /* BASE_NUM */
+#define O       USE(O)  /* OTHER */
+#define R       USE(R)  /* REPHA */
+#define RK      USE(RK) /* REORDERING_KILLER */
+#define SB      USE(SB) /* HIEROGLYPH_SEGMENT_BEGIN */
+#define SE      USE(SE) /* HIEROGLYPH_SEGMENT_END */
+#define SUB     USE(SUB)        /* CONS_SUB */
+#define Sk      USE(Sk) /* SAKOT */
+#define WJ      USE(WJ) /* Word_Joiner */
+#define ZWNJ    USE(ZWNJ)       /* ZWNJ */
+#define CMAbv   USE(CMAbv)
+#define CMBlw   USE(CMBlw)
+#define FAbv    USE(FAbv)
+#define FBlw    USE(FBlw)
+#define FPst    USE(FPst)
+#define FMAbv   USE(FMAbv)
+#define FMBlw   USE(FMBlw)
+#define FMPst   USE(FMPst)
+#define MAbv    USE(MAbv)
+#define MBlw    USE(MBlw)
+#define MPst    USE(MPst)
+#define MPre    USE(MPre)
+#define SMAbv   USE(SMAbv)
+#define SMBlw   USE(SMBlw)
+#define VAbv    USE(VAbv)
+#define VBlw    USE(VBlw)
+#define VPst    USE(VPst)
+#define VPre    USE(VPre)
+#define VMAbv   USE(VMAbv)
+#define VMBlw   USE(VMBlw)
+#define VMPst   USE(VMPst)
+#define VMPre   USE(VMPre)
 #pragma GCC diagnostic pop
 
 

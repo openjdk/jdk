@@ -116,30 +116,30 @@ propagate_attachment_offsets (hb_glyph_position_t *pos,
       /* This is the common case: mark follows base.
        * And currently the only way in OpenType. */
       if (HB_DIRECTION_IS_FORWARD (direction))
-	for (unsigned int k = j; k < i; k++) {
-	  pos[i].x_offset -= pos[k].x_advance;
-	  pos[i].y_offset -= pos[k].y_advance;
-	}
+        for (unsigned int k = j; k < i; k++) {
+          pos[i].x_offset -= pos[k].x_advance;
+          pos[i].y_offset -= pos[k].y_advance;
+        }
       else
-	for (unsigned int k = j + 1; k < i + 1; k++) {
-	  pos[i].x_offset += pos[k].x_advance;
-	  pos[i].y_offset += pos[k].y_advance;
-	}
+        for (unsigned int k = j + 1; k < i + 1; k++) {
+          pos[i].x_offset += pos[k].x_advance;
+          pos[i].y_offset += pos[k].y_advance;
+        }
     }
     else // j > i
     {
       /* This can happen with `kerx`: a mark attaching
        * to a base after it in the logical order. */
       if (HB_DIRECTION_IS_FORWARD (direction))
-	for (unsigned int k = i; k < j; k++) {
-	  pos[i].x_offset += pos[k].x_advance;
-	  pos[i].y_offset += pos[k].y_advance;
-	}
+        for (unsigned int k = i; k < j; k++) {
+          pos[i].x_offset += pos[k].x_advance;
+          pos[i].y_offset += pos[k].y_advance;
+        }
       else
-	for (unsigned int k = i + 1; k < j + 1; k++) {
-	  pos[i].x_offset -= pos[k].x_advance;
-	  pos[i].y_offset -= pos[k].y_advance;
-	}
+        for (unsigned int k = i + 1; k < j + 1; k++) {
+          pos[i].x_offset -= pos[k].x_advance;
+          pos[i].y_offset -= pos[k].y_advance;
+        }
     }
   }
 }
@@ -175,12 +175,12 @@ GPOS::position_finish_offsets (hb_font_t *font, hb_buffer_t *buffer)
     if (HB_DIRECTION_IS_FORWARD (direction))
     {
       for (unsigned i = 0; i < len; i++)
-	if (pos[i].attach_chain())
-	  propagate_attachment_offsets (pos, len, i, direction);
+        if (pos[i].attach_chain())
+          propagate_attachment_offsets (pos, len, i, direction);
     } else {
       for (unsigned i = len; i-- > 0; )
-	if (pos[i].attach_chain())
-	  propagate_attachment_offsets (pos, len, i, direction);
+        if (pos[i].attach_chain())
+          propagate_attachment_offsets (pos, len, i, direction);
     }
   }
 

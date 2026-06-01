@@ -97,31 +97,31 @@ struct Coverage
     }
   }
   unsigned int get_coverage (hb_codepoint_t glyph_id,
-			     hb_ot_layout_mapping_cache_t *cache) const
+                             hb_ot_layout_mapping_cache_t *cache) const
   {
     unsigned coverage;
     if (cache && cache->get (glyph_id, &coverage)) return coverage < cache->MAX_VALUE ? coverage : NOT_COVERED;
     coverage = get_coverage (glyph_id);
     if (cache) {
       if (coverage == NOT_COVERED)
-	cache->set_unchecked (glyph_id, cache->MAX_VALUE);
+        cache->set_unchecked (glyph_id, cache->MAX_VALUE);
       else if (likely (coverage < cache->MAX_VALUE))
-	cache->set_unchecked (glyph_id, coverage);
+        cache->set_unchecked (glyph_id, coverage);
     }
     return coverage;
   }
 
   unsigned int get_coverage_binary (hb_codepoint_t glyph_id,
-				    hb_ot_layout_binary_cache_t *cache) const
+                                    hb_ot_layout_binary_cache_t *cache) const
   {
     unsigned coverage;
     if (cache && cache->get (glyph_id, &coverage)) return coverage < cache->MAX_VALUE ? coverage : NOT_COVERED;
     coverage = get_coverage (glyph_id);
     if (cache) {
       if (coverage == NOT_COVERED)
-	cache->set_unchecked (glyph_id, cache->MAX_VALUE);
+        cache->set_unchecked (glyph_id, cache->MAX_VALUE);
       else
-	cache->set_unchecked (glyph_id, 0);
+        cache->set_unchecked (glyph_id, 0);
     }
     return coverage;
   }
@@ -154,9 +154,9 @@ struct Coverage
     for (auto g: glyphs)
     {
       if (last != (hb_codepoint_t) -2 && g < last)
-	unsorted = true;
+        unsorted = true;
       if (last + 1 != g)
-	num_ranges++;
+        num_ranges++;
       last = g;
       if (g > max) max = g;
     }
@@ -261,7 +261,7 @@ struct Coverage
   }
 
   template <typename IterableOut,
-	    hb_requires (hb_is_sink_of (IterableOut, hb_codepoint_t))>
+            hb_requires (hb_is_sink_of (IterableOut, hb_codepoint_t))>
   void intersect_set (const hb_set_t &glyphs, IterableOut&& intersect_glyphs) const
   {
     switch (u.format.v)

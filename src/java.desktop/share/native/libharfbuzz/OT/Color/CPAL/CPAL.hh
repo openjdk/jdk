@@ -48,25 +48,25 @@ struct CPALV1Tail
 
   private:
   hb_ot_color_palette_flags_t get_palette_flags (const void *base,
-						 unsigned int palette_index,
-						 unsigned int palette_count) const
+                                                 unsigned int palette_index,
+                                                 unsigned int palette_count) const
   {
     if (!paletteFlagsZ) return HB_OT_COLOR_PALETTE_FLAG_DEFAULT;
     return (hb_ot_color_palette_flags_t) (uint32_t)
-	   (base+paletteFlagsZ).as_array (palette_count)[palette_index];
+           (base+paletteFlagsZ).as_array (palette_count)[palette_index];
   }
 
   hb_ot_name_id_t get_palette_name_id (const void *base,
-				       unsigned int palette_index,
-				       unsigned int palette_count) const
+                                       unsigned int palette_index,
+                                       unsigned int palette_count) const
   {
     if (!paletteLabelsZ) return HB_OT_NAME_ID_INVALID;
     return (base+paletteLabelsZ).as_array (palette_count)[palette_index];
   }
 
   hb_ot_name_id_t get_color_name_id (const void *base,
-				     unsigned int color_index,
-				     unsigned int color_count) const
+                                     unsigned int color_index,
+                                     unsigned int color_count) const
   {
     if (!colorLabelsZ) return HB_OT_NAME_ID_INVALID;
     return (base+colorLabelsZ).as_array (color_count)[color_index];
@@ -134,32 +134,32 @@ struct CPALV1Tail
   }
 
   bool sanitize (hb_sanitize_context_t *c,
-		 const void *base,
-		 unsigned int palette_count,
-		 unsigned int color_count) const
+                 const void *base,
+                 unsigned int palette_count,
+                 unsigned int color_count) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  (!paletteFlagsZ  || (base+paletteFlagsZ).sanitize (c, palette_count)) &&
-		  (!paletteLabelsZ || (base+paletteLabelsZ).sanitize (c, palette_count)) &&
-		  (!colorLabelsZ   || (base+colorLabelsZ).sanitize (c, color_count)));
+                  (!paletteFlagsZ  || (base+paletteFlagsZ).sanitize (c, palette_count)) &&
+                  (!paletteLabelsZ || (base+paletteLabelsZ).sanitize (c, palette_count)) &&
+                  (!colorLabelsZ   || (base+colorLabelsZ).sanitize (c, color_count)));
   }
 
   protected:
   // TODO(garretrieger): these offsets can hold nulls so we should not be using non-null offsets
   //                     here. Currently they are needed since UnsizedArrayOf doesn't define null_size
   NNOffset32To<UnsizedArrayOf<HBUINT32>>
-		paletteFlagsZ;		/* Offset from the beginning of CPAL table to
-					 * the Palette Type Array. Set to 0 if no array
-					 * is provided. */
+                paletteFlagsZ;          /* Offset from the beginning of CPAL table to
+                                         * the Palette Type Array. Set to 0 if no array
+                                         * is provided. */
   NNOffset32To<UnsizedArrayOf<NameID>>
-		paletteLabelsZ;		/* Offset from the beginning of CPAL table to
-					 * the palette labels array. Set to 0 if no
-					 * array is provided. */
+                paletteLabelsZ;         /* Offset from the beginning of CPAL table to
+                                         * the palette labels array. Set to 0 if no
+                                         * array is provided. */
   NNOffset32To<UnsizedArrayOf<NameID>>
-		colorLabelsZ;		/* Offset from the beginning of CPAL table to
-					 * the color labels array. Set to 0
-					 * if no array is provided. */
+                colorLabelsZ;           /* Offset from the beginning of CPAL table to
+                                         * the color labels array. Set to 0
+                                         * if no array is provided. */
   public:
   DEFINE_SIZE_STATIC (12);
 };
@@ -196,9 +196,9 @@ struct CPAL
     return all_colors.sub_array (start_index, numColors);
   }
   unsigned int get_palette_colors (unsigned int  palette_index,
-				   unsigned int  start_offset,
-				   unsigned int *color_count, /* IN/OUT.  May be NULL. */
-				   hb_color_t   *colors       /* OUT.     May be NULL. */) const
+                                   unsigned int  start_offset,
+                                   unsigned int *color_count, /* IN/OUT.  May be NULL. */
+                                   hb_color_t   *colors       /* OUT.     May be NULL. */) const
   {
     if (unlikely (palette_index >= numPalettes))
     {
@@ -208,7 +208,7 @@ struct CPAL
     unsigned int start_index = colorRecordIndicesZ[palette_index];
     hb_array_t<const BGRAColor> all_colors ((this+colorRecordsZ).arrayZ, numColorRecords);
     hb_array_t<const BGRAColor> palette_colors = all_colors.sub_array (start_index,
-								       numColors);
+                                                                       numColors);
     if (color_count)
     {
       + palette_colors.sub_array (start_offset, color_count)
@@ -337,26 +337,26 @@ struct CPAL
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  (this+colorRecordsZ).sanitize (c, numColorRecords) &&
-		  colorRecordIndicesZ.sanitize (c, numPalettes) &&
-		  (version == 0 || v1 ().sanitize (c, this, numPalettes, numColors)));
+                  hb_barrier () &&
+                  (this+colorRecordsZ).sanitize (c, numColorRecords) &&
+                  colorRecordIndicesZ.sanitize (c, numPalettes) &&
+                  (version == 0 || v1 ().sanitize (c, this, numPalettes, numColors)));
   }
 
   protected:
-  HBUINT16	version;		/* Table version number */
+  HBUINT16      version;                /* Table version number */
   /* Version 0 */
-  HBUINT16	numColors;		/* Number of colors in each palette. */
-  HBUINT16	numPalettes;		/* Number of palettes in the table. */
-  HBUINT16	numColorRecords;	/* Total number of color records, combined for
-					 * all palettes. */
+  HBUINT16      numColors;              /* Number of colors in each palette. */
+  HBUINT16      numPalettes;            /* Number of palettes in the table. */
+  HBUINT16      numColorRecords;        /* Total number of color records, combined for
+                                         * all palettes. */
   NNOffset32To<UnsizedArrayOf<BGRAColor>>
-		colorRecordsZ;		/* Offset from the beginning of CPAL table to
-					 * the first ColorRecord. */
+                colorRecordsZ;          /* Offset from the beginning of CPAL table to
+                                         * the first ColorRecord. */
   UnsizedArrayOf<HBUINT16>
-		colorRecordIndicesZ;	/* Index of each palette’s first color record in
-					 * the combined color record array. */
-/*CPALV1Tail	v1;*/
+                colorRecordIndicesZ;    /* Index of each palette’s first color record in
+                                         * the combined color record array. */
+/*CPALV1Tail    v1;*/
   public:
   DEFINE_SIZE_ARRAY (12, colorRecordIndicesZ);
 };

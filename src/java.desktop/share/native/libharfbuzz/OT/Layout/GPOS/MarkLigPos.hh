@@ -11,10 +11,10 @@ struct MarkLigPos
 {
   protected:
   union {
-  struct { HBUINT16 v; }		format;         /* Format identifier */
-  MarkLigPosFormat1_2<SmallTypes>	format1;
+  struct { HBUINT16 v; }                format;         /* Format identifier */
+  MarkLigPosFormat1_2<SmallTypes>       format1;
 #ifndef HB_NO_BEYOND_64K
-  MarkLigPosFormat1_2<MediumTypes>	format2;
+  MarkLigPosFormat1_2<MediumTypes>      format2;
 #endif
   } u;
 
