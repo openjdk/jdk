@@ -1140,7 +1140,6 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
   ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, addr, tmp2, tmp3, narrow);
 
   Register dest_current = exchange ? res   : R0;
-  Register int_flag     = exchange ? noreg : res;
   Label no_update;
   int semantics         = MacroAssembler::MemBarNone;
 
@@ -1149,19 +1148,21 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
                   MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter;
   }
 
+  if (!exchange) { li(res, 0); }
   if (narrow) {
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CR0, dest_current, oldval, newval, addr,
                 semantics, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                int_flag, &no_update, true, weak);
+                noreg, &no_update, true, weak);
   } else {
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CR0, dest_current, oldval, newval, addr,
                 semantics, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                int_flag, &no_update, true, weak);
+                noreg, &no_update, true, weak);
   }
 
   ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp1, tmp2);
+  if (!exchange) { li(res, 1); }
 
   __ bind(no_update);
 }
