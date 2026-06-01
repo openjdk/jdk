@@ -256,10 +256,7 @@ TRACE_REQUEST_FUNC(SystemProcess) {
     // feature is implemented, write real event
     while (processes != nullptr) {
       SystemProcess* tmp = processes;
-      const char* info = processes->command_line();
-      if (info == nullptr) {
-         info = processes->path();
-      }
+      const char* info = processes->path();
       if (info == nullptr) {
          info = processes->name();
       }

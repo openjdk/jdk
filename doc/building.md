@@ -355,7 +355,7 @@ earlier versions may also work.
 Starting with Xcode 26, introduced in macOS 26, the Metal toolchain no longer
 comes bundled with Xcode, so it needs to be installed separately. This can
 either be done via the Xcode's Settings/Components UI, or in the command line
-calling `xcodebuild -downloadComponent metalToolchain`.
+calling `xcodebuild -downloadComponent MetalToolchain`.
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses

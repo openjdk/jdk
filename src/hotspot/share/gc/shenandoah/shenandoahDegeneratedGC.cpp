@@ -96,6 +96,16 @@ void ShenandoahDegenGC::op_degenerated() {
   // some phase, we have to upgrade the Degenerate GC to Full GC.
   heap->clear_cancelled_gc();
 
+  // If we degenerated from evacuation or update-refs, some objects in cset may
+  // have been self-forwarded by the failing thread. Clear those marks now so
+  // the remainder of this cycle (re-evac, update-refs, verification) sees a
+  // clean forwarding state.
+  if (_degen_point == ShenandoahDegenPoint::_degenerated_evac ||
+      _degen_point == ShenandoahDegenPoint::_degenerated_update_refs) {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_un_self_forward);
+    heap->un_self_forward_cset_regions();
+  }
+
   // If it's passive mode with ShenandoahCardBarrier turned on: clean the write table
   // without swapping the tables since no scan happens in passive mode anyway
   if (ShenandoahCardBarrier && !heap->mode()->is_generational()) {
@@ -305,6 +315,8 @@ void ShenandoahDegenGC::op_degenerated() {
       ShouldNotReachHere();
   }
 
+  DEBUG_ONLY(heap->assert_no_self_forwards());
+
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_degenerated(_generation);
   }
@@ -335,7 +347,7 @@ void ShenandoahDegenGC::op_reset() {
 
 void ShenandoahDegenGC::op_mark() {
   assert(!_generation->is_concurrent_mark_in_progress(), "Should be reset");
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_stw_mark);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_mark);
   ShenandoahSTWMark mark(_generation, false /*full gc*/);
   mark.mark();
 }
@@ -398,7 +410,7 @@ void ShenandoahDegenGC::op_cleanup_early() {
 }
 
 void ShenandoahDegenGC::op_evacuate() {
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_stw_evac);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_evac);
   ShenandoahHeap::heap()->evacuate_collection_set(_generation, false /* concurrent*/);
 }
 

@@ -44,15 +44,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryPermission;
 import java.nio.file.attribute.AclEntryType;
 import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.UserPrincipal;
 import java.nio.channels.SocketChannel;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.Map;
@@ -1031,25 +1034,18 @@ public final class Utils {
         } else if (attr.contains("acl")) {
             AclFileAttributeView view =
                     Files.getFileAttributeView(file, AclFileAttributeView.class);
+            UserPrincipal everyone = file.getFileSystem()
+                    .getUserPrincipalLookupService()
+                    .lookupPrincipalByName("Everyone");
+            UserPrincipal principal = userOnly ? view.getOwner() : everyone;
+            EnumSet<AclEntryPermission> allPermissions = EnumSet.allOf(AclEntryPermission.class);
+
             List<AclEntry> acl = new ArrayList<>();
-            for (AclEntry thisEntry : view.getAcl()) {
-                if (userOnly) {
-                    if (thisEntry.principal().getName()
-                            .equals(view.getOwner().getName())) {
-                        acl.add(allowAccess(thisEntry));
-                    } else if (thisEntry.type() == AclEntryType.ALLOW) {
-                        acl.add(revokeAccess(thisEntry));
-                    } else {
-                        acl.add(thisEntry);
-                    }
-                } else {
-                    if (thisEntry.type() != AclEntryType.ALLOW) {
-                        acl.add(allowAccess(thisEntry));
-                    } else {
-                        acl.add(thisEntry);
-                    }
-                }
-            }
+            acl.add(AclEntry.newBuilder()
+                    .setType(AclEntryType.ALLOW)
+                    .setPrincipal(principal)
+                    .setPermissions(allPermissions)
+                    .build());
             view.setAcl(acl);
         } else {
             throw new RuntimeException("Unsupported file attributes: " + attr);
