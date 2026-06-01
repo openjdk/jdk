@@ -54,7 +54,7 @@ javap - disassemble one or more class files
 
 The `javap` command disassembles one or more class files. The output depends on
 the options used. When no options are used, the `javap` command prints the
-package private, protected and public fields, and methods of the classes passed
+package private, protected, and public fields and methods declared in the classes passed
 to it.
 
 The `javap` command isn't multirelease JAR aware. Using the class path form of
