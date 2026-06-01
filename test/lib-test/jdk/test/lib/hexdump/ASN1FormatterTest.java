@@ -68,7 +68,7 @@ class ASN1FormatterTest {
             assertEquals(24, result.lines().filter(s -> s.contains("SEQUENCE")).count(),"Sequences");
             assertEquals(17, result.lines().filter(s -> s.contains("OBJECT ID")).count(), "ObjectIDs");
             assertEquals(2, result.lines().filter(s -> s.contains("UTCTIME")).count(), "UTCTIME");
-            assertEquals(3, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
+            assertEquals(2, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
         } catch (EOFException eof) {
             // done
         }
@@ -96,7 +96,7 @@ class ASN1FormatterTest {
             assertEquals(24, result.lines().filter(s -> s.contains("SEQUENCE")).count(), "Sequences");
             assertEquals(17, result.lines().filter(s -> s.contains("OBJECT ID")).count(), "ObjectIDs");
             assertEquals(2, result.lines().filter(s -> s.contains("UTCTIME")).count(), "UTCTIME");
-            assertEquals(3, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
+            assertEquals(2, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
         } catch (EOFException eof) {
             // done
         }
@@ -139,6 +139,18 @@ class ASN1FormatterTest {
     }
 
     @Test
+    void testManyChildren() {
+        HexPrinter p = HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter(), "; ", 100);
+        // 10 child BOOLEAN
+        byte[] c10 = HexFormat.of().parseHex("30140100010001000100010001000100010001000100");
+        p.toString(c10);
+        // 11 child BOOLEN. Not supported now.
+        byte[] c11 = HexFormat.of().parseHex("301601000100010001000100010001000100010001000100");
+        assertThrows(UnsupportedOperationException.class, () -> p.toString(c11));
+    }
+
+    @Test
     void testMain() {
         String file = "openssl.p12.pem";
         Path path = Path.of(DIR, file);
@@ -146,5 +158,4 @@ class ASN1FormatterTest {
         System.out.println("path: " + path);
         ASN1Formatter.main(args);
     }
-
 }

@@ -162,7 +162,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
     }
 
     private ASN1Formatter(Set<String> drillPaths) {
-        this.drillPaths = drillPaths;
+        this.drillPaths = Set.copyOf(drillPaths);
     }
 
     /**
@@ -221,6 +221,11 @@ public class ASN1Formatter implements HexPrinter.Formatter {
         while (available != 0 || origAvailable < 0) {
             // When isRoot is true, there is only one ASN.1 value inside.
             // Do not use a new prefix.
+            if (position > 9) {
+                // No established convention for child #10 yet.
+                throw new UnsupportedOperationException(
+                        "ASN.1 path labels only support single-digit child positions");
+            }
             currentPrefix = isRoot ? prefix : (prefix + position);
             position++;
             // Read the tag
