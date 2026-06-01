@@ -1164,19 +1164,46 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public TrayIconPeer createTrayIcon(TrayIcon target)
       throws HeadlessException, AWTException
     {
-        TrayIconPeer peer = new XTrayIconPeer(target);
+        TrayIconPeer peer;
+        SNISystemTrayPeer sniTray = SNISystemTrayPeer.getPeerInstance();
+        if (sniTray != null && sniTray.isAvailable()) {
+            peer = new SNITrayIconPeer(target);
+        } else {
+            peer = new XTrayIconPeer(target);
+        }
         targetCreatedPeer(target, peer);
         return peer;
     }
 
     @Override
     public SystemTrayPeer createSystemTray(SystemTray target) throws HeadlessException {
-        SystemTrayPeer peer = new XSystemTrayPeer(target);
-        return peer;
+        // Prefer SNI (StatusNotifierItem) when the session bus has a watcher,
+        // fall back to X11 XEmbed otherwise. The UNIXToolkit.shouldDisableSystemTray()
+        // policy is specifically a workaround for broken xembed rendering on
+        // older GNOME shells (< 45), so the SNI path intentionally does not
+        // consult it — SNI is precisely the protocol that fixes that bug.
+        // The X11 fallback (XSystemTrayPeer constructor) still respects the
+        // policy when SNI is unavailable.
+        SNISystemTrayPeer sniPeer = new SNISystemTrayPeer(target);
+        if (sniPeer.isAvailable()) {
+            return sniPeer;
+        }
+        return new XSystemTrayPeer(target);
     }
 
     @Override
     public boolean isTraySupported() {
+        // SystemTray.isSupported() may be called before SystemTray.getSystemTray()
+        // (the typical "if (isSupported()) ..." pattern), in which case no peer
+        // has been created yet and getPeerInstance() returns null. Probe the
+        // D-Bus session bus directly so we do not falsely report "not supported"
+        // when SNI is in fact available.
+        SNISystemTrayPeer sniPeer = SNISystemTrayPeer.getPeerInstance();
+        if (sniPeer != null) {
+            if (sniPeer.isAvailable()) return true;
+        } else if (SNITrayIconPeer.isWatcherAvailable()) {
+            return true;
+        }
         XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
         if (peer != null) {
             return peer.isAvailable();
