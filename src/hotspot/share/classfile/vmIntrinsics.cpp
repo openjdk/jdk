@@ -487,6 +487,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!UseSHA512Intrinsics) return true;
     break;
   case vmIntrinsics::_double_keccak:
+  case vmIntrinsics::_quad_keccak:
   case vmIntrinsics::_sha3_implCompress:
     if (!UseSHA3Intrinsics) return true;
     break;
