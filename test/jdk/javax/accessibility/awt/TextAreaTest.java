@@ -51,7 +51,7 @@ public class TextAreaTest {
     private static final String ACCESSIBLE_NAME = "TextArea Test";
     private static final String ACCESSIBLE_DESCRIPTION =
             "Regression Test:  javax.accessibility, TextArea";
-    private static final String TEXT_FILE = "preface.html";
+    private static final String TEXT_FILE = "tree.txt";
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException, AWTException {
