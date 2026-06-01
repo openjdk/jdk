@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@
  * @summary Unit test for Collections.checkedList
  * @author  Josh Bloch
  * @key randomness
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -182,6 +184,7 @@ public class CheckedListBash {
             || !l.equals(Arrays.asList(ia).subList(0, listSize)))
             fail("toArray(Object[]) is hosed (3)");
 
+        testValueCheckedList();
     }
 
     // Done inefficiently so as to exercise toArray
@@ -224,5 +227,20 @@ public class CheckedListBash {
 
     static void fail(String s) {
         throw new RuntimeException(s);
+    }
+
+    static void testValueCheckedList() {
+        List<VClass> list = Collections.checkedList(new ArrayList<>(), VClass.class);
+        list.add(new VClass(1, new int[] { 1 }));
+        list.add(new VClass(2, new int[] { 2 }));
+        if (!list.contains(new VClass(1, new int[] { 1 })) || list.indexOf(new VClass(2, new int[] { 2 })) != 1)
+            fail("value checkedList lookup failed");
+        VClass[] a = list.toArray(new VClass[0]);
+        if (!Arrays.asList(a).equals(list))
+            fail("value checkedList toArray failed");
+        try {
+            ((List) list).add("not a Tuple");
+            fail("value checkedList accepted wrong type");
+        } catch (ClassCastException expected) { }
     }
 }

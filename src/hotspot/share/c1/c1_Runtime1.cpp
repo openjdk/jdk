@@ -560,9 +560,6 @@ JRT_ENTRY(int, Runtime1::substitutability_check(JavaThread* current, oopDesc* le
   return result.get_jboolean() ? 1 : 0;
 JRT_END
 
-
-extern "C" void ps();
-
 void Runtime1::buffer_inline_args_impl(JavaThread* current, Method* m, bool allocate_receiver) {
   JavaThread* THREAD = current;
   methodHandle method(current, m); // We are inside the verified_entry or verified_inline_ro_entry of this method.

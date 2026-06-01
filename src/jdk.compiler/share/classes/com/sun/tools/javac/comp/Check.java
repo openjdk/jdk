@@ -167,8 +167,7 @@ public class Check {
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealed = Feature.SEALED_CLASSES.allowedInSource(source);
         allowPrimitivePatterns = preview.isEnabled() && Feature.PRIMITIVE_PATTERNS.allowedInSource(source);
-        allowValueClasses = (!preview.isPreview(Feature.VALUE_CLASSES) || preview.isEnabled()) &&
-                Feature.VALUE_CLASSES.allowedInSource(source);
+        allowValueClasses = preview.isEnabled() && Feature.VALUE_CLASSES.allowedInSource(source);
     }
 
     /** Character for synthetic names

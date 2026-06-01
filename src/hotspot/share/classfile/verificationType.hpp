@@ -220,8 +220,6 @@ class VerificationType {
   bool is_array_array() const { return is_x_array(JVM_SIGNATURE_ARRAY); }
   bool is_reference_array() const
     { return is_object_array() || is_array_array(); }
-  bool is_nonscalar_array() const
-    { return is_object_array() || is_array_array(); }
   bool is_object() const
     { return (is_reference() && !is_null() && name()->utf8_length() >= 1 &&
               name()->char_at(0) != JVM_SIGNATURE_ARRAY); }

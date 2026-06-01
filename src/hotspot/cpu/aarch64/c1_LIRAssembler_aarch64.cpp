@@ -1440,6 +1440,10 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         if (k->is_loaded() && k->is_obj_array_klass()) {
           // For a direct pointer comparison, we need the refined array klass pointer
           ciKlass* k_refined = ciObjArrayKlass::make(k->as_obj_array_klass()->element_klass());
+          if (!k_refined->is_loaded()) {
+            bailout("encountered unloaded_ciobjarrayklass due to out of memory error");
+            return;
+          }
           __ mov_metadata(rscratch1, k_refined->constant_encoding());
           __ cmp(klass_RInfo, rscratch1);
         } else {

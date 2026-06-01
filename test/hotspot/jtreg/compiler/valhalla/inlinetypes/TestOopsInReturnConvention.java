@@ -170,7 +170,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestOopsInReturnConvention {
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    static final int COMP_LEVEL_FULL_OPTIMIZATION = 4; // C2 or JVMCI
+    static final int COMP_LEVEL_FULL_OPTIMIZATION = 4; // C2
 
     // Large value class with oops
     static value class LargeValueWithOops {

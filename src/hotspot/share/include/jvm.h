@@ -178,9 +178,6 @@ JNIEXPORT jboolean JNICALL
 JVM_IsPreviewEnabled(void);
 
 JNIEXPORT jboolean JNICALL
-JVM_IsValhallaEnabled(void);
-
-JNIEXPORT jboolean JNICALL
 JVM_IsContinuationsSupported(void);
 
 JNIEXPORT jboolean JNICALL
@@ -561,9 +558,6 @@ JVM_IsInterface(JNIEnv *env, jclass cls);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsHiddenClass(JNIEnv *env, jclass cls);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsIdentityClass(JNIEnv *env, jclass cls);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass);

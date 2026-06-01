@@ -23,10 +23,14 @@
 /*
  * @test
  * @bug 8345438
+ * @library /tools/javac/lib
  * @summary Verify 'return' allowed in a lambda declared in an early construction context
+ * @modules jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @enablePreview
  * @run main EarlyLambdaReturn
- * @build InitializationWarningTester
- * @run main InitializationWarningTester EarlyLambdaReturn
+ * @build SuperCallRemover
+ * @compile -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyLambdaReturn.java
  */
 public class EarlyLambdaReturn {
 

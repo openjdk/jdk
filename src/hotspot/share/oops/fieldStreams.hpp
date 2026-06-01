@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,12 @@ class FieldStreamBase : public StackObj {
     _reader.read_field_counts(&java_fields_count, &injected_fields_count);
     if (_limit < _index) {
       _limit = java_fields_count + injected_fields_count;
-    } else {
-      assert( _limit <= java_fields_count + injected_fields_count, "Safety check");
     }
-    if (_limit != 0) {
+    assert(_limit <= java_fields_count + injected_fields_count, "Safety check");
+    if (_index < _limit) {
+      if (_index != 0) {
+        _reader.skip_to_field_info(_index);
+      }
       _reader.read_field_info(_fi_buf);
     }
    }
@@ -194,7 +196,7 @@ class JavaFieldStream : public FieldStreamBase {
 // Iterate over only the internal fields
 class InternalFieldStream : public FieldStreamBase {
  public:
-  InternalFieldStream(InstanceKlass* k):      FieldStreamBase(k->fieldinfo_stream(), k->constants(), k->java_fields_count(), 0) {}
+  InternalFieldStream(InstanceKlass* k):      FieldStreamBase(k->fieldinfo_stream(), k->constants(), k->java_fields_count(), -1) {}
 };
 
 
@@ -203,17 +205,17 @@ class AllFieldStream : public FieldStreamBase {
   AllFieldStream(const InstanceKlass* k):      FieldStreamBase(k->fieldinfo_stream(), k->constants()) {}
 };
 
-/* Very generally, a base class for a stream adapter, a derived class just implements
- * current_stream that returns a FieldStreamType, and this adapter takes care of providing
- * the methods of FieldStreamBase.
- *
- * In practice, this is used to provide a stream over the fields of a class and its superclasses
- * and interfaces. The derived class of HierarchicalFieldStreamBase decides in which order we iterate
- * on the superclasses (and interfaces), and the template parameter FieldStreamType is the underlying
- * stream we use to iterate over the fields each class. Methods such as done and next are still up to
- * the derived classes, allowing them to iterate over the class hierarchy, but also skip elements that
- * the underlying FieldStreamType would otherwise include.
- */
+// Very generally, a base class for a stream adapter, a subclass just implements
+// current_stream that returns a FieldStreamType, and this adapter takes care of providing
+// the methods of FieldStreamBase.
+//
+// In practice, this is used to provide a stream over the fields of a class and its superclasses
+// and interfaces. The subclass of HierarchicalFieldStreamBase decides in which order we iterate
+// on the superclasses (and interfaces), and the template parameter FieldStreamType is the underlying
+// stream we use to iterate over the fields each class. Methods such as done and next are still up to
+// the subclasses, allowing them to iterate over the class hierarchy, but also skip elements that
+// the underlying FieldStreamType would otherwise include.
+
 template<typename FieldStreamType>
 class HierarchicalFieldStreamBase : public StackObj {
   virtual FieldStreamType& current_stream() = 0;
@@ -278,10 +280,9 @@ public:
   }
 };
 
-/* Iterate over fields including the ones declared in supertypes.
- * Derived classes are traversed before base classes, and interfaces
- * at the end.
- */
+// Iterate over fields including the ones declared in supertypes.
+// Subclasses are traversed before base classes, and interfaces
+// at the end.
 template<typename FieldStreamType>
 class HierarchicalFieldStream final : public HierarchicalFieldStreamBase<FieldStreamType>  {
  private:
@@ -341,12 +342,12 @@ class HierarchicalFieldStream final : public HierarchicalFieldStreamBase<FieldSt
   bool done() const { return _next_klass == nullptr && _current_stream.done(); }
 };
 
-/* Iterates on the fields of a class and its super-class top-down (java.lang.Object first)
- * Doesn't traverse interfaces for now, because it's not clear which order would make sense
- * Let's decide when or if the need arises. Since we are not traversing interfaces, we
- * wouldn't get all the static fields, and since the current use-case of this stream does not
- * care about static fields, we restrict it to regular non-static fields.
- */
+// Iterates on the fields of a class and its super-class top-down (java.lang.Object first)
+// Doesn't traverse interfaces for now, because it's not clear which order would make sense
+// Let's decide when or if the need arises. Since we are not traversing interfaces, we
+// wouldn't get all the static fields, and since the current use-case of this stream does not
+// care about static fields, we restrict it to regular non-static fields.
+
 class TopDownHierarchicalNonStaticFieldStreamBase final : public HierarchicalFieldStreamBase<JavaFieldStream> {
   GrowableArray<InstanceKlass*>* _super_types;  // Self and super type, bottom up
   int _current_stream_index;

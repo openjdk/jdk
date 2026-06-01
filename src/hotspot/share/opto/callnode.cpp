@@ -1196,7 +1196,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // Try to replace the runtime call to the substitutability test emitted by acmp if we can reason
   // about the operands
-  if (can_reshape && !control()->is_top() && method() != nullptr &&
+  if (can_reshape && !control()->is_top() && !memory()->is_top() && method() != nullptr &&
       method()->holder() == phase->C->env()->ValueObjectMethods_klass() &&
       method()->name() == ciSymbols::isSubstitutable_name()) {
     Node* res = replace_is_substitutable(phase->is_IterGVN());
@@ -1732,7 +1732,7 @@ Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     for (uint i = jvms()->debug_start(); i < jvms()->debug_end(); i++) {
       Node* n = in(i)->uncast();
       if (n->is_InlineType()) {
-        n->as_InlineType()->make_scalar_in_safepoints(phase->is_IterGVN());
+        n->as_InlineType()->make_scalar_in_safepoints(phase->is_IterGVN(), true, this);
       }
     }
   }

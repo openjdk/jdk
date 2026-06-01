@@ -36,6 +36,9 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
 
+// Forward Declaration
+
+class JvmtiEnv;
 
 ///////////////////////////////////////////////////////////////
 //

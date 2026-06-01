@@ -47,9 +47,6 @@
 #include "opto/runtime.hpp"
 #include "opto/c2_globals.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
 
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
@@ -5071,7 +5068,7 @@ void StubGenerator::generate_final_stubs() {
 }
 
 void StubGenerator::generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
   // Entry points that are C2 compiler specific.
 
@@ -5129,11 +5126,9 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
   StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
 
-#ifdef COMPILER2
   if ((UseAVX == 2) && EnableX86ECoreOpts && UseCountTrailingZerosInstruction) {
     generate_string_indexof(StubRoutines::_string_indexof_array);
   }
-#endif
 
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
@@ -5212,7 +5207,6 @@ void StubGenerator::generate_compiler_stubs() {
     StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
   }
 
-#ifdef COMPILER2
   if (UseMultiplyToLenIntrinsic) {
     StubRoutines::_multiplyToLen = generate_multiplyToLen();
   }
@@ -5257,7 +5251,6 @@ void StubGenerator::generate_compiler_stubs() {
   }
 
 #endif // COMPILER2
-#endif // COMPILER2_OR_JVMCI
 }
 
 StubGenerator::StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {

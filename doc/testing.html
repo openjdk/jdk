@@ -465,6 +465,44 @@ class, named Virtual, is currently part of the JDK build in the
 <code>test/jtreg_test_thread_factory/</code> directory. This class gets
 compiled during the test image build. The implementation of the Virtual
 class creates a new virtual thread for executing each test class.</p>
+<h4 id="value_class_plugin">VALUE_CLASS_PLUGIN</h4>
+<p>Enables the <code>ValueClassPlugin</code> javac plugin when compiling
+and running JTReg tests. This is a <strong>temporary mode</strong>
+intended for use while value classes (JEP 401) are a preview feature.
+The long-term plan is to replace classes annotated with
+<code>@jdk.test.lib.valueclass.AsValueClass</code> with plain
+<code>value class</code> declarations once value classes are
+finalized.</p>
+<p>In the meantime, this mode allows test sources to compile and run as
+either value classes or regular identity classes without source-level
+changes.</p>
+<p>When set to any non-empty value, the following options are appended to
+every JTReg invocation:</p>
+<ul>
+<li><code>-cpa:&lt;valueClassPlugin.jar&gt;</code> — appends the plugin
+JAR to the compile-time classpath (only when the JAR is present in the
+test image under
+<code>jtreg_value_class_plugin/valueClassPlugin.jar</code>).</li>
+<li><code>-vmoption:--enable-preview</code> — enables JVM preview
+features at runtime.</li>
+<li><code>-javacoption:-XDaccessInternalAPI</code> — grants the compiler
+access to internal APIs required by the plugin.</li>
+<li><code>-javacoption:--source &lt;version&gt; --enable-preview</code>
+— enables preview language features at compile time.</li>
+<li><code>-javacoption:-Xplugin:ValueClassPlugin</code> — activates the
+plugin.</li>
+</ul>
+<p>The plugin scans each compilation unit after parsing and converts any
+class annotated with
+<code>@jdk.test.lib.valueclass.AsValueClass</code> into a value class by
+setting the internal <code>VALUE_CLASS</code> modifier flag and clearing
+the <code>IDENTITY_TYPE</code> flag. This transformation only takes
+effect when <code>--enable-preview</code> is active; without it the
+annotation is a no-op and the class compiles as an ordinary identity
+class, so the same test source can exercise both code paths.</p>
+<p>Example:</p>
+<pre><code>$ make test TEST=jdk_lang JTREG="VALUE_CLASS_PLUGIN=true"
+</code></pre>
 <h4 id="jvmti_stress_agent">JVMTI_STRESS_AGENT</h4>
 <p>Executes JTReg tests with JVM TI stress agent. The stress agent is
 the part of test library and located in

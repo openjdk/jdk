@@ -229,8 +229,8 @@ bool InstanceKlass::field_is_null_free_inline_type(int index) const {
 bool InstanceKlass::is_class_in_loadable_descriptors_attribute(Symbol* name) const {
   if (_loadable_descriptors == nullptr) return false;
   for (int i = 0; i < _loadable_descriptors->length(); i++) {
-        Symbol* class_name = _constants->symbol_at(_loadable_descriptors->at(i));
-        if (class_name == name) return true;
+    Symbol* class_name = _constants->symbol_at(_loadable_descriptors->at(i));
+    if (class_name == name) return true;
   }
   return false;
 }
@@ -562,38 +562,8 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     return nullptr;
   }
 
-#ifdef ASSERT
-  ik->bounds_check((address) ik->start_of_vtable(), false, size);
-  ik->bounds_check((address) ik->start_of_itable(), false, size);
-  ik->bounds_check((address) ik->end_of_itable(), true, size);
-  ik->bounds_check((address) ik->end_of_nonstatic_oop_maps(), true, size);
-#endif //ASSERT
   return ik;
 }
-
-#ifndef PRODUCT
-bool InstanceKlass::bounds_check(address addr, bool edge_ok, intptr_t size_in_bytes) const {
-  const char* bad = nullptr;
-  address end = nullptr;
-  if (addr < (address)this) {
-    bad = "before";
-  } else if (addr == (address)this) {
-    if (edge_ok)  return true;
-    bad = "just before";
-  } else if (addr == (end = (address)this + sizeof(intptr_t) * (size_in_bytes < 0 ? size() : size_in_bytes))) {
-    if (edge_ok)  return true;
-    bad = "just after";
-  } else if (addr > end) {
-    bad = "after";
-  } else {
-    return true;
-  }
-  tty->print_cr("%s object bounds: " INTPTR_FORMAT " [" INTPTR_FORMAT ".." INTPTR_FORMAT "]",
-      bad, (intptr_t)addr, (intptr_t)this, (intptr_t)end);
-  Verbose = WizardMode = true; this->print(); //@@
-  return false;
-}
-#endif //PRODUCT
 
 // copy method ordering from resource area to Metaspace
 void InstanceKlass::copy_method_ordering(const intArray* m, TRAPS) {
@@ -2013,18 +1983,18 @@ ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
   }
 
   // array_klasses() will always be set at this point
-  ArrayKlass* ak = array_klasses();
+  ObjArrayKlass* ak = array_klasses();
   assert(ak != nullptr, "should be set");
   return ak->array_klass(n, THREAD);
 }
 
 ArrayKlass* InstanceKlass::array_klass_or_null(int n) {
   // Need load-acquire for lock-free read
-  ArrayKlass* ak = array_klasses_acquire();
-  if (ak == nullptr) {
+  ObjArrayKlass* oak = array_klasses_acquire();
+  if (oak == nullptr) {
     return nullptr;
   } else {
-    return ak->array_klass_or_null(n);
+    return oak->array_klass_or_null(n);
   }
 }
 
@@ -3454,19 +3424,15 @@ u2 InstanceKlass::generic_signature_index() const                  { return _con
 void InstanceKlass::set_generic_signature_index(u2 sig_index)      { _constants->set_generic_signature_index(sig_index); }
 
 const char* InstanceKlass::signature_name() const {
-  return signature_name_of_carrier(JVM_SIGNATURE_CLASS);
-}
-
-const char* InstanceKlass::signature_name_of_carrier(char c) const {
   // Get the internal name as a c string
   const char* src = (const char*) (name()->as_C_string());
   const int src_length = (int)strlen(src);
 
   char* dest = NEW_RESOURCE_ARRAY(char, src_length + 3);
 
-  // Add L or Q as type indicator
+  // Add L as type indicator
   int dest_index = 0;
-  dest[dest_index++] = c;
+  dest[dest_index++] = JVM_SIGNATURE_CLASS;
 
   // Add the actual class name
   for (int src_index = 0; src_index < src_length; ) {
@@ -4090,34 +4056,20 @@ static const char* state_names[] = {
   "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
 };
 
-static void print_vtable(address self, intptr_t* start, int len, outputStream* st) {
-  ResourceMark rm;
-  int* forward_refs = NEW_RESOURCE_ARRAY(int, len);
-  for (int i = 0; i < len; i++)  forward_refs[i] = 0;
+static void print_vtable(intptr_t* start, int len, outputStream* st) {
   for (int i = 0; i < len; i++) {
     intptr_t e = start[i];
     st->print("%d : " INTPTR_FORMAT, i, e);
-    if (forward_refs[i] != 0) {
-      int from = forward_refs[i];
-      int off = (int) start[from];
-      st->print(" (offset %d <= [%d])", off, from);
-    }
     if (MetaspaceObj::is_valid((Metadata*)e)) {
       st->print(" ");
       ((Metadata*)e)->print_value_on(st);
-    } else if (self != nullptr && e > 0 && e < 0x10000) {
-      address location = self + e;
-      int index = (int)((intptr_t*)location - start);
-      st->print(" (offset %d => [%d])", (int)e, index);
-      if (index >= 0 && index < len)
-        forward_refs[index] = i;
     }
     st->cr();
   }
 }
 
 static void print_vtable(vtableEntry* start, int len, outputStream* st) {
-  return print_vtable(nullptr, reinterpret_cast<intptr_t*>(start), len, st);
+  return print_vtable(reinterpret_cast<intptr_t*>(start), len, st);
 }
 
 const char* InstanceKlass::init_state_name() const {
@@ -4259,7 +4211,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"vtable length      %d  (start addr: " PTR_FORMAT ")", vtable_length(), p2i(start_of_vtable())); st->cr();
   if (vtable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_vtable(), vtable_length(), st);
   st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
-  if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(nullptr, start_of_itable(), itable_length(), st);
+  if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
 
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
   // There is no oop so static and nonstatic printing can use the same printer.

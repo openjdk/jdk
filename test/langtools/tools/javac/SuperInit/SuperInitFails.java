@@ -1,11 +1,14 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8194743
+ * @library /tools/javac/lib
  * @summary Permit additional statements before this/super in constructors
+ * @modules jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @compile/fail/ref=SuperInitFails.out -XDrawDiagnostics SuperInitFails.java
- * @build InitializationWarningTester
- * @run main InitializationWarningTester SuperInitFails SuperInitFailsWarnings.out
+ * @build SuperCallRemover
+ * @compile/fail/ref=SuperInitFailsWarnings.out -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover SuperInitFails.java
  */
 import java.util.concurrent.atomic.AtomicReference;
 public class SuperInitFails extends AtomicReference<Object> implements Iterable<Object> {
