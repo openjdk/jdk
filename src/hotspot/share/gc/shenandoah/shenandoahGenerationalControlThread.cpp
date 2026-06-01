@@ -121,7 +121,7 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
       // a long time if it keeps getting interrupted by allocation failures). At
       // this point, let's run a global cycle.
       request.generation = _heap->global_generation();
-    } else {
+    } else if (_requested_generation == nullptr) {
       request.generation = _heap->young_generation();
     }
 
@@ -623,6 +623,19 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
   return false;
 }
 
+// Some causes should not be allowed to preempt others. We must make sure that
+// regulator requests and allocation failures do not preempt a shutdown request.
+static int cause_priority(GCCause::Cause cause) {
+  if (cause == GCCause::_shenandoah_stop_vm)                   return 4;
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc)        return 3;
+  // Explicit gc will escalate an allocation failure from a young to global cycle
+  if (ShenandoahCollectorPolicy::is_explicit_gc(cause))        return 2;
+  if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) return 1;
+  if (cause == GCCause::_shenandoah_concurrent_gc)             return 0;
+  // Implicit gc is treated as an allocation failure
+  return 1;
+}
+
 void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) {
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
   notify_control_thread(ml, cause, generation);
@@ -630,12 +643,7 @@ void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause c
 
 void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation) {
   assert(_control_lock.is_locked(), "Request lock must be held here");
-  if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
-    // We have already observed a request to handle an allocation failure. We cannot allow
-    // another request (System.gc or regulator) to subvert the degenerated cycle.
-    // TODO: We could 'upgrade' to global without any issues if the user requested a system.gc.
-    // In fact, it would probably be less correct to run a young cycle if a global cycle was
-    // already requested.
+  if (cause_priority(_requested_gc_cause) > cause_priority(cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
   } else {
     log_debug(gc, thread)("Notify control (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(cause), generation->name());
@@ -652,9 +660,7 @@ void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause c
 
 void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause) {
   assert(_control_lock.is_locked(), "Request lock must be held here");
-  if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
-    // We have already observed a request to handle an allocation failure. We cannot allow
-    // another request (System.gc or regulator) to subvert the degenerated cycle.
+  if (cause_priority(_requested_gc_cause) > cause_priority(cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
   } else {
     log_debug(gc, thread)("Notify control (%s): %s", gc_mode_name(gc_mode()), GCCause::to_string(cause));
