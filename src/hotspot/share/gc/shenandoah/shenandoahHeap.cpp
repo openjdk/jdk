@@ -972,7 +972,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       //   b) We experienced at least one Full GC (whether or not it had good progress)
 
       const size_t original_count = total_collections();
-      while (result == nullptr) {
+      while (result == nullptr && !control_thread()->should_terminate()) {
         control_thread()->handle_alloc_failure(req);
         result = allocate_memory_under_lock(req, in_new_region);
         if (result == nullptr) {
