@@ -1358,8 +1358,8 @@ class Assembler : public AbstractAssembler {
     return (0 == addr % a);
   }
 
-  void flush() {
-    AbstractAssembler::flush();
+  void invalidate_icache() {
+    AbstractAssembler::invalidate_icache();
   }
 
   inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
