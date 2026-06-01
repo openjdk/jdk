@@ -503,7 +503,7 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
   return barriers;
 }
 
-void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
+void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach, MachNode* dominator) const {
   uint8_t barrier_data = mach->barrier_data();
   barrier_data &= ~G1C2BarrierPre;
   if (CardTableBarrierSetC2::use_ReduceInitialCardMarks()) {

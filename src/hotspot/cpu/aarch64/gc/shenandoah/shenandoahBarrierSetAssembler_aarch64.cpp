@@ -42,6 +42,10 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif
+#ifdef COMPILER2
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#include "opto/output.hpp"
+#endif
 
 #define __ masm->
 
@@ -831,3 +835,433 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 #undef __
 
 #endif // COMPILER1
+
+#ifdef COMPILER2
+
+#undef __
+#define __ masm->
+
+
+void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src, Register tmp1, Register tmp2, bool is_narrow, bool is_acquire) {
+  // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
+  if (is_narrow) {
+    if (is_acquire) {
+      assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
+          "is_acquire path requires address to be base-only");
+      __ ldarw(dst, src.base());
+    } else {
+      __ ldrw(dst, src);
+    }
+  } else {
+    if (is_acquire) {
+      assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
+          "is_acquire path requires address to be base-only");
+      __ ldar(dst, src.base());
+    } else {
+      __ ldr(dst, src);
+    }
+  }
+
+  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, tmp1, tmp2, is_narrow);
+}
+
+void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow,
+    Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3, bool is_volatile) {
+
+  ShenandoahBarrierStubC2::store_pre(masm, node, tmp1, dst, tmp2, tmp3, dst_narrow);
+
+  // Do the actual store
+  if (dst_narrow) {
+    if (!src_narrow) {
+      // Need to encode into rscratch, because we cannot clobber src.
+      if ((node->barrier_data() & ShenandoahBitNotNull) == 0) {
+        __ encode_heap_oop(tmp2, src);
+      } else {
+        __ encode_heap_oop_not_null(tmp2, src);
+      }
+      src = tmp2;
+    }
+
+    if (is_volatile) {
+      assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
+          "is_acquire path requires address to be base-only");
+      __ stlrw(src, dst.base());
+    } else {
+      __ strw(src, dst);
+    }
+  } else {
+    if (is_volatile) {
+      assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
+          "is_acquire path requires address to be base-only");
+      __ stlr(src, dst.base());
+    } else {
+      __ str(src, dst);
+    }
+  }
+
+  ShenandoahBarrierStubC2::store_post(masm, node, dst, tmp2, tmp3);
+}
+
+void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr,
+    Register oldval, Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool weak, bool acquire) {
+  Assembler::operand_size op_size = narrow ? Assembler::word : Assembler::xword;
+
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, addr, tmp2, tmp3, narrow);
+
+  // CAS!
+  __ cmpxchg(addr, oldval, newval, op_size, acquire, /* release */ true, weak, exchange ? res : noreg);
+
+  // If we need a boolean result out of CAS, set the flag appropriately and promote the result.
+  if (!exchange) {
+    assert(res != noreg, "need result register");
+    __ cset(res, Assembler::EQ);
+  }
+
+  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
+}
+
+void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval,
+    Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3, bool is_acquire) {
+  bool is_narrow = node->bottom_type()->isa_narrowoop();
+
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, addr, tmp2, tmp3, is_narrow);
+
+  if (is_narrow) {
+    if (is_acquire) {
+      __ atomic_xchgalw(preval, newval, addr);
+    } else {
+      __ atomic_xchgw(preval, newval, addr);
+    }
+  } else {
+    if (is_acquire) {
+      __ atomic_xchgal(preval, newval, addr);
+    } else {
+      __ atomic_xchg(preval, newval, addr);
+    }
+  }
+
+  ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp2, tmp3);
+}
+
+#undef __
+#define __ masm.
+
+void ShenandoahBarrierStubC2::cardtable(MacroAssembler& masm, Address address, Register tmp1, Register tmp2) {
+  assert(CardTable::dirty_card_val() == 0, "must be");
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
+
+  // tmp1 = card table base (holder)
+  Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ ldr(tmp1, curr_ct_holder_addr);
+
+  // tmp2 = effective address
+  __ lea(tmp2, address);
+
+  // tmp2 = &card_table[ addr >> CardTable::card_shift() ] ; card index
+  __ add(tmp2, tmp1, tmp2, Assembler::LSR, CardTable::card_shift());
+
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    __ ldrb(tmp1, Address(tmp2));
+    __ cbz(tmp1, L_already_dirty);
+    __ strb(zr, Address(tmp2));
+    __ bind(L_already_dirty);
+  } else {
+    __ strb(zr, Address(tmp2));
+  }
+}
+
+void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp) {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
+  PhaseOutput* const output = Compile::current()->output();
+  Address gc_state_fast(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(test_state)));
+
+  // We piggyback on scratch_emit_size mode to compute the slowpath stub size.
+  // We'll use that information to decide whether we need a far jump to the
+  // stub entry point or not. In scratch_emit_size mode we don't bind entry()
+  // because otherwise it will be rebound when we later emit the instructions
+  // for real.
+  if (_needs_far_jump) {
+    __ ldrb(tmp, gc_state_fast);
+    __ cbz(tmp, *continuation());
+    __ b(output->in_scratch_emit_size() ? *continuation() : *entry());
+  } else {
+    __ ldrb(tmp, gc_state_fast);
+    __ cbnz(tmp, output->in_scratch_emit_size() ? *continuation() : *entry());
+  }
+
+  // This is were the slowpath stub will return to or the code above will
+  // jump to if the checks are false
+  __ bind(*continuation());
+}
+
+void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
+  assert(_needs_keep_alive_barrier || _needs_load_ref_barrier, "Why are you here?");
+  PhaseOutput* const output = Compile::current()->output();
+
+  // We piggyback on scratch_emit_size mode to compute the slowpath stub size.
+  // We'll use that information to decide whether we need a far jump to the
+  // stub entry point or not. In scratch_emit_size mode we don't bind entry()
+  // because otherwise it will be rebound when we later emit the instructions
+  // for real.
+  if (!output->in_scratch_emit_size()) {
+    __ bind(*entry());
+  }
+
+  // If we need to load ourselves, do it here.
+  if (_do_load) {
+    if (_narrow) {
+      __ ldrw(_obj, _addr);
+    } else {
+      __ ldr(_obj, _addr);
+    }
+  }
+
+  // If the object is null, there is no point in applying barriers.
+  maybe_far_jump_if_zero(masm, _obj);
+
+  // We need to make sure that loads done by callers survive across slow-path calls.
+  // For self-loads, we need to care about the case when both KA and LRB are enabled (rare).
+  bool needs_both_barriers = _needs_keep_alive_barrier && _needs_load_ref_barrier;
+  if (!_do_load || needs_both_barriers) {
+    preserve(_obj);
+  }
+
+  // Go for barriers. Barriers can return straight to continuation, as long
+  // as another barrier is not needed and we can reach the fastpath.
+  if (needs_both_barriers) {
+    // The Load match rule in the .ad file may have legitimized the load
+    // address using a TEMP register and in that case we need to explicitly
+    // preserve them here, because the RA does not consider TEMP as live-in,
+    // and the KA runtime call may clobber them and cause a crash on the
+    // subsequent LRB stub.
+    if (_addr.base() != noreg) {
+      preserve(_addr.base());
+    }
+    if (_addr.index() != noreg) {
+      preserve(_addr.index());
+    }
+    keepalive(masm, nullptr);
+    lrb(masm);
+  } else if (_needs_keep_alive_barrier) {
+    keepalive(masm, continuation());
+  } else if (_needs_load_ref_barrier) {
+    lrb(masm);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
+void ShenandoahBarrierStubC2::maybe_far_jump_if_zero(MacroAssembler& masm, Register reg) {
+  if (_needs_far_jump) {
+    Label L_short_jump;
+    __ cbnz(reg, L_short_jump);
+    __ b(*continuation());
+    __ bind(L_short_jump);
+  } else {
+    __ cbz(reg, *continuation());
+  }
+}
+
+void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
+  Address gcstate(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(ShenandoahHeap::MARKING)));
+  Address index(rthread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(rthread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
+  Label L_through, L_slowpath;
+
+  // If another barrier is enabled as well, do a runtime check for a specific barrier.
+  if (_needs_load_ref_barrier) {
+    assert(L_done == nullptr, "L_done is always null when _needs_load_ref_barrier is true");
+    __ ldrb(_tmp1, gcstate);
+    __ cbz(_tmp1, L_through);
+  }
+
+  // Fast-path: put object into buffer.
+  // If buffer is already full, go slow.
+  __ ldr(_tmp1, index);
+  __ cbz(_tmp1, L_slowpath);
+  __ sub(_tmp1, _tmp1, wordSize);
+  __ str(_tmp1, index);
+  __ ldr(_tmp2, buffer);
+
+  // Store the object in queue.
+  // If object is narrow, we need to decode it before inserting.
+  if (_narrow) {
+    __ add(_tmp2, _tmp2, _tmp1);
+    __ decode_heap_oop_not_null(_tmp1, _obj);
+    __ str(_tmp1, Address(_tmp2));
+  } else {
+    // Buffer is 64-bit address, must be in base register.
+    __ str(_obj, Address(_tmp2, _tmp1));
+  }
+
+  // Fast-path exits here.
+  if (L_done != nullptr) {
+    __ b(*L_done);
+  } else {
+    __ b(L_through);
+  }
+
+  // Slow-path: call runtime to handle.
+  __ bind(L_slowpath);
+
+  {
+    SaveLiveRegisters slr(&masm, this);
+
+    // Go to runtime and handle the rest there.
+    __ mov(c_rarg0, _obj);
+    __ lea(lr, RuntimeAddress(keepalive_runtime_entry_addr()));
+    __ blr(lr);
+  }
+  if (L_done != nullptr) {
+    __ b(*L_done);
+  } else {
+    __ bind(L_through);
+  }
+}
+
+void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
+  Label L_slow;
+
+  // If another barrier is enabled as well, do a runtime check for a specific barrier.
+  if (_needs_keep_alive_barrier) {
+    char state_to_check = ShenandoahHeap::HAS_FORWARDED | (_needs_load_ref_weak_barrier ? ShenandoahHeap::WEAK_ROOTS : 0);
+    Address gc_state_fast(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(state_to_check)));
+    __ ldrb(_tmp1, gc_state_fast);
+    maybe_far_jump_if_zero(masm, _tmp1);
+  }
+
+  // If weak references are being processed, weak/phantom loads need to go slow,
+  // regardless of their cset status.
+  if (_needs_load_ref_weak_barrier) {
+    Address gc_state_fast(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(ShenandoahHeap::WEAK_ROOTS)));
+    __ ldrb(_tmp1, gc_state_fast);
+    __ cbnz(_tmp1, L_slow);
+  }
+
+  // Cset-check. Fall-through to slow if in collection set.
+  bool is_aot = AOTCodeCache::is_on_for_dump();
+  if (!is_aot) {
+    __ mov(_tmp1, ShenandoahHeap::in_cset_fast_test_addr());
+    if (_narrow) {
+      __ decode_heap_oop_not_null(_tmp2, _obj);
+      __ add(_tmp1, _tmp1, _tmp2, Assembler::LSR, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    } else {
+      __ add(_tmp1, _tmp1, _obj, Assembler::LSR, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    }
+  } else {
+    // Generating AOT code, pull the cset bitmap and region shift from AOT table.
+    if (_narrow) {
+      __ decode_heap_oop_not_null(_tmp1, _obj);
+    } else {
+      __ mov(_tmp1, _obj);
+    }
+    __ lea(_tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+    __ ldrw(_tmp2, Address(_tmp2));
+    __ lsrv(_tmp2, _tmp1, _tmp2);
+    __ lea(_tmp1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+    __ ldr(_tmp1, Address(_tmp1));
+    __ add(_tmp1, _tmp1, _tmp2);
+  }
+  __ ldrb(_tmp1, Address(_tmp1, 0));
+  maybe_far_jump_if_zero(masm, _tmp1);
+
+  // Slow path
+  __ bind(L_slow);
+
+  // Obj is the result, need to temporarily stop preserving it.
+  bool is_obj_preserved = is_preserved(_obj);
+  if (is_obj_preserved) {
+    dont_preserve(_obj);
+  }
+  {
+    SaveLiveRegisters slr(&masm, this);
+
+    // Shuffle in the arguments. The end result should be:
+    //   c_rarg0 <-- obj
+    //   c_rarg1 <-- lea(addr)
+    if (c_rarg0 == _obj) {
+      __ lea(c_rarg1, _addr);
+    } else if (c_rarg1 == _obj) {
+      // Set up arguments in reverse, and then flip them
+      __ lea(c_rarg0, _addr);
+      // flip them
+      __ mov(_tmp1, c_rarg0);
+      __ mov(c_rarg0, c_rarg1);
+      __ mov(c_rarg1, _tmp1);
+    } else {
+      assert_different_registers(c_rarg1, _obj);
+      __ lea(c_rarg1, _addr);
+      __ mov(c_rarg0, _obj);
+    }
+
+    // Go to runtime and handle the rest there.
+    __ lea(lr, RuntimeAddress(lrb_runtime_entry_addr()));
+    __ blr(lr);
+
+    // Save the result where needed. Narrow entries return narrowOop (32 bits)
+    // and AAPCS does not guarantee the upper 32 bits of x0 are zero.
+    if (_narrow) {
+      __ movw(_obj, r0);
+    } else if (_obj != r0) {
+      __ mov(_obj, r0);
+    }
+  }
+  if (is_obj_preserved) {
+    preserve(_obj);
+  }
+
+  __ b(*continuation());
+}
+
+int ShenandoahBarrierStubC2::available_gp_registers() {
+  Unimplemented(); // Not used
+  return 0;
+}
+
+bool ShenandoahBarrierStubC2::is_special_register(Register r) {
+  Unimplemented(); // Not used
+  return true;
+}
+
+static ShenandoahBarrierSetC2State* barrier_set_state() {
+  return reinterpret_cast<ShenandoahBarrierSetC2State*>(Compile::current()->barrier_set_state());
+}
+
+static int get_stub_size(ShenandoahBarrierStubC2* stub) {
+  PhaseOutput* const output = Compile::current()->output();
+  assert(output->in_scratch_emit_size(), "only used when in scratch_emit_size.");
+  BufferBlob* const blob = output->scratch_buffer_blob();
+  CodeBuffer cb(blob->content_begin(), (address)output->scratch_locs_memory() - blob->content_begin());
+  MacroAssembler masm(&cb);
+  stub->emit_code(masm);
+  return cb.insts_size();
+}
+
+void ShenandoahBarrierStubC2::post_init() {
+  // If we are in scratch emit mode we assume worst case, and force the use of
+  // far branches.
+  PhaseOutput* const output = Compile::current()->output();
+  ShenandoahBarrierSetC2State* state = barrier_set_state();
+  if (output->in_scratch_emit_size()) {
+    state->inc_stubs_current_total_size(get_stub_size(this));
+    _needs_far_jump = true;
+    return;
+  }
+
+  // The logic implemented in this stub only uses short jumps (cbz, cbnz) if
+  // the aggregation of all relevant code sections of a method is less than 1MB
+  // - 2KB. We could be more aggressive and try and compute the distance
+  // between the fastpath branch and the stub entry but in practice not many
+  // methods reach the 1MB size.
+  const BufferSizingData* sizing = output->buffer_sizing_data();
+  const int code_size = sizing->_code + state->stubs_current_total_size();
+
+  // Maximum backward range is 1M. Maximum forward reach is 1M - 4bytes.
+  // Subtract 2K to be ultra conservative.
+  const int cond_branch_max_reach = (int)(1*M - 2*K);
+  _needs_far_jump = code_size >= cond_branch_max_reach;
+}
+
+#endif // COMPILER2
