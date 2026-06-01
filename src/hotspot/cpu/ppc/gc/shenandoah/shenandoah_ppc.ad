@@ -201,7 +201,7 @@ instruct encodePAndStoreN_shenandoah(memory dst, iRegPsrc src, iRegPdstNoScratch
 // ---------------------- LOAD-STORES -----------------------------------
 //
 
-// Strong CAS also handles WeakCompareAndSwap* on PPC, see JDK-XXXXXXX.
+// Strong CAS also handles WeakCompareAndSwap* on PPC, see JDK-8385633.
 instruct compareAndSwapN_regP_regN_regN_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapN mem_ptr (Binary src1 src2)));
   match(Set res (WeakCompareAndSwapN mem_ptr (Binary src1 src2)));
