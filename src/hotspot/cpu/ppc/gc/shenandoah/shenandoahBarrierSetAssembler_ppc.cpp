@@ -1148,7 +1148,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
                   MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter;
   }
 
-  if (!exchange) { li(res, 0); }
+  if (!exchange) { __ li(res, 0); }
   if (narrow) {
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CR0, dest_current, oldval, newval, addr,
@@ -1162,7 +1162,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
   }
 
   ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp1, tmp2);
-  if (!exchange) { li(res, 1); }
+  if (!exchange) { __ li(res, 1); }
 
   __ bind(no_update);
 }
