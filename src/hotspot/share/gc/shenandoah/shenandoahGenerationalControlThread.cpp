@@ -626,14 +626,16 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
 // Some causes should not be allowed to preempt others. We must make sure that
 // regulator requests and allocation failures do not preempt a shutdown request.
 static int cause_priority(GCCause::Cause cause) {
-  if (cause == GCCause::_shenandoah_stop_vm)                   return 4;
-  if (cause == GCCause::_shenandoah_upgrade_to_full_gc)        return 3;
+  if (cause == GCCause::_shenandoah_stop_vm)                   return 5;
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc)        return 4;
   // Explicit gc will escalate an allocation failure from a young to global cycle
-  if (ShenandoahCollectorPolicy::is_explicit_gc(cause))        return 2;
-  if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) return 1;
-  if (cause == GCCause::_shenandoah_concurrent_gc)             return 0;
-  // Implicit gc is treated as an allocation failure
-  return 1;
+  if (ShenandoahCollectorPolicy::is_explicit_gc(cause))        return 3;
+  if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) return 2;
+  if (cause == GCCause::_shenandoah_concurrent_gc)             return 1;
+  if (cause == GCCause::_no_gc)                                return 0;
+  // Unanticipated gc causes are treated as an allocation failure and cannot be
+  // preempted by
+  return 2;
 }
 
 void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) {
