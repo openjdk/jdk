@@ -33,7 +33,6 @@ import static compiler.lib.template_framework.library.PrimitiveType.CHARS;
 import static compiler.lib.template_framework.library.PrimitiveType.INTS;
 import static compiler.lib.template_framework.library.PrimitiveType.LONGS;
 import static compiler.lib.template_framework.library.PrimitiveType.FLOATS;
-import static compiler.lib.template_framework.library.PrimitiveType.FLOAT16S;
 import static compiler.lib.template_framework.library.PrimitiveType.DOUBLES;
 import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
 import static compiler.lib.template_framework.library.Float16Type.FLOAT16;
@@ -41,6 +40,10 @@ import static compiler.lib.template_framework.library.CodeGenerationDataNameType
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INTEGRAL_TYPES;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.FLOATING_TYPES;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INT_LONG_TYPES;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.VECTOR_ELEMENT_TYPES;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INTEGRAL_VECTOR_ELEMENT_TYPES;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.FLOATING_VECTOR_ELEMENT_TYPES;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INT_LONG_VECTOR_ELEMENT_TYPES;
 
 /**
  * This class provides various lists of {@link Expression}s, that represent Java operators or library
@@ -107,17 +110,11 @@ public final class Operations {
         });
 
         CodeGenerationDataNameType.FLOATING_TYPES.stream().forEach(type -> {
-            // float16 uses short as its carrier type; Java promotes short arithmetic
-            // results to int, so all arithmetic expressions need an explicit (short) cast.
-            boolean needsCast = (type == FLOAT16S);
-            String cb = needsCast ? "((short)(" : "(";
-            String ce = needsCast ? "))" : ")";
-
             // Arithmetic operators
-            ops.add(Expression.make(type, cb + "-(", type, ")" + ce));
-            ops.add(Expression.make(type, cb, type, " + ", type, ce));
-            ops.add(Expression.make(type, cb, type, " - ", type, ce));
-            ops.add(Expression.make(type, cb, type, " * ", type, ce));
+            ops.add(Expression.make(type, "(-(", type, "))"));
+            ops.add(Expression.make(type, "(", type, " + ", type, ")"));
+            ops.add(Expression.make(type, "(", type, " - ", type, ")"));
+            ops.add(Expression.make(type, "(", type, " * ", type, ")"));
             // Because of subtyping, we can sample an expression like `(float)((int)(3) / (int)(0))`. Floating point
             // division and modulo do not throw an ArithmeticException on division by zero, integer division and modulo
             // do. In the expression above, the division has an integer on both sides, so it is executed as an integer
@@ -125,14 +122,10 @@ public final class Operations {
             // To prevent this issue, we provide two versions of floating point division operations: one that casts
             // its operands and one that expects that an ArithmeticException might be thrown when we get unlucky when
             // sampling subtypes.
-            // Per-operand casts don't help float16 since its carrier type (short) always
-            // uses integer division regardless of casts.
-            if (!needsCast) {
-                ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") / (" + type.name() +")(", type, "))"));
-                ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") % (" + type.name() +")(", type, "))"));
-            }
-            ops.add(Expression.make(type, cb, type, " / ", type, ce, WITH_ARITHMETIC_EXCEPTION));
-            ops.add(Expression.make(type, cb, type, " % ", type, ce, WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") / (" + type.name() +")(", type, "))"));
+            ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") % (" + type.name() +")(", type, "))"));
+            ops.add(Expression.make(type, "(", type, " / ", type, ")", WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, "(", type, " % ", type, ")", WITH_ARITHMETIC_EXCEPTION));
 
             // Relational / Comparison Operators
             ops.add(Expression.make(BOOLEANS, "(", type, " == ", type, ")"));
@@ -333,8 +326,11 @@ public final class Operations {
         INTEGRAL_ASSOCIATIVE, // Binary - but only safe for integral reductions
         TERNARY
     }
-    private record VOP(String name, VOPType type, List<PrimitiveType> elementTypes, boolean isDeterministic) {
-        VOP(String name, VOPType type, List<PrimitiveType> elementTypes) {
+    // VOP element type pools are typed as VectorElementType so they can include
+    // Float16VectorType.FLOAT16 (the Float16Vector lane type) alongside the
+    // primitive lane types.
+    private record VOP(String name, VOPType type, List<VectorElementType> elementTypes, boolean isDeterministic) {
+        VOP(String name, VOPType type, List<VectorElementType> elementTypes) {
             this(name, type, elementTypes, true);
         }
     }
@@ -344,81 +340,81 @@ public final class Operations {
     //       But if a test is just interested in determinism, they are still
     //       non-deterministic.
     private static final List<VOP> VECTOR_OPS = List.of(
-        new VOP("ABS",                  VOPType.UNARY,                PRIMITIVE_TYPES),
-        new VOP("ACOS",                 VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("ADD",                  VOPType.INTEGRAL_ASSOCIATIVE, PRIMITIVE_TYPES),
-        new VOP("AND",                  VOPType.ASSOCIATIVE,          INTEGRAL_TYPES),
-        new VOP("AND_NOT",              VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("ASHR",                 VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("ASIN",                 VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("ATAN",                 VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("ATAN2",                VOPType.BINARY,               FLOATING_TYPES,     false), // 2 ulp
-        new VOP("BIT_COUNT",            VOPType.UNARY,                INTEGRAL_TYPES),
-        new VOP("BITWISE_BLEND",        VOPType.TERNARY,              INTEGRAL_TYPES),
-        new VOP("CBRT",                 VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("COMPRESS_BITS",        VOPType.BINARY,               INT_LONG_TYPES),
-        new VOP("COS",                  VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("COSH",                 VOPType.UNARY,                FLOATING_TYPES,     false), // 2.5 ulp
-        new VOP("DIV",                  VOPType.BINARY,               FLOATING_TYPES),
-        new VOP("EXP",                  VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("EXPAND_BITS",          VOPType.BINARY,               INT_LONG_TYPES),
-        new VOP("EXPM1",                VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("FIRST_NONZERO",        VOPType.ASSOCIATIVE,          PRIMITIVE_TYPES),
-        new VOP("FMA",                  VOPType.TERNARY,              FLOATING_TYPES),
-        new VOP("HYPOT",                VOPType.BINARY,               FLOATING_TYPES,     false), // 1.5 ulp
-        new VOP("LEADING_ZEROS_COUNT",  VOPType.UNARY,                INTEGRAL_TYPES),
-        new VOP("LOG",                  VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("LOG10",                VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("LOG1P",                VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("LSHL",                 VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("LSHR",                 VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("MIN",                  VOPType.ASSOCIATIVE,          PRIMITIVE_TYPES),
-        new VOP("MAX",                  VOPType.ASSOCIATIVE,          PRIMITIVE_TYPES),
-        new VOP("MUL",                  VOPType.INTEGRAL_ASSOCIATIVE, PRIMITIVE_TYPES),
-        new VOP("NEG",                  VOPType.UNARY,                PRIMITIVE_TYPES),
-        new VOP("NOT",                  VOPType.UNARY,                INTEGRAL_TYPES),
-        new VOP("OR",                   VOPType.ASSOCIATIVE,          INTEGRAL_TYPES),
-        new VOP("POW",                  VOPType.BINARY,               FLOATING_TYPES,     false), // 1 ulp
-        new VOP("REVERSE",              VOPType.UNARY,                INTEGRAL_TYPES),
-        new VOP("REVERSE_BYTES",        VOPType.UNARY,                INTEGRAL_TYPES),
-        new VOP("ROL",                  VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("ROR",                  VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("SADD",                 VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("SIN",                  VOPType.UNARY,                FLOATING_TYPES,     false), // 1 ulp
-        new VOP("SINH",                 VOPType.UNARY,                FLOATING_TYPES,     false), // 2.5 ulp
-        new VOP("SQRT",                 VOPType.UNARY,                FLOATING_TYPES),
-        new VOP("SSUB",                 VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("SUADD",                VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("SUB",                  VOPType.BINARY,               PRIMITIVE_TYPES),
-        new VOP("SUSUB",                VOPType.BINARY,               INTEGRAL_TYPES),
-        new VOP("TAN",                  VOPType.UNARY,                FLOATING_TYPES,     false), // 1.25 ulp
-        new VOP("TANH",                 VOPType.UNARY,                FLOATING_TYPES,     false), // 2.5 ulp
-        new VOP("TRAILING_ZEROS_COUNT", VOPType.UNARY,                INTEGRAL_TYPES),
-        new VOP("UMAX",                 VOPType.ASSOCIATIVE,          INTEGRAL_TYPES),
-        new VOP("UMIN",                 VOPType.ASSOCIATIVE,          INTEGRAL_TYPES),
-        new VOP("XOR",                  VOPType.ASSOCIATIVE,          INTEGRAL_TYPES),
-        new VOP("ZOMO",                 VOPType.UNARY,                INTEGRAL_TYPES)
+        new VOP("ABS",                  VOPType.UNARY,                VECTOR_ELEMENT_TYPES),
+        new VOP("ACOS",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("ADD",                  VOPType.INTEGRAL_ASSOCIATIVE, VECTOR_ELEMENT_TYPES),
+        new VOP("AND",                  VOPType.ASSOCIATIVE,          INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("AND_NOT",              VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("ASHR",                 VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("ASIN",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("ATAN",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("ATAN2",                VOPType.BINARY,               FLOATING_VECTOR_ELEMENT_TYPES, false), // 2 ulp
+        new VOP("BIT_COUNT",            VOPType.UNARY,                INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("BITWISE_BLEND",        VOPType.TERNARY,              INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("CBRT",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("COMPRESS_BITS",        VOPType.BINARY,               INT_LONG_VECTOR_ELEMENT_TYPES),
+        new VOP("COS",                  VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("COSH",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 2.5 ulp
+        new VOP("DIV",                  VOPType.BINARY,               FLOATING_VECTOR_ELEMENT_TYPES),
+        new VOP("EXP",                  VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("EXPAND_BITS",          VOPType.BINARY,               INT_LONG_VECTOR_ELEMENT_TYPES),
+        new VOP("EXPM1",                VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("FIRST_NONZERO",        VOPType.ASSOCIATIVE,          VECTOR_ELEMENT_TYPES),
+        new VOP("FMA",                  VOPType.TERNARY,              FLOATING_VECTOR_ELEMENT_TYPES),
+        new VOP("HYPOT",                VOPType.BINARY,               FLOATING_VECTOR_ELEMENT_TYPES, false), // 1.5 ulp
+        new VOP("LEADING_ZEROS_COUNT",  VOPType.UNARY,                INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("LOG",                  VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("LOG10",                VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("LOG1P",                VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("LSHL",                 VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("LSHR",                 VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("MIN",                  VOPType.ASSOCIATIVE,          VECTOR_ELEMENT_TYPES),
+        new VOP("MAX",                  VOPType.ASSOCIATIVE,          VECTOR_ELEMENT_TYPES),
+        new VOP("MUL",                  VOPType.INTEGRAL_ASSOCIATIVE, VECTOR_ELEMENT_TYPES),
+        new VOP("NEG",                  VOPType.UNARY,                VECTOR_ELEMENT_TYPES),
+        new VOP("NOT",                  VOPType.UNARY,                INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("OR",                   VOPType.ASSOCIATIVE,          INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("POW",                  VOPType.BINARY,               FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("REVERSE",              VOPType.UNARY,                INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("REVERSE_BYTES",        VOPType.UNARY,                INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("ROL",                  VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("ROR",                  VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("SADD",                 VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("SIN",                  VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
+        new VOP("SINH",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 2.5 ulp
+        new VOP("SQRT",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES),
+        new VOP("SSUB",                 VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("SUADD",                VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("SUB",                  VOPType.BINARY,               VECTOR_ELEMENT_TYPES),
+        new VOP("SUSUB",                VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("TAN",                  VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1.25 ulp
+        new VOP("TANH",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 2.5 ulp
+        new VOP("TRAILING_ZEROS_COUNT", VOPType.UNARY,                INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("UMAX",                 VOPType.ASSOCIATIVE,          INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("UMIN",                 VOPType.ASSOCIATIVE,          INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("XOR",                  VOPType.ASSOCIATIVE,          INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("ZOMO",                 VOPType.UNARY,                INTEGRAL_VECTOR_ELEMENT_TYPES)
     );
 
     private static final List<VOP> VECTOR_CMP = List.of(
-        new VOP("EQ",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-        new VOP("GE",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-        new VOP("GT",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-        new VOP("LE",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-        new VOP("LT",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-        new VOP("NE",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-        new VOP("UGE",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
-        new VOP("UGT",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
-        new VOP("ULE",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
-        new VOP("ULT",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES)
+        new VOP("EQ",                   VOPType.ASSOCIATIVE, VECTOR_ELEMENT_TYPES),
+        new VOP("GE",                   VOPType.ASSOCIATIVE, VECTOR_ELEMENT_TYPES),
+        new VOP("GT",                   VOPType.ASSOCIATIVE, VECTOR_ELEMENT_TYPES),
+        new VOP("LE",                   VOPType.ASSOCIATIVE, VECTOR_ELEMENT_TYPES),
+        new VOP("LT",                   VOPType.ASSOCIATIVE, VECTOR_ELEMENT_TYPES),
+        new VOP("NE",                   VOPType.ASSOCIATIVE, VECTOR_ELEMENT_TYPES),
+        new VOP("UGE",                  VOPType.ASSOCIATIVE, INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("UGT",                  VOPType.ASSOCIATIVE, INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("ULE",                  VOPType.ASSOCIATIVE, INTEGRAL_VECTOR_ELEMENT_TYPES),
+        new VOP("ULT",                  VOPType.ASSOCIATIVE, INTEGRAL_VECTOR_ELEMENT_TYPES)
     );
 
     private static final List<VOP> VECTOR_TEST = List.of(
-        new VOP("IS_DEFAULT",           VOPType.UNARY, PRIMITIVE_TYPES),
-        new VOP("IS_NEGATIVE",          VOPType.UNARY, PRIMITIVE_TYPES),
-        new VOP("IS_FINITE",            VOPType.UNARY, FLOATING_TYPES),
-        new VOP("IS_NAN",               VOPType.UNARY, FLOATING_TYPES),
-        new VOP("IS_INFINITE",          VOPType.UNARY, FLOATING_TYPES)
+        new VOP("IS_DEFAULT",           VOPType.UNARY, VECTOR_ELEMENT_TYPES),
+        new VOP("IS_NEGATIVE",          VOPType.UNARY, VECTOR_ELEMENT_TYPES),
+        new VOP("IS_FINITE",            VOPType.UNARY, FLOATING_VECTOR_ELEMENT_TYPES),
+        new VOP("IS_NAN",               VOPType.UNARY, FLOATING_VECTOR_ELEMENT_TYPES),
+        new VOP("IS_INFINITE",          VOPType.UNARY, FLOATING_VECTOR_ELEMENT_TYPES)
     );
 
     // TODO: Conversion VectorOperators -> convertShape
@@ -483,14 +479,14 @@ public final class Operations {
                                                 "((" + type.name() + ")",
                                                 type2,
                                                 ".convert(VectorOperators.Conversion.ofCast("
-                                                    + type2.elementType.className() +  ".class, "
-                                                    + type.elementType.className() + ".class), 0))"));
+                                                    + type2.elementType.elementTypeName() +  ".class, "
+                                                    + type.elementType.elementTypeName() + ".class), 0))"));
                     ops.add(Expression.make(type,
                                                 "((" + type.name() + ")",
                                                 type2,
                                                 ".convert(VectorOperators.Conversion.ofCast("
-                                                    + type2.elementType.className() +  ".class, "
-                                                    + type.elementType.className() + ".class),",
+                                                    + type2.elementType.elementTypeName() +  ".class, "
+                                                    + type.elementType.elementTypeName() + ".class),",
                                                 INTS, // part
                                                 "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
                 }
@@ -505,14 +501,14 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.className() +  ".class, "
-                                                + type.elementType.className() + ".class), 0))", reinterpretInfo));
+                                                + type2.elementType.elementTypeName() +  ".class, "
+                                                + type.elementType.elementTypeName() + ".class), 0))", reinterpretInfo));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.className() +  ".class, "
-                                                + type.elementType.className() + ".class),",
+                                                + type2.elementType.elementTypeName() +  ".class, "
+                                                + type.elementType.elementTypeName() + ".class),",
                                             INTS, // part
                                             "))", reinterpretInfo.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
                     if (type.elementType == BYTES) {
@@ -530,7 +526,7 @@ public final class Operations {
                     if (type.elementType == FLOATS) {
                         ops.add(Expression.make(type, "", type2, ".reinterpretAsFloats()", reinterpretInfo));
                     }
-                    if (type.elementType == FLOAT16S) {
+                    if (type.elementType instanceof Float16VectorType) {
                         ops.add(Expression.make(type, "", type2, ".reinterpretAsFloat16s()", reinterpretInfo));
                     }
                     if (type.elementType == DOUBLES) {
@@ -568,8 +564,8 @@ public final class Operations {
                                         "((" + type.name() + ")",
                                         type2,
                                         ".convertShape(VectorOperators.Conversion.ofCast("
-                                            + type2.elementType.className() +  ".class, "
-                                            + type.elementType.className() + ".class), "
+                                            + type2.elementType.elementTypeName() +  ".class, "
+                                            + type.elementType.elementTypeName() + ".class), "
                                         + type.speciesName + ", ",
                                         INTS, // part
                                         "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
@@ -577,8 +573,8 @@ public final class Operations {
                                         "((" + type.name() + ")",
                                         type2,
                                         ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                            + type2.elementType.className() +  ".class, "
-                                            + type.elementType.className() + ".class), "
+                                            + type2.elementType.elementTypeName() +  ".class, "
+                                            + type.elementType.elementTypeName() + ".class), "
                                         + type.speciesName + ", ",
                                         INTS, // part
                                         "))", reinterpretInfo.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
@@ -595,16 +591,16 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.className() +  ".class, "
-                                                + type.elementType.className() + ".class), "
+                                                + type2.elementType.elementTypeName() +  ".class, "
+                                                + type.elementType.elementTypeName() + ".class), "
                                             + type.speciesName + ", ",
                                             INTS, " & " + partMask + "))"));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.className() +  ".class, "
-                                                + type.elementType.className() + ".class), "
+                                                + type2.elementType.elementTypeName() +  ".class, "
+                                                + type.elementType.elementTypeName() + ".class), "
                                             + type.speciesName + ", ",
                                             INTS, " & " + partMask + "))", reinterpretInfo));
                 } else {
@@ -614,16 +610,16 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.className() +  ".class, "
-                                                + type.elementType.className() + ".class), "
+                                                + type2.elementType.elementTypeName() +  ".class, "
+                                                + type.elementType.elementTypeName() + ".class), "
                                             + type.speciesName + ", "
                                             + "-(", INTS, " & " + partMask + ")))"));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.className() +  ".class, "
-                                                + type.elementType.className() + ".class), "
+                                                + type2.elementType.elementTypeName() +  ".class, "
+                                                + type.elementType.elementTypeName() + ".class), "
                                             + type.speciesName + ", "
                                             + "-(", INTS, " & " + partMask + ")))", reinterpretInfo));
                 }
@@ -848,8 +844,18 @@ public final class Operations {
         FLOAT16_OPERATIONS
     );
 
+    /**
+     * Provides a list of Vector API operations. Iterates over all
+     * {@link CodeGenerationDataNameType#VECTOR_VECTOR_TYPES}, including
+     * {@code Float16Vector_*}, whose lanes are described by
+     * {@link Float16VectorType#FLOAT16}.
+     */
     public static final List<Expression> VECTOR_OPERATIONS = generateVectorOperations();
 
+    /**
+     * Provides a list of all operations: every scalar operation and every
+     * Vector API operation.
+     */
     public static final List<Expression> ALL_OPERATIONS = Utils.concat(
         SCALAR_NUMERIC_OPERATIONS,
         VECTOR_OPERATIONS

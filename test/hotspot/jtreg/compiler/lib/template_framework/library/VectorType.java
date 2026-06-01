@@ -36,10 +36,14 @@ import static compiler.lib.template_framework.library.PrimitiveType.LONGS;
 import static compiler.lib.template_framework.library.PrimitiveType.FLOATS;
 import static compiler.lib.template_framework.library.PrimitiveType.DOUBLES;
 import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
-import static compiler.lib.template_framework.library.PrimitiveType.FLOAT16S;
 
 /**
  * The {@link VectorType} models the Vector API types.
+ *
+ * <p>A {@code VectorType.Vector} is parameterized by a {@link VectorElementType}
+ * (its lane element type) and a lane count. The lane element type may be a
+ * Java primitive lane ({@link PrimitiveType}) or {@link Float16VectorType} for
+ * {@code Float16Vector}.
  */
 public abstract class VectorType implements CodeGenerationDataNameType {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -74,10 +78,10 @@ public abstract class VectorType implements CodeGenerationDataNameType {
     public static final VectorType.Vector DOUBLE_256 = new VectorType.Vector(DOUBLES, 4);
     public static final VectorType.Vector DOUBLE_512 = new VectorType.Vector(DOUBLES, 8);
 
-    public static final VectorType.Vector FLOAT16_64  = new VectorType.Vector(FLOAT16S, 4);
-    public static final VectorType.Vector FLOAT16_128 = new VectorType.Vector(FLOAT16S, 8);
-    public static final VectorType.Vector FLOAT16_256 = new VectorType.Vector(FLOAT16S, 16);
-    public static final VectorType.Vector FLOAT16_512 = new VectorType.Vector(FLOAT16S, 32);
+    public static final VectorType.Vector FLOAT16_64  = new VectorType.Vector(Float16VectorType.FLOAT16, 4);
+    public static final VectorType.Vector FLOAT16_128 = new VectorType.Vector(Float16VectorType.FLOAT16, 8);
+    public static final VectorType.Vector FLOAT16_256 = new VectorType.Vector(Float16VectorType.FLOAT16, 16);
+    public static final VectorType.Vector FLOAT16_512 = new VectorType.Vector(Float16VectorType.FLOAT16, 32);
 
     private final String vectorTypeName;
 
@@ -101,7 +105,7 @@ public abstract class VectorType implements CodeGenerationDataNameType {
         return this == other;
     }
 
-    private static final String vectorTypeName(PrimitiveType elementType) {
+    private static final String vectorTypeName(VectorElementType elementType) {
         return switch(elementType.name()) {
             case "byte"   -> "ByteVector";
             case "short"  -> "ShortVector";
@@ -116,14 +120,14 @@ public abstract class VectorType implements CodeGenerationDataNameType {
     }
 
     public static final class Vector extends VectorType {
-        public final PrimitiveType elementType;
+        public final VectorElementType elementType;
         public final int length; // lane count
         public final String speciesName;
 
         public final Mask maskType;
         public final Shuffle shuffleType;
 
-        private Vector(PrimitiveType elementType, int length) {
+        private Vector(VectorElementType elementType, int length) {
             super(vectorTypeName(elementType));
             this.elementType = elementType;
             this.length = length;
@@ -139,7 +143,7 @@ public abstract class VectorType implements CodeGenerationDataNameType {
                 return List.of(name(), ".zero(", speciesName, ")");
             } else if (r <= 8) {
                 return List.of(
-                    name(), ".fromArray(", speciesName, ", new ", elementType.cname(), "[] {",
+                    name(), ".fromArray(", speciesName, ", new ", elementType.carrierTypeName(), "[] {",
                     elementType.con(),
                     Stream.generate(() ->
                         List.of(", ", elementType.con())

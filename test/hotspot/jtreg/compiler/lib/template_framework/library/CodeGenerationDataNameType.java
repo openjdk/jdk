@@ -33,6 +33,27 @@ import compiler.lib.template_framework.Template;
  * additional functionality for code generation. These types with their extended
  * functionality can be used with many other code generation facilities in the
  * library, such as generating random {@code Expression}s.
+ *
+ * <p>This module distinguishes <strong>scalar</strong> Java types and
+ * <strong>Vector API lane-element</strong> types:
+ * <ul>
+ *   <li>Scalar {@code PRIMITIVE_TYPES}/{@code FLOATING_TYPES}/etc. enumerate
+ *       only Java primitive types ({@code byte}, {@code short}, ...).
+ *       These lists are typed as {@code List<PrimitiveType>} and are consumed
+ *       by scalar fuzzers / scalar code generation. {@link Float16Type} (the
+ *       scalar {@code Float16} logical type) is included in
+ *       {@link #SCALAR_NUMERIC_TYPES} only.</li>
+ *   <li>Vector-lane lists ({@code VECTOR_ELEMENT_TYPES},
+ *       {@code FLOATING_VECTOR_ELEMENT_TYPES}, ...) enumerate the lane types
+ *       valid for {@code VectorType.Vector}. These are typed as
+ *       {@code List<VectorElementType>} and additionally include
+ *       {@link Float16VectorType#FLOAT16} since {@code Float16Vector} is a real
+ *       Vector API type whose lanes happen to have no Java primitive
+ *       keyword.</li>
+ * </ul>
+ * Vector generators (e.g. {@code Operations.VECTOR_OPERATIONS}) consume the
+ * vector-lane lists; scalar generators (e.g.
+ * {@code Operations.PRIMITIVE_OPERATIONS}) consume the scalar lists.
  */
 public interface CodeGenerationDataNameType extends DataName.Type {
 
@@ -57,13 +78,6 @@ public interface CodeGenerationDataNameType extends DataName.Type {
      * @return The short {@link PrimitiveType}.
      */
     static PrimitiveType shorts()   { return PrimitiveType.SHORTS; }
-
-    /**
-     * The short {@link PrimitiveType}.
-     *
-     * @return The short {@link PrimitiveType}.
-     */
-    static PrimitiveType float16s()   { return PrimitiveType.FLOAT16S; }
 
     /**
      * The char {@link PrimitiveType}.
@@ -108,9 +122,19 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     static PrimitiveType booleans() { return PrimitiveType.BOOLEANS; }
 
     /**
-     * The Float16 type.
+     * The {@code Float16Vector} lane-element type. This is a
+     * {@link VectorElementType}, <strong>not</strong> a Java
+     * {@link PrimitiveType}; it appears in vector-lane lists but never in the
+     * scalar {@code PRIMITIVE_TYPES}/{@code FLOATING_TYPES} lists.
      *
-     * @return The Float16 type.
+     * @return The {@code Float16Vector} {@link VectorElementType}.
+     */
+    static Float16VectorType float16s() { return Float16VectorType.FLOAT16; }
+
+    /**
+     * The {@code Float16} scalar (logical) type.
+     *
+     * @return The scalar {@code Float16} type.
      */
     static CodeGenerationDataNameType float16() { return Float16Type.FLOAT16; }
 
@@ -121,7 +145,6 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         bytes(),
         chars(),
         shorts(),
-        float16s(),
         ints(),
         longs(),
         floats(),
@@ -161,7 +184,6 @@ public interface CodeGenerationDataNameType extends DataName.Type {
      * List of all floating {@link PrimitiveType}s (float, double).
      */
     List<PrimitiveType> FLOATING_TYPES = List.of(
-        float16s(),
         floats(),
         doubles()
     );
@@ -193,6 +215,75 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         booleans(),
         float16()
     );
+
+    // --------------------------------------------------------------------
+    // Vector API lane-element type lists.
+    //
+    // These are typed as List<VectorElementType> and may include
+    // Float16VectorType.FLOAT16 in addition to the Java primitive lane
+    // carriers. They are the source of truth for vector lane iteration in
+    // vector generators (e.g. Operations.VECTOR_OPS).
+    // --------------------------------------------------------------------
+
+    /**
+     * All Vector API lane-element types: every Java numeric primitive lane
+     * carrier plus {@link Float16VectorType#FLOAT16}.
+     */
+    List<VectorElementType> VECTOR_ELEMENT_TYPES = List.of(
+        bytes(),
+        shorts(),
+        float16s(),
+        ints(),
+        longs(),
+        floats(),
+        doubles()
+    );
+
+    /**
+     * Integral Vector API lane-element types (byte, short, int, long).
+     */
+    List<VectorElementType> INTEGRAL_VECTOR_ELEMENT_TYPES = List.of(
+        bytes(),
+        shorts(),
+        ints(),
+        longs()
+    );
+
+    /**
+     * Floating Vector API lane-element types (float16, float, double).
+     */
+    List<VectorElementType> FLOATING_VECTOR_ELEMENT_TYPES = List.of(
+        float16s(),
+        floats(),
+        doubles()
+    );
+
+    /**
+     * Integral-and-floating Vector API lane-element types: every lane type
+     * except booleans/chars (which have no Vector API counterparts).
+     */
+    List<VectorElementType> INTEGRAL_AND_FLOATING_VECTOR_ELEMENT_TYPES = List.of(
+        bytes(),
+        shorts(),
+        float16s(),
+        ints(),
+        longs(),
+        floats(),
+        doubles()
+    );
+
+    /**
+     * Vector API lane-element types whose lanes are 32/64 bits and integral
+     * (int, long).
+     */
+    List<VectorElementType> INT_LONG_VECTOR_ELEMENT_TYPES = List.of(
+        ints(),
+        longs()
+    );
+
+    // --------------------------------------------------------------------
+    // Concrete VectorType lists (typed as the concrete Vector subclasses).
+    // --------------------------------------------------------------------
 
     List<VectorType.Vector> VECTOR_BYTE_VECTOR_TYPES = List.of(
         VectorType.BYTE_64,

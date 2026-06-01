@@ -40,8 +40,20 @@ import static compiler.lib.template_framework.Template.let;
  * The {@link PrimitiveType} models Java's primitive types, and provides a set
  * of useful methods for code generation, such as the {@link #byteSize} and
  * {@link #boxedTypeName}.
+ *
+ * <p>{@link PrimitiveType} is a Java <em>scalar</em> type and additionally
+ * doubles as a {@link VectorElementType} for those Vector API lane types whose
+ * lane carrier is itself a Java primitive (e.g. {@code IntVector}'s lane
+ * carrier is {@code int}). For these primitive lane types
+ * {@link #carrierTypeName} and {@link #elementTypeName} both coincide with
+ * {@link #name}.
+ *
+ * <p>Non-primitive lane types, such as the {@code Float16Vector} lane, are
+ * modeled by separate {@link VectorElementType} implementations (see
+ * {@link Float16VectorType}). They do <strong>not</strong> appear in any of
+ * the scalar {@code PRIMITIVE_TYPES}/{@code FLOATING_TYPES} lists.
  */
-public final class PrimitiveType implements CodeGenerationDataNameType {
+public final class PrimitiveType implements VectorElementType {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
     private static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
@@ -50,9 +62,8 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
     private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
     private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
-    private static final Generator<Short> GEN_FLOAT16 = Generators.G.float16s();
 
-    private static enum Kind { BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN, FLOAT16 };
+    private static enum Kind { BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN };
 
     // We have one static instance each, so we do not have duplicated instances.
     static final PrimitiveType BYTES    = new PrimitiveType(Kind.BYTE   );
@@ -63,7 +74,6 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     static final PrimitiveType FLOATS   = new PrimitiveType(Kind.FLOAT  );
     static final PrimitiveType DOUBLES  = new PrimitiveType(Kind.DOUBLE );
     static final PrimitiveType BOOLEANS = new PrimitiveType(Kind.BOOLEAN);
-    static final PrimitiveType FLOAT16S = new PrimitiveType(Kind.FLOAT16);
 
     final Kind kind;
 
@@ -106,39 +116,17 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case FLOAT   -> "float";
             case DOUBLE  -> "double";
             case BOOLEAN -> "boolean";
-            case FLOAT16 -> "float16";
         };
     }
 
-    /**
-     * Returns the Vector lane carrier type name. For most types this is the
-     * same as {@link #name()}, but for {@code float16} the carrier type is
-     * {@code short}.
-     */
-    public String cname() {
-        return switch (kind) {
-            case BYTE    -> "byte";
-            case SHORT   -> "short";
-            case CHAR    -> "char";
-            case INT     -> "int";
-            case LONG    -> "long";
-            case FLOAT   -> "float";
-            case DOUBLE  -> "double";
-            case BOOLEAN -> "boolean";
-            case FLOAT16 -> "short";
-        };
+    @Override
+    public String carrierTypeName() {
+        return name();
     }
 
-    /**
-     * Returns the name used in {@code .class} literals. For Java primitives
-     * this is the primitive keyword (e.g. {@code int}). For {@code float16}
-     * it is {@code Float16} since there is no {@code float16} keyword.
-     */
-    public String className() {
-        return switch (kind) {
-            case FLOAT16 -> "Float16";
-            default      -> name();
-        };
+    @Override
+    public String elementTypeName() {
+        return name();
     }
 
     @Override
@@ -152,7 +140,6 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case BYTE    -> "(byte)" + GEN_BYTE.next();
             case SHORT   -> "(short)" + GEN_SHORT.next();
             case CHAR    -> "(char)" + GEN_CHAR.next();
-            case FLOAT16 -> "(short)" + GEN_FLOAT16.next();
             case INT     -> GEN_INT.next();
             case LONG    -> GEN_LONG.next();
             case FLOAT   -> GEN_FLOAT.next();
@@ -167,10 +154,11 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * @return Size of the type in bytes.
      * @throws UnsupportedOperationException for boolean which has no defined size.
      */
+    @Override
     public int byteSize() {
         return switch (kind) {
             case BYTE    -> 1;
-            case SHORT, CHAR, FLOAT16 -> 2;
+            case SHORT, CHAR -> 2;
             case INT, FLOAT -> 4;
             case LONG, DOUBLE -> 8;
             case BOOLEAN -> { throw new UnsupportedOperationException("boolean does not have a defined 'size'"); }
@@ -182,6 +170,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      *
      * @return the name of the boxed type.
      */
+    @Override
     public String boxedTypeName() {
         return switch (kind) {
             case BYTE    -> "Byte";
@@ -192,7 +181,6 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case FLOAT   -> "Float";
             case DOUBLE  -> "Double";
             case BOOLEAN -> "Boolean";
-            case FLOAT16 -> "Float16";
         };
     }
 
@@ -205,7 +193,6 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
         return switch (kind) {
             case LONG    -> "J";
             case BOOLEAN -> "Z";
-            case FLOAT16 -> "S";
             default      -> boxedTypeName().substring(0, 1);
         };
     }
@@ -231,10 +218,11 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      *
      * @return true iff the type is a floating point type.
      */
+    @Override
     public boolean isFloating() {
         return switch (kind) {
             case BYTE, SHORT, CHAR, INT, LONG, BOOLEAN -> false;
-            case FLOAT16, FLOAT, DOUBLE -> true;
+            case FLOAT, DOUBLE -> true;
         };
     }
 
@@ -250,6 +238,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * @return the token representing the method call to obtain a
      *         random value for the given type at runtime.
      */
+    @Override
     public Object callLibraryRNG() {
         return switch (kind) {
             case BYTE    -> "LibraryRNG.nextByte()";
@@ -260,7 +249,6 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case FLOAT   -> "LibraryRNG.nextFloat()";
             case DOUBLE  -> "LibraryRNG.nextDouble()";
             case BOOLEAN -> "LibraryRNG.nextBoolean()";
-            case FLOAT16 -> "LibraryRNG.nextFloat16()";
         };
     }
 
@@ -268,6 +256,12 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * Generates the {@code LibraryRNG} class, which makes a set of pseudo
      * random number generators available, wrapping {@link Generators}. This
      * is supposed to be used in tandem with {@link #callLibraryRNG}.
+     *
+     * <p>In addition to the Java primitive generators, this also emits
+     * helpers for {@code Float16Vector}'s {@code short} carrier
+     * ({@code nextFloat16()} / {@code fill_float16(short[])}) so that
+     * {@link Float16VectorType#callLibraryRNG()} can be used with vector
+     * fuzzers without depending on this class importing Float16Vector itself.
      *
      * Note: you must ensure that all required imports are performed:
      *       {@code java.util.Random}
@@ -322,6 +316,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
                     return RANDOM.nextBoolean();
                 }
 
+                // Float16Vector lane helpers. Float16 lanes are carried in short[].
                 public static short nextFloat16() {
                     return GEN_FLOAT16.next();
                 }
@@ -333,9 +328,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
                 }
 
             """,
-            CodeGenerationDataNameType.PRIMITIVE_TYPES.stream()
-                .filter(type -> !type.cname().equals("short") || type.name().equals("short"))
-                .map(type -> scope(
+            CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type -> scope(
                 let("type", type),
                 """
                 public static void fill(#type[] a) {
