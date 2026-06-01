@@ -45,10 +45,10 @@ struct OpticalBounds
     return_trace (c->check_struct (this));
   }
 
-  FWORD         leftSide;
-  FWORD         topSide;
-  FWORD         rightSide;
-  FWORD         bottomSide;
+  FWORD		leftSide;
+  FWORD		topSide;
+  FWORD		rightSide;
+  FWORD		bottomSide;
   public:
   DEFINE_SIZE_STATIC (8);
 };
@@ -56,7 +56,7 @@ struct OpticalBounds
 struct opbdFormat0
 {
   bool get_bounds (hb_font_t *font, hb_codepoint_t glyph_id,
-                   hb_glyph_extents_t *extents, const void *base) const
+		   hb_glyph_extents_t *extents, const void *base) const
   {
     const Offset16To<OpticalBounds> *bounds_offset = lookupTable.get_value (glyph_id, font->face->get_num_glyphs ());
     if (!bounds_offset) return false;
@@ -64,10 +64,10 @@ struct opbdFormat0
 
     if (extents)
       *extents = {
-        font->em_scale_x (bounds.leftSide),
-        font->em_scale_y (bounds.topSide),
-        font->em_scale_x (bounds.rightSide),
-        font->em_scale_y (bounds.bottomSide)
+	font->em_scale_x (bounds.leftSide),
+	font->em_scale_y (bounds.topSide),
+	font->em_scale_x (bounds.rightSide),
+	font->em_scale_y (bounds.bottomSide)
       };
     return true;
   }
@@ -80,9 +80,9 @@ struct opbdFormat0
 
   protected:
   Lookup<Offset16To<OpticalBounds>>
-                lookupTable;    /* Lookup table associating glyphs with the four
-                                 * int16 values for the left-side, top-side,
-                                 * right-side, and bottom-side optical bounds. */
+		lookupTable;	/* Lookup table associating glyphs with the four
+				 * int16 values for the left-side, top-side,
+				 * right-side, and bottom-side optical bounds. */
   public:
   DEFINE_SIZE_MIN (2);
 };
@@ -90,7 +90,7 @@ struct opbdFormat0
 struct opbdFormat1
 {
   bool get_bounds (hb_font_t *font, hb_codepoint_t glyph_id,
-                   hb_glyph_extents_t *extents, const void *base) const
+		   hb_glyph_extents_t *extents, const void *base) const
   {
     const Offset16To<OpticalBounds> *bounds_offset = lookupTable.get_value (glyph_id, font->face->get_num_glyphs ());
     if (!bounds_offset) return false;
@@ -98,12 +98,12 @@ struct opbdFormat1
 
     hb_position_t left = 0, top = 0, right = 0, bottom = 0, ignore;
     if (font->get_glyph_contour_point (glyph_id, bounds.leftSide, &left, &ignore) ||
-        font->get_glyph_contour_point (glyph_id, bounds.topSide, &ignore, &top) ||
-        font->get_glyph_contour_point (glyph_id, bounds.rightSide, &right, &ignore) ||
-        font->get_glyph_contour_point (glyph_id, bounds.bottomSide, &ignore, &bottom))
+	font->get_glyph_contour_point (glyph_id, bounds.topSide, &ignore, &top) ||
+	font->get_glyph_contour_point (glyph_id, bounds.rightSide, &right, &ignore) ||
+	font->get_glyph_contour_point (glyph_id, bounds.bottomSide, &ignore, &bottom))
     {
       if (extents)
-        *extents = {left, top, right, bottom};
+	*extents = {left, top, right, bottom};
       return true;
     }
     return false;
@@ -117,9 +117,9 @@ struct opbdFormat1
 
   protected:
   Lookup<Offset16To<OpticalBounds>>
-                lookupTable;    /* Lookup table associating glyphs with the four
-                                 * int16 values for the left-side, top-side,
-                                 * right-side, and bottom-side optical bounds. */
+		lookupTable;	/* Lookup table associating glyphs with the four
+				 * int16 values for the left-side, top-side,
+				 * right-side, and bottom-side optical bounds. */
   public:
   DEFINE_SIZE_MIN (2);
 };
@@ -129,7 +129,7 @@ struct opbd
   static constexpr hb_tag_t tableTag = HB_AAT_TAG_opbd;
 
   bool get_bounds (hb_font_t *font, hb_codepoint_t glyph_id,
-                   hb_glyph_extents_t *extents) const
+		   hb_glyph_extents_t *extents) const
   {
     switch (format)
     {
@@ -155,14 +155,14 @@ struct opbd
   }
 
   protected:
-  FixedVersion<>version;        /* Version number of the optical bounds
-                                 * table (0x00010000 for the current version). */
-  HBUINT16      format;         /* Format of the optical bounds table.
-                                 * Format 0 indicates distance and Format 1 indicates
-                                 * control point. */
+  FixedVersion<>version;	/* Version number of the optical bounds
+				 * table (0x00010000 for the current version). */
+  HBUINT16	format;		/* Format of the optical bounds table.
+				 * Format 0 indicates distance and Format 1 indicates
+				 * control point. */
   union {
-  opbdFormat0   format0;
-  opbdFormat1   format1;
+  opbdFormat0	format0;
+  opbdFormat1	format1;
   } u;
   public:
   DEFINE_SIZE_MIN (8);

@@ -69,7 +69,7 @@ struct hb_bit_vector_t
 
   // Move
   hb_bit_vector_t (hb_bit_vector_t &&other)
-                : min_v (other.min_v), max_v (other.max_v), count (other.count), elts (other.elts)
+		: min_v (other.min_v), max_v (other.max_v), count (other.count), elts (other.elts)
   {
     other.min_v = other.max_v = other.count = 0;
     other.elts = nullptr;

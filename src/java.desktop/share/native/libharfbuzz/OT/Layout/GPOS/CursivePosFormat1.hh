@@ -25,7 +25,7 @@ struct EntryExitRecord
   }
 
   bool subset (hb_subset_context_t *c,
-               const struct CursivePosFormat1 *src_base) const
+	       const struct CursivePosFormat1 *src_base) const
   {
     TRACE_SERIALIZE (this);
     auto *out = c->serializer->embed (this);
@@ -51,7 +51,11 @@ struct EntryExitRecord
 };
 
 static inline void
-reverse_cursive_minor_offset (hb_glyph_position_t *pos, unsigned int i, hb_direction_t direction, unsigned int new_parent)
+reverse_cursive_minor_offset (hb_glyph_position_t *pos,
+                              unsigned int len,
+                              unsigned int i,
+                              hb_direction_t direction,
+                              unsigned int new_parent)
 {
   int chain = pos[i].attach_chain(), type = pos[i].attach_type();
   if (likely (!chain || 0 == (type & ATTACH_TYPE_CURSIVE)))
@@ -61,18 +65,28 @@ reverse_cursive_minor_offset (hb_glyph_position_t *pos, unsigned int i, hb_direc
 
   unsigned int j = (int) i + chain;
 
+  if (unlikely (j >= len))
+    return;
+
   /* Stop if we see new parent in the chain. */
   if (j == new_parent)
     return;
 
-  reverse_cursive_minor_offset (pos, j, direction, new_parent);
+  int16_t reversed_chain = -chain;
+  /* The old edge was cleared above; if the reversed distance truncates,
+   * keep it detached instead of storing a poisoned chain.
+   */
+  if (unlikely (reversed_chain != -chain))
+    return;
+
+  reverse_cursive_minor_offset (pos, len, j, direction, new_parent);
 
   if (HB_DIRECTION_IS_HORIZONTAL (direction))
     pos[j].y_offset = -pos[i].y_offset;
   else
     pos[j].x_offset = -pos[i].x_offset;
 
-  pos[j].attach_chain() = -chain;
+  pos[j].attach_chain() = reversed_chain;
   pos[j].attach_type() = type;
 }
 
@@ -128,7 +142,7 @@ struct CursivePosFormat1
 
     const EntryExitRecord &this_record = entryExitRecord[(this+coverage).get_coverage  (buffer->cur().codepoint)];
     if (!this_record.entryAnchor ||
-        unlikely (!this_record.entryAnchor.sanitize (&c->sanitizer, this))) return_trace (false);
+	unlikely (!this_record.entryAnchor.sanitize (&c->sanitizer, this))) return_trace (false);
     hb_barrier ();
 
     auto &skippy_iter = c->iter_input;
@@ -142,7 +156,7 @@ struct CursivePosFormat1
 
     const EntryExitRecord &prev_record = entryExitRecord[(this+coverage).get_coverage  (buffer->info[skippy_iter.idx].codepoint)];
     if (!prev_record.exitAnchor ||
-        unlikely (!prev_record.exitAnchor.sanitize (&c->sanitizer, this)))
+	unlikely (!prev_record.exitAnchor.sanitize (&c->sanitizer, this)))
     {
       buffer->unsafe_to_concat_from_outbuffer (skippy_iter.idx, buffer->idx + 1);
       return_trace (false);
@@ -155,8 +169,8 @@ struct CursivePosFormat1
     if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
     {
       c->buffer->message (c->font,
-                          "cursive attaching glyph at %u to glyph at %u",
-                          i, j);
+			  "cursive attaching glyph at %u to glyph at %u",
+			  i, j);
     }
 
     buffer->unsafe_to_break (i, j + 1);
@@ -228,7 +242,7 @@ struct CursivePosFormat1
      * previous connection now attaches to new parent.  Watch out for case
      * where new parent is on the path from old chain...
      */
-    reverse_cursive_minor_offset (pos, child, c->direction, parent);
+    reverse_cursive_minor_offset (pos, buffer->len, child, c->direction, parent);
 
     pos[child].attach_chain() = (int) parent - (int) child;
     if (pos[child].attach_chain() != (int) parent - (int) child)
@@ -250,16 +264,16 @@ struct CursivePosFormat1
     {
       pos[parent].attach_chain() = 0;
       if (likely (HB_DIRECTION_IS_HORIZONTAL (c->direction)))
-        pos[parent].y_offset = 0;
+	pos[parent].y_offset = 0;
       else
-        pos[parent].x_offset = 0;
+	pos[parent].x_offset = 0;
     }
 
     if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
     {
       c->buffer->message (c->font,
-                          "cursive attached glyph at %u to glyph at %u",
-                          i, j);
+			  "cursive attached glyph at %u to glyph at %u",
+			  i, j);
     }
 
   overflow:

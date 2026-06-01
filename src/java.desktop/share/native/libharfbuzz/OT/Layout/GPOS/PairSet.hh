@@ -24,11 +24,11 @@ struct PairSet : ValueBase
   public:
   DEFINE_SIZE_MIN (2);
 
-  static unsigned get_size (unsigned len1, unsigned len2)
+  static size_t get_size (unsigned len1, unsigned len2)
   {
     return Types::HBGlyphID::static_size + Value::static_size * (len1 + len2);
   }
-  static unsigned get_size (const ValueFormat valueFormats[2])
+  static size_t get_size (const ValueFormat valueFormats[2])
   {
     unsigned len1 = valueFormats[0].get_len ();
     unsigned len2 = valueFormats[1].get_len ();
@@ -39,14 +39,14 @@ struct PairSet : ValueBase
   {
     const ValueFormat *valueFormats;
     unsigned int len1; /* valueFormats[0].get_len() */
-    unsigned int stride; /* bytes */
+    size_t stride; /* bytes */
   };
 
   bool sanitize (hb_sanitize_context_t *c, const sanitize_closure_t *closure) const
   {
     TRACE_SANITIZE (this);
     if (!(c->check_struct (this) &&
-          hb_barrier () &&
+	  hb_barrier () &&
           c->check_range (&firstPairValueRecord,
                           len,
                           closure->stride))) return_trace (false);
@@ -55,7 +55,7 @@ struct PairSet : ValueBase
     unsigned int count = len;
     const PairValueRecord *record = &firstPairValueRecord;
     return_trace (c->lazy_some_gpos ||
-                  (closure->valueFormats[0].sanitize_values_stride_unsafe (c, this, &record->values[0], count, closure->stride) &&
+		  (closure->valueFormats[0].sanitize_values_stride_unsafe (c, this, &record->values[0], count, closure->stride) &&
                    closure->valueFormats[1].sanitize_values_stride_unsafe (c, this, &record->values[closure->len1], count, closure->stride)));
   }
 
@@ -118,27 +118,27 @@ struct PairSet : ValueBase
     {
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->message (c->font,
-                            "try kerning glyphs at %u,%u",
-                            c->buffer->idx, pos);
+	c->buffer->message (c->font,
+			    "try kerning glyphs at %u,%u",
+			    c->buffer->idx, pos);
       }
 
       bool applied_first = len1 && valueFormats[0].apply_value (c, this, &record->values[0], buffer->cur_pos());
       bool applied_second = len2 && valueFormats[1].apply_value (c, this, &record->values[len1], buffer->pos[pos]);
 
       if (applied_first || applied_second)
-        if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
-        {
-          c->buffer->message (c->font,
-                              "kerned glyphs at %u,%u",
-                              c->buffer->idx, pos);
-        }
+	if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+	{
+	  c->buffer->message (c->font,
+			      "kerned glyphs at %u,%u",
+			      c->buffer->idx, pos);
+	}
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->message (c->font,
-                            "tried kerning glyphs at %u,%u",
-                            c->buffer->idx, pos);
+	c->buffer->message (c->font,
+			    "tried kerning glyphs at %u,%u",
+			    c->buffer->idx, pos);
       }
 
       if (applied_first || applied_second)
@@ -146,7 +146,7 @@ struct PairSet : ValueBase
 
       if (len2)
       {
-        pos++;
+	pos++;
       // https://github.com/harfbuzz/harfbuzz/issues/3824
       // https://github.com/harfbuzz/harfbuzz/issues/3888#issuecomment-1326781116
       buffer->unsafe_to_break (buffer->idx, pos + 1);

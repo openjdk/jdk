@@ -53,8 +53,8 @@ struct SettingName
       nameIndex,
       (hb_aat_layout_feature_selector_t) (unsigned int) setting,
       default_selector == HB_AAT_LAYOUT_FEATURE_SELECTOR_INVALID
-        ? (hb_aat_layout_feature_selector_t) (setting + 1)
-        : default_selector,
+	? (hb_aat_layout_feature_selector_t) (setting + 1)
+	: default_selector,
       0
     };
   }
@@ -66,8 +66,8 @@ struct SettingName
   }
 
   protected:
-  HBUINT16      setting;        /* The setting. */
-  NameID        nameIndex;      /* The name table index for the setting's name. */
+  HBUINT16	setting;	/* The setting. */
+  NameID	nameIndex;	/* The name table index for the setting's name. */
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -81,24 +81,24 @@ struct FeatureName
   { return (int) key - (int) feature; }
 
   enum {
-    Exclusive   = 0x8000,       /* If set, the feature settings are mutually exclusive. */
-    NotDefault  = 0x4000,       /* If clear, then the setting with an index of 0 in
-                                 * the setting name array for this feature should
-                                 * be taken as the default for the feature
-                                 * (if one is required). If set, then bits 0-15 of this
-                                 * featureFlags field contain the index of the setting
-                                 * which is to be taken as the default. */
-    IndexMask   = 0x00FF        /* If bits 30 and 31 are set, then these sixteen bits
-                                 * indicate the index of the setting in the setting name
-                                 * array for this feature which should be taken
-                                 * as the default. */
+    Exclusive	= 0x8000,	/* If set, the feature settings are mutually exclusive. */
+    NotDefault	= 0x4000,	/* If clear, then the setting with an index of 0 in
+				 * the setting name array for this feature should
+				 * be taken as the default for the feature
+				 * (if one is required). If set, then bits 0-15 of this
+				 * featureFlags field contain the index of the setting
+				 * which is to be taken as the default. */
+    IndexMask	= 0x00FF	/* If bits 30 and 31 are set, then these sixteen bits
+				 * indicate the index of the setting in the setting name
+				 * array for this feature which should be taken
+				 * as the default. */
   };
 
   unsigned int get_selector_infos (unsigned int                           start_offset,
-                                   unsigned int                          *selectors_count, /* IN/OUT.  May be NULL. */
-                                   hb_aat_layout_feature_selector_info_t *selectors,       /* OUT.     May be NULL. */
-                                   unsigned int                          *pdefault_index,  /* OUT.     May be NULL. */
-                                   const void *base) const
+				   unsigned int                          *selectors_count, /* IN/OUT.  May be NULL. */
+				   hb_aat_layout_feature_selector_info_t *selectors,       /* OUT.     May be NULL. */
+				   unsigned int                          *pdefault_index,  /* OUT.     May be NULL. */
+				   const void *base) const
   {
     hb_array_t< const SettingName> settings_table = (base+settingTableZ).as_array (nSettings);
 
@@ -138,22 +138,22 @@ struct FeatureName
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-                          hb_barrier () &&
-                          (base+settingTableZ).sanitize (c, nSettings)));
+			  hb_barrier () &&
+			  (base+settingTableZ).sanitize (c, nSettings)));
   }
 
   protected:
-  HBUINT16      feature;        /* Feature type. */
-  HBUINT16      nSettings;      /* The number of records in the setting name array. */
+  HBUINT16	feature;	/* Feature type. */
+  HBUINT16	nSettings;	/* The number of records in the setting name array. */
   NNOffset32To<UnsizedArrayOf<SettingName>>
-                settingTableZ;  /* Offset in bytes from the beginning of this table to
-                                 * this feature's setting name array. The actual type of
-                                 * record this offset refers to will depend on the
-                                 * exclusivity value, as described below. */
-  HBUINT16      featureFlags;   /* Single-bit flags associated with the feature type. */
-  HBINT16       nameIndex;      /* The name table index for the feature's name.
-                                 * This index has values greater than 255 and
-                                 * less than 32768. */
+		settingTableZ;	/* Offset in bytes from the beginning of this table to
+				 * this feature's setting name array. The actual type of
+				 * record this offset refers to will depend on the
+				 * exclusivity value, as described below. */
+  HBUINT16	featureFlags;	/* Single-bit flags associated with the feature type. */
+  HBINT16	nameIndex;	/* The name table index for the feature's name.
+				 * This index has values greater than 255 and
+				 * less than 32768. */
   public:
   DEFINE_SIZE_STATIC (12);
 };
@@ -165,8 +165,8 @@ struct feat
   bool has_data () const { return version.to_int (); }
 
   unsigned int get_feature_types (unsigned int                  start_offset,
-                                  unsigned int                 *count,
-                                  hb_aat_layout_feature_type_t *features) const
+				  unsigned int                 *count,
+				  hb_aat_layout_feature_type_t *features) const
   {
     if (count)
     {
@@ -188,33 +188,33 @@ struct feat
   { return get_feature (feature).get_feature_name_id (); }
 
   unsigned int get_selector_infos (hb_aat_layout_feature_type_t           feature_type,
-                                   unsigned int                           start_offset,
-                                   unsigned int                          *selectors_count, /* IN/OUT.  May be NULL. */
-                                   hb_aat_layout_feature_selector_info_t *selectors,       /* OUT.     May be NULL. */
-                                   unsigned int                          *default_index    /* OUT.     May be NULL. */) const
+				   unsigned int                           start_offset,
+				   unsigned int                          *selectors_count, /* IN/OUT.  May be NULL. */
+				   hb_aat_layout_feature_selector_info_t *selectors,       /* OUT.     May be NULL. */
+				   unsigned int                          *default_index    /* OUT.     May be NULL. */) const
   {
     return get_feature (feature_type).get_selector_infos (start_offset, selectors_count, selectors,
-                                                          default_index, this);
+							  default_index, this);
   }
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-                          hb_barrier () &&
-                          version.major == 1 &&
-                          namesZ.sanitize (c, featureNameCount, this)));
+			  hb_barrier () &&
+			  version.major == 1 &&
+			  namesZ.sanitize (c, featureNameCount, this)));
   }
 
   protected:
-  FixedVersion<>version;        /* Version number of the feature name table
-                                 * (0x00010000 for the current version). */
-  HBUINT16      featureNameCount;
-                                /* The number of entries in the feature name array. */
-  HBUINT16      reserved1;      /* Reserved (set to zero). */
-  HBUINT32      reserved2;      /* Reserved (set to zero). */
+  FixedVersion<>version;	/* Version number of the feature name table
+				 * (0x00010000 for the current version). */
+  HBUINT16	featureNameCount;
+				/* The number of entries in the feature name array. */
+  HBUINT16	reserved1;	/* Reserved (set to zero). */
+  HBUINT32	reserved2;	/* Reserved (set to zero). */
   SortedUnsizedArrayOf<FeatureName>
-                namesZ;         /* The feature name array. */
+		namesZ;		/* The feature name array. */
   public:
   DEFINE_SIZE_ARRAY (12, namesZ);
 };

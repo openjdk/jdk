@@ -58,8 +58,8 @@ _fix_ascender_descender (float value, hb_ot_metrics_tag_t metrics_tag)
    to be able to have slim builds without the not always needed parts */
 bool
 _hb_ot_metrics_get_position_common (hb_font_t           *font,
-                                    hb_ot_metrics_tag_t  metrics_tag,
-                                    hb_position_t       *position     /* OUT.  May be NULL. */)
+				    hb_ot_metrics_tag_t  metrics_tag,
+				    hb_position_t       *position     /* OUT.  May be NULL. */)
 {
   hb_face_t *face = font->face;
   switch ((unsigned) metrics_tag)
@@ -80,13 +80,13 @@ _hb_ot_metrics_get_position_common (hb_font_t           *font,
 
   case HB_OT_METRICS_TAG_HORIZONTAL_ASCENDER:
     return (face->table.OS2->use_typo_metrics () && GET_METRIC_Y (OS2, sTypoAscender)) ||
-           GET_METRIC_Y (hhea, ascender);
+	   GET_METRIC_Y (hhea, ascender);
   case HB_OT_METRICS_TAG_HORIZONTAL_DESCENDER:
     return (face->table.OS2->use_typo_metrics () && GET_METRIC_Y (OS2, sTypoDescender)) ||
-           GET_METRIC_Y (hhea, descender);
+	   GET_METRIC_Y (hhea, descender);
   case HB_OT_METRICS_TAG_HORIZONTAL_LINE_GAP:
     return (face->table.OS2->use_typo_metrics () && GET_METRIC_Y (OS2, sTypoLineGap)) ||
-           GET_METRIC_Y (hhea, lineGap);
+	   GET_METRIC_Y (hhea, lineGap);
 
 #ifndef HB_NO_VERTICAL
   case HB_OT_METRICS_TAG_VERTICAL_ASCENDER:  return GET_METRIC_X (vhea, ascender);
@@ -135,8 +135,8 @@ _get_gasp (hb_face_t *face, float *result, hb_ot_metrics_tag_t metrics_tag)
  **/
 hb_bool_t
 hb_ot_metrics_get_position (hb_font_t           *font,
-                            hb_ot_metrics_tag_t  metrics_tag,
-                            hb_position_t       *position     /* OUT.  May be NULL. */)
+			    hb_ot_metrics_tag_t  metrics_tag,
+			    hb_position_t       *position     /* OUT.  May be NULL. */)
 {
   hb_face_t *face = font->face;
   switch ((unsigned) metrics_tag)
@@ -178,7 +178,7 @@ hb_ot_metrics_get_position (hb_font_t           *font,
       bool ret = GET_METRIC_Y (hhea, caretSlopeRise);
 
       if (position)
-        *position *= mult;
+	*position *= mult;
 
       return ret;
     }
@@ -187,16 +187,16 @@ hb_ot_metrics_get_position (hb_font_t           *font,
       hb_position_t rise = 0;
 
       if (font->slant && position && GET_METRIC_Y (hhea, caretSlopeRise))
-        rise = *position;
+	rise = *position;
 
       bool ret = GET_METRIC_X (hhea, caretSlopeRun);
 
       if (position)
       {
-        *position *= mult;
+	*position *= mult;
 
-        if (font->slant)
-          *position += roundf (mult * font->slant_xy * rise);
+	if (font->slant)
+	  *position += roundf (mult * font->slant_xy * rise);
       }
 
       return ret;
@@ -251,8 +251,8 @@ hb_ot_metrics_get_position (hb_font_t           *font,
  **/
 void
 hb_ot_metrics_get_position_with_fallback (hb_font_t           *font,
-                                          hb_ot_metrics_tag_t  metrics_tag,
-                                          hb_position_t       *position     /* OUT */)
+					  hb_ot_metrics_tag_t  metrics_tag,
+					  hb_position_t       *position     /* OUT */)
 {
   hb_font_extents_t font_extents;
   hb_codepoint_t glyph;

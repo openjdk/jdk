@@ -22,32 +22,32 @@
 
 static hb_unicode_combining_class_t
 hb_ucd_combining_class (hb_unicode_funcs_t *ufuncs HB_UNUSED,
-                        hb_codepoint_t unicode,
-                        void *user_data HB_UNUSED)
+			hb_codepoint_t unicode,
+			void *user_data HB_UNUSED)
 {
   return (hb_unicode_combining_class_t) _hb_ucd_ccc (unicode);
 }
 
 static hb_unicode_general_category_t
 hb_ucd_general_category (hb_unicode_funcs_t *ufuncs HB_UNUSED,
-                         hb_codepoint_t unicode,
-                         void *user_data HB_UNUSED)
+			 hb_codepoint_t unicode,
+			 void *user_data HB_UNUSED)
 {
   return (hb_unicode_general_category_t) _hb_ucd_gc (unicode);
 }
 
 static hb_codepoint_t
 hb_ucd_mirroring (hb_unicode_funcs_t *ufuncs HB_UNUSED,
-                  hb_codepoint_t unicode,
-                  void *user_data HB_UNUSED)
+		  hb_codepoint_t unicode,
+		  void *user_data HB_UNUSED)
 {
   return unicode + _hb_ucd_bmg (unicode);
 }
 
 static hb_script_t
 hb_ucd_script (hb_unicode_funcs_t *ufuncs HB_UNUSED,
-               hb_codepoint_t unicode,
-               void *user_data HB_UNUSED)
+	       hb_codepoint_t unicode,
+	       void *user_data HB_UNUSED)
 {
   return _hb_ucd_sc_map[_hb_ucd_sc (unicode)];
 }
@@ -126,8 +126,8 @@ _cmp_pair_11_7_14 (const void *_key, const void *_item)
 
 static hb_bool_t
 hb_ucd_compose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
-                hb_codepoint_t a, hb_codepoint_t b, hb_codepoint_t *ab,
-                void *user_data HB_UNUSED)
+		hb_codepoint_t a, hb_codepoint_t b, hb_codepoint_t *ab,
+		void *user_data HB_UNUSED)
 {
   // Hangul is handled algorithmically.
   if (_hb_ucd_compose_hangul (a, b, ab)) return true;
@@ -141,10 +141,10 @@ hb_ucd_compose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
      * by "a,b" pair. */
     uint32_t k = HB_CODEPOINT_ENCODE3_11_7_14 (a, b, 0);
     const uint32_t *v = hb_bsearch (k,
-                                    _hb_ucd_dm2_u32_map,
-                                    ARRAY_LENGTH (_hb_ucd_dm2_u32_map),
-                                    sizeof (*_hb_ucd_dm2_u32_map),
-                                    _cmp_pair_11_7_14);
+				    _hb_ucd_dm2_u32_map,
+				    ARRAY_LENGTH (_hb_ucd_dm2_u32_map),
+				    sizeof (*_hb_ucd_dm2_u32_map),
+				    _cmp_pair_11_7_14);
     if (likely (!v)) return false;
     u = HB_CODEPOINT_DECODE3_11_7_14_3 (*v);
   }
@@ -154,10 +154,10 @@ hb_ucd_compose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
      * "a,b" pair. */
     uint64_t k = HB_CODEPOINT_ENCODE3 (a, b, 0);
     const uint64_t *v = hb_bsearch (k,
-                                    _hb_ucd_dm2_u64_map,
-                                    ARRAY_LENGTH (_hb_ucd_dm2_u64_map),
-                                    sizeof (*_hb_ucd_dm2_u64_map),
-                                    _cmp_pair);
+				    _hb_ucd_dm2_u64_map,
+				    ARRAY_LENGTH (_hb_ucd_dm2_u64_map),
+				    sizeof (*_hb_ucd_dm2_u64_map),
+				    _cmp_pair);
     if (likely (!v)) return false;
     u = HB_CODEPOINT_DECODE3_3 (*v);
   }
@@ -169,8 +169,8 @@ hb_ucd_compose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
 
 static hb_bool_t
 hb_ucd_decompose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
-                  hb_codepoint_t ab, hb_codepoint_t *a, hb_codepoint_t *b,
-                  void *user_data HB_UNUSED)
+		  hb_codepoint_t ab, hb_codepoint_t *a, hb_codepoint_t *b,
+		  void *user_data HB_UNUSED)
 {
   if (_hb_ucd_decompose_hangul (ab, a, b)) return true;
 

@@ -24,7 +24,7 @@
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  *
  * Contributor(s):
- *      Chris Wilson <chris@chris-wilson.co.uk>
+ *	Chris Wilson <chris@chris-wilson.co.uk>
  * Red Hat Author(s): Behdad Esfahbod
  * Google Author(s): Behdad Esfahbod
  */
@@ -56,14 +56,14 @@ struct hb_lockable_set_t
     item_t *item = items.lsearch (v);
     if (item) {
       if (replace) {
-        item_t old = *item;
-        *item = v;
-        l.unlock ();
-        old.fini ();
+	item_t old = *item;
+	*item = v;
+	l.unlock ();
+	old.fini ();
       }
       else {
-        item = nullptr;
-        l.unlock ();
+	item = nullptr;
+	l.unlock ();
       }
     } else {
       item = items.push (v);
@@ -178,17 +178,17 @@ struct hb_user_data_array_t
   void fini () { items.fini (lock); lock.fini (); }
 
   bool set (hb_user_data_key_t *key,
-            void *              data,
-            hb_destroy_func_t   destroy,
-            hb_bool_t           replace)
+	    void *              data,
+	    hb_destroy_func_t   destroy,
+	    hb_bool_t           replace)
   {
     if (!key)
       return false;
 
     if (replace) {
       if (!data && !destroy) {
-        items.remove (key, lock);
-        return true;
+	items.remove (key, lock);
+	return true;
       }
     }
     hb_user_data_item_t item = {key, data, destroy};
@@ -229,9 +229,9 @@ template <typename Type>
 static inline void hb_object_trace (const Type *obj, const char *function)
 {
   DEBUG_MSG (OBJECT, (void *) obj,
-             "%s refcount=%d",
-             function,
-             obj ? obj->header.ref_count.get_relaxed () : 0);
+	     "%s refcount=%d",
+	     function,
+	     obj ? obj->header.ref_count.get_relaxed () : 0);
 }
 
 template <typename Type, typename ...Ts>
@@ -272,6 +272,8 @@ static inline void hb_object_make_immutable (const Type *obj)
   obj->header.writable = false;
 }
 template <typename Type>
+static inline void hb_object_fini (Type *obj);
+template <typename Type>
 static inline Type *hb_object_reference (Type *obj)
 {
   hb_object_trace (obj, HB_FUNC);
@@ -282,7 +284,7 @@ static inline Type *hb_object_reference (Type *obj)
   return obj;
 }
 template <typename Type>
-static inline bool hb_object_destroy (Type *obj)
+static inline bool hb_object_should_destroy (Type *obj)
 {
   hb_object_trace (obj, HB_FUNC);
   if (unlikely (!obj || obj->header.is_inert ()))
@@ -290,12 +292,25 @@ static inline bool hb_object_destroy (Type *obj)
   assert (hb_object_is_valid (obj));
   if (obj->header.ref_count.dec () != 1)
     return false;
+  return true;
+}
 
+template <typename Type>
+static inline void hb_object_actually_destroy (Type *obj)
+{
   hb_object_fini (obj);
 
   if (!std::is_trivially_destructible<Type>::value)
     obj->~Type ();
+}
 
+template <typename Type>
+static inline bool hb_object_destroy (Type *obj)
+{
+  if (!hb_object_should_destroy (obj))
+    return false;
+
+  hb_object_actually_destroy (obj);
   return true;
 }
 template <typename Type>
@@ -312,10 +327,10 @@ static inline void hb_object_fini (Type *obj)
 }
 template <typename Type>
 static inline bool hb_object_set_user_data (Type               *obj,
-                                            hb_user_data_key_t *key,
-                                            void *              data,
-                                            hb_destroy_func_t   destroy,
-                                            hb_bool_t           replace)
+					    hb_user_data_key_t *key,
+					    void *              data,
+					    hb_destroy_func_t   destroy,
+					    hb_bool_t           replace)
 {
   if (unlikely (!obj || obj->header.is_inert ()))
     return false;
@@ -342,7 +357,7 @@ retry:
 
 template <typename Type>
 static inline void *hb_object_get_user_data (Type               *obj,
-                                             hb_user_data_key_t *key)
+					     hb_user_data_key_t *key)
 {
   if (unlikely (!obj || obj->header.is_inert ()))
     return nullptr;

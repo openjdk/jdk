@@ -49,24 +49,24 @@
 #if !defined(HB_NO_AAT) || !defined(HB_NO_OT_KERN)
 
 AAT::hb_aat_apply_context_t::hb_aat_apply_context_t (const hb_ot_shape_plan_t *plan_,
-                                                     hb_font_t *font_,
-                                                     hb_buffer_t *buffer_,
-                                                     hb_blob_t *blob) :
-                                                       plan (plan_),
-                                                       font (font_),
-                                                       face (font->face),
-                                                       buffer (buffer_),
-                                                       sanitizer (),
-                                                       ankr_table (&Null (AAT::ankr)),
-                                                       gdef (
+						     hb_font_t *font_,
+						     hb_buffer_t *buffer_,
+						     hb_blob_t *blob) :
+						       plan (plan_),
+						       font (font_),
+						       face (font->face),
+						       buffer (buffer_),
+						       sanitizer (),
+						       ankr_table (&Null (AAT::ankr)),
+						       gdef (
 #ifndef HB_NO_OT_LAYOUT
-                                                         *face->table.GDEF->table
+							 *face->table.GDEF->table
 #else
-                                                         Null (GDEF)
+							 Null (GDEF)
 #endif
-                                                       ),
-                                                       has_glyph_classes (gdef.has_glyph_classes ()),
-                                                       lookup_index (0)
+						       ),
+						       has_glyph_classes (gdef.has_glyph_classes ()),
+						       lookup_index (0)
 {
   sanitizer.init (blob);
   sanitizer.set_num_glyphs (face->get_num_glyphs ());
@@ -243,7 +243,7 @@ AAT::mort::is_blocklisted (hb_blob_t *blob,
 
 void
 hb_aat_layout_compile_map (const hb_aat_map_builder_t *mapper,
-                           hb_aat_map_t *map)
+			   hb_aat_map_t *map)
 {
   const AAT::morx& morx = *mapper->face->table.morx->table;
   if (morx.has_data ())
@@ -278,15 +278,15 @@ hb_bool_t
 hb_aat_layout_has_substitution (hb_face_t *face)
 {
   return face->table.morx->table->has_data () ||
-         face->table.mort->table->has_data ();
+	 face->table.mort->table->has_data ();
 }
 
 void
 hb_aat_layout_substitute (const hb_ot_shape_plan_t *plan,
-                          hb_font_t *font,
-                          hb_buffer_t *buffer,
-                          const hb_feature_t *features,
-                          unsigned num_features)
+			  hb_font_t *font,
+			  hb_buffer_t *buffer,
+			  const hb_feature_t *features,
+			  unsigned num_features)
 {
   hb_aat_map_t map;
   if (num_features)
@@ -361,8 +361,8 @@ hb_aat_layout_has_positioning (hb_face_t *face)
 
 void
 hb_aat_layout_position (const hb_ot_shape_plan_t *plan,
-                        hb_font_t *font,
-                        hb_buffer_t *buffer)
+			hb_font_t *font,
+			hb_buffer_t *buffer)
 {
   auto &accel = *font->face->table.kerx;
 
@@ -396,8 +396,8 @@ hb_aat_layout_has_tracking (hb_face_t *face)
 
 void
 hb_aat_layout_track (const hb_ot_shape_plan_t *plan,
-                     hb_font_t *font,
-                     hb_buffer_t *buffer)
+		     hb_font_t *font,
+		     hb_buffer_t *buffer)
 {
   const AAT::trak& trak = *font->face->table.trak;
 
@@ -421,9 +421,9 @@ hb_aat_layout_track (const hb_ot_shape_plan_t *plan,
  */
 unsigned int
 hb_aat_layout_get_feature_types (hb_face_t                    *face,
-                                 unsigned int                  start_offset,
-                                 unsigned int                 *feature_count, /* IN/OUT.  May be NULL. */
-                                 hb_aat_layout_feature_type_t *features       /* OUT.     May be NULL. */)
+				 unsigned int                  start_offset,
+				 unsigned int                 *feature_count, /* IN/OUT.  May be NULL. */
+				 hb_aat_layout_feature_type_t *features       /* OUT.     May be NULL. */)
 {
   return face->table.feat->get_feature_types (start_offset, feature_count, features);
 }
@@ -441,7 +441,7 @@ hb_aat_layout_get_feature_types (hb_face_t                    *face,
  */
 hb_ot_name_id_t
 hb_aat_layout_feature_type_get_name_id (hb_face_t                    *face,
-                                        hb_aat_layout_feature_type_t  feature_type)
+					hb_aat_layout_feature_type_t  feature_type)
 {
   return face->table.feat->get_feature_name_id (feature_type);
 }
@@ -469,11 +469,11 @@ hb_aat_layout_feature_type_get_name_id (hb_face_t                    *face,
  */
 unsigned int
 hb_aat_layout_feature_type_get_selector_infos (hb_face_t                             *face,
-                                               hb_aat_layout_feature_type_t           feature_type,
-                                               unsigned int                           start_offset,
-                                               unsigned int                          *selector_count, /* IN/OUT.  May be NULL. */
-                                               hb_aat_layout_feature_selector_info_t *selectors,      /* OUT.     May be NULL. */
-                                               unsigned int                          *default_index   /* OUT.     May be NULL. */)
+					       hb_aat_layout_feature_type_t           feature_type,
+					       unsigned int                           start_offset,
+					       unsigned int                          *selector_count, /* IN/OUT.  May be NULL. */
+					       hb_aat_layout_feature_selector_info_t *selectors,      /* OUT.     May be NULL. */
+					       unsigned int                          *default_index   /* OUT.     May be NULL. */)
 {
   return face->table.feat->get_selector_infos (feature_type, start_offset, selector_count, selectors, default_index);
 }

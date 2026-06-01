@@ -54,18 +54,18 @@ struct hb_subset_accelerator_t
   }
 
   static hb_subset_accelerator_t* create(hb_face_t *source,
-                                         const hb_map_t& unicode_to_gid_,
-                                         const hb_set_t& unicodes_,
-                                         bool has_seac_) {
+					 const hb_map_t& unicode_to_gid_,
+					 const hb_set_t& unicodes_,
+					 bool has_seac_) {
     hb_subset_accelerator_t* accel =
         (hb_subset_accelerator_t*) hb_calloc (1, sizeof(hb_subset_accelerator_t));
 
     if (unlikely (!accel)) return accel;
 
     new (accel) hb_subset_accelerator_t (source,
-                                         unicode_to_gid_,
-                                         unicodes_,
-                                         has_seac_);
+					 unicode_to_gid_,
+					 unicodes_,
+					 has_seac_);
 
     return accel;
   }
@@ -82,9 +82,9 @@ struct hb_subset_accelerator_t
   }
 
   hb_subset_accelerator_t (hb_face_t *source,
-                           const hb_map_t& unicode_to_gid_,
-                           const hb_set_t& unicodes_,
-                           bool has_seac_) :
+			   const hb_map_t& unicode_to_gid_,
+			   const hb_set_t& unicodes_,
+			   bool has_seac_) :
     unicode_to_gid(unicode_to_gid_),
     unicodes(unicodes_),
     cmap_cache(nullptr),
@@ -124,9 +124,9 @@ struct hb_subset_accelerator_t
   bool in_error () const
   {
     return unicode_to_gid.in_error () ||
-           gid_to_unicodes.in_error () ||
-           unicodes.in_error () ||
-           sanitized_table_cache.in_error ();
+	   gid_to_unicodes.in_error () ||
+	   unicodes.in_error () ||
+	   sanitized_table_cache.in_error ();
   }
 
   hb_face_t *source;

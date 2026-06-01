@@ -41,7 +41,7 @@ struct hb_dispatch_context_t
   private:
   /* https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern */
   const Context* thiz () const { return static_cast<const Context *> (this); }
-        Context* thiz ()       { return static_cast<      Context *> (this); }
+	Context* thiz ()       { return static_cast<      Context *> (this); }
   public:
   const char *get_name () { return "UNKNOWN"; }
   static constexpr unsigned max_debug_depth = MaxDebugDepth;

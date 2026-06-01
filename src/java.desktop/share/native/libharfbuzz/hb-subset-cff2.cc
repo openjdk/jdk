@@ -34,6 +34,7 @@
 #include "hb-subset-plan.hh"
 #include "hb-subset-cff-common.hh"
 #include "hb-cff2-interp-cs.hh"
+#include "hb-subset-cff2-to-cff1.hh"
 
 using namespace CFF;
 
@@ -50,8 +51,8 @@ struct cff2_sub_table_info_t : cff_sub_table_info_t
 struct cff2_top_dict_op_serializer_t : cff_top_dict_op_serializer_t<>
 {
   bool serialize (hb_serialize_context_t *c,
-                  const op_str_t &opstr,
-                  const cff2_sub_table_info_t &info) const
+		  const op_str_t &opstr,
+		  const cff2_sub_table_info_t &info) const
   {
     TRACE_SERIALIZE (this);
 
@@ -59,12 +60,12 @@ struct cff2_top_dict_op_serializer_t : cff_top_dict_op_serializer_t<>
     {
       case OpCode_vstore:
         if (info.var_store_link)
-          return_trace (FontDict::serialize_link4_op(c, opstr.op, info.var_store_link));
-        else
-          return_trace (true);
+	  return_trace (FontDict::serialize_link4_op(c, opstr.op, info.var_store_link));
+	else
+	  return_trace (true);
 
       default:
-        return_trace (cff_top_dict_op_serializer_t<>::serialize (c, opstr, info));
+	return_trace (cff_top_dict_op_serializer_t<>::serialize (c, opstr, info));
     }
   }
 };
@@ -73,12 +74,62 @@ struct cff2_cs_opset_flatten_t : cff2_cs_opset_t<cff2_cs_opset_flatten_t, flatte
 {
   static void flush_args_and_op (op_code_t op, cff2_cs_interp_env_t<blend_arg_t> &env, flatten_param_t& param)
   {
+    /* Optionally capture command for specialization (before flushing, to preserve args) */
+    if (param.commands)
+    {
+      bool skip_command = false;
+
+      switch (op)
+      {
+	case OpCode_return:
+	case OpCode_endchar:
+	  skip_command = true;
+	  break;
+
+	case OpCode_hstem:
+	case OpCode_hstemhm:
+	case OpCode_vstem:
+	case OpCode_vstemhm:
+	case OpCode_hintmask:
+	case OpCode_cntrmask:
+	  if (param.drop_hints)
+	    skip_command = true;
+	  break;
+
+	default:
+	  break;
+      }
+
+      if (!skip_command)
+      {
+	cs_command_t cmd (op);
+	/* Capture resolved blend values */
+	for (unsigned int i = 0; i < env.argStack.get_count ();)
+	{
+	  const blend_arg_t &arg = env.argStack[i];
+	  if (arg.blending ())
+	  {
+	    /* For blend args, capture only the resolved default value */
+	    cmd.args.push (arg);
+	    /* Skip over the multiple blend values */
+	    i += arg.numValues;
+	  }
+	  else
+	  {
+	    cmd.args.push (arg);
+	    i++;
+	  }
+	}
+	param.commands->push (cmd);
+      }
+    }
+
     switch (op)
     {
       case OpCode_return:
       case OpCode_endchar:
-        /* dummy opcodes in CFF2. ignore */
-        break;
+	/* dummy opcodes in CFF2. ignore */
+	break;
 
       case OpCode_hstem:
       case OpCode_hstemhm:
@@ -86,16 +137,16 @@ struct cff2_cs_opset_flatten_t : cff2_cs_opset_t<cff2_cs_opset_flatten_t, flatte
       case OpCode_vstemhm:
       case OpCode_hintmask:
       case OpCode_cntrmask:
-        if (param.drop_hints)
-        {
-          env.clear_args ();
-          return;
-        }
-        HB_FALLTHROUGH;
+	if (param.drop_hints)
+	{
+	  env.clear_args ();
+	  return;
+	}
+	HB_FALLTHROUGH;
 
       default:
-        SUPER::flush_args_and_op (op, env, param);
-        break;
+	SUPER::flush_args_and_op (op, env, param);
+	break;
     }
   }
 
@@ -106,19 +157,19 @@ struct cff2_cs_opset_flatten_t : cff2_cs_opset_t<cff2_cs_opset_flatten_t, flatte
       const blend_arg_t &arg = env.argStack[i];
       if (arg.blending ())
       {
-        if (unlikely (!((arg.numValues > 0) && (env.argStack.get_count () >= arg.numValues))))
-        {
-          env.set_error ();
-          return;
-        }
-        flatten_blends (arg, i, env, param);
-        i += arg.numValues;
+	if (unlikely (!((arg.numValues > 0) && (env.argStack.get_count () >= arg.numValues))))
+	{
+	  env.set_error ();
+	  return;
+	}
+	flatten_blends (arg, i, env, param);
+	i += arg.numValues;
       }
       else
       {
-        str_encoder_t  encoder (param.flatStr);
-        encoder.encode_num_cs (arg);
-        i++;
+	str_encoder_t  encoder (param.flatStr);
+	encoder.encode_num_cs (arg);
+	i++;
       }
     }
     SUPER::flush_args (env, param);
@@ -132,10 +183,10 @@ struct cff2_cs_opset_flatten_t : cff2_cs_opset_t<cff2_cs_opset_flatten_t, flatte
     {
       const blend_arg_t &arg1 = env.argStack[i + j];
       if (unlikely (!((arg1.blending () && (arg.numValues == arg1.numValues) && (arg1.valueIndex == j) &&
-              (arg1.deltas.length == env.get_region_count ())))))
+	      (arg1.deltas.length == env.get_region_count ())))))
       {
-        env.set_error ();
-        return;
+	env.set_error ();
+	return;
       }
       encoder.encode_num_cs (arg1);
     }
@@ -144,7 +195,7 @@ struct cff2_cs_opset_flatten_t : cff2_cs_opset_t<cff2_cs_opset_flatten_t, flatte
     {
       const blend_arg_t &arg1 = env.argStack[i + j];
       for (unsigned int k = 0; k < arg1.deltas.length; k++)
-        encoder.encode_num_cs (arg1.deltas[k]);
+	encoder.encode_num_cs (arg1.deltas[k]);
     }
     /* flatten the number of values followed by blend operator */
     encoder.encode_int (arg.numValues);
@@ -157,21 +208,37 @@ struct cff2_cs_opset_flatten_t : cff2_cs_opset_t<cff2_cs_opset_flatten_t, flatte
     {
       case OpCode_return:
       case OpCode_endchar:
-        return;
+	return;
       default:
-        str_encoder_t  encoder (param.flatStr);
-        encoder.encode_op (op);
+	str_encoder_t  encoder (param.flatStr);
+	encoder.encode_op (op);
     }
   }
 
   static void flush_hintmask (op_code_t op, cff2_cs_interp_env_t<blend_arg_t> &env, flatten_param_t& param)
   {
     SUPER::flush_hintmask (op, env, param);
+    /* Preserve hintmask payload in captured commands for specializer re-encoding. */
+    if (param.commands && !param.drop_hints && param.commands->length > 0)
+    {
+      auto &cmd = param.commands->tail ();
+      if (cmd.op == op)
+      {
+        cmd.mask_bytes.resize (env.hintmask_size);
+        if (unlikely (cmd.mask_bytes.in_error ()))
+        {
+          env.set_error ();
+          return;
+        }
+        for (unsigned int i = 0; i < env.hintmask_size; i++)
+          cmd.mask_bytes[i] = env.str_ref[i];
+      }
+    }
     if (!param.drop_hints)
     {
       str_encoder_t  encoder (param.flatStr);
       for (unsigned int i = 0; i < env.hintmask_size; i++)
-        encoder.encode_byte (env.str_ref[i]);
+	encoder.encode_byte (env.str_ref[i]);
     }
   }
 
@@ -187,35 +254,35 @@ struct cff2_cs_opset_subr_subset_t : cff2_cs_opset_t<cff2_cs_opset_subr_subset_t
     switch (op) {
 
       case OpCode_return:
-        param.current_parsed_str->set_parsed ();
-        env.return_from_subr ();
-        param.set_current_str (env, false);
-        break;
+	param.current_parsed_str->set_parsed ();
+	env.return_from_subr ();
+	param.set_current_str (env, false);
+	break;
 
       case OpCode_endchar:
-        param.current_parsed_str->set_parsed ();
-        SUPER::process_op (op, env, param);
-        break;
+	param.current_parsed_str->set_parsed ();
+	SUPER::process_op (op, env, param);
+	break;
 
       case OpCode_callsubr:
-        process_call_subr (op, CSType_LocalSubr, env, param, env.localSubrs, param.local_closure);
-        break;
+	process_call_subr (op, CSType_LocalSubr, env, param, env.localSubrs, param.local_closure);
+	break;
 
       case OpCode_callgsubr:
-        process_call_subr (op, CSType_GlobalSubr, env, param, env.globalSubrs, param.global_closure);
-        break;
+	process_call_subr (op, CSType_GlobalSubr, env, param, env.globalSubrs, param.global_closure);
+	break;
 
       default:
-        SUPER::process_op (op, env, param);
-        param.current_parsed_str->add_op (op, env.str_ref);
-        break;
+	SUPER::process_op (op, env, param);
+	param.current_parsed_str->add_op (op, env.str_ref);
+	break;
     }
   }
 
   protected:
   static void process_call_subr (op_code_t op, cs_type_t type,
-                                 cff2_cs_interp_env_t<blend_arg_t> &env, subr_subset_param_t& param,
-                                 cff2_biased_subrs_t& subrs, hb_set_t *closure)
+				 cff2_cs_interp_env_t<blend_arg_t> &env, subr_subset_param_t& param,
+				 cff2_biased_subrs_t& subrs, hb_set_t *closure)
   {
     byte_str_ref_t    str_ref = env.str_ref;
     env.call_subr (subrs, type);
@@ -248,8 +315,8 @@ struct cff2_subr_subsetter_t : subr_subsetter_t<cff2_subr_subsetter_t, CFF2Subrs
 struct cff2_private_blend_encoder_param_t
 {
   cff2_private_blend_encoder_param_t (hb_serialize_context_t *c,
-                                      const CFF2ItemVariationStore *varStore,
-                                      hb_array_t<int> normalized_coords) :
+				      const CFF2ItemVariationStore *varStore,
+				      hb_array_t<int> normalized_coords) :
     c (c), varStore (varStore), normalized_coords (normalized_coords) {}
 
   void init () {}
@@ -261,7 +328,7 @@ struct cff2_private_blend_encoder_param_t
       region_count = varStore->varStore.get_region_index_count (ivs);
       scalars.resize_exact (region_count);
       varStore->varStore.get_region_scalars (ivs, normalized_coords.arrayZ, normalized_coords.length,
-                                             &scalars[0], region_count);
+					     &scalars[0], region_count);
       seen_blend = true;
     }
   }
@@ -273,7 +340,7 @@ struct cff2_private_blend_encoder_param_t
     {
       unsigned count = scalars.length;
       for (unsigned i = 0; i < count; i++)
-        v += (double) scalars.arrayZ[i] * deltas.arrayZ[i].to_real ();
+	v += (double) scalars.arrayZ[i] * deltas.arrayZ[i].to_real ();
     }
     return v;
   }
@@ -284,16 +351,16 @@ struct cff2_private_blend_encoder_param_t
   unsigned ivs = 0;
   unsigned region_count = 0;
   hb_vector_t<float> scalars;
-  const  CFF2ItemVariationStore *varStore = nullptr;
+  const	 CFF2ItemVariationStore *varStore = nullptr;
   hb_array_t<int> normalized_coords;
 };
 
 struct cff2_private_dict_blend_opset_t : dict_opset_t
 {
   static void process_arg_blend (cff2_private_blend_encoder_param_t& param,
-                                 number_t &arg,
-                                 const hb_array_t<const number_t> blends,
-                                 unsigned n, unsigned i)
+				 number_t &arg,
+				 const hb_array_t<const number_t> blends,
+				 unsigned n, unsigned i)
   {
     arg.set_int (round (arg.to_real () + param.blend_deltas (blends)));
   }
@@ -339,20 +406,20 @@ struct cff2_private_dict_blend_opset_t : dict_opset_t
       case OpCode_FamilyOtherBlues:
       case OpCode_StemSnapH:
       case OpCode_StemSnapV:
-        break;
+	break;
       case OpCode_vsindexdict:
-        env.process_vsindex ();
-        param.ivs = env.get_ivs ();
-        env.clear_args ();
-        return;
+	env.process_vsindex ();
+	param.ivs = env.get_ivs ();
+	env.clear_args ();
+	return;
       case OpCode_blenddict:
-        process_blend (env, param);
-        return;
+	process_blend (env, param);
+	return;
 
       default:
-        dict_opset_t::process_op (op, env);
-        if (!env.argStack.is_empty ()) return;
-        break;
+	dict_opset_t::process_op (op, env);
+	if (!env.argStack.is_empty ()) return;
+	break;
     }
 
     if (unlikely (env.in_error ())) return;
@@ -378,14 +445,14 @@ struct cff2_private_dict_blend_opset_t : dict_opset_t
 struct cff2_private_dict_op_serializer_t : op_serializer_t
 {
   cff2_private_dict_op_serializer_t (bool desubroutinize_, bool drop_hints_, bool pinned_,
-                                     const CFF::CFF2ItemVariationStore* varStore_,
-                                     hb_array_t<int> normalized_coords_)
+				     const CFF::CFF2ItemVariationStore* varStore_,
+				     hb_array_t<int> normalized_coords_)
     : desubroutinize (desubroutinize_), drop_hints (drop_hints_), pinned (pinned_),
       varStore (varStore_), normalized_coords (normalized_coords_) {}
 
   bool serialize (hb_serialize_context_t *c,
-                  const op_str_t &opstr,
-                  objidx_t subrs_link) const
+		  const op_str_t &opstr,
+		  objidx_t subrs_link) const
   {
     TRACE_SERIALIZE (this);
 
@@ -395,9 +462,9 @@ struct cff2_private_dict_op_serializer_t : op_serializer_t
     if (opstr.op == OpCode_Subrs)
     {
       if (desubroutinize || !subrs_link)
-        return_trace (true);
+	return_trace (true);
       else
-        return_trace (FontDict::serialize_link2_op (c, opstr.op, subrs_link));
+	return_trace (FontDict::serialize_link2_op (c, opstr.op, subrs_link));
     }
 
     if (pinned)
@@ -425,7 +492,7 @@ namespace OT {
 struct cff2_subset_plan
 {
   bool create (const OT::cff2::accelerator_subset_t &acc,
-              hb_subset_plan_t *plan)
+	      hb_subset_plan_t *plan)
   {
     /* make sure notdef is first */
     hb_codepoint_t old_glyph;
@@ -436,8 +503,14 @@ struct cff2_subset_plan
 
     drop_hints = plan->flags & HB_SUBSET_FLAGS_NO_HINTING;
     pinned = (bool) plan->normalized_coords;
+    normalized_coords = plan->normalized_coords;
+    head_maxp_info = plan->head_maxp_info;
+    hmtx_map = &plan->hmtx_map;
     desubroutinize = plan->flags & HB_SUBSET_FLAGS_DESUBROUTINIZE ||
-                     pinned; // For instancing we need this path
+		     pinned; // For instancing we need this path
+
+    /* Enable command capture for CFF2→CFF1 conversion (for specialization) */
+    capture_commands = pinned;
 
  #ifdef HB_EXPERIMENTAL_API
     min_charstrings_off_size = (plan->flags & HB_SUBSET_FLAGS_IFTB_REQUIREMENTS) ? 4 : 0;
@@ -449,33 +522,46 @@ struct cff2_subset_plan
     {
       /* Flatten global & local subrs */
       subr_flattener_t<const OT::cff2::accelerator_subset_t, cff2_cs_interp_env_t<blend_arg_t>, cff2_cs_opset_flatten_t>
-                    flattener(acc, plan);
-      if (!flattener.flatten (subset_charstrings))
-        return false;
+		    flattener(acc, plan);
+
+      /* Enable command capture if requested (for specialization) */
+      if (capture_commands)
+      {
+	if (!charstring_commands.resize_exact (num_glyphs))
+	  return false;
+
+	if (!flattener.flatten (subset_charstrings, &charstring_commands))
+	  return false;
+      }
+      else
+      {
+	if (!flattener.flatten (subset_charstrings))
+	  return false;
+      }
     }
     else
     {
-      cff2_subr_subsetter_t     subr_subsetter (acc, plan);
+      cff2_subr_subsetter_t	subr_subsetter (acc, plan);
 
       /* Subset subrs: collect used subroutines, leaving all unused ones behind */
       if (!subr_subsetter.subset ())
-        return false;
+	return false;
 
       /* encode charstrings, global subrs, local subrs with new subroutine numbers */
       if (!subr_subsetter.encode_charstrings (subset_charstrings, !pinned))
-        return false;
+	return false;
 
       if (!subr_subsetter.encode_globalsubrs (subset_globalsubrs))
-        return false;
+	return false;
 
       /* local subrs */
       if (!subset_localsubrs.resize (orig_fdcount))
-        return false;
+	return false;
       for (unsigned int fd = 0; fd < orig_fdcount; fd++)
       {
-        subset_localsubrs[fd].init ();
-        if (!subr_subsetter.encode_localsubrs (fd, subset_localsubrs[fd]))
-          return false;
+	subset_localsubrs[fd].init ();
+	if (!subr_subsetter.encode_localsubrs (fd, subset_localsubrs[fd]))
+	  return false;
       }
     }
 
@@ -483,14 +569,14 @@ struct cff2_subset_plan
     if (acc.fdSelect != &Null (CFF2FDSelect))
     {
       if (unlikely (!hb_plan_subset_cff_fdselect (plan,
-                                                  orig_fdcount,
-                                                  *(const FDSelect *)acc.fdSelect,
-                                                  subset_fdcount,
-                                                  subset_fdselect_size,
-                                                  subset_fdselect_format,
-                                                  subset_fdselect_ranges,
-                                                  fdmap)))
-        return false;
+						  orig_fdcount,
+						  *(const FDSelect *)acc.fdSelect,
+						  subset_fdcount,
+						  subset_fdselect_size,
+						  subset_fdselect_format,
+						  subset_fdselect_ranges,
+						  fdmap)))
+	return false;
     }
     else
       fdmap.identity (1);
@@ -510,20 +596,494 @@ struct cff2_subset_plan
 
   hb_inc_bimap_t   fdmap;
 
-  str_buff_vec_t            subset_charstrings;
-  str_buff_vec_t            subset_globalsubrs;
+  str_buff_vec_t	    subset_charstrings;
+  str_buff_vec_t	    subset_globalsubrs;
   hb_vector_t<str_buff_vec_t> subset_localsubrs;
 
-  bool      drop_hints = false;
-  bool      desubroutinize = false;
+  bool	    drop_hints = false;
+  bool	    desubroutinize = false;
 
   unsigned  min_charstrings_off_size = 0;
+
+  hb_array_t<int> normalized_coords; // For instantiation
+  head_maxp_info_t head_maxp_info;  // For FontBBox
+  const hb_hashmap_t<hb_codepoint_t, hb_pair_t<unsigned, int>> *hmtx_map; // For widths
+
+  // Width optimization results (for CFF1 conversion)
+  unsigned default_width = 0;
+  unsigned nominal_width = 0;
+
+  // Command capture for specialization (CFF2→CFF1 conversion)
+  bool capture_commands = false;
+  hb_vector_t<hb_vector_t<cs_command_t>> charstring_commands;
 };
 } // namespace OT
 
+/*
+ * CFF2 to CFF1 Converter Implementation
+ */
+
+#include "hb-cff-width-optimizer.hh"
+#include "hb-cff-specializer.hh"
+
+/* Serialize charstrings using CFF1 format with widths */
+static bool
+_serialize_cff1_charstrings (hb_serialize_context_t *c,
+                             OT::cff2_subset_plan &plan,
+                             unsigned default_width,
+                             unsigned nominal_width)
+{
+  c->push ();
+
+  // CFF1 requires:
+  // 1. Width at the beginning (if != defaultWidthX)
+  // 2. endchar at the end
+  str_buff_vec_t cff1_charstrings;
+  if (unlikely (!cff1_charstrings.resize (plan.subset_charstrings.length)))
+  {
+    c->pop_discard ();
+    return false;
+  }
+
+  for (unsigned i = 0; i < plan.subset_charstrings.length; i++)
+  {
+    // Get width for this glyph from hmtx_map
+    unsigned width = 0;
+    if (plan.hmtx_map->has (i))
+      width = plan.hmtx_map->get (i).first;
+
+    // Encode width if different from default
+    str_encoder_t encoder (cff1_charstrings[i]);
+    if (width != default_width)
+    {
+      int delta = (int) width - (int) nominal_width;
+      encoder.encode_int (delta);
+    }
+
+    // Use specialized commands if available, otherwise use binary
+    if (plan.capture_commands && i < plan.charstring_commands.length &&
+        plan.charstring_commands[i].length > 0)
+    {
+      // Specialize and encode commands
+      auto &commands = plan.charstring_commands[i];
+      CFF::specialize_commands (commands, 48);  /* maxstack=48 for CFF1 */
+      if (unlikely (!CFF::encode_commands (commands, cff1_charstrings[i])))
+      {
+        c->pop_discard ();
+        return false;
+      }
+    }
+    else
+    {
+      // Use binary CharString
+      const str_buff_t &cs = plan.subset_charstrings[i];
+      for (unsigned j = 0; j < cs.length; j++)
+        cff1_charstrings[i].push (cs[j]);
+    }
+
+    // Check if it already ends with endchar (0x0e) or return (0x0b)
+    if (cff1_charstrings[i].length == 0 ||
+        (cff1_charstrings[i].tail () != 0x0e && cff1_charstrings[i].tail () != 0x0b))
+    {
+      // Append endchar operator
+      if (unlikely (!cff1_charstrings[i].push_or_fail (0x0e)))
+      {
+        c->pop_discard ();
+        return false;
+      }
+    }
+  }
+
+  unsigned data_size = 0;
+  unsigned total_size = CFF1CharStrings::total_size (cff1_charstrings, &data_size);
+  if (unlikely (!c->start_zerocopy (total_size)))
+  {
+    c->pop_discard ();
+    return false;
+  }
+
+  auto *cs = c->start_embed<CFF1CharStrings> ();
+  if (unlikely (!cs->serialize (c, cff1_charstrings)))
+  {
+    c->pop_discard ();
+    return false;
+  }
+
+  plan.info.char_strings_link = c->pop_pack (false);
+  return true;
+}
+
+/* Serialize CID Charset (format 2 range: gid 0-N -> cid 0-N) */
+static bool
+_serialize_cff1_charset (hb_serialize_context_t *c,
+                         unsigned int num_glyphs,
+                         objidx_t &charset_link)
+{
+  // For CID fonts, create a simple identity charset
+  // Format 2: one range covering all glyphs (except .notdef)
+  c->push ();
+
+  auto *charset = c->start_embed<Charset> ();
+  if (unlikely (!charset))
+  {
+    c->pop_discard ();
+    return false;
+  }
+
+  // Create a single range for CID 1 to num_glyphs-1
+  hb_vector_t<code_pair_t> ranges;
+  if (num_glyphs > 1)
+  {
+    code_pair_t range;
+    range.code = 1;  // first CID
+    range.glyph = num_glyphs - 2;  // nLeft (covers glyphs 1 to num_glyphs-1)
+    ranges.push (range);
+  }
+
+  if (unlikely (!charset->serialize (c, 2, num_glyphs, ranges)))
+  {
+    c->pop_discard ();
+    return false;
+  }
+
+  charset_link = c->pop_pack ();
+  return true;
+}
+
+/* CFF2 to CFF1 serialization */
+namespace CFF {
+
+bool
+serialize_cff2_to_cff1 (hb_serialize_context_t *c,
+                        OT::cff2_subset_plan &plan,
+                        const cff2_top_dict_values_t &cff2_topDict,
+                        const OT::cff2::accelerator_subset_t &acc)
+{
+  TRACE_SERIALIZE (this);
+
+  /*
+   * CFF1 Serialization Order (reverse, as HarfBuzz packs from end):
+   * 1. CharStrings
+   * 2. Private DICs & Local Subrs
+   * 3. FDArray
+   * 4. FDSelect
+   * 5. Charset
+   * 6. Global Subrs
+   * 7. String INDEX
+   * 8. Top DICT INDEX
+   * 9. Name INDEX
+   * 10. Header
+   */
+
+  // 0. Optimize width encoding (for all FDs)
+  {
+    // Collect widths from hmtx_map
+    hb_vector_t<unsigned> widths;
+    widths.alloc (plan.num_glyphs);
+
+    for (unsigned gid = 0; gid < plan.num_glyphs; gid++)
+    {
+      unsigned width = 0;
+      if (plan.hmtx_map->has (gid))
+        width = plan.hmtx_map->get (gid).first;
+      widths.push (width);
+    }
+
+    // Optimize defaultWidthX and nominalWidthX
+    CFF::optimize_widths (widths, plan.default_width, plan.nominal_width);
+  }
+
+  // 1. CharStrings (with widths prepended)
+  if (!_serialize_cff1_charstrings (c, plan, plan.default_width, plan.nominal_width))
+    return_trace (false);
+
+  // 2. Private DICs & Local Subrs (same as CFF2)
+  hb_vector_t<table_info_t> private_dict_infos;
+  if (unlikely (!private_dict_infos.resize (plan.subset_fdcount)))
+    return_trace (false);
+
+  for (int i = (int)acc.privateDicts.length; --i >= 0;)
+  {
+    if (plan.fdmap.has (i))
+    {
+      objidx_t subrs_link = 0;
+
+      if (plan.subset_localsubrs[i].length > 0)
+      {
+        auto *dest = c->push<CFF1Subrs> ();
+        if (likely (dest->serialize (c, plan.subset_localsubrs[i])))
+          subrs_link = c->pop_pack (false);
+        else
+        {
+          c->pop_discard ();
+          return_trace (false);
+        }
+      }
+
+      auto *pd = c->push<PrivateDict> ();
+      // Use the CFF2 Private DICT serializer which instantiates blends when pinned=true
+      cff2_private_dict_op_serializer_t privSzr (plan.desubroutinize, plan.drop_hints, plan.pinned,
+                                                  acc.varStore, plan.normalized_coords);
+      if (likely (pd->serialize (c, acc.privateDicts[i], privSzr, subrs_link)))
+      {
+        // Add defaultWidthX and nominalWidthX for CFF1
+        str_buff_t width_ops;
+        str_encoder_t encoder (width_ops);
+        encoder.encode_int (plan.default_width);
+        encoder.encode_op (OpCode_defaultWidthX);
+        encoder.encode_int (plan.nominal_width);
+        encoder.encode_op (OpCode_nominalWidthX);
+
+        if (!encoder.in_error () && c->embed (width_ops.as_bytes ().arrayZ, width_ops.length))
+        {
+          unsigned fd = plan.fdmap[i];
+          private_dict_infos[fd].size = c->length ();
+          private_dict_infos[fd].link = c->pop_pack ();
+        }
+        else
+        {
+          c->pop_discard ();
+          return_trace (false);
+        }
+      }
+      else
+      {
+        c->pop_discard ();
+        return_trace (false);
+      }
+    }
+  }
+
+  // 3. FDArray - serialize CFF2 font dicts as CFF1
+  {
+    auto *fda = c->push<FDArray<HBUINT16>> ();
+    cff_font_dict_op_serializer_t fontSzr;
+    auto it =
+    + hb_zip (+ hb_iter (acc.fontDicts)
+              | hb_filter ([&] (const cff2_font_dict_values_t &_)
+                { return plan.fdmap.has (&_ - &acc.fontDicts[0]); }),
+              hb_iter (private_dict_infos))
+    ;
+    // Explicitly specify template parameters: DICTVAL, INFO
+    bool success = fda->serialize<cff2_font_dict_values_t, table_info_t> (c, it, fontSzr);
+    if (success)
+      plan.info.fd_array_link = c->pop_pack (false);
+    else
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+  }
+
+  // 4. FDSelect (required in CFF1 CID-keyed fonts)
+  // CFF1 requires FDSelect for all CID-keyed fonts, even with just one FD
+  // CFF2 makes it optional when there's only one FD
+  if (acc.fdSelect != &Null (CFF2FDSelect))
+  {
+    c->push ();
+    if (likely (hb_serialize_cff_fdselect (c, plan.num_glyphs,
+                                          *(const FDSelect *)acc.fdSelect,
+                                          plan.orig_fdcount,
+                                          plan.subset_fdselect_format,
+                                          plan.subset_fdselect_size,
+                                          plan.subset_fdselect_ranges)))
+      plan.info.fd_select.link = c->pop_pack ();
+    else
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+  }
+  else
+  {
+    // Create a range-based FDSelect3 mapping all glyphs to FD 0
+    // Format: format(1) + nRanges(2) + range(3) + sentinel(2) = 8 bytes
+    c->push ();
+
+    // Format byte
+    HBUINT8 format;
+    format = 3;
+    if (unlikely (!c->embed (format)))
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+
+    // nRanges
+    HBUINT16 nRanges;
+    nRanges = 1;
+    if (unlikely (!c->embed (nRanges)))
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+
+    // Single range: {first: 0, fd: 0}
+    FDSelect3_Range range;
+    range.first = 0;
+    range.fd = 0;
+    if (unlikely (!c->embed (range)))
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+
+    // Sentinel (number of glyphs)
+    HBUINT16 sentinel;
+    sentinel = plan.num_glyphs;
+    if (unlikely (!c->embed (sentinel)))
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+
+    plan.info.fd_select.link = c->pop_pack ();
+  }
+
+  // 5. Charset (CID charset for identity mapping)
+  objidx_t charset_link;
+  if (!_serialize_cff1_charset (c, plan.num_glyphs, charset_link))
+    return_trace (false);
+
+  // 6. Global Subrs
+  {
+    auto *dest = c->push<CFF1Subrs> ();
+    if (likely (dest->serialize (c, plan.subset_globalsubrs)))
+      c->pop_pack (false);
+    else
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+  }
+
+  // 7. String INDEX - Add "Adobe" and "Identity" for ROS operator
+  {
+    const char *adobe_str = "Adobe";
+    const char *identity_str = "Identity";
+    unsigned adobe_len = 5;  // strlen("Adobe")
+    unsigned identity_len = 8;  // strlen("Identity")
+
+    // Build strings array
+    hb_vector_t<hb_ubytes_t> strings;
+    strings.alloc (2);
+    strings.push (hb_ubytes_t ((const unsigned char *) adobe_str, adobe_len));
+    strings.push (hb_ubytes_t ((const unsigned char *) identity_str, identity_len));
+
+    // Serialize as CFF INDEX
+    auto *dest = c->push<CFF1Index> ();
+    if (likely (dest->serialize (c, strings)))
+      c->pop_pack (false);
+    else
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+  }
+
+  // 8. CFF Header
+  OT::cff1 *cff = c->allocate_min<OT::cff1> ();
+  if (unlikely (!cff)) return_trace (false);
+
+  /* header */
+  cff->version.major = 0x01;
+  cff->version.minor = 0x00;
+  cff->nameIndex = cff->min_size;
+  cff->offSize = 4; /* unused? */
+
+  // 9. Name INDEX (single entry)
+  {
+    unsigned name_len = strlen (CFF1_DEFAULT_FONT_NAME);
+
+    CFF1Index *idx = c->start_embed<CFF1Index> ();
+    if (unlikely (!idx)) return_trace (false);
+
+    if (unlikely (!idx->serialize_header (c, hb_iter (&name_len, 1), name_len)))
+      return_trace (false);
+
+    if (unlikely (!c->embed (CFF1_DEFAULT_FONT_NAME, name_len)))
+      return_trace (false);
+  }
+
+  // 10. Top DICT INDEX
+  {
+    // Serialize the Top DICT data first
+    c->push<TopDict> ();
+    cff1_from_cff2_top_dict_op_serializer_t topSzr;
+
+    // Serialize ROS first
+    if (unlikely (!topSzr.serialize_ros (c)))
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+
+    // Serialize FontBBox from head table
+    {
+      str_buff_t bbox_buff;
+      str_encoder_t encoder (bbox_buff);
+
+      encoder.encode_int (plan.head_maxp_info.xMin);
+      encoder.encode_int (plan.head_maxp_info.yMin);
+      encoder.encode_int (plan.head_maxp_info.xMax);
+      encoder.encode_int (plan.head_maxp_info.yMax);
+      encoder.encode_op (OpCode_FontBBox);
+
+      if (encoder.in_error () || !c->embed (bbox_buff.as_bytes ().arrayZ, bbox_buff.length))
+      {
+        c->pop_discard ();
+        return_trace (false);
+      }
+    }
+
+    // Serialize charset operator
+    if (charset_link && unlikely (!FontDict::serialize_link4_op (c, OpCode_charset, charset_link, whence_t::Absolute)))
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+
+    // Serialize FDSelect operator (required for CID-keyed CFF1 fonts)
+    if (plan.info.fd_select.link && unlikely (!FontDict::serialize_link4_op (c, OpCode_FDSelect, plan.info.fd_select.link, whence_t::Absolute)))
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+
+    // Serialize FDArray operator (required for CID-keyed CFF1 fonts)
+    if (plan.info.fd_array_link && unlikely (!FontDict::serialize_link4_op (c, OpCode_FDArray, plan.info.fd_array_link, whence_t::Absolute)))
+    {
+      c->pop_discard ();
+      return_trace (false);
+    }
+
+    // Serialize other operators from CFF2 TopDict
+    for (const auto &opstr : cff2_topDict.values)
+    {
+      if (unlikely (!topSzr.serialize (c, opstr, plan.info)))
+      {
+        c->pop_discard ();
+        return_trace (false);
+      }
+    }
+
+    unsigned top_size = c->length ();
+    c->pop_pack (false);
+
+    // Serialize INDEX header
+    auto *dest = c->start_embed<CFF1Index> ();
+    if (unlikely (!dest->serialize_header (c, hb_iter (&top_size, 1), top_size)))
+      return_trace (false);
+  }
+
+  return_trace (true);
+}
+
+} /* namespace CFF */
+
 static bool _serialize_cff2_charstrings (hb_serialize_context_t *c,
-                             cff2_subset_plan &plan,
-                             const OT::cff2::accelerator_subset_t  &acc)
+			     cff2_subset_plan &plan,
+			     const OT::cff2::accelerator_subset_t  &acc)
 {
   c->push ();
 
@@ -545,8 +1105,8 @@ static bool _serialize_cff2_charstrings (hb_serialize_context_t *c,
 
 bool
 OT::cff2::accelerator_subset_t::serialize (hb_serialize_context_t *c,
-                                           struct cff2_subset_plan &plan,
-                                           hb_array_t<int> normalized_coords) const
+					   struct cff2_subset_plan &plan,
+					   hb_array_t<int> normalized_coords) const
 {
   /* push charstrings onto the object stack first which will ensure it packs as the last
      object in the table. Keeping the chastrings last satisfies the requirements for patching
@@ -563,32 +1123,32 @@ OT::cff2::accelerator_subset_t::serialize (hb_serialize_context_t *c,
   {
     if (plan.fdmap.has (i))
     {
-      objidx_t  subrs_link = 0;
+      objidx_t	subrs_link = 0;
 
       if (plan.subset_localsubrs[i].length > 0)
       {
-        auto *dest = c->push <CFF2Subrs> ();
-        if (likely (dest->serialize (c, plan.subset_localsubrs[i])))
-          subrs_link = c->pop_pack (false);
-        else
-        {
-          c->pop_discard ();
-          return false;
-        }
+	auto *dest = c->push <CFF2Subrs> ();
+	if (likely (dest->serialize (c, plan.subset_localsubrs[i])))
+	  subrs_link = c->pop_pack (false);
+	else
+	{
+	  c->pop_discard ();
+	  return false;
+	}
       }
       auto *pd = c->push<PrivateDict> ();
       cff2_private_dict_op_serializer_t privSzr (plan.desubroutinize, plan.drop_hints, plan.pinned,
-                                                 varStore, normalized_coords);
+						 varStore, normalized_coords);
       if (likely (pd->serialize (c, privateDicts[i], privSzr, subrs_link)))
       {
-        unsigned fd = plan.fdmap[i];
-        private_dict_infos[fd].size = c->length ();
-        private_dict_infos[fd].link = c->pop_pack ();
+	unsigned fd = plan.fdmap[i];
+	private_dict_infos[fd].size = c->length ();
+	private_dict_infos[fd].link = c->pop_pack ();
       }
       else
       {
-        c->pop_discard ();
-        return false;
+	c->pop_discard ();
+	return false;
       }
     }
   }
@@ -598,9 +1158,9 @@ OT::cff2::accelerator_subset_t::serialize (hb_serialize_context_t *c,
   {
     c->push ();
     if (likely (hb_serialize_cff_fdselect (c, plan.num_glyphs, *(const FDSelect *)fdSelect,
-                                           plan.orig_fdcount,
-                                           plan.subset_fdselect_format, plan.subset_fdselect_size,
-                                           plan.subset_fdselect_ranges)))
+					   plan.orig_fdcount,
+					   plan.subset_fdselect_format, plan.subset_fdselect_size,
+					   plan.subset_fdselect_ranges)))
       plan.info.fd_select.link = c->pop_pack ();
     else
     {
@@ -615,9 +1175,9 @@ OT::cff2::accelerator_subset_t::serialize (hb_serialize_context_t *c,
     cff_font_dict_op_serializer_t fontSzr;
     auto it =
     + hb_zip (+ hb_iter (fontDicts)
-              | hb_filter ([&] (const cff2_font_dict_values_t &_)
-                { return plan.fdmap.has (&_ - &fontDicts[0]); }),
-              hb_iter (private_dict_infos))
+	      | hb_filter ([&] (const cff2_font_dict_values_t &_)
+		{ return plan.fdmap.has (&_ - &fontDicts[0]); }),
+	      hb_iter (private_dict_infos))
     ;
     if (unlikely (!fda->serialize (c, it, fontSzr)))
     {
@@ -669,8 +1229,40 @@ OT::cff2::accelerator_subset_t::subset (hb_subset_context_t *c) const
   cff2_subset_plan cff2_plan;
 
   if (unlikely (!cff2_plan.create (*this, c->plan))) return false;
+
+  // If instantiating (pinned) and downgrade flag is set, convert to CFF1
+  if (cff2_plan.pinned && (c->plan->flags & HB_SUBSET_FLAGS_DOWNGRADE_CFF2))
+  {
+    // Serialize CFF1 to the subsetter's serializer
+    // If we run out of room, returning true will cause subsetter to retry with larger buffer
+    bool result = CFF::serialize_cff2_to_cff1 (c->serializer, cff2_plan, topDict, *this);
+
+    if (c->serializer->ran_out_of_room ())
+      return true; // Subsetter will retry with larger buffer
+
+    if (result && !c->serializer->in_error ())
+    {
+      // Success - end serialization to resolve links
+      c->serializer->end_serialize ();
+
+      // Copy the serialized CFF1 data and add as CFF table
+      hb_blob_t *cff_blob = c->serializer->copy_blob ();
+      if (cff_blob)
+      {
+        c->plan->add_table (HB_TAG('C','F','F',' '), cff_blob);
+        hb_blob_destroy (cff_blob);
+
+        // Return false to signal CFF2 table is not needed
+        return false;
+      }
+    }
+
+    // Conversion failed - don't fall back, fail hard for debugging
+    return false;
+  }
+
   return serialize (c->serializer, cff2_plan,
-                    c->plan->normalized_coords.as_array ());
+		    c->plan->normalized_coords.as_array ());
 }
 
 #endif

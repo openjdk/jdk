@@ -39,10 +39,10 @@
 
 static void
 hb_paint_bounded_push_clip_glyph (hb_paint_funcs_t *funcs HB_UNUSED,
-                                  void *paint_data,
-                                  hb_codepoint_t glyph,
-                                  hb_font_t *font,
-                                  void *user_data HB_UNUSED)
+				  void *paint_data,
+				  hb_codepoint_t glyph,
+				  hb_font_t *font,
+				  void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -51,9 +51,9 @@ hb_paint_bounded_push_clip_glyph (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static void
 hb_paint_bounded_push_clip_rectangle (hb_paint_funcs_t *funcs HB_UNUSED,
-                                      void *paint_data,
-                                      float xmin, float ymin, float xmax, float ymax,
-                                      void *user_data)
+				      void *paint_data,
+				      float xmin, float ymin, float xmax, float ymax,
+				      void *user_data)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -62,8 +62,8 @@ hb_paint_bounded_push_clip_rectangle (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static void
 hb_paint_bounded_pop_clip (hb_paint_funcs_t *funcs HB_UNUSED,
-                           void *paint_data,
-                           void *user_data HB_UNUSED)
+			   void *paint_data,
+			   void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -72,8 +72,8 @@ hb_paint_bounded_pop_clip (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static void
 hb_paint_bounded_push_group (hb_paint_funcs_t *funcs HB_UNUSED,
-                             void *paint_data,
-                             void *user_data HB_UNUSED)
+			     void *paint_data,
+			     void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -82,9 +82,9 @@ hb_paint_bounded_push_group (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static void
 hb_paint_bounded_pop_group (hb_paint_funcs_t *funcs HB_UNUSED,
-                            void *paint_data,
-                            hb_paint_composite_mode_t mode,
-                            void *user_data HB_UNUSED)
+			    void *paint_data,
+			    hb_paint_composite_mode_t mode,
+			    void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -93,14 +93,14 @@ hb_paint_bounded_pop_group (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static hb_bool_t
 hb_paint_bounded_paint_image (hb_paint_funcs_t *funcs HB_UNUSED,
-                              void *paint_data,
-                              hb_blob_t *blob HB_UNUSED,
-                              unsigned int width HB_UNUSED,
-                              unsigned int height HB_UNUSED,
-                              hb_tag_t format HB_UNUSED,
-                              float slant HB_UNUSED,
-                              hb_glyph_extents_t *glyph_extents,
-                              void *user_data HB_UNUSED)
+			      void *paint_data,
+			      hb_blob_t *blob HB_UNUSED,
+			      unsigned int width HB_UNUSED,
+			      unsigned int height HB_UNUSED,
+			      hb_tag_t format HB_UNUSED,
+			      float slant HB_UNUSED,
+			      hb_glyph_extents_t *glyph_extents,
+			      void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -113,10 +113,10 @@ hb_paint_bounded_paint_image (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static void
 hb_paint_bounded_paint_color (hb_paint_funcs_t *funcs HB_UNUSED,
-                              void *paint_data,
-                              hb_bool_t use_foreground HB_UNUSED,
-                              hb_color_t color HB_UNUSED,
-                              void *user_data HB_UNUSED)
+			      void *paint_data,
+			      hb_bool_t use_foreground HB_UNUSED,
+			      hb_color_t color HB_UNUSED,
+			      void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -125,12 +125,12 @@ hb_paint_bounded_paint_color (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static void
 hb_paint_bounded_paint_linear_gradient (hb_paint_funcs_t *funcs HB_UNUSED,
-                                        void *paint_data,
-                                        hb_color_line_t *color_line HB_UNUSED,
-                                        float x0 HB_UNUSED, float y0 HB_UNUSED,
-                                        float x1 HB_UNUSED, float y1 HB_UNUSED,
-                                        float x2 HB_UNUSED, float y2 HB_UNUSED,
-                                        void *user_data HB_UNUSED)
+				        void *paint_data,
+				        hb_color_line_t *color_line HB_UNUSED,
+				        float x0 HB_UNUSED, float y0 HB_UNUSED,
+				        float x1 HB_UNUSED, float y1 HB_UNUSED,
+				        float x2 HB_UNUSED, float y2 HB_UNUSED,
+				        void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -139,11 +139,11 @@ hb_paint_bounded_paint_linear_gradient (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static void
 hb_paint_bounded_paint_radial_gradient (hb_paint_funcs_t *funcs HB_UNUSED,
-                                        void *paint_data,
-                                        hb_color_line_t *color_line HB_UNUSED,
-                                        float x0 HB_UNUSED, float y0 HB_UNUSED, float r0 HB_UNUSED,
-                                        float x1 HB_UNUSED, float y1 HB_UNUSED, float r1 HB_UNUSED,
-                                        void *user_data HB_UNUSED)
+				        void *paint_data,
+				        hb_color_line_t *color_line HB_UNUSED,
+				        float x0 HB_UNUSED, float y0 HB_UNUSED, float r0 HB_UNUSED,
+				        float x1 HB_UNUSED, float y1 HB_UNUSED, float r1 HB_UNUSED,
+				        void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 
@@ -152,12 +152,12 @@ hb_paint_bounded_paint_radial_gradient (hb_paint_funcs_t *funcs HB_UNUSED,
 
 static void
 hb_paint_bounded_paint_sweep_gradient (hb_paint_funcs_t *funcs HB_UNUSED,
-                                       void *paint_data,
-                                       hb_color_line_t *color_line HB_UNUSED,
-                                       float cx HB_UNUSED, float cy HB_UNUSED,
-                                       float start_angle HB_UNUSED,
-                                       float end_angle HB_UNUSED,
-                                       void *user_data HB_UNUSED)
+				       void *paint_data,
+				       hb_color_line_t *color_line HB_UNUSED,
+				       float cx HB_UNUSED, float cy HB_UNUSED,
+				       float start_angle HB_UNUSED,
+				       float end_angle HB_UNUSED,
+				       void *user_data HB_UNUSED)
 {
   hb_paint_bounded_context_t *c = (hb_paint_bounded_context_t *) paint_data;
 

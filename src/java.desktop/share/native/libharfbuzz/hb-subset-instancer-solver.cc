@@ -216,7 +216,7 @@ _solve (Triple tent, Triple axisLimit, rebase_tent_result_t &out, bool negative 
     {
       // A tent's peak cannot fall on axis default. Nudge it.
       if (upper == axisDef)
-        upper += EPSILON;
+	upper += EPSILON;
 
       // Downslope.
       Triple loc1 {crossing, upper, axisMax};
@@ -235,7 +235,7 @@ _solve (Triple tent, Triple axisLimit, rebase_tent_result_t &out, bool negative 
   {
     // Special-case if peak is at axisMax.
     if (axisMax == peak)
-        upper = peak;
+	upper = peak;
 
     /* Case 3:
      * we keep deltas as is and only scale the axis upper to achieve
@@ -263,9 +263,9 @@ _solve (Triple tent, Triple axisLimit, rebase_tent_result_t &out, bool negative 
       upper = newUpper;
       if (!negative && axisDef + (axisMax - axisDef) * MAX_F2DOT14 < upper)
       {
-        // we clamp +2.0 to the max F2Dot14 (~1.99994) for convenience
-        upper = axisDef + (axisMax - axisDef) * MAX_F2DOT14;
-        assert (peak < upper);
+	// we clamp +2.0 to the max F2Dot14 (~1.99994) for convenience
+	upper = axisDef + (axisMax - axisDef) * MAX_F2DOT14;
+	assert (peak < upper);
       }
 
       Triple loc {hb_max (axisDef, lower), peak, upper};
@@ -301,7 +301,7 @@ _solve (Triple tent, Triple axisLimit, rebase_tent_result_t &out, bool negative 
       out.push (hb_pair (scalar1 - gain, loc1));
       // Don't add a dirac delta!
       if (peak < axisMax)
-        out.push (hb_pair (scalar2 - gain, loc2));
+	out.push (hb_pair (scalar2 - gain, loc2));
     }
   }
 
@@ -370,7 +370,8 @@ double renormalizeValue (double v, const Triple &triple,
                          const TripleDistances &triple_distances, bool extrapolate)
 {
   double lower = triple.minimum, def = triple.middle, upper = triple.maximum;
-  assert (lower <= def && def <= upper);
+  if (unlikely (!(lower <= def && def <= upper)))
+    return hb_clamp (v, -1.0, +1.0);
 
   if (!extrapolate)
     v = hb_clamp (v, lower, upper);
@@ -384,14 +385,26 @@ double renormalizeValue (double v, const Triple &triple,
 
   /* default >= 0 and v != default */
   if (v > def)
-    return (v - def) / (upper - def);
+  {
+    double positive_range = upper - def;
+    if (unlikely (!positive_range))
+      return +1.0;
+    return (v - def) / positive_range;
+  }
 
   /* v < def */
   if (lower >= 0.0)
-    return (v - def) / (def - lower);
+  {
+    double negative_range = def - lower;
+    if (unlikely (!negative_range))
+      return -1.0;
+    return (v - def) / negative_range;
+  }
 
   /* lower < 0 and v < default */
   double total_distance = triple_distances.negative * (-lower) + triple_distances.positive * def;
+  if (unlikely (!total_distance))
+    return 0.0;
 
   double v_distance;
   if (v >= 0.0)
@@ -404,12 +417,22 @@ double renormalizeValue (double v, const Triple &triple,
 
 void
 rebase_tent (Triple tent, Triple axisLimit, TripleDistances axis_triple_distances,
-             rebase_tent_result_t &out,
-             rebase_tent_result_t &scratch)
+	     rebase_tent_result_t &out,
+	     rebase_tent_result_t &scratch)
 {
-  assert (-1.0 <= axisLimit.minimum && axisLimit.minimum <= axisLimit.middle && axisLimit.middle <= axisLimit.maximum && axisLimit.maximum <= +1.0);
-  assert (-2.0 <= tent.minimum && tent.minimum <= tent.middle && tent.middle <= tent.maximum && tent.maximum <= +2.0);
-  assert (tent.middle != 0.0);
+  if (unlikely (!(-1.0 <= axisLimit.minimum &&
+                  axisLimit.minimum <= axisLimit.middle &&
+                  axisLimit.middle <= axisLimit.maximum &&
+                  axisLimit.maximum <= +1.0) ||
+                !(-2.0 <= tent.minimum &&
+                  tent.minimum <= tent.middle &&
+                  tent.middle <= tent.maximum &&
+                  tent.maximum <= +2.0) ||
+                tent.middle == 0.0))
+  {
+    out.reset ();
+    return;
+  }
 
   rebase_tent_result_t &sols = scratch;
   _solve (tent, axisLimit, sols);
@@ -427,6 +450,6 @@ rebase_tent (Triple tent, Triple axisLimit, TripleDistances axis_triple_distance
     }
     Triple t = p.second;
     out.push (hb_pair (p.first,
-                       Triple{n (t.minimum), n (t.middle), n (t.maximum)}));
+		       Triple{n (t.minimum), n (t.middle), n (t.maximum)}));
   }
 }

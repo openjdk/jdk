@@ -79,22 +79,22 @@ struct hb_paint_bounded_context_t
     switch ((int) mode)
     {
       case HB_PAINT_COMPOSITE_MODE_CLEAR:
-        backdrop_bounded = true;
-        break;
+	backdrop_bounded = true;
+	break;
       case HB_PAINT_COMPOSITE_MODE_SRC:
       case HB_PAINT_COMPOSITE_MODE_SRC_OUT:
-        backdrop_bounded = src_bounded;
-        break;
+	backdrop_bounded = src_bounded;
+	break;
       case HB_PAINT_COMPOSITE_MODE_DEST:
       case HB_PAINT_COMPOSITE_MODE_DEST_OUT:
-        break;
+	break;
       case HB_PAINT_COMPOSITE_MODE_SRC_IN:
       case HB_PAINT_COMPOSITE_MODE_DEST_IN:
-        backdrop_bounded = backdrop_bounded && src_bounded;
-        break;
+	backdrop_bounded = backdrop_bounded && src_bounded;
+	break;
       default:
-        backdrop_bounded = backdrop_bounded || src_bounded;
-        break;
+	backdrop_bounded = backdrop_bounded || src_bounded;
+	break;
      }
   }
 

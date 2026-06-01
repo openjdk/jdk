@@ -166,14 +166,21 @@ struct hb_bit_set_invertible_t
       auto it1 = iter ();
       auto it2 = other.iter ();
       return hb_all (+ hb_zip (it1, it2)
-                     | hb_map ([](hb_codepoint_pair_t _) { return _.first == _.second; }));
+		     | hb_map ([](hb_codepoint_pair_t _) { return _.first == _.second; }));
     }
   }
 
   bool is_subset (const hb_bit_set_invertible_t &larger_set) const
   {
     if (unlikely (inverted != larger_set.inverted))
-      return hb_all (hb_iter (s) | hb_map (larger_set.s));
+    {
+      if (inverted)
+	return hb_all (iter (), larger_set.s);
+      else
+        // larger set is inverted so larger_set.s is the set of things that are not present
+        // in larger_set, therefore if s has any of those it can't be a subset.
+	return !s.intersects (larger_set.s);
+    }
     else
       return unlikely (inverted) ? larger_set.s.is_subset (s) : s.is_subset (larger_set.s);
   }
@@ -188,16 +195,16 @@ struct hb_bit_set_invertible_t
     if (likely (inverted == other.inverted))
     {
       if (unlikely (inverted))
-        process (hb_bitwise_and, other);
+	process (hb_bitwise_and, other);
       else
-        process (hb_bitwise_or, other); /* Main branch. */
+	process (hb_bitwise_or, other); /* Main branch. */
     }
     else
     {
       if (unlikely (inverted))
-        process (hb_bitwise_gt, other);
+	process (hb_bitwise_gt, other);
       else
-        process (hb_bitwise_lt, other);
+	process (hb_bitwise_lt, other);
     }
     if (likely (s.successful))
       inverted = inverted || other.inverted;
@@ -207,16 +214,16 @@ struct hb_bit_set_invertible_t
     if (likely (inverted == other.inverted))
     {
       if (unlikely (inverted))
-        process (hb_bitwise_or, other);
+	process (hb_bitwise_or, other);
       else
-        process (hb_bitwise_and, other); /* Main branch. */
+	process (hb_bitwise_and, other); /* Main branch. */
     }
     else
     {
       if (unlikely (inverted))
-        process (hb_bitwise_lt, other);
+	process (hb_bitwise_lt, other);
       else
-        process (hb_bitwise_gt, other);
+	process (hb_bitwise_gt, other);
     }
     if (likely (s.successful))
       inverted = inverted && other.inverted;
@@ -226,16 +233,16 @@ struct hb_bit_set_invertible_t
     if (likely (inverted == other.inverted))
     {
       if (unlikely (inverted))
-        process (hb_bitwise_lt, other);
+	process (hb_bitwise_lt, other);
       else
-        process (hb_bitwise_gt, other); /* Main branch. */
+	process (hb_bitwise_gt, other); /* Main branch. */
     }
     else
     {
       if (unlikely (inverted))
-        process (hb_bitwise_or, other);
+	process (hb_bitwise_or, other);
       else
-        process (hb_bitwise_and, other);
+	process (hb_bitwise_and, other);
     }
     if (likely (s.successful))
       inverted = inverted && !other.inverted;
@@ -334,11 +341,11 @@ struct hb_bit_set_invertible_t
   }
 
   unsigned int next_many (hb_codepoint_t  codepoint,
-                          hb_codepoint_t *out,
-                          unsigned int    size) const
+			  hb_codepoint_t *out,
+			  unsigned int    size) const
   {
     return inverted ? s.next_many_inverted (codepoint, out, size)
-                    : s.next_many (codepoint, out, size);
+		    : s.next_many (codepoint, out, size);
   }
 
   static constexpr hb_codepoint_t INVALID = hb_bit_set_t::INVALID;
@@ -351,12 +358,12 @@ struct hb_bit_set_invertible_t
     static constexpr bool is_sorted_iterator = true;
     static constexpr bool has_fast_len = true;
     iter_t (const hb_bit_set_invertible_t &s_ = Null (hb_bit_set_invertible_t),
-            bool init = true) : s (&s_), v (INVALID), l(0)
+	    bool init = true) : s (&s_), v (INVALID), l(0)
     {
       if (init)
       {
-        l = s->get_population () + 1;
-        __next__ ();
+	l = s->get_population () + 1;
+	__next__ ();
       }
     }
 

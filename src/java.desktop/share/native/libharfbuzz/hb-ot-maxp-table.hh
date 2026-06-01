@@ -47,23 +47,23 @@ struct maxpV1Tail
     return_trace (c->check_struct (this));
   }
 
-  HBUINT16 maxPoints;             /* Maximum points in a non-composite glyph. */
-  HBUINT16 maxContours;           /* Maximum contours in a non-composite glyph. */
-  HBUINT16 maxCompositePoints;    /* Maximum points in a composite glyph. */
+  HBUINT16 maxPoints;		  /* Maximum points in a non-composite glyph. */
+  HBUINT16 maxContours;		  /* Maximum contours in a non-composite glyph. */
+  HBUINT16 maxCompositePoints;	  /* Maximum points in a composite glyph. */
   HBUINT16 maxCompositeContours;  /* Maximum contours in a composite glyph. */
-  HBUINT16 maxZones;              /* 1 if instructions do not use the twilight zone (Z0),
-                                   * or 2 if instructions do use Z0; should be set to 2 in
-                                   * most cases. */
-  HBUINT16 maxTwilightPoints;     /* Maximum points used in Z0. */
-  HBUINT16 maxStorage;            /* Number of Storage Area locations. */
-  HBUINT16 maxFunctionDefs;       /* Number of FDEFs, equal to the highest function number + 1. */
-  HBUINT16 maxInstructionDefs;    /* Number of IDEFs. */
-  HBUINT16 maxStackElements;      /* Maximum stack depth. (This includes Font and CVT
-                                   * Programs, as well as the instructions for each glyph.) */
+  HBUINT16 maxZones;		  /* 1 if instructions do not use the twilight zone (Z0),
+				   * or 2 if instructions do use Z0; should be set to 2 in
+				   * most cases. */
+  HBUINT16 maxTwilightPoints;	  /* Maximum points used in Z0. */
+  HBUINT16 maxStorage;		  /* Number of Storage Area locations. */
+  HBUINT16 maxFunctionDefs;	  /* Number of FDEFs, equal to the highest function number + 1. */
+  HBUINT16 maxInstructionDefs;	  /* Number of IDEFs. */
+  HBUINT16 maxStackElements;	  /* Maximum stack depth. (This includes Font and CVT
+				   * Programs, as well as the instructions for each glyph.) */
   HBUINT16 maxSizeOfInstructions; /* Maximum byte count for glyph instructions. */
   HBUINT16 maxComponentElements;  /* Maximum number of components referenced at
-                                   * "top level" for any composite glyph. */
-  HBUINT16 maxComponentDepth;     /* Maximum levels of recursion; 1 for simple components. */
+				   * "top level" for any composite glyph. */
+  HBUINT16 maxComponentDepth;	  /* Maximum levels of recursion; 1 for simple components. */
  public:
   DEFINE_SIZE_STATIC (26);
 };
@@ -109,7 +109,7 @@ struct maxp
       if (unlikely (!dest_v1)) return_trace (false);
 
       if (c->plan->flags & HB_SUBSET_FLAGS_NO_HINTING)
-        drop_hint_fields (dest_v1);
+	drop_hint_fields (dest_v1);
 
       if (c->plan->normalized_coords)
         instancing_update_fields (c->plan->head_maxp_info, dest_v1);
@@ -141,10 +141,10 @@ struct maxp
 
   protected:
   FixedVersion<>version;/* Version of the maxp table (0.5 or 1.0),
-                         * 0x00005000u or 0x00010000u. */
-  HBUINT16      numGlyphs;
-                        /* The number of glyphs in the font. */
-/*maxpV1Tail    v1Tail[HB_VAR_ARRAY]; */
+			 * 0x00005000u or 0x00010000u. */
+  HBUINT16	numGlyphs;
+			/* The number of glyphs in the font. */
+/*maxpV1Tail	v1Tail[HB_VAR_ARRAY]; */
   public:
   DEFINE_SIZE_STATIC (6);
 };
