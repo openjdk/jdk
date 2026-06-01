@@ -516,6 +516,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
   case vmIntrinsics::_getEventWriter:           return inline_native_getEventWriter();
   case vmIntrinsics::_jvm_commit:               return inline_native_jvm_commit();
+  case vmIntrinsics::_tryUpdateEpochField:      return inline_native_try_update_epoch();
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
@@ -1155,7 +1156,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg2 = argument(1);
 
   const TypeAryPtr* mtype = (ae == StrIntrinsicNode::UU) ? TypeAryPtr::CHARS : TypeAryPtr::BYTES;
-  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
+  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), mtype, arg1, arg2, ae)));
   clear_upper_avx();
 
   return true;
@@ -2444,9 +2445,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
         if (bt == type && !field->is_flat()) {
           Node* value = vt->field_value_by_offset(off, false);
           const Type* value_type = _gvn.type(value);
-          if (value->is_InlineType()) {
-            value = value->as_InlineType()->adjust_scalarization_depth(this);
-          } else if (value_type->is_inlinetypeptr()) {
+          if (value_type->is_inlinetypeptr()) {
             value = InlineTypeNode::make_from_oop(this, value, value_type->inline_klass());
           }
           set_result(value);
@@ -3185,8 +3184,6 @@ bool LibraryCallKit::inline_getFieldMap() {
 
   Node* map_addr = basic_plus_adr(mirror, field_map_offset);
   const TypeAryPtr* val_type = TypeAryPtr::INTS->cast_to_ptr_type(TypePtr::NotNull)->with_offset(0);
-  // TODO 8350865 Remove this
-  val_type = val_type->cast_to_not_flat(true)->cast_to_not_null_free(true);
   Node* map = access_load_at(mirror, map_addr, TypeAryPtr::INTS, val_type, T_ARRAY, IN_HEAP | MO_UNORDERED);
 
   set_result(map);
@@ -4086,6 +4083,121 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   set_all_memory(_gvn.transform(thread_compare_mem));
 }
 
+//------------------------inline_native_try_update_epoch------------------
+//
+// The generated code is a function of the argument type.
+//
+bool LibraryCallKit::inline_native_try_update_epoch() {
+  enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
+
+  // Save input memory.
+  Node* input_memory_state = reset_memory();
+  set_all_memory(input_memory_state);
+
+  // Argument is an oop whose class has an injected instance field,
+  // called 'jfr_epoch' of type T_INT, used for holding a jfr epoch value.
+  Node* oop = argument(0);
+  const TypeInstPtr* tinst = _gvn.type(oop)->isa_instptr();
+  assert(tinst != nullptr, "oop is null");
+  assert(tinst->is_loaded(), "klass is not loaded");
+  ciInstanceKlass* const ik = tinst->instance_klass();
+
+  ciField* const field = ik->get_injected_instance_field_by_name(ciSymbol::make("jfr_epoch"),
+                                                                 ciSymbol::make("I"));
+
+  assert(field != nullptr, "field 'jfr_epoch' of type I not injected in klass %s", ik->name()->as_utf8());
+
+  const int jfr_epoch_field_offset = field->offset_in_bytes();
+  Node* oop_epoch_field_offset = basic_plus_adr(oop, jfr_epoch_field_offset);
+  const TypePtr* adr_type = _gvn.type(oop_epoch_field_offset)->isa_ptr();
+  const int alias_idx = C->get_alias_index(adr_type);
+  BasicType bt = field->layout_type();
+  const Type * oop_epoch_field_type = Type::get_const_basic_type(bt);
+
+  // Load the epoch value from the oop.
+  Node* oop_epoch = access_load_at(oop,
+                                   oop_epoch_field_offset,
+                                   adr_type, oop_epoch_field_type,
+                                   bt, IN_HEAP | MO_UNORDERED);
+
+  // Load the current JFR epoch generation. The value is unsigned 16-bit, so we type it as T_CHAR.
+  Node* epoch_generation_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_generation_address()));
+  Node* current_epoch_generation = make_load(control(), epoch_generation_address, TypeInt::CHAR, T_CHAR, MemNode::unordered);
+
+  // Compare the epoch in the oop against the current JFR epoch generation.
+  Node* const epochs_cmp = _gvn.transform(new CmpINode(current_epoch_generation, oop_epoch));
+  Node* epochs_equal_test = _gvn.transform(new BoolNode(epochs_cmp, BoolTest::eq));
+  IfNode* iff_epochs_equal = create_and_map_if(control(), epochs_equal_test, PROB_LIKELY(0.999), COUNT_UNKNOWN);
+
+  // True path.
+  Node* epochs_are_equal = _gvn.transform(new IfTrueNode(iff_epochs_equal));
+
+  // False path.
+  Node* epochs_are_not_equal = _gvn.transform(new IfFalseNode(iff_epochs_equal));
+
+  set_control(_gvn.transform(epochs_are_not_equal));
+
+  // Attempt to cas the current JFR epoch generation into the oop epoch field.
+  DecoratorSet decorators = IN_HEAP;
+  decorators |= mo_decorator_for_access_kind(Volatile);
+
+  Node* result = access_atomic_cmpxchg_val_at(oop,
+                                              oop_epoch_field_offset,
+                                              adr_type, alias_idx,
+                                              oop_epoch, // expected value
+                                              current_epoch_generation, // new value
+                                              oop_epoch_field_type,
+                                              bt,
+                                              decorators);
+
+  // Compare the result of the cas operation to the expected value.
+  Node* const cas_cmp_to_expected_value = _gvn.transform(new CmpINode(result, oop_epoch));
+  Node* cas_operation_test = _gvn.transform(new BoolNode(cas_cmp_to_expected_value, BoolTest::eq));
+  IfNode* iff_cas_success = create_and_map_if(control(), cas_operation_test, PROB_LIKELY(0.999), COUNT_UNKNOWN);
+
+  // True path.
+  Node* cas_success = _gvn.transform(new IfTrueNode(iff_cas_success));
+
+  // False path.
+  Node* cas_failure = _gvn.transform(new IfFalseNode(iff_cas_success));
+
+  // Cas result region and phi nodes.
+  RegionNode* cas_operation_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(cas_operation_rgn);
+  PhiNode* cas_operation_mem = new PhiNode(cas_operation_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(cas_operation_mem);
+  PhiNode* cas_result = new PhiNode(cas_operation_rgn, TypeInt::BOOL);
+  record_for_igvn(cas_result);
+
+  cas_operation_rgn->init_req(_true_path, _gvn.transform(cas_success));
+  cas_operation_rgn->init_req(_false_path, _gvn.transform(cas_failure));
+  cas_operation_mem->init_req(_true_path, reset_memory());
+  cas_operation_mem->init_req(_false_path, input_memory_state);
+  cas_result->init_req(_true_path, _gvn.intcon(1));
+  cas_result->init_req(_false_path, _gvn.intcon(0));
+
+  // Epoch compare region and phi nodes.
+  RegionNode* epoch_compare_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(epoch_compare_rgn);
+  PhiNode* epoch_compare_mem = new PhiNode(epoch_compare_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(epoch_compare_mem);
+  PhiNode* result_value = new PhiNode(epoch_compare_rgn, TypeInt::BOOL);
+  record_for_igvn(result_value);
+
+  epoch_compare_rgn->init_req(_true_path, _gvn.transform(epochs_are_equal));
+  epoch_compare_rgn->init_req(_false_path, _gvn.transform(cas_operation_rgn));
+  epoch_compare_mem->init_req(_true_path, _gvn.transform(input_memory_state));
+  epoch_compare_mem->init_req(_false_path, _gvn.transform(cas_operation_mem));
+  result_value->init_req(_true_path, _gvn.intcon(0));
+  result_value->init_req(_false_path, _gvn.transform(cas_result));
+
+  // Set output state.
+  set_result(epoch_compare_rgn, result_value);
+  set_all_memory(_gvn.transform(epoch_compare_mem));
+
+  return true;
+}
+
 #endif // JFR_HAVE_INTRINSICS
 
 //------------------------inline_native_currentCarrierThread------------------
@@ -4805,18 +4917,68 @@ bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
   Node* bol;
   switch(check) {
     case IsFlat:
-      // TODO 8350865 Use the object version here instead of loading the klass
-      // The problem is that PhaseMacroExpand::expand_flatarraycheck_node can only handle some IR shapes and will fail, for example, if the bol is directly wired to a ReturnNode
       bol = flat_array_test(load_object_klass(array));
       break;
     case IsNullRestricted:
       bol = null_free_array_test(array);
       break;
-    case IsAtomic:
-      // TODO 8350865 Implement this. It's a bit more complicated, see conditions in JVM_IsAtomicArray
-      // Enable TestIntrinsics::test87/88 once this is implemented
-      // bol = null_free_atomic_array_test
-      return false;
+    case IsAtomic: {
+      // See conditions in JVM_IsAtomicArray
+      // 1. If not flat, then atomic, or else...
+      RegionNode* atomic_region = new RegionNode(1);
+      RegionNode* non_atomic_region = new RegionNode(1);
+      Node* array_klass = load_object_klass(array);
+      Node* is_flat_bol = flat_array_test(array_klass);
+      IfNode* iff_is_flat = create_and_xform_if(control(), is_flat_bol, PROB_FAIR, COUNT_UNKNOWN);
+      atomic_region->add_req(_gvn.transform(new IfFalseNode(iff_is_flat)));
+      set_control(_gvn.transform(new IfTrueNode(iff_is_flat)));
+
+      // 2. ...if the layout is atomic, then atomic, or else...
+      Node* layout_kind = atomic_layout_array_test_and_get_layout_kind(array, atomic_region);
+
+      // 3. ...if the element type is naturally atomic and null-free OR empty and nullable, then atomic, or else...
+      int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
+      Node* array_element_klass_addr = off_heap_plus_addr(array_klass, element_klass_offset);
+      Node* array_element_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), array_element_klass_addr, _gvn.type(array_klass)->is_klassptr()));
+      int klass_flags_offset = in_bytes(InstanceKlass::misc_flags_offset() + InstanceKlassFlags::flags_offset());
+      Node* array_element_klass_flags_addr = off_heap_plus_addr(array_element_klass, klass_flags_offset);
+      Node* array_element_klass_flags = make_load(control(), array_element_klass_flags_addr, TypeInt::INT, T_INT, MemNode::unordered);
+
+      // Here, layout can only be non-atomic, otherwise atomic_layout_array_test_and_get_layout_kind already decides the array to be atomic.
+      Node* is_null_free_cmp = _gvn.transform(new CmpINode(layout_kind, intcon(static_cast<jint>(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT))));
+      Node* is_null_free_bol = _gvn.transform(new BoolNode(is_null_free_cmp, BoolTest::eq));
+      IfNode* iff_is_null_free_bol = create_and_xform_if(control(), is_null_free_bol, PROB_FAIR, COUNT_UNKNOWN);
+      Node* is_null_free_ctl = _gvn.transform(new IfTrueNode(iff_is_null_free_bol));
+      Node* is_nullable_ctl = _gvn.transform(new IfFalseNode(iff_is_null_free_bol));
+
+      Node* is_naturally_atomic_flag = _gvn.transform(new AndINode(array_element_klass_flags, intcon(InstanceKlassFlags::_misc_is_naturally_atomic)));
+      Node* is_naturally_atomic_cmp = _gvn.transform(new CmpINode(is_naturally_atomic_flag, intcon(0)));
+      Node* is_naturally_atomic_bol = _gvn.transform(new BoolNode(is_naturally_atomic_cmp, BoolTest::ne));
+      IfNode* iff_is_naturally_atomic = create_and_xform_if(is_null_free_ctl, is_naturally_atomic_bol, PROB_FAIR, COUNT_UNKNOWN);
+      Node* is_naturally_atomic_ctl = _gvn.transform(new IfTrueNode(iff_is_naturally_atomic));
+      Node* is_not_naturally_atomic_ctl = _gvn.transform(new IfFalseNode(iff_is_naturally_atomic));
+      atomic_region->add_req(is_naturally_atomic_ctl);
+      non_atomic_region->add_req(is_not_naturally_atomic_ctl);
+
+      Node* is_empty_inline_type_flag = _gvn.transform(new AndINode(array_element_klass_flags, intcon(InstanceKlassFlags::_misc_is_empty_inline_type)));
+      Node* is_empty_inline_type_cmp = _gvn.transform(new CmpINode(is_empty_inline_type_flag, intcon(0)));
+      Node* is_empty_inline_type_bol = _gvn.transform(new BoolNode(is_empty_inline_type_cmp, BoolTest::ne));
+      IfNode* iff_is_empty_inline_type = create_and_xform_if(is_nullable_ctl, is_empty_inline_type_bol, PROB_FAIR, COUNT_UNKNOWN);
+      Node* is_empty_inline_type_ctl = _gvn.transform(new IfTrueNode(iff_is_empty_inline_type));
+      Node* is_nonempty_inline_type_ctl = _gvn.transform(new IfFalseNode(iff_is_empty_inline_type));
+      atomic_region->add_req(is_empty_inline_type_ctl);
+      non_atomic_region->add_req(is_nonempty_inline_type_ctl);
+
+      // ...non-atomic, but we tried everything.
+      RegionNode* decision = new RegionNode(3);
+      decision->set_req(1, _gvn.transform(atomic_region));
+      decision->set_req(2, _gvn.transform(non_atomic_region));
+      PhiNode* result = PhiNode::make(decision, intcon(1), TypeInt::BOOL);
+      result->set_req(2, intcon(0));
+      set_control(_gvn.transform(decision));
+      set_result(_gvn.transform(result));
+      return true;
+    }
     default:
       ShouldNotReachHere();
   }
@@ -6822,11 +6984,14 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   // 'src_start' points to src array + scaled offset
   // 'dst_start' points to dst array + scaled offset
 
-  const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length, ascii);
+  // See GraphKit::compress_string
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  Node* enc = new EncodeISOArrayNode(control(), mem, adr_type, src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
-  set_memory(res_mem, mtype);
+  memory_effect(res_mem, src_type, dst_type);
+
   set_result(enc);
   clear_upper_avx();
 
@@ -7305,7 +7470,8 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   // Resolve address of first element
   Node* array_start = array_element_address(array, offset, bt);
 
-  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+  const TypeAryPtr* in_adr_type = TypeAryPtr::get_array_body_type(bt);
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(in_adr_type), in_adr_type,
     array_start, length, initialValue, basic_type)));
   clear_upper_avx();
 

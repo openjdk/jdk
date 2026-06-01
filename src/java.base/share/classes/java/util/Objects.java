@@ -178,29 +178,28 @@ public final class Objects {
         return o.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(o));
     }
 
-   /**
-    * {@return {@code true} if the input is a non-null reference
-    * to an object with identity, and {@code false} otherwise}
-    *
-    * <p>If the object is an instance of a concrete {@linkplain Class#isValue()
-    * value class}, it does not have identity and the result will be
-    * {@code false}. All other objects, including arrays, are identity objects
-    * and the result will be {@code true}.
-    *
-    * @apiNote
-    * If the parameter is {@code null}, there is no object
-    * and hence no identity; the result is {@code false}.
-    * To test for a value object use:
-    * {@snippet type="java" :
-    *     if (obj != null && !Objects.hasIdentity(obj)) {
-    *         // obj is a non-null value object
-    *     }
-    * }
-    * @param obj an object or {@code null}
-    * @since Valhalla
-    */
-   @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
-//    @IntrinsicCandidate
+    /**
+     * {@return {@code true} if the input is a non-null reference
+     * to an object with identity, and {@code false} otherwise}
+     *
+     * <p>If the object is an instance of a concrete {@linkplain Class#isValue()
+     * value class}, it does not have identity and the result will be
+     * {@code false}. All other objects, including arrays, are identity objects
+     * and the result will be {@code true}.
+     *
+     * @apiNote
+     * If the parameter is {@code null}, there is no object
+     * and hence no identity; the result is {@code false}.
+     * To test for a value object use:
+     * {@snippet type="java" :
+     *     if (obj != null && !Objects.hasIdentity(obj)) {
+     *         // obj is a non-null value object
+     *     }
+     * }
+     * @param obj an object or {@code null}
+     * @since Valhalla
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
     public static boolean hasIdentity(Object obj) {
         return (obj == null) ? false : !obj.getClass().isValue();
     }

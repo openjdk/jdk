@@ -77,7 +77,7 @@ private:
     // make sure it isn't called before UseCompressedOops is initialized.
     static int arrayoopdesc_hs = 0;
     if (arrayoopdesc_hs == 0) arrayoopdesc_hs = hs;
-    // assert(arrayoopdesc_hs == hs, "header size can't change");
+    assert(arrayoopdesc_hs == hs, "header size can't change");
 #endif // ASSERT
     return (int)hs;
   }

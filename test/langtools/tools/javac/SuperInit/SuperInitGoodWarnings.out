@@ -1,1 +1,4 @@
-SuperInitGood.java:52:17: compiler.warn.would.not.be.allowed.in.prologue: hashCode()
+SuperInitGood.java:56:13: compiler.warn.would.not.be.allowed.in.prologue: this
+- compiler.err.warnings.and.werror
+1 error
+1 warning

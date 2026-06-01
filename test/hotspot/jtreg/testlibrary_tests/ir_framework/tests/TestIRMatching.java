@@ -210,13 +210,10 @@ public class TestIRMatching {
                  BadFailOnConstraint.create(Traps.class, "rangeCheck", 2, "CallStaticJava", "uncommon_trap", "range_check"),
                  BadFailOnConstraint.create(Traps.class, "rangeCheck", 3, "CallStaticJava", "uncommon_trap", "null_check"),
                  GoodRuleConstraint.create(Traps.class, "rangeCheck", 4),
-                 BadFailOnConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining", 1, "CallStaticJava", "uncommon_trap"),
-                 WhiteBox.getWhiteBox().isJVMCISupportedByGC() ?
-                    BadFailOnConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining", 2, "CallStaticJava", "uncommon_trap", "intrinsic_or_type_checked_inlining")
-                    : GoodRuleConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining", 2),
-                 BadFailOnConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining", 3, "CallStaticJava", "uncommon_trap", "intrinsic"),
-                 BadFailOnConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining", 4, "CallStaticJava", "uncommon_trap", "null_check"),
-                 GoodRuleConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining", 5)
+                 BadFailOnConstraint.create(Traps.class, "intrinsic", 1, "CallStaticJava", "uncommon_trap"),
+                 BadFailOnConstraint.create(Traps.class, "intrinsic", 2, "CallStaticJava", "uncommon_trap", "intrinsic"),
+                 BadFailOnConstraint.create(Traps.class, "intrinsic", 3, "CallStaticJava", "uncommon_trap", "null_check"),
+                 GoodRuleConstraint.create(Traps.class, "intrinsic", 4)
         );
 
 
@@ -1127,7 +1124,6 @@ class Traps {
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
                   IRNode.INTRINSIC_TRAP,
-                  IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void noTraps() {
         for (int i = 0; i < 100; i++) {
@@ -1148,7 +1144,6 @@ class Traps {
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
                   IRNode.INTRINSIC_TRAP,
-                  IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void predicateTrap() {
         for (int i = 0; i < 100; i++) {
@@ -1168,7 +1163,6 @@ class Traps {
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.UNSTABLE_IF_TRAP,
                   IRNode.INTRINSIC_TRAP,
-                  IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void nullCheck() {
         if (myClass instanceof MyClassSub) {
@@ -1185,7 +1179,6 @@ class Traps {
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
                   IRNode.INTRINSIC_TRAP,
-                  IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public Object nullAssert() {
         return notLoaded.notLoadedFld;
@@ -1201,7 +1194,6 @@ class Traps {
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
                   IRNode.INTRINSIC_TRAP,
-                  IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void unstableIf(boolean flag) {
         if (flag) {
@@ -1220,7 +1212,6 @@ class Traps {
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.INTRINSIC_TRAP,
-                  IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void classCheck() {
         try {
@@ -1239,7 +1230,6 @@ class Traps {
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
                   IRNode.INTRINSIC_TRAP,
-                  IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void rangeCheck() {
         iArr[1] = 3;
@@ -1248,7 +1238,6 @@ class Traps {
 
     @Test
     @IR(failOn = IRNode.TRAP) // fails
-    @IR(failOn = IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP) // fails
     @IR(failOn = IRNode.INTRINSIC_TRAP) // fails
     @IR(failOn = IRNode.NULL_CHECK_TRAP) // fails
     @IR(failOn = {IRNode.PREDICATE_TRAP,
@@ -1257,7 +1246,7 @@ class Traps {
                   IRNode.CLASS_CHECK_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.UNHANDLED_TRAP})
-    public void instrinsicOrTypeCheckedInlining() {
+    public void intrinsic() {
         System.arraycopy(oArr, 0, mArr, 0, 8);
     }
 }

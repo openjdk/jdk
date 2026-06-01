@@ -125,6 +125,7 @@ public class Transforms {
             cc = ClassFile.of();
         }
 
+        @SuppressWarnings("initialization")
         NoOpTransform(boolean shared,
                       ClassTransform classTransform,
                       ClassFile.Option... options) {

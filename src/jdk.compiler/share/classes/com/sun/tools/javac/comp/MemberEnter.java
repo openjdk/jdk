@@ -32,7 +32,6 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.code.Source.Feature;
 
@@ -66,6 +65,8 @@ public class MemberEnter extends JCTree.Visitor {
     private final Annotate annotate;
     private final Types types;
     private final Names names;
+    private final Preview preview;
+    private final boolean allowValueClasses;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -86,6 +87,8 @@ public class MemberEnter extends JCTree.Visitor {
         types = Types.instance(context);
         source = Source.instance(context);
         names = Names.instance(context);
+        preview = Preview.instance(context);
+        allowValueClasses = preview.isEnabled() && Feature.VALUE_CLASSES.allowedInSource(source);
     }
 
     /** Construct method type from method signature.
@@ -294,7 +297,10 @@ public class MemberEnter extends JCTree.Visitor {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
                 initEnv = initEnv(tree, initEnv);
-                initEnv.info.ctorPrologue = (v.owner.kind == TYP && v.owner.isValueClass() && !v.isStatic());
+                if (v.owner.kind == TYP && !v.isStatic() && allowValueClasses) {
+                    initEnv.info.earlyContext = EarlyConstructionContext.of((ClassSymbol)v.owner,
+                            !v.isStrict(), false);
+                }
                 v.setLazyConstValue(initEnv(tree, initEnv), env, attr, tree);
             }
         }

@@ -39,7 +39,6 @@
                             int regs_from_count, int& from_index);
   bool is_reg_in_unpacked_fields(const GrowableArray<SigEntry>* sig, int sig_index, VMReg to, VMRegPair* regs_from,
                                  int regs_from_count, int from_index);
-  void mark_reg_writable(const VMRegPair* regs, int num_regs, int reg_index, RegState* reg_state);
   RegState* init_reg_state(VMRegPair* regs, int num_regs, int sp_inc, int max_stack);
   int unpack_inline_args(Compile* C, bool receiver_only);
   void shuffle_inline_args(bool is_packing, bool receiver_only,

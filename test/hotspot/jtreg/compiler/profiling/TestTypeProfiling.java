@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
   * @summary Parameters type profiling is not performed from aarch64 interpreter
   *
   * @requires os.arch != "arm"
-  * @requires vm.flavor == "server" & vm.compMode == "Xmixed" & !vm.graal.enabled
+  * @requires vm.flavor == "server" & vm.compMode == "Xmixed"
   *
   * @comment the test can't be run w/ TieredStopAtLevel < 4
   * @requires vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4

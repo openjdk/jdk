@@ -222,7 +222,7 @@ import jdk.test.whitebox.WhiteBox;
 public class TestVirtualThreads {
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     static final int COMP_LEVEL_SIMPLE = 1; // C1
-    static final int COMP_LEVEL_FULL_OPTIMIZATION = 4; // C2 or JVMCI
+    static final int COMP_LEVEL_FULL_OPTIMIZATION = 4; // C2
     static final Random RAND = Utils.getRandomInstance();
     static final int PARK_DURATION = 10;
     static final boolean EXCLUDE_RANDOM = false; // Randomly exclude methods from compilation (very slow!)

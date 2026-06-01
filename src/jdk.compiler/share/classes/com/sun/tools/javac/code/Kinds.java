@@ -204,6 +204,10 @@ public class Kinds {
             return (data & other.data) != 0;
         }
 
+        public boolean isAssignment() {
+            return ASG.subset(this) && !VAL.subset(this);
+        }
+
         /** A set of KindName(s) representing a set of symbol's kinds. */
         public Set<KindName> kindNames() {
             EnumSet<KindName> kinds = EnumSet.noneOf(KindName.class);

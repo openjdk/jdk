@@ -23,10 +23,14 @@
 /*
  * @test
  * @bug 8334037
+ * @library /tools/javac/lib
  * @summary Test for compiler crash when local class created in early lambda
+ * @modules jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @enablePreview
  * @run main LambdaLocalEarlyCrash
- * @build InitializationWarningTester
- * @run main InitializationWarningTester LambdaLocalEarlyCrash
+ * @build SuperCallRemover
+ * @compile -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover LambdaLocalEarlyCrash.java
  */
 
 public class LambdaLocalEarlyCrash {

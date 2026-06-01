@@ -23,10 +23,14 @@
 /*
  * @test
  * @bug 8333313
+ * @library /tools/javac/lib
  * @summary Verify references to local classes declared in early construction contexts
+ * @modules jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @enablePreview
  * @run main EarlyLocalTest6
- * @build InitializationWarningTester
- * @run main InitializationWarningTester EarlyLocalTest6
+ * @build SuperCallRemover
+ * @compile -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyLocalTest6.java
  */
 import java.util.concurrent.atomic.AtomicReference;
 

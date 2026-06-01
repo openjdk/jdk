@@ -233,6 +233,7 @@ public:
     }
     return _declared_nonstatic_fields->length();
   }
+  ciField* get_injected_instance_field_by_name(ciSymbol* name, ciSymbol* signature);
   BasicType get_field_type_by_offset(int field_offset, bool is_static);
 
   int nof_nonstatic_fields() {

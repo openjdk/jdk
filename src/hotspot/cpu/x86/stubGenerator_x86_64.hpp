@@ -161,7 +161,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void restore_argument_regs(BasicType type);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Following rules apply to AVX3 optimized arraycopy stubs:
   // - If target supports AVX3 features (BW+VL+F) then implementation uses 32 byte vectors (YMMs)
   //   for both special cases (various small block sizes) and aligned copy loop. This is the
@@ -216,7 +216,7 @@ class StubGenerator: public StubCodeGenerator {
   void copy32_masked_avx(Register dst, Register src, XMMRegister xmm,
                          KRegister mask, Register length, Register index,
                          Register temp, int shift = Address::times_1, int offset = 0);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   address generate_disjoint_byte_copy(address* entry);
 

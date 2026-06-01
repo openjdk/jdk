@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
  * @bug     4904067 5023830 7129185 8072015 8292955
  * @summary Unit test for Collections.checkedMap
  * @author  Josh Bloch
- * @run testng CheckedMapBash
  * @key randomness
+ * @library /test/lib
+ * @run testng CheckedMapBash
  */
 
+import jdk.test.lib.valueclass.VClass;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -190,5 +192,19 @@ public class CheckedMapBash {
         Map m = Collections.checkedMap(new HashMap<>(), Integer.class, Integer.class);
         Assert.assertThrows(ClassCastException.class, () -> m.merge("key", "value", (v1, v2) -> null));
         Assert.assertThrows(ClassCastException.class, () -> m.merge("key", 3, (v1, v2) -> v2));
+    }
+
+    @Test
+    public static void testValueCheckedMap() {
+        Map<VClass,VClass> m = Collections.checkedMap(new HashMap<>(), VClass.class, VClass.class);
+        m.put(new VClass(1, new int[] { 1 }), new VClass(10, new int[] { 10 }));
+        if (!m.containsKey(new VClass(1, new int[] { 1 })) || !m.containsValue(new VClass(10, new int[] { 10 })))
+            fail("value checkedMap lookup failed");
+        if (!new HashMap<>(m).equals(m))
+            fail("value checkedMap equals failed");
+        try {
+            ((Map) m).put("not a Tuple", new VClass(2, new int[] { 2 }));
+            fail("value checkedMap accepted wrong type");
+        } catch (ClassCastException expected) { }
     }
 }

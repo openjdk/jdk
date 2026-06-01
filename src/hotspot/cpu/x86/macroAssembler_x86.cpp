@@ -2421,12 +2421,6 @@ void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label
   jcc(Assembler::notEqual, is_flat);
 }
 
-void MacroAssembler::test_field_has_null_marker(Register flags, Register temp_reg, Label& has_null_marker) {
-  movl(temp_reg, flags);
-  testl(temp_reg, 1 << ResolvedFieldEntry::has_null_marker_shift);
-  jcc(Assembler::notEqual, has_null_marker);
-}
-
 void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label) {
   Label test_mark_word;
   // load mark word
@@ -2465,11 +2459,6 @@ void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_re
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
   testl(lh, Klass::_lh_array_tag_flat_value_bit_inplace);
   jcc(Assembler::notZero, is_flat_array);
-}
-
-void MacroAssembler::test_non_flat_array_layout(Register lh, Label& is_non_flat_array) {
-  testl(lh, Klass::_lh_array_tag_flat_value_bit_inplace);
-  jcc(Assembler::zero, is_non_flat_array);
 }
 
 void MacroAssembler::os_breakpoint() {
@@ -5650,24 +5639,6 @@ void MacroAssembler::payload_addr(Register oop, Register data, Register inline_k
   }
 }
 
-void MacroAssembler::data_for_value_array_index(Register array, Register array_klass,
-                                                Register index, Register data) {
-  assert(index != rcx, "index needs to shift by rcx");
-  assert_different_registers(array, array_klass, index);
-  assert_different_registers(rcx, array, index);
-
-  // array->base() + (index << Klass::layout_helper_log2_element_size(lh));
-  movl(rcx, Address(array_klass, Klass::layout_helper_offset()));
-
-  // Klass::layout_helper_log2_element_size(lh)
-  // (lh >> _lh_log2_element_size_shift) & _lh_log2_element_size_mask;
-  shrl(rcx, Klass::_lh_log2_element_size_shift);
-  andl(rcx, Klass::_lh_log2_element_size_mask);
-  shlptr(index); // index << rcx
-
-  lea(data, Address(array, index, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_FLAT_ELEMENT)));
-}
-
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1, DecoratorSet decorators) {
   access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1);
 }
@@ -6512,7 +6483,7 @@ void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair
   }
 }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM/ZMM registers
 void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register val, XMMRegister xtmp, KRegister mask) {
@@ -6716,7 +6687,7 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register val, XMMReg
   BIND(DONE);
 }
 
-#endif //COMPILER2_OR_JVMCI
+#endif //COMPILER2
 
 
 void MacroAssembler::generate_fill(BasicType t, bool aligned,
@@ -10108,7 +10079,7 @@ void MacroAssembler::vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, Add
   }
 }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 void MacroAssembler::fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRegister mask,
                                  Register length, Register temp, int vec_enc) {
@@ -10343,7 +10314,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
   }
   bind(L_exit);
 }
-#endif //COMPILER2_OR_JVMCI
+#endif //COMPILER2
 
 
 void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {

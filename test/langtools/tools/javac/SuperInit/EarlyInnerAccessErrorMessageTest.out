@@ -1,2 +1,2 @@
-EarlyInnerAccessErrorMessageTest.java:13:34: compiler.err.cant.ref.before.ctor.called: x
+EarlyInnerAccessErrorMessageTest.java:17:34: compiler.err.cant.ref.before.ctor.called: x
 1 error

@@ -61,6 +61,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import java.util.Arrays;
+import java.util.function.Predicate;
 
 /** This pass implements dataflow analysis for Java programs though
  *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
@@ -212,7 +213,6 @@ public class Flow {
     private final ExhaustivenessComputer exhaustiveness;
     private Env<AttrContext> attrEnv;
     private final UnsetFieldsInfo unsetFieldsInfo;
-    private final boolean allowValueClasses;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -339,8 +339,6 @@ public class Flow {
         unsetFieldsInfo = UnsetFieldsInfo.instance(context);
         Preview preview = Preview.instance(context);
         Source source = Source.instance(context);
-        allowValueClasses = (!preview.isPreview(Source.Feature.VALUE_CLASSES) || preview.isEnabled()) &&
-                Source.Feature.VALUE_CLASSES.allowedInSource(source);
         exhaustiveness = ExhaustivenessComputer.instance(context);
     }
 
@@ -478,17 +476,30 @@ public class Flow {
             }
         }
 
-        // Do something with static or non-static field initializers and initialization blocks.
-        protected void forEachInitializer(JCClassDecl classDef, boolean isStatic, Consumer<? super JCTree> handler) {
-            forEachInitializer(classDef, isStatic, false, handler);
-        }
+        /** a predicate that selects all static initializers */
+        static final Predicate<JCTree> STATIC_INITS = tree ->
+            switch (tree) {
+                case JCVariableDecl vdecl -> vdecl.sym.isStatic();
+                case JCBlock b -> b.isStatic();
+                default -> false;
+            };
 
-        /* Do something with static or non-static field initializers and initialization blocks.
-         * the `earlyOnly` argument will determine if we will deal or not with early variable instance
-         * initializers we want to process only those before a super() invocation and ignore them after
-         * it.
-         */
-        protected void forEachInitializer(JCClassDecl classDef, boolean isStatic, boolean earlyOnly,
+        /** a predicate that selects early instance initializers */
+        static final Predicate<JCTree> EARLY_INSTANCE_INITS = tree ->
+                tree instanceof JCVariableDecl vdecl && vdecl.sym.isStrictInstance();
+
+        /** a predicate that selects late instance initializers */
+        static final Predicate<JCTree> LATE_INSTANCE_INITS = tree ->
+                switch (tree) {
+                    case JCVariableDecl vdecl -> !vdecl.sym.isStatic() && !vdecl.sym.isStrict();
+                    case JCBlock b -> !b.isStatic();
+                    default -> false;
+                };
+
+        /** a predicate that all instance initializers */
+        static final Predicate<JCTree> INSTANCE_INITS = EARLY_INSTANCE_INITS.or(LATE_INSTANCE_INITS);
+
+        protected void forEachInitializer(JCClassDecl classDef, Predicate<? super JCTree> initFilter,
                                           Consumer<? super JCTree> handler) {
             if (classDef == initScanClass)          // avoid infinite loops
                 return;
@@ -498,27 +509,11 @@ public class Flow {
                 for (List<JCTree> defs = classDef.defs; defs.nonEmpty(); defs = defs.tail) {
                     JCTree def = defs.head;
 
-                    // Don't recurse into nested classes
-                    if (def.hasTag(CLASSDEF))
+                    if (!initFilter.test(def)) {
                         continue;
-
-                    /* we need to check for flags in the symbol too as there could be cases for which implicit flags are
-                     * represented in the symbol but not in the tree modifiers as they were not originally in the source
-                     * code
-                     */
-                    boolean isDefStatic = ((TreeInfo.flags(def) | (TreeInfo.symbolFor(def) == null ? 0 : TreeInfo.symbolFor(def).flags_field)) & STATIC) != 0;
-                    if (!def.hasTag(METHODDEF) && (isDefStatic == isStatic)) {
-                        if (def instanceof JCVariableDecl varDecl) {
-                            boolean isEarly = varDecl.init != null &&
-                                    varDecl.sym.isStrict() &&
-                                    !varDecl.sym.isStatic();
-                            if (isEarly == earlyOnly) {
-                                handler.accept(def);
-                            }
-                        } else if (!earlyOnly) {
-                            handler.accept(def);
-                        }
                     }
+
+                    handler.accept(def);
                 }
             } finally {
                 initScanClass = initScanClassPrev;
@@ -594,13 +589,13 @@ public class Flow {
                 }
 
                 // process all the static initializers
-                forEachInitializer(tree, true, def -> {
+                forEachInitializer(tree, STATIC_INITS, def -> {
                     scanDef(def);
                     clearPendingExits(false);
                 });
 
                 // process all the instance initializers
-                forEachInitializer(tree, false, def -> {
+                forEachInitializer(tree, INSTANCE_INITS, def -> {
                     scanDef(def);
                     clearPendingExits(false);
                 });
@@ -1083,7 +1078,7 @@ public class Flow {
                 }
 
                 // process all the static initializers
-                forEachInitializer(tree, true, def -> {
+                forEachInitializer(tree, STATIC_INITS, def -> {
                     scan(def);
                     errorUncaught();
                 });
@@ -1427,7 +1422,7 @@ public class Flow {
 
             // After super(), scan initializers to uncover any exceptions they throw
             if (TreeInfo.name(tree.meth) == names._super) {
-                forEachInitializer(classDef, false, def -> {
+                forEachInitializer(classDef, INSTANCE_INITS, def -> {
                     scan(def);
                     errorUncaught();
                 });
@@ -1792,14 +1787,14 @@ public class Flow {
             return
                 sym.pos >= startPos &&
                 ((sym.owner.kind == MTH || sym.owner.kind == VAR ||
-                isFinalOrStrictUninitializedField(sym)));
+                isBlankFinalOrStrictField(sym)));
         }
 
-        boolean isFinalOrStrictUninitializedField(VarSymbol sym) {
+        boolean isBlankFinalOrStrictField(VarSymbol sym) {
             return sym.owner.kind == TYP &&
-                   (((sym.flags() & (FINAL | HASINIT | PARAMETER)) == FINAL ||
-                     (sym.flags() & (STRICT | HASINIT | PARAMETER)) == STRICT) &&
-                   classDef.sym.isEnclosedBy((ClassSymbol)sym.owner));
+                   (sym.flags() & (HASINIT | PARAMETER)) == 0 &&
+                   (sym.isFinal() || sym.isStrict()) &&
+                   classDef.sym.isEnclosedBy((ClassSymbol)sym.owner);
         }
 
         /** Initialize new trackable variable by setting its address field
@@ -2022,7 +2017,7 @@ public class Flow {
                 }
 
                 // process all the static initializers
-                forEachInitializer(tree, true, def -> {
+                forEachInitializer(tree, STATIC_INITS, def -> {
                     scan(def);
                     clearPendingExits(false);
                 });
@@ -2110,13 +2105,20 @@ public class Flow {
                      */
                     initParam(def);
                 }
-                if (isConstructor) {
+                if (isConstructor &&
+                        !TreeInfo.hasConstructorCall(tree, names._this)) {
                     Set<VarSymbol> unsetFields = findUninitStrictFields();
                     if (unsetFields != null && !unsetFields.isEmpty()) {
                         unsetFieldsInfo.addUnsetFieldsInfo(classDef.sym, tree.body, unsetFields);
                     }
-                }
 
+                    // Strict fields initializers are executed before the first statement
+                    // in the constructor body, unless the constructor is an alternate constructor
+                    forEachInitializer(classDef, EARLY_INSTANCE_INITS, def -> {
+                        scan(def);
+                        clearPendingExits(false);
+                    });
+                }
                 // else we are in an instance initializer block;
                 // leave caught unchanged.
                 scan(tree.body);
@@ -2634,14 +2636,6 @@ public class Flow {
         }
 
         public void visitApply(JCMethodInvocation tree) {
-            Name name = TreeInfo.name(tree.meth);
-            // let's process early initializers
-            if (name == names._super) {
-                forEachInitializer(classDef, false, true, def -> {
-                    scan(def);
-                    clearPendingExits(false);
-                });
-            }
             scanExpr(tree.meth);
             scanExprs(tree.args);
 
@@ -2649,29 +2643,36 @@ public class Flow {
             if (isConstructor) {
 
                 // If super(): at this point all initialization blocks will execute
-
+                Name name = TreeInfo.name(tree.meth);
                 if (name == names._super) {
-                    // strict fields should have been initialized at this point
-                    for (int i = firstadr; i < nextadr; i++) {
-                        JCVariableDecl vardecl = vardecls[i];
-                        VarSymbol var = vardecl.sym;
-                        if (allowValueClasses && (var.owner == classDef.sym && !var.isStatic() && (var.isStrict() || ((var.flags_field & RECORD) != 0)) && !isCompactOrGeneratedRecordConstructor)) {
-                            checkInit(TreeInfo.diagEndPos(tree), var, Errors.StrictFieldNotHaveBeenInitializedBeforeSuper(var));
-                        }
+                    if (!isCompactOrGeneratedRecordConstructor) {
+                        // all strict fields must be initialized at this point
+                        checkStrictFieldsInitializedBeforeSuper(tree);
                     }
-                    forEachInitializer(classDef, false, def -> {
-                        scan(def);
-                        clearPendingExits(false);
-                    });
+                    forEachInitializer(classDef, LATE_INSTANCE_INITS,
+                            def -> {
+                                scan(def);
+                                clearPendingExits(false);
+                            });
                 }
 
                 // If this(): at this point all final uninitialized fields will get initialized
                 else if (name == names._this) {
                     for (int address = firstadr; address < nextadr; address++) {
                         VarSymbol sym = vardecls[address].sym;
-                        if (isFinalOrStrictUninitializedField(sym) && !sym.isStatic())
+                        if (isBlankFinalOrStrictField(sym) && !sym.isStatic())
                             letInit(tree.pos(), sym);
                     }
+                }
+            }
+        }
+
+        void checkStrictFieldsInitializedBeforeSuper(JCMethodInvocation tree) {
+            for (int i = firstadr; i < nextadr; i++) {
+                JCVariableDecl vardecl = vardecls[i];
+                VarSymbol var = vardecl.sym;
+                if (var.owner == classDef.sym && var.isStrictInstance()) {
+                    checkInit(TreeInfo.diagEndPos(tree), var, Errors.StrictFieldNotHaveBeenInitializedBeforeSuper(var));
                 }
             }
         }

@@ -2299,7 +2299,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
         && ((flags & JVM_ACC_STATIC) == 0 )
         && !_access_flags.is_identity_class()) {
       classfile_parse_error("Invalid synchronized method in non-identity class %s", THREAD);
-        return nullptr;
+      return nullptr;
     }
   }
 
@@ -4921,8 +4921,7 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
     case JVM_SIGNATURE_LONG:
     case JVM_SIGNATURE_DOUBLE:
       return signature + 1;
-    case JVM_SIGNATURE_CLASS:
-    {
+    case JVM_SIGNATURE_CLASS: {
       if (_major_version < JAVA_1_5_VERSION) {
         signature++;
         length--;
@@ -6372,6 +6371,7 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
       TempNewSymbol name = Signature::strip_envelope(sig);
       if (name == _class_name) continue;
       if (PreloadClasses && is_class_in_loadable_descriptors_attribute(sig)) {
+        ResourceMark rm(THREAD);
         log_info(class, preload)("Preloading of class %s during loading of class %s. "
                                  "Cause: field type in LoadableDescriptors attribute",
                                  name->as_C_string(), _class_name->as_C_string());
@@ -6423,12 +6423,14 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
         InstanceKlass* klass = SystemDictionary::find_instance_klass(THREAD, name, Handle(THREAD, loader));
         if (klass != nullptr && klass->is_inline_klass()) {
           set_inline_layout_info_klass(fieldinfo.index(), InlineKlass::cast(klass), CHECK);
+          ResourceMark rm(THREAD);
           log_info(class, preload)("During loading of class %s , class %s found in local system dictionary"
                                    "(field type not in LoadableDescriptors attribute)",
                                    _class_name->as_C_string(), name->as_C_string());
         } else if (fieldinfo.field_flags().is_null_free_inline_type()) {
+          ResourceMark rm(THREAD);
           if (klass == nullptr) {
-          log_warning(class, preload)("During loading of class %s, class %s is unknown, "
+            log_warning(class, preload)("During loading of class %s, class %s is unknown, "
                                  "but a field of this type was annotated with @NullRestricted, "
                                  "the annotation is ignored",
                                  _class_name->as_C_string(), name->as_C_string());

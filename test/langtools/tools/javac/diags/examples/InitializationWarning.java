@@ -25,9 +25,7 @@
 // options: -Xlint:initialization --enable-preview -source ${jdk.version}
 
 public class InitializationWarning {
-    Object o = null;
-
     InitializationWarning(Object oo) {
-        this.o = oo;
+        hashCode();
     }
 }

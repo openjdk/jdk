@@ -1,11 +1,14 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8325805
+ * @library /tools/javac/lib
  * @summary Permit non-superclass instance field assignments before this/super in constructors
+ * @modules jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @compile/fail/ref=EarlyAssignments.out -XDrawDiagnostics EarlyAssignments.java
- * @build InitializationWarningTester
- * @run main InitializationWarningTester EarlyAssignments EarlyAssignmentsWarnings.out
+ * @build SuperCallRemover
+ * @compile/fail/ref=EarlyAssignmentsWarnings.out -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyAssignments.java
  */
 public class EarlyAssignments {
 
@@ -176,7 +179,7 @@ public class EarlyAssignments {
         int x = 1;
         int y;
         Inner9() {
-            y = x; // FAIL, x has an initializer
+            y = x; // FAIL, x has an initializer; no warning mode diagnostic, as this would be ok for a strict field
             super();
         }
     }
