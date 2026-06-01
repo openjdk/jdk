@@ -3355,9 +3355,9 @@ public class IRNode {
         beforeMatchingNameRegex(OPAQUE_CONSTANT_BOOL, "OpaqueConstantBool");
     }
 
-    public static final String BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP = PREFIX + "BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP" + POSTFIX;
+    public static final String BIMORPHIC_TRAP = PREFIX + "BIMORPHIC_TRAP" + POSTFIX;
     static {
-        trapNodes(BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP, "bimorphic_or_optimized_type_check");
+        trapNodes(BIMORPHIC_TRAP, "bimorphic");
     }
 
     /*

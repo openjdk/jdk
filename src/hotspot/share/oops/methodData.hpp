@@ -1171,6 +1171,7 @@ protected:
     receiver_type_row_cell_count = (count0_offset + 1) - receiver0_offset
   };
 
+  ProfileData* _pd;
   const int _base_off;
   const int _type_width;
 
