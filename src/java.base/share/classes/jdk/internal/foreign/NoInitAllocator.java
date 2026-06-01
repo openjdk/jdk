@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,37 +25,8 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment.Scope;
+public interface NoInitAllocator {
 
-public final class ArenaImpl implements Arena, NoInitAllocator {
+    public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment);
 
-    private final MemorySessionImpl session;
-    private final boolean shouldReserveMemory;
-
-    ArenaImpl(MemorySessionImpl session) {
-        this.session = session;
-        shouldReserveMemory = session instanceof ImplicitSession;
-        super();
-    }
-
-    @Override
-    public Scope scope() {
-        return session;
-    }
-
-    @Override
-    public void close() {
-        session.close();
-    }
-
-    @Override
-    public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
-        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserveMemory, false);
-    }
-
-    @Override
-    public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
-        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserveMemory, true);
-    }
 }

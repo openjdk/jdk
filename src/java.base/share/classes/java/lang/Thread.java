@@ -394,6 +394,22 @@ public class Thread implements Runnable {
     }
 
     /*
+     * Lazily initialized allocator used to speed up small allocations made by
+     * confined arenas owned by this thread.
+     */
+    @Stable
+    private AutoCloseable confinedArenaAllocator;
+
+    AutoCloseable confinedArenaAllocator() {
+        return confinedArenaAllocator;
+    }
+
+    void setConfinedArenaAllocator(AutoCloseable allocator) {
+        assert confinedArenaAllocator == null;
+        confinedArenaAllocator = allocator;
+    }
+
+    /*
      * Lock object for thread interrupt.
      */
     final Object interruptLock = new Object();
@@ -1547,6 +1563,16 @@ public class Thread implements Runnable {
     void clearReferences() {
         threadLocals = null;
         inheritableThreadLocals = null;
+        if (confinedArenaAllocator != null) {
+            try {
+                confinedArenaAllocator.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        // It is safe to reset this variable to null even though it might be constant
+        // folded (as the thread died anyhow).
+        confinedArenaAllocator = null;
         if (uncaughtExceptionHandler != null)
             uncaughtExceptionHandler = null;
         if (nioBlocker != null)

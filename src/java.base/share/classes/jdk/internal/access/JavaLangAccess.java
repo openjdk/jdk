@@ -582,6 +582,16 @@ public interface JavaLangAccess {
     Object scopedValueBindings();
 
     /**
+     * Returns the thread's cached confined arena allocator, if any.
+     */
+    AutoCloseable confinedArenaAllocator(Thread thread);
+
+    /**
+     * Sets the thread's cached confined arena allocator.
+     */
+    void setConfinedArenaAllocator(Thread thread, AutoCloseable allocator);
+
+    /**
      * Returns the native thread ID for the given platform thread or 0 if not set.
      */
     long nativeThreadID(Thread thread);

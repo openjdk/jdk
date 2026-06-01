@@ -254,7 +254,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * are zero-initialized.
      */
     static Arena ofConfined() {
-        return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
+        return MemorySessionImpl.createConfinedArena(Thread.currentThread());
     }
 
     /**

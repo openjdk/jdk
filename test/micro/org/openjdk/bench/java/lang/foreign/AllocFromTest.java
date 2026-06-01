@@ -74,6 +74,14 @@ public class AllocFromTest extends CLayouts {
     }
 
     @Benchmark
+    @Fork(jvmArgsAppend = {"-Djava.lang.foreign.native.confined.arena.pool-slots=0"})
+    public MemorySegment alloc_confined_no_pool() {
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
+    }
+
+    @Benchmark
     public MemorySegment alloc_malloc_arena() {
         try (MallocArena arena = new MallocArena()) {
             return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);

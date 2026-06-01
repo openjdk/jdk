@@ -26,6 +26,7 @@
 package jdk.internal.foreign;
 
 import jdk.internal.invoke.MhUtil;
+import jdk.internal.misc.CarrierThread;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandles;
@@ -80,6 +81,21 @@ final class ConfinedSession extends MemorySessionImpl {
         } else {
             throw alreadyAcquired(acquire);
         }
+    }
+
+    // Only call this method during thread cleanup!
+    void closeFromThreadCleanup() {
+        if (ownerThread().isVirtual()) {
+            // Allow a CarrierThread to close a confined are on behalf of the
+            // owning virtual thread.
+            if (state < OPEN) {
+                throw ALREADY_CLOSED.newRuntimeException();
+            }
+        } else {
+            checkValidState();
+        }
+        state = CLOSED;
+        resourceList.cleanup();
     }
 
     /**

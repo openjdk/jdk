@@ -2277,6 +2277,14 @@ public final class System {
                 return Thread.scopedValueBindings();
             }
 
+            public AutoCloseable confinedArenaAllocator(Thread thread) {
+                return thread.confinedArenaAllocator();
+            }
+
+            public void setConfinedArenaAllocator(Thread thread, AutoCloseable allocator) {
+                thread.setConfinedArenaAllocator(allocator);
+            }
+
             public long nativeThreadID(Thread thread) {
                 return thread.nativeThreadID();
             }

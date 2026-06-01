@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,13 @@ public final class SegmentBulkOperations {
     private static final long LONG_MASK = ~7L; // The last three bits are zero
     private static final long BYTE_REPLICATOR = 0x0101010101010101L;
 
+    static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";
+
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
-    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
-    private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
-    private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
+    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr(PROPERTY_PATH + "fill", 5);
+    private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr(PROPERTY_PATH + "mismatch", 6);
+    private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr(PROPERTY_PATH + "copy", 6);
 
     @ForceInline
     public static MemorySegment fill(AbstractMemorySegmentImpl dst, byte value) {
@@ -377,11 +379,9 @@ public final class SegmentBulkOperations {
         return ~remaining;
     }
 
-    static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";
-
     // The returned value is in the interval [0, 2^30]
     static int powerOfPropertyOr(String name, int defaultPower) {
-        final int power = Integer.getInteger(PROPERTY_PATH + name, defaultPower);
+        final int power = Integer.getInteger(name, defaultPower);
         return 1 << Math.clamp(power, 0, Integer.SIZE - 2);
     }
 
