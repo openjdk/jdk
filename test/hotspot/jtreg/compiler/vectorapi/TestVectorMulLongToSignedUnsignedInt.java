@@ -27,6 +27,7 @@ import jdk.incubator.vector.*;
 import static jdk.incubator.vector.VectorOperators.AND;
 import static jdk.incubator.vector.VectorOperators.MUL;
 import static jdk.incubator.vector.VectorOperators.LSHR;
+import static jdk.incubator.vector.VectorOperators.ASHR;
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
 
@@ -36,9 +37,9 @@ import compiler.lib.verify.*;
  * @summary C2: Incorrect uint constant match mishandles negative values in vectors
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @run driver compiler.vectorapi.TestVectorMulLongUint
+ * @run driver compiler.vectorapi.TestVectorMulLongToSignedUnsignedInt
  */
-public class TestVectorMulLongUint {
+public class TestVectorMulLongToSignedUnsignedInt {
     static final VectorSpecies<Long> SPECIES = LongVector.SPECIES_PREFERRED;
     static final int SIZE = SPECIES.length();
 
@@ -46,11 +47,16 @@ public class TestVectorMulLongUint {
     static final long[] src2 = new long[SIZE];
     static long[] res = new long[SIZE];
 
+    static final boolean[] mask_arr = new boolean[SIZE];
+    static final VectorMask<Long> MASK;
+
     static {
         for (int i = 0; i < SIZE; i++) {
             src1[i] = 0x1_0000_0001L;
             src2[i] = 0x2_0000_0002L;
+            mask_arr[i] = (i % 2) == 0;
         }
+        MASK = VectorMask.fromArray(SPECIES, mask_arr, 0);
     }
 
     public static void main(String[] args) {
@@ -231,6 +237,69 @@ public class TestVectorMulLongUint {
         long[] expected = new long[SPECIES.length()];
         for (int i = 0; i < SPECIES.length(); i++) {
             expected[i] = (src1[i] >>> 32) * (src2[i] & -2L);
+        }
+        Verify.checkEQ(res, expected);
+    }
+
+    // Case 10: Predicated AndV (uint path). Inactive lanes preserves destination with non-zero upper 32 bits.
+    @Test
+    @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx512f", "true"})
+    public static void testPredicatedAndMask() {
+        LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
+        LongVector v2 = LongVector.fromArray(SPECIES, src2, 0);
+        v1.lanewise(AND, 0xFFFF_FFFFL, MASK).lanewise(MUL, v2.lanewise(AND, 0xFFFF_FFFFL, MASK)).intoArray(res, 0);
+    }
+
+    @Run(test = "testPredicatedAndMask")
+    public void runPredicatedAndMask() {
+        testPredicatedAndMask();
+        long[] expected = new long[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            long a = mask_arr[i] ? (src1[i] & 0xFFFF_FFFFL) : src1[i];
+            long b = mask_arr[i] ? (src2[i] & 0xFFFF_FFFFL) : src2[i];
+            expected[i] = a * b;
+        }
+        Verify.checkEQ(res, expected);
+    }
+
+    // Case 11: Predicated URShiftVL by 32 (uint path). Inactive lanes preserves destination with non-zero upper 32 bits.
+    @Test
+    @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx512f", "true"})
+    public static void testPredicatedURShift32() {
+        LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
+        LongVector v2 = LongVector.fromArray(SPECIES, src2, 0);
+        v1.lanewise(LSHR, 32, MASK).lanewise(MUL, v2.lanewise(LSHR, 32, MASK)).intoArray(res, 0);
+    }
+
+    @Run(test = "testPredicatedURShift32")
+    public void runPredicatedURShift32() {
+        testPredicatedURShift32();
+        long[] expected = new long[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            long a = mask_arr[i] ? (src1[i] >>> 32) : src1[i];
+            long b = mask_arr[i] ? (src2[i] >>> 32) : src2[i];
+            expected[i] = a * b;
+        }
+        Verify.checkEQ(res, expected);
+    }
+
+    // Case 12: Predicated RShiftVL (arithmetic) by 32.
+    @Test
+    @IR(failOn = {IRNode.X86_VMULDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx512f", "true"})
+    public static void testPredicatedRShift32() {
+        LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
+        LongVector v2 = LongVector.fromArray(SPECIES, src2, 0);
+        v1.lanewise(ASHR, 32, MASK).lanewise(MUL, v2.lanewise(ASHR, 32, MASK)).intoArray(res, 0);
+    }
+
+    @Run(test = "testPredicatedRShift32")
+    public void runPredicatedRShift32() {
+        testPredicatedRShift32();
+        long[] expected = new long[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            long a = mask_arr[i] ? (src1[i] >> 32) : src1[i];
+            long b = mask_arr[i] ? (src2[i] >> 32) : src2[i];
+            expected[i] = a * b;
         }
         Verify.checkEQ(res, expected);
     }
