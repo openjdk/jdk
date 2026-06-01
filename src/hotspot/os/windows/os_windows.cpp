@@ -243,18 +243,10 @@ static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSiz
   return result;
 }
 
-static void* lookup_kernelbase_library() {
-  const char* const name = "KernelBase";
-  char ebuf[1024];
-  void* const handle = os::dll_load(name, ebuf, sizeof(ebuf));
-  if (handle == nullptr) {
-    log_trace(os)("Failed to load library: %s: %s", name, ebuf);
-  }
-  return handle;
-}
-
 void* os::win32::lookup_kernelbase_symbol(const char* name) {
-  static void* const handle = lookup_kernelbase_library();
+  // Pass a small ebuf so dll_load logs failures, but don't use it here to avoid redundancy.
+  char ebuf[1024];
+  static void* const handle = os::dll_load("KernelBase", ebuf, sizeof(ebuf));
   if (handle == nullptr) {
     return nullptr;
   }
