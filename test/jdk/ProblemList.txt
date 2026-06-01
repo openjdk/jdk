@@ -409,8 +409,8 @@ java/lang/invoke/RicochetTest.java                              8251969 generic-
 
 # jdk_instrument
 
-java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all
-java/lang/instrument/RetransformBigClass.sh                     8065756 generic-all
+java/lang/instrument/RedefineBigClassTest.java                        8065756 generic-all
+java/lang/instrument/RetransformBigClassDriver.java                     8065756 generic-all
 
 ############################################################################
 
