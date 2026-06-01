@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
  *                    TestConfinedSegmentPool
@@ -32,21 +33,25 @@
  *                    TestConfinedSegmentPool
  */
 
+import jdk.test.lib.thread.VThreadScheduler;
+
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
@@ -131,17 +136,7 @@ final class TestConfinedSegmentPool {
             throw failureRef.get();
         }
 
-        if (thread.isVirtual()) {
-            // Give the virtual thread some time to clean up
-            long timeOut = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
-            while (System.nanoTime() < timeOut) {
-                if (threadAllocator(thread) == null) {
-                    break;
-                }
-                LockSupport.parkNanos(1_000_000L);
-            }
-        }
-
+        awaitThreadAllocatorCleared(thread);
         assertNull(name, threadAllocator(thread));
     }
 
@@ -161,6 +156,10 @@ final class TestConfinedSegmentPool {
 
     static int poolSlots() throws ReflectiveOperationException {
         return POOL_SLOTS_FIELD.getInt(null);
+    }
+
+    static long poolSlotSize() throws ReflectiveOperationException {
+        return POOL_SLOT_SIZE_FIELD.getLong(null);
     }
 
     @Test
@@ -239,6 +238,125 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
+    void testLargeAllocationDoesNotConsumePoolSlot() throws Exception {
+        Assumptions.assumeTrue(poolSlots() > 0, "Pool is disabled");
+        long poolSlotSize = poolSlotSize();
+        Assumptions.assumeTrue(poolSlotSize < (1 << 20), "Pool slot too large for fallback test");
+
+        long pooledAddress;
+        try (Arena arena = Arena.ofConfined()) {
+            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            MemorySegment largeSegment = arena.allocate(poolSlotSize + 1);
+            largeSegment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
+
+            MemorySegment pooledSegment = arena.allocate(ValueLayout.JAVA_BYTE);
+            pooledAddress = pooledSegment.address();
+            pooledSegment.set(ValueLayout.JAVA_BYTE, 0, (byte) 1);
+        }
+
+        try (Arena arena = Arena.ofConfined()) {
+            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            MemorySegment pooledSegment = arena.allocate(ValueLayout.JAVA_BYTE);
+            assertEquals(pooledSegment.address(), pooledAddress);
+            assertEquals((byte) 0, pooledSegment.get(ValueLayout.JAVA_BYTE, 0));
+        }
+    }
+
+    @Test
+    void testPoolExhaustionFallsBack() throws Exception {
+        int poolSlots = poolSlots();
+        Assumptions.assumeTrue(poolSlots > 0, "Pool is disabled");
+
+        List<Arena> arenas = new ArrayList<>();
+        try {
+            for (int i = 0; i < poolSlots; i++) {
+                Arena arena = Arena.ofConfined();
+                assertEquals("CachedArena", arena.getClass().getSimpleName());
+                MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE);
+                assertSame(arena.scope(), segment.scope());
+                segment.set(ValueLayout.JAVA_BYTE, 0, (byte) i);
+                arenas.add(arena);
+            }
+
+            try (Arena overflowArena = Arena.ofConfined()) {
+                assertEquals("CachedArena", overflowArena.getClass().getSimpleName());
+                MemorySegment segment = overflowArena.allocate(ValueLayout.JAVA_BYTE);
+                assertSame(overflowArena.scope(), segment.scope());
+                segment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
+            }
+        } finally {
+            for (Arena arena : arenas) {
+                if (arena.scope().isAlive()) {
+                    arena.close();
+                }
+            }
+        }
+    }
+
+    @Test
+    void testAllocateFromReusesCachedSlot() throws Exception {
+        byte[] firstBytes = { 1, 2, 3, 4 };
+        byte[] secondBytes = { 5, 6, 7, 8 };
+        Assumptions.assumeTrue(poolSlotSize() >= firstBytes.length, "Pool slot too small");
+
+        long firstAddress;
+        try (Arena arena = Arena.ofConfined()) {
+            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, firstBytes);
+            firstAddress = segment.address();
+            assertBytes(segment, firstBytes);
+        }
+
+        try (Arena arena = Arena.ofConfined()) {
+            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, secondBytes);
+            assertEquals(segment.address(), firstAddress);
+            assertBytes(segment, secondBytes);
+        }
+    }
+
+    @Test
+    void testVirtualThreadCleanupWithCustomScheduler() throws Throwable {
+        Assumptions.assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+
+        ExecutorService scheduler = Executors.newSingleThreadExecutor();
+        try {
+            AtomicReference<Object> allocatorRef = new AtomicReference<>();
+            AtomicReference<Throwable> failureRef = new AtomicReference<>();
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+            Thread thread = factory.newThread(() -> {
+                try (Arena arena = Arena.ofConfined()) {
+                    assertEquals("CachedArena", arena.getClass().getSimpleName());
+                    Object allocator = threadAllocator(Thread.currentThread());
+                    assertNotNull(allocator);
+                    assertTrue(backingArena(allocator).scope().isAlive());
+                    allocatorRef.set(allocator);
+
+                    MemorySegment segment = arena.allocate(ValueLayout.JAVA_LONG);
+                    segment.set(ValueLayout.JAVA_LONG, 0, 42L);
+                } catch (Throwable ex) {
+                    failureRef.set(ex);
+                }
+            });
+
+            thread.start();
+            thread.join();
+
+            if (failureRef.get() != null) {
+                throw failureRef.get();
+            }
+
+            Object allocator = allocatorRef.get();
+            assertNotNull(allocator);
+            awaitThreadAllocatorCleared(thread);
+            assertNull(threadAllocator(thread));
+            assertFalse(backingArena(allocator).scope().isAlive());
+        } finally {
+            scheduler.shutdownNow();
+        }
+    }
+
+    @Test
     void testScopesAreUnique() {
         Arena firstArena = Arena.ofConfined();
         Arena secondArena = Arena.ofConfined();
@@ -295,6 +413,22 @@ final class TestConfinedSegmentPool {
             if (arena.scope().isAlive()) {
                 arena.close();
             }
+        }
+    }
+
+    static void awaitThreadAllocatorCleared(Thread thread) throws ReflectiveOperationException {
+        long timeOut = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (System.nanoTime() < timeOut) {
+            if (threadAllocator(thread) == null) {
+                return;
+            }
+            LockSupport.parkNanos(1_000_000L);
+        }
+    }
+
+    static void assertBytes(MemorySegment segment, byte[] bytes) {
+        for (int i = 0; i < bytes.length; i++) {
+            assertEquals(bytes[i], segment.get(ValueLayout.JAVA_BYTE, i));
         }
     }
 
