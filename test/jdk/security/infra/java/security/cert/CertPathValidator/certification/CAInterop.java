@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,9 +290,8 @@
  * @summary Interoperability tests with Microsoft TLS root CAs
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop microsoftrsa2017 OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop microsoftrsa2017 OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath CAInterop microsoftrsa2017 CRL
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop microsoftrsa2017 DEFAULT
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop microsoftrsa2017 DEFAULT
  */
 
 /*
@@ -543,6 +542,34 @@
  * sectigotlsroote46 CRL
  */
 
+/*
+ * @test id=wisekeyglobalrootgbca
+ * @bug 8372351
+ * @summary Interoperability tests with OISTE WISeKey Global Root GB CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * wisekeyglobalrootgbca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop wisekeyglobalrootgbca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * wisekeyglobalrootgbca CRL
+ */
+
+/*
+ * @test id=wisekeyglobalrootgcca
+ * @bug 8372351
+ * @summary Interoperability tests with OISTE WISeKey Global Root GC CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * wisekeyglobalrootgcca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop wisekeyglobalrootgcca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * wisekeyglobalrootgcca CRL
+ */
+
 /**
  * Collection of certificate validation tests for interoperability with external CAs.
  * These tests are marked as manual as they depend on external infrastructure and may fail
@@ -579,8 +606,8 @@ public class CAInterop {
                     new CATestURLs("https://valid.business.ca22.ssl.buypass.no",
                     "https://revoked.business.ca22.ssl.buypass.no");
             case "buypassclass3ca" ->
-                    new CATestURLs("https://valid.qcevident.ca23.ssl.buypass.no",
-                    "https://revoked.qcevident.ca23.ssl.buypass.no");
+                    new CATestURLs("https://valid.evident.ca23.ssl.buypass.no",
+                    "https://revoked.evident.ca23.ssl.buypass.no");
 
             case "comodorsaca" ->
                     new CATestURLs("https://comodorsacertificationauthority-ev.comodoca.com",
@@ -720,6 +747,13 @@ public class CAInterop {
             case "sectigotlsroote46" ->
                     new CATestURLs("https://sectigopublicserverauthenticationroote46-ev.sectigo.com",
                             "https://sectigopublicserverauthenticationroote46-ev.sectigo.com:444");
+
+            case "wisekeyglobalrootgbca" ->
+                    new CATestURLs("https://gbvalidssl.hightrusted.com",
+                            "https://gbrevokedssl.hightrusted.com");
+            case "wisekeyglobalrootgcca" ->
+                    new CATestURLs("https://gcvalidssl.hightrusted.com",
+                            "https://gcrevokedssl.hightrusted.com");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };

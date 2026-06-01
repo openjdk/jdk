@@ -876,7 +876,7 @@ public:
   void bind(Label& L) {
     Assembler::bind(L);
     // fences across basic blocks should not be merged
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
   }
 
   typedef void (MacroAssembler::* compare_and_branch_insn)(Register Rs1, Register Rs2, const address dest);

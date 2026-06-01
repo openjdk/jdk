@@ -35,7 +35,7 @@ define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for im
 define_pd_global(bool, TrapBasedNullChecks,      false); // Not needed on x86.
 define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls passed to check cast
 
-define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_PRESENT(true) NOT_COMPILER2(false));
 
 define_pd_global(size_t, CodeCacheSegmentSize,   64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 // See 4827828 for this change. There is no globals_core_i486.hpp. I can't
@@ -45,11 +45,11 @@ define_pd_global(size_t, CodeCacheSegmentSize,   64 COMPILER1_AND_COMPILER2_PRES
 // the vep is aligned at CodeEntryAlignment whereas c2 only aligns
 // the uep and the vep doesn't get real alignment but just slops on by
 // only assured that the entry instruction meets the 5 byte size requirement.
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 define_pd_global(uint, CodeEntryAlignment,       32);
 #else
 define_pd_global(uint, CodeEntryAlignment,       16);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 define_pd_global(intx, OptoLoopAlignment,        16);
 define_pd_global(intx, InlineSmallCode,          1000);
 
@@ -99,7 +99,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                                                                             \
   product(int, UseSSE, 4,                                                   \
           "Highest supported SSE instructions set on x86/x64")              \
-          range(0, 4)                                                       \
+          range(2, 4)                                                       \
                                                                             \
   product(int, UseAVX, 3,                                                   \
           "Highest supported AVX instructions set on x86/x64")              \

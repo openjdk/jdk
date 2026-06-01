@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -137,16 +137,16 @@ CDS_DUMP_FLAGS = -Xmx128M -Xms128M
 # Helper function for creating the CDS archives for the JDK and JRE
 #
 # Param1 - VM variant (e.g., server, client, zero, ...)
-# Param2 - _nocoops, _coh, _nocoops_coh, or empty
+# Param2 - _nocoops, _nocoh, _nocoops_nocoh, or empty
 define CreateCDSArchive
   $1_$2_COOPS_OPTION := $(if $(findstring _nocoops, $2),-XX:-UseCompressedOops)
   # enable and also explicitly disable coh as needed.
   ifeq ($(call isTargetCpuBits, 64), true)
-    $1_$2_COH_OPTION := -XX:+UnlockExperimentalVMOptions \
-                        $(if $(findstring _coh, $2),-XX:+UseCompactObjectHeaders,-XX:-UseCompactObjectHeaders)
+    $1_$2_NOCOH_OPTION := -XX:+UnlockExperimentalVMOptions \
+                        $(if $(findstring _nocoh, $2),-XX:-UseCompactObjectHeaders,-XX:+UseCompactObjectHeaders)
   endif
-  $1_$2_DUMP_EXTRA_ARG := $$($1_$2_COOPS_OPTION) $$($1_$2_COH_OPTION)
-  $1_$2_DUMP_TYPE      := $(if $(findstring _nocoops, $2),-NOCOOPS,)$(if $(findstring _coh, $2),-COH,)
+  $1_$2_DUMP_EXTRA_ARG := $$($1_$2_COOPS_OPTION) $$($1_$2_NOCOH_OPTION)
+  $1_$2_DUMP_TYPE      := $(if $(findstring _nocoops, $2),-NOCOOPS,)$(if $(findstring _nocoh, $2),-NOCOH,)
 
   $1_$2_CDS_DUMP_FLAGS := $(CDS_DUMP_FLAGS) $(if $(filter g1gc, $(JVM_FEATURES_$1)), -XX:+UseG1GC)
 
@@ -200,12 +200,12 @@ ifeq ($(BUILD_CDS_ARCHIVE), true)
     $(foreach v, $(JVM_VARIANTS), \
       $(eval $(call CreateCDSArchive,$v,_nocoops)) \
     )
-    ifeq ($(BUILD_CDS_ARCHIVE_COH), true)
+    ifeq ($(BUILD_CDS_ARCHIVE_NOCOH), true)
       $(foreach v, $(JVM_VARIANTS), \
-        $(eval $(call CreateCDSArchive,$v,_coh)) \
+        $(eval $(call CreateCDSArchive,$v,_nocoh)) \
       )
       $(foreach v, $(JVM_VARIANTS), \
-        $(eval $(call CreateCDSArchive,$v,_nocoops_coh)) \
+        $(eval $(call CreateCDSArchive,$v,_nocoops_nocoh)) \
       )
     endif
   endif

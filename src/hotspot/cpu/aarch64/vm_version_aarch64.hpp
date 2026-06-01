@@ -38,7 +38,6 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 protected:
   static int _cpu;
@@ -70,9 +69,9 @@ protected:
   // Read additional info using OS-specific interfaces
   static void get_os_cpu_info();
 
-  // Sets the SVE length and returns a new actual value or negative on error.
-  // If the len is larger than the system largest supported SVE vector length,
-  // the function sets the largest supported value.
+  // Set the SVE vector length to len. If the vector length cannot be
+  // changed to len, set the length to the largest possible value.
+  // Return the length that will be used, or -ve if an error occurred.
   static int set_and_get_current_sve_vector_length(int len);
   static int get_current_sve_vector_length();
 
@@ -144,33 +143,32 @@ public:
     CPU_MODEL_ARM_NEOVERSE_N3   = 0xd8e,
   };
 
-#define CPU_FEATURE_FLAGS(decl)               \
-    decl(FP,            fp,            0)     \
-    decl(ASIMD,         asimd,         1)     \
-    decl(EVTSTRM,       evtstrm,       2)     \
-    decl(AES,           aes,           3)     \
-    decl(PMULL,         pmull,         4)     \
-    decl(SHA1,          sha1,          5)     \
-    decl(SHA2,          sha256,        6)     \
-    decl(CRC32,         crc32,         7)     \
-    decl(LSE,           lse,           8)     \
-    decl(FPHP,          fphp,          9)     \
-    decl(ASIMDHP,       asimdhp,       10)    \
-    decl(DCPOP,         dcpop,         16)    \
-    decl(SHA3,          sha3,          17)    \
-    decl(SHA512,        sha512,        21)    \
-    decl(SVE,           sve,           22)    \
-    decl(SB,            sb,            29)    \
-    decl(PACA,          paca,          30)    \
-    /* flags above must follow Linux HWCAP */ \
-    decl(SVEBITPERM,    svebitperm,    27)    \
-    decl(SVE2,          sve2,          28)    \
-    decl(A53MAC,        a53mac,        31)    \
-    decl(ECV,           ecv,           32)    \
-    decl(WFXT,          wfxt,          33)
+#define CPU_FEATURE_FLAGS(decl)            \
+    decl(FP,            fp            )    \
+    decl(ASIMD,         asimd         )    \
+    decl(EVTSTRM,       evtstrm       )    \
+    decl(AES,           aes           )    \
+    decl(PMULL,         pmull         )    \
+    decl(SHA1,          sha1          )    \
+    decl(SHA2,          sha256        )    \
+    decl(CRC32,         crc32         )    \
+    decl(LSE,           lse           )    \
+    decl(FPHP,          fphp          )    \
+    decl(ASIMDHP,       asimdhp       )    \
+    decl(DCPOP,         dcpop         )    \
+    decl(SHA3,          sha3          )    \
+    decl(SHA512,        sha512        )    \
+    decl(SVE,           sve           )    \
+    decl(SB,            sb            )    \
+    decl(PACA,          paca          )    \
+    decl(SVEBITPERM,    svebitperm    )    \
+    decl(SVE2,          sve2          )    \
+    decl(A53MAC,        a53mac        )    \
+    decl(ECV,           ecv           )    \
+    decl(WFXT,          wfxt          )
 
   enum Feature_Flag {
-#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = bit,
+#define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
 #undef DECLARE_CPU_FEATURE_FLAG
     MAX_CPU_FEATURES
@@ -178,10 +176,10 @@ public:
 
   STATIC_ASSERT(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
 
-  static const char* _features_names[MAX_CPU_FEATURES];
+  static const char* _features_names[];
 
   // Feature identification
-#define CPU_FEATURE_DETECTION(id, name, bit) \
+#define CPU_FEATURE_DETECTION(id, name) \
   static bool supports_##name() { return supports_feature(CPU_##id); }
   CPU_FEATURE_FLAGS(CPU_FEATURE_DETECTION)
 #undef CPU_FEATURE_DETECTION

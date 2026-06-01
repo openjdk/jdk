@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,6 @@ const char* OldObjectRoot::system_description(System system) {
       return "Class Loader Data";
     case _code_cache:
       return "Code Cache";
-#if INCLUDE_JVMCI
-    case _jvmci:
-      return "JVMCI";
-#endif
     default:
       ShouldNotReachHere();
   }
