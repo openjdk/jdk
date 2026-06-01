@@ -1214,15 +1214,19 @@ class LoadVectorNode : public LoadNode {
 #endif
 };
 
-// Load Vector from memory via index map
+// Gather:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   output[i] = adr[indices[i]]
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
   LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
-    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
-    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
   }
 
@@ -1277,8 +1281,13 @@ class StoreVectorNode : public StoreNode {
 #endif
 };
 
-// Store Vector into memory via index map
- class StoreVectorScatterNode : public StoreVectorNode {
+// Scatter:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   adr[indices[i]] = val[i]
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
+class StoreVectorScatterNode : public StoreVectorNode {
   public:
    enum { Indices = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
@@ -1338,7 +1347,12 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   }
 };
 
-// Load Vector from memory via index map under the influence of a predicate register(mask).
+// Masked Gather:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   output[i] = mask[i] ? adr[indices[i]] : 0
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
   LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
@@ -1347,7 +1361,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
-    assert(is_subword_type(vt->element_basic_type()) || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
   }
 
   virtual int Opcode() const;
@@ -1360,7 +1374,12 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
   }
 };
 
-// Store Vector into memory via index map under the influence of a predicate register(mask).
+// Masked Scatter:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   if (mask[i]) { adr[indices[i]] = val[i] }
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
    enum { Indices = 4,
