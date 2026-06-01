@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
  *      6894719 6968053 7151434 7146424 8007333 8077822 8143640 8132379 8218547
+ *      8385024
  * @summary Argument parsing validation.
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -517,7 +518,7 @@ public class Arrrghs extends TestHelper {
         final int MAX_PATH = 260;
         String jarName = "elp.jar";
         String dirSegment = "longpathtest_longpathtest/";
-        int cwdLen = Path.of(".").toAbsolutePath().normalize().toString().length();
+        int cwdLen = Path.of(System.getProperty("user.dir")).toString().length();
 
         // We want `cwdLen + 1 + relativeLen` to be longer than `MAX_PATH` and
         // `relativeLen` to be shorter than `MAX_PATH`, where `relativeLen` is
