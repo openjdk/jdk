@@ -229,6 +229,7 @@ private:
   shenandoah_padding(1);
 
   ShenandoahAllocationRate _alloc_rate;
+  ShenandoahDecayAllocRate _alloc_rate_decay;
 
 public:
   void increase_committed(size_t bytes);
