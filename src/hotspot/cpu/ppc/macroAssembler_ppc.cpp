@@ -4380,7 +4380,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   }
 
   Label L_loop_search_receiver, L_loop_search_empty;
-  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+  Label L_restart, L_found_recv, L_found_empty, L_count_update;
   Register offset = tmp1, count = tmp2;
 
   // The code here recognizes three major cases:
@@ -4474,11 +4474,6 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_found_empty);
 
   // Atomically swing receiver slot: null -> recv.
-  //
-  // The update uses CAS, which clobbers tmp. Therefore, rscratch2
-  // is used to hold the destination address. This is safe because the
-  // offset is no longer needed after the address is computed.
-
   {
     Register receiver_addr = offset;
     add(receiver_addr, mdp, offset); // kills offset
