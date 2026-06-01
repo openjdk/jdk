@@ -24,6 +24,7 @@
 /**
  * @test
  * @library /test/lib /
+ * @requires vm.flagless
  * @enablePreview
  * @modules java.base/jdk.internal.value
  * @modules java.base/jdk.internal.vm.annotation

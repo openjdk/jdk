@@ -212,6 +212,12 @@ public:
           _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
         }
         _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
+        if (_parse.stopped()) {
+          if (safe_for_replace_in_map) {
+            pop_stack();
+          }
+          return _parse.C->top();
+        }
         const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr()->cast_to_null_free(true);
         array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
         if (_parse.needs_range_check(array_type->size(), _array_index)) {

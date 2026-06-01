@@ -5216,13 +5216,13 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
   jccb(Assembler::notEqual, null_free_non_atomic);
   movptr(offset, flat_nullfree_atomic_count_offset);
 
-  jmpb(L_count_update);
+  jmp(L_count_update);
   bind(null_free_non_atomic);
   cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
   jccb(Assembler::notEqual, nullable_atomic_flat);
   movptr(offset, flat_nullfree_not_atomic_count_offset);
 
-  jmpb(L_count_update);
+  jmp(L_count_update);
   bind(nullable_atomic_flat);
   cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULLABLE_ATOMIC_FLAT);
   jccb(Assembler::notEqual, failure);
