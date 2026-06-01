@@ -74,7 +74,7 @@ public class ArchivedSuperIf extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 // The interface Bar will be loaded from the archive.
                 // The class (Baz) which implements Bar will be loaded from jar.
-                output.shouldContain("[class,load] pkg.Bar source: shared objects file (top)")
+                output.shouldMatch("\\[class,load *\\] pkg\\.Bar source: shared objects file \\(top\\)")
                       .shouldMatch(".class.load. pkg.Baz source:.*archived_super_if.jar")
                       .shouldHaveExitValue(0);
             });

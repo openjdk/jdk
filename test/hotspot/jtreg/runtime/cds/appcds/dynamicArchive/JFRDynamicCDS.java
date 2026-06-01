@@ -62,7 +62,7 @@ public class JFRDynamicCDS extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
                       .shouldMatch(".class.load. jdk.jfr.events.*source:.*jrt:/jdk.jfr")
-                      .shouldContain("[class,load] JFRDynamicCDSApp source: shared objects file (top)");
+                      .shouldMatch("\\[class,load *\\] JFRDynamicCDSApp source: shared objects file \\(top\\)");
             });
     }
 }

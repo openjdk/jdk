@@ -76,7 +76,7 @@ public class LambdaContainsOldInf extends DynamicArchiveTestBase {
                 "-Xlog:class+load=debug",
                 "-cp", appJar, mainClass, mainArg)
                 .assertNormalExit(output -> {
-                    output.shouldContain("[class,load] LambdaContainsOldInfApp source: shared objects file (top)")
+                    output.shouldMatch("\\[class,load *\\] LambdaContainsOldInfApp source: shared objects file \\(top\\)")
                           .shouldMatch(".class.load. OldProvider.source:.*lambda_contains_old_inf.jar")
                           .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*LambdaContainsOldInf")
                           .shouldHaveExitValue(0);

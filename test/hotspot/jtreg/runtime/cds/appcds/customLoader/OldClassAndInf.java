@@ -92,7 +92,7 @@ public class OldClassAndInf {
 
         TestCommon.checkExec(output);
         for (String loadee : loadees) {
-            output.shouldContain("[class,load] " + loadee + " source: shared objects file");
+            output.shouldMatch("\\[class,load *\\] " + loadee + " source: shared objects file");
         }
     }
 }

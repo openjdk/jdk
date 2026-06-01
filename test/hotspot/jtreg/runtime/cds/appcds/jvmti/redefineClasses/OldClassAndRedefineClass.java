@@ -71,8 +71,8 @@ public class OldClassAndRedefineClass {
                 "-Xlog:cds,class+load",
                 agentCmdArg,
                "OldClassAndRedefineClassApp");
-        out.shouldContain("[class,load] OldSuper source: shared objects file")
-           .shouldContain("[class,load] ChildOldSuper source: shared objects file")
-           .shouldContain("[class,load] Hello source: __VM_RedefineClasses__");
+        out.shouldMatch("\\[class,load *\\] OldSuper source: shared objects file")
+           .shouldMatch("\\[class,load *\\] ChildOldSuper source: shared objects file")
+           .shouldMatch("\\[class,load *\\] Hello source: __VM_RedefineClasses__");
     }
 }

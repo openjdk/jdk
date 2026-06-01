@@ -134,7 +134,7 @@ class MutateFinalsTest {
     void testMutateInstanceFinalWithLogging(String methodName) throws Exception {
         String type = methodName.contains("Object") ? "Object" : "<Type>";
         test(methodName, "-Xlog:jni=debug")
-            .shouldContain("[debug][jni] Set" + type + "Field mutated final instance field")
+            .shouldMatch("\\[debug\\]\\[jni *\\] Set" + type + "Field mutated final instance field")
             .shouldHaveExitValue(0);
     }
 
@@ -147,7 +147,7 @@ class MutateFinalsTest {
     void testMutateStaticFinalWithLogging(String methodName) throws Exception {
         String type = methodName.contains("Object") ? "Object" : "<Type>";
         test(methodName, "-Xlog:jni=debug")
-            .shouldContain("[debug][jni] SetStatic" + type + "Field mutated final static field")
+            .shouldMatch("\\[debug\\]\\[jni *\\] SetStatic" + type + "Field mutated final static field")
             .shouldHaveExitValue(0);
     }
 

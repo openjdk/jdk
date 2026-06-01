@@ -59,7 +59,7 @@ public class LambdaProxyClasslist {
     out = TestCommon.dump(appJar,
         TestCommon.list("LambHello",
                         "@lambda-proxy LambHello run ()Ljava/lang/Runnable; ()V REF_invokeStatic LambHello lambda$doTest$0 ()V ()Z"));
-    out.shouldContain("[warning][cds] No invoke dynamic constant pool entry can be found for class LambHello. The classlist is probably out-of-date.")
+    out.shouldMatch("\\[warning\\]\\[cds *\\] No invoke dynamic constant pool entry can be found for class LambHello\\. The classlist is probably out-of-date\\.")
        .shouldHaveExitValue(0);
 
     // 4. More blank spaces in between items should be fine.

@@ -67,7 +67,7 @@ public class LambdaWithOldClass {
             .setUseVersion(false)
             .addSuffix(mainClass);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldContain("[class,load] LambdaWithOldClassApp source: shared objects file")
+        output.shouldMatch("\\[class,load *\\] LambdaWithOldClassApp source: shared objects file")
               .shouldHaveExitValue(0);
         if (!CDSTestUtils.isAOTClassLinkingEnabled()) {
             // With AOTClassLinking, we don't archive any lambda with old classes in the method
