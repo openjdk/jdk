@@ -172,8 +172,6 @@ public final class PEMDecoder {
      * Returns the default {@code PEMDecoder} instance.
      *
      * @return the default {@code PEMDecoder}
-     *
-     * @since 25
      */
     public static PEMDecoder of() {
         return PEM_DECODER;
@@ -332,7 +330,7 @@ public final class PEMDecoder {
      * @throws IOException if an I/O error occurs or PEM syntax is invalid
      * @throws EOFException if no PEM data is found or the stream ends unexpectedly
      * @throws IllegalArgumentException if decoding fails
-     * @throws NullPointerException when {@code InputStream} is {@code null}
+     * @throws NullPointerException if {@code InputStream} is {@code null}
      * @throws CryptoException if an error occurs during decryption
      *
      * @since 27
@@ -369,14 +367,14 @@ public final class PEMDecoder {
      * <p>The input is interpreted as
      * {@link java.nio.charset.StandardCharsets#UTF_8 UTF-8}.
      *
-     * @param <S> the requested {@code BinaryEncodable} type
+     * @param <S> class type parameter that extends {@code BinaryEncodable}
      * @param str the {@code String} containing PEM data
      * @param tClass the returned object class that extends or implements
      *        {@code BinaryEncodable}
      * @return a {@code BinaryEncodable} specified by {@code tClass}
      * @throws IllegalArgumentException on error in decoding or no PEM data found
      * @throws ClassCastException if {@code tClass} does not represent the PEM type
-     * @throws NullPointerException when any input values are {@code null}
+     * @throws NullPointerException if any input values are {@code null}
      * @throws CryptoException if an error occurs during decryption
      *
      * @since 27

@@ -402,7 +402,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws NullPointerException if {@code be} or {@code password} is {@code null}
      * @throws IllegalArgumentException if {@code be} is an unsupported
-     *         {@code BinaryEncodable}
+     *         {@code BinaryEncodable} or has no encoding
      * @throws CryptoException if an error occurs while generating the
      *         PBE key, if the default algorithm is misconfigured, or if an
      *         error occurs during encryption
