@@ -115,19 +115,9 @@ Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
-  // Push cast through InlineTypeNode but be careful because in dead parts of the graph,
-  // an InlineTypeNode can be casted to some completely unrelated type.
-  InlineTypeNode* vt = in(1)->isa_InlineType();
-  if (vt != nullptr && vt->is_allocated(phase) && _type->isa_instptr() != nullptr &&
-      vt->type()->inline_klass()->is_subtype_of(_type->is_instptr()->instance_klass())) {
-    Node* cast = clone();
-    cast->set_req(1, vt->get_oop());
-    vt = vt->clone()->as_InlineType();
-    if (!_type->maybe_null()) {
-      vt->as_InlineType()->set_null_marker(*phase);
-    }
-    vt->set_oop(*phase, phase->transform(cast));
-    return vt;
+  // Push cast through InlineTypeNode
+  if (in(1)->is_InlineType()) {
+    return ideal_cast_of_inline_type_node(phase);
   }
 
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
@@ -230,6 +220,49 @@ bool ConstraintCastNode::higher_equal_types(PhaseGVN* phase, const Node* other) 
 Node* ConstraintCastNode::pin_node_under_control_impl() const {
   assert(_dependency.is_floating(), "already pinned");
   return make_cast_for_type(in(0), in(1), bottom_type(), _dependency.with_pinned_dependency(), _extra_types);
+}
+
+Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
+  InlineTypeNode* vt = in(1)->as_InlineType();
+  const Type* join = vt->type()->filter(type());
+  if (join == Type::TOP) {
+    // Do not push a dead Cast since its type can be unrelated
+    return nullptr;
+  }
+
+  if (join == vt->type()->remove_speculative()) {
+    // Redundant cast, let Identity handle
+    return nullptr;
+  }
+
+  if (join == TypePtr::NULL_PTR) {
+    // Will collapse to the constant null
+    return nullptr;
+  }
+
+  // The only possible case left is that the cast is a cast to not-null
+  assert(join == vt->type()->filter(TypePtr::NOTNULL), "must be");
+  InlineTypeNode* res = vt->clone()->as_InlineType();
+  res->set_null_marker(*phase);
+
+  // Push the cast to the oop input if possible
+  if (vt->is_allocated(phase)) {
+    Node* new_oop = clone();
+    new_oop->set_req(1, vt->get_oop());
+    res->set_oop(*phase, phase->transform(new_oop));
+  }
+
+  // Push the cast to the null-free inputs of vt
+  for (uint i = 0; i < vt->field_count(); i++) {
+    if (vt->field(i)->is_null_free()) {
+      const ConstraintCastNode::DependencyType& dep = _dependency.is_floating() ? ConstraintCastNode::DependencyType::FloatingNarrowing
+                                                                                : ConstraintCastNode::DependencyType::NonFloatingNarrowing;
+      Node* new_fv = new CastPPNode(in(0), vt->field_value(i), TypePtr::NOTNULL, dep);
+      res->set_field_value(i, phase->transform(new_fv));
+    }
+  }
+
+  return res;
 }
 
 #ifndef PRODUCT

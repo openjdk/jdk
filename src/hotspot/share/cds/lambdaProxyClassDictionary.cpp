@@ -92,6 +92,7 @@ void RunTimeLambdaProxyClassInfo::init(LambdaProxyClassKey& key, DumpTimeLambdaP
 }
 
 DumpTimeLambdaProxyClassDictionary* LambdaProxyClassDictionary::_dumptime_table = nullptr;
+LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_table_for_dumping;
 LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_static_table; // for static CDS archive
 LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_dynamic_table; // for dynamic CDS archive
 
@@ -425,7 +426,7 @@ public:
 };
 
 void LambdaProxyClassDictionary::write_dictionary(bool is_static_archive) {
-  LambdaProxyClassDictionary* dictionary = is_static_archive ? &_runtime_static_table : &_runtime_dynamic_table;
+  LambdaProxyClassDictionary* dictionary = &_runtime_table_for_dumping;
   CompactHashtableStats stats;
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->_count, &stats);

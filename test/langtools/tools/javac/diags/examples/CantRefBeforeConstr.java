@@ -28,7 +28,7 @@ class Base {
 }
 
 class CantRefBeforeConstr extends Base {
-    int i;
+    int i = 0;
 
     CantRefBeforeConstr() {
         super(i);

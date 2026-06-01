@@ -23,10 +23,14 @@
 /*
  * @test
  * @bug 8194743 8345438 8356551 8349754 8379833
+ * @library /tools/javac/lib
  * @summary Test valid placements of super()/this() in constructors
+ * @modules jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @enablePreview
  * @run main SuperInitGood
- * @build InitializationWarningTester
- * @run main InitializationWarningTester SuperInitGood SuperInitGoodWarnings.out
+ * @build SuperCallRemover
+ * @compile/fail/ref=SuperInitGoodWarnings.out -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover SuperInitGood.java
  */
 
 import java.util.concurrent.atomic.AtomicReference;

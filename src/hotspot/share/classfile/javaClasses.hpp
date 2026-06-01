@@ -233,7 +233,6 @@ class java_lang_String : AllStatic {
 
 class java_lang_Class : AllStatic {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class HeapShared;
 
  private:
@@ -252,7 +251,6 @@ class java_lang_Class : AllStatic {
   static int _class_loader_offset;
   static int _module_offset;
   static int _component_mirror_offset;
-
   static int _name_offset;
   static int _source_file_offset;
   static int _classData_offset;
@@ -383,7 +381,6 @@ class java_lang_Class : AllStatic {
 
 class java_lang_Thread : AllStatic {
   friend class java_lang_VirtualThread;
-  friend class JVMCIVMStructs;
  private:
   // Note that for this class the layout changed between JDK1.2 and JDK1.3,
   // so we compute the offsets at startup rather than hard-wiring them.
@@ -821,6 +818,10 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   friend class JavaClasses;
 };
 
+#if INCLUDE_JFR
+#define FIELD_INJECTED_FIELDS(macro) \
+  macro(java_lang_reflect_Field, jfr_epoch, int_signature, false)
+#endif // INCLUDE_JFR
 
 // Interface to java.lang.reflect.Field objects
 
@@ -836,6 +837,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int _flags_offset;
   static int _signature_offset;
   static int _annotations_offset;
+  JFR_ONLY(static int _jfr_epoch_offset;)
 
   static void compute_offsets();
 
@@ -865,6 +867,9 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
 
   static void set_signature(oop constructor, oop value);
   static void set_annotations(oop constructor, oop value);
+
+  JFR_ONLY(static u2 epoch(oop field);)
+  JFR_ONLY(static int epoch_offset() { CHECK_INIT(_jfr_epoch_offset); })
 
   // Debugging
   friend class JavaClasses;
@@ -1579,10 +1584,6 @@ class java_lang_StackTraceElement: AllStatic {
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
-#if INCLUDE_JVMCI
-  static void decode(const methodHandle& method, int bci, Symbol*& fileName, int& lineNumber, TRAPS);
-#endif
-
   // Debugging
   friend class JavaClasses;
 };
@@ -1776,31 +1777,6 @@ class vector_VectorPayload : AllStatic {
   static bool is_instance(oop obj);
 };
 
-class java_lang_Integer : AllStatic {
-public:
-  static jint value(oop obj);
-};
-
-class java_lang_Long : AllStatic {
-public:
-  static jlong value(oop obj);
-};
-
-class java_lang_Character : AllStatic {
-public:
-  static jchar value(oop obj);
-};
-
-class java_lang_Short : AllStatic {
-public:
-  static jshort value(oop obj);
-};
-
-class java_lang_Byte : AllStatic {
-public:
-  static jbyte value(oop obj);
-};
-
 class java_lang_Boolean : AllStatic {
  private:
   static int _static_TRUE_offset;
@@ -1808,10 +1784,7 @@ class java_lang_Boolean : AllStatic {
  public:
   static Symbol* symbol();
   static void compute_offsets(InstanceKlass* k);
-  static oop  get_TRUE(InstanceKlass *k);
-  static oop  get_FALSE(InstanceKlass *k);
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-  static jboolean value(oop obj);
 };
 
 class java_lang_Integer_IntegerCache : AllStatic {

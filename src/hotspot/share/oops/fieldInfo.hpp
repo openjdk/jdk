@@ -67,7 +67,6 @@ class FieldInfo {
 
   class FieldFlags {
     friend class VMStructs;
-    friend class JVMCIVMStructs;
     friend class FieldDesc;
 
     // The ordering of this enum is totally internal.  More frequent

@@ -870,11 +870,11 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                 }
                 """
         );
-        assertOK(
+        assertFail("compiler.err.var.might.not.have.been.initialized",
                 """
                 value class V {
                     int x;
-                    int y = x + 1; // allowed
+                    int y = x + 1; // error
                     V() {
                         x = 12;
                         // super();
@@ -882,6 +882,17 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                 }
                 """
         );
+        assertOK("""
+                value class V {
+                    int y;
+                    int x = (y = 1);
+
+                    V() {
+                        int z = y; // ok
+                        super();
+                    }
+                }
+                """);
         assertFail("compiler.err.cant.ref.before.ctor.called",
                 """
                 value class V2 {
@@ -904,7 +915,7 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                 }
                 """
         );
-        assertOK(
+        assertFail("compiler.err.var.might.not.have.been.initialized",
                 """
                 value class V4 {
                     int x;

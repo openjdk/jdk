@@ -841,6 +841,7 @@ class GraphKit : public Phase {
   Node* flat_array_test(Node* array_or_klass, bool flat = true);
   Node* null_free_array_test(Node* array, bool null_free = true);
   Node* null_free_atomic_array_test(Node* array, ciInlineKlass* vk);
+  Node* atomic_layout_array_test_and_get_layout_kind(Node* array, RegionNode* atomic_region);
   Node* inline_array_null_guard(Node* ary, Node* val, int nargs, bool safe_for_replace = false);
 
   Node* gen_subtype_check(Node* obj, Node* superklass);
@@ -877,7 +878,8 @@ class GraphKit : public Phase {
   Node* load_String_coder(Node* str, bool set_ctrl);
   void store_String_value(Node* str, Node* value);
   void store_String_coder(Node* str, Node* value);
-  Node* capture_memory(const TypePtr* src_type, const TypePtr* dst_type);
+  Node* capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type);
+  void memory_effect(Node* res_mem, const TypePtr* src_type, const TypePtr* dst_type);
   Node* compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count);
   void inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count);
   void inflate_string_slow(Node* src, Node* dst, Node* start, Node* count);

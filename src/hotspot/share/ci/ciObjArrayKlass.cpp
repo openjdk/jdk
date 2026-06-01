@@ -159,6 +159,12 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
       .with_non_atomic(!atomic);
 
     array = ObjArrayKlass::cast(array)->klass_with_properties(props, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+      CURRENT_THREAD_ENV->record_out_of_memory_failure();
+      return ciEnv::unloaded_ciobjarrayklass();
+    }
+    assert(array != nullptr, "klass_with_properties should return a klass or throw");
     if (array->is_flatArray_klass()) {
       return CURRENT_THREAD_ENV->get_flat_array_klass(array);
     } else {

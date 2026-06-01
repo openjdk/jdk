@@ -51,7 +51,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
 import static compiler.lib.ir_framework.IRNode.ALLOC;
 import static compiler.lib.ir_framework.IRNode.ALLOC_ARRAY;
 import static compiler.lib.ir_framework.IRNode.CLASS_CHECK_TRAP;
-import static compiler.lib.ir_framework.IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP;
+import static compiler.lib.ir_framework.IRNode.INTRINSIC_TRAP;
 import static compiler.lib.ir_framework.IRNode.LOOP;
 import static compiler.lib.ir_framework.IRNode.PREDICATE_TRAP;
 import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
@@ -2664,9 +2664,9 @@ public class TestArrays {
     // Arraycopy with constant source and destination arrays
     @Test
     @IR(applyIf = {"UseArrayFlattening", "true"},
-        counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+        counts = {INTRINSIC_TRAP, "= 1"})
     @IR(applyIf = {"UseArrayFlattening", "false"},
-        failOn = INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP)
+        failOn = INTRINSIC_TRAP)
     public void test102() {
         System.arraycopy(val_src, 0, obj_dst, 0, 8);
     }
@@ -2693,7 +2693,7 @@ public class TestArrays {
 
     // Same as test102 but with Object[] src
     @Test
-    @IR(failOn = INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP)
+    @IR(failOn = INTRINSIC_TRAP)
     public void test104() {
         System.arraycopy(obj_src, 0, obj_dst, 0, 8);
     }
@@ -2706,7 +2706,7 @@ public class TestArrays {
 
     // Same as test103 but with Object[] src
     @Test
-    @IR(counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+    @IR(counts = {INTRINSIC_TRAP, "= 1"})
     public void test105() {
         System.arraycopy(obj_src, 0, val_dst, 0, 8);
     }
@@ -2719,7 +2719,7 @@ public class TestArrays {
 
     // Same as test103 but with Object[] src containing null
     @Test
-    @IR(counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+    @IR(counts = {INTRINSIC_TRAP, "= 1"})
     public void test105_null() {
         System.arraycopy(obj_null_src, 0, val_dst, 0, 8);
     }
@@ -2738,9 +2738,9 @@ public class TestArrays {
     // after the arraycopy intrinsic is emitted (with incremental inlining).
     @Test
     @IR(applyIf = {"UseArrayFlattening", "true"},
-        counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+        counts = {INTRINSIC_TRAP, "= 1"})
     @IR(applyIf = {"UseArrayFlattening", "false"},
-        failOn = INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP)
+        failOn = INTRINSIC_TRAP)
     public void test106() {
         System.arraycopy(get_val_src(), 0, get_obj_dst(), 0, 8);
     }
@@ -2755,7 +2755,7 @@ public class TestArrays {
     // at parse time it looks as if src could be flat and dst could be not flat.
     @Test
     @IR(applyIf = {"UseArrayFlattening", "false"},
-        failOn = INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP)
+        failOn = INTRINSIC_TRAP)
     public void test107() {
         System.arraycopy(get_val_src(), 0, get_val_dst(), 0, 8);
     }
@@ -2767,7 +2767,7 @@ public class TestArrays {
     }
 
     @Test
-    @IR(failOn = INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP)
+    @IR(failOn = INTRINSIC_TRAP)
     public void test108() {
         System.arraycopy(get_obj_src(), 0, get_obj_dst(), 0, 8);
     }
@@ -2779,7 +2779,7 @@ public class TestArrays {
     }
 
     @Test
-    @IR(counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+    @IR(counts = {INTRINSIC_TRAP, "= 1"})
     public void test109() {
         System.arraycopy(get_obj_src(), 0, get_val_dst(), 0, 8);
     }
@@ -2791,7 +2791,7 @@ public class TestArrays {
     }
 
     @Test
-    @IR(counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+    @IR(counts = {INTRINSIC_TRAP, "= 1"})
     public void test109_null() {
         System.arraycopy(get_obj_null_src(), 0, get_val_dst(), 0, 8);
     }
@@ -2810,9 +2810,9 @@ public class TestArrays {
     @Test
     // TODO 8251971 Re-enable
     // @IR(applyIf = {"UseArrayFlattening", "true"},
-    //     counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+    //     counts = {INTRINSIC_TRAP, "= 1"})
     // @IR(applyIf = {"UseArrayFlattening", "false"},
-    //     failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    //     failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test110() {
         return Arrays.copyOf(val_src, 8, Object[].class);
     }
@@ -2825,7 +2825,7 @@ public class TestArrays {
 
     // Same as test110 but with MyValue2[] dst
     @Test
-    @IR(failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    @IR(failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test111() {
         return Arrays.copyOf(val_src2, 8, val_src2.getClass());
     }
@@ -2838,7 +2838,7 @@ public class TestArrays {
 
     // Same as test110 but with Object[] src
     @Test
-    @IR(failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    @IR(failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test112() {
         return Arrays.copyOf(obj_src, 8, Object[].class);
     }
@@ -2881,9 +2881,9 @@ public class TestArrays {
     @Test
     // TODO 8251971 Re-enable
     // @IR(applyIf = {"UseArrayFlattening", "true"},
-    //     counts = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "= 1"})
+    //     counts = {INTRINSIC_TRAP, "= 1"})
     // @IR(applyIf = {"UseArrayFlattening", "false"},
-    //     failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    //     failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test114() {
         return Arrays.copyOf((Object[])get_val_src(), 8, get_obj_class());
     }
@@ -2899,7 +2899,7 @@ public class TestArrays {
     @Test
     // TODO 8251971 Re-enable
     // @IR(applyIf = {"UseArrayFlattening", "false"},
-    //    failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    //    failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test115() {
         return Arrays.copyOf((Object[])get_val_src(), 8, get_val_class());
     }
@@ -2911,7 +2911,7 @@ public class TestArrays {
     }
 
     @Test
-    @IR(failOn = {INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, CLASS_CHECK_TRAP})
+    @IR(failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test116() {
         return Arrays.copyOf((Object[])get_obj_src(), 8, get_obj_class());
     }

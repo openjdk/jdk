@@ -3281,7 +3281,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     u1 frame_type = *stackmap_p;
     stackmap_p++;
 
-   if (frame_type == 246) {  // EARLY_LARVAL
+   if (frame_type == StackMapReader::EARLY_LARVAL) {
      // rewrite_cp_refs in  unset fields and fall through.
      rewrite_cp_refs_in_early_larval_stackmaps(stackmap_p, stackmap_end, calc_number_of_entries, frame_type);
      // The larval frames point to the next frame, so advance to the next frame and fall through.

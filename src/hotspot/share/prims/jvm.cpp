@@ -393,8 +393,6 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
     const char* compiler_name = "HotSpot " CSIZE "Client Compiler";
 #elif defined(COMPILER2)
     const char* compiler_name = "HotSpot " CSIZE "Server Compiler";
-#elif INCLUDE_JVMCI
-    #error "INCLUDE_JVMCI should imply COMPILER1_OR_COMPILER2"
 #else
     const char* compiler_name = "";
 #endif // compilers
@@ -3435,10 +3433,6 @@ JVM_END
 
 JVM_LEAF(jboolean, JVM_IsPreviewEnabled(void))
   return Arguments::enable_preview() ? JNI_TRUE : JNI_FALSE;
-JVM_END
-
-JVM_LEAF(jboolean, JVM_IsValhallaEnabled(void))
-  return Arguments::is_valhalla_enabled() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsContinuationsSupported(void))

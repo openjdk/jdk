@@ -160,7 +160,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestDeoptimizationWhenBuffering {
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    static final int COMP_LEVEL_FULL_OPTIMIZATION = 4; // C2 or JVMCI
+    static final int COMP_LEVEL_FULL_OPTIMIZATION = 4; // C2
 
     @LooselyConsistentValue
     static value class MyValue1 {
