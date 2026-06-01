@@ -74,9 +74,6 @@ class PathString : public CHeapObj<mtArguments> {
 
   PathString(const char* value);
   ~PathString();
-
-  // for JVM_ReadSystemPropertiesInfo
-  static int value_offset_in_bytes()  { return (int)offset_of(PathString, _value);  }
 };
 
 // ModulePatchPath records the module/path pair as specified to --patch-module.
@@ -139,10 +136,6 @@ class SystemProperty : public PathString {
 
   // Constructor
   SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
-
-  // for JVM_ReadSystemPropertiesInfo
-  static int key_offset_in_bytes()  { return (int)offset_of(SystemProperty, _key);  }
-  static int next_offset_in_bytes() { return (int)offset_of(SystemProperty, _next); }
 };
 
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
@@ -200,10 +193,6 @@ class Arguments : AllStatic {
   static char* _java_command;
   // number of unique modules specified in the --add-modules option
   static unsigned int _addmods_count;
-#if INCLUDE_JVMCI
-  // was jdk.internal.vm.ci module specified in the --add-modules option?
-  static bool _jvmci_module_added;
-#endif
 
   // Property list
   static SystemProperty* _system_properties;
@@ -471,7 +460,6 @@ class Arguments : AllStatic {
 
   // Set up the underlying pieces of the boot class path
   static void add_patch_mod_prefix(const char *module_name, const char *path);
-  static int finalize_patch_module();
 
   static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()

@@ -55,15 +55,6 @@ bool MacroAssembler::is_reg_in_unpacked_fields(const GrowableArray<SigEntry>* si
   return false;
 }
 
-void MacroAssembler::mark_reg_writable(const VMRegPair* regs, int num_regs, int reg_index, MacroAssembler::RegState* reg_state) {
-  assert(0 <= reg_index && reg_index < num_regs, "sanity");
-  VMReg from_reg = regs[reg_index].first();
-  if (from_reg->is_valid()) {
-    assert(from_reg->is_stack(), "reserved entries must be stack");
-    reg_state[from_reg->value()] = MacroAssembler::reg_writable;
-  }
-}
-
 MacroAssembler::RegState* MacroAssembler::init_reg_state(VMRegPair* regs, int num_regs, int sp_inc, int max_stack) {
   int max_reg = VMRegImpl::stack2reg(max_stack)->value();
   MacroAssembler::RegState* reg_state = NEW_RESOURCE_ARRAY(MacroAssembler::RegState, max_reg);

@@ -46,9 +46,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciJavaClasses.hpp"
-#endif
 
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper
@@ -330,11 +327,11 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
 
   // Verify the arguments
-  if (JVMCI_ONLY(args->alternative_target().is_null() &&) (DEBUG_ONLY(true ||) CheckJNICalls)) {
+  if ((DEBUG_ONLY(true ||) CheckJNICalls)) {
     args->verify(method, result->get_type());
   }
   // Ignore call if method is empty
-  if (JVMCI_ONLY(args->alternative_target().is_null() &&) method->is_empty_method()) {
+  if (method->is_empty_method()) {
     assert(result->get_type() == T_VOID, "an empty method must return a void value");
     return;
   }
@@ -408,20 +405,6 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
           // Since the call stub sets up like the interpreter we call the from_interpreted_entry
           // so we can go compiled via a i2c.
           entry_point = method->from_interpreted_entry();
-#if INCLUDE_JVMCI
-          // Gets the alternative target (if any) that should be called
-          Handle alternative_target = args->alternative_target();
-          if (!alternative_target.is_null()) {
-            // Must extract verified entry point from HotSpotNmethod after VM to Java
-            // transition in JavaCallWrapper constructor so that it is safe with
-            // respect to nmethod sweeping.
-            address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
-            if (verified_entry_point != nullptr) {
-              thread->set_jvmci_alternate_call_target(verified_entry_point);
-              entry_point = method->get_i2c_entry();
-            }
-          }
-#endif
         }
       }
       {

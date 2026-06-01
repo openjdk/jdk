@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestC2CCalls {
     public static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    public static final int COMP_LEVEL_FULL_OPTIMIZATION = 4; // C2 or JVMCI
+    public static final int COMP_LEVEL_FULL_OPTIMIZATION = 4; // C2
     public static final int rI = Utils.getRandomInstance().nextInt() % 1000;
 
     static value class OtherVal {

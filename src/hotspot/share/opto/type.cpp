@@ -56,9 +56,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif // INCLUDE_SHENANDOAHGC
 
 // Portions of code courtesy of Clifford Click
 
@@ -824,10 +821,6 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecX] = TypeVect::VECTX;
   mreg2type[Op_VecY] = TypeVect::VECTY;
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
-
-#if INCLUDE_SHENANDOAHGC
-  ShenandoahBarrierSetC2::init();
-#endif //INCLUDE_SHENANDOAHGC
 
   BarrierSetC2::make_clone_type();
   LockNode::initialize_lock_Type();
@@ -2587,7 +2580,16 @@ bool TypeAry::singleton(void) const {
 }
 
 bool TypeAry::empty(void) const {
-  return _elem->empty() || _size->empty();
+  assert(!_size->empty(), "TypeInt is never empty");
+  // TODO 8385426 This should be simplified at construction time once we get rid of dual
+  // Doing it with the dual-based join is annoying. TypeAry::empty tests whether the
+  // element type is empty. When computing the dual of an array that can be flat or not,
+  // we will get an element type that is empty, and doesn't need more. We even shouldn't
+  // do more otherwise, we can't make the dual involutive. But if we compute the
+  // intersection of a flat and a non-flat array, we could change the element type to an
+  // empty type to reduce the abstract value. And we must be careful not to do that in
+  // the dual world.
+  return _elem->empty() || (_flat && _not_flat);
 }
 
 //--------------------------ary_must_be_exact----------------------------------
@@ -5710,10 +5712,6 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 
 bool TypeAryPtr::empty(void) const {
   if (_ary->empty())       return true;
-  // TODO 8350865 This should go to the meet implementation
-  if (is_flat() && is_not_flat()) {
-    return true;
-  }
   return TypeOopPtr::empty();
 }
 

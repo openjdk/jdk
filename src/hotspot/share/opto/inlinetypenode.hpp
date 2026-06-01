@@ -66,19 +66,17 @@ private:
   Node* is_loaded(PhaseGVN* phase, ciInlineKlass* vk = nullptr, Node* base = nullptr, int holder_offset = 0) const;
 
   // Initialize the inline type fields with the inputs or outputs of a MultiNode
-  void initialize_fields(GraphKit* kit, MultiNode* multi, uint& base_input, bool in, bool no_null_marker, Node* null_check_region, GrowableArray<ciType*>& visited);
+  void initialize_fields(GraphKit* kit, MultiNode* multi, uint& base_input, bool in, bool no_null_marker, Node* null_check_region);
   // Initialize the inline type by loading its field values from memory
-  void load(GraphKit* kit, Node* base, Node* ptr, bool immutable_memory, bool trust_null_free_oop, DecoratorSet decorators, GrowableArray<ciType*>& visited);
+  void load(GraphKit* kit, Node* base, Node* ptr, bool immutable_memory, bool trust_null_free_oop, DecoratorSet decorators);
   // Store the field values to memory
   void store(GraphKit* kit, Node* base, Node* ptr, bool immutable_memory, DecoratorSet decorators) const;
 
-  InlineTypeNode* adjust_scalarization_depth_impl(GraphKit* kit, GrowableArray<ciType*>& visited);
-
-  static InlineTypeNode* make_all_zero_impl(PhaseGVN& gvn, ciInlineKlass* vk, GrowableArray<ciType*>& visited);
-  static InlineTypeNode* make_from_oop_impl(GraphKit* kit, Node* oop, ciInlineKlass* vk, GrowableArray<ciType*>& visited);
-  static InlineTypeNode* make_null_impl(PhaseGVN& gvn, ciInlineKlass* vk, GrowableArray<ciType*>& visited, bool transform = true);
+  static InlineTypeNode* make_all_zero_impl(PhaseGVN& gvn, ciInlineKlass* vk);
+  static InlineTypeNode* make_from_oop_impl(GraphKit* kit, Node* oop, ciInlineKlass* vk);
+  static InlineTypeNode* make_null_impl(PhaseGVN& gvn, ciInlineKlass* vk, bool transform = true);
   static InlineTypeNode* make_from_flat_impl(GraphKit* kit, ciInlineKlass* vk, Node* base, Node* ptr, bool atomic, bool immutable_memory,
-                                             bool null_free, bool trust_null_free_oop, DecoratorSet decorators, GrowableArray<ciType*>& visited);
+                                             bool null_free, bool trust_null_free_oop, DecoratorSet decorators);
 
 public:
   // Create with all-zero field values
@@ -125,13 +123,13 @@ public:
 
   // Replace InlineTypeNodes in debug info at safepoints with SafePointScalarObjectNodes
   void make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop = true);
+  // Variant that allows to limit to a single safepoint. If nullptr is given, all safepoint uses will be considered.
+  void make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint);
 
   // Store the inline type as a flat (headerless) representation
   void store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomic, bool immutable_memory, bool null_free, DecoratorSet decorators);
   // Store the inline type as a flat (headerless) representation into an array
   void store_flat_array(GraphKit* kit, Node* base, Node* idx);
-  // Make sure that inline type is fully scalarized
-  InlineTypeNode* adjust_scalarization_depth(GraphKit* kit);
 
   // Implementation of the substitutability check for acmp
   static bool can_emit_substitutability_check(Node* lhs, Node* rhs);

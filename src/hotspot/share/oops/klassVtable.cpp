@@ -1440,18 +1440,6 @@ class InterfaceVisiterClosure : public StackObj {
   virtual void doit(InstanceKlass* intf, int method_count) = 0;
 };
 
-int count_interface_methods_needing_itable_index(Array<Method*>* methods) {
-  int method_count = 0;
-  if (methods->length() > 0) {
-    for (int i = methods->length(); --i >= 0; ) {
-      if (interface_method_needs_itable_index(methods->at(i))) {
-        method_count++;
-      }
-    }
-  }
-  return method_count;
-}
-
 // Visit all interfaces with at least one itable method
 static void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
   // Handle array argument

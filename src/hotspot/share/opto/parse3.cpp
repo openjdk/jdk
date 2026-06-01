@@ -135,9 +135,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
     InlineTypeNode* vt = obj->as_InlineType();
     Node* value = vt->field_value_by_offset(field->offset_in_bytes(), false);
     const Type* value_type = _gvn.type(value);
-    if (value->is_InlineType()) {
-      value = value->as_InlineType()->adjust_scalarization_depth(this);
-    } else if (value_type->is_inlinetypeptr()) {
+    if (value_type->is_inlinetypeptr()) {
       value = InlineTypeNode::make_from_oop(this, value, value_type->inline_klass());
     }
     pop();

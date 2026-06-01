@@ -26,15 +26,10 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcWhen.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/debug.hpp"
 

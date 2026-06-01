@@ -192,7 +192,6 @@ class ClassFileParser {
 
   int _num_miranda_methods;
 
-
   Handle _protection_domain;
   AccessFlags _access_flags;
 

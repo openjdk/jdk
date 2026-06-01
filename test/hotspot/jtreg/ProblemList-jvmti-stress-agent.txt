@@ -63,10 +63,6 @@ compiler/loopopts/superword/TestDependencyOffsets.java#vec-v032-U           0000
 compiler/loopopts/superword/TestDependencyOffsets.java#vec-v064-A           0000000 generic-all
 compiler/loopopts/superword/TestDependencyOffsets.java#vec-v064-U           0000000 generic-all
 
-# Requires solo jvmti capabilities
-
-compiler/jvmci/events/JvmciShutdownEventTest.java                           0000000 generic-all
-
 # jdwp
 runtime/6294277/SourceDebugExtension.java                                   0000000 generic-all
 

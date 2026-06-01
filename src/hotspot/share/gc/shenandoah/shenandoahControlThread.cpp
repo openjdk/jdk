@@ -138,11 +138,6 @@ void ShenandoahControlThread::run_service() {
 
       heuristics->cancel_trigger_request();
 
-      if (mode != stw_degenerated) {
-        // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
-        heap->reset_bytes_allocated_since_gc_start();
-      }
-
       MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
       // If GC was requested, we are sampling the counters even without actual triggers

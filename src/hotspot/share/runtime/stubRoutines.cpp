@@ -100,10 +100,6 @@ BlobId StubRoutines::stub_to_blob(StubId id) {
 
 #endif // ASSERT
 
-// TODO: update with 8343767
-address StubRoutines::_load_inline_type_fields_in_regs = nullptr;
-address StubRoutines::_store_inline_type_fields_to_buf = nullptr;
-
 // Initialization
 
 extern void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data); // only interface to generators

@@ -142,7 +142,7 @@ value class Test5NestmateAccess {
     private static MyValueNestmateAccess vt;
 
     public Test5NestmateAccess(final MyValueNestmateAccess vt) {
-        this.vt = vt;
+        Test5NestmateAccess.vt = vt;
     }
 
     public MyInterfaceNestmateAccess test() {

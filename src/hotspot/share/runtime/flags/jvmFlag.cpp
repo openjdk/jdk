@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,18 +84,6 @@ void JVMFlag::clear_diagnostic() {
   assert(is_diagnostic(), "sanity");
   _flags = Flags(_flags & ~KIND_DIAGNOSTIC);
   assert(!is_diagnostic(), "sanity");
-}
-
-void JVMFlag::clear_experimental() {
-  assert(is_experimental(), "sanity");
-  _flags = Flags(_flags & ~KIND_EXPERIMENTAL);
-  assert(!is_experimental(), "sanity");
-}
-
-void JVMFlag::set_product() {
-  assert(!is_product(), "sanity");
-  _flags = Flags(_flags | KIND_PRODUCT);
-  assert(is_product(), "sanity");
 }
 
 // Get custom message for this locked flag, or null if
@@ -330,7 +318,6 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
   };
 
   Data data[] = {
-    { KIND_JVMCI, "JVMCI" },
     { KIND_C1, "C1" },
     { KIND_C2, "C2" },
     { KIND_ARCH, "ARCH" },
@@ -446,7 +433,7 @@ void JVMFlag::print_as_flag(outputStream* st) const {
 //----------------------------------------------------------------------
 // Build flagTable[]
 
-// Find out the number of LP64/ARCH/JVMCI/COMPILER1/COMPILER2 flags,
+// Find out the number of LP64/ARCH/COMPILER1/COMPILER2 flags,
 // for JVMFlag::flag_group()
 
 #define ENUM_F(type, name, ...)  enum_##name,
@@ -455,21 +442,18 @@ void JVMFlag::print_as_flag(outputStream* st) const {
 //                                                  dev     dev-pd  pro     pro-pd  range     constraint
 enum FlagCounter_LP64  { LP64_RUNTIME_FLAGS(        ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)  num_flags_LP64   };
 enum FlagCounter_ARCH  { ARCH_FLAGS(                ENUM_F,         ENUM_F,         IGNORE_F, IGNORE_F)  num_flags_ARCH   };
-enum FlagCounter_JVMCI { JVMCI_ONLY(JVMCI_FLAGS(    ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_JVMCI  };
 enum FlagCounter_C1    { COMPILER1_PRESENT(C1_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C1     };
 enum FlagCounter_C2    { COMPILER2_PRESENT(C2_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C2     };
 
 const int first_flag_enum_LP64   = 0;
 const int first_flag_enum_ARCH   = first_flag_enum_LP64  + num_flags_LP64;
-const int first_flag_enum_JVMCI  = first_flag_enum_ARCH  + num_flags_ARCH;
-const int first_flag_enum_C1     = first_flag_enum_JVMCI + num_flags_JVMCI;
+const int first_flag_enum_C1     = first_flag_enum_ARCH  + num_flags_ARCH;
 const int first_flag_enum_C2     = first_flag_enum_C1    + num_flags_C1;
 const int first_flag_enum_other  = first_flag_enum_C2    + num_flags_C2;
 
 static constexpr int flag_group(int flag_enum) {
   if (flag_enum < first_flag_enum_ARCH)  return JVMFlag::KIND_LP64_PRODUCT;
-  if (flag_enum < first_flag_enum_JVMCI) return JVMFlag::KIND_ARCH;
-  if (flag_enum < first_flag_enum_C1)    return JVMFlag::KIND_JVMCI;
+  if (flag_enum < first_flag_enum_C1)    return JVMFlag::KIND_ARCH;
   if (flag_enum < first_flag_enum_C2)    return JVMFlag::KIND_C1;
   if (flag_enum < first_flag_enum_other) return JVMFlag::KIND_C2;
 

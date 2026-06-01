@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
  * @test
  * @bug 4323074
  * @summary Basic test for Collections.indexOfSubList/lastIndexOfSubList
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +37,7 @@ import java.util.List;
 import java.util.Vector;
 
 public class FindSubList {
+
     public static void main(String[] args) throws Exception {
         int N = 500;
         List source = new ArrayList(3 * N);
@@ -103,5 +106,12 @@ public class FindSubList {
                                                                  "0")) != -1)
               throw new Exception(s.getClass()+" lastIndexOfSubList: big tgt");
         }
+
+        List<VClass> vsource = Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), new VClass(3, new int[] { 3 }), new VClass(2, new int[] { 2 }), new VClass(3, new int[] { 3 }));
+        List<VClass> vtarget = Arrays.asList(new VClass(2, new int[] { 2 }), new VClass(3, new int[] { 3 }));
+        if (Collections.indexOfSubList(vsource, vtarget) != 1)
+            throw new Exception("value indexOfSubList failed");
+        if (Collections.lastIndexOfSubList(vsource, vtarget) != 3)
+            throw new Exception("value lastIndexOfSubList failed");
     }
 }

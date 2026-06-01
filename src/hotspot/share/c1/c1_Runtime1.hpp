@@ -98,7 +98,6 @@ public:
 
   // runtime entry points
   static void new_instance    (JavaThread* current, Klass* klass);
-  static void new_instance_no_inline(JavaThread* current, Klass* klass);
   static void new_type_array  (JavaThread* current, Klass* klass, jint length);
   static void new_object_array(JavaThread* current, Klass* klass, jint length);
   static void new_null_free_array(JavaThread* current, Klass* klass, jint length);

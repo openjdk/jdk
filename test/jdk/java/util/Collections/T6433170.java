@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
  * @test
  * @bug 6433170
  * @summary CheckedCollection.addAll should be all-or-nothing
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +42,7 @@ import static java.util.Collections.checkedSet;
 
 @SuppressWarnings("unchecked")
 public class T6433170 {
+
     private void checkEmpty(Collection x) {
         check(x.isEmpty());
         check(x.size() == 0);
@@ -56,6 +59,12 @@ public class T6433170 {
         test(checkedCollection(
                  checkedCollection(new Vector(), String.class),
                  Object.class));
+
+        Collection<VClass> vc = checkedCollection(new ArrayList<>(), VClass.class);
+        List mixed = Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), "not a Tuple");
+        THROWS(ClassCastException.class,
+               new F(){void f(){ vc.addAll(mixed); }});
+        checkEmpty(vc);
     }
 
     void test(final Collection checked) {

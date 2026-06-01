@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +37,17 @@ public:
   explicit ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info);
 
   bool should_start_gc() override;
+  const char* name() override     { return "Compact"; }
+  bool is_diagnostic() override   { return false; }
+  bool is_experimental() override { return false; }
 
+protected:
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                              RegionData* data, size_t size,
                                              size_t actual_free) override;
 
-  const char* name() override     { return "Compact"; }
-  bool is_diagnostic() override   { return false; }
-  bool is_experimental() override { return false; }
+private:
+  size_t estimate_bytes_allocated_since_gc_start() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
