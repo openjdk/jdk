@@ -2433,7 +2433,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
 
   assert((alias_type->index() == Compile::AliasIdxRaw) ==
-         (is_non_heap_access || (can_access_non_heap && alias_type->field() == nullptr)), "");
+         (is_non_heap_access || (can_access_non_heap && alias_type->field() == nullptr)), "wrong alias");
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
       alias_type->adr_type() == TypeAryPtr::RANGE) {

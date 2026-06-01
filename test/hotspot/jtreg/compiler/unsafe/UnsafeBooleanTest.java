@@ -40,10 +40,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.*;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
@@ -116,13 +113,17 @@ public class UnsafeBooleanTest {
     static @Stable boolean stableB;
     static @Stable long stableJ;
 
+    static final Random RANDOM = jdk.test.lib.Utils.getRandomInstance();
+
     static final int[] INPUTS = new int[] {
             0, 1,
             2, 3, 4, 5, -1,
             Byte.MIN_VALUE, Byte.MAX_VALUE,
             Short.MIN_VALUE, Short.MAX_VALUE,
             Character.MIN_VALUE , Character.MAX_VALUE,
-            Integer.MIN_VALUE, Integer.MAX_VALUE };
+            Integer.MIN_VALUE, Integer.MAX_VALUE,
+            RANDOM.nextInt()
+            };
 
     static final int[] TOGGLES = new int[] { 0, 1, 0xFF };
 
