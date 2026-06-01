@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
+ * @bug 8383248
  * @summary Verifies that Http2Connection.cachedHeaderBuffer is reused
  *          across multiple requests on the same connection.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
@@ -93,35 +94,25 @@ public class HeaderEncodingBufferReuseTest implements HttpServerAdapters {
                 .sslContext(sslContext)
                 .build()) {
 
-            // Force a large cached header buffer by sending 300 headers.
-            assertEquals(200, send(client, httpUri, 300).statusCode());
+            // Send an initial request to allocate the header encoding buffer.
+            assertEquals(200, send(client, httpUri, 2).statusCode());
 
             Collection<?> connections = HttpClientImplAccess.getHttp2Connections(client);
             assertEquals(1, connections.size());
             Object conn = connections.iterator().next();
 
-            HttpResponse response = send(client, httpUri, 2);
-            assertEquals(200, response.statusCode());
-
             ByteBuffer cached = HttpClientImplAccess.getCachedHeaderBuffer(conn);
             assertNotNull(cached);
 
-            response = send(client, httpUri, 2);
-            assertEquals(200, response.statusCode());
+            // Send another request and verify the same buffer is reused.
+            assertEquals(200, send(client, httpUri, 2).statusCode());
             connections = HttpClientImplAccess.getHttp2Connections(client);
             assertEquals(1, connections.size());
             assertSame(conn, connections.iterator().next());
             assertSame(cached, HttpClientImplAccess.getCachedHeaderBuffer(conn));
 
-            response = send(client, httpUri, 300);
-            assertEquals(200, response.statusCode());
-            connections = HttpClientImplAccess.getHttp2Connections(client);
-            assertEquals(1, connections.size());
-            assertSame(conn, connections.iterator().next());
-            assertSame(cached, HttpClientImplAccess.getCachedHeaderBuffer(conn));
-
-            response = send(client, httpUri, 2);
-            assertEquals(200, response.statusCode());
+            // Verify that the buffer is reused when headers span multiple frames.
+            assertEquals(200, send(client, httpUri, 300).statusCode());
             connections = HttpClientImplAccess.getHttp2Connections(client);
             assertEquals(1, connections.size());
             assertSame(conn, connections.iterator().next());

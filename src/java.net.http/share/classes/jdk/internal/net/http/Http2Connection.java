@@ -1612,10 +1612,10 @@ class Http2Connection implements Closeable {
     // Dedicated reusable ByteBuffer for headers encoding.
     // There can be no concurrent access to this  buffer as all access to this buffer
     // and its content happen within a single critical code block section protected
-    // by the sendlock (see `sendFrame()`).
+    // by the sendlock (see sendFrame()).
     private ByteBuffer cachedHeaderBuffer;
 
-    // `getCachedHeaderBuffer()` is used only by tests and it should not be
+    // getCachedHeaderBuffer() is used only by tests and it should not be
     // called in source code without also holding `sendlock`.
     ByteBuffer getCachedHeaderBuffer() {
         return cachedHeaderBuffer;
