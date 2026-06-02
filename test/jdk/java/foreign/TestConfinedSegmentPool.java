@@ -89,6 +89,27 @@ final class TestConfinedSegmentPool {
         }
     }
 
+    @Test
+    void testNoAllocation() {
+        try (Arena arena = Arena.ofConfined()) {
+            assertCorrectArenaImpl(arena);
+        }
+    }
+
+    @Test
+    void testManyAllocations() {
+        // Try two times to also test a recycled pool element
+        for (int i = 0; i < 2; i++) {
+            try (Arena arena = Arena.ofConfined()) {
+                for (int j = 0; j < poolSlotSize() * 2; j++) {
+                    MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE);
+                    // Make sure the segment is zeroed out
+                    assertEquals((byte) 0, segment.get(ValueLayout.JAVA_BYTE, 0));
+                }
+            }
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("threadFactories")
     void testThreadLocalAllocator(String name, Thread.Builder threadBuilder) throws Throwable {
@@ -156,32 +177,44 @@ final class TestConfinedSegmentPool {
                 Arguments.of("virtual", Thread.ofVirtual()));
     }
 
-    static Object threadAllocator(Thread thread) throws ReflectiveOperationException {
-        return THREAD_ALLOCATOR_FIELD.get(thread);
+    static Object threadAllocator(Thread thread) {
+        return getOrThrow(() -> THREAD_ALLOCATOR_FIELD.get(thread));
     }
 
-    static Arena backingArena(Object allocator) throws ReflectiveOperationException {
-        return (Arena) BACKING_ARENA_FIELD.get(allocator);
+    static Arena backingArena(Object allocator) {
+        return getOrThrow(() -> (Arena) BACKING_ARENA_FIELD.get(allocator));
     }
 
-    static int poolSlots() throws ReflectiveOperationException {
-        return POOL_SLOTS_FIELD.getInt(null);
+    static int poolSlots() {
+        return getOrThrow(() -> POOL_SLOTS_FIELD.getInt(null));
     }
 
-    static long poolSlotSize() throws ReflectiveOperationException {
-        return POOL_SLOT_SIZE_FIELD.getLong(null);
+    static long poolSlotSize() {
+        return getOrThrow(() -> POOL_SLOT_SIZE_FIELD.getLong(null));
     }
 
-    static boolean isPoolEnabled() throws ReflectiveOperationException {
+    interface ReflectiveOperation<T> {
+        T reflect() throws ReflectiveOperationException;
+    }
+
+    static <T> T getOrThrow(ReflectiveOperation<T> op) {
+        try {
+            return op.reflect();
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex);
+        }
+    }
+
+    static boolean isPoolEnabled() {
         return poolSlots() > 0 && poolSlotSize() > 1;
     }
 
-    static void assertCorrectArenaImpl(Arena arena) throws ReflectiveOperationException {
+    static void assertCorrectArenaImpl(Arena arena) {
         assertEquals(isPoolEnabled() ? "CachedArena" : "ArenaImpl", arena.getClass().getSimpleName());
     }
 
     @Test
-    void testCachedSegmentScope() throws Exception {
+    void testCachedSegmentScope() {
         try (Arena arena = Arena.ofConfined()) {
             assertCorrectArenaImpl(arena);
             MemorySegment segment = arena.allocate(ValueLayout.JAVA_LONG);
@@ -190,7 +223,7 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testCachedSegmentIsClosedWithArena() throws Exception {
+    void testCachedSegmentIsClosedWithArena() {
         Arena arena = Arena.ofConfined();
         assertCorrectArenaImpl(arena);
         MemorySegment segment = arena.allocate(ValueLayout.JAVA_LONG);
@@ -206,7 +239,7 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testClosedCachedSegmentCannotAccessReusedSlot() throws Exception {
+    void testClosedCachedSegmentCannotAccessReusedSlot() {
         Assumptions.assumeTrue(isPoolEnabled(), "Pool not enabled");
 
         MemorySegment firstSegment;
@@ -231,7 +264,7 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testOutOfOrderClose() throws Exception {
+    void testOutOfOrderClose() {
         Arena firstArena = Arena.ofConfined();
         MemorySegment firstSegment = firstArena.allocate(ValueLayout.JAVA_LONG);
         long firstAddress = firstSegment.address();
@@ -256,7 +289,7 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testLargeAllocationDoesNotConsumePoolSlot() throws Exception {
+    void testLargeAllocationDoesNotConsumePoolSlot() {
         Assumptions.assumeTrue(isPoolEnabled(), "Pool is disabled");
         long poolSlotSize = poolSlotSize();
         Assumptions.assumeTrue(poolSlotSize < (1 << 20), "Pool slot too large for fallback test");
@@ -281,7 +314,7 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testPoolExhaustionFallsBack() throws Exception {
+    void testPoolExhaustionFallsBack() {
         int poolSlots = poolSlots();
         Assumptions.assumeTrue(isPoolEnabled(), "Pool is disabled");
 
@@ -312,7 +345,7 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testAllocateFromReusesCachedSlot() throws Exception {
+    void testAllocateFromReusesCachedSlot() {
         byte[] firstBytes = { 1, 2, 3, 4 };
         byte[] secondBytes = { 5, 6, 7, 8 };
         Assumptions.assumeTrue(isPoolEnabled(), "Pool is disabled");
@@ -395,7 +428,7 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testCleanerThreadCannotCloseConfinedArena() throws Exception {
+    void testCleanerThreadCannotCloseConfinedArena() {
         AtomicReference<Thread> cleanerThreadRef = new AtomicReference<>();
         Cleaner cleaner = Cleaner.create(runnable -> {
             Thread cleanerThread = new Thread(runnable, "TestConfinedSegmentPool-Cleaner");
@@ -456,12 +489,16 @@ final class TestConfinedSegmentPool {
         }
     }
 
-    static void awaitCleaner(CountDownLatch latch) throws InterruptedException {
+    static void awaitCleaner(CountDownLatch latch)  {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         do {
             System.gc();
-            if (latch.await(10, TimeUnit.MILLISECONDS)) {
-                return;
+            try {
+                if (latch.await(10, TimeUnit.MILLISECONDS)) {
+                    return;
+                }
+            } catch (InterruptedException e) {
+                throw new AssertionError(e);
             }
             Thread.onSpinWait();
         } while (System.nanoTime() < deadline);

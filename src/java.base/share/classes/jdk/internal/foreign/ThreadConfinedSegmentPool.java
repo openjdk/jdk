@@ -195,7 +195,7 @@ final class ThreadConfinedSegmentPool implements AutoCloseable {
         @ForceInline
         @Override
         public void close() {
-            if (session.isAlive()) {
+            if (session.isAlive() && allocator != null) {
                 // To minimize data exposure, we zero out _after_ use rather than
                 // before use.
                 allocator.zeroOutToOffset();
