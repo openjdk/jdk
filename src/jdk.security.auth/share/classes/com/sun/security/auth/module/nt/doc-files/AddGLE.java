@@ -51,12 +51,12 @@ void main(String[] args) throws IOException {
     for (int i = 1; i < args.length; i++) {
         String name = args[i];
         String line = all.get(name);
-        String argList = line.substring(line.indexOf('(') + 1, line.indexOf(')'));
-        String argListWithoutTypes = argList.replaceAll("\\w+ (\\w+)", "$1");
         if (line == null) {
             System.out.println("    // Cannot find " + name);
             continue;
         }
+        String argList = line.substring(line.indexOf('(') + 1, line.indexOf(')'));
+        String argListWithoutTypes = argList.replaceAll("\\w+ (\\w+)", "$1");
         System.out.printf("""
                     private static final MethodHandle MH_%1$sGLE = Linker.nativeLinker()
                             .downcallHandle(%1$s$address(), %1$s$descriptor(), CCS_GLE);

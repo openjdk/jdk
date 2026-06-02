@@ -79,11 +79,14 @@ public class NTSystem {
             }
         }
         // dwLanguageId = 0 uses the caller's language preferences
-        FormatMessageA(dwFormatFlags, hModule, errno, 0, buffer, 0, NULL);
-        MemorySegment msg = buffer.get(C_POINTER, 0);
-        System.out.println(label + " error [" + errno + "]: "
-                + msg.getString(0));
-        LocalFree(msg);
+        if (FormatMessageA(dwFormatFlags, hModule, errno, 0, buffer, 0, NULL) > 0) {
+            MemorySegment msg = buffer.get(C_POINTER, 0);
+            System.out.println(label + " error [" + errno + "]: "
+                    + msg.getString(0));
+            LocalFree(msg);
+        } else {
+            System.out.println(label + " error [" + errno + "]");
+        }
         if (hModule != NULL) {
             FreeLibrary(hModule);
         }
@@ -405,23 +408,32 @@ public class NTSystem {
     }
 
     private static String getTextSid(MemorySegment sid) {
-        String textSid;
         if (IsValidSid(sid) == 0) {
             return null;
         }
         MemorySegment sia = GetSidIdentifierAuthority(sid);
         byte subCC = GetSidSubAuthorityCount(sid).get(C_CHAR, 0);
         StringBuilder sb = new StringBuilder("S-1-");
-        sb.append(sia.get(C_CHAR, 5) & 0xff
-                + ((sia.get(C_CHAR, 4) & 0xff) << 8)
-                + ((sia.get(C_CHAR, 3) & 0xff) << 16)
-                + ((sia.get(C_CHAR, 2) & 0xff) << 24));
+        if (sia.get(C_CHAR, 0) != 0 || sia.get(C_CHAR, 1) != 0) {
+            sb.append("0x%02x%02x%02x%02x%02x%02x".formatted(
+                    sia.get(C_CHAR, 0) & 0xff,
+                    sia.get(C_CHAR, 1) & 0xff,
+                    sia.get(C_CHAR, 2) & 0xff,
+                    sia.get(C_CHAR, 3) & 0xff,
+                    sia.get(C_CHAR, 4) & 0xff,
+                    sia.get(C_CHAR, 5) & 0xff));
+        } else {
+            long value = (sia.get(C_CHAR, 5) & 0xff)
+                    + ((sia.get(C_CHAR, 4) & 0xff) << 8)
+                    + ((sia.get(C_CHAR, 3) & 0xff) << 16)
+                    + ((long)(sia.get(C_CHAR, 2) & 0xff) << 24);
+            sb.append(value);
+        }
         for (int i = 0; i < subCC; i++) {
             sb.append('-').append(Integer.toUnsignedLong(
                     (GetSidSubAuthority(sid, i)).get(C_INT, 0)));
         }
-        textSid = sb.toString();
-        return textSid;
+        return sb.toString();
     }
 
     private long getImpersonationToken0() {
@@ -438,12 +450,10 @@ public class NTSystem {
             }
             MemorySegment impersonationToken = scope.allocate(HANDLE);
             MemorySegment dupToken = pDupToken.get(HANDLE, 0);
-            if (DuplicateTokenGLE(dupToken, SecurityImpersonation(),
-                    impersonationToken) == 0) {
-                return 0;
-            }
+            int result = DuplicateTokenGLE(dupToken, SecurityImpersonation(),
+                    impersonationToken);
             CloseHandle(dupToken);
-            return impersonationToken.get(JAVA_LONG, 0);
+            return result == 0 ? 0 : impersonationToken.get(JAVA_LONG, 0);
         }
     }
 
