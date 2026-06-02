@@ -743,9 +743,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_gc_humongous_allocation) {
 
     // First mutator phase:
     // No new humongous allocations in this phase.
-    // h_t1 < h_t0 (eager reclaim)
     gc_start_time_s += (gc_pause_duration_s + mutator_duration_s);
-    size_t h_t1 = 60;
     ctrl.mutator_phase_end_with_normal_gc({
         gc_start_time_s,
         gc_pause_duration_s,

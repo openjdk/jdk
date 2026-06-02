@@ -512,7 +512,7 @@
     <Field type="ulong" contentType="bytes" name="additionalBufferSize" label="Additional Buffer" description="Additional buffer size" experimental="true" />
     <Field type="double" contentType="bytes-per-second" name="predictedNonHumongousAllocation" label="Predicted Non-Humongous Allocation Rate"
       description="Predicted allocation rate of non-humongous objects into the old generation, in bytes per second" />
-    <Field type="ulong" contentType="bytes" name="predictedPeakHumongousAllocation" label="Peak Humongous Allocation"
+    <Field type="ulong" contentType="bytes" name="predictedPeakHumongousAllocation" label="Predicted Peak Humongous Allocation"
       description="Predicted maximum bytes allocated for humongous objects during a concurrent cycle" experimental="true" />
     <Field type="long" contentType="millis" name="predictedMarkingDuration" label="Predicted Marking Duration"
       description="Current predicted time from the end of the last concurrent start to the first mixed GC" />

@@ -1026,12 +1026,12 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
   if (!this_gc_was_young_only && _concurrent_cycle_tracker.has_completed_cycle()) {
     G1ConcurrentCycleStats cycle_stats = _concurrent_cycle_tracker.get_and_reset_cycle_stats();
 
-    double marking_to_mixed_time = cycle_stats._cycle_duration_s;
-    assert(marking_to_mixed_time > 0.0,
-           "Concurrent start to mixed time must be larger than zero but is %.3f",
-           marking_to_mixed_time);
-    if (marking_to_mixed_time > min_valid_time) {
-      _ihop_control->record_concurrent_cycle(marking_to_mixed_time,
+    double concurrent_cycle_duration_s = cycle_stats._cycle_duration_s;
+    assert(concurrent_cycle_duration_s > 0.0,
+           "Time for Concurrent Start GC to the first Mixed GC must be larger than zero but is %.3f",
+           concurrent_cycle_duration_s);
+    if (concurrent_cycle_duration_s > min_valid_time) {
+      _ihop_control->record_concurrent_cycle(concurrent_cycle_duration_s,
                                              cycle_stats._non_humongous_allocated_bytes,
                                              cycle_stats._peak_extra_humongous_reserve_bytes);
       report = true;
