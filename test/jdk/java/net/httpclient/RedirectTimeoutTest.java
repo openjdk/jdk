@@ -29,7 +29,7 @@
  *          an HttpTimeoutException during the redirected request.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.httpclient.HttpClient.log=errors,trace -Djdk.internal.httpclient.debug=false RedirectTimeoutTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=errors,trace -Djdk.internal.httpclient.debug=false ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

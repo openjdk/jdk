@@ -61,8 +61,10 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
             long featureIndex = idx >>> featuresElementShiftCount;
             return Unsafe.getUnsafe().getLong(featuresBitMapAddress + featureIndex * Long.BYTES);
         }, renaming);
-        assert features.contains(AMD64.CPUFeature.SSE) : "minimum config for x64";
-        assert features.contains(AMD64.CPUFeature.SSE2) : "minimum config for x64";
+        // SSE and SSE2 are no longer reported as of JDK-8383881, but JVMCI compiler may
+        // still model instructions using these feature flags, so add them explicitly here.
+        features.add(AMD64.CPUFeature.SSE);
+        features.add(AMD64.CPUFeature.SSE2);
         return features;
     }
 

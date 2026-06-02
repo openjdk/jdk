@@ -139,10 +139,10 @@ const char* CDSConfig::default_archive_path() {
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
     }
-    if (UseCompactObjectHeaders) {
-      // Note that generation of xxx_coh.jsa variants require
-      // --enable-cds-archive-coh at build time
-      tmp.print_raw("_coh");
+    if (!UseCompactObjectHeaders) {
+      // Note that generation of xxx_nocoh.jsa variants require
+      // --enable-cds-archive-nocoh at build time
+      tmp.print_raw("_nocoh");
     }
 #endif
     tmp.print_raw(".jsa");
@@ -462,7 +462,7 @@ void CDSConfig::check_aot_flags() {
   // At least one AOT flag has been used
   _new_aot_flags_used = true;
 
-  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
+  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0) {
     check_aotmode_auto_or_on();
   } else if (strcmp(AOTMode, "off") == 0) {
     check_aotmode_off();
@@ -489,7 +489,7 @@ void CDSConfig::check_aotmode_auto_or_on() {
   if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
     RequireSharedSpaces = false;
   } else {
-    assert(strcmp(AOTMode, "on") == 0, "already checked");
+    assert(strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0 , "already checked");
     RequireSharedSpaces = true;
   }
 }
@@ -520,7 +520,7 @@ static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
     JVMFlag::Error err = JVMFlagAccess::set_ccstr(flag, &new_filename, JVMFlagOrigin::ERGONOMIC);
     assert(err == JVMFlag::SUCCESS, "must never fail");
   }
-  FREE_C_HEAP_ARRAY(char, new_filename);
+  FREE_C_HEAP_ARRAY(new_filename);
 }
 
 void CDSConfig::check_aotmode_record() {

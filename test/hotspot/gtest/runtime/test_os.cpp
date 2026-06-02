@@ -746,7 +746,7 @@ static void test_show_mappings(address start, size_t size) {
 #endif
   // buf[buflen - 1] = '\0';
   // tty->print_raw(buf);
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 }
 
 TEST_VM(os, show_mappings_small_range) {

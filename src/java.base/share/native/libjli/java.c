@@ -1058,7 +1058,7 @@ static void
 SetMainModule(const char *s)
 {
     static const char format[] = "-Djdk.module.main=%s";
-    char* slash = JLI_StrChr(s, '/');
+    const char* slash = JLI_StrChr(s, '/');
     size_t s_len, def_len;
     char *def;
 
@@ -1303,21 +1303,9 @@ ParseArguments(int *pargc, char ***pargv,
             AddOption("-verbose:gc", NULL);
         } else if (JLI_StrCmp(arg, "-debug") == 0) {
             JLI_ReportErrorMessage(ARG_DEPRECATED, "-debug");
-        } else if (JLI_StrCmp(arg, "-noclassgc") == 0) {
-            JLI_ReportErrorMessage(ARG_DEPRECATED, "-noclassgc");
-            AddOption("-Xnoclassgc", NULL);
         } else if (JLI_StrCmp(arg, "-verify") == 0) {
             JLI_ReportErrorMessage(ARG_DEPRECATED, "-verify");
             AddOption("-Xverify:all", NULL);
-        } else if (JLI_StrCmp(arg, "-verifyremote") == 0) {
-            JLI_ReportErrorMessage(ARG_DEPRECATED, "-verifyremote");
-            AddOption("-Xverify:remote", NULL);
-        } else if (JLI_StrCmp(arg, "-noverify") == 0) {
-            /*
-             * Note that no 'deprecated' message is needed here because the VM
-             * issues 'deprecated' messages for -noverify and -Xverify:none.
-             */
-            AddOption("-Xverify:none", NULL);
         } else if (JLI_StrCCmp(arg, "-ss") == 0 ||
                    JLI_StrCCmp(arg, "-ms") == 0 ||
                    JLI_StrCCmp(arg, "-mx") == 0) {

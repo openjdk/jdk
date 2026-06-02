@@ -31,14 +31,14 @@
 
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gc_state(0),
-  _oom_scope_nesting_level(0),
-  _oom_during_evac(false),
   _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
   _card_table(nullptr),
   _gclab(nullptr),
   _gclab_size(0),
   _shenandoah_plab(nullptr),
-  _evacuation_stats(new ShenandoahEvacuationStats()) {
+  _evacuation_stats(new ShenandoahEvacuationStats()),
+  _invisible_root(nullptr),
+  _invisible_root_word_size(0) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

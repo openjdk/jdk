@@ -98,7 +98,7 @@ void G1Arguments::initialize_verification_types() {
       parse_verification_type(token);
       token = strtok_r(nullptr, delimiter, &save_ptr);
     }
-    FREE_C_HEAP_ARRAY(char, type_list);
+    FREE_C_HEAP_ARRAY(type_list);
   }
 }
 

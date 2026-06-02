@@ -648,7 +648,7 @@ void JVMFlag::printSetFlags(outputStream* out) {
     }
   }
   out->cr();
-  FREE_C_HEAP_ARRAY(JVMFlag*, array);
+  FREE_C_HEAP_ARRAY(array);
 }
 
 #ifndef PRODUCT

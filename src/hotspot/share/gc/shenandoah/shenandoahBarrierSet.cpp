@@ -149,11 +149,9 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
     thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
 
-    if (ShenandoahStackWatermarkBarrier) {
-      JavaThread* const jt = JavaThread::cast(thread);
-      StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
-      StackWatermarkSet::add_watermark(jt, watermark);
-    }
+    JavaThread* const jt = JavaThread::cast(thread);
+    StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
+    StackWatermarkSet::add_watermark(jt, watermark);
   }
 }
 
@@ -172,14 +170,12 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
     }
 
     // SATB protocol requires to keep alive reachable oops from roots at the beginning of GC
-    if (ShenandoahStackWatermarkBarrier) {
-      if (_heap->is_concurrent_mark_in_progress()) {
-        ShenandoahKeepAliveClosure oops;
-        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
-      } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
-        ShenandoahContextEvacuateUpdateRootsClosure oops;
-        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
-      }
+    if (_heap->is_concurrent_mark_in_progress()) {
+      ShenandoahKeepAliveClosure oops;
+      StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
+    } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
+      ShenandoahContextEvacuateUpdateRootsClosure oops;
+      StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
     }
   }
 }

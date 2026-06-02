@@ -280,7 +280,6 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   assert(beg_region <= _region_count, "beg_region out of range");
   assert(end_region <= _region_count, "end_region out of range");
 
-  const size_t region_cnt = end_region - beg_region;
   for (size_t i = beg_region; i < end_region; i++) {
     ::new (&_region_data[i]) RegionData{};
   }
@@ -1378,11 +1377,9 @@ public:
     _weak_proc_task(nworkers),
     _oop_storage_iter(),
     _nworkers(nworkers),
-    _code_cache_claimed(false) {
+    _code_cache_claimed(false),
+    _claim_counters{} {
 
-    for (unsigned int i = PSParallelCompact::old_space_id; i < PSParallelCompact::last_space_id; ++i) {
-      ::new (&_claim_counters[i]) Atomic<uint>{};
-    }
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
   }
 

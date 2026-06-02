@@ -892,9 +892,7 @@ void AOTMappedHeapWriter::compute_ptrmap(AOTMappedHeapInfo* heap_info) {
     Metadata* native_ptr = *buffered_field_addr;
     guarantee(native_ptr != nullptr, "sanity");
 
-    if (RegeneratedClasses::has_been_regenerated(native_ptr)) {
-      native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
-    }
+    native_ptr = RegeneratedClasses::maybe_get_regenerated_object(native_ptr);
 
     if (!ArchiveBuilder::current()->has_been_archived((address)native_ptr)) {
       ResourceMark rm;

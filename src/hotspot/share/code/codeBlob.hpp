@@ -45,9 +45,10 @@ class OopMapSet;
 enum class CodeBlobType {
   MethodNonProfiled   = 0,    // Execution level 1 and 4 (non-profiled) nmethods (including native nmethods)
   MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
-  NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
-  All                 = 3,    // All types (No code cache segmentation)
-  NumTypes            = 4     // Number of CodeBlobTypes
+  MethodHot           = 2,    // Nmethods predicted to be always hot
+  NonNMethod          = 3,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
+  All                 = 4,    // All types (No code cache segmentation)
+  NumTypes            = 5     // Number of CodeBlobTypes
 };
 
 // CodeBlob - superclass for all entries in the CodeCache.
@@ -225,7 +226,7 @@ public:
   nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
   // we may want to force an actual buffer blob or subtype instance
-  BufferBlob* as_buffer_blob(bool strict = true) const { assert(is_buffer_blob(), "must be %sbuffer blob", (strict ? "strict " : "")); return (BufferBlob*) this; }
+  BufferBlob* as_buffer_blob(bool strict = true) const { assert(is_buffer_blob(strict), "must be %sbuffer blob", (strict ? "strict " : "")); return (BufferBlob*) this; }
   AdapterBlob* as_adapter_blob() const        { assert(is_adapter_blob(), "must be adapter blob"); return (AdapterBlob*) this; }
   ExceptionBlob* as_exception_blob() const    { assert(is_exception_stub(), "must be exception stub"); return (ExceptionBlob*) this; }
   // this will always return a subtype instance
@@ -603,7 +604,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
  public:
-  static const int ENTRY_COUNT = 4 JVMTI_ONLY(+ 2);
+  static const int ENTRY_COUNT = 4 JVMCI_ONLY(+ 2);
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,

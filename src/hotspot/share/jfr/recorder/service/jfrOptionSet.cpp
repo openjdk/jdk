@@ -799,7 +799,7 @@ void JfrOptionSet::release_start_flight_recording_options() {
   if (start_flight_recording_options_array != nullptr) {
     const int length = start_flight_recording_options_array->length();
     for (int i = 0; i < length; ++i) {
-      FREE_C_HEAP_ARRAY(char, start_flight_recording_options_array->at(i));
+      FREE_C_HEAP_ARRAY(start_flight_recording_options_array->at(i));
     }
     delete start_flight_recording_options_array;
     start_flight_recording_options_array = nullptr;

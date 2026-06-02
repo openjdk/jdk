@@ -32,7 +32,7 @@
 
   // Total virtual time so far.
 inline double G1ConcurrentMarkThread::total_mark_cpu_time_s() {
-  return static_cast<double>(os::thread_cpu_time(this)) + worker_threads_cpu_time_s();
+  return static_cast<double>(os::thread_cpu_time(this)) / NANOSECS_PER_SEC + worker_threads_cpu_time_s();
 }
 
 // Marking virtual time so far

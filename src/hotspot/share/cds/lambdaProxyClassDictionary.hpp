@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
-#define SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
+#ifndef SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP
+#define SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP
 
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
@@ -331,4 +331,4 @@ public:
   static void print_statistics(outputStream* st,  bool is_static_archive);
 };
 
-#endif // SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
+#endif // SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP

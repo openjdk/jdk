@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -39,20 +38,6 @@
 
 ShenandoahNMethodTable* ShenandoahCodeRoots::_nmethod_table;
 int ShenandoahCodeRoots::_disarmed_value = 1;
-
-bool ShenandoahCodeRoots::use_nmethod_barriers_for_mark() {
-  // Continuations need nmethod barriers for scanning stack chunk nmethods.
-  if (Continuations::enabled()) return true;
-
-  // Concurrent class unloading needs nmethod barriers.
-  // When a nmethod is about to be executed, we need to make sure that all its
-  // metadata are marked. The alternative is to remark thread roots at final mark
-  // pause, which would cause latency issues.
-  if (ShenandoahHeap::heap()->unload_classes()) return true;
-
-  // Otherwise, we can go without nmethod barriers.
-  return false;
-}
 
 void ShenandoahCodeRoots::initialize() {
   _nmethod_table = new ShenandoahNMethodTable();
@@ -68,27 +53,14 @@ void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
   _nmethod_table->unregister_nmethod(nm);
 }
 
-void ShenandoahCodeRoots::arm_nmethods_for_mark() {
-  if (use_nmethod_barriers_for_mark()) {
-    BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
-  }
-}
-
-void ShenandoahCodeRoots::arm_nmethods_for_evac() {
+void ShenandoahCodeRoots::arm_nmethods() {
   BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 }
 
 class ShenandoahDisarmNMethodClosure : public NMethodClosure {
-private:
-  BarrierSetNMethod* const _bs;
-
 public:
-  ShenandoahDisarmNMethodClosure() :
-    _bs(BarrierSet::barrier_set()->barrier_set_nmethod()) {
-  }
-
   virtual void do_nmethod(nmethod* nm) {
-    _bs->disarm(nm);
+    ShenandoahNMethod::disarm_nmethod(nm);
   }
 };
 
@@ -111,10 +83,8 @@ public:
 };
 
 void ShenandoahCodeRoots::disarm_nmethods() {
-  if (use_nmethod_barriers_for_mark()) {
-    ShenandoahDisarmNMethodsTask task;
-    ShenandoahHeap::heap()->workers()->run_task(&task);
-  }
+  ShenandoahDisarmNMethodsTask task;
+  ShenandoahHeap::heap()->workers()->run_task(&task);
 }
 
 class ShenandoahNMethodUnlinkClosure : public NMethodClosure {
@@ -146,7 +116,6 @@ public:
 
       // Heal oops
       if (_bs->is_armed(nm)) {
-        ShenandoahEvacOOMScope oom_evac_scope;
         ShenandoahNMethod::heal_nmethod_metadata(nm_data);
         // Must remain armed to complete remaining work in nmethod entry barrier
         assert(_bs->is_armed(nm), "Should remain armed");
