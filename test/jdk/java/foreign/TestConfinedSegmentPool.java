@@ -26,10 +26,15 @@
  * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
+ *                    -Djava.lang.foreign.native.confined.arena.power.pool-slot-size=6
  *                    TestConfinedSegmentPool
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.arena.power.pool-slot-size=2
+ *                    -Djava.lang.foreign.native.confined.arena.power.pool-slot-size=0
+ *                    TestConfinedSegmentPool
+ * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
+ *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
+ *                    -Djava.lang.foreign.native.confined.arena.pool-slots=0
  *                    TestConfinedSegmentPool
  */
 
@@ -62,6 +67,7 @@ import static org.junit.Assert.*;
 
 final class TestConfinedSegmentPool {
 
+    static final String PROPERTY_PATH = "java.lang.foreign.native.confined.arena.";
     static final Field THREAD_ALLOCATOR_FIELD;
     static final Field BACKING_ARENA_FIELD;
     static final Field POOL_SLOTS_FIELD;
@@ -83,9 +89,6 @@ final class TestConfinedSegmentPool {
         }
     }
 
-    static final boolean IS_POOL_ACCOMODATES_LONG =
-            Integer.getInteger("java.lang.foreign.native.confined.arena.power.pool-slot-size", 6) >= 4 ;
-
     @ParameterizedTest
     @MethodSource("threadFactories")
     void testThreadLocalAllocator(String name, Thread.Builder threadBuilder) throws Throwable {
@@ -97,16 +100,20 @@ final class TestConfinedSegmentPool {
 
                 long firstAddress;
                 try (Arena arena = Arena.ofConfined()) {
-                    assertEquals("CachedArena", arena.getClass().getSimpleName());
+                    assertCorrectArenaImpl(arena);
                     Object allocator = threadAllocator(Thread.currentThread());
-                    assertNotNull(allocator);
-                    assertTrue(backingArena(allocator).scope().isAlive());
-                    allocatorRef.set(allocator);
+                    if (isPoolEnabled()) {
+                        assertNotNull(allocator);
+                        assertTrue(backingArena(allocator).scope().isAlive());
+                        allocatorRef.set(allocator);
+                    } else {
+                        assertNull(allocator);
+                    }
 
                     MemorySegment firstSegment = arena.allocate(ValueLayout.JAVA_LONG);
                     MemorySegment secondSegment = arena.allocate(ValueLayout.JAVA_LONG);
                     firstAddress = firstSegment.address();
-                    if (IS_POOL_ACCOMODATES_LONG) {
+                    if (isPoolEnabled()) {
                         assertEquals(secondSegment.address(), firstAddress + ValueLayout.JAVA_LONG.byteSize());
                     }
                     firstSegment.set(ValueLayout.JAVA_LONG, 0, -1L);
@@ -114,10 +121,10 @@ final class TestConfinedSegmentPool {
                 }
 
                 try (Arena arena = Arena.ofConfined()) {
-                    assertEquals("CachedArena", arena.getClass().getSimpleName());
+                    assertCorrectArenaImpl(arena);
                     MemorySegment firstSegment = arena.allocate(ValueLayout.JAVA_LONG);
                     MemorySegment secondSegment = arena.allocate(ValueLayout.JAVA_LONG);
-                    if (IS_POOL_ACCOMODATES_LONG) {
+                    if (isPoolEnabled()) {
                         assertEquals(firstSegment.address(), firstAddress);
                         assertEquals(secondSegment.address(), firstAddress + ValueLayout.JAVA_LONG.byteSize());
                     }
@@ -138,6 +145,9 @@ final class TestConfinedSegmentPool {
 
         awaitThreadAllocatorCleared(thread);
         assertNull(name, threadAllocator(thread));
+        if (allocatorRef.get() != null) {
+            assertFalse(backingArena(allocatorRef.get()).scope().isAlive());
+        }
     }
 
     static Stream<Arguments> threadFactories() {
@@ -162,19 +172,27 @@ final class TestConfinedSegmentPool {
         return POOL_SLOT_SIZE_FIELD.getLong(null);
     }
 
+    static boolean isPoolEnabled() throws ReflectiveOperationException {
+        return poolSlots() > 0 && poolSlotSize() > 1;
+    }
+
+    static void assertCorrectArenaImpl(Arena arena) throws ReflectiveOperationException {
+        assertEquals(isPoolEnabled() ? "CachedArena" : "ArenaImpl", arena.getClass().getSimpleName());
+    }
+
     @Test
-    void testCachedSegmentScope() {
+    void testCachedSegmentScope() throws Exception {
         try (Arena arena = Arena.ofConfined()) {
-            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            assertCorrectArenaImpl(arena);
             MemorySegment segment = arena.allocate(ValueLayout.JAVA_LONG);
             assertSame(arena.scope(), segment.scope());
         }
     }
 
     @Test
-    void testCachedSegmentIsClosedWithArena() {
+    void testCachedSegmentIsClosedWithArena() throws Exception {
         Arena arena = Arena.ofConfined();
-        assertEquals("CachedArena", arena.getClass().getSimpleName());
+        assertCorrectArenaImpl(arena);
         MemorySegment segment = arena.allocate(ValueLayout.JAVA_LONG);
         segment.set(ValueLayout.JAVA_LONG, 0, 42L);
 
@@ -188,32 +206,32 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testClosedCachedSegmentCannotAccessReusedSlot() {
-        if (IS_POOL_ACCOMODATES_LONG) {
-            MemorySegment firstSegment;
-            long firstAddress;
-            try (Arena firstArena = Arena.ofConfined()) {
-                assertEquals("CachedArena", firstArena.getClass().getSimpleName());
-                firstSegment = firstArena.allocate(ValueLayout.JAVA_LONG);
-                firstAddress = firstSegment.address();
-                firstSegment.set(ValueLayout.JAVA_LONG, 0, 42L);
-            }
+    void testClosedCachedSegmentCannotAccessReusedSlot() throws Exception {
+        Assumptions.assumeTrue(isPoolEnabled(), "Pool not enabled");
 
-            try (Arena secondArena = Arena.ofConfined()) {
-                assertEquals("CachedArena", secondArena.getClass().getSimpleName());
-                MemorySegment secondSegment = secondArena.allocate(ValueLayout.JAVA_LONG);
-                assertEquals(secondSegment.address(), firstAddress);
-                secondSegment.set(ValueLayout.JAVA_LONG, 0, -1L);
-                assertThrows(IllegalStateException.class,
-                        () -> firstSegment.get(ValueLayout.JAVA_LONG, 0));
-                assertThrows(IllegalStateException.class,
-                        () -> firstSegment.set(ValueLayout.JAVA_LONG, 0, 0L));
-            }
+        MemorySegment firstSegment;
+        long firstAddress;
+        try (Arena firstArena = Arena.ofConfined()) {
+            assertCorrectArenaImpl(firstArena);
+            firstSegment = firstArena.allocate(ValueLayout.JAVA_LONG);
+            firstAddress = firstSegment.address();
+            firstSegment.set(ValueLayout.JAVA_LONG, 0, 42L);
+        }
+
+        try (Arena secondArena = Arena.ofConfined()) {
+            assertCorrectArenaImpl(secondArena);
+            MemorySegment secondSegment = secondArena.allocate(ValueLayout.JAVA_LONG);
+            assertEquals(secondSegment.address(), firstAddress);
+            secondSegment.set(ValueLayout.JAVA_LONG, 0, -1L);
+            assertThrows(IllegalStateException.class,
+                    () -> firstSegment.get(ValueLayout.JAVA_LONG, 0));
+            assertThrows(IllegalStateException.class,
+                    () -> firstSegment.set(ValueLayout.JAVA_LONG, 0, 0L));
         }
     }
 
     @Test
-    void testOutOfOrderClose() {
+    void testOutOfOrderClose() throws Exception {
         Arena firstArena = Arena.ofConfined();
         MemorySegment firstSegment = firstArena.allocate(ValueLayout.JAVA_LONG);
         long firstAddress = firstSegment.address();
@@ -227,7 +245,7 @@ final class TestConfinedSegmentPool {
 
         try (Arena thirdArena = Arena.ofConfined()) {
             MemorySegment thirdSegment = thirdArena.allocate(ValueLayout.JAVA_LONG);
-            if (IS_POOL_ACCOMODATES_LONG) {
+            if (isPoolEnabled()) {
                 assertEquals(thirdSegment.address(), firstAddress);
             }
             assertEquals(thirdSegment.get(ValueLayout.JAVA_LONG, 0), 0L);
@@ -239,13 +257,13 @@ final class TestConfinedSegmentPool {
 
     @Test
     void testLargeAllocationDoesNotConsumePoolSlot() throws Exception {
-        Assumptions.assumeTrue(poolSlots() > 0, "Pool is disabled");
+        Assumptions.assumeTrue(isPoolEnabled(), "Pool is disabled");
         long poolSlotSize = poolSlotSize();
         Assumptions.assumeTrue(poolSlotSize < (1 << 20), "Pool slot too large for fallback test");
 
         long pooledAddress;
         try (Arena arena = Arena.ofConfined()) {
-            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            assertCorrectArenaImpl(arena);
             MemorySegment largeSegment = arena.allocate(poolSlotSize + 1);
             largeSegment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
 
@@ -255,7 +273,7 @@ final class TestConfinedSegmentPool {
         }
 
         try (Arena arena = Arena.ofConfined()) {
-            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            assertCorrectArenaImpl(arena);
             MemorySegment pooledSegment = arena.allocate(ValueLayout.JAVA_BYTE);
             assertEquals(pooledSegment.address(), pooledAddress);
             assertEquals((byte) 0, pooledSegment.get(ValueLayout.JAVA_BYTE, 0));
@@ -265,13 +283,13 @@ final class TestConfinedSegmentPool {
     @Test
     void testPoolExhaustionFallsBack() throws Exception {
         int poolSlots = poolSlots();
-        Assumptions.assumeTrue(poolSlots > 0, "Pool is disabled");
+        Assumptions.assumeTrue(isPoolEnabled(), "Pool is disabled");
 
         List<Arena> arenas = new ArrayList<>();
         try {
             for (int i = 0; i < poolSlots; i++) {
                 Arena arena = Arena.ofConfined();
-                assertEquals("CachedArena", arena.getClass().getSimpleName());
+                assertCorrectArenaImpl(arena);
                 MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE);
                 assertSame(arena.scope(), segment.scope());
                 segment.set(ValueLayout.JAVA_BYTE, 0, (byte) i);
@@ -279,7 +297,7 @@ final class TestConfinedSegmentPool {
             }
 
             try (Arena overflowArena = Arena.ofConfined()) {
-                assertEquals("CachedArena", overflowArena.getClass().getSimpleName());
+                assertCorrectArenaImpl(overflowArena);
                 MemorySegment segment = overflowArena.allocate(ValueLayout.JAVA_BYTE);
                 assertSame(overflowArena.scope(), segment.scope());
                 segment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
@@ -297,18 +315,19 @@ final class TestConfinedSegmentPool {
     void testAllocateFromReusesCachedSlot() throws Exception {
         byte[] firstBytes = { 1, 2, 3, 4 };
         byte[] secondBytes = { 5, 6, 7, 8 };
+        Assumptions.assumeTrue(isPoolEnabled(), "Pool is disabled");
         Assumptions.assumeTrue(poolSlotSize() >= firstBytes.length, "Pool slot too small");
 
         long firstAddress;
         try (Arena arena = Arena.ofConfined()) {
-            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            assertCorrectArenaImpl(arena);
             MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, firstBytes);
             firstAddress = segment.address();
             assertBytes(segment, firstBytes);
         }
 
         try (Arena arena = Arena.ofConfined()) {
-            assertEquals("CachedArena", arena.getClass().getSimpleName());
+            assertCorrectArenaImpl(arena);
             MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, secondBytes);
             assertEquals(segment.address(), firstAddress);
             assertBytes(segment, secondBytes);
@@ -326,11 +345,15 @@ final class TestConfinedSegmentPool {
             ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
             Thread thread = factory.newThread(() -> {
                 try (Arena arena = Arena.ofConfined()) {
-                    assertEquals("CachedArena", arena.getClass().getSimpleName());
+                    assertCorrectArenaImpl(arena);
                     Object allocator = threadAllocator(Thread.currentThread());
-                    assertNotNull(allocator);
-                    assertTrue(backingArena(allocator).scope().isAlive());
-                    allocatorRef.set(allocator);
+                    if (isPoolEnabled()) {
+                        assertNotNull(allocator);
+                        assertTrue(backingArena(allocator).scope().isAlive());
+                        allocatorRef.set(allocator);
+                    } else {
+                        assertNull(allocator);
+                    }
 
                     MemorySegment segment = arena.allocate(ValueLayout.JAVA_LONG);
                     segment.set(ValueLayout.JAVA_LONG, 0, 42L);
@@ -346,11 +369,12 @@ final class TestConfinedSegmentPool {
                 throw failureRef.get();
             }
 
-            Object allocator = allocatorRef.get();
-            assertNotNull(allocator);
             awaitThreadAllocatorCleared(thread);
             assertNull(threadAllocator(thread));
-            assertFalse(backingArena(allocator).scope().isAlive());
+            Object allocator = allocatorRef.get();
+            if (allocator != null) {
+                assertFalse(backingArena(allocator).scope().isAlive());
+            }
         } finally {
             scheduler.shutdownNow();
         }
@@ -371,7 +395,7 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void testCleanerThreadCannotCloseCachedArena() throws Exception {
+    void testCleanerThreadCannotCloseConfinedArena() throws Exception {
         AtomicReference<Thread> cleanerThreadRef = new AtomicReference<>();
         Cleaner cleaner = Cleaner.create(runnable -> {
             Thread cleanerThread = new Thread(runnable, "TestConfinedSegmentPool-Cleaner");
@@ -384,7 +408,7 @@ final class TestConfinedSegmentPool {
         AtomicReference<Throwable> failureRef = new AtomicReference<>();
 
         Arena arena = Arena.ofConfined();
-        assertEquals("CachedArena", arena.getClass().getSimpleName());
+        assertCorrectArenaImpl(arena);
         MemorySegment segment = arena.allocate(ValueLayout.JAVA_LONG);
         segment.set(ValueLayout.JAVA_LONG, 0, 42L);
 

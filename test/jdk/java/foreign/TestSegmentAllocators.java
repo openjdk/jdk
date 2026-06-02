@@ -26,6 +26,7 @@
  * @test
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm TestSegmentAllocators
+ * @run testng/othervm -Djava.lang.foreign.native.confined.arena.pool-slots=0 TestSegmentAllocators
  */
 
 import java.lang.foreign.*;
