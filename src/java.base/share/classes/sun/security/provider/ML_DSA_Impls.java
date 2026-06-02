@@ -214,9 +214,19 @@ public class ML_DSA_Impls {
                             "Unknown feature: " + f);
                 }
             }
-            if (!isInternal && useExternalMu) {
-                throw new InvalidAlgorithmParameterException(
-                        "externalMu requires internal");
+            if (useExternalMu) {
+                if (!isInternal) {
+                    throw new InvalidAlgorithmParameterException(
+                            "externalMu requires internal");
+                }
+                if (sps.context().length != 0) {
+                    throw new InvalidAlgorithmParameterException(
+                            "externalMu ignores context");
+                }
+                if (sps.preHash() != null) {
+                    throw new InvalidAlgorithmParameterException(
+                            "externalMu ignores pre-hash");
+                }
             }
         }
 

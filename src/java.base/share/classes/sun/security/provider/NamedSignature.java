@@ -148,7 +148,6 @@ public abstract class NamedSignature extends SignatureSpi {
     protected void engineSetParameter(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
         if (params instanceof InternalSignatureParameterSpec sps) {
-            this.sps = sps;
             var hash = sps.preHash();
             if (hash == null) {
                 accu = new SignatureMessageAccumulator();
@@ -159,9 +158,13 @@ public abstract class NamedSignature extends SignatureSpi {
                     throw new InvalidAlgorithmParameterException(e);
                 }
             }
+            this.sps = sps;
         } else if (params != null) {
             throw new InvalidAlgorithmParameterException("The " + fname
                     + " algorithm does not take parameters of " + params.getClass());
+        } else {
+            accu = new SignatureMessageAccumulator();
+            sps = InternalSignatureParameterSpec.PURE;
         }
     }
 
