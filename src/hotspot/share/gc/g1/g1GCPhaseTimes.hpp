@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     UpdateDerivedPointers,
-#endif
+#endif // COMPILER2
     EagerlyReclaimHumongousObjects,
     ResetPartialArrayStateManager,
     ProcessEvacuationFailedRegions,

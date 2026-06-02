@@ -105,36 +105,6 @@
  *                 -XX:GuaranteedAsyncDeflationInterval=1
  */
 
-/**
- * @test
- * @bug 8227745
- *
- * @summary This is another configuration of EATests.java to test Graal. Some testcases are expected
- *          to fail because Graal does not provide all information about non-escaping objects in
- *          scope. These are skipped.
- *
- * @author Richard Reingruber richard DOT reingruber AT sap DOT com
- *
- * @requires ((vm.compMode == "Xmixed") & vm.graal.enabled)
- *
- * @library /test/lib /test/hotspot/jtreg
- *
- * @run build TestScaffold VMConnection TargetListener TargetAdapter jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run compile -g EATests.java
- *
- * @comment Test with Graal. Some testcases are expected to fail because Graal does not provide all information about non-escaping
- *          objects in scope. These are skipped.
- * @run driver EATests
- *                 -XX:+UnlockDiagnosticVMOptions
- *                 -Xms256m -Xmx256m
- *                 -Xbootclasspath/a:.
- *                 -XX:CompileCommand=dontinline,*::dontinline_*
- *                 -XX:+WhiteBoxAPI
- *                 -Xbatch
- *                 -XX:+UnlockExperimentalVMOptions -XX:+UseJVMCICompiler
- */
-
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import compiler.testlibrary.CompilerUtils;
@@ -297,7 +267,6 @@ public class EATests extends TestScaffold {
 
     public static class TargetVMOptions {
 
-        public final boolean UseJVMCICompiler;
         public final boolean EliminateAllocations;
         public final boolean DeoptimizeObjectsALot;
         public final boolean DoEscapeAnalysis;
@@ -314,8 +283,6 @@ public class EATests extends TestScaffold {
             EliminateAllocations = DoEscapeAnalysis && ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("DeoptimizeObjectsALot"));
             DeoptimizeObjectsALot = ((PrimitiveValue) val).booleanValue();
-            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("UseJVMCICompiler"));
-            UseJVMCICompiler = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ZGCIsSelected"));
             ZGCIsSelected = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ShenandoahGCIsSelected"));
@@ -468,7 +435,7 @@ abstract class EATestCaseBaseDebugger  extends EATestCaseBaseShared {
     /**
      * Set a breakpoint in the given method and resume all threads. The
      * breakpoint is configured to suspend just the thread that reaches it
-     * instead of all threads. This is important when running with graal.
+     * instead of all threads.
      */
     public BreakpointEvent resumeTo(String clsName, String methodName, String signature) {
         boolean suspendThreadOnly = true;
@@ -806,9 +773,8 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     }
 
     // Some of the fields are only read by the debugger
-    public static final boolean UseJVMCICompiler = unbox(WB.getBooleanVMFlag("UseJVMCICompiler"), false);
-    public static final boolean DoEscapeAnalysis = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), UseJVMCICompiler);
-    public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler);
+    public static final boolean DoEscapeAnalysis = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), false);
+    public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), false);
     public static final boolean DeoptimizeObjectsALot = WB.getBooleanVMFlag("DeoptimizeObjectsALot");
     public static final boolean ZGCIsSelected = GC.Z.isSelected();
     public static final boolean ShenandoahGCIsSelected = GC.Shenandoah.isSelected();
@@ -994,23 +960,8 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
         }
         int highestLevel = CompilerUtils.getMaxCompilationLevel();
         int compLevel = WB.getMethodCompilationLevel(m);
-        if (!UseJVMCICompiler) {
-            Asserts.assertEQ(highestLevel, compLevel,
-                             m + " not on expected compilation level");
-        } else {
-            // Background compilation (-Xbatch) will block a thread with timeout
-            // (see CompileBroker::wait_for_jvmci_completion()). Therefore it is
-            // possible to reach here before the main test method is compiled.
-            // In that case we wait for it to be compiled.
-            while (compLevel != highestLevel) {
-                msg(TESTMETHOD_DEFAULT_NAME + " is compiled on level " + compLevel +
-                    ". Wait until highes level (" + highestLevel + ") is reached.");
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) { /* ignored */ }
-                compLevel = WB.getMethodCompilationLevel(m);
-            }
-        }
+        Asserts.assertEQ(highestLevel, compLevel,
+                         m + " not on expected compilation level");
     }
 
     // to be overridden as appropriate
@@ -2199,12 +2150,6 @@ class EARelockingArgEscapeLWLockedInCalleeFrameTarget extends EATestCaseBaseTarg
             l1.dontinline_sync_method(this);  // l1 escapes
         }
     }
-
-    @Override
-    public boolean testFrameShouldBeDeoptimized() {
-        // Graal does not provide debug info about arg escape objects, therefore the frame is not deoptimized
-        return !UseJVMCICompiler && super.testFrameShouldBeDeoptimized();
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2503,12 +2448,6 @@ class EADeoptFrameAfterReadLocalObject_02Target extends EATestCaseBaseTarget {
         super.setUp();
         testMethodDepth = 2;
     }
-
-    @Override
-    public boolean testFrameShouldBeDeoptimized() {
-        // Graal does not provide debug info about arg escape objects, therefore the frame is not deoptimized
-        return !UseJVMCICompiler && super.testFrameShouldBeDeoptimized();
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2765,12 +2704,6 @@ class EAPopFrameNotInlined extends EATestCaseBaseDebugger {
         bpe.thread().popFrames(bpe.thread().frame(0));
         msg("PopFrame DONE");
     }
-
-    @Override
-    public boolean shouldSkip() {
-        // And Graal currently doesn't support PopFrame
-        return super.shouldSkip() || env.targetVMOptions.UseJVMCICompiler;
-    }
 }
 
 class EAPopFrameNotInlinedTarget extends EATestCaseBaseTarget {
@@ -2791,12 +2724,6 @@ class EAPopFrameNotInlinedTarget extends EATestCaseBaseTarget {
     @Override
     public int getExpectedIResult() {
         return 4 + 2;
-    }
-
-    @Override
-    public boolean shouldSkip() {
-        // And Graal currently doesn't support PopFrame
-        return super.shouldSkip() || UseJVMCICompiler;
     }
 }
 
@@ -2840,14 +2767,12 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
     @Override
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
-        // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
                 env.targetVMOptions.ZGCIsSelected ||
                 env.targetVMOptions.ShenandoahGCIsSelected ||
-                env.targetVMOptions.DeoptimizeObjectsALot ||
-                env.targetVMOptions.UseJVMCICompiler;
+                env.targetVMOptions.DeoptimizeObjectsALot;
     }
 }
 
@@ -2886,14 +2811,12 @@ class EAPopFrameNotInlinedReallocFailureTarget extends EATestCaseBaseTarget {
     @Override
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
-        // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
                 ZGCIsSelected ||
                 ShenandoahGCIsSelected ||
-                DeoptimizeObjectsALot ||
-                UseJVMCICompiler;
+                DeoptimizeObjectsALot;
     }
 }
 
@@ -2940,14 +2863,12 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
     @Override
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
-        // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
                 env.targetVMOptions.ZGCIsSelected ||
                 env.targetVMOptions.ShenandoahGCIsSelected ||
-                env.targetVMOptions.DeoptimizeObjectsALot ||
-                env.targetVMOptions.UseJVMCICompiler;
+                env.targetVMOptions.DeoptimizeObjectsALot;
     }
 }
 
@@ -3002,14 +2923,12 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailureTarget extends EA
     @Override
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
-        // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
                 ZGCIsSelected ||
                 ShenandoahGCIsSelected ||
-                DeoptimizeObjectsALot ||
-                UseJVMCICompiler;
+                DeoptimizeObjectsALot;
     }
 }
 
@@ -3034,6 +2953,8 @@ class EAForceEarlyReturnNotInlined extends EATestCaseBaseDebugger {
         // frame[3]: EATestCaseBaseTarget.run()
         // frame[4]: EATestsTarget.main(java.lang.String[])
 
+        env.stepOverLine(thread); // needed to keep target thread interp-only, so dontinline_brkpt_iret is not inlined
+
         msg("Step out");
         env.stepOut(thread);                               // return from dontinline_brkpt
         printStack(thread);
@@ -3044,12 +2965,6 @@ class EAForceEarlyReturnNotInlined extends EATestCaseBaseDebugger {
         env.stepOverLine(thread);                          // reallocation is triggered here
         printStack(thread);
         msg("ForceEarlyReturn DONE");
-    }
-
-    @Override
-    public boolean shouldSkip() {
-        // Graal currently doesn't support Force Early Return
-        return super.shouldSkip() || env.targetVMOptions.UseJVMCICompiler;
     }
 }
 
@@ -3074,12 +2989,6 @@ class EAForceEarlyReturnNotInlinedTarget extends EATestCaseBaseTarget {
 
     public boolean testFrameShouldBeDeoptimized() {
         return true; // because of stepping
-    }
-
-    @Override
-    public boolean shouldSkip() {
-        // Graal currently doesn't support Force Early Return
-        return super.shouldSkip() || UseJVMCICompiler;
     }
 }
 
@@ -3108,12 +3017,6 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjects extends EATestC
         env.stepOverInstruction(thread);
         printStack(thread);
         msg("ForceEarlyReturn DONE");
-    }
-
-    @Override
-    public boolean shouldSkip() {
-        // Graal currently doesn't support Force Early Return
-        return super.shouldSkip() || env.targetVMOptions.UseJVMCICompiler;
     }
 }
 
@@ -3159,12 +3062,6 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsTarget extends E
     public boolean testFrameShouldBeDeoptimized() {
         return true; // because of stepping
     }
-
-    @Override
-    public boolean shouldSkip() {
-        // Graal currently doesn't support Force Early Return
-        return super.shouldSkip() || UseJVMCICompiler;
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3209,14 +3106,12 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
     @Override
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
-        // And Graal currently doesn't support Force Early Return
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
                 env.targetVMOptions.ZGCIsSelected ||
                 env.targetVMOptions.ShenandoahGCIsSelected ||
-                env.targetVMOptions.DeoptimizeObjectsALot ||
-                env.targetVMOptions.UseJVMCICompiler;
+                env.targetVMOptions.DeoptimizeObjectsALot;
     }
 }
 
@@ -3272,14 +3167,12 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailureTa
     @Override
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
-        // And Graal currently doesn't support Force Early Return
         return super.shouldSkip() ||
                 !EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
                 ZGCIsSelected ||
                 ShenandoahGCIsSelected ||
-                DeoptimizeObjectsALot ||
-                UseJVMCICompiler;
+                DeoptimizeObjectsALot;
     }
 }
 
