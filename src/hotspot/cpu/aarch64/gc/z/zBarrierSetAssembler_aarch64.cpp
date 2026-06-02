@@ -1329,11 +1329,19 @@ void ZStoreBarrierStubC2Aarch64::emit_code(MacroAssembler& masm) {
 }
 
 #undef __
+
+#endif // COMPILER2
+
+#undef __
 #define __ masm->
 
-void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
+void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                           Register tmp, Label& slow_path) {
+  assert_different_registers(weak_handle, tmp, noreg);
+  assert_different_registers(obj, tmp, noreg);
+
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, tmp, slow_path);
 
   // Check if the oop is bad, in which case we need to take the slow path.
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeMov);
@@ -1344,13 +1352,6 @@ void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, R
   // Oop is okay, so we uncolor it.
   __ lsr(obj, obj, ZPointerLoadShift);
 }
-
-#undef __
-
-#endif // COMPILER2
-
-#undef __
-#define __ masm->
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored

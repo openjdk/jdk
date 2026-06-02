@@ -40,6 +40,12 @@ class StubAssembler;
 
 #endif
 
+#ifdef COMPILER2
+
+class MachNode;
+
+#endif
+
 class StubCodeGenerator;
 
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
@@ -123,7 +129,22 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
-  virtual void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                               Register tmp, Label& slow_path);
+
+#ifdef COMPILER2
+  // Entry points from Matcher
+  void load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Register addr, int disp, Register tmp1, Register tmp2, bool narrow, bool acquire);
+
+  void store_c2(const MachNode* node, MacroAssembler* masm,
+                Register dst, int disp, bool dst_narrow, Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3);
+
+  void compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr, Register oldval,
+      Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool weak, bool acquire);
+
+  void get_and_set_c2(const MachNode* node, MacroAssembler* masm,
+                      Register preval, Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3);
+#endif // COMPILER2
 };
 
 #endif // CPU_PPC_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_PPC_HPP

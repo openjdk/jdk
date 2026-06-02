@@ -55,7 +55,6 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
     private static final LinkedList<SequencedEvent> list = new LinkedList<>();
 
     private final AWTEvent nested;
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private boolean disposed;
     private final LinkedList<AWTEvent> pendingEvents = new LinkedList<>();
 

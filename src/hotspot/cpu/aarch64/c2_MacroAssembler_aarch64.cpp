@@ -265,7 +265,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
       // Check if object matches.
       ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, t3, t2, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
       cmp(t3, obj);
       br(Assembler::NE, slow_path);
 
@@ -2494,8 +2494,12 @@ void C2_MacroAssembler::sve_extract_integral(Register dst, BasicType bt, FloatRe
       smov(dst, src, size, idx);
     }
   } else {
-    sve_orr(vtmp, src, src);
-    sve_ext(vtmp, vtmp, idx << size);
+    sve_movprfx(vtmp, src);
+    // Although vtmp and src hold the same value after movprfx, we must use src
+    // (not vtmp) as the second source of ext. The movprfx destination register
+    // must not appear in any source operand of the following instruction except
+    // as the destructive operand.
+    sve_ext(vtmp, src, idx << size);
     if (bt == T_INT || bt == T_LONG) {
       umov(dst, vtmp, size, 0);
     } else {

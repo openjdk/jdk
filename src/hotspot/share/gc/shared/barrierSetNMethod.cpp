@@ -39,9 +39,6 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 int BarrierSetNMethod::disarmed_guard_value() const {
   return *disarmed_guard_value_address();
@@ -65,7 +62,7 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  if (nm->is_native_method() || nm->is_compiled_by_c2() || nm->is_compiled_by_c1() || nm->is_compiled_by_jvmci()) {
+  if (nm->is_native_method() || nm->is_compiled_by_c2() || nm->is_compiled_by_c1()) {
     return true;
   }
 
