@@ -55,10 +55,13 @@ import static compiler.lib.template_framework.Template.$;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
 /**
- * For more basic examples, see TestFoldCompares.java
+ * For more basic examples, see:
+ * - TestFoldCompares.java
+ * - TestOptimizeTrichotomy.java
  *
  * I'm only covering some basic cases to test the fundamental
- * logic inside IfNode::fold_compares_helper.
+ * logic inside IfNode::fold_compares_helper, and the somewhat
+ * similar pattern of RegionNode::optimize_trichotomy.
  * - TestMethodGeneratorConstIR does extensive result and IR verification
  *   for the cases a-d) in IfNode::fold_compares_helper, but only with
  *   constant lo and hi.
@@ -68,6 +71,7 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * - I'm also mixing signed and unsigned comparisons, just to ensure
  *   the less often used (and tested) unsigned comparisons don't slip
  *   through the cracks.
+ * - TestMethodGeneratorTrichotomy targets shapes of RegionNode::optimize_trichotomy
  *
  * In the future, we could add more cases:
  * - Extend to long - though the optimization does not yet cover longs anyway.
@@ -668,16 +672,57 @@ public class TestFoldComparesFuzzer {
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
     }
 
-    // TODO: a more targetted test for JDK-8385157
+    // And to stress the related optimization: RegionNode::optimize_trichotomy
+    // Forms like:
+    //   (a cmp1 b) && (a cmp2 b)
+    // To catch bugs like found in JDK-8385157, where we accidentally confused CmpU and CmpI.
+    // This pattern seems to only have miscompiled without warmup.
+    static class TestMethodGeneratorTrichotomy implements TestMethodGenerator {
+        private final int a_hi = INT_GEN.next();
+        private final int a_lo = INT_GEN.next();
+        private final int b_hi = INT_GEN.next();
+        private final int b_lo = INT_GEN.next();
+
+        private final Comparison c1 = new Comparison("a", Comparator.random(), "b").permuteRandom();
+        private final Comparison c2 = new Comparison("a", Comparator.random(), "b").permuteRandom();
+
+        private final boolean withAnd = RANDOM.nextBoolean();
+        private final String operator = withAnd ? "&&" : "||";
+
+        private final Template.OneArg<String> template = Template.make("methodName", (String methodName) -> scope(
+            let("a_hi", a_hi),
+            let("a_lo", a_lo),
+            let("b_hi", b_hi),
+            let("b_lo", b_lo),
+            let("c1", c1),
+            let("c2", c2),
+            let("op", operator),
+            """
+            static boolean #methodName(int n, int a, int b) {
+                a = Math.min(#a_hi, Math.max(#a_lo, a));
+                b = Math.min(#b_hi, Math.max(#b_lo, b));
+                if (#c1 #op #c2) {
+                    return true;
+                }
+                return false;
+            }
+            """
+        ));
+
+        public Template.OneArg<String> getTestTemplate() {
+            return template;
+        }
+    }
 
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = switch(RANDOM.nextInt(6)) {
+        TestMethodGenerator tg = switch(RANDOM.nextInt(7)) {
             case 0 -> new TestMethodGeneratorConst();
             case 1 -> new TestMethodGeneratorWithIf();
             case 2 -> new TestMethodGeneratorRanges();
             case 3 -> new TestMethodGeneratorConstIR();
             case 4 -> new TestMethodGeneratorSwitch();
             case 5 -> new TestMethodGeneratorArrLength();
+            case 6 -> new TestMethodGeneratorTrichotomy();
             default -> throw new RuntimeException("not expected");
         };
         Template.ZeroArgs testInputTemplate = tg.getInputTemplate();
