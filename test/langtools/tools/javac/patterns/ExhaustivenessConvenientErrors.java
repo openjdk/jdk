@@ -576,7 +576,8 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "Lib.Rec _");
+               "Lib.Base _",
+               "or.use.default");
     }
 
     @Test
@@ -624,7 +625,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Box(Lib.Base base) {}
                }
                """,
-               "Test.Box(Lib.Rec _)");
+               "Test.Box(Lib.Base _)");
     }
 
     @Test
@@ -650,7 +651,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Box(Lib.Base base) {}
                }
                """,
-               "Test.Box(Lib.Intermediate3 _)");
+               "Test.Box(Lib.Base _)");
     }
 
     @Test
@@ -778,7 +779,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Box(Lib.Base base) {}
                }
                """,
-               "Test.Box(Lib.Rec _)");
+               "Test.Box(Lib.Base _)");
     }
 
     @Test
@@ -807,7 +808,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                               }
                """,
-               "Test.Box(Lib.Intermediate3 _)");
+               "Test.IOp(Lib.I _)");
     }
 
     @Test

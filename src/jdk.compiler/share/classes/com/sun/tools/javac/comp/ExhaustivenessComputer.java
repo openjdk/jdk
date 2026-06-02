@@ -403,18 +403,27 @@ public class ExhaustivenessComputer {
                         .filter(isApplicableSubtypePredicate(type));
     }
 
-    private Set<ClassSymbol> accessibleLeafPermittedSubTypes(TypeSymbol root, Predicate<TypeSymbol> accept) {
+    private Set<ClassSymbol> leafPermittedSubTypes(TypeSymbol root, Predicate<ClassSymbol> accept) {
         Set<ClassSymbol> permitted = new LinkedHashSet<>();
+        List<ClassSymbol> permittedSubtypesClosure = baseClasses(root);
 
-        for (ClassSymbol base : baseClasses(root)) {
-            Set<ClassSymbol> direct = closesAccessiblePermittedSubtypes(accept, base);
+        while (permittedSubtypesClosure.nonEmpty()) {
+            ClassSymbol current = permittedSubtypesClosure.head;
 
-            if (direct == null) {
-                permitted.add(base);
-            } else {
-                for (ClassSymbol permittedSubtype : direct) {
-                    permitted.addAll(accessibleLeafPermittedSubTypes(permittedSubtype, accept));
+            permittedSubtypesClosure = permittedSubtypesClosure.tail;
+
+            current.complete();
+
+            if (current.isSealed() && current.isAbstract()) {
+                for (Type t : current.getPermittedSubclasses()) {
+                    ClassSymbol csym = (ClassSymbol) t.tsym;
+
+                    if (accept.test(csym)) {
+                        permittedSubtypesClosure = permittedSubtypesClosure.prepend(csym);
+                    }
                 }
+            } else {
+                permitted.add(current);
             }
         }
 
@@ -863,16 +872,131 @@ public class ExhaustivenessComputer {
         try {
             baseChecks = 0;
             PatternDescription defaultPattern = new BindingPattern(selectorType);
-            return expandMissingPatternDescriptions(selectorType,
-                                                    selectorType,
-                                                    defaultPattern,
-                                                    incompletePatterns,
-                                                    Set.of(defaultPattern));
+            Set<PatternDescription> missingPatterns =
+                    expandMissingPatternDescriptions(selectorType,
+                                                     selectorType,
+                                                     defaultPattern,
+                                                     incompletePatterns,
+                                                     Set.of(defaultPattern));
+            missingPatterns = generalizeInaccessibleTypes(selectorType, missingPatterns);
+            return missingPatterns;
         } catch (TooManyChecksException ex) {
             return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
         } finally {
             baseChecks = NO_BASE_CHECKS_COUNTING;
         }
+    }
+
+    private Set<PatternDescription> generalizeInaccessibleTypes(Type selectorType, Set<PatternDescription> forPatterns) {
+        Set<PatternDescription> generalized =
+                forPatterns.stream()
+                           .map(pd -> generalizeInaccessibleTypes(selectorType, pd))
+                           .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        OUTER: for (Iterator<PatternDescription> it = generalized.iterator(); it.hasNext(); ) {
+            PatternDescription current = it.next();
+            for (PatternDescription check : generalized) {
+                if (check != current && patternDominated(current, check)) {
+                    it.remove();
+                    continue OUTER;
+                }
+            }
+        }
+
+        return generalized;
+    }
+
+    private PatternDescription generalizeInaccessibleTypes(Type targetType, PatternDescription forPattern) {
+        switch (forPattern) {
+            case BindingPattern _, EnumConstantPattern _ -> {
+                Type generalized = generalizeInaccessibleTypes(targetType, forPattern.type());
+                if (generalized != forPattern.type()) {
+                    return new BindingPattern(generalized);
+                } else {
+                    return forPattern;
+                }
+            }
+            case RecordPattern rp -> {
+                Type generalized = generalizeInaccessibleTypes(targetType, rp.type());
+                if (generalized != rp.type()) {
+                    return new BindingPattern(generalized);
+                } else {
+                    PatternDescription[] newNested = new PatternDescription[rp.nested().length];
+                    boolean modified = false;
+
+                    for (int i = 0; i < rp.nested().length; i++) {
+                        PatternDescription orig = rp.nested()[i];
+                        PatternDescription nue = generalizeInaccessibleTypes(rp.fullComponentTypes()[i], orig);
+
+                        newNested[i] = nue;
+                        modified = modified || orig != nue;
+                    }
+
+                    return modified ? new RecordPattern(rp.recordType(), rp.fullComponentTypes(), newNested) : rp;
+                }
+            }
+        }
+    }
+
+    private Type generalizeInaccessibleTypes(Type targetType, Type generalized) {
+        boolean cont = true;
+        while (cont && !isAccessible(generalized.tsym)) {
+            cont = false;
+
+            for (Type generalizedSuper : types.directSupertypes(generalized)) {
+                if (types.asSuper(generalizedSuper, targetType.tsym) != null) {
+                    generalized = generalizedSuper;
+                    cont = true;
+                    break;
+                }
+            }
+        }
+
+        return generalized;
+    }
+
+    private boolean isAccessible(Symbol candidate) {
+        while (candidate.kind == Kind.TYP) {
+            if (!rs.isAccessible(env, (TypeSymbol) candidate)) {
+                return false;
+            }
+
+            candidate = candidate.owner;
+        }
+
+        return true;
+    }
+
+    private boolean patternDominated(PatternDescription existingPattern, PatternDescription currentPattern) {
+        Type existingPatternType = types.erasure(existingPattern.type());
+        Type currentPatternType = types.erasure(currentPattern.type());
+        if (!types.isUnconditionallyExactTypeBased(currentPatternType, existingPatternType)) {
+            return false;
+        }
+        if (currentPattern instanceof BindingPattern) {
+            return existingPattern instanceof BindingPattern;
+        } else if (currentPattern instanceof RecordPattern currentRecordPattern) {
+            if (existingPattern instanceof BindingPattern) {
+                return true;
+            } else if (existingPattern instanceof RecordPattern existingRecordPattern) {
+                PatternDescription[] existingNested = existingRecordPattern.nested();
+                PatternDescription[] currentNested = currentRecordPattern.nested();
+                if (existingNested.length != currentNested.length) {
+                    return false;
+                }
+                for (int i = 0; i < existingNested.length; i++) {
+                    if (!patternDominated(existingNested[i], currentNested[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                Assert.error("Unknown pattern: " + existingPattern.getClass());
+            }
+        } else {
+            Assert.error("Unknown pattern: " + currentPattern.getClass());
+        }
+        return false;
     }
 
     private Set<PatternDescription> expandMissingPatternDescriptions(Type selectorType,
@@ -898,13 +1022,12 @@ public class ExhaustivenessComputer {
                                                                        Set<? extends PatternDescription> basePatterns,
                                                                        Set<PatternDescription> inMissingPatterns) {
         if (toExpand instanceof BindingPattern bp) {
-            if (closesAccessiblePermittedSubtypes(isApplicableSubtypePredicate(bp.type),
-                                                  (ClassSymbol) bp.type.tsym) instanceof Set<ClassSymbol> closesAccessiblePermittedSubtypes) {
+            if (bp.type.tsym.isSealed()) {
                 //try to replace binding patterns for sealed types with all their immediate permitted applicable types:
                 Set<PatternDescription> applicableDirectPermittedPatterns =
-                        closesAccessiblePermittedSubtypes.stream()
-                                                         .map(cs -> new BindingPattern(types.erasure(cs.type)))
-                                                         .collect(Collectors.toCollection(LinkedHashSet::new));
+                        directPermittedSubTypes(bp.type)
+                                 .map(csym -> new BindingPattern(types.erasure(csym.type)))
+                                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
                 //remove the permitted subtypes that are not needed to achieve exhaustivity
                 boolean reduced =
@@ -940,10 +1063,10 @@ public class ExhaustivenessComputer {
                 for (Type componentType : componentTypes) {
                     List<Type> applicableLeafPermittedSubtypes;
 
-                    if (componentType.tsym.isSealed() && componentType.tsym.isAbstract()) {
+                    if (componentType.tsym.isSealed()) {
                         applicableLeafPermittedSubtypes =
-                                accessibleLeafPermittedSubTypes(componentType.tsym,
-                                                                isApplicableSubtypePredicate(componentType))
+                                leafPermittedSubTypes(componentType.tsym,
+                                                      isApplicableSubtypePredicate(componentType))
                                     .stream()
                                     .map(csym -> instantiatePatternType(componentType, csym))
                                     .collect(List.collector());
@@ -1007,58 +1130,6 @@ public class ExhaustivenessComputer {
             }
         }
         return inMissingPatterns;
-    }
-
-    /**
-     * Return permitted subtypes of {@code forClass}, such that they are as immediate subtypes
-     * of {@code forClass} as possible, but also accessible.
-     *
-     * I.e. if an immediate permitted subtype of {@code forClass} is not accessible, its
-     * immediate permitted subtypes are inspected, recursively, and possibly used in place of the
-     * inaccessible permitted subtype.
-     *
-     * Returns {@code} null if some permitted subtype is inaccessible and cannot be
-     * replaced by its own accessible permitted subtypes (i.e. if it has no accessible
-     * permitted subtypes).
-     */
-    private Set<ClassSymbol> closesAccessiblePermittedSubtypes(Predicate<TypeSymbol> filter, ClassSymbol forClass) {
-        if (!forClass.isSealed() || !forClass.isAbstract()) {
-            return null;
-        }
-
-        Set<ClassSymbol> applicableDirectPermittedPatterns = new LinkedHashSet<>();
-        List<Type> permitted = forClass.getPermittedSubclasses();
-
-        for (Type candidate : permitted) {
-            if (!filter.test(candidate.tsym)) {
-                continue;
-            }
-
-            if (isAccessible(candidate.tsym)) {
-                applicableDirectPermittedPatterns.add((ClassSymbol) candidate.tsym);
-            } else {
-                Set<ClassSymbol> nextLevel = closesAccessiblePermittedSubtypes(filter, (ClassSymbol) candidate.tsym);
-
-                if (nextLevel == null) {
-                    return null;
-                }
-
-                applicableDirectPermittedPatterns.addAll(nextLevel);
-            }
-        }
-        return applicableDirectPermittedPatterns;
-    }
-
-    private boolean isAccessible(Symbol candidate) {
-        while (candidate.kind == Kind.TYP) {
-            if (!rs.isAccessible(env, (TypeSymbol) candidate)) {
-                return false;
-            }
-
-            candidate = candidate.owner;
-        }
-
-        return true;
     }
 
     /*
@@ -1177,12 +1248,6 @@ public class ExhaustivenessComputer {
             } else if (pd1 instanceof BindingPattern bp1 && pd2 instanceof BindingPattern bp2) {
                 Type t1 = bp1.type();
                 Type t2 = bp2.type();
-                if (isAccessible(t1.tsym) && !isAccessible(t2.tsym)) {
-                    return false;
-                }
-                if (!isAccessible(t1.tsym) && isAccessible(t2.tsym)) {
-                    return true;
-                }
                 boolean t1IsImportantRecord =
                         (t1.tsym.flags_field & RECORD) != 0 &&
                         hasMatchingRecordPattern(basePatterns, missingPatterns, bp1);
