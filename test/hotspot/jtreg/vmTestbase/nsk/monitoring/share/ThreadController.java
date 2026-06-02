@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,17 +467,19 @@ abstract class BaseThread extends Thread {
     public boolean checkStackTrace(StackTraceElement[] elements) {
         boolean res = true;
 
-        logger.trace(controller.THREAD_TRACE_LEVEL, "trace elements: "
-                + elements.length);
+        int length = stackTraceLength(elements);
 
-        if (elements.length > expectedLength) {
+        logger.trace(controller.THREAD_TRACE_LEVEL, "trace elements: "
+                + length);
+
+        if (length > expectedLength) {
             res = false;
-            logger.complain("Contains " + elements.length + ", more then "
+            logger.complain("Contains " + length + ", more then "
                     + expectedLength + " elements");
         }
 
         for (int j = 0; j < elements.length; j++) {
-            if (!checkElement(elements[j])) {
+            if (!checkElement(elements, j)) {
                 logger.complain("Unexpected method name: "
                                 + elements[j].getMethodName()
                                 + " at " + j + " position");
@@ -504,6 +506,14 @@ abstract class BaseThread extends Thread {
         logger.trace(controller.THREAD_TRACE_LEVEL, "\"" + name + "\""
                 + " is not expected method name");
         return false;
+    }
+
+    protected boolean checkElement(StackTraceElement[] elements, int index) {
+        return checkElement(elements[index]);
+    }
+
+    protected int stackTraceLength(StackTraceElement[] elements) {
+        return elements.length;
     }
 
     protected void recursiveMethod() {
@@ -653,21 +663,6 @@ class SleepingThread extends BaseThread {
 
         this.threadsGroupLocks = threadsGroupLocks;
 
-        expectedLength += 4;
-
-        expectedMethods.add(Thread.class.getName() + ".sleep");
-        expectedMethods.add(Thread.class.getName() + ".sleepNanos");
-        expectedMethods.add(Thread.class.getName() + ".sleepNanos0");
-        expectedMethods.add(Thread.class.getName() + ".beforeSleep");
-        expectedMethods.add(Thread.class.getName() + ".afterSleep");
-        expectedMethods.add(Thread.class.getName() + ".currentCarrierThread");
-        expectedMethods.add(Thread.class.getName() + ".currentThread");
-        // jdk.internal.event.ThreadSleepEvent not accessible
-        expectedMethods.add("java.lang.Object.<init>");
-        expectedMethods.add("jdk.internal.event.Event.<init>");
-        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<init>");
-        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<clinit>");
-        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isEnabled");
         expectedMethods.add(SleepingThread.class.getName() + ".run");
 
         switch (controller.invocationType) {
@@ -696,6 +691,27 @@ class SleepingThread extends BaseThread {
 
     public boolean checkState(Thread.State state) {
         return state == Thread.State.TIMED_WAITING;
+    }
+
+    protected boolean checkElement(StackTraceElement[] elements, int index) {
+        return super.checkElement(elements, index) ||
+               isJdkImplementationFrame(elements[index]);
+    }
+
+    protected int stackTraceLength(StackTraceElement[] elements) {
+        int count = 0;
+        for (StackTraceElement element : elements) {
+            if (!isJdkImplementationFrame(element))
+                count++;
+        }
+        return count;
+    }
+
+    private static boolean isJdkImplementationFrame(StackTraceElement element) {
+        String className = element.getClassName();
+        return className.startsWith("java.") ||
+               className.startsWith("jdk.") ||
+               className.startsWith("sun.");
     }
 
     public void run() {
