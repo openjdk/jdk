@@ -779,7 +779,7 @@ public class Flow {
                                        .sorted((d1, d2) -> d1.toString()
                                                              .compareTo(d2.toString()))
                                        .collect(List.collector());
-            boolean hasUnconditionalType = 
+            boolean hasUnconditionalType =
                     exhaustivenessResult.notExhaustiveDetails()
                                         .stream()
                                         .filter(pd -> pd instanceof BindingPattern)

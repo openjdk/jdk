@@ -797,7 +797,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    sealed interface Op permits NoOp, IOp {}
                    record NoOp() implements Op {}
                    record IOp(Lib.I i) implements Op {}
-               
+
                    private void t(Op op) {
                        switch (op) {
                            case NoOp() -> {}
