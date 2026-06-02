@@ -142,11 +142,11 @@ class ASN1FormatterTest {
     void testManyChildren() {
         HexPrinter p = HexPrinter.simple()
                 .formatter(ASN1Formatter.formatter(), "; ", 100);
-        // 10 child BOOLEAN
-        byte[] c10 = HexFormat.of().parseHex("30140100010001000100010001000100010001000100");
+        // 10 child NULLs
+        byte[] c10 = HexFormat.of().parseHex("30140500050005000500050005000500050005000500");
         p.toString(c10);
-        // 11 child BOOLEN. Not supported now.
-        byte[] c11 = HexFormat.of().parseHex("301601000100010001000100010001000100010001000100");
+        // 11 child NULLs. Not supported now.
+        byte[] c11 = HexFormat.of().parseHex("301605000500050005000500050005000500050005000500");
         assertThrows(UnsupportedOperationException.class, () -> p.toString(c11));
     }
 
