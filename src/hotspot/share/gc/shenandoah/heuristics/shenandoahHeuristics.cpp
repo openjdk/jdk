@@ -263,12 +263,12 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
   }
 }
 
-void ShenandoahHeuristics::record_success_concurrent(bool abbreviated) {
+void ShenandoahHeuristics::record_success_concurrent() {
   _gc_times_learned++;
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_degenerated(bool abbreviated) {
+void ShenandoahHeuristics::record_degenerated() {
   adjust_penalty(Degenerated_Penalty);
 }
 

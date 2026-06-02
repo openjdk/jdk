@@ -296,7 +296,6 @@ void ShenandoahDegenGC::op_degenerated() {
     case _degenerated_update_refs:
       if (heap->has_forwarded_objects()) {
         op_update_refs();
-        // op_update_roots() rebuilds the freeset following completion of update refs
         op_update_roots();
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
@@ -332,13 +331,13 @@ void ShenandoahDegenGC::op_degenerated() {
   policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
   if (progress) {
     heap->notify_gc_progress();
-    _generation->heuristics()->record_degenerated(_abbreviated);
+    _generation->heuristics()->record_degenerated();
     heap->start_idle_span();
   } else if (policy->should_upgrade_degenerated_gc()) {
     // Upgrade to full GC, register full-GC impact on heuristics.
     op_degenerated_futile();
   } else {
-    _generation->heuristics()->record_degenerated(_abbreviated);
+    _generation->heuristics()->record_degenerated();
   }
 }
 
