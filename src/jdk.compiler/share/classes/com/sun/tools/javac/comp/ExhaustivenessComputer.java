@@ -79,7 +79,6 @@ public class ExhaustivenessComputer {
     private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new LinkedHashMap<>();
     private final long maxBaseChecks;
     private long baseChecks = NO_BASE_CHECKS_COUNTING;
-    private Env<AttrContext> env;
 
     public static ExhaustivenessComputer instance(Context context) {
         ExhaustivenessComputer instance = context.get(exhaustivenessKey);
@@ -112,75 +111,70 @@ public class ExhaustivenessComputer {
     }
 
     public ExhaustivenessResult exhausts(Env<AttrContext> env, JCExpression selector, List<JCCase> cases) {
-        this.env = env;
-        try {
-            Set<PatternDescription> patternSet = new LinkedHashSet<>();
-            Map<Symbol, Set<Symbol>> enum2Constants = new LinkedHashMap<>();
-            Set<Object> booleanLiterals = new LinkedHashSet<>(Set.of(0, 1));
-            for (JCCase c : cases) {
-                if (!TreeInfo.unguardedCase(c))
-                    continue;
+        Set<PatternDescription> patternSet = new LinkedHashSet<>();
+        Map<Symbol, Set<Symbol>> enum2Constants = new LinkedHashMap<>();
+        Set<Object> booleanLiterals = new LinkedHashSet<>(Set.of(0, 1));
+        for (JCCase c : cases) {
+            if (!TreeInfo.unguardedCase(c))
+                continue;
 
-                for (var l : c.labels) {
-                    if (l instanceof JCPatternCaseLabel patternLabel) {
-                        for (Type component : components(selector.type)) {
-                            patternSet.add(makePatternDescription(component, patternLabel.pat));
-                        }
-                    } else if (l instanceof JCConstantCaseLabel constantLabel) {
-                        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
-                            Object value = ((JCLiteral) constantLabel.expr).value;
-                            booleanLiterals.remove(value);
-                        } else {
-                            Symbol s = TreeInfo.symbol(constantLabel.expr);
-                            if (s != null && s.isEnum()) {
-                                enum2Constants.computeIfAbsent(s.owner, x -> {
-                                    Set<Symbol> result = new LinkedHashSet<>();
-                                    s.owner.members()
-                                            .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
-                                            .forEach(result::add);
-                                    return result;
-                                }).remove(s);
-                            }
+            for (var l : c.labels) {
+                if (l instanceof JCPatternCaseLabel patternLabel) {
+                    for (Type component : components(selector.type)) {
+                        patternSet.add(makePatternDescription(component, patternLabel.pat));
+                    }
+                } else if (l instanceof JCConstantCaseLabel constantLabel) {
+                    if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
+                        Object value = ((JCLiteral) constantLabel.expr).value;
+                        booleanLiterals.remove(value);
+                    } else {
+                        Symbol s = TreeInfo.symbol(constantLabel.expr);
+                        if (s != null && s.isEnum()) {
+                            enum2Constants.computeIfAbsent(s.owner, x -> {
+                                Set<Symbol> result = new LinkedHashSet<>();
+                                s.owner.members()
+                                        .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
+                                        .forEach(result::add);
+                                return result;
+                            }).remove(s);
                         }
                     }
                 }
             }
+        }
 
-            if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
+        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
+            return ExhaustivenessResult.ofExhaustive();
+        }
+
+        for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
+            if (e.getValue().isEmpty()) {
+                patternSet.add(new BindingPattern(e.getKey().type));
+            }
+        }
+        try {
+            CoverageResult coveredResult = computeCoverage(selector.type, patternSet, PatternEquivalence.STRICT);
+            if (coveredResult.covered()) {
                 return ExhaustivenessResult.ofExhaustive();
             }
 
-            for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
-                if (e.getValue().isEmpty()) {
-                    patternSet.add(new BindingPattern(e.getKey().type));
-                }
-            }
-            try {
-                CoverageResult coveredResult = computeCoverage(selector.type, patternSet, PatternEquivalence.STRICT);
-                if (coveredResult.covered()) {
-                    return ExhaustivenessResult.ofExhaustive();
-                }
+            Set<PatternDescription> details =
+                    this.computeMissingPatternDescriptions(env, selector.type, coveredResult.incompletePatterns())
+                        .stream()
+                        .flatMap(pd -> {
+                            if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
+                                Symbol enumType = bp.type.tsym;
+                                return enum2Constants.get(enumType).stream().map(c -> new EnumConstantPattern(bp.type, c.name));
+                            } else {
+                                return Stream.of(pd);
+                            }
+                        })
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
 
-                Set<PatternDescription> details =
-                        this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
-                            .stream()
-                            .flatMap(pd -> {
-                                if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
-                                    Symbol enumType = bp.type.tsym;
-                                    return enum2Constants.get(enumType).stream().map(c -> new EnumConstantPattern(bp.type, c.name));
-                                } else {
-                                    return Stream.of(pd);
-                                }
-                            })
-                            .collect(Collectors.toCollection(LinkedHashSet::new));
-
-                return ExhaustivenessResult.ofDetails(details);
-            } catch (CompletionFailure cf) {
-                chk.completionError(selector.pos(), cf);
-                return ExhaustivenessResult.ofExhaustive(); //error recovery
-            }
-        } finally {
-            this.env = null;
+            return ExhaustivenessResult.ofDetails(details);
+        } catch (CompletionFailure cf) {
+            chk.completionError(selector.pos(), cf);
+            return ExhaustivenessResult.ofExhaustive(); //error recovery
         }
     }
 
@@ -864,7 +858,8 @@ public class ExhaustivenessComputer {
     }
 
     //computation of missing patterns:
-    protected Set<PatternDescription> computeMissingPatternDescriptions(Type selectorType,
+    protected Set<PatternDescription> computeMissingPatternDescriptions(Env<AttrContext> env,
+                                                                        Type selectorType,
                                                                         Set<PatternDescription> incompletePatterns) {
         if (maxBaseChecks == 0) {
             return Set.of();
@@ -878,7 +873,7 @@ public class ExhaustivenessComputer {
                                                      defaultPattern,
                                                      incompletePatterns,
                                                      Set.of(defaultPattern));
-            missingPatterns = generalizeInaccessibleTypes(selectorType, missingPatterns);
+            missingPatterns = generalizeInaccessibleTypes(env, selectorType, missingPatterns);
             return missingPatterns;
         } catch (TooManyChecksException ex) {
             return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
@@ -887,10 +882,12 @@ public class ExhaustivenessComputer {
         }
     }
 
-    private Set<PatternDescription> generalizeInaccessibleTypes(Type selectorType, Set<PatternDescription> forPatterns) {
+    private Set<PatternDescription> generalizeInaccessibleTypes(Env<AttrContext> env,
+                                                                Type selectorType,
+                                                                Set<PatternDescription> forPatterns) {
         Set<PatternDescription> generalized =
                 forPatterns.stream()
-                           .map(pd -> generalizeInaccessibleTypes(selectorType, pd))
+                           .map(pd -> generalizeInaccessibleTypes(env, selectorType, pd))
                            .collect(Collectors.toCollection(LinkedHashSet::new));
 
         OUTER: for (Iterator<PatternDescription> it = generalized.iterator(); it.hasNext(); ) {
@@ -906,10 +903,12 @@ public class ExhaustivenessComputer {
         return generalized;
     }
 
-    private PatternDescription generalizeInaccessibleTypes(Type targetType, PatternDescription forPattern) {
+    private PatternDescription generalizeInaccessibleTypes(Env<AttrContext> env,
+                                                           Type targetType,
+                                                           PatternDescription forPattern) {
         switch (forPattern) {
             case BindingPattern _, EnumConstantPattern _ -> {
-                Type generalized = generalizeInaccessibleTypes(targetType, forPattern.type());
+                Type generalized = generalizeInaccessibleTypes(env, targetType, forPattern.type());
                 if (generalized != forPattern.type()) {
                     return new BindingPattern(generalized);
                 } else {
@@ -917,7 +916,7 @@ public class ExhaustivenessComputer {
                 }
             }
             case RecordPattern rp -> {
-                Type generalized = generalizeInaccessibleTypes(targetType, rp.type());
+                Type generalized = generalizeInaccessibleTypes(env, targetType, rp.type());
                 if (generalized != rp.type()) {
                     return new BindingPattern(generalized);
                 } else {
@@ -926,7 +925,7 @@ public class ExhaustivenessComputer {
 
                     for (int i = 0; i < rp.nested().length; i++) {
                         PatternDescription orig = rp.nested()[i];
-                        PatternDescription nue = generalizeInaccessibleTypes(rp.fullComponentTypes()[i], orig);
+                        PatternDescription nue = generalizeInaccessibleTypes(env, rp.fullComponentTypes()[i], orig);
 
                         newNested[i] = nue;
                         modified = modified || orig != nue;
@@ -938,9 +937,11 @@ public class ExhaustivenessComputer {
         }
     }
 
-    private Type generalizeInaccessibleTypes(Type targetType, Type generalized) {
+    private Type generalizeInaccessibleTypes(Env<AttrContext> env,
+                                             Type targetType,
+                                             Type generalized) {
         boolean cont = true;
-        while (cont && !isAccessible(generalized.tsym)) {
+        while (cont && !isAccessible(env, generalized.tsym)) {
             cont = false;
 
             for (Type generalizedSuper : types.directSupertypes(generalized)) {
@@ -955,7 +956,7 @@ public class ExhaustivenessComputer {
         return generalized;
     }
 
-    private boolean isAccessible(Symbol candidate) {
+    private boolean isAccessible(Env<AttrContext> env, Symbol candidate) {
         while (candidate.kind == Kind.TYP) {
             if (!rs.isAccessible(env, (TypeSymbol) candidate)) {
                 return false;
