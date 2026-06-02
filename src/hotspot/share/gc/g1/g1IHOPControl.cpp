@@ -114,7 +114,7 @@ void G1IHOPControl::add_marking_start_to_mixed_length(double length_s) {
 // Determine the old generation occupancy threshold at which to start
 // concurrent marking such that reclamation (first Mixed GC) begins
 // before the heap reaches a critical occupancy level.
-size_t G1IHOPControl::old_gen_threshold_for_conc_mark_start() {
+size_t G1IHOPControl::old_gen_threshold_for_conc_mark_start() const {
   guarantee(_target_occupancy > 0, "Target occupancy must be initialized");
 
   if (!_is_adaptive || !have_enough_data_for_prediction()) {

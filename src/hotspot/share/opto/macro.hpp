@@ -104,13 +104,13 @@ private:
                               address slow_call_address,
                               Node* valid_length_test);
   void yank_alloc_node(AllocateNode* alloc);
-  Node *value_from_mem(Node *mem, Node *ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc);
+  Node* value_from_mem(Node* start, Node* ctl, BasicType ft, const Type* ftype, const TypeOopPtr* adr_t, AllocateNode* alloc);
   Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
 
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  void undo_previous_scalarizations(GrowableArray <SafePointNode *> safepoints_done, AllocateNode* alloc);
-  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
+  void undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc);
+  bool scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints);
   void process_users_of_allocation(CallNode *alloc);
 
   void eliminate_gc_barrier(Node *p2x);
@@ -205,7 +205,7 @@ private:
                           Node* klass_node, Node* length,
                           Node* size_in_bytes);
 
-  Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
+  Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type* ftype, AllocateNode* alloc);
 
 public:
   PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn) {
@@ -218,7 +218,7 @@ public:
   void eliminate_opaque_looplimit_macro_nodes();
 
   SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
-  static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);
+  static bool can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List* safepoints);
 
 
   PhaseIterGVN &igvn() const { return _igvn; }

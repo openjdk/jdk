@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package jdk.jfr.event.runtime;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import jdk.internal.misc.VM;
@@ -48,13 +49,14 @@ public class TestDirectBufferStatisticsEvent {
     private static final String EVENT_PATH = EventNames.DirectBufferStatistics;
 
     public static void main(String[] args) throws Throwable {
+        ArrayList<ByteBuffer> buffers = new ArrayList<>();
         try (Recording recording = new Recording()) {
             recording.enable(EVENT_PATH);
             recording.start();
             int rounds = 16;
             int size = 1 * 1024 * 1024; // 1M
             for (int i = 0; i < rounds; i++) {
-                ByteBuffer.allocateDirect(size);
+                buffers.add(ByteBuffer.allocateDirect(size));
             }
             recording.stop();
 

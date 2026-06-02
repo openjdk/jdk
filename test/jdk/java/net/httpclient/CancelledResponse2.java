@@ -66,7 +66,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @compile ReferenceTracker.java
- * @run junit/othervm -Djdk.internal.httpclient.debug=true CancelledResponse2
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 // -Djdk.internal.httpclient.debug=true
 public class CancelledResponse2 implements HttpServerAdapters {

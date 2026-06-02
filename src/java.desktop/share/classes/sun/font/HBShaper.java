@@ -174,6 +174,17 @@ public class HBShaper {
         MethodHandle tmp1 = LINKER.downcallHandle(malloc_symbol, mallocDescriptor);
         malloc_handle = tmp1;
 
+        MemorySegment free_symbol = SYM_LOOKUP.findOrThrow("free");
+        long free_address = free_symbol.address();
+        FunctionDescriptor setFreeFnDescriptor = FunctionDescriptor.ofVoid(JAVA_LONG);
+        MemorySegment set_free = SYM_LOOKUP.findOrThrow("HBSetFreeFn");
+        @SuppressWarnings("restricted")
+        MethodHandle set_free_handle = LINKER.downcallHandle(set_free, setFreeFnDescriptor);
+        try {
+            set_free_handle.invokeExact(free_address);
+        } catch (Throwable t) {
+        }
+
         FunctionDescriptor createFaceDescriptor =
             FunctionDescriptor.of(ADDRESS, ADDRESS);
         MemorySegment create_face_symbol = SYM_LOOKUP.findOrThrow("HBCreateFace");

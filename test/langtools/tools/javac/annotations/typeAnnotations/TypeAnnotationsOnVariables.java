@@ -23,15 +23,16 @@
 
 /*
  * @test
- * @bug 8371155
+ * @bug 8371155 8379550
  * @summary Verify type annotations on local-like variables are propagated to
  *          their types at an appropriate time.
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
+ *      jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main TypeAnnotationsOnVariables
+ * @run junit TypeAnnotationsOnVariables
  */
 
 import com.sun.source.tree.LambdaExpressionTree;
@@ -41,31 +42,44 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import java.io.IOException;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.UnionType;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import toolbox.JavacTask;
+import toolbox.JavapTask;
+import toolbox.Task;
 import toolbox.ToolBox;
 
 public class TypeAnnotationsOnVariables {
 
-    public static void main(String... args) throws Exception {
-        new TypeAnnotationsOnVariables().run();
-    }
+    private static final Pattern CP_REFERENCE = Pattern.compile("#([1-9][0-9]*)");
+    final ToolBox tb = new ToolBox();
+    Path base;
 
-    ToolBox tb = new ToolBox();
-
-    void run() throws Exception {
-        typeAnnotationInConstantExpressionFieldInit(Paths.get("."));
-    }
-
-    void typeAnnotationInConstantExpressionFieldInit(Path base) throws Exception {
+    @Test
+    void typeAnnotationInConstantExpressionFieldInit() throws Exception {
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
         tb.writeJavaFiles(src,
@@ -203,9 +217,208 @@ public class TypeAnnotationsOnVariables {
     }
 
     static String treeToString(Tree tree) {
-        if (tree.toString().contains("\n")) {
-            System.err.println("!!!");
-        }
         return String.valueOf(tree).replaceAll("\\R", " ");
+    }
+
+    @Test
+    void properPathForLocalVarsInLambdas() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import java.lang.annotation.ElementType;
+                          import java.lang.annotation.Target;
+                          import java.util.function.Supplier;
+
+                          class Test {
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno { }
+
+                              void o() {
+                                  Runnable r = () -> {
+                                      @TypeAnno long test1 = 0;
+                                      while (true) {
+                                          @TypeAnno long test2 = 0;
+                                          System.err.println(test2);
+                                          try (@TypeAnno AutoCloseable ac = null) {
+                                              System.err.println(ac);
+                                          } catch (@TypeAnno Exception e1) {
+                                              System.err.println(e1);
+                                          }
+                                          try {
+                                              "".length();
+                                          } catch (@TypeAnno final Exception e2) {
+                                              System.err.println(e2);
+                                          }
+                                          try {
+                                              "".length();
+                                          } catch (@TypeAnno IllegalStateException | @TypeAnno NullPointerException | IllegalArgumentException e3) {
+                                              System.err.println(e3);
+                                          }
+                                          Runnable r2 = () -> {
+                                              @TypeAnno long test3 = 0;
+                                              while (true) {
+                                                  @TypeAnno long test4 = 0;
+                                                  System.err.println(test4);
+                                              }
+                                          };
+                                          Object o = null;
+                                          if (o instanceof @TypeAnno String s) {
+                                              System.err.println(s);
+                                          }
+                                      }
+                                  };
+                              }
+                              void lambdaInClass() {
+                                  class C {
+                                      Runnable r = () -> {
+                                          @TypeAnno long test1 = 0;
+                                          System.err.println(test1);
+                                      };
+                                  }
+                              }
+                              void classInLambda() {
+                                  Runnable r = () -> {
+                                      class C {
+                                          void method() {
+                                              @TypeAnno long test1 = 0;
+                                              System.err.println(test1);
+                                          }
+                                      }
+                                  };
+                              }
+                          }
+                          """);
+        Files.createDirectories(classes);
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(tb.findJavaFiles(src))
+                .run()
+                .writeAll();
+
+        Path testClass = classes.resolve("Test.class");
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+        MethodModel oMethod = singletonValue(testClassDesc.name2Method().get("o"));
+        var oTypeAnnos = getAnnotations(oMethod);
+        assertFalse(oTypeAnnos.isPresent(), () -> oTypeAnnos.toString());
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$o$0",
+                             "        0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=2, length=151, index=0}",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=4, length=146, index=2}",
+                             "          Test$TypeAnno",
+                             "        2: LTest$TypeAnno;(): RESOURCE_VARIABLE, {start_pc=14, length=52, index=4}",
+                             "          Test$TypeAnno",
+                             "        3: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=2",
+                             "          Test$TypeAnno",
+                             "        4: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=3",
+                             "          Test$TypeAnno",
+                             "        5: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=4",
+                             "          Test$TypeAnno",
+                             "        6: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=5",
+                             "          Test$TypeAnno",
+                             "        7: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=142, length=8, index=6}",
+                             "          Test$TypeAnno");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$o$1",
+                             "        0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=2, length=12, index=0}",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=4, length=7, index=2}",
+                             "          Test$TypeAnno");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$classInLambda$0");
+
+        checkTypeAnnotations(TestClassDesc.create(classes.resolve("Test$1C.class")),
+                             "lambda$new$0",
+                             "        0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=2, length=8, index=0}",
+                             "          Test$TypeAnno");
+    }
+
+    private void checkTypeAnnotations(TestClassDesc testClassDesc,
+                                      String lambdaMethodName,
+                                      String... expectedEntries) throws IOException {
+        MethodModel lambdaMethod = singletonValue(testClassDesc.name2Method().get(lambdaMethodName));
+        var lambdaTypeAnnos = getAnnotations(lambdaMethod);
+        if (expectedEntries.length == 0) {
+            assertFalse(lambdaTypeAnnos.isPresent(), () -> lambdaTypeAnnos.toString());
+        } else {
+            assertTrue(lambdaTypeAnnos.isPresent(), () -> lambdaTypeAnnos.toString());
+            assertEquals(expectedEntries.length / 2,
+                         lambdaTypeAnnos.orElseThrow().annotations().size(),
+                         () -> lambdaTypeAnnos.orElseThrow().annotations().toString());
+
+            checkJavapOutput(testClassDesc,
+                             List.of(expectedEntries));
+        }
+    }
+
+    private <T> T singletonValue(List<T> values) {
+        assertEquals(1, values.size());
+        return values.get(0);
+    }
+
+    private Optional<RuntimeInvisibleTypeAnnotationsAttribute> getAnnotations(MethodModel m) {
+        return m.findAttribute(Attributes.code())
+                .orElseThrow()
+                .findAttribute(Attributes.runtimeInvisibleTypeAnnotations());
+    }
+
+    void checkJavapOutput(TestClassDesc testClassDesc, List<String> expectedOutput) throws IOException {
+        String javapOut = new JavapTask(tb)
+                .options("-v", "-p")
+                .classes(testClassDesc.pathToClass().toString())
+                .run()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        StringBuilder expandedJavapOutBuilder = new StringBuilder();
+        Matcher m = CP_REFERENCE.matcher(javapOut);
+
+        while (m.find()) {
+            String cpIndexText = m.group(1);
+            int cpIndex = Integer.parseInt(cpIndexText);
+            m.appendReplacement(expandedJavapOutBuilder, Matcher.quoteReplacement(testClassDesc.cpIndex2Name().getOrDefault(cpIndex, cpIndexText)));
+        }
+
+        m.appendTail(expandedJavapOutBuilder);
+
+        String expandedJavapOut = expandedJavapOutBuilder.toString();
+
+        for (String expected : expectedOutput) {
+            if (!expandedJavapOut.contains(expected)) {
+                System.err.println(expandedJavapOut);
+                throw new AssertionError("unexpected output");
+            }
+        }
+    }
+
+    record TestClassDesc(Path pathToClass,
+                     Map<String, List<MethodModel>> name2Method,
+                     Map<Integer, String> cpIndex2Name) {
+        public static TestClassDesc create(Path pathToClass) throws IOException{
+            ClassModel model = ClassFile.of().parse(pathToClass);
+            Map<String, List<MethodModel>> name2Method =
+                    model.methods()
+                         .stream()
+                         .collect(Collectors.groupingBy(m -> m.methodName().stringValue()));
+            ConstantPool cp = model.constantPool();
+            int cpSize = cp.size();
+            Map<Integer, String> cpIndex2Name = new HashMap<>();
+
+            for (int i = 1; i < cpSize; i++) {
+                if (cp.entryByIndex(i) instanceof Utf8Entry string) {
+                    cpIndex2Name.put(i, string.stringValue());
+                }
+            }
+
+            return new TestClassDesc(pathToClass, name2Method, cpIndex2Name);
+        }
+    }
+
+    @BeforeEach
+    void setUp(TestInfo thisTest) {
+        base = Path.of(thisTest.getTestMethod().orElseThrow().getName());
     }
 }

@@ -26,15 +26,10 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcWhen.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/debug.hpp"
 
@@ -56,15 +51,14 @@ const char* ShenandoahGCSession::cycle_end_message(ShenandoahGenerationType type
   }
 }
 
-ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation) :
+ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
+                                         bool is_degenerated, bool is_out_of_cycle) :
   _heap(ShenandoahHeap::heap()),
   _generation(generation),
   _timer(_heap->gc_timer()),
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
-
-  _heap->on_cycle_start(cause, _generation);
-
+  _heap->on_cycle_start(cause, _generation, is_degenerated, is_out_of_cycle);
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);

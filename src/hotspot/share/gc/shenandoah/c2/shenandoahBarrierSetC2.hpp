@@ -46,7 +46,7 @@ class ShenandoahBarrierSetC2 : public BarrierSetC2 {
 private:
   void shenandoah_eliminate_wb_pre(Node* call, PhaseIterGVN* igvn) const;
 
-  bool satb_can_remove_pre_barrier(GraphKit* kit, PhaseValues* phase, Node* adr,
+  bool satb_can_remove_pre_barrier(GraphKit* kit, PhaseGVN* phase, Node* adr,
                                    BasicType bt, uint adr_idx) const;
   void satb_write_barrier_pre(GraphKit* kit, bool do_load,
                               Node* obj,

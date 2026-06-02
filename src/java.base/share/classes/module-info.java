@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@
  * @uses java.text.spi.NumberFormatProvider
  * @uses java.time.chrono.AbstractChronology
  * @uses java.time.chrono.Chronology
+ * @uses java.time.format.DateTimeFormatterPatternProvider
  * @uses java.time.zone.ZoneRulesProvider
  * @uses java.util.spi.CalendarDataProvider
  * @uses java.util.spi.CalendarNameProvider
@@ -380,6 +381,7 @@ module java.base {
     uses java.text.spi.NumberFormatProvider;
     uses java.time.chrono.AbstractChronology;
     uses java.time.chrono.Chronology;
+    uses java.time.format.DateTimeFormatterPatternProvider;
     uses java.time.zone.ZoneRulesProvider;
     uses java.util.spi.CalendarDataProvider;
     uses java.util.spi.CalendarNameProvider;
@@ -395,7 +397,6 @@ module java.base {
 
     uses jdk.internal.io.JdkConsoleProvider;
     uses jdk.internal.logger.DefaultLoggerFinder;
-    uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;
     uses sun.util.locale.provider.LocaleDataMetaInfo;
     uses sun.util.resources.LocaleData.LocaleDataResourceBundleProvider;

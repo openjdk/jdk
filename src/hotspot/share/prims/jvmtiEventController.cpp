@@ -544,6 +544,11 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
   }
 
   switch (JvmtiEnv::get_phase()) {
+  case JVMTI_PHASE_ONLOAD:
+  case JVMTI_PHASE_PRIMORDIAL:
+  case JVMTI_PHASE_START:
+    now_enabled &= EARLY_EVENT_BITS;
+    break;
   case JVMTI_PHASE_DEAD:
     // no events allowed when dead
     now_enabled = 0;

@@ -615,7 +615,7 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
-
+  iff->as_If()->mark_projections_unsafe_for_fold_compare();
   C->set_major_progress();
   RegionNode *region = iff->in(0)->as_Region();
   Node *region_dom = idom(region);
@@ -704,6 +704,9 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
       new_true = ifpx;
     }
   }
+  assert(new_false != nullptr, "iff is malformed");
+  assert(new_true != nullptr, "iff is malformed");
+
   _igvn.remove_dead_node(new_iff, PhaseIterGVN::NodeOrigin::Speculative);
   // Lazy replace IDOM info with the region's dominator
   replace_node_and_forward_ctrl(iff, region_dom);

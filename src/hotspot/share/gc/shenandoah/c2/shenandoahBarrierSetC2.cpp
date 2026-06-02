@@ -73,7 +73,7 @@ void ShenandoahBarrierSetC2State::remove_load_reference_barrier(ShenandoahLoadRe
 
 #define __ kit->
 
-bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseValues* phase, Node* adr,
+bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseGVN* phase, Node* adr,
                                                          BasicType bt, uint adr_idx) const {
   intptr_t offset = 0;
   Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
@@ -990,19 +990,23 @@ void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node*
     shenandoah_eliminate_wb_pre(node, &macro->igvn());
   }
   if (ShenandoahCardBarrier && node->Opcode() == Op_CastP2X) {
-    Node* shift = node->unique_out();
-    Node* addp = shift->unique_out();
-    for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
-      Node* mem = addp->last_out(j);
-      if (UseCondCardMark && mem->is_Load()) {
-        assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
-        // The load is checking if the card has been written so
-        // replace it with zero to fold the test.
-        macro->replace_node(mem, macro->intcon(0));
-        continue;
+    for (DUIterator_Last imin, i = node->last_outs(imin); i >= imin; --i) {
+      Node* shift = node->last_out(i);
+      for (DUIterator_Last kmin, k = shift->last_outs(kmin); k >= kmin; --k) {
+        Node* addp = shift->last_out(k);
+        for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
+          Node* mem = addp->last_out(j);
+          if (UseCondCardMark && mem->is_Load()) {
+            assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
+            // The load is checking if the card has been written so
+            // replace it with zero to fold the test.
+            macro->replace_node(mem, macro->intcon(0));
+            continue;
+          }
+          assert(mem->is_Store(), "store required");
+          macro->replace_node(mem, mem->in(MemNode::Memory));
+        }
       }
-      assert(mem->is_Store(), "store required");
-      macro->replace_node(mem, mem->in(MemNode::Memory));
     }
   }
 }

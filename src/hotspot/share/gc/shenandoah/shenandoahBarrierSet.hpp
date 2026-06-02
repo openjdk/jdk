@@ -96,7 +96,6 @@ public:
   void on_thread_detach(Thread* thread) override;
 
   static inline oop resolve_forwarded_not_null(oop p);
-  static inline oop resolve_forwarded_not_null_mutator(oop p);
   static inline oop resolve_forwarded(oop p);
 
   template <DecoratorSet decorators, typename T>
@@ -109,7 +108,7 @@ public:
 
   inline oop load_reference_barrier(oop obj);
 
-  template <class T>
+  template <DecoratorSet decorators, class T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
   template <class T>

@@ -40,6 +40,8 @@
 // Inlined from <linux/magic.h> for portability.
 #ifndef CGROUP2_SUPER_MAGIC
 #  define CGROUP2_SUPER_MAGIC 0x63677270
+#else
+  STATIC_ASSERT(CGROUP2_SUPER_MAGIC == 0x63677270);
 #endif
 
 // controller names have to match the *_IDX indices
@@ -647,7 +649,7 @@ bool CgroupSubsystem::active_processor_count(int (*cpu_bound_func)(), double& va
     return true;
   }
 
-  int cpu_count = cpu_bound_func();
+  double cpu_count = static_cast<double>(cpu_bound_func());
   double result = -1;
   if (!CgroupUtil::processor_count(contrl->controller(), cpu_count, result)) {
     return false;

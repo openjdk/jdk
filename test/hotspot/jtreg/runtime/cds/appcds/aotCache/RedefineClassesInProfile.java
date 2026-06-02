@@ -41,7 +41,10 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar redef1.jar
  *             RedefFoo RedefBar
  *             RedefTaz0 RedefTaz1 RedefTaz2 RedefTaz3 RedefTaz4
-
+ *
+ * @compile test-classes/CustomLoadee.java
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar CustomLoadee
+ *
  * @run driver RedefineClassHelper
  * @build RedefineClassesInProfile
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar RedefineClassesInProfileApp Util
@@ -49,6 +52,8 @@
  */
 
 import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -89,6 +94,7 @@ public class RedefineClassesInProfile {
                     out.shouldNotMatch(prefix + "RedefFoo");
                     out.shouldNotMatch(prefix + "RedefBar");
                     out.shouldNotMatch(prefix + "RedefTaz");
+                    out.shouldNotMatch(prefix + "CustomLoadee");
                 })
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("Redefined: class RedefBar");
@@ -104,6 +110,7 @@ class RedefineClassesInProfileApp {
 
     public static void main(String[] args) throws Exception {
         test1();
+        test2();
     }
 
     // test1
@@ -175,4 +182,30 @@ class RedefineClassesInProfileApp {
             throw new RuntimeException("Unexpected failure", t);
         }
     }
+
+    // Test 2 -- TrainingData interaction with custom class loaders.
+    static void test2() throws Exception {
+        // Do this several times. The AOT cache should contain only one
+        // copy of CustomLoadee as an "unregistered" class, which will be
+        // used in the first iteration of this loop.
+        //
+        // The JVM should work well even if the cached version of CustomLoadee
+        // has been unloaded.
+        for (int i = 0; i < 4; i++) {
+            test2_inner();
+            System.gc(); // trigger unloading of CustomLoadee.
+        }
+    }
+
+    static void test2_inner() throws Exception {
+        // Load a class and run a loop to make sure it's compiled, but
+        // TrainingData should not record any class/method that are loaded
+        // by custom class loaders
+        File custJar = new File("cust.jar");
+        URL[] urls = new URL[] {custJar.toURI().toURL()};
+        URLClassLoader loader = new URLClassLoader(urls, RedefineClassesInProfileApp.class.getClassLoader());
+        Class<?> c = loader.loadClass("CustomLoadee");
+        System.out.println(c.newInstance());
+    }
 }
+

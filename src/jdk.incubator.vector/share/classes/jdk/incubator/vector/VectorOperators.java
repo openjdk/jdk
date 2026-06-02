@@ -560,15 +560,15 @@ public final class VectorOperators {
 
 
     /** Produce {@code a<<(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code (a&EMASK)>>>(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateRight(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code compress(a,n)}. Integral, {@code int} and {@code long}, only.
      * @since 19
      */

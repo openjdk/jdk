@@ -45,9 +45,6 @@
 class ShenandoahThreadLocalData {
 private:
   char _gc_state;
-  // Evacuation OOM state
-  uint8_t                 _oom_scope_nesting_level;
-  bool                    _oom_during_evac;
 
   SATBMarkQueue           _satb_mark_queue;
 
@@ -66,6 +63,9 @@ private:
   ShenandoahPLAB* _shenandoah_plab;
 
   ShenandoahEvacuationStats* _evacuation_stats;
+
+  Atomic<HeapWord*> _invisible_root;
+  Atomic<size_t> _invisible_root_word_size;
 
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
@@ -157,39 +157,6 @@ public:
     return data(thread)->_shenandoah_plab;
   }
 
-  // Evacuation OOM handling
-  static bool is_oom_during_evac(Thread* thread) {
-    return data(thread)->_oom_during_evac;
-  }
-
-  static void set_oom_during_evac(Thread* thread, bool oom) {
-    data(thread)->_oom_during_evac = oom;
-  }
-
-  static uint8_t evac_oom_scope_level(Thread* thread) {
-    return data(thread)->_oom_scope_nesting_level;
-  }
-
-  // Push the scope one level deeper, return previous level
-  static uint8_t push_evac_oom_scope(Thread* thread) {
-    uint8_t level = evac_oom_scope_level(thread);
-    assert(level < 254, "Overflow nesting level"); // UINT8_MAX = 255
-    data(thread)->_oom_scope_nesting_level = level + 1;
-    return level;
-  }
-
-  // Pop the scope by one level, return previous level
-  static uint8_t pop_evac_oom_scope(Thread* thread) {
-    uint8_t level = evac_oom_scope_level(thread);
-    assert(level > 0, "Underflow nesting level");
-    data(thread)->_oom_scope_nesting_level = level - 1;
-    return level;
-  }
-
-  static bool is_evac_allowed(Thread* thread) {
-    return evac_oom_scope_level(thread) > 0;
-  }
-
   // Offsets
   static ByteSize satb_mark_queue_index_offset() {
     return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index();
@@ -205,6 +172,25 @@ public:
 
   static ByteSize card_table_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _card_table);
+  }
+
+  // invisible root are the partially initialized obj array set by ShenandoahObjArrayAllocator
+  static void set_invisible_root(Thread* thread, HeapWord* invisible_root, size_t word_size) {
+    data(thread)->_invisible_root.store_relaxed(invisible_root);
+    data(thread)->_invisible_root_word_size.store_relaxed(word_size);
+  }
+
+  static void clear_invisible_root(Thread* thread) {
+    data(thread)->_invisible_root.store_relaxed(nullptr);
+    data(thread)->_invisible_root_word_size.store_relaxed(0);
+  }
+
+  static HeapWord* get_invisible_root(Thread* thread) {
+    return data(thread)->_invisible_root.load_relaxed();
+  }
+
+  static size_t get_invisible_root_word_size(Thread* thread) {
+    return data(thread)->_invisible_root_word_size.load_relaxed();
   }
 };
 

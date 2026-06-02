@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,11 @@ public final class Utils {
      * Returns the value of 'test.src' system property.
      */
     public static final String TEST_SRC = System.getProperty("test.src", "").trim();
+
+    /**
+     * Returns the value of 'test.src.path' system property.
+     */
+    public static final String TEST_SRC_PATH = System.getProperty("test.src.path", "").trim();
 
     /**
      * Returns the value of 'test.root' system property.
