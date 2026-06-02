@@ -171,10 +171,9 @@ final class ThreadConfinedSegmentPool implements AutoCloseable {
                 return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, false, init);
             }
 
+            // The backing segment in the `allocator` is guaranteed to be zeroed out after
+            // each recycle so, we do not have to do this explicitly.
             final NativeMemorySegmentImpl segment = (NativeMemorySegmentImpl) allocator.allocate(byteSize, byteAlignment);
-            if (init) {
-                segment.fill((byte) 0);
-            }
             // Reinterpret the slice to use this arena's scope.
             return SegmentFactories.makeNativeSegmentUnchecked(segment.address(), byteSize, session);
         }
@@ -196,6 +195,11 @@ final class ThreadConfinedSegmentPool implements AutoCloseable {
         @ForceInline
         @Override
         public void close() {
+            if (session.isAlive()) {
+                // To minimize data exposure, we zero out _after_ use rather than
+                // before use.
+                allocator.zeroOutToOffset();
+            }
             // The Arena::close method is called first as it checks thread
             // confinement and liveness before cached chunks are made available again.
             try {

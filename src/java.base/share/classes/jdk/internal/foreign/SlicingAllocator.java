@@ -25,6 +25,8 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.vm.annotation.ForceInline;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
@@ -60,6 +62,11 @@ public final class SlicingAllocator implements SegmentAllocator {
         MemorySegment slice = segment.asSlice(start, byteSize, byteAlignment);
         sp = start + byteSize;
         return slice;
+    }
+
+    @ForceInline
+    void zeroOutToOffset() {
+        segment.asSlice(0, sp).fill((byte) 0);
     }
 
     @Override
