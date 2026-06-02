@@ -99,10 +99,10 @@ final class ThreadConfinedSegmentPool implements AutoCloseable {
         SlicingAllocator allocator = allocators[allocatorIndex];
         // Lazily constuct allocators
         if (allocator == null) {
-            // We do not have to zero out the backing segment as this is handled
-            // on demand and later by the CachedArena.
+            // We have to zero out the backing segment upon creation as
+            // we are only zeroing out recycled segments upon closing an arena.
             allocators[allocatorIndex] = allocator = new SlicingAllocator(
-                    backingArena.allocateNoInit(POOL_SLOT_SIZE, POOL_SLOT_ALIGNMENT));
+                    backingArena.allocate(POOL_SLOT_SIZE, POOL_SLOT_ALIGNMENT));
         }
         return allocator;
     }

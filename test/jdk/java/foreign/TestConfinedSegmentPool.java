@@ -98,13 +98,14 @@ final class TestConfinedSegmentPool {
 
     @Test
     void testManyAllocations() {
-        // Try two times to also test a recycled pool element
-        for (int i = 0; i < 2; i++) {
+        // Try a couple of times to also test recycled pool elements
+        for (int i = 0; i < 4; i++) {
             try (Arena arena = Arena.ofConfined()) {
                 for (int j = 0; j < poolSlotSize() * 2; j++) {
                     MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE);
                     // Make sure the segment is zeroed out
-                    assertEquals((byte) 0, segment.get(ValueLayout.JAVA_BYTE, 0));
+                    assertEquals("At " + i + ", " + j + " (" + poolSlotSize() + ")",
+                            (byte) 0, segment.get(ValueLayout.JAVA_BYTE, 0));
                 }
             }
         }
