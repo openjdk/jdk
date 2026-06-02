@@ -160,7 +160,7 @@ void G1IHOPControl::print_log(size_t non_young_occupancy,
                               size_t peak_extra_humongous_occupancy) {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   size_t old_gen_mark_start_threshold = old_gen_threshold_for_conc_mark_start();
-  log_debug(gc, ihop)("Basic information (value update), old-gen threshold: %zuB (%1.2f%%), target occupancy: %zuB, old-gen occupancy: %zuB (%1.2f%%), ",
+  log_debug(gc, ihop)("Basic information (value update), old-gen threshold: %zuB (%1.2f%%), target occupancy: %zuB, old-gen occupancy: %zuB (%1.2f%%)",
                       old_gen_mark_start_threshold,
                       percent_of(old_gen_mark_start_threshold, _target_occupancy),
                       _target_occupancy,
