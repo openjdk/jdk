@@ -114,7 +114,7 @@ public abstract class VectorType implements CodeGenerationDataNameType {
             case "long"   -> "LongVector";
             case "float"  -> "FloatVector";
             case "double" -> "DoubleVector";
-            case "float16" -> "Float16Vector";
+            case "Float16" -> "Float16Vector";
             default       -> throw new UnsupportedOperationException("Not supported: " + elementType.name());
         };
     }

@@ -479,14 +479,14 @@ public final class Operations {
                                                 "((" + type.name() + ")",
                                                 type2,
                                                 ".convert(VectorOperators.Conversion.ofCast("
-                                                    + type2.elementType.elementTypeName() +  ".class, "
-                                                    + type.elementType.elementTypeName() + ".class), 0))"));
+                                                    + type2.elementType.name() +  ".class, "
+                                                    + type.elementType.name() + ".class), 0))"));
                     ops.add(Expression.make(type,
                                                 "((" + type.name() + ")",
                                                 type2,
                                                 ".convert(VectorOperators.Conversion.ofCast("
-                                                    + type2.elementType.elementTypeName() +  ".class, "
-                                                    + type.elementType.elementTypeName() + ".class),",
+                                                    + type2.elementType.name() +  ".class, "
+                                                    + type.elementType.name() + ".class),",
                                                 INTS, // part
                                                 "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
                 }
@@ -501,14 +501,14 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.elementTypeName() +  ".class, "
-                                                + type.elementType.elementTypeName() + ".class), 0))", reinterpretInfo));
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), 0))", reinterpretInfo));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.elementTypeName() +  ".class, "
-                                                + type.elementType.elementTypeName() + ".class),",
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class),",
                                             INTS, // part
                                             "))", reinterpretInfo.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
                     if (type.elementType == BYTES) {
@@ -564,8 +564,8 @@ public final class Operations {
                                         "((" + type.name() + ")",
                                         type2,
                                         ".convertShape(VectorOperators.Conversion.ofCast("
-                                            + type2.elementType.elementTypeName() +  ".class, "
-                                            + type.elementType.elementTypeName() + ".class), "
+                                            + type2.elementType.name() +  ".class, "
+                                            + type.elementType.name() + ".class), "
                                         + type.speciesName + ", ",
                                         INTS, // part
                                         "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
@@ -573,8 +573,8 @@ public final class Operations {
                                         "((" + type.name() + ")",
                                         type2,
                                         ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                            + type2.elementType.elementTypeName() +  ".class, "
-                                            + type.elementType.elementTypeName() + ".class), "
+                                            + type2.elementType.name() +  ".class, "
+                                            + type.elementType.name() + ".class), "
                                         + type.speciesName + ", ",
                                         INTS, // part
                                         "))", reinterpretInfo.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
@@ -591,16 +591,16 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.elementTypeName() +  ".class, "
-                                                + type.elementType.elementTypeName() + ".class), "
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
                                             + type.speciesName + ", ",
                                             INTS, " & " + partMask + "))"));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.elementTypeName() +  ".class, "
-                                                + type.elementType.elementTypeName() + ".class), "
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
                                             + type.speciesName + ", ",
                                             INTS, " & " + partMask + "))", reinterpretInfo));
                 } else {
@@ -610,16 +610,16 @@ public final class Operations {
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.elementTypeName() +  ".class, "
-                                                + type.elementType.elementTypeName() + ".class), "
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
                                             + type.speciesName + ", "
                                             + "-(", INTS, " & " + partMask + ")))"));
                     ops.add(Expression.make(type,
                                             "((" + type.name() + ")",
                                             type2,
                                             ".convertShape(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.elementTypeName() +  ".class, "
-                                                + type.elementType.elementTypeName() + ".class), "
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
                                             + type.speciesName + ", "
                                             + "-(", INTS, " & " + partMask + ")))", reinterpretInfo));
                 }

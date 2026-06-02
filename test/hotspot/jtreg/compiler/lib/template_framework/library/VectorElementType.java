@@ -29,13 +29,14 @@ package compiler.lib.template_framework.library;
  * <ul>
  *   <li>{@link PrimitiveType} - the standard Java primitive lane types
  *       (byte, short, int, long, float, double, and char/boolean where
- *       applicable). For these the carrier and element-class names coincide
- *       with the primitive keyword (e.g. {@code int} / {@code Integer.class}).</li>
+ *       applicable). For these {@link #name()} is the primitive keyword
+ *       (e.g. {@code "int"}) and {@code name() + ".class"} yields the
+ *       primitive {@code Class<?>} literal ({@code int.class}).</li>
  *   <li>{@link Float16VectorType} - the {@code Float16Vector} lane type. Float16
  *       has no Java primitive keyword; its lanes are stored in a {@code short[]}
- *       carrier and identified by {@code Float16.class} in
- *       {@code VectorOperators.Conversion.ofCast}/{@code ofReinterpret}
- *       expressions.</li>
+ *       carrier and {@link #name()} returns {@code "Float16"} so that
+ *       {@code name() + ".class"} ({@code Float16.class}) is the token expected
+ *       by {@code VectorOperators.Conversion.ofCast}/{@code ofReinterpret}.</li>
  * </ul>
  *
  * <p>This interface intentionally lives <strong>outside</strong> the scalar
@@ -48,28 +49,12 @@ package compiler.lib.template_framework.library;
 public interface VectorElementType extends CodeGenerationDataNameType {
 
     /**
-     * @return The logical name of the lane type (e.g. {@code "int"},
-     *         {@code "float16"}).
-     */
-    @Override
-    String name();
-
-    /**
      * @return The element type of the Java carrier array used to hold these
      *         lanes when calling {@code fromArray}/{@code intoArray}. For most
      *         lane types this is the same as {@link #name()}; for
-     *         {@code float16} it is {@code "short"}.
+     *         {@code Float16} it is {@code "short"}.
      */
     String carrierTypeName();
-
-    /**
-     * @return The element type token used as a {@code .class} literal in
-     *         {@code VectorOperators.Conversion.ofCast}/{@code ofReinterpret}
-     *         expressions. For Java primitives this is the primitive keyword
-     *         (e.g. {@code "int"}). For {@code float16} this is
-     *         {@code "Float16"}.
-     */
-    String elementTypeName();
 
     /**
      * @return The boxed type name used to parameterize generic types such as

@@ -45,8 +45,7 @@ import static compiler.lib.template_framework.Template.let;
  * doubles as a {@link VectorElementType} for those Vector API lane types whose
  * lane carrier is itself a Java primitive (e.g. {@code IntVector}'s lane
  * carrier is {@code int}). For these primitive lane types
- * {@link #carrierTypeName} and {@link #elementTypeName} both coincide with
- * {@link #name}.
+ * {@link #carrierTypeName} coincides with {@link #name}.
  *
  * <p>Non-primitive lane types, such as the {@code Float16Vector} lane, are
  * modeled by separate {@link VectorElementType} implementations (see
@@ -121,11 +120,6 @@ public final class PrimitiveType implements VectorElementType {
 
     @Override
     public String carrierTypeName() {
-        return name();
-    }
-
-    @Override
-    public String elementTypeName() {
         return name();
     }
 

@@ -63,17 +63,12 @@ public final class Float16VectorType implements VectorElementType {
 
     @Override
     public String name() {
-        return "float16";
+        return "Float16";
     }
 
     @Override
     public String carrierTypeName() {
         return "short";
-    }
-
-    @Override
-    public String elementTypeName() {
-        return "Float16";
     }
 
     @Override
