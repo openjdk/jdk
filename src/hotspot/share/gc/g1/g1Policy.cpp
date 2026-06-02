@@ -974,9 +974,16 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
   if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
     update_young_length_bounds();
 
+    // Take snapshots of these values here as update_ihop_prediction
+    // may complete the concurrent cycle and reset the values.
+    size_t non_humongous_allocation = _concurrent_cycle_tracker.non_humongous_allocated_bytes();
+    size_t peak_extra_humongous_occupancy = _concurrent_cycle_tracker.peak_extra_humongous_occupancy_bytes();
+
     if (update_ihop_prediction(app_time_ms / 1000.0, is_young_only_pause)) {
       _ihop_control->report_statistics(_g1h->gc_tracer_stw(),
-                                       _g1h->non_young_occupancy_after_allocation(allocation_word_size));
+                                       _g1h->non_young_occupancy_after_allocation(allocation_word_size),
+                                       non_humongous_allocation,
+                                       peak_extra_humongous_occupancy);
     }
   }
 
@@ -1033,7 +1040,7 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
     if (concurrent_cycle_duration_s > min_valid_time) {
       _ihop_control->record_concurrent_cycle(concurrent_cycle_duration_s,
                                              cycle_stats._non_humongous_allocated_bytes,
-                                             cycle_stats._peak_extra_humongous_reserve_bytes);
+                                             cycle_stats._peak_extra_humongous_occupancy_bytes);
       report = true;
     }
   }

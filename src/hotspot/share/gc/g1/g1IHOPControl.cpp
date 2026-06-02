@@ -73,7 +73,7 @@ G1IHOPControl::G1IHOPControl(double ihop_percent,
     _predictor(predictor),
     _marking_start_to_mixed_time_s(10, 0.05),
     _old_non_humongous_alloc_rate(10, 0.05),
-    _peak_humongous_allocated_in_mark_cycle(10, 0.05),
+    _peak_extra_humongous_occupancy_in_mark_cycle(10, 0.05),
     _expected_young_gen_at_first_mixed_gc(0) {
   assert(_initial_ihop_percent >= 0.0 && _initial_ihop_percent <= 100.0,
          "IHOP percent out of range: %.3f", ihop_percent);
@@ -86,9 +86,13 @@ void G1IHOPControl::update_target_occupancy(size_t new_target_occupancy) {
   _target_occupancy = new_target_occupancy;
 }
 
-void G1IHOPControl::report_statistics(G1NewTracer* new_tracer, size_t non_young_occupancy) {
-  print_log(non_young_occupancy);
-  send_trace_event(new_tracer, non_young_occupancy);
+void G1IHOPControl::report_statistics(G1NewTracer* new_tracer,
+                                      size_t non_young_occupancy,
+                                      size_t non_humongous_allocation,
+                                      size_t peak_extra_humongous_occupancy) {
+  print_log(non_young_occupancy, non_humongous_allocation, peak_extra_humongous_occupancy);
+  send_trace_event(new_tracer, non_young_occupancy,
+                   non_humongous_allocation, peak_extra_humongous_occupancy);
 }
 
 void G1IHOPControl::record_expected_young_gen_size(size_t expected_young_gen_size) {
@@ -97,13 +101,13 @@ void G1IHOPControl::record_expected_young_gen_size(size_t expected_young_gen_siz
 
 void G1IHOPControl::record_concurrent_cycle(double marking_start_to_mixed_time_s,
                                             size_t non_humongous_bytes,
-                                            size_t peak_extra_humongous_reserve_bytes) {
+                                            size_t peak_extra_humongous_occupancy_bytes) {
   assert(marking_start_to_mixed_time_s > 0.0, "Invalid concurrent cycle duration: %.3f", marking_start_to_mixed_time_s);
 
   double non_humongous_rate = non_humongous_bytes / marking_start_to_mixed_time_s;
   _marking_start_to_mixed_time_s.add(marking_start_to_mixed_time_s);
   _old_non_humongous_alloc_rate.add(non_humongous_rate);
-  _peak_humongous_allocated_in_mark_cycle.add(peak_extra_humongous_reserve_bytes);
+  _peak_extra_humongous_occupancy_in_mark_cycle.add(peak_extra_humongous_occupancy_bytes);
 }
 
 // Determine the old generation occupancy threshold at which to start
@@ -128,7 +132,7 @@ size_t G1IHOPControl::old_gen_threshold_for_conc_mark_start() const {
   //
   //   old_gen_at_concurrent_start +
   //   predicted_non_hum_old_growth +
-  //   predicted_peak_extra_humongous_reserve +
+  //   predicted_peak_extra_humongous_occupancy +
   //   expected_young_gen_at_first_mixed_gc
   //
   // stays below the effective target occupancy.
@@ -136,21 +140,24 @@ size_t G1IHOPControl::old_gen_threshold_for_conc_mark_start() const {
   double old_non_humongous_alloc_rate = predict(&_old_non_humongous_alloc_rate);
   size_t old_non_humongous_alloc_bytes = (size_t)(marking_start_to_mixed_time * old_non_humongous_alloc_rate);
 
-  size_t peak_humongous_reserve = predict(&_peak_humongous_allocated_in_mark_cycle);
+  size_t predicted_peak_extra_humongous_occupancy =
+    predict(&_peak_extra_humongous_occupancy_in_mark_cycle);
 
   size_t reserve_for_young_regions = _expected_young_gen_at_first_mixed_gc;
   size_t target_heap_occupancy = effective_target_occupancy();
 
   size_t needed_for_concurrent_cycle = reserve_for_young_regions +
                                        old_non_humongous_alloc_bytes +
-                                       peak_humongous_reserve;
+                                       predicted_peak_extra_humongous_occupancy;
 
   size_t threshold = needed_for_concurrent_cycle < target_heap_occupancy ?
                      target_heap_occupancy - needed_for_concurrent_cycle : 0;
   return threshold;
 }
 
-void G1IHOPControl::print_log(size_t non_young_occupancy) {
+void G1IHOPControl::print_log(size_t non_young_occupancy,
+                              size_t non_humongous_allocation,
+                              size_t peak_extra_humongous_occupancy) {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   size_t old_gen_mark_start_threshold = old_gen_threshold_for_conc_mark_start();
   log_debug(gc, ihop)("Basic information (value update), old-gen threshold: %zuB (%1.2f%%), target occupancy: %zuB, old-gen occupancy: %zuB (%1.2f%%), ",
@@ -166,7 +173,9 @@ void G1IHOPControl::print_log(size_t non_young_occupancy) {
 
   size_t effective_target = effective_target_occupancy();
   log_debug(gc, ihop)("Adaptive IHOP information (value update), old-gen threshold: %zuB (%1.2f%%), internal target occupancy: %zuB, "
-                      "old-gen occupancy: %zuB (%1.2f%%), additional buffer size: %zuB, predicted old-gen non-humongous allocation rate: %1.2fB/s, predicted peak humongous %1.2fB, "
+                      "old-gen occupancy: %zuB (%1.2f%%), additional buffer size: %zuB, "
+                      "current non-humongous allocation: %zuB, current peak extra humongous occupancy: %zuB, "
+                      "predicted old-gen non-humongous allocation rate: %1.2fB/s, predicted peak extra humongous occupancy %1.2fB, "
                       "predicted concurrent cycle duration: %1.2fms",
                       old_gen_mark_start_threshold,
                       percent_of(old_gen_mark_start_threshold, effective_target),
@@ -174,13 +183,16 @@ void G1IHOPControl::print_log(size_t non_young_occupancy) {
                       non_young_occupancy,
                       percent_of(non_young_occupancy, effective_target),
                       _expected_young_gen_at_first_mixed_gc,
+                      non_humongous_allocation, peak_extra_humongous_occupancy,
                       predict(&_old_non_humongous_alloc_rate),
-                      predict(&_peak_humongous_allocated_in_mark_cycle),
+                      predict(&_peak_extra_humongous_occupancy_in_mark_cycle),
                       predict(&_marking_start_to_mixed_time_s) * 1000.0);
 }
 
 void G1IHOPControl::send_trace_event(G1NewTracer* tracer,
-                                     size_t non_young_occupancy) {
+                                     size_t non_young_occupancy,
+                                     size_t non_humongous_allocation,
+                                     size_t peak_extra_humongous_occupancy) {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   tracer->report_basic_ihop_statistics(old_gen_threshold_for_conc_mark_start(),
                                        _target_occupancy,
@@ -191,8 +203,10 @@ void G1IHOPControl::send_trace_event(G1NewTracer* tracer,
                                             effective_target_occupancy(),
                                             non_young_occupancy,
                                             _expected_young_gen_at_first_mixed_gc,
+                                            non_humongous_allocation,
+                                            peak_extra_humongous_occupancy,
                                             predict(&_old_non_humongous_alloc_rate),
-                                            predict(&_peak_humongous_allocated_in_mark_cycle),
+                                            predict(&_peak_extra_humongous_occupancy_in_mark_cycle),
                                             predict(&_marking_start_to_mixed_time_s),
                                             have_enough_data_for_prediction());
   }

@@ -35,7 +35,7 @@ void G1ConcurrentCycleTracker::reset() {
 
   _humongous_bytes_at_start = 0;
   _non_humongous_allocated_bytes = 0;
-  _peak_extra_humongous_reserve_bytes = 0;
+  _peak_extra_humongous_occupancy_bytes = 0;
 }
 
 void G1ConcurrentCycleTracker::update_allocation_stats(G1AllocationIntervalStats interval_stats) {
@@ -52,7 +52,7 @@ void G1ConcurrentCycleTracker::update_allocation_stats(G1AllocationIntervalStats
                          checked_cast<intptr_t>(interval_stats._humongous_allocated_bytes);
 
   if (delta_after > 0) {
-    _peak_extra_humongous_reserve_bytes = MAX2(_peak_extra_humongous_reserve_bytes, delta_after);
+    _peak_extra_humongous_occupancy_bytes = MAX2(_peak_extra_humongous_occupancy_bytes, checked_cast<size_t>(delta_after));
   }
 }
 
@@ -63,7 +63,7 @@ G1ConcurrentCycleTracker::G1ConcurrentCycleTracker()
   _total_pause_time_s(0.0),
   _humongous_bytes_at_start(0),
   _non_humongous_allocated_bytes(0),
-  _peak_extra_humongous_reserve_bytes(0)
+  _peak_extra_humongous_occupancy_bytes(0)
 { }
 
 void G1ConcurrentCycleTracker::record_cycle_start(double cycle_start_time_s, size_t humongous_bytes_after_pause) {
@@ -123,7 +123,7 @@ G1ConcurrentCycleStats G1ConcurrentCycleTracker::get_and_reset_cycle_stats() {
   G1ConcurrentCycleStats stats{
     cycle_duration,
     _non_humongous_allocated_bytes,
-    checked_cast<size_t>(_peak_extra_humongous_reserve_bytes)
+    checked_cast<size_t>(_peak_extra_humongous_occupancy_bytes)
   };
 
   reset();

@@ -60,7 +60,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Concurrent Start to the first Mixed GC.
   // These values are used only when G1UseAdaptiveIHOP is enabled.
   TruncatedSeq _old_non_humongous_alloc_rate;
-  TruncatedSeq _peak_humongous_allocated_in_mark_cycle;
+  TruncatedSeq _peak_extra_humongous_occupancy_in_mark_cycle;
 
   // The most recent unrestrained size of the young gen. This is used as an additional
   // factor in the calculation of the threshold, as the threshold is based on
@@ -81,8 +81,14 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // algorithm needs to consider restrictions by the environment.
   size_t effective_target_occupancy() const;
 
-  void print_log(size_t non_young_occupancy);
-  void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
+  void print_log(size_t non_young_occupancy,
+                 size_t non_humongous_allocation,
+                 size_t peak_extra_humongous_occupancy);
+
+  void send_trace_event(G1NewTracer* tracer,
+                        size_t non_young_occupancy,
+                        size_t non_humongous_allocation,
+                        size_t peak_extra_humongous_occupancy);
 
  public:
   G1IHOPControl(double ihop_percent,
@@ -102,12 +108,15 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 
   void record_concurrent_cycle(double marking_start_to_mixed_time_s,
                                size_t non_humongous_bytes,
-                               size_t peak_extra_humongous_reserve_bytes);
+                               size_t peak_extra_humongous_occupancy);
 
   // Get the current non-young occupancy at which concurrent marking should start.
   size_t old_gen_threshold_for_conc_mark_start() const;
 
-  void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy);
+  void report_statistics(G1NewTracer* tracer,
+                         size_t non_young_occupancy,
+                         size_t non_humongous_allocation,
+                         size_t peak_extra_humongous_occupancy);
 };
 
 #endif // SHARE_GC_G1_G1IHOPCONTROL_HPP

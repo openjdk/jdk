@@ -108,16 +108,20 @@ void G1NewTracer::report_adaptive_ihop_statistics(size_t threshold,
                                                   size_t internal_target_occupancy,
                                                   size_t current_occupancy,
                                                   size_t additional_buffer_size,
+                                                  size_t non_humongous_allocation,
+                                                  size_t peak_extra_humongous_occupancy,
                                                   double predicted_old_non_hum_alloc_rate,
-                                                  size_t predicted_peak_humongous_allocated,
+                                                  size_t predicted_peak_extra_humongous_occupancy,
                                                   double predicted_marking_length,
                                                   bool prediction_active) {
   send_adaptive_ihop_statistics(threshold,
                                 internal_target_occupancy,
                                 current_occupancy,
                                 additional_buffer_size,
+                                non_humongous_allocation,
+                                peak_extra_humongous_occupancy,
                                 predicted_old_non_hum_alloc_rate,
-                                predicted_peak_humongous_allocated,
+                                predicted_peak_extra_humongous_occupancy,
                                 predicted_marking_length,
                                 prediction_active);
 }
@@ -218,8 +222,10 @@ void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
                                                 size_t internal_target_occupancy,
                                                 size_t current_occupancy,
                                                 size_t additional_buffer_size,
+                                                size_t non_humongous_allocation,
+                                                size_t peak_extra_humongous_occupancy,
                                                 double predicted_old_non_hum_alloc_rate,
-                                                size_t predicted_peak_humongous_allocated,
+                                                size_t predicted_peak_extra_humongous_occupancy,
                                                 double predicted_marking_length,
                                                 bool prediction_active) {
   EventG1AdaptiveIHOP evt;
@@ -230,8 +236,10 @@ void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
     evt.set_ihopTargetOccupancy(internal_target_occupancy);
     evt.set_currentOccupancy(current_occupancy);
     evt.set_additionalBufferSize(additional_buffer_size);
+    evt.set_nonHumongousAllocation(non_humongous_allocation);
+    evt.set_peakExtraHumongousOccupancy(peak_extra_humongous_occupancy);
     evt.set_predictedNonHumongousAllocation(predicted_old_non_hum_alloc_rate);
-    evt.set_predictedPeakHumongousAllocation(predicted_peak_humongous_allocated);
+    evt.set_predictedPeakExtraHumongousOccupancy(predicted_peak_extra_humongous_occupancy);
     evt.set_predictedMarkingDuration(predicted_marking_length * MILLIUNITS);
     evt.set_predictionActive(prediction_active);
     evt.commit();

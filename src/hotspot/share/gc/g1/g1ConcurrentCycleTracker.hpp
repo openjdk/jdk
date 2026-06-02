@@ -36,14 +36,14 @@ struct G1AllocationIntervalStats;
 struct G1ConcurrentCycleStats {
   double _cycle_duration_s;
   size_t _non_humongous_allocated_bytes;
-  size_t _peak_extra_humongous_reserve_bytes;
+  size_t _peak_extra_humongous_occupancy_bytes;
 
   G1ConcurrentCycleStats(double cycle_duration_s,
                          size_t non_humongous_allocated_bytes,
-                         size_t peak_extra_humongous_reserve_bytes)
+                         size_t peak_extra_humongous_occupancy_bytes)
   : _cycle_duration_s(cycle_duration_s),
     _non_humongous_allocated_bytes(non_humongous_allocated_bytes),
-    _peak_extra_humongous_reserve_bytes(peak_extra_humongous_reserve_bytes)
+    _peak_extra_humongous_occupancy_bytes(peak_extra_humongous_occupancy_bytes)
   { }
 };
 
@@ -66,7 +66,7 @@ class G1ConcurrentCycleTracker {
   // allocation accounting
   size_t _humongous_bytes_at_start;
   size_t _non_humongous_allocated_bytes;
-  intptr_t _peak_extra_humongous_reserve_bytes;
+  size_t _peak_extra_humongous_occupancy_bytes;
 
   void reset();
 
@@ -83,14 +83,6 @@ class G1ConcurrentCycleTracker {
 
   void complete_cycle(double cycle_end_time_s);
 
-  size_t non_humongous_allocated_bytes() const {
-    return _non_humongous_allocated_bytes;
-  }
-
-  size_t peak_extra_humongous_reserve_bytes() const {
-    return checked_cast<size_t>(_peak_extra_humongous_reserve_bytes);
-  }
-
  public:
   G1ConcurrentCycleTracker();
 
@@ -106,6 +98,14 @@ class G1ConcurrentCycleTracker {
 
   bool has_completed_cycle() const {
     return _state == CycleState::Complete;
+  }
+
+  size_t non_humongous_allocated_bytes() const {
+    return _non_humongous_allocated_bytes;
+  }
+
+  size_t peak_extra_humongous_occupancy_bytes() const {
+    return _peak_extra_humongous_occupancy_bytes;
   }
 
   G1ConcurrentCycleStats get_and_reset_cycle_stats();
