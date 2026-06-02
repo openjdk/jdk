@@ -259,7 +259,12 @@ void ShenandoahHeuristics::record_success_concurrent() {
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_degenerated() {
+void ShenandoahHeuristics::record_degenerated(bool is_out_of_cycle, bool is_generational_global) {
+
+  if (!is_out_of_cycle || !is_generational_global) {
+    _most_recent_declined_trigger_count = _declined_trigger_count;
+    _declined_trigger_count = 0;
+  }
   adjust_penalty(Degenerated_Penalty);
 }
 

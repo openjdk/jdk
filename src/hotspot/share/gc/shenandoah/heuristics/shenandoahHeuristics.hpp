@@ -194,6 +194,10 @@ protected:
 
   virtual void adjust_penalty(intx step);
 
+  inline void accept_trigger() {
+    _start_gc_is_pending = true;
+  }
+
   inline void decline_trigger() {
     _declined_trigger_count++;
   }
@@ -209,12 +213,6 @@ protected:
 public:
   ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
-
-  inline void accept_trigger() {
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
-    _start_gc_is_pending = true;
-  }
 
   void record_metaspace_oom()     { _metaspace_oom.set(); }
   void clear_metaspace_oom()      { _metaspace_oom.unset(); }
@@ -254,7 +252,7 @@ public:
 
   virtual void record_success_concurrent();
 
-  virtual void record_degenerated();
+  virtual void record_degenerated(bool is_out_of_cycle, bool is_generational_global);
 
   virtual void record_success_full();
 
