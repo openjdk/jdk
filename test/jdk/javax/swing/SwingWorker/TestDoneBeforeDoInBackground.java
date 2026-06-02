@@ -43,13 +43,15 @@ public class TestDoneBeforeDoInBackground {
     private static final AtomicBoolean doInBackgroundFinished = new AtomicBoolean(false);
     private static final AtomicBoolean doneFinished = new AtomicBoolean(false);
     private static final CountDownLatch doneLatch = new CountDownLatch(1);
+    private static final CountDownLatch workerStarted = new CountDownLatch(1);
 
     public static void main(String[] args) throws InterruptedException {
         SwingWorker<String, String> worker = new SwingWorker<>() {
             @Override
             protected String doInBackground() throws Exception {
                 try {
-                    while (!Thread.currentThread().isInterrupted()) {
+                    while (true) {
+                        workerStarted.countDown();
                         System.out.println("Working...");
                         Thread.sleep(WAIT_TIME);
                     }
@@ -121,7 +123,7 @@ public class TestDoneBeforeDoInBackground {
                 }
             });
         worker.execute();
-        Thread.sleep(WAIT_TIME * 3);
+        workerStarted.await();
 
         final long start = System.currentTimeMillis();
         worker.cancel(true);
