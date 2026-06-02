@@ -236,7 +236,7 @@ public class Compliance {
         var c1x = c1.exportKey("AES", new byte[1], 32).getEncoded();
         var c1d = c1.exportData(new byte[1], 32);
         Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("AES", new byte[1], -1));
-        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("AES", null, -1));
+        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("AES", null, 32));
         Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("", new byte[1], 32));
         Asserts.assertThrows(NullPointerException.class, () -> c1.exportKey(null, new byte[1], 32));
         Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportData(new byte[1], -1));

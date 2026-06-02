@@ -964,10 +964,10 @@ public abstract class CipherSpi {
      * material can be securely derived from the existing encryption or
      * decryption state.
      *
-     * <p>This method guarantees that an encryption cipher and a decryption
-     * cipher, if initialized with the same symmetric key or a matching
-     * asymmetric key pair and equivalent parameters, will produce identical
-     * derived keys when the same arguments are provided.
+     * <p>An implementation that supports this method must guarantee that an
+     * encryption cipher and a decryption cipher, if initialized with the same
+     * symmetric key or a matching asymmetric key pair and equivalent parameters,
+     * will produce identical derived keys when the same arguments are provided.
      *
      * @param algorithm the algorithm of the derived key
      * @param context a byte array representing additional data or context
@@ -988,7 +988,7 @@ public abstract class CipherSpi {
      * @implSpec The default implementation throws an
      * {@code UnsupportedOperationException}.
      *
-     * @since 27
+     * @since 28
      */
     protected SecretKey engineExportKey(String algorithm, byte[] context, int length) {
         throw new UnsupportedOperationException(
@@ -1005,10 +1005,10 @@ public abstract class CipherSpi {
      * can be securely derived from the existing encryption or
      * decryption state.
      *
-     * <p>This method guarantees that an encryption cipher and a decryption
-     * cipher, if initialized with the same symmetric key or a matching
-     * asymmetric key pair and equivalent parameters, will produce identical
-     * derived data when the same arguments are provided.
+     * <p>An implementation that supports this method must guarantee that an
+     * encryption cipher and a decryption cipher, if initialized with the same
+     * symmetric key or a matching asymmetric key pair and equivalent parameters,
+     * will produce identical derived data when the same arguments are provided.
      *
      * @param context a byte array representing additional data or context
      *          information that influences the data derivation process.
@@ -1029,7 +1029,7 @@ public abstract class CipherSpi {
      * @implSpec The default implementation throws an
      * {@code UnsupportedOperationException}.
      *
-     * @since 27
+     * @since 28
      */
     protected byte[] engineExportData(byte[] context, int length) {
         throw new UnsupportedOperationException(

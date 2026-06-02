@@ -47,7 +47,7 @@ public class Export {
 
     public static Provider PROVIDER = new Provider("X", "X", "X") {{
         put("Cipher.X", CipherImpl.class.getName());
-        put("Cipher.NX", CipherImplNoEx.class.getName());
+        put("Cipher.ND", CipherImplNoData.class.getName());
     }};
 
     public static void main(String[] args) throws Exception {
@@ -68,6 +68,8 @@ public class Export {
         // Cipher not initialized
         Asserts.assertThrows(IllegalStateException.class,
                 () -> c1.exportKey("X", s2b("one"), 32));
+        Asserts.assertThrows(IllegalStateException.class,
+                () -> c1.exportData(s2b("one"), 32));
 
         c1.init(Cipher.ENCRYPT_MODE, key);
 
@@ -108,12 +110,17 @@ public class Export {
         byte[] d3 = c3.exportData(s2b("one"), 32);
         Asserts.assertNotEqualsByteArray(d1, d3);
 
-        // NX cipher
-        Cipher c4 = Cipher.getInstance("NX", PROVIDER);
+        // Not in ENCRYPT_MODE or DECRYPT_MODE
+        c3.init(Cipher.UNWRAP_MODE, new SecretKeySpec(s2b("another"), "X"));
+        Asserts.assertThrows(IllegalStateException.class,
+                () -> c3.exportData(s2b("one"), 32));
+
+        // ND cipher
+        Cipher c4 = Cipher.getInstance("ND", PROVIDER);
         c4.init(Cipher.ENCRYPT_MODE, key);
         c4.exportKey("X", s2b("one"), 32);
 
-        // NX does not support exportData
+        // ND does not support exportData
         Asserts.assertThrows(UnsupportedOperationException.class,
                 () -> c4.exportData(s2b("one"), 32));
     }
@@ -160,7 +167,7 @@ public class Export {
         }
     }
 
-    public static class CipherImplNoEx extends CipherImpl {
+    public static class CipherImplNoData extends CipherImpl {
         @Override
         protected byte[] engineExportData(byte[] context, int length) {
             throw new UnsupportedOperationException("Not supported");

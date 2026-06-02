@@ -2609,7 +2609,7 @@ public class Cipher {
      *          state (e.g., has not been initialized)
      * @throws NullPointerException if {@code algorithm} is {@code null}
      *
-     * @since 27
+     * @since 28
      */
     public SecretKey exportKey(String algorithm, byte[] context, int length) {
         checkCipherState();
@@ -2653,7 +2653,7 @@ public class Cipher {
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      *          state (e.g., has not been initialized)
      *
-     * @since 27
+     * @since 28
      */
     public byte[] exportData(byte[] context, int length) {
         checkCipherState();
