@@ -252,7 +252,7 @@ public:
 
   virtual void record_success_concurrent();
 
-  virtual void record_degenerated(bool is_out_of_cycle, bool is_generational_global);
+  virtual void record_degenerated(bool is_generational_global);
 
   virtual void record_success_full();
 
