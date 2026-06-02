@@ -174,6 +174,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
   if (is_late_inline() && !call->is_boxing_method() && ret->is_Proj()) {
+    // If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
     assert(ret->is_dead_loop_safe(), "shouldn't be cleared yet");
     ret->mark_not_dead_loop_safe();
   }
@@ -276,6 +277,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   kit.set_edges_for_java_call(call, false /*must_throw*/, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
   if (is_late_inline() && ret->is_Proj()) {
+    // If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
     assert(ret->is_dead_loop_safe(), "shouldn't be cleared yet");
     ret->mark_not_dead_loop_safe();
   }

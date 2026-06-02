@@ -25,9 +25,9 @@
  * @test
  * @bug 8375694
  * @summary C2: Dead loop constructed with CastPP in late inlining
- * @requires vm.debug
  * @run main ${test.main.class}
- * @run main/othervm -XX:+AlwaysIncrementalInline -XX:CompileOnly=${test.main.class}::test* -Xcomp ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                   -XX:CompileOnly=${test.main.class}::test* -Xcomp ${test.main.class}
  */
 
 package compiler.c2;
@@ -39,7 +39,6 @@ public class TestDeadLoopLateInlining {
     private static B fieldB = new B();
 
     public static void main(String[] args) {
-        Object o = new Object();
         test1(0, true);
         test2(0, 0, true);
     }
