@@ -109,7 +109,7 @@ public class ML_KEM_Test {
                             if (c.get("testPassed").asBoolean()) {
                                 g.newEncapsulator(ek);
                             } else {
-                                Asserts.assertThrows(Exception.class, () -> g.newEncapsulator(ek));
+                                Asserts.assertThrows(InvalidKeyException.class, () -> g.newEncapsulator(ek));
                             }
                         }
                     }
@@ -127,14 +127,14 @@ public class ML_KEM_Test {
                             if (c.get("testPassed").asBoolean()) {
                                 g.newDecapsulator(dk);
                             } else {
-                                Asserts.assertThrows(Exception.class, () -> g.newDecapsulator(dk));
+                                Asserts.assertThrows(InvalidKeyException.class, () -> g.newDecapsulator(dk));
                             }
                         }
                     }
                     default -> throw new UnsupportedOperationException("Unknown function: " + function);
                 }
-                System.out.println();
             }
+            System.out.println();
         }
     }
 
