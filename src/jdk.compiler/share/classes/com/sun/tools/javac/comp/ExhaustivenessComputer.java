@@ -407,18 +407,14 @@ public class ExhaustivenessComputer {
         Set<ClassSymbol> permitted = new LinkedHashSet<>();
 
         for (ClassSymbol base : baseClasses(root)) {
-            if (base.isSealed()) {
-                Set<ClassSymbol> direct = closesAccessiblePermittedSubtypes(accept, base);
+            Set<ClassSymbol> direct = closesAccessiblePermittedSubtypes(accept, base);
 
-                if (direct == null) {
-                    permitted.add(base);
-                } else {
-                    for (ClassSymbol permittedSubtype : direct) {
-                        permitted.addAll(accessibleLeafPermittedSubTypes(permittedSubtype, accept));
-                    }
-                }
-            } else {
+            if (direct == null) {
                 permitted.add(base);
+            } else {
+                for (ClassSymbol permittedSubtype : direct) {
+                    permitted.addAll(accessibleLeafPermittedSubTypes(permittedSubtype, accept));
+                }
             }
         }
 
@@ -902,8 +898,7 @@ public class ExhaustivenessComputer {
                                                                        Set<? extends PatternDescription> basePatterns,
                                                                        Set<PatternDescription> inMissingPatterns) {
         if (toExpand instanceof BindingPattern bp) {
-            if (bp.type.tsym.isSealed() &&
-                closesAccessiblePermittedSubtypes(isApplicableSubtypePredicate(bp.type),
+            if (closesAccessiblePermittedSubtypes(isApplicableSubtypePredicate(bp.type),
                                                   (ClassSymbol) bp.type.tsym) instanceof Set<ClassSymbol> closesAccessiblePermittedSubtypes) {
                 //try to replace binding patterns for sealed types with all their immediate permitted applicable types:
                 Set<PatternDescription> applicableDirectPermittedPatterns =
@@ -945,10 +940,10 @@ public class ExhaustivenessComputer {
                 for (Type componentType : componentTypes) {
                     List<Type> applicableLeafPermittedSubtypes;
 
-                    if (componentType.tsym.isSealed()) {
+                    if (componentType.tsym.isSealed() && componentType.tsym.isAbstract()) {
                         applicableLeafPermittedSubtypes =
                                 accessibleLeafPermittedSubTypes(componentType.tsym,
-                                                      isApplicableSubtypePredicate(componentType))
+                                                                isApplicableSubtypePredicate(componentType))
                                     .stream()
                                     .map(csym -> instantiatePatternType(componentType, csym))
                                     .collect(List.collector());
@@ -1027,7 +1022,7 @@ public class ExhaustivenessComputer {
      * permitted subtypes).
      */
     private Set<ClassSymbol> closesAccessiblePermittedSubtypes(Predicate<TypeSymbol> filter, ClassSymbol forClass) {
-        if (!forClass.isSealed()) {
+        if (!forClass.isSealed() || !forClass.isAbstract()) {
             return null;
         }
 

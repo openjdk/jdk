@@ -35,6 +35,7 @@
 
 import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,6 +44,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.tools.Diagnostic;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -549,7 +551,8 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "Lib.Base _");
+               "Lib.Base _",
+               "or.use.default");
     }
 
     @Test
@@ -721,7 +724,8 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "Lib.Base _");
+               "Lib.Base _",
+               "or.use.default");
     }
 
     @Test
@@ -777,6 +781,55 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "Test.Box(Lib.Rec _)");
     }
 
+    @Test
+    public void testInaccessiblePermittedType11(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface I permits A, B, X { }
+                   public static final class A implements I { }
+                   public static final class B implements I { }
+                   private static final class X implements I { }
+               }
+               public class Test {
+                   sealed interface Op permits NoOp, IOp {}
+                   record NoOp() implements Op {}
+                   record IOp(Lib.I i) implements Op {}
+               
+                   private void t(Op op) {
+                       switch (op) {
+                           case NoOp() -> {}
+                           case IOp(Lib.A a) -> {}
+                           case IOp(Lib.B b) -> {}
+//                         //IOp(X) missing, but cannot be used here
+                       }
+                   }
+                              }
+               """,
+               "Test.Box(Lib.Intermediate3 _)");
+    }
+
+    @Test
+    public void testNonAbstract(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed class Sealed {}
+                   final class Impl extends Sealed {}
+                   record Rec(Sealed s) {}
+
+                   int t(Rec r) {
+                       return switch (r) {
+                           case Rec(Impl _) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.Rec(Test.Sealed _)");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
@@ -812,17 +865,26 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                      "-XDexhaustivityMaxBaseChecks=" + Long.MAX_VALUE) //never give up
             .outdir(classes)
             .files(tb.findJavaFiles(src))
-            .diagnosticListener(d -> {
+            .diagnosticListener((Diagnostic<?> d) -> {
                 if ("compiler.err.not.exhaustive.details".equals(d.getCode()) ||
-                    "compiler.err.not.exhaustive.statement.details".equals(d.getCode())) {
+                    "compiler.err.not.exhaustive.statement.details".equals(d.getCode()) ||
+                    "compiler.err.not.exhaustive.details.use.default".equals(d.getCode()) ||
+                    "compiler.err.not.exhaustive.statement.details.use.default".equals(d.getCode())) {
+                    boolean useDefault = d.getCode().endsWith(".use.default");
                     if (d instanceof DiagnosticSourceUnwrapper uw) {
                         d = uw.d;
+                    }
+                    if (d instanceof JCDiagnostic diag) {
+                        d = (Diagnostic<?>) diag.getArgs()[0];
                     }
                     if (d instanceof JCDiagnostic.MultilineDiagnostic diag) {
                         diag.getSubdiagnostics()
                                 .stream()
                                 .map(fragment -> fragment.toString())
                                 .forEach(missingPatterns::add);
+                    }
+                    if (useDefault) {
+                        missingPatterns.add("or.use.default");
                     }
                 }
             })
