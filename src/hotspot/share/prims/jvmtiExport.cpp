@@ -2269,6 +2269,9 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::skip);
   javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+  assert(jvf != nullptr, "last frame shouldn't be null");
+  assert(jvf->fr().is_java_frame(), "last frame should be a java frame");
+
   Method* method = jvf->method();
   address address = jvf->method()->code_base();
 
@@ -2367,6 +2370,9 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::skip);
   javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+  assert(jvf != nullptr, "last frame shouldn't be null");
+  assert(jvf->fr().is_java_frame(), "last frame should be a java frame");
+
   Method* method = jvf->method();
   address address = jvf->method()->code_base();
 
