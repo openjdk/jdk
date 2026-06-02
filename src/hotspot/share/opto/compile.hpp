@@ -80,6 +80,7 @@ class PhaseIterGVN;
 class PhaseRegAlloc;
 class PhaseCCP;
 class PhaseOutput;
+class ReachabilityFenceNode;
 class RootNode;
 class relocInfo;
 class StartNode;
@@ -107,7 +108,8 @@ enum LoopOptsMode {
   LoopOptsMaxUnroll,
   LoopOptsShenandoahExpand,
   LoopOptsSkipSplitIf,
-  LoopOptsVerify
+  LoopOptsVerify,
+  PostLoopOptsExpandReachabilityFences
 };
 
 // The type of all node counts and indexes.
@@ -317,6 +319,7 @@ class Compile : public Phase {
   int                   _fixed_slots;           // count of frame slots not allocated by the register
                                                 // allocator i.e. locks, original deopt pc, etc.
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
+  uint             _node_count_inlining_cutoff; // Number of nodes in the graph above which inlining is denied
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
@@ -385,6 +388,7 @@ class Compile : public Phase {
   // of Template Assertion Predicates themselves.
   GrowableArray<OpaqueTemplateAssertionPredicateNode*>  _template_assertion_predicate_opaques;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
+  GrowableArray<ReachabilityFenceNode*> _reachability_fences; // List of reachability fences
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
@@ -596,11 +600,11 @@ public:
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
-  int               inlining_progress() const   { return _inlining_progress; }
+  bool              inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
-  int               inlining_incrementally() const { return _inlining_incrementally; }
+  bool              inlining_incrementally() const { return _inlining_incrementally; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
-  int               do_cleanup() const          { return _do_cleanup; }
+  bool              do_cleanup() const          { return _do_cleanup; }
   bool              major_progress() const      { return _major_progress; }
   void          set_major_progress()            { _major_progress = true; }
   void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
@@ -651,6 +655,8 @@ public:
   void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
   uint              max_node_limit() const       { return (uint)_max_node_limit; }
   void          set_max_node_limit(uint n)       { _max_node_limit = n; }
+  uint           node_count_inlining_cutoff() const { return _node_count_inlining_cutoff; }
+  void       set_node_count_inlining_cutoff(uint n) { _node_count_inlining_cutoff = n; }
   bool              clinit_barrier_on_entry()       { return _clinit_barrier_on_entry; }
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
   bool              has_monitors() const         { return _has_monitors; }
@@ -714,10 +720,12 @@ public:
   int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaques.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
-
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
 
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
+
+  ReachabilityFenceNode* reachability_fence(int idx) const { return _reachability_fences.at(idx); }
+  int                    reachability_fences_count() const { return _reachability_fences.length(); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
@@ -738,6 +746,14 @@ public:
   void add_expensive_node(Node* n);
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);
+  }
+
+  void add_reachability_fence(ReachabilityFenceNode* rf) {
+    _reachability_fences.append(rf);
+  }
+
+  void remove_reachability_fence(ReachabilityFenceNode* n) {
+    _reachability_fences.remove_if_existing(n);
   }
 
   void add_parse_predicate(ParsePredicateNode* n) {
@@ -795,6 +811,7 @@ public:
   void remove_from_merge_stores_igvn(Node* n);
   void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
 
+  void shuffle_late_inlines();
   void shuffle_macro_nodes();
   void sort_macro_nodes();
 
@@ -990,6 +1007,7 @@ public:
            should_delay_boxing_inlining(call_method, jvms) ||
            should_delay_vector_inlining(call_method, jvms);
   }
+  bool should_delay_after_inlining_cutoff(ciMethod* callee, ciMethod* caller);
   bool should_delay_string_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms);
@@ -1059,6 +1077,13 @@ public:
   // Record this CallGenerator for inlining at the end of parsing.
   void              add_late_inline(CallGenerator* cg)        {
     _late_inlines.insert_before(_late_inlines_pos, cg);
+    if (StressIncrementalInlining) {
+      assert(_late_inlines_pos < _late_inlines.length(), "unthinkable!");
+      if (_late_inlines.length() - _late_inlines_pos >= 2) {
+        int j = (C->random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
+        swap(_late_inlines.at(_late_inlines_pos), _late_inlines.at(j));
+      }
+    }
     _late_inlines_pos++;
   }
 
@@ -1096,7 +1121,7 @@ public:
       // and avoid thrashing when live node count is close to the limit.
       // Keep in mind that live_nodes() isn't accurate during inlining until
       // dead node elimination step happens (see Compile::inline_incrementally).
-      return live_nodes() > (uint)LiveNodeCountInliningCutoff * 11 / 10;
+      return live_nodes() > node_count_inlining_cutoff() * 11 / 10;
     }
   }
 
@@ -1291,6 +1316,9 @@ public:
 
   // Definitions of pd methods
   static void pd_compiler2_init();
+
+  // Materialize reachability fences from reachability edges on safepoints.
+  void expand_reachability_edges(Unique_Node_List& safepoints);
 
   // Static parse-time type checking logic for gen_subtype_check:
   enum SubTypeCheckResult { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };

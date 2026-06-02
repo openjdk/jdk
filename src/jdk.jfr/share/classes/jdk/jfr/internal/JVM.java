@@ -658,6 +658,12 @@ public final class JVM {
     public static native long hostTotalSwapMemory();
 
     /**
+     * Returns the amount of memory used in the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostMemoryUsage();
+
+    /**
      * Emit a jdk.DataLoss event for the specified amount of bytes.
      *
      * @param bytes number of bytes that were lost

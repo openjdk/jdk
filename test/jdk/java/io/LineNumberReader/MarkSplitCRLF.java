@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8218280
  * @summary Make sure marking a line feed within a CRLF sequence works correctly
- * @run testng MarkSplitCRLF
+ * @run junit MarkSplitCRLF
  */
 
 import java.io.IOException;
@@ -32,13 +32,13 @@ import java.io.LineNumberReader;
 import java.io.Reader;
 import java.io.StringReader;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MarkSplitCRLF {
     @Test
-    public static void testSpecifiedBufferSize() throws IOException {
+    public void testSpecifiedBufferSize() throws IOException {
         final String string = "foo\r\nbar";
         try (Reader reader =
             new LineNumberReader(new StringReader(string), 5)) {
@@ -56,7 +56,7 @@ public class MarkSplitCRLF {
     }
 
     @Test
-    public static void testCRNotFollowedByLF() throws IOException {
+    public void testCRNotFollowedByLF() throws IOException {
         final String string = "foo\rbar";
         try (Reader reader =
             new LineNumberReader(new StringReader(string), 5)) {
@@ -74,7 +74,7 @@ public class MarkSplitCRLF {
     }
 
     @Test
-    public static void testDefaultBufferSize() throws IOException {
+    public void testDefaultBufferSize() throws IOException {
         StringBuilder sb = new StringBuilder(8195);
         for (int i = 0; i < 8190; i++) {
             char c = (char)i;

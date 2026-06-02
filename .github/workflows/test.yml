@@ -128,7 +128,7 @@ jobs:
 
     steps:
       - name: 'Checkout the JDK source'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
@@ -239,7 +239,7 @@ jobs:
         if: always()
 
       - name: 'Upload test results'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           path: results
           name: ${{ steps.package.outputs.artifact-name }}
@@ -247,7 +247,7 @@ jobs:
 
         # This is the best way I found to abort the job with an error message
       - name: 'Notify about test failures'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
         if: steps.run-tests.outputs.failure == 'true'

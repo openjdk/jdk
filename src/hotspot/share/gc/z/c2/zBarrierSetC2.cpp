@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,7 +442,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       assert(src_offset == dest_offset, "should be equal");
       const jlong offset = src_offset->get_long();
       if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
-        assert(!UseCompressedClassPointers || UseCompactObjectHeaders, "should only happen without compressed class pointers");
+        assert(UseCompactObjectHeaders, "should only happen with COH");
         assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
         length = phase->transform_later(new SubLNode(length, phase->longcon(1))); // Size is in longs
         src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));

@@ -100,11 +100,6 @@ size_t ShenandoahYoungGeneration::used() const {
   return _free_set->young_used();
 }
 
-size_t ShenandoahYoungGeneration::bytes_allocated_since_gc_start() const {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "Young implies generational");
-  return _free_set->get_bytes_allocated_since_gc_start();
-}
-
 size_t ShenandoahYoungGeneration::get_affiliated_region_count() const {
   return _free_set->young_affiliated_regions();
 }
@@ -129,6 +124,14 @@ size_t ShenandoahYoungGeneration::max_capacity() const {
 
 size_t ShenandoahYoungGeneration::free_unaffiliated_regions() const {
   return _free_set->young_unaffiliated_regions();
+}
+
+size_t ShenandoahYoungGeneration::available_with_reserve() const {
+  shenandoah_assert_heaplocked();
+  ShenandoahFreeSet* free_set = ShenandoahHeap::heap()->free_set();
+  size_t mutator_available = free_set->available_locked();
+  size_t collector_available = free_set->collector_available_locked();
+  return mutator_available + collector_available;
 }
 
 size_t ShenandoahYoungGeneration::available() const {

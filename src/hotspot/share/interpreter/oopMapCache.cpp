@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,14 +78,10 @@ class OopMapForCacheEntry: public GenerateOopMap {
   int               _stack_top;
 
   virtual bool report_results() const     { return false; }
-  virtual bool possible_gc_point          (BytecodeStream *bcs);
-  virtual void fill_stackmap_prolog       (int nof_gc_points);
-  virtual void fill_stackmap_epilog       ();
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stack_top);
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars);
 
  public:
   OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry *entry);
@@ -96,11 +92,8 @@ class OopMapForCacheEntry: public GenerateOopMap {
 };
 
 
-OopMapForCacheEntry::OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry* entry) : GenerateOopMap(method) {
-  _bci       = bci;
-  _entry     = entry;
-  _stack_top = -1;
-}
+OopMapForCacheEntry::OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry* entry) :
+  GenerateOopMap(method, /*all_exception_edges*/ true), _entry(entry), _bci(bci), _stack_top(-1) { }
 
 
 bool OopMapForCacheEntry::compute_map(Thread* current) {
@@ -111,32 +104,17 @@ bool OopMapForCacheEntry::compute_map(Thread* current) {
   } else {
     ResourceMark rm;
     if (!GenerateOopMap::compute_map(current)) {
+      // If compute_map fails, print the exception message, which is generated if
+      // this is a JavaThread, otherwise compute_map calls fatal so we don't get here.
+      if (exception() != nullptr) {
+        exception()->print();
+      }
       fatal("Unrecoverable verification or out-of-memory error");
       return false;
     }
     result_for_basicblock(_bci);
   }
   return true;
-}
-
-
-bool OopMapForCacheEntry::possible_gc_point(BytecodeStream *bcs) {
-  return false; // We are not reporting any result. We call result_for_basicblock directly
-}
-
-
-void OopMapForCacheEntry::fill_stackmap_prolog(int nof_gc_points) {
-  // Do nothing
-}
-
-
-void OopMapForCacheEntry::fill_stackmap_epilog() {
-  // Do nothing
-}
-
-
-void OopMapForCacheEntry::fill_init_vars(GrowableArray<intptr_t> *init_vars) {
-  // Do nothing
 }
 
 
@@ -178,7 +156,7 @@ InterpreterOopMap::InterpreterOopMap() {
 InterpreterOopMap::~InterpreterOopMap() {
   if (has_valid_mask() && mask_size() > small_mask_limit) {
     assert(_bit_mask[0] != 0, "should have pointer to C heap");
-    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
+    FREE_C_HEAP_ARRAY((uintptr_t*)_bit_mask[0]);
   }
 }
 
@@ -280,8 +258,8 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
 
   if (log) st.print("Locals (%d): ", max_locals);
   for(int i = 0; i < max_locals; i++) {
-    bool v1 = is_oop(i)               ? true : false;
-    bool v2 = vars[i].is_reference()  ? true : false;
+    bool v1 = is_oop(i);
+    bool v2 = vars[i].is_reference();
     assert(v1 == v2, "locals oop mask generation error");
     if (log) st.print("%d", v1 ? 1 : 0);
   }
@@ -289,8 +267,8 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
 
   if (log) st.print("Stack (%d): ", stack_top);
   for(int j = 0; j < stack_top; j++) {
-    bool v1 = is_oop(max_locals + j)  ? true : false;
-    bool v2 = stack[j].is_reference() ? true : false;
+    bool v1 = is_oop(max_locals + j);
+    bool v2 = stack[j].is_reference();
     assert(v1 == v2, "stack oop mask generation error");
     if (log) st.print("%d", v1 ? 1 : 0);
   }
@@ -310,7 +288,7 @@ void OopMapCacheEntry::deallocate_bit_mask() {
   if (mask_size() > small_mask_limit && _bit_mask[0] != 0) {
     assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
       "This bit mask should not be in the resource area");
-    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
+    FREE_C_HEAP_ARRAY((uintptr_t*)_bit_mask[0]);
     DEBUG_ONLY(_bit_mask[0] = 0;)
   }
 }
@@ -339,6 +317,9 @@ void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
   } else {
     OopMapForCacheEntry gen(method, bci, this);
     if (!gen.compute_map(Thread::current())) {
+      if (gen.exception() != nullptr) {
+        gen.exception()->print();
+      }
       fatal("Unrecoverable verification or out-of-memory error");
     }
   }
@@ -374,7 +355,7 @@ void OopMapCacheEntry::set_mask(CellTypeState *vars, CellTypeState *stack, int s
     }
 
     // set oop bit
-    if ( cell->is_reference()) {
+    if (cell->is_reference()) {
       value |= (mask << oop_bit_number );
       _num_oops++;
     }

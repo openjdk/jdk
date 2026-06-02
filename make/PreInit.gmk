@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,8 @@ CALLED_SPEC_TARGETS := $(filter-out $(ALL_GLOBAL_TARGETS), $(CALLED_TARGETS))
 ifeq ($(CALLED_SPEC_TARGETS), )
   SKIP_SPEC := true
 endif
-ifeq ($(findstring p, $(MAKEFLAGS))$(findstring q, $(MAKEFLAGS)), pq)
+MFLAGS_SINGLE := $(filter-out --%, $(MFLAGS))
+ifeq ($(findstring p, $(MFLAGS_SINGLE))$(findstring q, $(MFLAGS_SINGLE)), pq)
   SKIP_SPEC := true
 endif
 

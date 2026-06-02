@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,21 @@
 
 package javax.xml.transform.ptests;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
-import org.testng.annotations.Test;
-import org.xml.sax.InputSource;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 /**
@@ -47,7 +46,7 @@ import org.xml.sax.InputSource;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.transform.ptests.SAXSourceTest
+ * @run junit/othervm javax.xml.transform.ptests.SAXSourceTest
  */
 public class SAXSourceTest {
     /**
@@ -57,8 +56,6 @@ public class SAXSourceTest {
 
     /**
      * Test obtaining a SAX InputSource object from a Source object.
-     *
-     * @throws IOException reading file error.
      */
     @Test
     public void source2inputsource01() throws IOException {
@@ -72,8 +69,6 @@ public class SAXSourceTest {
      * This test case tries to get InputSource from DOMSource using
      * sourceToInputSource method. It is not possible and hence null is
      * expected. This is a negative test case,
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void source2inputsource02() throws Exception {
@@ -87,8 +82,6 @@ public class SAXSourceTest {
      * This test case tries to get InputSource from SAXSource using
      * sourceToInputSource method. This will also check if the systemId
      * remained the same. This is a positive test case.
-     *
-     * @throws IOException reading file error.
      */
     @Test
     public void source2inputsource03() throws IOException {
@@ -97,8 +90,7 @@ public class SAXSourceTest {
             SAXSource saxSource =
                     new SAXSource(new InputSource(fis));
             saxSource.setSystemId(SYSTEM_ID);
-            assertEquals(SAXSource.sourceToInputSource(saxSource).getSystemId(),
-                    SYSTEM_ID);
+            assertEquals(SYSTEM_ID, SAXSource.sourceToInputSource(saxSource).getSystemId());
         }
     }
 }

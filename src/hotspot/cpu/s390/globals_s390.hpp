@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,7 @@ define_pd_global(size_t, CodeCacheSegmentSize,       256);
 // Ideally, this is 256 (cache line size). This keeps code end data
 // on separate lines. But we reduced it to 64 since 256 increased
 // code size significantly by padding nops between IVC and second UEP.
-define_pd_global(intx,  CodeEntryAlignment,          64);
+define_pd_global(uint,  CodeEntryAlignment,          64);
 define_pd_global(intx,  OptoLoopAlignment,           2);
 define_pd_global(intx,  InlineSmallCode,             2000);
 

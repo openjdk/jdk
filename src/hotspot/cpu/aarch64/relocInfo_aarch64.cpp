@@ -54,7 +54,12 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     bytes = MacroAssembler::pd_patch_instruction_size(addr(), x);
     break;
   }
-  ICache::invalidate_range(addr(), bytes);
+
+  if (UseSingleICacheInvalidation) {
+    assert(_binding != nullptr, "expect to be called with RelocIterator in use");
+  } else {
+    ICache::invalidate_range(addr(), bytes);
+  }
 }
 
 address Relocation::pd_call_destination(address orig_addr) {

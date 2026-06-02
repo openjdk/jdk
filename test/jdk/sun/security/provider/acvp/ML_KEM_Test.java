@@ -61,12 +61,12 @@ public class ML_KEM_Test {
         var f = p == null
                 ? KeyFactory.getInstance("ML-KEM")
                 : KeyFactory.getInstance("ML-KEM", p);
-        for (var t : kat.get("testGroups").asArray()) {
+        for (var t : kat.get("testGroups").elements()) {
             var pname = t.get("parameterSet").asString();
             var np = genParams(pname);
             System.out.println(">> " + pname);
-            for (var c : t.get("tests").asArray()) {
-                System.out.print(c.get("tcId").asString() + " ");
+            for (var c : t.get("tests").elements()) {
+                System.out.print(c.get("tcId").asInt() + " ");
                 var seed = toByteArray(c.get("d").asString() + c.get("z").asString());
                 g.initialize(np, new FixedSecureRandom(seed));
                 var kp = g.generateKeyPair();
@@ -84,12 +84,12 @@ public class ML_KEM_Test {
         var g = p == null
                 ? KEM.getInstance("ML-KEM")
                 : KEM.getInstance("ML-KEM", p);
-        for (var t : kat.get("testGroups").asArray()) {
+        for (var t : kat.get("testGroups").elements()) {
             var pname = t.get("parameterSet").asString();
             var function = t.get("function").asString();
             System.out.println(">> " + pname + " " + function);
-            for (var c : t.get("tests").asArray()) {
-                System.out.print(c.get("tcId").asString() + " ");
+            for (var c : t.get("tests").elements()) {
+                System.out.print(c.get("tcId").asInt() + " ");
                 switch (function) {
                     case "encapsulation", "encapsulationKeyCheck" -> {
                         var ek = new PublicKey() {
@@ -106,7 +106,7 @@ public class ML_KEM_Test {
                             Asserts.assertEqualsByteArray(
                                     toByteArray(c.get("k").asString()), enc.key().getEncoded());
                         } else {
-                            if (c.get("testPassed").asString().equals("true")) {
+                            if (c.get("testPassed").asBoolean()) {
                                 g.newEncapsulator(ek);
                             } else {
                                 Asserts.assertThrows(Exception.class, () -> g.newEncapsulator(ek));
@@ -124,7 +124,7 @@ public class ML_KEM_Test {
                             var k = d.decapsulate(toByteArray(c.get("c").asString()));
                             Asserts.assertEqualsByteArray(toByteArray(c.get("k").asString()), k.getEncoded());
                         } else {
-                            if (c.get("testPassed").asString().equals("true")) {
+                            if (c.get("testPassed").asBoolean()) {
                                 g.newDecapsulator(dk);
                             } else {
                                 Asserts.assertThrows(Exception.class, () -> g.newDecapsulator(dk));
@@ -133,9 +133,9 @@ public class ML_KEM_Test {
                     }
                     default -> throw new UnsupportedOperationException("Unknown function: " + function);
                 }
+                System.out.println();
             }
         }
-        System.out.println();
     }
 
     static byte[] oct(byte[] in) {

@@ -152,9 +152,12 @@ bool PhaseCFG::is_CFG(Node* n) {
 }
 
 bool PhaseCFG::is_control_proj_or_safepoint(Node* n) const {
-  bool result = (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) || (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
-  assert(!result || (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint)
-          || (n->is_Proj() && n->as_Proj()->_con == 0), "If control projection, it must be projection 0");
+  bool result = n->is_ReachabilityFence() ||
+                (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) ||
+                (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
+  assert(!n->is_Proj() ||
+         n->as_Proj()->bottom_type() != Type::CONTROL ||
+         n->as_Proj()->_con == 0, "If control projection, it must be projection 0");
   return result;
 }
 
@@ -592,7 +595,7 @@ private:
   };
 
   GrowableArray<DefUsePair> _queue;
-  GrowableArray<MergeMemNode*> _worklist_visited; // visited mergemem nodes
+  Unique_Node_List _worklist_visited; // visited mergemem nodes
 
   bool already_enqueued(Node* def_mem, PhiNode* use_phi) const {
     // def_mem is one of the inputs of use_phi and at least one input of use_phi is
@@ -632,9 +635,11 @@ public:
   void push(Node* def_mem_state, Node* use_mem_state) {
     if (use_mem_state->is_MergeMem()) {
       // Be sure we don't get into combinatorial problems.
-      if (!_worklist_visited.append_if_missing(use_mem_state->as_MergeMem())) {
-        return; // already on work list; do not repeat
+      if (_worklist_visited.member(use_mem_state)) {
+        // already on work list; do not repeat
+        return;
       }
+      _worklist_visited.push(use_mem_state);
     } else if (use_mem_state->is_Phi()) {
       // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
       // more than once. We otherwise allow phis to be repeated; they can merge two relevant states.
@@ -1740,6 +1745,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       // are needed make sure that after placement in a block we don't
       // need any new precedence edges.
       verify_anti_dependences(late, self);
+      if (C->failing()) {
+        return;
+      }
     }
 #endif
   } // Loop until all nodes have been visited

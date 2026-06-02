@@ -551,6 +551,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                 unsafeGetOffset() == that.unsafeGetOffset();
     }
 
+    @ForceInline
     @Override
     public String getString(long offset, Charset charset, long byteLength) {
         Utils.checkNonNegativeArgument(byteLength, "byteLength");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 8087112
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
  *                     -Djdk.internal.httpclient.debug=true
- *                     NoBodyTest
+ *                     ${test.main.class}
  */
 
 import java.io.IOException;
@@ -47,10 +47,10 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
-@Test
+import org.junit.jupiter.api.Test;
+
 public class NoBodyTest {
     static int httpPort, httpsPort;
     static Http2TestServer httpServer, httpsServer;
@@ -86,7 +86,7 @@ public class NoBodyTest {
     }
 
     @Test
-    public static void runtest() throws Exception {
+    public void runtest() throws Exception {
         try {
             initialize();
             warmup(false);

@@ -78,7 +78,7 @@ else ifeq ($(BASE_OS), Fedora)
     endif
     BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
   else
-    LATEST_ARCHIVED_OS_VERSION := 36
+    LATEST_ARCHIVED_OS_VERSION := 41
     ifeq ($(filter aarch64 armhfp x86_64, $(ARCH)), )
       FEDORA_TYPE := fedora-secondary
     else

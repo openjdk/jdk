@@ -1618,7 +1618,7 @@ public class Utils {
         CompilationUnitTree cu = path.getCompilationUnit();
         LineMap lineMap = cu.getLineMap();
         DocSourcePositions spos = docTrees.getSourcePositions();
-        long pos = spos.getStartPosition(cu, path.getLeaf());
+        long pos = spos.getStartPosition(path.getLeaf());
         return lineMap.getLineNumber(pos);
     }
 

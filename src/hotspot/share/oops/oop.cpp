@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,8 +152,7 @@ bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
 #if INCLUDE_CDS_JAVA_HEAP
 void oopDesc::set_narrow_klass(narrowKlass nk) {
   assert(CDSConfig::is_dumping_heap(), "Used by CDS only. Do not abuse!");
-  assert(UseCompressedClassPointers, "must be");
-  _metadata._compressed_klass = nk;
+  _compressed_klass = nk;
 }
 #endif
 

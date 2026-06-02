@@ -26,8 +26,7 @@ package gc.arguments;
 /*
  * @test TestUseCompressedOopsFlagsWithUlimit
  * @bug 8280761
- * @summary Verify correct UseCompressedOops when MaxRAM and MaxRAMPercentage
- * are specified with ulimit -v.
+ * @summary Verify that ergonomic setting of UseCompressedOops adheres to ulimit -v
  * @library /test/lib
  * @library /
  * @requires vm.bits == "64"
@@ -50,10 +49,9 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestUseCompressedOopsFlagsWithUlimit {
 
-  private static void checkFlag(long ulimit, long maxram, int maxrampercent, boolean expectcoop) throws Exception {
+  private static void checkFlag(long ulimit, int maxrampercent, boolean expectcoop) throws Exception {
 
     ArrayList<String> args = new ArrayList<String>();
-    args.add("-XX:MaxRAM=" + maxram);
     args.add("-XX:MaxRAMPercentage=" + maxrampercent);
     args.add("-XX:+PrintFlagsFinal");
 
@@ -74,7 +72,7 @@ public class TestUseCompressedOopsFlagsWithUlimit {
     boolean actualcoop = getFlagBoolValue("UseCompressedOops", stdout);
     if (actualcoop != expectcoop) {
       throw new RuntimeException("UseCompressedOops set to " + actualcoop +
-        ", expected " + expectcoop + " when running with the following flags: " + Arrays.asList(args).toString());
+        ", expected " + expectcoop + " when running with the following flags: " + Arrays.asList(args).toString() + ", and ulimit: " + ulimit);
     }
   }
 
@@ -91,10 +89,13 @@ public class TestUseCompressedOopsFlagsWithUlimit {
     // Verify that UseCompressedOops Ergo follows ulimit -v setting.
 
     long oneG = 1L * 1024L * 1024L * 1024L;
+    long ulimit = 10 * oneG;
 
-    // Args: ulimit, max_ram, max_ram_percent, expected_coop
-    // Setting MaxRAMPercentage explicitly to make the test more resilient.
-    checkFlag(10 * oneG, 32 * oneG, 100, true);
-    checkFlag(10 * oneG, 128 * oneG, 100, true);
+    // Regardless of how much memory that is available on the machine, we should
+    // always get compressed oops if we have set a ulimit below the COOPS limit.
+    // We set MaxRAMPercentage explicitly to make the test more resilient.
+
+    // Args: ulimit, maxrampercent, expectedcoop
+    checkFlag(ulimit, 100, true);
   }
 }

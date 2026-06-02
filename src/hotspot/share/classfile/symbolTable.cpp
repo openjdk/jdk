@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -690,7 +691,7 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
     sym->set_permanent();
-    writer->add(fixed_hash, builder->buffer_to_offset_u4((address)sym));
+    writer->add(fixed_hash, AOTCompressedPointers::encode_not_null(sym));
   }
 }
 

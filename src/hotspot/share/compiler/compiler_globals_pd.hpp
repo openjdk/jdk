@@ -58,7 +58,6 @@ define_pd_global(bool, TieredCompilation,            false);
 define_pd_global(intx, CompileThreshold,             0);
 
 define_pd_global(intx,   OnStackReplacePercentage,   0);
-define_pd_global(size_t, NewSizeThreadIncrease,      4*K);
 define_pd_global(bool,   InlineClassNatives,         true);
 define_pd_global(bool,   InlineUnsafeOps,            true);
 define_pd_global(size_t, InitialCodeCacheSize,       160*K);
@@ -70,13 +69,6 @@ define_pd_global(size_t, NonNMethodCodeHeapSize,     32*M);
 define_pd_global(size_t, CodeCacheExpansionSize,     32*K);
 define_pd_global(size_t, CodeCacheMinBlockLength,    1);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   200*K);
-#ifndef ZERO
-define_pd_global(bool, NeverActAsServerClassMachine, true);
-#else
-// Zero runs without compilers. Do not let this code to force
-// the GC mode and default heap settings.
-define_pd_global(bool, NeverActAsServerClassMachine, false);
-#endif
 #define CI_COMPILER_COUNT 0
 #else
 

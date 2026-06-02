@@ -2,7 +2,7 @@
 //
 //   Auto-fitter data for blue strings.
 //
-// Copyright (C) 2013-2024 by
+// Copyright (C) 2013-2025 by
 // David Turner, Robert Wilhelm, and Werner Lemberg.
 //
 // This file is part of the FreeType project, and may only be used,
@@ -699,12 +699,12 @@ AF_BLUE_STRING_ENUM AF_BLUE_STRINGS_ARRAY AF_BLUE_STRING_MAX_LEN:
 AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
 
   AF_BLUE_STRINGSET_ADLM
-    { AF_BLUE_STRING_ADLAM_CAPITAL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_ADLAM_CAPITAL_BOTTOM, 0                                 }
+    { AF_BLUE_STRING_ADLAM_CAPITAL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_ADLAM_CAPITAL_BOTTOM, AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
     { AF_BLUE_STRING_ADLAM_SMALL_TOP,      AF_BLUE_PROPERTY_LATIN_TOP      |
-                                           AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_ADLAM_SMALL_BOTTOM,   0                                 }
-    { AF_BLUE_STRING_MAX,                  0                                 }
+                                           AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_ADLAM_SMALL_BOTTOM,   AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM   }
+    { AF_BLUE_STRING_MAX,                  0                                     }
 
   AF_BLUE_STRINGSET_ARAB
     { AF_BLUE_STRING_ARABIC_TOP,    AF_BLUE_PROPERTY_LATIN_TOP     }
@@ -713,14 +713,14 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,           0                              }
 
   AF_BLUE_STRINGSET_ARMN
-    { AF_BLUE_STRING_ARMENIAN_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_ARMENIAN_CAPITAL_BOTTOM,  0                                 }
-    { AF_BLUE_STRING_ARMENIAN_SMALL_ASCENDER,  AF_BLUE_PROPERTY_LATIN_TOP        }
+    { AF_BLUE_STRING_ARMENIAN_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_ARMENIAN_CAPITAL_BOTTOM,  AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
+    { AF_BLUE_STRING_ARMENIAN_SMALL_ASCENDER,  AF_BLUE_PROPERTY_LATIN_TOP            }
     { AF_BLUE_STRING_ARMENIAN_SMALL_TOP,       AF_BLUE_PROPERTY_LATIN_TOP      |
-                                               AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_ARMENIAN_SMALL_BOTTOM,    0                                 }
-    { AF_BLUE_STRING_ARMENIAN_SMALL_DESCENDER, 0                                 }
-    { AF_BLUE_STRING_MAX,                      0                                 }
+                                               AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_ARMENIAN_SMALL_BOTTOM,    AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM   }
+    { AF_BLUE_STRING_ARMENIAN_SMALL_DESCENDER, 0                                     }
+    { AF_BLUE_STRING_MAX,                      0                                     }
 
   AF_BLUE_STRINGSET_AVST
     { AF_BLUE_STRING_AVESTAN_TOP,    AF_BLUE_PROPERTY_LATIN_TOP }
@@ -756,14 +756,14 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,              0                          }
 
   AF_BLUE_STRINGSET_CANS
-    { AF_BLUE_STRING_CANADIAN_SYLLABICS_TOP,          AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_CANADIAN_SYLLABICS_BOTTOM,       0                                 }
+    { AF_BLUE_STRING_CANADIAN_SYLLABICS_TOP,          AF_BLUE_PROPERTY_LATIN_TOP          }
+    { AF_BLUE_STRING_CANADIAN_SYLLABICS_BOTTOM,       0                                   }
     { AF_BLUE_STRING_CANADIAN_SYLLABICS_SMALL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP      |
-                                                      AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_CANADIAN_SYLLABICS_SMALL_BOTTOM, 0                                 }
-    { AF_BLUE_STRING_CANADIAN_SYLLABICS_SUPS_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_CANADIAN_SYLLABICS_SUPS_BOTTOM,  0                                 }
-    { AF_BLUE_STRING_MAX,                             0                                 }
+                                                      AF_BLUE_PROPERTY_LATIN_X_HEIGHT     }
+    { AF_BLUE_STRING_CANADIAN_SYLLABICS_SMALL_BOTTOM, AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM }
+    { AF_BLUE_STRING_CANADIAN_SYLLABICS_SUPS_TOP,     AF_BLUE_PROPERTY_LATIN_TOP          }
+    { AF_BLUE_STRING_CANADIAN_SYLLABICS_SUPS_BOTTOM,  0                                   }
+    { AF_BLUE_STRING_MAX,                             0                                   }
 
   AF_BLUE_STRINGSET_CARI
     { AF_BLUE_STRING_CARIAN_TOP,    AF_BLUE_PROPERTY_LATIN_TOP }
@@ -781,12 +781,12 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,                      0                                 }
 
   AF_BLUE_STRINGSET_COPT
-    { AF_BLUE_STRING_COPTIC_CAPITAL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_COPTIC_CAPITAL_BOTTOM, 0                                 }
+    { AF_BLUE_STRING_COPTIC_CAPITAL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_COPTIC_CAPITAL_BOTTOM, AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
     { AF_BLUE_STRING_COPTIC_SMALL_TOP,      AF_BLUE_PROPERTY_LATIN_TOP      |
-                                            AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_COPTIC_SMALL_BOTTOM,   0                                 }
-    { AF_BLUE_STRING_MAX,                   0                                 }
+                                            AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_COPTIC_SMALL_BOTTOM,   AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM   }
+    { AF_BLUE_STRING_MAX,                   0                                     }
 
   AF_BLUE_STRINGSET_CPRT
     { AF_BLUE_STRING_CYPRIOT_TOP,    AF_BLUE_PROPERTY_LATIN_TOP }
@@ -796,13 +796,13 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,            0                          }
 
   AF_BLUE_STRINGSET_CYRL
-    { AF_BLUE_STRING_CYRILLIC_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_CYRILLIC_CAPITAL_BOTTOM,  0                                 }
+    { AF_BLUE_STRING_CYRILLIC_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_CYRILLIC_CAPITAL_BOTTOM,  AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
     { AF_BLUE_STRING_CYRILLIC_SMALL,           AF_BLUE_PROPERTY_LATIN_TOP      |
-                                               AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_CYRILLIC_SMALL,           0                                 }
-    { AF_BLUE_STRING_CYRILLIC_SMALL_DESCENDER, 0                                 }
-    { AF_BLUE_STRING_MAX,                      0                                 }
+                                               AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_CYRILLIC_SMALL,           0                                     }
+    { AF_BLUE_STRING_CYRILLIC_SMALL_DESCENDER, 0                                     }
+    { AF_BLUE_STRING_MAX,                      0                                     }
 
   AF_BLUE_STRINGSET_DEVA
     { AF_BLUE_STRING_DEVANAGARI_TOP,    AF_BLUE_PROPERTY_LATIN_TOP        }
@@ -815,12 +815,12 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,               0                                 }
 
   AF_BLUE_STRINGSET_DSRT
-    { AF_BLUE_STRING_DESERET_CAPITAL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_DESERET_CAPITAL_BOTTOM, 0                                 }
+    { AF_BLUE_STRING_DESERET_CAPITAL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_DESERET_CAPITAL_BOTTOM, AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
     { AF_BLUE_STRING_DESERET_SMALL_TOP,      AF_BLUE_PROPERTY_LATIN_TOP      |
-                                             AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_DESERET_SMALL_BOTTOM,   0                                 }
-    { AF_BLUE_STRING_MAX,                    0                                 }
+                                             AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_DESERET_SMALL_BOTTOM,   AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM   }
+    { AF_BLUE_STRING_MAX,                    0                                     }
 
   AF_BLUE_STRINGSET_ETHI
     { AF_BLUE_STRING_ETHIOPIC_TOP,    AF_BLUE_PROPERTY_LATIN_TOP }
@@ -848,12 +848,12 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,                         0                                 }
 
   AF_BLUE_STRINGSET_GLAG
-    { AF_BLUE_STRING_GLAGOLITIC_CAPITAL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_GLAGOLITIC_CAPITAL_BOTTOM, 0                                 }
+    { AF_BLUE_STRING_GLAGOLITIC_CAPITAL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_GLAGOLITIC_CAPITAL_BOTTOM, AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
     { AF_BLUE_STRING_GLAGOLITIC_SMALL_TOP,      AF_BLUE_PROPERTY_LATIN_TOP      |
-                                                AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_GLAGOLITIC_SMALL_BOTTOM,   0                                 }
-    { AF_BLUE_STRING_MAX,                       0                                 }
+                                                AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_GLAGOLITIC_SMALL_BOTTOM,   AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM   }
+    { AF_BLUE_STRING_MAX,                       0                                     }
 
   AF_BLUE_STRINGSET_GOTH
     { AF_BLUE_STRING_GOTHIC_TOP,    AF_BLUE_PROPERTY_LATIN_TOP }
@@ -861,14 +861,14 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,           0                          }
 
   AF_BLUE_STRINGSET_GREK
-    { AF_BLUE_STRING_GREEK_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_GREEK_CAPITAL_BOTTOM,  0                                 }
-    { AF_BLUE_STRING_GREEK_SMALL_BETA_TOP,  AF_BLUE_PROPERTY_LATIN_TOP        }
+    { AF_BLUE_STRING_GREEK_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_GREEK_CAPITAL_BOTTOM,  AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
+    { AF_BLUE_STRING_GREEK_SMALL_BETA_TOP,  AF_BLUE_PROPERTY_LATIN_TOP            }
     { AF_BLUE_STRING_GREEK_SMALL,           AF_BLUE_PROPERTY_LATIN_TOP      |
-                                            AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_GREEK_SMALL,           0                                 }
-    { AF_BLUE_STRING_GREEK_SMALL_DESCENDER, 0                                 }
-    { AF_BLUE_STRING_MAX,                   0                                 }
+                                            AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_GREEK_SMALL,           0                                     }
+    { AF_BLUE_STRING_GREEK_SMALL_DESCENDER, 0                                     }
+    { AF_BLUE_STRING_MAX,                   0                                     }
 
   AF_BLUE_STRINGSET_GUJR
     { AF_BLUE_STRING_GUJARATI_TOP,       AF_BLUE_PROPERTY_LATIN_TOP      |
@@ -935,34 +935,34 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,                0                                 }
 
   AF_BLUE_STRINGSET_LATN
-    { AF_BLUE_STRING_LATIN_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_LATIN_CAPITAL_BOTTOM,  0                                 }
-    { AF_BLUE_STRING_LATIN_SMALL_F_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
+    { AF_BLUE_STRING_LATIN_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_LATIN_CAPITAL_BOTTOM,  AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
+    { AF_BLUE_STRING_LATIN_SMALL_F_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
     { AF_BLUE_STRING_LATIN_SMALL_TOP,       AF_BLUE_PROPERTY_LATIN_TOP      |
-                                            AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_LATIN_SMALL_BOTTOM,    0                                 }
-    { AF_BLUE_STRING_LATIN_SMALL_DESCENDER, 0                                 }
-    { AF_BLUE_STRING_MAX,                   0                                 }
+                                            AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_LATIN_SMALL_BOTTOM,    AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM   }
+    { AF_BLUE_STRING_LATIN_SMALL_DESCENDER, 0                                     }
+    { AF_BLUE_STRING_MAX,                   0                                     }
 
   AF_BLUE_STRINGSET_LATB
-    { AF_BLUE_STRING_LATIN_SUBS_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_LATIN_SUBS_CAPITAL_BOTTOM,  0                                 }
-    { AF_BLUE_STRING_LATIN_SUBS_SMALL_F_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
+    { AF_BLUE_STRING_LATIN_SUBS_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_LATIN_SUBS_CAPITAL_BOTTOM,  AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
+    { AF_BLUE_STRING_LATIN_SUBS_SMALL_F_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
     { AF_BLUE_STRING_LATIN_SUBS_SMALL,           AF_BLUE_PROPERTY_LATIN_TOP      |
-                                                 AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_LATIN_SUBS_SMALL,           0                                 }
-    { AF_BLUE_STRING_LATIN_SUBS_SMALL_DESCENDER, 0                                 }
-    { AF_BLUE_STRING_MAX,                        0                                 }
+                                                 AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_LATIN_SUBS_SMALL,           0                                     }
+    { AF_BLUE_STRING_LATIN_SUBS_SMALL_DESCENDER, 0                                     }
+    { AF_BLUE_STRING_MAX,                        0                                     }
 
   AF_BLUE_STRINGSET_LATP
-    { AF_BLUE_STRING_LATIN_SUPS_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_LATIN_SUPS_CAPITAL_BOTTOM,  0                                 }
-    { AF_BLUE_STRING_LATIN_SUPS_SMALL_F_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
+    { AF_BLUE_STRING_LATIN_SUPS_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_LATIN_SUPS_CAPITAL_BOTTOM,  AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
+    { AF_BLUE_STRING_LATIN_SUPS_SMALL_F_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
     { AF_BLUE_STRING_LATIN_SUPS_SMALL,           AF_BLUE_PROPERTY_LATIN_TOP      |
-                                                 AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_LATIN_SUPS_SMALL,           0                                 }
-    { AF_BLUE_STRING_LATIN_SUPS_SMALL_DESCENDER, 0                                 }
-    { AF_BLUE_STRING_MAX,                        0                                 }
+                                                 AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_LATIN_SUPS_SMALL,           0                                     }
+    { AF_BLUE_STRING_LATIN_SUPS_SMALL_DESCENDER, 0                                     }
+    { AF_BLUE_STRING_MAX,                        0                                     }
 
   AF_BLUE_STRINGSET_LISU
     { AF_BLUE_STRING_LISU_TOP,    AF_BLUE_PROPERTY_LATIN_TOP }
@@ -975,15 +975,15 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,              0                          }
 
   AF_BLUE_STRINGSET_MEDF
-    { AF_BLUE_STRING_MEDEFAIDRIN_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_MEDEFAIDRIN_CAPITAL_BOTTOM,  0                                 }
-    { AF_BLUE_STRING_MEDEFAIDRIN_SMALL_F_TOP,     AF_BLUE_PROPERTY_LATIN_TOP        }
+    { AF_BLUE_STRING_MEDEFAIDRIN_CAPITAL_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_MEDEFAIDRIN_CAPITAL_BOTTOM,  AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
+    { AF_BLUE_STRING_MEDEFAIDRIN_SMALL_F_TOP,     AF_BLUE_PROPERTY_LATIN_TOP            }
     { AF_BLUE_STRING_MEDEFAIDRIN_SMALL_TOP,       AF_BLUE_PROPERTY_LATIN_TOP      |
-                                                  AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_MEDEFAIDRIN_SMALL_BOTTOM,    0                                 }
-    { AF_BLUE_STRING_MEDEFAIDRIN_SMALL_DESCENDER, 0                                 }
-    { AF_BLUE_STRING_MEDEFAIDRIN_DIGIT_TOP,       AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_MAX,                         0                                 }
+                                                  AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_MEDEFAIDRIN_SMALL_BOTTOM,    AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM   }
+    { AF_BLUE_STRING_MEDEFAIDRIN_SMALL_DESCENDER, 0                                     }
+    { AF_BLUE_STRING_MEDEFAIDRIN_DIGIT_TOP,       AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_MAX,                         0                                     }
 
   AF_BLUE_STRINGSET_MONG
     { AF_BLUE_STRING_MONGOLIAN_TOP_BASE,    AF_BLUE_PROPERTY_LATIN_TOP }
@@ -999,12 +999,12 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,               0                                 }
 
   AF_BLUE_STRINGSET_NKOO
-    { AF_BLUE_STRING_NKO_TOP,          AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_NKO_BOTTOM,       0                                 }
+    { AF_BLUE_STRING_NKO_TOP,          AF_BLUE_PROPERTY_LATIN_TOP          }
+    { AF_BLUE_STRING_NKO_BOTTOM,       0                                   }
     { AF_BLUE_STRING_NKO_SMALL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP      |
-                                       AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_NKO_SMALL_BOTTOM, 0                                 }
-    { AF_BLUE_STRING_MAX,              0                                 }
+                                       AF_BLUE_PROPERTY_LATIN_X_HEIGHT     }
+    { AF_BLUE_STRING_NKO_SMALL_BOTTOM, AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM }
+    { AF_BLUE_STRING_MAX,              0                                   }
 
   AF_BLUE_STRINGSET_NONE
     { AF_BLUE_STRING_MAX, 0 }
@@ -1020,15 +1020,15 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,               0                          }
 
   AF_BLUE_STRINGSET_OSGE
-    { AF_BLUE_STRING_OSAGE_CAPITAL_TOP,       AF_BLUE_PROPERTY_LATIN_TOP       }
-    { AF_BLUE_STRING_OSAGE_CAPITAL_BOTTOM,    0                                }
-    { AF_BLUE_STRING_OSAGE_CAPITAL_DESCENDER, 0                                }
-    { AF_BLUE_STRING_OSAGE_SMALL_TOP,         AF_BLUE_PROPERTY_LATIN_TOP     |
-                                              AF_BLUE_PROPERTY_LATIN_X_HEIGHT  }
-    { AF_BLUE_STRING_OSAGE_SMALL_BOTTOM,      0                                }
-    { AF_BLUE_STRING_OSAGE_SMALL_ASCENDER,    AF_BLUE_PROPERTY_LATIN_TOP       }
-    { AF_BLUE_STRING_OSAGE_SMALL_DESCENDER,   0                                }
-    { AF_BLUE_STRING_MAX,                     0                                }
+    { AF_BLUE_STRING_OSAGE_CAPITAL_TOP,       AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_OSAGE_CAPITAL_BOTTOM,    AF_BLUE_PROPERTY_LATIN_CAPITAL_BOTTOM }
+    { AF_BLUE_STRING_OSAGE_CAPITAL_DESCENDER, 0                                     }
+    { AF_BLUE_STRING_OSAGE_SMALL_TOP,         AF_BLUE_PROPERTY_LATIN_TOP      |
+                                              AF_BLUE_PROPERTY_LATIN_X_HEIGHT       }
+    { AF_BLUE_STRING_OSAGE_SMALL_BOTTOM,      AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM   }
+    { AF_BLUE_STRING_OSAGE_SMALL_ASCENDER,    AF_BLUE_PROPERTY_LATIN_TOP            }
+    { AF_BLUE_STRING_OSAGE_SMALL_DESCENDER,   0                                     }
+    { AF_BLUE_STRING_MAX,                     0                                     }
 
   AF_BLUE_STRINGSET_OSMA
     { AF_BLUE_STRING_OSMANYA_TOP,    AF_BLUE_PROPERTY_LATIN_TOP }
@@ -1047,13 +1047,13 @@ AF_BLUE_STRINGSET_ENUM AF_BLUE_STRINGSETS_ARRAY AF_BLUE_STRINGSET_MAX_LEN:
     { AF_BLUE_STRING_MAX,               0                          }
 
   AF_BLUE_STRINGSET_SHAW
-    { AF_BLUE_STRING_SHAVIAN_TOP,          AF_BLUE_PROPERTY_LATIN_TOP        }
-    { AF_BLUE_STRING_SHAVIAN_BOTTOM,       0                                 }
-    { AF_BLUE_STRING_SHAVIAN_DESCENDER,    0                                 }
+    { AF_BLUE_STRING_SHAVIAN_TOP,          AF_BLUE_PROPERTY_LATIN_TOP          }
+    { AF_BLUE_STRING_SHAVIAN_BOTTOM,       0                                   }
+    { AF_BLUE_STRING_SHAVIAN_DESCENDER,    0                                   }
     { AF_BLUE_STRING_SHAVIAN_SMALL_TOP,    AF_BLUE_PROPERTY_LATIN_TOP      |
-                                           AF_BLUE_PROPERTY_LATIN_X_HEIGHT   }
-    { AF_BLUE_STRING_SHAVIAN_SMALL_BOTTOM, 0                                 }
-    { AF_BLUE_STRING_MAX,                  0                                 }
+                                           AF_BLUE_PROPERTY_LATIN_X_HEIGHT     }
+    { AF_BLUE_STRING_SHAVIAN_SMALL_BOTTOM, AF_BLUE_PROPERTY_LATIN_SMALL_BOTTOM }
+    { AF_BLUE_STRING_MAX,                  0                                   }
 
   AF_BLUE_STRINGSET_SINH
     { AF_BLUE_STRING_SINHALA_TOP,       AF_BLUE_PROPERTY_LATIN_TOP }

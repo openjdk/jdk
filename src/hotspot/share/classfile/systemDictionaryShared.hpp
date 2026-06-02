@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/filemap.hpp"
@@ -199,7 +200,6 @@ private:
   static void iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
 
 public:
-  static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static bool has_archived_enum_objs(InstanceKlass* ik);
   static void set_has_archived_enum_objs(InstanceKlass* ik);
 
@@ -236,6 +236,7 @@ public:
   static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);
 
+  static void check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) NOT_CDS_RETURN;
   static InstanceKlass* lookup_from_stream(Symbol* class_name,
                                            Handle class_loader,
                                            Handle protection_domain,
@@ -312,7 +313,7 @@ public:
 
   template <typename T>
   static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
-    assert(MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr), "must be");
+    assert(AOTMetaspace::in_aot_cache(ptr), "must be");
     assert(ptr > (T*)SharedBaseAddress, "must be");
     uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
     return primitive_hash<uintx>(offset);

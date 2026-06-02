@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,31 @@
  */
 package jdk.incubator.vector;
 
-import java.lang.foreign.MemorySegment;
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 import java.lang.reflect.Array;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 
-abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.VectorSpecies<E>
-                                  implements VectorSpecies<E> {
-    @Stable
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
+
+@TrustFinalFields
+abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.VectorSpecies<E>
+        implements VectorSpecies<E>
+        permits ByteVector.ByteSpecies, DoubleVector.DoubleSpecies, FloatVector.FloatSpecies,
+        IntVector.IntSpecies, LongVector.LongSpecies, ShortVector.ShortSpecies {
     final VectorShape vectorShape;
-    @Stable
     final LaneType laneType;
-    @Stable
     final int laneCount;
-    @Stable
     final int laneCountLog2P1;
-    @Stable
     final Class<? extends AbstractVector<E>> vectorType;
-    @Stable
     final Class<? extends AbstractMask<E>> maskType;
-    @Stable
     final Class<? extends AbstractShuffle<E>> shuffleType;
-    @Stable
     final Function<Object, ? extends AbstractVector<E>> vectorFactory;
 
-    @Stable
     final VectorShape indexShape;
-    @Stable
     final int maxScale, minScale;
-    @Stable
     final int vectorBitSize, vectorByteSize;
 
     AbstractSpecies(VectorShape vectorShape,
@@ -142,6 +134,20 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     //NOT FINAL: SPECIALIZED
     public Class<E> elementType() {
         return (Class<E>) laneType.elementType;
+    }
+
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    //NOT FINAL: SPECIALIZED
+    int laneTypeOrdinal() {
+        return laneType.ordinal();
+    }
+
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    //NOT FINAL: SPECIALIZED
+    Class<E> carrierType() {
+        return (Class<E>) laneType.carrierType;
     }
 
     // FIXME: appeal to general method (see https://bugs.openjdk.org/browse/JDK-6176992)
@@ -320,7 +326,7 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         return makeDummyVector();
     }
     private AbstractVector<E> makeDummyVector() {
-        Object za = Array.newInstance(elementType(), laneCount);
+        Object za = Array.newInstance(carrierType(), laneCount);
         return dummyVector = vectorFactory.apply(za);
         // This is the only use of vectorFactory.
         // All other factory requests are routed
@@ -415,8 +421,7 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     Object iotaArray() {
         // Create an iota array.  It's OK if this is really slow,
         // because it happens only once per species.
-        Object ia = Array.newInstance(laneType.elementType,
-                                      laneCount);
+        Object ia = Array.newInstance(carrierType(), laneCount);
         assert(ia.getClass() == laneType.arrayType);
         checkValue(laneCount-1);  // worst case
         for (int i = 0; i < laneCount; i++) {

@@ -58,9 +58,10 @@
 //     ValueType -> T
 //
 //   special functions:
-//     explicit constructor(T)
+//     constexpr constructor()             // See (2) below
+//     explicit constexpr constructor(T)
 //     noncopyable
-//     destructor
+//     destructor                          // Trivial
 //
 //   static member functions:
 //     value_offset_in_bytes() -> int   // constexpr
@@ -343,7 +344,8 @@ class AtomicImpl::Atomic<T, AtomicImpl::Category::Integer>
   : public SupportsArithmetic<T>
 {
 public:
-  explicit constexpr Atomic(T value = 0) : SupportsArithmetic<T>(value) {}
+  constexpr Atomic() : Atomic(0) {}
+  explicit constexpr Atomic(T value) : SupportsArithmetic<T>(value) {}
 
   NONCOPYABLE(Atomic);
 
@@ -383,7 +385,8 @@ class AtomicImpl::Atomic<T, AtomicImpl::Category::Byte>
   : public CommonCore<T>
 {
 public:
-  explicit constexpr Atomic(T value = 0) : CommonCore<T>(value) {}
+  constexpr Atomic() : Atomic(0) {}
+  explicit constexpr Atomic(T value) : CommonCore<T>(value) {}
 
   NONCOPYABLE(Atomic);
 
@@ -399,7 +402,8 @@ class AtomicImpl::Atomic<T, AtomicImpl::Category::Pointer>
   : public SupportsArithmetic<T>
 {
 public:
-  explicit constexpr Atomic(T value = nullptr) : SupportsArithmetic<T>(value) {}
+  constexpr Atomic() : Atomic(nullptr) {}
+  explicit constexpr Atomic(T value) : SupportsArithmetic<T>(value) {}
 
   NONCOPYABLE(Atomic);
 

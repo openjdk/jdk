@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1210,7 +1210,7 @@ void InterpreterMacroAssembler::profile_final_call(Register mdp) {
 
 
 // Sets mdp, blows Rtemp.
-void InterpreterMacroAssembler::profile_virtual_call(Register mdp, Register receiver, bool receiver_can_be_null) {
+void InterpreterMacroAssembler::profile_virtual_call(Register mdp, Register receiver) {
   assert_different_registers(mdp, receiver, Rtemp);
 
   if (ProfileInterpreter) {
@@ -1219,19 +1219,8 @@ void InterpreterMacroAssembler::profile_virtual_call(Register mdp, Register rece
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    Label skip_receiver_profile;
-    if (receiver_can_be_null) {
-      Label not_null;
-      cbnz(receiver, not_null);
-      // We are making a call.  Increment the count for null receiver.
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()), Rtemp);
-      b(skip_receiver_profile);
-      bind(not_null);
-    }
-
     // Record the receiver type.
     record_klass_in_profile(receiver, mdp, Rtemp, true);
-    bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));

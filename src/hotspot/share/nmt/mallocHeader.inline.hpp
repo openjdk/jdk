@@ -46,9 +46,6 @@ inline MallocHeader::MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_mark
 }
 
 inline void MallocHeader::revive() {
-  assert(_canary == _header_canary_dead_mark, "must be dead");
-  assert(get_footer() == _footer_canary_dead_mark, "must be dead");
-  NOT_LP64(assert(_alt_canary == _header_alt_canary_dead_mark, "must be dead"));
   _canary = _header_canary_live_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_live_mark);
   set_footer(_footer_canary_live_mark);
@@ -96,16 +93,18 @@ inline bool MallocHeader::is_valid_malloced_pointer(const void* payload, char* m
 
 template<typename InTypeParam, typename OutTypeParam>
 inline OutTypeParam MallocHeader::resolve_checked_impl(InTypeParam memblock) {
-  char msg[256];
-  address corruption = nullptr;
-  if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
-    fatal("Not a valid malloc pointer: " PTR_FORMAT ": %s", p2i(memblock), msg);
-  }
   OutTypeParam header_pointer = (OutTypeParam)memblock - 1;
-  if (!header_pointer->check_block_integrity(msg, sizeof(msg), &corruption)) {
-    header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer, (address)header_pointer);
-    fatal("NMT has detected a memory corruption bug. Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
-  }
+  #ifdef NMT_BLOCK_INTEGRITY_CHECKS
+    char msg[256];
+    address corruption = nullptr;
+    if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
+      fatal("Not a valid malloc pointer: " PTR_FORMAT ": %s", p2i(memblock), msg);
+    }
+    if (!header_pointer->check_block_integrity(msg, sizeof(msg), &corruption)) {
+      header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer, (address)header_pointer);
+      fatal("NMT has detected a memory corruption bug. Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
+    }
+  #endif
   return header_pointer;
 }
 
@@ -161,6 +160,22 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
     return false;
   }
   return true;
+}
+
+MallocHeader* MallocHeader::kill_block(void* memblock) {
+  MallocHeader* header = (MallocHeader*)memblock - 1;
+  ASAN_UNPOISON_MEMORY_REGION(header, sizeof(MallocHeader));
+  ASAN_UNPOISON_MEMORY_REGION(header->footer_address(), footer_size);
+  resolve_checked(memblock);
+  header->mark_block_as_dead();
+  return header;
+}
+
+void MallocHeader::revive_block(void* memblock) {
+  MallocHeader* header = (MallocHeader*)memblock - 1;
+  header->revive();
+  ASAN_POISON_MEMORY_REGION(header->footer_address(), footer_size);
+  ASAN_POISON_MEMORY_REGION(header, sizeof(MallocHeader));
 }
 
 #endif // SHARE_NMT_MALLOCHEADER_INLINE_HPP

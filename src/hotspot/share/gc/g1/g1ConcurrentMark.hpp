@@ -280,65 +280,44 @@ private:
 // Typically they contain the areas from TAMS to top of the regions.
 // We could scan and mark through these objects during the concurrent start pause,
 // but for pause time reasons we move this work to the concurrent phase.
-// We need to complete this procedure before we can evacuate a particular region
-// because evacuation might determine that some of these "root objects" are dead,
-// potentially dropping some required references.
+// Garbage collections that evacuate must either complete or abort this procedure
+// before they can move objects because evacuation might determine that some of these
+// "root objects" are dead, potentially dropping some references.
 // Root MemRegions comprise of the contents of survivor regions at the end
 // of the GC, and any objects copied into the old gen during GC.
 class G1CMRootMemRegions {
   // The set of root MemRegions.
   MemRegion* _root_regions;
-  size_t const _max_regions;
+  uint const _max_regions;
 
-  Atomic<size_t> _num_root_regions;  // Actual number of root regions.
+  Atomic<uint> _num_regions;  // Actual number of root regions.
+  Atomic<uint> _num_claimed_regions; // Number of root regions currently claimed.
 
-  Atomic<size_t> _claimed_root_regions; // Number of root regions currently claimed.
-
-  Atomic<bool> _scan_in_progress;
-  Atomic<bool> _should_abort;
-
-  void notify_scan_done();
+  uint num_regions() const { return _num_regions.load_relaxed(); }
+  uint num_claimed_regions() const { return _num_claimed_regions.load_relaxed(); }
 
 public:
   G1CMRootMemRegions(uint const max_regions);
   ~G1CMRootMemRegions();
 
-  // Reset the data structure to allow addition of new root regions.
-  void reset();
-
   void add(HeapWord* start, HeapWord* end);
 
-  // Reset the claiming / scanning of the root regions.
-  void prepare_for_scan();
-
-  // Forces get_next() to return null so that the iteration aborts early.
-  void abort() { _should_abort.store_relaxed(true); }
-
-  // Return true if the CM thread are actively scanning root regions,
-  // false otherwise.
-  bool scan_in_progress() { return _scan_in_progress.load_relaxed(); }
+  // Reset data structure to initial state.
+  void reset();
 
   // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
   const MemRegion* claim_next();
 
-  // The number of root regions to scan.
-  uint num_root_regions() const;
+  // Number of root regions to still process.
+  uint num_remaining_regions() const;
+
+  // Returns whether all root regions have been processed or the processing been aborted.
+  bool work_completed() const;
 
   // Is the given memregion contained in the root regions; the MemRegion must
   // match exactly.
   bool contains(const MemRegion mr) const;
-
-  void cancel_scan();
-
-  // Flag that we're done with root region scanning and notify anyone
-  // who's waiting on it. If aborted is false, assume that all regions
-  // have been claimed.
-  void scan_finished();
-
-  // If CM threads are still scanning root regions, wait until they
-  // are done. Return true if we had to wait, false otherwise.
-  bool wait_until_scan_finished();
 };
 
 // This class manages data structures and methods for doing liveness analysis in
@@ -352,6 +331,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMRemarkTask;
   friend class G1CMRootRegionScanTask;
   friend class G1CMTask;
+  friend class G1ClearBitMapTask;
+  friend class G1CollectorState;
   friend class G1ConcurrentMarkThread;
 
   G1ConcurrentMarkThread* _cm_thread;     // The thread doing the work
@@ -365,10 +346,11 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Root region tracking and claiming
   G1CMRootMemRegions      _root_regions;
+  Atomic<bool>            _root_region_scan_aborted;
 
   // For grey objects
   G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
-  HeapWord* volatile      _finger;            // The global finger, region aligned,
+  Atomic<HeapWord*>       _finger;            // The global finger, region aligned,
                                               // always pointing to the end of the
                                               // last claimed region
 
@@ -395,19 +377,19 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   WorkerThreadsBarrierSync     _second_overflow_barrier_sync;
 
   // Number of completed mark cycles.
-  volatile uint           _completed_mark_cycles;
+  Atomic<uint>            _completed_mark_cycles;
 
   // This is set by any task, when an overflow on the global data
   // structures is detected
-  volatile bool           _has_overflown;
+  Atomic<bool>            _has_overflown;
   // True: marking is concurrent, false: we're in remark
-  volatile bool           _concurrent;
+  Atomic<bool>            _concurrent;
   // Set at the end of a Full GC so that marking aborts
-  volatile bool           _has_aborted;
+  Atomic<bool>            _has_aborted;
 
   // Used when remark aborts due to an overflow to indicate that
   // another concurrent marking phase should start
-  volatile bool           _restart_for_overflow;
+  Atomic<bool>            _restart_for_overflow;
 
   ConcurrentGCTimer*      _gc_timer_cm;
 
@@ -461,8 +443,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   void print_and_reset_taskqueue_stats();
 
-  HeapWord*           finger()       { return _finger;   }
-  bool                concurrent()   { return _concurrent; }
+  HeapWord*           finger()       { return _finger.load_relaxed();   }
+  bool                concurrent()   { return _concurrent.load_relaxed(); }
   uint                active_tasks() { return _num_active_tasks; }
   TaskTerminator*     terminator()   { return &_terminator; }
 
@@ -487,7 +469,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // to satisfy an allocation without doing a GC. This is fine, because all
   // objects in those regions will be considered live anyway because of
   // SATB guarantees (i.e. their TAMS will be equal to bottom).
-  bool out_of_regions() { return _finger >= _heap.end(); }
+  bool out_of_regions() { return finger() >= _heap.end(); }
 
   // Returns the task with the given id
   G1CMTask* task(uint id) {
@@ -499,10 +481,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Access / manipulation of the overflow flag which is set to
   // indicate that the global stack has overflown
-  bool has_overflown()           { return _has_overflown; }
-  void set_has_overflown()       { _has_overflown = true; }
-  void clear_has_overflown()     { _has_overflown = false; }
-  bool restart_for_overflow()    { return _restart_for_overflow; }
+  bool has_overflown()           { return _has_overflown.load_relaxed(); }
+  void set_has_overflown()       { _has_overflown.store_relaxed(true); }
+  void clear_has_overflown()     { _has_overflown.store_relaxed(false); }
+  bool restart_for_overflow()    { return _restart_for_overflow.load_relaxed(); }
 
   // Methods to enter the two overflow sync barriers
   void enter_first_sync_barrier(uint worker_id);
@@ -516,14 +498,23 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1RegionMarkStats* _region_mark_stats;
   // Top pointer for each region at the start of marking. Must be valid for all committed
   // regions.
-  HeapWord* volatile* _top_at_mark_starts;
+  Atomic<HeapWord*>* _top_at_mark_starts;
   // Top pointer for each region at the start of the rebuild remembered set process
   // for regions which remembered sets need to be rebuilt. A null for a given region
   // means that this region does not be scanned during the rebuilding remembered
   // set phase at all.
-  HeapWord* volatile* _top_at_rebuild_starts;
+  Atomic<HeapWord*>* _top_at_rebuild_starts;
   // True when Remark pause selected regions for rebuilding.
   bool _needs_remembered_set_rebuild;
+
+  G1ConcurrentMarkThread* cm_thread() const;
+
+  // Concurrent cycle state queries.
+  bool is_in_concurrent_cycle() const;
+  bool is_in_marking() const;
+  bool is_in_rebuild_or_scrub() const;
+  bool is_in_reset_for_next_cycle() const;
+
 public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
@@ -557,7 +548,7 @@ public:
 
   void fully_initialize();
   bool is_fully_initialized() const { return _cm_thread != nullptr; }
-  bool in_progress() const;
+
   uint max_num_tasks() const {return _max_num_tasks; }
 
   // Clear statistics gathered during the concurrent cycle for the given region after
@@ -589,7 +580,7 @@ public:
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not
   // guarantee or update any state after the call. Root region scan must not be
-  // running.
+  // running or being aborted.
   void abort_marking_threads();
 
   // Total cpu time spent in mark worker threads in seconds.
@@ -601,8 +592,6 @@ public:
   G1ConcurrentMark(G1CollectedHeap* g1h,
                    G1RegionToSpaceMapper* bitmap_storage);
   ~G1ConcurrentMark();
-
-  G1ConcurrentMarkThread* cm_thread() { return _cm_thread; }
 
   G1CMBitMap* mark_bitmap() const { return (G1CMBitMap*)&_mark_bitmap; }
 
@@ -632,20 +621,40 @@ public:
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
   void pre_concurrent_start(GCCause::Cause cause);
-  void post_concurrent_mark_start();
-  void post_concurrent_undo_start();
 
-  // Scan all the root regions and mark everything reachable from
-  // them.
-  void scan_root_regions();
-  bool wait_until_root_region_scan_finished();
+  // Start the particular type of concurrent cycle. After this call threads may be running.
+  void start_full_concurrent_cycle();
+  void start_undo_concurrent_cycle();
+
+  void notify_concurrent_cycle_completed();
+
+  // Stop active components/the concurrent mark thread.
+  void stop();
+
   void add_root_region(G1HeapRegion* r);
   bool is_root_region(G1HeapRegion* r);
-  void root_region_scan_abort_and_wait();
+
+  // Scan all the root regions concurrently and mark everything reachable from
+  // them.
+  void scan_root_regions_concurrently();
+  // Complete root region scan work in the safepoint, return if we did some work.
+  bool complete_root_regions_scan_in_safepoint();
+
+  // Abort an active concurrent root region scan outside safepoint.
+  void abort_root_region_scan();
+
+  bool has_root_region_scan_aborted() const;
 
 private:
+  // Abort an active concurrent root region scan during safepoint.
+  void abort_root_region_scan_at_safepoint();
+
+  void assert_root_region_scan_completed_or_aborted() PRODUCT_RETURN;
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
+  // Perform root region scan until all root regions have been processed, or
+  // the process has been aborted. Returns true if we did some work.
+  bool scan_root_regions(WorkerThreads* workers, bool concurrent);
   // Scan a single root MemRegion to mark everything reachable from it.
   void scan_root_region(const MemRegion* region, uint worker_id);
 
@@ -657,8 +666,10 @@ public:
   // Do concurrent preclean work.
   void preclean();
 
+  // Executes the Remark pause.
   void remark();
 
+  // Executes the Cleanup pause.
   void cleanup();
 
   // Mark in the marking bitmap. Used during evacuation failure to
@@ -679,7 +690,7 @@ public:
 
   uint completed_mark_cycles() const;
 
-  bool has_aborted()      { return _has_aborted; }
+  bool has_aborted() { return _has_aborted.load_relaxed(); }
 
   void print_summary_info();
 
@@ -833,12 +844,10 @@ private:
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
   bool is_below_finger(oop obj, HeapWord* global_finger) const;
 
-  template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry, bool stolen);
-
   static bool should_be_sliced(oop obj);
   // Start processing the given objArrayOop by first pushing its continuations and
   // then scanning the first chunk including the header.
-  size_t start_partial_array_processing(oop obj);
+  size_t start_partial_array_processing(objArrayOop obj);
   // Process the given continuation. Returns the number of words scanned.
   size_t process_partial_array(const G1TaskQueueEntry& task, bool stolen);
   // Apply the closure to the given range of elements in the objArray.
@@ -906,6 +915,9 @@ public:
   // Returns true if the reference caused a mark to be set in the marking bitmap.
   template <class T>
   inline bool deal_with_reference(T* p);
+
+  // Scan the klass and visit its children.
+  inline void process_klass(Klass* klass);
 
   // Scans an object and visits its children.
   inline void process_entry(G1TaskQueueEntry task_entry, bool stolen);

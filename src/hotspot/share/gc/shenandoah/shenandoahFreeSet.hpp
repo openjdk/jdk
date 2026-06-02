@@ -32,8 +32,8 @@
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "logging/logStream.hpp"
 
-typedef ShenandoahLock    ShenandoahRebuildLock;
-typedef ShenandoahLocker  ShenandoahRebuildLocker;
+typedef ShenandoahLock                           ShenandoahRebuildLock;
+typedef ShenandoahLocker<ShenandoahRebuildLock>  ShenandoahRebuildLocker;
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -302,9 +302,13 @@ public:
 
   inline void increase_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline void decrease_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-  inline size_t get_capacity(ShenandoahFreeSetPartitionId which_partition) {
+  inline size_t get_capacity(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "Partition must be valid");
     return _capacity[int(which_partition)];
+  }
+
+  inline size_t get_capacity_region_count(ShenandoahFreeSetPartitionId which_partition) const {
+    return get_capacity(which_partition) / ShenandoahHeapRegion::region_size_bytes();
   }
 
   inline void increase_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
@@ -402,6 +406,9 @@ public:
   //       idx <= rightmost
   //     }
   void assert_bounds() NOT_DEBUG_RETURN;
+  // this checks certain sanity conditions related to the bounds with much less effort than is required to
+  // more rigorously enforce correctness as is done by assert_bounds()
+  inline void assert_bounds_sanity() NOT_DEBUG_RETURN;
 };
 
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
@@ -434,6 +441,9 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
+  // Temporarily holds mutator_Free allocatable bytes between prepare_to_rebuild() and finish_rebuild()
+  size_t _prepare_to_rebuild_mutator_free;
+
   // This locks the rebuild process (in combination with the global heap lock).  Whenever we rebuild the free set,
   // we first acquire the global heap lock and then we acquire this _rebuild_lock in a nested context.  Threads that
   // need to check available, acquire only the _rebuild_lock to make sure that they are not obtaining the value of
@@ -443,9 +453,9 @@ private:
   // locks will acquire them in the same order: first the global heap lock and then the rebuild lock.
   ShenandoahRebuildLock _rebuild_lock;
 
-  size_t _total_humongous_waste;
-
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
+
+  size_t _total_humongous_waste;
 
   // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
   // we allocate an object, we decrement the count of this value.  Each time we re-evaluate whether to allocate
@@ -505,8 +515,6 @@ private:
 
   size_t _total_young_regions;
   size_t _total_global_regions;
-
-  size_t _mutator_bytes_allocated_since_gc_start;
 
   // If only affiliation changes are promote-in-place and generation sizes have not changed,
   //    we have AffiliatedChangesAreGlobalNeutral
@@ -655,14 +663,6 @@ public:
     return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
   }
 
-  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
-
-  void increase_bytes_allocated(size_t bytes);
-
-  inline size_t get_bytes_allocated_since_gc_start() const {
-    return _mutator_bytes_allocated_since_gc_start;
-  }
-
   // Public because ShenandoahRegionPartitions assertions require access.
   inline size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   inline size_t alloc_capacity(size_t idx) const;
@@ -728,7 +728,7 @@ public:
   }
 
   inline size_t total_old_regions() {
-    return _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) / ShenandoahHeapRegion::region_size_bytes();
+    return _partitions.get_capacity_region_count(ShenandoahFreeSetPartitionId::OldCollector);
   }
 
   size_t total_global_regions() {
@@ -778,15 +778,15 @@ public:
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
 
-  // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
-  // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
-  // rebuild are not counted as part of capacity.)
-
-  // All three of the following functions may produce stale data if called without owning the global heap lock.
+  // All four of the following functions may produce stale data if called without owning the global heap lock.
   // Changes to the values of these variables are performed with a lock.  A change to capacity or used "atomically"
   // adjusts available with respect to lock holders.  However, sequential calls to these three functions may produce
   // inconsistent data: available may not equal capacity - used because the intermediate states of any "atomic"
   // locked action can be seen by these unlocked functions.
+
+  // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
+  // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
+  // rebuild are not counted as part of capacity.)
   inline size_t capacity_holding_lock() const {
     shenandoah_assert_heaplocked();
     return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
@@ -805,6 +805,7 @@ public:
     ShenandoahRebuildLocker locker(rebuild_lock());
     return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
   }
+  inline size_t reserved()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector);           }
   inline size_t available() {
     shenandoah_assert_not_heaplocked();
     ShenandoahRebuildLocker locker(rebuild_lock());
@@ -814,6 +815,14 @@ public:
   // Use this version of available() if the heap lock is held.
   inline size_t available_locked() const {
     return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator);
+  }
+
+  inline size_t collector_available_locked() const {
+    return _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
+  }
+
+  inline size_t old_collector_available_locked() const {
+    return _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
   }
 
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
@@ -877,13 +886,17 @@ public:
   //   first_old_region is the index of the first region that is part of the OldCollector set
   //    last_old_region is the index of the last region that is part of the OldCollector set
   //   old_region_count is the number of regions in the OldCollector set that have memory available to be allocated
-  void find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
-                                        size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
+                                          size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
 
   // Ensure that Collector has at least to_reserve bytes of available memory, and OldCollector has at least old_reserve
   // bytes of available memory.  On input, old_region_count holds the number of regions already present in the
   // OldCollector partition.  Upon return, old_region_count holds the updated number of regions in the OldCollector partition.
-  void reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count,
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count,
                        size_t &young_used_regions, size_t &old_used_regions, size_t &young_used_bytes, size_t &old_used_bytes);
 
   // Reserve space for evacuations, with regions reserved for old evacuations placed to the right

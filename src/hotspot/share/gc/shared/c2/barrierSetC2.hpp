@@ -270,6 +270,9 @@ public:
 // various GC barrier sets inherit from the BarrierSetC2 class to sprinkle
 // barriers into the accesses.
 class BarrierSetC2: public CHeapObj<mtGC> {
+private:
+  static const TypeFunc* _clone_type_Type;
+
 protected:
   virtual void resolve_address(C2Access& access) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
@@ -378,6 +381,9 @@ public:
   virtual void emit_stubs(CodeBuffer& cb) const { }
 
   static int arraycopy_payload_base_offset(bool is_array);
+
+  static void make_clone_type();
+  static const TypeFunc* clone_type();
 
 #ifndef PRODUCT
   virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const {

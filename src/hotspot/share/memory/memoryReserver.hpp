@@ -70,7 +70,7 @@ public:
                                MemTag mem_tag);
 
   // Release reserved memory
-  static bool release(const ReservedSpace& reserved);
+  static void release(const ReservedSpace& reserved);
 };
 
 class CodeMemoryReserver : AllStatic {

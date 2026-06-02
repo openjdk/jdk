@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ public class AddmodsOption {
         final String allModulePath = "ALL-MODULE-PATH";
         final String loggingOption = "-Xlog:aot=debug,aot+module=debug,aot+heap=info,cds=debug,module=trace";
         final String versionPattern = "java.[0-9][0-9].*";
-        final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         final String warningIncubator = "WARNING: Using incubator modules: jdk.incubator.vector";
         String archiveName = TestCommon.getNewArchiveName("addmods-option");
         TestCommon.setCurrentArchiveName(archiveName);
@@ -81,16 +80,14 @@ public class AddmodsOption {
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.addmods")
-          .shouldContain("runtime jdk.incubator.vector dump time jdk.jconsole")
-          .shouldContain(subgraphCannotBeUsed);
+          .shouldContain("runtime jdk.incubator.vector dump time jdk.jconsole");
 
         // no module specified during runtime
         oa = TestCommon.execCommon(
             loggingOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("jdk.httpserver specified during dump time but not during runtime")
-          .shouldContain(subgraphCannotBeUsed);
+          .shouldContain("jdk.httpserver specified during dump time but not during runtime");
 
         // dump an archive without the --add-modules option
         archiveName = TestCommon.getNewArchiveName("no-addmods-option");
@@ -111,8 +108,7 @@ public class AddmodsOption {
         oa.shouldHaveExitValue(0)
           .shouldContain("jdk.jconsole specified during runtime but not during dump time")
           // version of the jdk.httpserver module, e.g. java 22-ea
-          .shouldMatch(versionPattern)
-          .shouldContain(subgraphCannotBeUsed);
+          .shouldMatch(versionPattern);
 
         // dump an archive with an incubator module, -add-modules jdk.incubator.vector
         archiveName = TestCommon.getNewArchiveName("incubator-module");
@@ -137,7 +133,6 @@ public class AddmodsOption {
           // module is not restored from archive
           .shouldContain("define_module(): creation of module: jdk.incubator.vector")
           .shouldContain("WARNING: Using incubator modules: jdk.incubator.vector")
-          .shouldContain("subgraph jdk.internal.module.ArchivedBootLayer is not recorde")
           .shouldHaveExitValue(0);
 
         if (Compiler.isJVMCIEnabled()) {

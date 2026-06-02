@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
@@ -39,7 +40,7 @@ namespace {
     MemoryReleaser(char* ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~MemoryReleaser() {
       if (_ptr != nullptr) {
-        os::release_memory_special(_ptr, _size);
+        os::release_memory(_ptr, _size);
       }
     }
   };
@@ -838,6 +839,38 @@ TEST_VM(os_windows, reserve_memory_special_concurrent) {
   ReserveMemorySpecialRunnable runnable;
   ConcurrentTestRunner testRunner(&runnable, 30, 15000);
   testRunner.run();
+}
+
+TEST_VM(os_windows, SafeFetchN_with_page_guard_protection) {
+  const DWORD page_size = (DWORD)os::vm_page_size();
+
+  void* p = ::VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ASSERT_NE(p, nullptr) << "VirtualAlloc failed";
+
+  DWORD old_protect;
+  BOOL res = ::VirtualProtect(p, page_size, PAGE_READWRITE | PAGE_GUARD, &old_protect);
+  ASSERT_TRUE(res) << "VirtualProtect failed";
+
+  intptr_t result = SafeFetchN((intptr_t*)p, -1);
+  ASSERT_EQ((intptr_t)-1, result) << "SafeFetchN should return errValue for a page protected with PAGE_GUARD";
+
+  ::VirtualFree(p, 0, MEM_RELEASE);
+}
+
+TEST_VM(os_windows, SafeFetch32_with_page_guard_protection) {
+  const DWORD page_size = (DWORD)os::vm_page_size();
+
+  void* p = ::VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ASSERT_NE(p, nullptr) << "VirtualAlloc failed";
+
+  DWORD old_protect;
+  BOOL res = ::VirtualProtect(p, page_size, PAGE_READWRITE | PAGE_GUARD, &old_protect);
+  ASSERT_TRUE(res) << "VirtualProtect failed";
+
+  int result = SafeFetch32((int*)p, -1);
+  ASSERT_EQ(-1, result) << "SafeFetch32 should return errValue for a page protected with PAGE_GUARD";
+
+  ::VirtualFree(p, 0, MEM_RELEASE);
 }
 
 #endif

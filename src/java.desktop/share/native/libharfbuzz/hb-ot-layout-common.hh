@@ -2480,7 +2480,7 @@ struct VarRegionAxis
     /* TODO Move these to sanitize(). */
     if (unlikely (start > peak || peak > end))
       return 1.f;
-    if (unlikely (start < 0 && end > 0 && peak != 0))
+    if (unlikely (start < 0 && end > 0))
       return 1.f;
 
     if (coord <= start || end <= coord)

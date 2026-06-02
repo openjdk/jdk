@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,19 @@ public final class CStrike extends PhysicalStrike {
 
     @Override
     Point2D.Float getGlyphMetrics(final int glyphCode) {
-        return new Point2D.Float(getGlyphAdvance(glyphCode), 0.0f);
+        Point2D.Float metrics = new Point2D.Float();
+        long glyphPtr = getGlyphImagePtr(glyphCode);
+        if (glyphPtr != 0L) {
+            metrics.x = StrikeCache.getGlyphXAdvance(glyphPtr);
+            metrics.y = StrikeCache.getGlyphYAdvance(glyphPtr);
+            /* advance is currently in device space, need to convert back
+             * into user space.
+             * This must not include the translation component. */
+            if (invDevTx != null) {
+                invDevTx.deltaTransform(metrics, metrics);
+            }
+        }
+        return metrics;
     }
 
     @Override

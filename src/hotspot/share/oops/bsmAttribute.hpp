@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,19 +61,19 @@ public:
     _argv_offset = 2
   };
 
-  int bootstrap_method_index() const {
+  u2 bootstrap_method_index() const {
     return _bootstrap_method_index;
   }
-  int argument_count() const {
+  u2 argument_count() const {
     return _argument_count;
   }
-  int argument(int n) const {
-    assert(checked_cast<u2>(n) < _argument_count, "oob");
+  u2 argument(u2 n) const {
+    assert(n < _argument_count, "oob");
     return argument_indexes()[n];
   }
 
-  void set_argument(int index, u2 value) {
-    assert(index >= 0 && index < argument_count(), "invariant");
+  void set_argument(u2 index, u2 value) {
+    assert(index < argument_count(), "invariant");
     argument_indexes()[index] = value;
   }
 

@@ -157,7 +157,7 @@
   declare_toplevel_type(CollectedHeap*)                                   \
   declare_toplevel_type(ContiguousSpace*)                                 \
   declare_toplevel_type(HeapWord*)                                        \
-  declare_toplevel_type(HeapWord* volatile)                               \
+  declare_toplevel_type(Atomic<HeapWord*>)                                \
   declare_toplevel_type(MemRegion*)                                       \
   declare_toplevel_type(ThreadLocalAllocBuffer*)                          \
                                                                           \

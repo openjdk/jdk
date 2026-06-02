@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,16 +80,17 @@ void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, size_
 }
 
 void VirtualMemoryTracker::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
-    VMATree::SummaryDiff diff = tree()->set_tag((VMATree::position) addr, size, mem_tag);
-    apply_summary_diff(diff);
+  VMATree::SummaryDiff diff;
+  tree()->set_tag((VMATree::position)addr, size, mem_tag, diff);
+  apply_summary_diff(diff);
 }
 
-void VirtualMemoryTracker::Instance::apply_summary_diff(VMATree::SummaryDiff diff) {
+void VirtualMemoryTracker::Instance::apply_summary_diff(VMATree::SummaryDiff& diff) {
   assert(_tracker != nullptr, "Sanity check");
   _tracker->apply_summary_diff(diff);
 }
 
-void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
+void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff& diff) {
   VMATree::SingleDiff::delta reserve_delta, commit_delta;
   size_t reserved, committed;
   MemTag tag = mtNone;
@@ -104,10 +105,9 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
 #endif
   };
 
-  for (int i = 0; i < mt_number_of_tags; i++) {
-    reserve_delta = diff.tag[i].reserve;
-    commit_delta = diff.tag[i].commit;
-    tag = NMTUtil::index_to_tag(i);
+  diff.visit([&](MemTag tag, const VMATree::SingleDiff& single_diff) {
+    reserve_delta = single_diff.reserve;
+    commit_delta = single_diff.commit;
     reserved = VirtualMemorySummary::as_snapshot()->by_tag(tag)->reserved();
     committed = VirtualMemorySummary::as_snapshot()->by_tag(tag)->committed();
     if (reserve_delta != 0) {
@@ -138,7 +138,7 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
         }
       }
     }
-  }
+  });
 }
 
 void VirtualMemoryTracker::Instance::add_committed_region(address addr, size_t size,
@@ -193,14 +193,14 @@ bool VirtualMemoryTracker::Instance::print_containing_region(const void* p, outp
 }
 
 bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
-  ReservedMemoryRegion rmr = tree()->find_reserved_region((address)p);
-  if (!rmr.contain_address((address)p)) {
+  VirtualMemoryRegion rgn = tree()->find_reserved_region((address)p);
+  if (!rgn.is_valid() || !rgn.contain_address((address)p)) {
     return false;
   }
   st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
-               p2i(p), p2i(rmr.base()), p2i(rmr.end()), NMTUtil::tag_to_enum_name(rmr.mem_tag()));
+               p2i(p), p2i(rgn.base()), p2i(rgn.end()), NMTUtil::tag_to_enum_name(rgn.mem_tag()));
   if (MemTracker::tracking_level() == NMT_detail) {
-    rmr.call_stack()->print_on(st);
+    rgn.reserved_call_stack()->print_on(st);
   }
   st->cr();
   return true;
@@ -213,7 +213,7 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   bool ret = true;
-  tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+  tree()->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
     if (!walker->do_allocation_site(&rgn)) {
       ret = false;
       return false;
@@ -223,29 +223,29 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   return ret;
 }
 
-size_t VirtualMemoryTracker::committed_size(const ReservedMemoryRegion* rmr) {
+size_t VirtualMemoryTracker::committed_size(const VirtualMemoryRegion* rgn) {
   size_t result = 0;
-  tree()->visit_committed_regions(*rmr, [&](CommittedMemoryRegion& crgn) {
+  tree()->visit_committed_regions(*rgn, [&](VirtualMemoryRegion& crgn) {
     result += crgn.size();
     return true;
   });
   return result;
 }
 
-size_t VirtualMemoryTracker::Instance::committed_size(const ReservedMemoryRegion* rmr) {
+size_t VirtualMemoryTracker::Instance::committed_size(const VirtualMemoryRegion* rgn) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->committed_size(rmr);
+  return _tracker->committed_size(rgn);
 }
 
-address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr) {
+address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rgn) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->thread_stack_uncommitted_bottom(rmr);
+  return _tracker->thread_stack_uncommitted_bottom(rgn);
 }
 
-address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr) {
-  address bottom = rmr->base();
-  address top = rmr->end();
-    tree()->visit_committed_regions(*rmr, [&](CommittedMemoryRegion& crgn) {
+address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rgn) {
+  address bottom = rgn->base();
+  address top = rgn->end();
+    tree()->visit_committed_regions(*rgn, [&](VirtualMemoryRegion& crgn) {
     address committed_top = crgn.base() + crgn.size();
     if (committed_top < top) {
       // committed stack guard pages, skip them
@@ -299,7 +299,7 @@ class SnapshotThreadStackWalker : public VirtualMemoryWalker {
 public:
   SnapshotThreadStackWalker() {}
 
-  bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+  bool do_allocation_site(const VirtualMemoryRegion* rgn) {
     if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
       assert_lock_strong(NmtVirtualMemory_lock);
     }
@@ -340,19 +340,19 @@ void VirtualMemoryTracker::Instance::snapshot_thread_stacks() {
   walk_virtual_memory(&walker);
 }
 
-ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {
-    ReservedMemoryRegion rmr;
-    auto contain_region = [&](ReservedMemoryRegion& region_in_tree) {
+VirtualMemoryRegion RegionsTree::find_reserved_region(address addr) {
+    VirtualMemoryRegion rgn;
+    auto contain_region = [&](VirtualMemoryRegion& region_in_tree) {
       if (region_in_tree.contain_address(addr)) {
-        rmr = region_in_tree;
+        rgn = region_in_tree;
         return false;
       }
       return true;
     };
     visit_reserved_regions(contain_region);
-    return rmr;
+    return rgn;
 }
 
-bool CommittedMemoryRegion::equals(const ReservedMemoryRegion& rmr) const {
-  return size() == rmr.size() && call_stack()->equals(*(rmr.call_stack()));
+bool VirtualMemoryRegion::equals_including_stacks(const VirtualMemoryRegion& rgn) const {
+  return size() == rgn.size() && committed_call_stack()->equals(*(rgn.reserved_call_stack()));
 }

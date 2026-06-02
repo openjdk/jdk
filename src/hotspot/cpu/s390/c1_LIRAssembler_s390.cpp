@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2251,9 +2251,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     NearLabel known_ok, halt;
     metadata2reg(default_type->constant_encoding(), tmp);
-    if (UseCompressedClassPointers) {
-      __ encode_klass_not_null(tmp);
-    }
+    __ encode_klass_not_null(tmp);
 
     if (basic_type != T_OBJECT) {
       __ cmp_klass(tmp, dst, Z_R1_scratch);
@@ -2540,13 +2538,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   // Get object class.
   // Not a safepoint as obj null check happens earlier.
   if (op->fast_check()) {
-    if (UseCompressedClassPointers) {
-      __ load_klass(klass_RInfo, obj);
-      __ compareU64_and_branch(k_RInfo, klass_RInfo, Assembler::bcondNotEqual, *failure_target);
-    } else {
-      __ z_cg(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-      __ branch_optimized(Assembler::bcondNotEqual, *failure_target);
-    }
+    __ load_klass(klass_RInfo, obj);
+    __ compareU64_and_branch(k_RInfo, klass_RInfo, Assembler::bcondNotEqual, *failure_target);
     // Successful cast, fall through to profile or jump.
   } else {
     bool need_slow_path = !k->is_loaded() ||
@@ -2891,10 +2884,23 @@ void LIR_Assembler::on_spin_wait() {
 }
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
-  assert(patch_code == lir_patch_none, "Patch code not supported");
+  assert(addr_opr->is_address(), "must be an address");
+  assert(dest->is_register(), "must be a register");
+
   LIR_Address* addr = addr_opr->as_address_ptr();
+  Register reg = dest->as_pointer_register();
   assert(addr->scale() == LIR_Address::times_1, "scaling unsupported");
-  __ load_address(dest->as_pointer_register(), as_Address(addr));
+
+  if (addr->index()->is_illegal() && patch_code != lir_patch_none) {
+    PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
+
+    // TODO: Use load_const_32to64 here by extending NativeMovRegMem to support both instruction patterns.
+    __ load_const(Z_R0_scratch, (intptr_t)0);
+    __ z_agrk(reg, addr->base()->as_pointer_register(), Z_R0_scratch);
+    patching_epilog(patch, patch_code, addr->base()->as_register(), info);
+  } else {
+    __ load_address(reg, as_Address(addr));
+  }
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {

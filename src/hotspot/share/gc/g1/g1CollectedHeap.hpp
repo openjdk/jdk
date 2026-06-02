@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
@@ -915,9 +914,6 @@ public:
   // specified by the policy object.
   jint initialize() override;
 
-  // Returns whether concurrent mark threads (and the VM) are about to terminate.
-  bool concurrent_mark_is_terminating() const;
-
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
@@ -1036,7 +1032,7 @@ public:
   // Returns how much memory there is assigned to non-young heap that can not be
   // allocated into any more without garbage collection after a hypothetical
   // allocation of allocation_word_size.
-  size_t non_young_occupancy_after_allocation(size_t allocation_word_size);
+  size_t non_young_occupancy_after_allocation(size_t allocation_word_size) const;
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.
@@ -1279,7 +1275,7 @@ public:
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the bitmap.
-  void mark_evac_failure_object(uint worker_id, oop obj, size_t obj_size) const;
+  void mark_evac_failure_object(oop obj) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 

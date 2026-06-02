@@ -54,18 +54,11 @@ jobs:
       fail-fast: false
       matrix:
         target-cpu:
-          - aarch64
           - arm
           - s390x
           - ppc64le
           - riscv64
         include:
-          - target-cpu: aarch64
-            gnu-arch: aarch64
-            debian-arch: arm64
-            debian-repository: https://httpredir.debian.org/debian/
-            debian-version: trixie
-            tolerate-sysroot-errors: false
           - target-cpu: arm
             gnu-arch: arm
             debian-arch: armhf
@@ -94,7 +87,7 @@ jobs:
 
     steps:
       - name: 'Checkout the JDK source'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 'Get the BootJDK'
         id: bootjdk
@@ -122,7 +115,7 @@ jobs:
 
       - name: 'Check cache for sysroot'
         id: get-cached-sysroot
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: sysroot
           key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('./.github/workflows/build-cross-compile.yml') }}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,12 @@ static const int UNKNOWN_STACK_DEPTH = -99;
 //
 
 JvmtiThreadState *JvmtiThreadState::_head = nullptr;
-bool JvmtiThreadState::_seen_interp_only_mode = false;
+Atomic<bool> JvmtiThreadState::_seen_interp_only_mode{false};
 
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   _thread               = thread;
-  _thread_saved         = nullptr;
   _exception_state      = ES_CLEARED;
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;
@@ -118,11 +117,11 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
 
   if (thread != nullptr) {
     if (thread_oop == nullptr || thread->jvmti_vthread() == nullptr || thread->jvmti_vthread() == thread_oop) {
-      // The JavaThread for carrier or mounted virtual thread case.
+      // The JavaThread for an active carrier or a mounted virtual thread case.
       // Set this only if thread_oop is current thread->jvmti_vthread().
       thread->set_jvmti_thread_state(this);
+      assert(!thread->is_interp_only_mode(), "sanity check");
     }
-    thread->set_interp_only_mode(false);
   }
 }
 
@@ -135,7 +134,10 @@ JvmtiThreadState::~JvmtiThreadState()   {
   }
 
   // clear this as the state for the thread
+  assert(get_thread() != nullptr, "sanity check");
+  assert(get_thread()->jvmti_thread_state() == this, "sanity check");
   get_thread()->set_jvmti_thread_state(nullptr);
+  get_thread()->set_interp_only_mode(false);
 
   // zap our env thread states
   {
@@ -321,18 +323,21 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 
 void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
+  assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(!is_interp_only_mode(), "entering interp only when in interp only mode");
-  _seen_interp_only_mode = true;
+  assert(_thread->jvmti_vthread() == nullptr || _thread->jvmti_vthread() == get_thread_oop(), "sanity check");
+  assert(_thread->jvmti_thread_state() == this, "sanity check");
+  _saved_interp_only_mode = true;
   _thread->set_interp_only_mode(true);
   invalidate_cur_stack_depth();
 }
 
 void JvmtiThreadState::leave_interp_only_mode() {
+  assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(is_interp_only_mode(), "leaving interp only when not in interp only mode");
-  if (_thread == nullptr) {
-    // Unmounted virtual thread updates the saved value.
-    _saved_interp_only_mode = false;
-  } else {
+  _saved_interp_only_mode = false;
+  if (_thread != nullptr && _thread->jvmti_thread_state() == this) {
+    assert(_thread->jvmti_vthread() == nullptr || _thread->jvmti_vthread() == get_thread_oop(), "sanity check");
     _thread->set_interp_only_mode(false);
   }
 }
@@ -340,7 +345,7 @@ void JvmtiThreadState::leave_interp_only_mode() {
 
 // Helper routine used in several places
 int JvmtiThreadState::count_frames() {
-  JavaThread* thread = get_thread_or_saved();
+  JavaThread* thread = get_thread();
   javaVFrame *jvf;
   ResourceMark rm;
   if (thread == nullptr) {
@@ -479,8 +484,6 @@ void JvmtiThreadState::update_for_pop_top_frame() {
     }
     // force stack depth to be recalculated
     invalidate_cur_stack_depth();
-  } else {
-    assert(!is_enabled(JVMTI_EVENT_FRAME_POP), "Must have no framepops set");
   }
 }
 
@@ -579,11 +582,8 @@ void JvmtiThreadState::update_thread_oop_during_vm_start() {
   }
 }
 
+// For virtual threads only.
 void JvmtiThreadState::set_thread(JavaThread* thread) {
-  _thread_saved = nullptr;  // Common case.
-  if (!_is_virtual && thread == nullptr) {
-    // Save JavaThread* if carrier thread is being detached.
-    _thread_saved = _thread;
-  }
+  assert(is_virtual(), "sanity check");
   _thread = thread;
 }

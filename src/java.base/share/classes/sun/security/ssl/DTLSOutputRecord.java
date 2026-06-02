@@ -92,7 +92,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
     void changeWriteCiphers(SSLWriteCipher writeCipher,
             boolean useChangeCipherSpec) {
         if (isClosed()) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
                     "change_cipher_spec message");
             }
@@ -120,7 +120,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
     @Override
     void encodeAlert(byte level, byte description) {
         if (isClosed()) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
                     "alert message: " + Alert.nameOf(description));
             }
@@ -137,7 +137,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
     @Override
     void encodeChangeCipherSpec() {
         if (isClosed()) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
                     "change_cipher_spec message");
             }
@@ -154,7 +154,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
     void encodeHandshake(byte[] source,
             int offset, int length) {
         if (isClosed()) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
                         "handshake message",
                         ByteBuffer.wrap(source, offset, length));
@@ -179,14 +179,14 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
 
         if (isClosed) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
                     "application data or cached messages");
             }
 
             return null;
         } else if (isCloseWaiting) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
                     "application data");
             }
@@ -201,7 +201,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
             ByteBuffer destination) throws IOException {
 
         if (writeCipher.authenticator.seqNumOverflow()) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine(
                     "sequence number extremely close to overflow " +
                     "(2^64-1 packets). Closing connection.");
@@ -269,7 +269,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
         destination.limit(destination.position());
         destination.position(dstContent);
 
-        if (SSLLogger.isOn() && SSLLogger.isOn("record")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
             SSLLogger.fine(
                     "WRITE: " + protocolVersion.name + " " +
                     ContentType.APPLICATION_DATA.name +
@@ -282,7 +282,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
                 dstPos, dstLim, headerSize,
                 protocolVersion);
 
-        if (SSLLogger.isOn() && SSLLogger.isOn("packet")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
             ByteBuffer temporary = destination.duplicate();
             temporary.limit(temporary.position());
             temporary.position(dstPos);
@@ -497,7 +497,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
             dstBuf.limit(dstBuf.position());
             dstBuf.position(dstContent);
 
-            if (SSLLogger.isOn() && SSLLogger.isOn("record")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
                 SSLLogger.fine(
                         "WRITE: " + protocolVersion.name + " " +
                         ContentType.nameOf(memo.contentType) +
@@ -511,7 +511,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
                     ProtocolVersion.valueOf(memo.majorVersion,
                             memo.minorVersion));
 
-            if (SSLLogger.isOn() && SSLLogger.isOn("packet")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
                 ByteBuffer temporary = dstBuf.duplicate();
                 temporary.limit(temporary.position());
                 temporary.position(dstPos);

@@ -96,10 +96,6 @@ static inline Address aaddress(Register r) {
   return iaddress(r);
 }
 
-static inline Address at_rsp() {
-  return Address(esp, 0);
-}
-
 // At top of Java expression stack which may be different than esp().  It
 // isn't for category 1 objects.
 static inline Address at_tos   () {
@@ -3483,7 +3479,6 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ bind(notVFinal);
 
   // Get receiver klass into r3
-  __ restore_locals();
   __ load_klass(r3, r2);
 
   Label no_such_method;

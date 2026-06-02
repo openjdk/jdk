@@ -703,7 +703,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return;
         }
         if (debug.on()) {
-            debug.log("scheduleForDecryption: %d bytes", received);
+            debug.log("scheduleForDecryption: %s bytes [idbytes: %s(%s,%s)]",
+                    received, datagram.destConnId().getClass().getSimpleName(),
+                    datagram.destConnId().position(), datagram.destConnId().limit());
         }
         endpoint.buffer(received);
         incoming.add(datagram);
@@ -1756,6 +1758,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return localConnIdManager;
     }
 
+    PeerConnIdManager peerConnectionIdManager() {
+        return peerConnIdManager;
+    }
+
     /**
      * {@return the local connection id}
      */
@@ -1847,6 +1853,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                     header.destinationId().toHexString(),
                                     Utils.asHexString(destConnId));
                         }
+                        assert packetIndex > 1 :
+                                "first long packet CID does not match itself %s(%s,%s)"
+                                        .formatted(destConnId.getClass().getSimpleName(),
+                                                destConnId.position(), destConnId.limit());
                         return;
                     }
                     var peekedVersion = header.version();
@@ -1918,6 +1928,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                             " wrong connection id (%s vs %s)",
                                     packetIndex, Utils.asHexString(cid), Utils.asHexString(destConnId));
                         }
+                        assert packetIndex > 1 : "first short packet CID does not match itself %s(%s,%s)"
+                                        .formatted(destConnId.getClass().getSimpleName(),
+                                                destConnId.position(), destConnId.limit());
+
                         return;
                     }
 
@@ -1933,6 +1947,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         } catch (Throwable t) {
             if (debug.on()) {
                 debug.log("Failed to process incoming packet", t);
+            }
+            if (t instanceof AssertionError) {
+                this.terminator.terminate(TerminationCause.forException(t));
             }
         }
     }

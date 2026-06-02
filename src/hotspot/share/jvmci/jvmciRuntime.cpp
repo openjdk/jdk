@@ -2157,6 +2157,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                  frame_words, oop_map_set,
                                  handler_table, implicit_exception_table,
                                  compiler, comp_level,
+                                 nmethod::Flags(has_unsafe_access, has_wide_vector, has_monitors, has_scoped_access),
                                  speculations, speculations_len, data);
 
 
@@ -2170,11 +2171,6 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         }
         result = JVMCI::cache_full;
       } else {
-        nm->set_has_unsafe_access(has_unsafe_access);
-        nm->set_has_wide_vectors(has_wide_vector);
-        nm->set_has_monitors(has_monitors);
-        nm->set_has_scoped_access(has_scoped_access);
-
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         assert(data != nullptr, "must be");
         if (install_default) {

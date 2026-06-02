@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,7 +419,8 @@ class ServerImpl {
             // Stopping marking the state as finished if stop is requested,
             // termination is in progress and exchange count is 0
             if (r instanceof Event.StopRequested) {
-                logger.log(Level.TRACE, "Handling Stop Requested Event");
+                logger.log(Level.TRACE, "Handling {0} event",
+                        r.getClass().getSimpleName());
 
                 // checking if terminating is set to true
                 final boolean terminatingCopy = terminating;
@@ -437,10 +438,11 @@ class ServerImpl {
             HttpConnection c = t.getConnection();
 
             try {
-                if (r instanceof Event.WriteFinished) {
+                if (r instanceof Event.ExchangeFinished) {
 
-                    logger.log(Level.TRACE, "Write Finished");
-                    int exchanges = endExchange();
+                    logger.log(Level.TRACE, "Handling {0} event",
+                                r.getClass().getSimpleName());
+                    int exchanges = t.endExchange();
                     if (terminating && exchanges == 0 && reqConnections.isEmpty()) {
                         finishedLatch.countDown();
                     }
@@ -842,68 +844,77 @@ class ServerImpl {
                 tx = new ExchangeImpl(
                     method, uri, req, clen, connection
                 );
-                String chdr = headers.getFirst("Connection");
-                Headers rheaders = tx.getResponseHeaders();
+                try {
 
-                if (chdr != null && chdr.equalsIgnoreCase("close")) {
-                    tx.close = true;
-                }
-                if (version.equalsIgnoreCase("http/1.0")) {
-                    tx.http10 = true;
-                    if (chdr == null) {
+                    String chdr = headers.getFirst("Connection");
+                    Headers rheaders = tx.getResponseHeaders();
+
+                    if (chdr != null && chdr.equalsIgnoreCase("close")) {
                         tx.close = true;
-                        rheaders.set("Connection", "close");
-                    } else if (chdr.equalsIgnoreCase("keep-alive")) {
-                        rheaders.set("Connection", "keep-alive");
-                        int idleSeconds = (int) (ServerConfig.getIdleIntervalMillis() / 1000);
-                        String val = "timeout=" + idleSeconds;
-                        rheaders.set("Keep-Alive", val);
                     }
-                }
+                    if (version.equalsIgnoreCase("http/1.0")) {
+                        tx.http10 = true;
+                        if (chdr == null) {
+                            tx.close = true;
+                            rheaders.set("Connection", "close");
+                        } else if (chdr.equalsIgnoreCase("keep-alive")) {
+                            rheaders.set("Connection", "keep-alive");
+                            int idleSeconds = (int) (ServerConfig.getIdleIntervalMillis() / 1000);
+                            String val = "timeout=" + idleSeconds;
+                            rheaders.set("Keep-Alive", val);
+                        }
+                    }
 
-                if (newconnection) {
-                    connection.setParameters(
-                        rawin, rawout, chan, engine, sslStreams,
-                        sslContext, protocol, ctx, rawin
-                    );
-                }
-                /* check if client sent an Expect 100 Continue.
-                 * In that case, need to send an interim response.
-                 * In future API may be modified to allow app to
-                 * be involved in this process.
-                 */
-                String exp = headers.getFirst("Expect");
-                if (exp != null && exp.equalsIgnoreCase("100-continue")) {
-                    logReply(100, requestLine, null);
-                    sendReply(
-                        Code.HTTP_CONTINUE, false, null
-                    );
-                }
-                /* uf is the list of filters seen/set by the user.
-                 * sf is the list of filters established internally
-                 * and which are not visible to the user. uc and sc
-                 * are the corresponding Filter.Chains.
-                 * They are linked together by a LinkHandler
-                 * so that they can both be invoked in one call.
-                 */
-                final List<Filter> sf = ctx.getSystemFilters();
-                final List<Filter> uf = ctx.getFilters();
+                    if (newconnection) {
+                        connection.setParameters(
+                                rawin, rawout, chan, engine, sslStreams,
+                                sslContext, protocol, ctx, rawin
+                        );
+                    }
+                    /* check if client sent an Expect 100 Continue.
+                     * In that case, need to send an interim response.
+                     * In future API may be modified to allow app to
+                     * be involved in this process.
+                     */
+                    String exp = headers.getFirst("Expect");
+                    if (exp != null && exp.equalsIgnoreCase("100-continue")) {
+                        logReply(100, requestLine, null);
+                        sendReply(
+                                Code.HTTP_CONTINUE, false, null
+                        );
+                    }
+                    /* uf is the list of filters seen/set by the user.
+                     * sf is the list of filters established internally
+                     * and which are not visible to the user. uc and sc
+                     * are the corresponding Filter.Chains.
+                     * They are linked together by a LinkHandler
+                     * so that they can both be invoked in one call.
+                     */
+                    final List<Filter> sf = ctx.getSystemFilters();
+                    final List<Filter> uf = ctx.getFilters();
 
-                final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
-                final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler(sc));
+                    final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
+                    final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler(sc));
 
-                /* set up the two stream references */
-                tx.getRequestBody();
-                tx.getResponseBody();
-                if (https) {
-                    uc.doFilter(new HttpsExchangeImpl(tx));
-                } else {
-                    uc.doFilter(new HttpExchangeImpl(tx));
+                    /* set up the two stream references */
+                    tx.getRequestBody();
+                    tx.getResponseBody();
+                    if (https) {
+                        uc.doFilter(new HttpsExchangeImpl(tx));
+                    } else {
+                        uc.doFilter(new HttpExchangeImpl(tx));
+                    }
+                } catch (Throwable t) {
+                    // release the exchange.
+                    logger.log(Level.TRACE, "ServerImpl.Exchange", t);
+                    if (!tx.writefinished()) {
+                        closeConnection(connection);
+                    }
+                    tx.postExchangeFinished(false);
                 }
-
             } catch (Exception e) {
                 logger.log(Level.TRACE, "ServerImpl.Exchange", e);
-                if (tx == null || !tx.writefinished) {
+                if (tx == null || !tx.writefinished()) {
                     closeConnection(connection);
                 }
             } catch (Throwable t) {

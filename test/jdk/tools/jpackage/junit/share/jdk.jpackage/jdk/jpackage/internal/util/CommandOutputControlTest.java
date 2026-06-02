@@ -22,6 +22,8 @@
  */
 package jdk.jpackage.internal.util;
 
+import jdk.jpackage.test.WindowsHelper;
+
 import static java.util.stream.Collectors.joining;
 import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
@@ -458,7 +460,7 @@ public class CommandOutputControlTest {
         processDestroyer.get().join();
     }
 
-    @DisabledOnOs(value = OS.MAC, disabledReason = "Closing a stream doesn't consistently cause a trouble as it should")
+    @DisabledOnOs(value = {OS.MAC, OS.LINUX}, disabledReason = "Closing a stream doesn't consistently cause a trouble as expected")
     @ParameterizedTest
     @EnumSource(OutputStreams.class)
     public void test_close_streams(OutputStreams action) throws InterruptedException, IOException {
@@ -1004,7 +1006,7 @@ public class CommandOutputControlTest {
                     commandSeparator = " && ";
                 }
                 case POWERSHELL -> {
-                    commandline.addAll(List.of("powershell", "-NoProfile", "-Command"));
+                    commandline.addAll(List.of(WindowsHelper.PowerShellPath(), "-NoProfile", "-Command"));
                     commandSeparator = "; ";
                 }
                 default -> {
@@ -1176,7 +1178,7 @@ public class CommandOutputControlTest {
                     // It sends packets every second.
                     // To wait N seconds, it should send N+1 packets.
                     // The "timeout" command works only in a console.
-                    return String.format("(ping -n %d localhost > nul)", sleep.seconds() + 1);
+                    return String.format("(%%SystemRoot%%\\System32\\ping.exe -n %d localhost > nul)", sleep.seconds() + 1);
                 }
                 case POWERSHELL -> {
                     return "Start-Sleep -Seconds " + sleep.seconds();
@@ -1248,7 +1250,7 @@ public class CommandOutputControlTest {
 
         static <T extends CommandOutputControlMutator> Function<T, Set<T>> addToSet(Set<T> set) {
             return m -> {
-                return new SetBuilder<T>().add(set).add(m).create();
+                return SetBuilder.build(set).add(m).create();
             };
         }
     }

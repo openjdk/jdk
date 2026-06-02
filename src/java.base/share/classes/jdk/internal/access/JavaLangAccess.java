@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,15 +448,19 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes as many ASCII codepoints as possible from the source array into
-     * the destination byte array, assuming that the encoding is ASCII
-     * compatible.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     * Encodes as many ASCII codepoints as possible from the source
+     * character array into the destination byte array, assuming that
+     * the encoding is ASCII compatible.
      *
-     * @return the number of bytes successfully encoded, or 0 if none
+     * @param sa the source character array
+     * @param sp the index of the source array to start reading from
+     * @param da the target byte array
+     * @param dp the index of the target array to start writing to
+     * @param len the total number of characters to be encoded
+     * @return the total number of characters successfully encoded
+     * @throws NullPointerException if any of the provided arrays is null
      */
-    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+    int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
 
     /**
      * Set the cause of Throwable
@@ -578,6 +582,16 @@ public interface JavaLangAccess {
     Object scopedValueBindings();
 
     /**
+     * Returns the native thread ID for the given platform thread or 0 if not set.
+     */
+    long nativeThreadID(Thread thread);
+
+    /**
+     * Sets the native thread ID for the current platform thread.
+     */
+    void setThreadNativeID(long id);
+
+    /**
      * Returns the innermost mounted continuation
      */
     Continuation getContinuation(Thread thread);
@@ -640,4 +654,9 @@ public interface JavaLangAccess {
      * Are the string bytes compatible with the given charset?
      */
     boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars);
+
+    /**
+     * Finish initialization of the StackTraceElement objects in a stack trace.
+     */
+    void finishInit(StackTraceElement[] stackTrace);
 }

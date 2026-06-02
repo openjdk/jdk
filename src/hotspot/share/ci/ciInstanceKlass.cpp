@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,12 +136,14 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
 
 
 // ------------------------------------------------------------------
-// ciInstanceKlass::compute_shared_is_initialized
-void ciInstanceKlass::compute_shared_init_state() {
-  GUARDED_VM_ENTRY(
-    InstanceKlass* ik = get_instanceKlass();
-    _init_state = ik->init_state();
-  )
+InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
+  if (_is_shared && is_loaded()) {
+    // Return cached init state of shared klass
+    ciEnv* env = CURRENT_ENV;
+    assert(env->task() != nullptr, "only calls from compilation are expected here");
+    return env->get_cached_init_state(ident());
+  }
+  return _init_state;
 }
 
 // ------------------------------------------------------------------
@@ -319,11 +321,11 @@ void ciInstanceKlass::print_impl(outputStream* st) {
               bool_to_str(has_subklass()),
               layout_helper());
 
-    _flags.print_klass_flags();
+    _flags.print_klass_flags(st);
 
     if (_super) {
       st->print(" super=");
-      _super->print_name();
+      _super->print_name_on(st);
     }
     if (_java_mirror) {
       st->print(" mirror=PRESENT");
@@ -392,7 +394,7 @@ bool ciInstanceKlass::contains_field_offset(int offset) {
   return get_instanceKlass()->contains_field_offset(offset);
 }
 
-ciField* ciInstanceKlass::get_non_static_field_by_offset(const int field_offset) {
+ciField* ciInstanceKlass::get_nonstatic_field_by_offset(const int field_offset) {
   for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
     ciField* field = _nonstatic_fields->at(i);
     int field_off = field->offset_in_bytes();
@@ -406,7 +408,7 @@ ciField* ciInstanceKlass::get_non_static_field_by_offset(const int field_offset)
 // ciInstanceKlass::get_field_by_offset
 ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) {
   if (!is_static) {
-    return get_non_static_field_by_offset(field_offset);
+    return get_nonstatic_field_by_offset(field_offset);
   }
   VM_ENTRY_MARK;
   InstanceKlass* k = get_instanceKlass();
@@ -437,7 +439,7 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
 // except this does not require allocating memory for a new ciField
 BasicType ciInstanceKlass::get_field_type_by_offset(const int field_offset, const bool is_static) {
   if (!is_static) {
-    ciField* field = get_non_static_field_by_offset(field_offset);
+    ciField* field = get_nonstatic_field_by_offset(field_offset);
     return field != nullptr ? field->layout_type() : T_ILLEGAL;
   }
 
