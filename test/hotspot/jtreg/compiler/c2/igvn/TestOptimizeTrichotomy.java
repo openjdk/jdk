@@ -24,6 +24,7 @@
 /*
  * @test id=vanilla
  * @bug 8385157
+ * @key randomness
  * @summary Test RegionNode::optimize_trichotomy, including cases that
  *          are expected to optimize, and others that should not, because
  *          it would lead to wrong results.
@@ -34,11 +35,15 @@
 /*
  * @test id=Xcomp
  * @bug 8385157
+ * @key randomness
  * @library /test/lib /
  * @run main ${test.main.class} -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
  */
 
 package compiler.c2.igvn;
+
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.ir_framework.*;
 
@@ -47,9 +52,11 @@ import compiler.lib.ir_framework.*;
  * Note: TestFoldComparesFuzzer.java was originally designed to fuzz a related
  *       optimization (IfNode::fold_compares), which also deals with folding
  *       multiple comparisons into one (or none). That fuzzer test also covers
- *       the trichotomy optimization.
+ *       the trichotomy optimization, and is the reason JDK-8385157 was reported.
  */
 public class TestOptimizeTrichotomy {
+
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -107,6 +114,38 @@ public class TestOptimizeTrichotomy {
     public void checkTest1(boolean val) {
         if (val != test1_gold) {
             throw new RuntimeException("wrong value: " + val + " vs " + test1_gold);
+        }
+    }
+
+    // Another case found by the TestFoldComparesFuzzer.java
+    @Test
+    static boolean test2(int a, int b) {
+        a = Math.min(1886969202, Math.max(-2002597787, a));
+        b = Math.min(130, Math.max(-33554430, b));
+        if (!(b  >=  a) || (Integer.compareUnsigned(a, b) <= 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @DontCompile
+    static boolean reference2(int a, int b) {
+        a = Math.min(1886969202, Math.max(-2002597787, a));
+        b = Math.min(130, Math.max(-33554430, b));
+        if (!(b  >=  a) || (Integer.compareUnsigned(a, b) <= 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Run(test = {"test2"})
+    static void runTest2() {
+        int a = RANDOM.nextInt();
+        int b = RANDOM.nextInt();
+        boolean v0 = test2(a, b);
+        boolean v1 = reference2(a, b);
+        if (v0 != v1) {
+            throw new RuntimeException("wrong value: " + v0 + " vs " + v1);
         }
     }
 
