@@ -125,7 +125,7 @@ public class SnippetTaglet extends BaseTaglet {
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
         } else {
-            var set = ids.computeIfAbsent(tagletWriter.htmlWriter, k -> new HashSet<>());
+            var set = ids.computeIfAbsent(tagletWriter.htmlWriter, _ -> new HashSet<>());
             pre.put(HtmlAttr.ID, config.htmlIds.forSnippet(element, set).name());
         }
         var code = HtmlTree.CODE()
