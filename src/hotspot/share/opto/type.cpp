@@ -22,6 +22,7 @@
  *
  */
 
+#include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "classfile/javaClasses.hpp"
@@ -3280,6 +3281,17 @@ bool TypeInterfaces::eq(ciInstanceKlass* k) const {
   return true;
 }
 
+// Check whether an instance of type k will satisfy this
+bool TypeInterfaces::is_subset(ciInstanceKlass* k) const {
+  assert(k->is_loaded(), "should be loaded");
+  GrowableArray<ciInstanceKlass*>* k_interfaces = k->transitive_interfaces();
+  for (int i = 0; i < _interfaces.length(); i++) {
+    if (!k_interfaces->contains(_interfaces.at(i))) {
+      return false;
+    }
+  }
+  return true;
+}
 
 uint TypeInterfaces::hash() const {
   assert(_initialized, "must be");
@@ -5958,20 +5970,16 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
   Compile* C = Compile::current();
   Dependencies* deps = C->dependencies();
   assert((deps != nullptr) == (C->method() != nullptr && C->method()->code_size() > 0), "sanity");
-  const TypeInterfaces* interfaces = _interfaces;
   if (k->is_loaded()) {
     ciInstanceKlass* ik = k->as_instance_klass();
     bool klass_is_exact = ik->is_final();
-    if (!klass_is_exact &&
-        deps != nullptr) {
+    if (!klass_is_exact && deps != nullptr) {
       ciInstanceKlass* sub = ik->unique_concrete_subklass();
-      if (sub != nullptr) {
-        if (_interfaces->eq(sub)) {
-          deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
-          k = ik = sub;
-          klass_is_exact = sub->is_final();
-          return TypeKlassPtr::make(klass_is_exact ? Constant : _ptr, k, _offset);
-        }
+      if (sub != nullptr && _interfaces->is_subset(sub)) {
+        deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
+        k = ik = sub;
+        klass_is_exact = sub->is_final();
+        return TypeKlassPtr::make(klass_is_exact ? Constant : _ptr, k, _offset);
       }
     }
   }
