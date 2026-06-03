@@ -51,7 +51,6 @@ public class TextAreaTest {
     private static final String ACCESSIBLE_NAME = "TextArea Test";
     private static final String ACCESSIBLE_DESCRIPTION =
             "Regression Test:  javax.accessibility, TextArea";
-    private static final String TEXT_FILE = "tree.txt";
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException, AWTException {
@@ -71,7 +70,13 @@ public class TextAreaTest {
 
     private void createGUI() {
         frame = new Frame("TextAreaTest");
-        textArea = new TextArea(getTextFromFile(TEXT_FILE), 24, 80);
+        String TEXT_CONTENT = """
+                1. Test TextArea javax.accessibility methods
+                2. Test TextArea javax.accessibility setAccessibleName
+                3. Test TextArea javax.accessibility setAccessibleDescription
+                4. Test TextArea javax.accessibility setAccessibleStateSet
+                """;
+        textArea = new TextArea(TEXT_CONTENT, 24, 80);
 
         textArea.getAccessibleContext().setAccessibleName(ACCESSIBLE_NAME);
         textArea.getAccessibleContext().setAccessibleDescription(
@@ -90,29 +95,6 @@ public class TextAreaTest {
                 frame.dispose();
             }
         });
-    }
-
-    private String getTextFromFile(String fileName) {
-        StringBuilder textBuilder = new StringBuilder();
-
-        File file = new File(System.getProperty("test.src", "."), fileName);
-        if (!file.exists()) {
-            file = new File(System.getProperty("test.root", "."),
-                    "../../src/demo/share/jfc/SwingSet2/resources/" + fileName);
-        }
-
-        try (BufferedReader in = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = in.readLine()) != null) {
-                textBuilder.append(line).append('\n');
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(
-                    "Can't load text for TextArea from " +
-                            file.getAbsolutePath(), e);
-        }
-
-        return textBuilder.toString();
     }
 
     private void test() {
