@@ -78,33 +78,33 @@ public class AIXTzMappingTest {
         // AIX should map to Europe/Paris or Europe/Berlin, not GMT+01:00
         if (tzId.startsWith("GMT")) {
             throw new RuntimeException(
-                "Expected IANA timezone ID but got GMT offset: " + tzId + 
+                "Expected IANA timezone ID but got GMT offset: " + tzId +
                 " for TZ=" + tzStr);
         }
         // Verify DST transitions work correctly
         // For CET/MEZ: Standard time = GMT+1, DST = GMT+2
         if (tz.inDaylightTime(time)) {
             // We are in Daylight savings period - expect GMT+02:00
-            if (time.toString().contains("GMT+02:00") || 
+            if (time.toString().contains("GMT+02:00") ||
                 time.toString().contains("CEST") ||
                 time.toString().contains("MESZ")) {
-                System.out.println("AIX timezone mapping test passed: " + 
+                System.out.println("AIX timezone mapping test passed: " +
                     tzId + " (DST active) for TZ=" + tzStr);
                 return;
             }
         } else {
             // Standard time - expect GMT+01:00
-            if (time.toString().contains("GMT+01:00") || 
+            if (time.toString().contains("GMT+01:00") ||
                 time.toString().contains("CET") ||
                 time.toString().contains("MEZ")) {
-                System.out.println("AIX timezone mapping test passed: " + 
+                System.out.println("AIX timezone mapping test passed: " +
                     tzId + " (standard time) for TZ=" + tzStr);
                 return;
             }
         }
         // Reaching here means time zone did not match up as expected
         throw new RuntimeException(
-            "Got unexpected timezone information: TZ=" + tzStr + 
+            "Got unexpected timezone information: TZ=" + tzStr +
             ", mapped to: " + tzId + ", time: " + time);
     }
 }
