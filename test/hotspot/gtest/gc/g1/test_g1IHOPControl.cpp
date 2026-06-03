@@ -21,8 +21,7 @@
  * questions.
  */
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorState.inline.hpp"
+ #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentCycleTracker.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"
@@ -174,10 +173,10 @@ static void add_multiple_samples(G1IHOPTestController* ctrl,
 
 static size_t old_gen_threshold(size_t target_occupancy_bytes,
                                 size_t young_reserve_bytes,
-                                size_t non_hum_bytes,
-                                size_t hum_bytes,
+                                size_t non_hum_alloc_rate,
+                                size_t peak_extra_hum,
                                 double cycle_duration_s) {
-  size_t needed_during_cycle = young_reserve_bytes + non_hum_bytes * cycle_duration_s + hum_bytes;
+  size_t needed_during_cycle = young_reserve_bytes + non_hum_alloc_rate * cycle_duration_s + peak_extra_hum;
   return needed_during_cycle < target_occupancy_bytes ?
          target_occupancy_bytes - needed_during_cycle : 0;
 }
@@ -299,8 +298,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_non_humongous_only) {
 
   size_t expected_threshold = old_gen_threshold(100 /* target_occupancy */,
                                                 10  /* young_reserve */,
-                                                20  /* non_hum_bytes */,
-                                                0   /* hum_bytes */,
+                                                20  /* non_hum_alloc_rate */,
+                                                0   /* peak_extra_hum */,
                                                 total_cycle_duration_s);
 
   EXPECT_EQ(expected_threshold, ctrl.old_gen_threshold_for_conc_mark_start());
@@ -330,8 +329,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_peak_humongous_only) {
   double total_cycle_duration_s = 2;
   size_t expected_threshold = old_gen_threshold(100 /* target_occupancy_bytes */,
                                                 10  /* young_reserve_bytes */,
-                                                0   /* non_hum_bytes */,
-                                                30  /* hum_alloc_bytes */,
+                                                0   /* non_hum_alloc_rate */,
+                                                30  /* peak_extra_hum */,
                                                 total_cycle_duration_s);
 
   EXPECT_EQ(expected_threshold, ctrl.old_gen_threshold_for_conc_mark_start());
@@ -361,8 +360,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_combined) {
   double total_cycle_duration_s = 2;
   size_t expected_threshold = old_gen_threshold(100 /* target_occupancy */,
                                                 10  /* young_reserve */,
-                                                20  /* non_hum_bytes */,
-                                                30  /* hum_bytes */,
+                                                20  /* non_hum_alloc_rate */,
+                                                30  /* peak_extra_hum */,
                                                 total_cycle_duration_s);
 
   EXPECT_EQ(expected_threshold, ctrl.old_gen_threshold_for_conc_mark_start());
@@ -418,8 +417,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_young_reserve) {
   double total_cycle_duration_s = 2;
   size_t expected_small_young = old_gen_threshold(100 /* target_occupancy */,
                                                   10  /* young_reserve */,
-                                                  20  /* non_hum_bytes */,
-                                                  30  /* hum_bytes */,
+                                                  20  /* non_hum_alloc_rate */,
+                                                  30  /* peak_extra_hum */,
                                                   total_cycle_duration_s);
 
   G1IHOPTestController ctrl_large(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
@@ -434,8 +433,8 @@ TEST_VM(G1IHOPControl, adaptive_ihop_young_reserve) {
 
   size_t expected_large_young = old_gen_threshold(100 /* target_occupancy */,
                                                   25  /* young_reserve */,
-                                                  20  /* non_hum_bytes */,
-                                                  30  /* hum_bytes */,
+                                                  20  /* non_hum_alloc_rate */,
+                                                  30  /* peak_extra_hum */,
                                                   total_cycle_duration_s);
 
   EXPECT_EQ(expected_small_young, ctrl_small.old_gen_threshold_for_conc_mark_start());
@@ -692,14 +691,14 @@ TEST_VM(G1IHOPControl, adaptive_ihop_cycle_duration_scales) {
 
   size_t expected_short = old_gen_threshold(200 /* target_occupancy */,
                                             10  /* young_reserve */,
-                                            40  /* non_hum_bytes */,
-                                            30  /* hum_bytes */,
+                                            40  /* non_hum_alloc_rate */,
+                                            30  /* peak_extra_hum */,
                                             short_cycle_duration_s);
 
   size_t expected_long = old_gen_threshold(200 /* target_occupancy */,
                                            10  /* young_reserve */,
-                                           (80 / long_mutator_duration_s)  /* non_hum_bytes */,
-                                           30  /* hum_bytes */,
+                                           (80 / long_mutator_duration_s)  /* non_hum_alloc_rate */,
+                                           30  /* peak_extra_hum */,
                                            long_cycle_duration_s);
 
   EXPECT_EQ(ctrl_short.old_gen_threshold_for_conc_mark_start(), expected_short);

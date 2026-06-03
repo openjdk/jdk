@@ -1384,10 +1384,11 @@ void G1Policy::record_pause(Pause gc_type,
   bool is_periodic_gc = _g1h->gc_cause() == GCCause::_g1_periodic_collection;
 
   if (humongous_allocation_bytes > 0) {
-    // Record the humongous allocation that triggered the GC. This allocation
-    // is attributed to the ending allocation interval. We account for it eagerly
-    // before the actual allocation because any subsequent allocation failure
-    // will reset the G1ConcurrentCycleTracker.
+    // Record the humongous allocation that triggered the GC and attribute it to
+    // the ending allocation interval. We do this eagerly, before we know whether
+    // the post GC allocation succeeds, to keep the common case simple. In the
+    // rare case where this allocation fails, we over-account; this only
+    // affects the stored IHOP sample if the current GC is the first Mixed GC.
     alloc_interval_stats.record_humongous_allocation(humongous_allocation_bytes);
   }
   _concurrent_cycle_tracker.record_allocation_interval(gc_type, is_periodic_gc, start, end, alloc_interval_stats);

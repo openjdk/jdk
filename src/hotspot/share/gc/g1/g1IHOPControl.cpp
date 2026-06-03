@@ -31,7 +31,7 @@
 double G1IHOPControl::predict(const TruncatedSeq* seq) const {
   assert(_is_adaptive, "precondition");
   assert(_predictor != nullptr, "precondition");
-  return  _predictor->predict_zero_bounded(seq);
+  return _predictor->predict_zero_bounded(seq);
 }
 
 bool G1IHOPControl::have_enough_data_for_prediction() const {
@@ -175,7 +175,7 @@ void G1IHOPControl::print_log(size_t non_young_occupancy,
   log_debug(gc, ihop)("Adaptive IHOP information (value update), old-gen threshold: %zuB (%1.2f%%), internal target occupancy: %zuB, "
                       "old-gen occupancy: %zuB (%1.2f%%), additional buffer size: %zuB, "
                       "current non-humongous allocation: %zuB, current peak extra humongous occupancy: %zuB, "
-                      "predicted old-gen non-humongous allocation rate: %1.2fB/s, predicted peak extra humongous occupancy %1.2fB, "
+                      "predicted old-gen non-humongous allocation rate: %1.2fB/s, predicted peak extra humongous occupancy: %1.2fB, "
                       "predicted concurrent cycle duration: %1.2fms",
                       old_gen_mark_start_threshold,
                       percent_of(old_gen_mark_start_threshold, effective_target),

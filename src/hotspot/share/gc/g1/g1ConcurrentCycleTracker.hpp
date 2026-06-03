@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1CONCURRENTCYCLETRACKER_HPP
 
 #include "gc/g1/g1CollectorState.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 struct G1AllocationIntervalStats;
@@ -48,8 +47,6 @@ struct G1ConcurrentCycleStats {
 };
 
 class G1ConcurrentCycleTracker {
-  friend class G1IHOPTestController;
-
   using Pause = G1CollectorState::Pause;
 
   enum class CycleState {

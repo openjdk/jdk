@@ -123,7 +123,7 @@ G1ConcurrentCycleStats G1ConcurrentCycleTracker::get_and_reset_cycle_stats() {
   G1ConcurrentCycleStats stats{
     cycle_duration,
     _non_humongous_allocated_bytes,
-    checked_cast<size_t>(_peak_extra_humongous_occupancy_bytes)
+    _peak_extra_humongous_occupancy_bytes
   };
 
   reset();
