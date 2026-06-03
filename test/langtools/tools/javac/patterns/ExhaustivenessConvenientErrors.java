@@ -858,6 +858,36 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "or.use.default");
     }
 
+    @Test
+    public void testInaccessiblePermittedTypeReducedByDominance(Path base) throws Exception {
+        doTest(base,
+               new String[] {
+                   """
+                   package lib;
+                   public class Lib {
+                       public sealed interface Base {}
+                       public record NoOp() implements Base {}
+                       record Inaccessible() implements Base {}
+                       public record Accessible() implements Base {}
+                   }
+                   """
+               },
+               """
+               package test;
+               import lib.Lib;
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+                           //Inaccessible and Accessible missing, but cannot be used here.
+                       };
+                   }
+               }
+               """,
+               "lib.Lib.Base _",
+               "or.use.default");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");

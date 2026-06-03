@@ -893,7 +893,7 @@ public class ExhaustivenessComputer {
         OUTER: for (Iterator<PatternDescription> it = generalized.iterator(); it.hasNext(); ) {
             PatternDescription current = it.next();
             for (PatternDescription check : generalized) {
-                if (check != current && patternDominated(current, check)) {
+                if (check != current && patternDominated(check, current)) {
                     it.remove();
                     continue OUTER;
                 }
