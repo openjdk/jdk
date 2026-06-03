@@ -65,7 +65,7 @@ public class ProhibitedPackage {
                         TestCommon.list("java/lang/Prohibited", "ProhibitedHelper"),
                         "-Xlog:class+load")
             .shouldContain("Dumping")
-            .shouldNotContain("[info][class,load] java.lang.Prohibited source: ")
+            .shouldNotMatch("\\[info *\\]\\[class,load *\\] java.lang.Prohibited source: ")
             .shouldHaveExitValue(0);
 
         // Try loading the class in a prohibited package with various -Xshare

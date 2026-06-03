@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jdk.test.lib.dcmd.JcmdExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
@@ -46,7 +47,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 public class TestJcmdChangeLogLevel {
     public static void main(String[] args) throws Exception {
         final String fileName = "jfr_trace.txt";
-        final String findWhat = "[info][jfr] Flight Recorder initialized";
+        final Pattern findWhat = Pattern.compile("\\[info *\\]\\[jfr\\] Flight Recorder initialized");
         boolean passed = false;
 
         JcmdExecutor je = new PidJcmdExecutor();
@@ -61,7 +62,7 @@ public class TestJcmdChangeLogLevel {
                 throw new Error(e);
             }
             for (String l : lines) {
-                if (l.toString().contains(findWhat)) {
+                if (findWhat.matcher(l).find()) {
                     passed = true;
                     break;
                 }

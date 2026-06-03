@@ -59,12 +59,12 @@ public class TestStartupMessage {
          // Can't turn off log with -Xlog:jfr+startup=warning
 
          startJfrJvm()
-             .shouldContain("[info][jfr,startup")
+             .shouldMatch("\\[info *\\]\\[jfr,startup")
              .shouldContain("Started recording")
              .shouldContain("Use jcmd");
 
          startJfrJvm("-Xlog:jfr+startup=info")
-             .shouldContain("[info][jfr,startup")
+             .shouldMatch("\\[info *\\]\\[jfr,startup")
              .shouldContain("Started recording")
              .shouldContain("Use jcmd");
     }

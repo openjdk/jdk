@@ -50,8 +50,8 @@ public class VerificationTest {
             output.shouldNotContain("[verification] offset = 0,  opcode =");
 
         } else { // log level debug
-            output.shouldContain("[debug][verification] StackMapTable: frame_count");
-            output.shouldContain("[debug][verification] offset = 0,  opcode =");
+            output.shouldMatch("\\[debug *\\]\\[verification\\] StackMapTable: frame_count");
+            output.shouldMatch("\\[debug *\\]\\[verification\\] offset = 0,  opcode =");
         }
         output.shouldHaveExitValue(0);
     }

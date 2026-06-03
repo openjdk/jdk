@@ -119,7 +119,7 @@ public class TestHugePageDecisionsAtVMStartup {
         }
 
         if (!useLP) {
-            out.shouldMatch("\\[info\\]\\[pagesize *\\] Large page support disabled");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] Large page support disabled");
         } else if (useLP && !useTHP &&
                  (!configuration.supportsExplicitHugePages() || !haveUsableExplicitHugePages)) {
             out.shouldMatch(warningNoLP);
@@ -130,16 +130,16 @@ public class TestHugePageDecisionsAtVMStartup {
             if (configuration.getExplicitAvailableHugePageNumber() == 0) {
                 throw new SkippedException("No usable explicit hugepages configured on the system, skipping test");
             }
-            out.shouldMatch("\\[info\\]\\[pagesize *\\] Using the default large page size: " + buildSizeString(configuration.getExplicitDefaultHugePageSize()));
-            out.shouldMatch("\\[info\\]\\[pagesize *\\] UseLargePages=1, UseTransparentHugePages=0");
-            out.shouldMatch("\\[info\\]\\[pagesize *\\] Large page support enabled");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] Using the default large page size: " + buildSizeString(configuration.getExplicitDefaultHugePageSize()));
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] UseLargePages=1, UseTransparentHugePages=0");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] Large page support enabled");
         } else if (useLP && useTHP && configuration.supportsTHP()) {
             long thpPageSize = configuration.getThpPageSizeOrFallback();
             String thpPageSizeString = buildSizeString(thpPageSize);
             // We expect to see exactly two "Usable page sizes" :  the system page size and the THP page size. The system
             // page size differs, but its always in KB).
-            out.shouldMatch("\\[info\\]\\[pagesize *\\] UseLargePages=1, UseTransparentHugePages=1");
-            out.shouldMatch(".*\\[info\\]\\[pagesize *\\] Large page support enabled\\. Usable page sizes: \\d+[kK], " + thpPageSizeString + "\\. Default large page size: " + thpPageSizeString + ".*");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] UseLargePages=1, UseTransparentHugePages=1");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] Large page support enabled\\. Usable page sizes: \\d+[kK], " + thpPageSizeString + "\\. Default large page size: " + thpPageSizeString);
         }
     }
 
