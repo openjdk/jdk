@@ -1134,39 +1134,41 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
   ShenandoahBarrierStubC2::store_post(masm, node, Address(dst, disp), tmp1, tmp2);
 }
 
-void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr, Register oldval,
-      Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool weak, bool acquire) {
+void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr,
+      Register oldval, Register newval, Register tmp1, Register tmp2, bool exchange, bool narrow, bool weak, bool acquire) {
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, addr, tmp2, tmp3, narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, res, addr, tmp1, tmp2, narrow);
 
-  Register dest_current = exchange ? res   : R0;
-  Register int_flag     = exchange ? noreg : res;
-  int semantics         = MacroAssembler::MemBarNone;
+  Register dest_current = exchange ? res : R0;
+  Label no_update;
+  int semantics = MacroAssembler::MemBarNone;
 
   if (acquire) {
     semantics = support_IRIW_for_not_multiple_copy_atomic_cpu ?
                   MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter;
   }
 
+  if (!exchange) { __ li(res, 0); }
   if (narrow) {
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgw(CR0, dest_current, oldval, newval, addr,
                 semantics, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                int_flag, nullptr, true, weak);
+                noreg, &no_update, true, weak);
   } else {
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CR0, dest_current, oldval, newval, addr,
                 semantics, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                int_flag, nullptr, true, weak);
+                noreg, &no_update, true, weak);
   }
+  if (!exchange) { __ li(res, 1); }
 
   ShenandoahBarrierStubC2::load_store_post(masm, node, Address(addr, 0), tmp1, tmp2);
+
+  __ bind(no_update);
 }
 
-void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval, Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3) {
+void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval, Register newval, Register addr, Register tmp1, Register tmp2) {
   bool is_narrow = node->bottom_type()->isa_narrowoop();
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, addr, tmp2, tmp3, is_narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, preval, addr, tmp1, tmp2, is_narrow);
 
   if (is_narrow) {
     __ getandsetw(preval, newval, addr, MacroAssembler::cmpxchgx_hint_atomic_update());

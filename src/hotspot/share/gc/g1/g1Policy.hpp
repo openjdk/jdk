@@ -91,9 +91,11 @@ class G1Policy: public CHeapObj<mtGC> {
   G1SurvRateGroup* _survivor_surv_rate_group;
 
   double _reserve_factor;
-  // This will be set when the heap is expanded
-  // for the first time during initialization.
-  uint   _reserve_regions;
+  // The allocation reserve in number of regions that we try to keep free.
+  // G1 allocation of new regions for eden is restrained when allocating into that reserve.
+  // This intentionally slows down the allocation when the heap is close to full to allow
+  // concurrent marking to finish and hopefully avoid a Full GC.
+  Atomic<uint> _reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
 
@@ -224,9 +226,13 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) const;
+  uint calculate_young_desired_length(size_t pending_cards,
+                                      size_t card_rs_length,
+                                      size_t code_root_rs_length,
+                                      uint min_young_length_by_sizer,
+                                      uint max_young_length_by_sizer) const;
   // Limit the given desired young length to available free regions.
-  uint calculate_young_target_length(uint desired_young_length) const;
+  uint calculate_young_target_length(uint desired_young_length, uint min_young_length_by_sizer) const;
 
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;

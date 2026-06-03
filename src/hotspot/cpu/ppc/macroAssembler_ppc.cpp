@@ -4411,20 +4411,19 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //     if (receiver(i) == recv) goto found_recv(i);
   //   }
   //
-  //   // Fast: no receiver, but profile is full
+  //   // Fast: no receiver, but profile is not full
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == null) goto found_null(i);
   //   }
-  //   goto polymorphic
+  //
+  //   // Slow: profile is full, polymorphic case
+  //   count++;
+  //   return
   //
   //   // Slow: try to install receiver
   // found_null(i):
   //   CAS(&receiver(i), null, recv);
   //   goto restart
-  //
-  // polymorphic:
-  //   count++;
-  //   return
   //
   // found_recv(i):
   //   *receiver_count(i)++
@@ -4466,11 +4465,12 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     addi(offset, offset, receiver_step);
   bdnz(L_loop_search_empty);
 
-  // Polymorphic: Increment polymorphic counter instead of receiver slot.
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
   li(offset, poly_count_offset);
   b(L_count_update);
 
-  // Slow: try to install receiver
+  // Slowest: try to install receiver
   bind(L_found_empty);
 
   // Atomically swing receiver slot: null -> recv.
@@ -4491,7 +4491,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_found_recv);
   addi(offset, offset, receiver_to_count_step);
 
-  // Counter update
+  // Finally, update the counter
   bind(L_count_update);
   increment_mem64(mdp, offset, DataLayout::counter_increment, /* temp */ (count != noreg) ? count : recv);
 }
