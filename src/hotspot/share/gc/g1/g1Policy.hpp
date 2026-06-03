@@ -91,9 +91,11 @@ class G1Policy: public CHeapObj<mtGC> {
   G1SurvRateGroup* _survivor_surv_rate_group;
 
   double _reserve_factor;
-  // This will be set when the heap is expanded
-  // for the first time during initialization.
-  uint   _reserve_regions;
+  // The allocation reserve in number of regions that we try to keep free.
+  // G1 allocation of new regions for eden is restrained when allocating into that reserve.
+  // This intentionally slows down the allocation when the heap is close to full to allow
+  // concurrent marking to finish and hopefully avoid a Full GC.
+  Atomic<uint> _reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
 
@@ -224,9 +226,13 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) const;
+  uint calculate_young_desired_length(size_t pending_cards,
+                                      size_t card_rs_length,
+                                      size_t code_root_rs_length,
+                                      uint min_young_length_by_sizer,
+                                      uint max_young_length_by_sizer) const;
   // Limit the given desired young length to available free regions.
-  uint calculate_young_target_length(uint desired_young_length) const;
+  uint calculate_young_target_length(uint desired_young_length, uint min_young_length_by_sizer) const;
 
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
@@ -258,8 +264,6 @@ public:
 
 private:
   void abandon_collection_set_candidates();
-  // Sets up marking if proper conditions are met.
-  void maybe_start_marking(size_t allocation_word_size);
   // Manage time-to-mixed tracking.
   void update_time_to_mixed_tracking(Pause gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
@@ -297,6 +301,7 @@ public:
   void record_young_gc_pause_end(bool evacuation_failed);
 
   bool need_to_start_conc_mark(const char* source, size_t allocation_word_size) const;
+  bool need_to_start_conc_mark(const char* source, const G1CollectorState& state, size_t allocation_word_size) const;
 
   bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
 
@@ -305,9 +310,10 @@ public:
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_pause_start_time();
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark,
-                                   bool allocation_failure,
-                                   size_t allocation_word_size);
+  // Returns the next CollectorState based on current state without modifying the latter.
+  G1CollectorState record_young_collection_end(bool concurrent_operation_is_full_mark,
+                                               bool allocation_failure,
+                                               size_t allocation_word_size);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
