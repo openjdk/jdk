@@ -36,17 +36,17 @@ import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImp
 public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     final int index;
-    final int poolHash;
+    final int constructionHash;
     private final ConstantPool constantPool;
     private final MethodHandleEntryImpl handle;
     private final List<LoadableConstantEntry> arguments;
-    private @Stable int contentHash;
+    private @Stable int fullHash;
 
     BootstrapMethodEntryImpl(ConstantPool constantPool, int bsmIndex, int hash,
                              MethodHandleEntryImpl handle,
                              List<LoadableConstantEntry> arguments) {
         this.index = bsmIndex;
-        this.poolHash = hash;
+        this.constructionHash = hash;
         this.constantPool = constantPool;
         this.handle = handle;
         this.arguments = Util.sanitizeU2List(arguments);
@@ -74,18 +74,18 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
                 && e.arguments().equals(arguments);
     }
 
-    static int computePoolHashCode(MethodHandleEntryImpl handle,
-                                   List<? extends LoadableConstantEntry> arguments) {
+    static int computeConstructionHashCode(MethodHandleEntryImpl handle,
+                                           List<? extends LoadableConstantEntry> arguments) {
         // Keep bootstrap method table lookup independent of recursive content hash computation
         int argumentsHash = 1;
         for (LoadableConstantEntry argument : arguments) {
-            argumentsHash = 31 * argumentsHash + ((AbstractPoolEntry) argument).poolHash();
+            argumentsHash = 31 * argumentsHash + ((AbstractPoolEntry) argument).constructionHash();
         }
-        return (31 * handle.poolHash() + argumentsHash) | AbstractPoolEntry.NON_ZERO;
+        return (31 * handle.constructionHash() + argumentsHash) | AbstractPoolEntry.NON_ZERO;
     }
 
-    private static int computeContentHashCode(MethodHandleEntryImpl handle,
-                                              List<? extends LoadableConstantEntry> arguments) {
+    private static int computeFullHashCode(MethodHandleEntryImpl handle,
+                                           List<? extends LoadableConstantEntry> arguments) {
         return (31 * handle.hashCode() + arguments.hashCode()) | AbstractPoolEntry.NON_ZERO;
     }
 
@@ -94,11 +94,11 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     @Override
     public int hashCode() {
-        int hash = this.contentHash;
+        int hash = this.fullHash;
         if (hash != 0)
             return hash;
 
-        return this.contentHash = computeContentHashCode(handle, arguments);
+        return this.fullHash = computeFullHashCode(handle, arguments);
     }
 
     void writeTo(BufWriterImpl writer) {

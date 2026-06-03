@@ -68,7 +68,7 @@ public abstract sealed class AbstractPoolEntry {
     }
 
     static int hashClassFromUtf8(boolean isArray, Utf8EntryImpl content) {
-        int hash = content.contentHash();
+        int hash = content.stringHash();
         return hashClassFromDescriptor(isArray ? hash : Util.descriptorStringHash(content.length(), hash));
     }
 
@@ -85,11 +85,12 @@ public abstract sealed class AbstractPoolEntry {
 
     final ConstantPool constantPool;
     private final int index;
-    private final int hash;
+    private final int constructionHash;
+    private @Stable int fullHash;
 
-    private AbstractPoolEntry(ConstantPool constantPool, int index, int hash) {
+    private AbstractPoolEntry(ConstantPool constantPool, int index, int constructionHash) {
         this.index = index;
-        this.hash = hash;
+        this.constructionHash = constructionHash;
         this.constantPool = constantPool;
     }
 
@@ -98,14 +99,22 @@ public abstract sealed class AbstractPoolEntry {
     public int index() { return index; }
 
     @Override
-    public int hashCode() {
-        return hash;
+    public final int hashCode() {
+        int hash = fullHash;
+        if (hash != 0)
+            return hash;
+        return fullHash = computeFullHash();
     }
 
-    int poolHash() {
+    int constructionHash() {
         // Hash used by constant pool maps.  Unlike Object.hashCode(), this may be
         // based on pool-local indices to keep lookup and building paths cheap.
-        return hash != 0 ? hash : hashCode();
+        assert constructionHash != 0;
+        return constructionHash;
+    }
+
+    int computeFullHash() {
+        return constructionHash();
     }
 
     public abstract int tag();
@@ -138,7 +147,7 @@ public abstract sealed class AbstractPoolEntry {
         private final int offset;
         private final int rawLen;
         // Set in any state other than RAW
-        private @Stable int contentHash;
+        private @Stable int stringHash;
         private @Stable int charLen;
         // Set in CHAR state
         private @Stable char[] chars;
@@ -160,7 +169,7 @@ public abstract sealed class AbstractPoolEntry {
             this(cpm, index, s, s.hashCode());
         }
 
-        Utf8EntryImpl(ConstantPool cpm, int index, String s, int contentHash) {
+        Utf8EntryImpl(ConstantPool cpm, int index, String s, int stringHash) {
             // Prevent creation of unwritable entries
             if (!ModifiedUtf.isValidLengthInConstantPool(s)) {
                 throw new IllegalArgumentException("utf8 length out of range of u2: " + ModifiedUtf.utfLen(s));
@@ -172,7 +181,7 @@ public abstract sealed class AbstractPoolEntry {
             this.state = State.STRING;
             this.stringValue = s;
             this.charLen = s.length();
-            this.contentHash = contentHash;
+            this.stringHash = stringHash;
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, Utf8EntryImpl u) {
@@ -181,7 +190,7 @@ public abstract sealed class AbstractPoolEntry {
             this.offset = u.offset;
             this.rawLen = u.rawLen;
             this.state = u.state;
-            this.contentHash = u.contentHash;
+            this.stringHash = u.stringHash;
             this.charLen = u.charLen;
             this.chars = u.chars;
             this.stringValue = u.stringValue;
@@ -232,7 +241,7 @@ public abstract sealed class AbstractPoolEntry {
             int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
             int hash = ArraysSupport.hashCodeOfUnsigned(rawBytes, offset, singleBytes, 0);
             if (singleBytes == rawLen) {
-                this.contentHash = hash;
+                this.stringHash = hash;
                 charLen = rawLen;
                 state = State.BYTE;
             } else {
@@ -294,7 +303,7 @@ public abstract sealed class AbstractPoolEntry {
                         throw malformedInput(px);
                 }
             }
-            this.contentHash = hash;
+            this.stringHash = hash;
             charLen = chararr_count;
             this.chars = chararr;
             state = State.CHAR;
@@ -316,14 +325,19 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public int hashCode() {
-            return hashString(contentHash());
+        int computeFullHash() {
+            return hashString(stringHash());
         }
 
-        int contentHash() {
+        @Override
+        int constructionHash() {
+            return hashCode();
+        }
+
+        int stringHash() {
             if (state == State.RAW)
                 inflate();
-            return contentHash;
+            return stringHash;
         }
 
         @Override
@@ -402,7 +416,7 @@ public abstract sealed class AbstractPoolEntry {
                 case STRING:
                     return stringValue.equals(requireNonNull(s));
                 case CHAR:
-                    if (charLen != s.length() || contentHash != s.hashCode())
+                    if (charLen != s.length() || stringHash != s.hashCode())
                         return false;
                     for (int i=0; i<charLen; i++)
                         if (chars[i] != s.charAt(i))
@@ -411,7 +425,7 @@ public abstract sealed class AbstractPoolEntry {
                     state = State.STRING;
                     return true;
                 case BYTE:
-                    if (rawLen != s.length() || contentHash != s.hashCode())
+                    if (rawLen != s.length() || stringHash != s.hashCode())
                         return false;
                     for (int i=0; i<rawLen; i++)
                         if (rawBytes[offset+i] != s.charAt(i))
@@ -527,7 +541,6 @@ public abstract sealed class AbstractPoolEntry {
 
     abstract static sealed class AbstractRefEntry<T extends PoolEntry> extends AbstractPoolEntry {
         protected final T ref1;
-        private @Stable int contentHash;
 
         public AbstractRefEntry(ConstantPool constantPool, int tag, int index, T ref1) {
             super(constantPool, index, hash1(tag, ref1.index()));
@@ -539,11 +552,8 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public int hashCode() {
-            var hash = this.contentHash;
-            if (hash != 0)
-                return hash;
-            return this.contentHash = hash1(tag(), ref1.hashCode());
+        int computeFullHash() {
+            return hash1(tag(), ref1.hashCode());
         }
 
         void writeTo(BufWriterImpl pool) {
@@ -560,7 +570,6 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractPoolEntry {
         protected final T ref1;
         protected final U ref2;
-        private @Stable int contentHash;
 
         public AbstractRefsEntry(ConstantPool constantPool, int tag, int index, T ref1, U ref2) {
             super(constantPool, index, hash2(tag, ref1.index(), ref2.index()));
@@ -577,11 +586,8 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public int hashCode() {
-            var hash = this.contentHash;
-            if (hash != 0)
-                return hash;
-            return this.contentHash = hash2(tag(), ref1.hashCode(), ref2.hashCode());
+        int computeFullHash() {
+            return hash2(tag(), ref1.hashCode(), ref2.hashCode());
         }
 
         void writeTo(BufWriterImpl pool) {
@@ -612,7 +618,7 @@ public abstract sealed class AbstractPoolEntry {
     public static final class ClassEntryImpl extends AbstractNamedEntry implements ClassEntry {
 
         public @Stable ClassDesc sym;
-        private @Stable int hash;
+        private @Stable int constructionHash;
 
         ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
             super(cpm, TAG_CLASS, index, name);
@@ -620,7 +626,7 @@ public abstract sealed class AbstractPoolEntry {
 
         ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, int hash, ClassDesc sym) {
             super(cpm, TAG_CLASS, index, name);
-            this.hash = hash;
+            this.constructionHash = hash;
             this.sym = sym;
         }
 
@@ -691,17 +697,12 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public int hashCode() {
-            var hash = this.hash;
+        int constructionHash() {
+            var hash = this.constructionHash;
             if (hash != 0)
                 return hash;
 
-            return this.hash = hashClassFromUtf8(ref1.mayBeArrayDescriptor(), ref1);
-        }
-
-        @Override
-        int poolHash() {
-            return hashCode();
+            return this.constructionHash = hashClassFromUtf8(ref1.mayBeArrayDescriptor(), ref1);
         }
     }
 
@@ -910,7 +911,6 @@ public abstract sealed class AbstractPoolEntry {
         private final int bsmIndex;
         private BootstrapMethodEntryImpl bootstrapMethod;
         private final NameAndTypeEntryImpl nameAndType;
-        private @Stable int contentHash;
 
         AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                          NameAndTypeEntryImpl nameAndType) {
@@ -953,12 +953,8 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public int hashCode() {
-            int h = this.contentHash;
-            if (h != 0) {
-                return h;
-            }
-            return this.contentHash = hash2(tag(), bootstrap().hashCode(), nameAndType.hashCode());
+        int computeFullHash() {
+            return hash2(tag(), bootstrap().hashCode(), nameAndType.hashCode());
         }
 
         void writeTo(BufWriterImpl pool) {
@@ -1067,7 +1063,6 @@ public abstract sealed class AbstractPoolEntry {
 
         private final int refKind;
         private final AbstractPoolEntry.AbstractMemberRefEntry reference;
-        private @Stable int contentHash;
         public @Stable DirectMethodHandleDesc sym;
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
@@ -1100,11 +1095,8 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public int hashCode() {
-            var hash = this.contentHash;
-            if (hash != 0)
-                return hash;
-            return this.contentHash = hash2(TAG_METHOD_HANDLE, refKind, reference.hashCode());
+        int computeFullHash() {
+            return hash2(TAG_METHOD_HANDLE, refKind, reference.hashCode());
         }
 
         @Override
