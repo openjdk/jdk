@@ -59,6 +59,7 @@ public class DisabledCipherSuitesNotNegotiated {
 
     private static final String DISABLED_CIPHERSUITE = "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384";
     private static final String DISABLED_CIPHER_WILDCARD = "TLS_ECDH*WITH_AES_256_GCM_*";
+    private static volatile Exception serverException = null;
 
     private static void runServer(boolean disabledInClient) throws Exception {
         SSLContext ctx = SSLContext.getInstance(TLS_PROTOCOL);
@@ -141,8 +142,7 @@ public class DisabledCipherSuitesNotNegotiated {
                     }
                     runServer(disabledInClient);
                 } catch (Exception exc) {
-                    System.out.println("Server Exception:");
-                    exc.printStackTrace(System.out);
+                    serverException = exc;
                 }
             });
 
@@ -159,7 +159,19 @@ public class DisabledCipherSuitesNotNegotiated {
                     ProcessTools.createTestJavaProcessBuilder(
                             "DisabledCipherSuitesNotNegotiated",
                             "" + disabledInClient, "" + serverPort));
-            oa.shouldHaveExitValue(0);
+            oa.waitFor();
+            System.out.printf("Client process return %d%nCLIENT OUTPUT%n%s%n",
+                    oa.getExitValue(), oa.getOutput());
+            if (serverException != null) {
+                System.out.printf(
+                        "Server thread threw an unexpected exception: %s%n",
+                        serverException);
+                throw serverException;
+            } else if (oa.getExitValue() != 0) {
+                throw new Exception(String.format("Client exit code is non-zero (%d). "+
+                        "Server did not throw an exception.",
+                        oa.getExitValue()));
+            }
         }
     }
 
