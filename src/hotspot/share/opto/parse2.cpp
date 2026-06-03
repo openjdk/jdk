@@ -279,13 +279,15 @@ public:
 
     _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
 
-    _res_phi->add_req(_parse.zerocon(T_OBJECT));
-    _region->add_req(null_ctl);
-    _io_phi->add_req(_parse.i_o());
     Node* mem = _parse.reset_memory();
-    _mem_phi->add_req(mem);
-
     _parse.set_all_memory(mem);
+    if (!null_ctl->is_top()) {
+      _res_phi->add_req(_parse.zerocon(T_OBJECT));
+      _region->add_req(null_ctl);
+      _io_phi->add_req(_parse.i_o());
+      _mem_phi->add_req(mem);
+    }
+
 
     Node* ld = _gvn.transform(vt->buffer(&_parse));
     _res_phi->add_req(ld);
