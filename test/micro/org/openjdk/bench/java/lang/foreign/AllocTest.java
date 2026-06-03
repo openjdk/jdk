@@ -56,7 +56,7 @@ public class AllocTest extends CLayouts {
     @Benchmark
     public long alloc_confined() {
         try (Arena arena = Arena.ofConfined()) {
-            return arena.allocate(size).address() + arena.allocate(size).address()  + arena.allocate(size).address();
+            return arena.allocate(size).address();
         }
     }
 
@@ -64,7 +64,7 @@ public class AllocTest extends CLayouts {
     @Fork(jvmArgsAppend = {"-Djava.lang.foreign.native.confined.arena.pool-slots=0"})
     public long alloc_confined_no_pool() {
         try (Arena arena = Arena.ofConfined()) {
-            return arena.allocate(size).address() + arena.allocate(size).address()  + arena.allocate(size).address();
+            return arena.allocate(size).address();
         }
     }
 
