@@ -189,6 +189,12 @@ void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* g
   ShenandoahRegionIterator regions;
   ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, false /* only promote regions */);
   workers()->run_task(&task);
+
+  if (_has_self_forwarded_objects.load_relaxed()) {
+    log_info(gc)("Cleaning up failed evacuations");
+    ShenandoahSelfForwardTask self_forward_task(this, collection_set());
+    workers()->run_task(&self_forward_task);
+  }
 }
 
 void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent) {

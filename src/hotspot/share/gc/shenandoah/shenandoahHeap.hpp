@@ -29,6 +29,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
@@ -134,6 +135,15 @@ public:
 };
 
 typedef Stack<oop, mtGC>                     ShenandoahScanObjectStack;
+
+class ShenandoahSelfForwardTask : public WorkerTask {
+  ShenandoahHeap*          const _heap;
+  ShenandoahCollectionSet* const _cs;
+
+public:
+  ShenandoahSelfForwardTask(ShenandoahHeap* heap, ShenandoahCollectionSet* cs);
+  void work(uint worker_id) override;
+};
 
 // Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
 // for concurent evacuation and a snapshot-at-the-beginning write barrier for

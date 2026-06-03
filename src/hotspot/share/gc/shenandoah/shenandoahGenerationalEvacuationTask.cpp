@@ -54,6 +54,7 @@ ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(Shena
   _heap(heap),
   _generation(generation),
   _regions(iterator),
+  _collection_set(_heap->collection_set()),
   _concurrent(concurrent),
   _only_promote_regions(only_promote_regions)
 {
@@ -110,25 +111,28 @@ void ShenandoahGenerationalEvacuationTask::promote_regions() {
 void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
   LogTarget(Debug, gc) lt;
   ShenandoahConcurrentEvacuator cl(_heap);
-  ShenandoahInPlacePromoter promoter(_heap);
   ShenandoahHeapRegion* r;
 
-  while ((r = _regions->next()) != nullptr) {
+  while ((r = _collection_set->claim_next()) != nullptr) {
     if (lt.is_enabled()) {
       LogStream ls(lt);
       log_region(r, &ls);
     }
-
-    if (r->is_cset()) {
-      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-      _heap->marked_object_iterate(r, &cl);
-    } else {
-      promoter.maybe_promote_region(r);
+    assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+    _heap->marked_object_iterate(r, &cl);
+    if (r->has_self_forwards()) {
+      // This thread can no longer evacuate, but it may still move on to promote regions in place
+      break;
     }
 
     if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
-      break;
+      // GC is cancelled (vm is stopping), no further work
+      assert(_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm,
+        "Evacuation should not be cancelled for: %s", GCCause::to_string(_heap->cancelled_cause()));
+      return;
     }
   }
+
+  promote_regions();
 }
 

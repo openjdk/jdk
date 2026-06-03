@@ -37,6 +37,7 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
@@ -1164,8 +1165,8 @@ public:
     WorkerTask("Shenandoah Evacuation"),
     _sh(sh),
     _cs(cs),
-    _concurrent(concurrent)
-  {}
+    _concurrent(concurrent) {
+  }
 
   void work(uint worker_id) {
     if (_concurrent) {
@@ -1187,6 +1188,13 @@ private:
     while ((r =_cs->claim_next()) != nullptr) {
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
+
+      if (r->has_self_forwards()) {
+        // This region and this thread are lost. This thread has evacuated all it can. If
+        // we let it continue on to other regions, it will only fail those as well. We want
+        // to let other threads try the regions that this thread could not.
+        break;
+      }
 
       if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
         break;
@@ -1258,10 +1266,60 @@ private:
   ShenandoahGCStatePropagatorHandshakeClosure _propagator;
 };
 
+class ShenandoahSelfForwardClosure : public ObjectClosure {
+  bool _self_forwarded;
+public:
+  ShenandoahSelfForwardClosure() : _self_forwarded(false) {}
+
+  void do_object(oop obj) override {
+    markWord m = obj->mark();
+    if (!m.is_forwarded()) {
+      obj->set_mark(m.set_self_forwarded());
+      _self_forwarded = true;
+    }
+  }
+
+  bool self_forwarded_objects() const { return _self_forwarded; }
+};
+
+ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, ShenandoahCollectionSet* cs) :
+  WorkerTask("Shenandoah Un-Self-Forward"),
+  _heap(heap),
+  _cs(cs) {
+  _cs->clear_current_index();
+}
+
+void ShenandoahSelfForwardTask::work(uint worker_id) {
+  ShenandoahParallelWorkerSession worker_session(worker_id);
+  ShenandoahHeapRegion* r;
+  while ((r = _cs->claim_next()) != nullptr) {
+    ShenandoahSelfForwardClosure cl;
+    _heap->marked_object_iterate(r, &cl);
+    if (cl.self_forwarded_objects()) {
+      r->set_has_self_forwards();
+    }
+  }
+}
+
 void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) {
   assert(generation->is_global(), "Only global generation expected here");
   ShenandoahEvacuationTask task(this, _collection_set, concurrent);
   workers()->run_task(&task);
+
+  if (_has_self_forwarded_objects.load_relaxed()) {
+    // When a thread cannot evacuate, it will self forward objects _and_ then it
+    // will _stop_ further evacuation attempts to avoid 'poisoning' more regions
+    // with self forwarded objects. Of course, we should change this behavior if
+    // we gain the ability to reclaim evacuated regions during evacuation. The scenario
+    // we are worried about here is that the workers failed to attempt evacuations
+    // in some subset of the collection set regions. In this case, we must prevent
+    // mutators from attempting to evacuate the object during update refs. We could,
+    // alternatively, have the LRB distinguish between the evacuation phase and the
+    // self-update phase, but this would increase barrier complexity.
+    log_info(gc)("Cleaning up failed evacuations");
+    ShenandoahSelfForwardTask self_forward_task(this, _collection_set);
+    workers()->run_task(&self_forward_task);
+  }
 }
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {

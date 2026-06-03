@@ -31,6 +31,7 @@ class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
 class ShenandoahRegionIterator;
+class ShenandoahCollectionSet;
 
 // Unlike ShenandoahEvacuationTask, this iterates over all regions rather than just the collection set.
 // This is needed in order to promote humongous start regions if age() >= tenure threshold.
@@ -39,6 +40,7 @@ private:
   ShenandoahGenerationalHeap* const _heap;
   ShenandoahGeneration* const _generation;
   ShenandoahRegionIterator* _regions;
+  ShenandoahCollectionSet* _collection_set;
   bool _concurrent;
   bool _only_promote_regions;
 
