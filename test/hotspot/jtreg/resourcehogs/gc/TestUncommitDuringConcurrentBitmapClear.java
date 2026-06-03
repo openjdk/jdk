@@ -29,6 +29,7 @@ package gc.g1;
  * @requires vm.gc.G1
  * @requires vm.debug
  * @requires vm.flagless
+ * @requires vm.bits == 64
  * @requires os.maxMemory > 8g
  * @summary Verify that G1 does not crash while uncommitting a region whose
  *          bitmap is currently being cleared.
@@ -112,7 +113,7 @@ public class TestUncommitDuringConcurrentBitmapClear {
                 Thread.sleep(1);
             } while (!concurrentClearTask.isDone() && numYoungGCs < 200);
 
-            concurrentClearTask.get(30, TimeUnit.SECONDS); // Propagate exceptions, if any.
+            concurrentClearTask.get(30, TimeUnit.SECONDS); // Propagates exceptions, if any.
         } finally {
             WB.concurrentGCRunToIdle();
 
