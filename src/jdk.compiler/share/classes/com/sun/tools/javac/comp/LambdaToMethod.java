@@ -675,6 +675,10 @@ public class LambdaToMethod extends TreeTranslator {
     //     //any additional deserialization cases with the same implMethodName.
     //     throw new IllegalArgumentException("Invalid lambda deserialization");
     // }
+    //
+    // The $deserializeLambda$<implMethodName> may contain multiple if statements if
+    // there are multiple SerializedLambdas with the same implMethodName name.
+    // This may happen when a method references is serialized.
     private List<JCMethodDecl> makeDeserializeMethod() {
         ListBuffer<JCCase> cases = new ListBuffer<>();
         ListBuffer<JCBreak> breaks = new ListBuffer<>();
