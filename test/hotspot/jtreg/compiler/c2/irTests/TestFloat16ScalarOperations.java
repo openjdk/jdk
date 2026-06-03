@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,6 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
-import java.util.Random;
 
 import compiler.lib.generators.Generator;
 import static compiler.lib.generators.Generators.G;
