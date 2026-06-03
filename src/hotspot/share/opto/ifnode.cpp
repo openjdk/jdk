@@ -2220,7 +2220,8 @@ Node* IfProjNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         if (u->is_Load()) {
           LoadNode* ld = u->as_Load()->with_rc_constant_folded();
           if (ld != nullptr) {
-            igvn->replace_node(u, phase->transform(ld));
+            igvn->register_new_node_with_optimizer(ld);
+            igvn->replace_node(u, ld);
             --i;
           }
         }

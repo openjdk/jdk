@@ -1441,7 +1441,6 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
       if (use != this &&
           use->Opcode() == Opcode() &&
           use->in(0) != nullptr &&
-          use->in(0) != in(0) &&
           use->in(Address) == in(Address) &&
           same_vector_load_inputs(use) &&
           phase->is_dominator(use->in(0), in(0))) {
