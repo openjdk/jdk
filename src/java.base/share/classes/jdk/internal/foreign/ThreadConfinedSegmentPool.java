@@ -195,11 +195,6 @@ final class ThreadConfinedSegmentPool implements AutoCloseable {
         @ForceInline
         @Override
         public void close() {
-            if (session.isAlive() && allocator != null) {
-                // To minimize data exposure, we zero out _after_ use rather than
-                // before use.
-                allocator.zeroOutToOffset();
-            }
             // The Arena::close method is called first as it checks thread
             // confinement and liveness before cached chunks are made available again.
             try {
@@ -219,6 +214,9 @@ final class ThreadConfinedSegmentPool implements AutoCloseable {
             if (allocator != null) {
                 // Make this method idempotent
                 if (!allocatorReleased) {
+                    // To minimize data exposure, we zero out _after_ use rather than
+                    // before use.
+                    allocator.zeroOutToOffset();
                     // Reset the allocator allowing future reuse
                     allocator.resetTo(0);
                     releaseAllocatorIndex(allocatorIndex);
