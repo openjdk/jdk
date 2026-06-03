@@ -160,7 +160,7 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
   double reserve_regions_d = (double) new_number_of_regions * _reserve_factor;
   // We use ceiling so that if reserve_regions_d is > 0.0 (but
   // smaller than 1.0) we'll get 1.
-  _reserve_regions = (uint) ceil(reserve_regions_d);
+  _reserve_regions.store_relaxed((uint) ceil(reserve_regions_d));
 
   _young_gen_sizer.heap_size_changed(new_number_of_regions);
 
@@ -186,8 +186,22 @@ void G1Policy::update_young_length_bounds() {
 void G1Policy::update_young_length_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) {
   uint old_young_list_target_length = young_list_target_length();
 
-  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, card_rs_length, code_root_rs_length);
-  uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length);
+  uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
+  uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
+
+  if (max_young_length_by_sizer < min_young_length_by_sizer) {
+    // This can happen due to races with heap_size_changed() at mutator time. Do not update the young gen
+    // lengths. Will be updated on the next regular call anyway.
+    assert(!SafepointSynchronize::is_at_safepoint(), "must be");
+    return;
+  }
+
+  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards,
+                                                                      card_rs_length,
+                                                                      code_root_rs_length,
+                                                                      min_young_length_by_sizer,
+                                                                      max_young_length_by_sizer);
+  uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length, min_young_length_by_sizer);
 
   log_trace(gc, ergo, heap)("Young list length update: pending cards %zu card_rs_length %zu old target %u desired: %u target: %u",
                             pending_cards,
@@ -224,9 +238,9 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t card_rs_l
 //
 uint G1Policy::calculate_young_desired_length(size_t pending_cards,
                                               size_t card_rs_length,
-                                              size_t code_root_rs_length) const {
-  uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
-  uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
+                                              size_t code_root_rs_length,
+                                              uint min_young_length_by_sizer,
+                                              uint max_young_length_by_sizer) const {
 
   assert(min_young_length_by_sizer >= 1, "invariant");
   assert(max_young_length_by_sizer >= min_young_length_by_sizer, "invariant");
@@ -302,7 +316,7 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards,
 // Limit the desired (wished) young length by current free regions. If the request
 // can be satisfied without using up reserve regions, do so, otherwise eat into
 // the reserve, giving away at most what the heap sizer allows.
-uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
+uint G1Policy::calculate_young_target_length(uint desired_young_length, uint min_young_length_by_sizer) const {
   uint allocated_young_length = _g1h->young_regions_count();
 
   uint receiving_additional_eden;
@@ -319,8 +333,14 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
     // do, we at most eat the sizer's minimum regions into the reserve or half the
     // reserve rounded up (if possible; this is an arbitrary value).
 
-    uint max_to_eat_into_reserve = MIN2(_young_gen_sizer.min_desired_young_length(),
-                                        (_reserve_regions + 1) / 2);
+    // The heap reserve needs to be snapshotted for consistent use in the following.
+    // It can be concurrently modified by the mutator as it expands the heap. It can
+    // only increase at that time, so this is a conservative snapshot. So at worst this
+    // method will return a too small young gen length in that case.
+    uint reserve_regions = _reserve_regions.load_relaxed();
+
+    uint max_to_eat_into_reserve = MIN2(min_young_length_by_sizer,
+                                        (reserve_regions + 1) / 2);
 
     log_trace(gc, ergo, heap)("Young target length: Common "
                               "free regions at end of collection %u "
@@ -329,14 +349,14 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
                               "max to eat into reserve %u",
                               _free_regions_at_end_of_collection,
                               desired_young_length,
-                              _reserve_regions,
+                              reserve_regions,
                               max_to_eat_into_reserve);
 
     uint survivor_regions_count = _g1h->survivor_regions_count();
     uint desired_eden_length = desired_young_length - survivor_regions_count;
     uint allocated_eden_length = allocated_young_length - survivor_regions_count;
 
-    if (_free_regions_at_end_of_collection <= _reserve_regions) {
+    if (_free_regions_at_end_of_collection <= reserve_regions) {
       // Fully eat (or already eating) into the reserve, hand back at most absolute_min_length regions.
       uint receiving_eden = MIN3(_free_regions_at_end_of_collection,
                                   desired_eden_length,
@@ -351,9 +371,9 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
       log_trace(gc, ergo, heap)("Young target length: Fully eat into reserve "
                                 "receiving eden %u receiving additional eden %u",
                                 receiving_eden, receiving_additional_eden);
-    } else if (_free_regions_at_end_of_collection < (desired_eden_length + _reserve_regions)) {
+    } else if (_free_regions_at_end_of_collection < (desired_eden_length + reserve_regions)) {
       // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
-      uint free_outside_reserve = _free_regions_at_end_of_collection - _reserve_regions;
+      uint free_outside_reserve = _free_regions_at_end_of_collection - reserve_regions;
       assert(free_outside_reserve < desired_eden_length,
              "must be %u %u",
              free_outside_reserve, desired_eden_length);
