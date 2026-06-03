@@ -107,7 +107,6 @@ import static com.sun.tools.javac.code.Kinds.Kind.VAR;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.VOID;
 import com.sun.tools.javac.tree.JCTree.JCThrow;
-import java.io.IOException;
 
 /**
  * This pass desugars lambda expressions into static methods
@@ -649,6 +648,33 @@ public class LambdaToMethod extends TreeTranslator {
         return trans_block;
     }
 
+    // When an instance created for a "lambda" is serialized, the type that is
+    // serialized is java.lang.invoke.SerializedLambda.
+    // Its SerializedLambda.readResolve will call method $deserializeLambda$
+    // on the class containing the lambda, passing the SerializedLambda as
+    // a parameter. The $deserializeLambda$ is responsible for recreating the
+    // appropriate instance.
+    //
+    // The $deserializeLambda$ looks like this:
+    // private static Object $deserializeLambda$(final java.lang.invoke.SerializedLambda lambda) {
+    //      switch (lambda.getImplMethodName()) {
+    //          case <implMethodName> -> return $deserializeLambda$<implMethodName>(lambda);
+    //      }
+    //      throw new IllegalArgumentException("Invalid lambda deserialization");
+    // }
+    //
+    // The $deserializeLambda$<implMethodName> methods then look like:
+    // private static Object $deserializeLambda$<implMethodName>(final java.lang.invoke.SerializedLambda lambda) {
+    //     if (lambda.getImplMethodKind() == ... &&
+    //         lambda.getFunctionalInterfaceClass().equals(...) &&
+    //         lambda.getFunctionalInterfaceMethodName().equals(...) &&
+    //         lambda.getFunctionalInterfaceMethodSignature().equals(...) &&
+    //         lambda.getImplClass().equals(...) &&
+    //         lambda.getImplMethodSignature().equals(...) &&
+    //         lambda.getInstantiatedMethodType().equals(...)) return <recreate-lambda>;
+    //     //any additional deserialization cases with the same implMethodName.
+    //     throw new IllegalArgumentException("Invalid lambda deserialization");
+    // }
     private List<JCMethodDecl> makeDeserializeMethod() {
         ListBuffer<JCCase> cases = new ListBuffer<>();
         ListBuffer<JCBreak> breaks = new ListBuffer<>();
@@ -757,7 +783,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         DeserializationCase deserializationCase = kInfo.deserializeCases.computeIfAbsent(implMethodName, _ -> {
             Name currentDeserializationMethodName =
-                    names.deserializeLambda.append(names.fromString(String.valueOf(kInfo.deserializeCases.size())));
+                    names.deserializeLambda.append(implMethodNameAsName);
             MethodSymbol caseDeserializationMethod = makePrivateSyntheticMethod(STATIC, currentDeserializationMethodName,
                                                                                 kInfo.deserMethodSym.type, kInfo.clazz.sym);
             VarSymbol caseDeserializationParam = new VarSymbol(FINAL, names.fromString("lambda"),
