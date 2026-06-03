@@ -40,6 +40,10 @@ on:
       architecture:
         required: false
         type: string
+      msys2-install-path:
+        required: false
+        type: string
+        default: ''
       xcode-toolset-version:
         required: false
         type: string
@@ -137,6 +141,7 @@ jobs:
         uses: ./.github/actions/get-msys2
         with:
           architecture: ${{ inputs.architecture }}
+          install-path: ${{ inputs.msys2-install-path }}
         if: runner.os == 'Windows'
 
       - name: 'Get the BootJDK'

@@ -29,6 +29,10 @@ inputs:
   architecture:
     description: 'Architecture'
     required: true
+  install-path:
+    description: 'Custom installation path for MSYS2. If set, a fresh release is downloaded to this location.'
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -39,10 +43,8 @@ runs:
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
-        # x86.x64 runners include MSYS2 pre-installed, so release: false reuses it.
-        release: ${{ inputs.architecture == 'ARM64' }}
-        # ARM64 runners don't, so a fresh release is downloaded to a custom location.
-        location: ${{ inputs.architecture == 'ARM64' && format('{0}/msys2', runner.tool_cache) || '' }}
+        release: ${{ inputs.install-path != '' }}
+        location: ${{ inputs.install-path }}
 
       # We can't run bash until this is completed, so stick with pwsh
     - name: 'Set MSYS2 path'
