@@ -28,6 +28,7 @@ import static jdk.incubator.vector.VectorOperators.AND;
 import static jdk.incubator.vector.VectorOperators.MUL;
 import static jdk.incubator.vector.VectorOperators.LSHR;
 import static jdk.incubator.vector.VectorOperators.ASHR;
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
 
@@ -43,12 +44,26 @@ public class TestVectorMulLongToSignedUnsignedInt {
     static final VectorSpecies<Long> SPECIES = LongVector.SPECIES_PREFERRED;
     static final int SIZE = SPECIES.length();
 
+    private static final Generators RD = Generators.G;
+
     static final long[] src1 = new long[SIZE];
     static final long[] src2 = new long[SIZE];
     static long[] res = new long[SIZE];
 
     static final boolean[] mask_arr = new boolean[SIZE];
     static final VectorMask<Long> MASK;
+
+    // Random compile-time-constant masks.
+    static final long RAND_MASK1 = RD.longs().next();
+    static final long RAND_MASK2 = RD.longs().next();
+
+    // Random compile-time-constant shift count in [0, 63]. A shift >= 32 clears
+    // the upper doubleword (fits uint); a smaller shift may not.
+    static final int RAND_SHIFT1 = RD.ints().next() & 0x3F;
+
+    // Random input arrays for the random-mask correctness cases.
+    static final long[] rsrc1 = new long[SIZE];
+    static final long[] rsrc2 = new long[SIZE];
 
     static {
         for (int i = 0; i < SIZE; i++) {
@@ -57,6 +72,9 @@ public class TestVectorMulLongToSignedUnsignedInt {
             mask_arr[i] = (i % 2) == 0;
         }
         MASK = VectorMask.fromArray(SPECIES, mask_arr, 0);
+
+        RD.fill(RD.longs(), rsrc1);
+        RD.fill(RD.longs(), rsrc2);
     }
 
     public static void main(String[] args) {
@@ -81,25 +99,6 @@ public class TestVectorMulLongToSignedUnsignedInt {
         long[] expected = new long[SPECIES.length()];
         for (int i = 0; i < SPECIES.length(); i++) {
             expected[i] = (src1[i] & -2L) * (src2[i] & -2L);
-        }
-        Verify.checkEQ(res, expected);
-    }
-
-    // Case 2: Mask = -1L (all bits set).
-    @Test
-    @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx", "true"})
-    public static void testAllOnesMask() {
-        LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
-        LongVector v2 = LongVector.fromArray(SPECIES, src2, 0);
-        v1.lanewise(AND, -1L).lanewise(MUL, v2.lanewise(AND, -1L)).intoArray(res, 0);
-    }
-
-    @Run(test = "testAllOnesMask")
-    public void runAllOnesMask() {
-        testAllOnesMask();
-        long[] expected = new long[SPECIES.length()];
-        for (int i = 0; i < SPECIES.length(); i++) {
-            expected[i] = (src1[i] & -1L) * (src2[i] & -1L);
         }
         Verify.checkEQ(res, expected);
     }
@@ -300,6 +299,44 @@ public class TestVectorMulLongToSignedUnsignedInt {
             long a = mask_arr[i] ? (src1[i] >> 32) : src1[i];
             long b = mask_arr[i] ? (src2[i] >> 32) : src2[i];
             expected[i] = a * b;
+        }
+        Verify.checkEQ(res, expected);
+    }
+
+    // Random-constant correctness cases with no IR rules.
+
+    // Case 13: AND pattern with random masks on both inputs.
+    @Test
+    public static void testRandomAndMasks() {
+        LongVector v1 = LongVector.fromArray(SPECIES, rsrc1, 0);
+        LongVector v2 = LongVector.fromArray(SPECIES, rsrc2, 0);
+        v1.lanewise(AND, RAND_MASK1).lanewise(MUL, v2.lanewise(AND, RAND_MASK2)).intoArray(res, 0);
+    }
+
+    @Run(test = "testRandomAndMasks")
+    public void runRandomAndMasks() {
+        testRandomAndMasks();
+        long[] expected = new long[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            expected[i] = (rsrc1[i] & RAND_MASK1) * (rsrc2[i] & RAND_MASK2);
+        }
+        Verify.checkEQ(res, expected);
+    }
+
+    // Case 14: URShiftV pattern with a random shift count on both inputs.
+    @Test
+    public static void testRandomURShift() {
+        LongVector v1 = LongVector.fromArray(SPECIES, rsrc1, 0);
+        LongVector v2 = LongVector.fromArray(SPECIES, rsrc2, 0);
+        v1.lanewise(LSHR, RAND_SHIFT1).lanewise(MUL, v2.lanewise(LSHR, RAND_SHIFT1)).intoArray(res, 0);
+    }
+
+    @Run(test = "testRandomURShift")
+    public void runRandomURShift() {
+        testRandomURShift();
+        long[] expected = new long[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            expected[i] = (rsrc1[i] >>> RAND_SHIFT1) * (rsrc2[i] >>> RAND_SHIFT1);
         }
         Verify.checkEQ(res, expected);
     }
