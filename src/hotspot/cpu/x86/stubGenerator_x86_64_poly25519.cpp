@@ -28,12 +28,12 @@
 
 #define __ _masm->
 
-const int term = 19;
-const int limbs = 5;
-const int bpl = 51;
-const int rem = 64 - bpl;
-const long MASK = 0x7FFFFFFFFFFFF;
-const long CARRY_ADD = 0x4000000000000;
+const int32_t term = 19;
+const int32_t limbs = 5;
+const int32_t bpl = 51;
+const int32_t rem = 64 - bpl;
+const uint64_t MASK = 0x7FFFFFFFFFFFF;
+const uint64_t CARRY_ADD = 0x4000000000000;
 
 // Multiplication operation for polynomial arithmetic in Curve25519.
 //
@@ -129,7 +129,7 @@ void square_25519_scalar(const Register aLimbs, const Register rLimbs, Register 
   for (int i = 0; i < limbs; i++) {
     __ movq(aArg, Address(aLimbs, i * 8));
     __ movq(rax, aArg);
-    __ imulq(aArg);   // rdx:rax = a * a
+    __ imulq(aArg);   // rdx:rax = a[j] * a[i]
     __ movq(d, rax);
     __ andq(d, mask);
     __ shrq(rax, bpl);
