@@ -473,30 +473,21 @@ jlong CurrentTimeMicros()
     return (jlong)(count.QuadPart * 1000 * 1000 / counterFrequency.QuadPart);
 }
 
-static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar_t** wpath) {
-    int unicode_path_len;
-    size_t prefix_len, wpath_len;
-
+static errno_t convert_to_unicode(const char* path, wchar_t** wpath) {
     /*
      * Get required buffer size to convert to Unicode.
      * The return value includes the terminating null character.
      */
-    unicode_path_len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
-                                           path, -1, NULL, 0);
+    int unicode_path_len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
+                                               path, -1, NULL, 0);
     if (unicode_path_len == 0) {
         return EINVAL;
     }
 
-    prefix_len = wcslen(prefix);
-    wpath_len = prefix_len + unicode_path_len;
-    *wpath = (wchar_t*)JLI_MemAlloc(wpath_len * sizeof(wchar_t));
-    if (*wpath == NULL) {
-        return ENOMEM;
-    }
+    *wpath = (wchar_t*)JLI_MemAlloc(unicode_path_len * sizeof(wchar_t));
 
-    wcsncpy(*wpath, prefix, prefix_len);
     if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
-                            path, -1, &((*wpath)[prefix_len]), (int)wpath_len) == 0) {
+                            path, -1, *wpath, unicode_path_len) == 0) {
         JLI_MemFree(*wpath);
         *wpath = NULL;
         return EINVAL;
@@ -657,7 +648,7 @@ static wchar_t* convert_to_absolute_path(const char* path, errno_t* err) {
     set_path_prefix(npath, &prefix, &prefix_off, &needs_fullpath);
 
     wchar_t* unicode_path = NULL;
-    *err = convert_to_unicode(npath, L"", &unicode_path);
+    *err = convert_to_unicode(npath, &unicode_path);
     JLI_MemFree(npath);
     if (*err != ERROR_SUCCESS) {
         return NULL;
@@ -686,6 +677,16 @@ static wchar_t* convert_to_absolute_path(const char* path, errno_t* err) {
         *err = ENOMEM;
     } else {
         _snwprintf(result, result_len, L"%s%s", prefix, &full_path[prefix_off]);
+
+        /*
+         * Remove trailing pathsep (not for \\?\<DRIVE>:\, since it would make
+         * it relative)
+         */
+        result_len = wcslen(result);
+        if ((result_len > 0) && result[result_len - 1] == L'\\' &&
+                !(result_len == 7 && iswalpha(result[4]) && result[5] == L':')) {
+            result[result_len - 1] = L'\0';
+        }
     }
 
     if (free_full_path != 0) {
