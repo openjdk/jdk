@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8285838
+ * @bug 8380993
  * @library /test/lib
  * @summary Validates AIX timezone mapping behavior where POSIX TZ strings
  * with comma-separated DST rules are truncated and mapped through tzmappings
