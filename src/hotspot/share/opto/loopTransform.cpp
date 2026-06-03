@@ -3005,11 +3005,11 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
           // but NOT before the pre-loop.
           Node* clone = cd->pin_node_under_control();
           if (clone != nullptr) {
-            clone->set_req(0, ctrl);
+            clone->set_req(0, ctrl_target_for_data_rewire);
             register_new_node(clone, get_ctrl(cd));
             _igvn.replace_node(cd, clone);
           } else {
-            _igvn.replace_input_of(cd, 0, ctrl); // ctrl, not null
+            _igvn.replace_input_of(cd, 0, ctrl_target_for_data_rewire); // ctrl, not null
           }
           --i;
         }

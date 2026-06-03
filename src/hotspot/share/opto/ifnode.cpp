@@ -2211,22 +2211,22 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
 
 Node* IfProjNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // The range check constant folds: mark array loads that depend on this range check
- if (can_reshape && in(0)->is_RangeCheck()) {
-   PhaseIterGVN* igvn = phase->is_IterGVN();
-   const TypeTuple *t = phase->type(in(0))->is_tuple();
-   if (always_taken(t)) {
-     for (DUIterator i = outs(); has_out(i); i++) {
-       Node* u = out(i);
-       if (u->is_Load()) {
-         LoadNode* ld = u->as_Load()->with_rc_constant_folded();
-         if (ld != nullptr) {
-           igvn->replace_node(u, phase->transform(ld));
-           --i;
-         }
-       }
-     }
-   }
- }
+  if (can_reshape && in(0)->is_RangeCheck()) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    const TypeTuple* t = phase->type(in(0))->is_tuple();
+    if (always_taken(t)) {
+      for (DUIterator i = outs(); has_out(i); i++) {
+        Node* u = out(i);
+        if (u->is_Load()) {
+          LoadNode* ld = u->as_Load()->with_rc_constant_folded();
+          if (ld != nullptr) {
+            igvn->replace_node(u, phase->transform(ld));
+            --i;
+          }
+        }
+      }
+    }
+  }
   return nullptr;
 }
 

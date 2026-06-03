@@ -2173,7 +2173,7 @@ void PhaseIterGVN::verify_node_invariants_for(const Node* n) {
             load->Opcode() == Op_LoadNKlass ||
             load->Opcode() == Op_LoadRange ||
             (load->Opcode() == Op_LoadX && adr_t->offset() == 0) || // mark word
-            load->in(0) == nullptr ||
+            load->in(0) == nullptr || // LoadNode::Ideal() clears control for constant references
             (load->in(0)->is_Proj() && load->in(0)->in(0)->is_RangeCheck()) ||
             !n->depends_only_on_test() ||
             load->rc_constant_folded())) {

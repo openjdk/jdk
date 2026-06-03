@@ -2702,15 +2702,22 @@ LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(
 }
 
 bool SuperWordVTransformBuilder::rc_constant_folded(const Node_List* pack) const {
-  bool rc_constant_folded = true;
-  for (uint i = 0; i < pack->size(); i++) {
+  bool rc_constant_folded = false;
+  for (uint i = 0; i < pack->size() && !rc_constant_folded; i++) {
     Node* n = pack->at(i);
     assert(n->is_Load(), "only meaningful for loads");
-    if (!n->as_Load()->rc_constant_folded()) {
-      rc_constant_folded = false;
+    if (n->as_Load()->rc_constant_folded()) {
+      rc_constant_folded = true;
     }
   }
-  assert(rc_constant_folded == pack->at(0)->as_Load()->rc_constant_folded(), "all load of the pack should be similar");
+#ifdef ASSERT
+  if (rc_constant_folded) {
+    for (uint i = 0; i < pack->size() && !rc_constant_folded; i++) {
+      Node* n = pack->at(i);
+      assert(n->as_Load()->rc_constant_folded() || !n->as_Load()->depends_only_on_test(), "");
+    }
+  }
+#endif
   return rc_constant_folded;
 }
 
