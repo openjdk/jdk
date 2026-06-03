@@ -485,6 +485,9 @@ static errno_t convert_to_unicode(const char* path, wchar_t** wpath) {
     }
 
     *wpath = (wchar_t*)JLI_MemAlloc(unicode_path_len * sizeof(wchar_t));
+    if (*wpath == NULL) {
+        return ENOMEM;
+    }
 
     if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
                             path, -1, *wpath, unicode_path_len) == 0) {
