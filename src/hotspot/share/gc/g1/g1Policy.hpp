@@ -91,9 +91,11 @@ class G1Policy: public CHeapObj<mtGC> {
   G1SurvRateGroup* _survivor_surv_rate_group;
 
   double _reserve_factor;
-  // This will be set when the heap is expanded
-  // for the first time during initialization.
-  uint   _reserve_regions;
+  // The allocation reserve in number of regions that we try to keep free.
+  // G1 allocation of new regions for eden is restrained when allocating into that reserve.
+  // This intentionally slows down the allocation when the heap is close to full to allow
+  // concurrent marking to finish and hopefully avoid a Full GC.
+  Atomic<uint> _reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
 
