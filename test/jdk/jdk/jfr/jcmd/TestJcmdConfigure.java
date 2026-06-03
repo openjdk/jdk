@@ -128,7 +128,7 @@ public class TestJcmdConfigure {
     }
 
     private static void testRepository(){
-        final Pattern findWhat = Pattern.compile("\\[info *\\]\\[jfr\\] Same base repository path " +
+        final Pattern findWhat = Pattern.compile("\\[info *\\]\\[jfr *\\] Same base repository path " +
                                                  Pattern.quote(REPOSITORYPATH_1) + " is set");
 
         try {

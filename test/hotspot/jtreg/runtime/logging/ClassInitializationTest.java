@@ -60,7 +60,7 @@ public class ClassInitializationTest {
                                                               "BadMap50");
         out = new OutputAnalyzer(pb.start());
         out.shouldNotHaveExitValue(0);
-        out.shouldNotContain("[class,init]");
+        out.shouldNotMatch("\\[class,init *\\]");
         out.shouldNotContain("Fail over class verification to old verifier for: BadMap50");
 
     }

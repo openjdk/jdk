@@ -44,7 +44,7 @@ public class StackWalkTest {
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("[stackwalk]");
+        output.shouldNotMatch("\\[stackwalk *\\]");
         output.shouldHaveExitValue(0);
     }
 

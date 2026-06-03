@@ -68,7 +68,7 @@ public class ExceptionsTest {
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("[exceptions]");
+        output.shouldNotMatch("\\[exceptions *\\]");
         output.shouldHaveExitValue(0);
     }
 

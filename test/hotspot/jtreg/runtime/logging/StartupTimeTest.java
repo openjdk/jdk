@@ -47,7 +47,7 @@ public class StartupTimeTest {
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("[startuptime]");
+        output.shouldNotMatch("\\[startuptime *\\]");
         output.shouldHaveExitValue(0);
     }
 

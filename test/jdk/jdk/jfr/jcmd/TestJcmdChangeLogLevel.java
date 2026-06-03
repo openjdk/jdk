@@ -47,7 +47,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 public class TestJcmdChangeLogLevel {
     public static void main(String[] args) throws Exception {
         final String fileName = "jfr_trace.txt";
-        final Pattern findWhat = Pattern.compile("\\[info *\\]\\[jfr\\] Flight Recorder initialized");
+        final Pattern findWhat = Pattern.compile("\\[info *\\]\\[jfr *\\] Flight Recorder initialized");
         boolean passed = false;
 
         JcmdExecutor je = new PidJcmdExecutor();
