@@ -3233,9 +3233,9 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
-  HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
+  HANDLE file_mapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
     (DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
-  if (fileMapping == nullptr) {
+  if (file_mapping == nullptr) {
     if (GetLastError() == ERROR_DISK_FULL) {
       vm_exit_during_initialization(err_msg("Could not allocate sufficient disk space for Java heap"));
     }
@@ -3246,9 +3246,9 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     return nullptr;
   }
 
-  LPVOID addr = mapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
+  LPVOID addr = mapViewOfFileEx(file_mapping, FILE_MAP_WRITE, 0, 0, size, base);
 
-  CloseHandle(fileMapping);
+  CloseHandle(file_mapping);
 
   return (char*)addr;
 }
@@ -3287,19 +3287,17 @@ static char* reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_ta
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
   char* aligned_base = nullptr;
-  static const int max_attempts = 20;
+  constexpr int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
     char* extra_base = os::reserve_memory(extra_size, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
-    // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
     os::release_memory(extra_base, extra_size);
 
-    // Attempt to reserve, into the just vacated space, the slightly smaller aligned area.
-    // Which may fail, hence the loop.
+    // A racing thread may have taken this region instead of us, which is why we loop and retry.
     aligned_base = os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
   }
 
@@ -3309,7 +3307,7 @@ static char* reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_ta
   return aligned_base;
 }
 
-// Similar to reserve_memory_aligned, multiple threads can race in this code.
+// Similar to reserve_memory_aligned, this code is race-prone.
 static char* map_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity");
@@ -3320,19 +3318,17 @@ static char* map_memory_aligned(size_t size, size_t alignment, int file_desc, Me
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
   char* aligned_base = nullptr;
-  static const int max_attempts = 20;
+  constexpr int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
     char* extra_base = os::map_memory_to_file(extra_size, file_desc, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
-    // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
     os::unmap_memory(extra_base, extra_size);
 
-    // Attempt to map, into the just vacated space, the slightly smaller aligned area.
-    // Which may fail, hence the loop.
+    // A racing thread may have taken this region instead of us, which is why we loop and retry.
     aligned_base = os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag);
   }
 
@@ -3344,7 +3340,7 @@ static char* map_memory_aligned(size_t size, size_t alignment, int file_desc, Me
 
 // MapViewOfFile3 supports alignment natively.
 static char* map_memory_aligned_va2(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
-  assert(file_desc != -1,"file descriptor should not be -1");
+  assert(file_desc != -1, "File descriptor should not be -1");
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
          "Alignment must be a multiple of allocation granularity");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3361,11 +3357,11 @@ static char* map_memory_aligned_va2(size_t size, size_t alignment, int file_desc
 
   // File-backed aligned mapping.
   HANDLE fh = (HANDLE)_get_osfhandle(file_desc);
-  HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,(DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
+  HANDLE file_mapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,(DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
   DWORD err = GetLastError();
-  if (fileMapping != nullptr) {
+  if (file_mapping != nullptr) {
     aligned_base = (char*)os::win32::MapViewOfFile3(
-            fileMapping,
+            file_mapping,
             GetCurrentProcess(),
             nullptr,  // let the system choose an aligned address
             0,        // offset
@@ -3374,7 +3370,7 @@ static char* map_memory_aligned_va2(size_t size, size_t alignment, int file_desc
             PAGE_READWRITE,
             &param, 1);
     err = GetLastError();
-    CloseHandle(fileMapping);
+    CloseHandle(file_mapping);
   }
 
   if (aligned_base != nullptr) {

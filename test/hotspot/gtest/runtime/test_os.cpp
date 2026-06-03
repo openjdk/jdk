@@ -1227,8 +1227,6 @@ TEST_VM(os, dll_load_null_error_buf) {
   ASSERT_NULL(lib);
 }
 
-// --- Aligned allocation tests ---
-
 TEST_VM(os, reserve_memory_aligned_basic) {
   const size_t granularity = os::vm_allocation_granularity();
   const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity };
