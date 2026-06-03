@@ -58,7 +58,7 @@ void G1UncommitRegionTask::enqueue() {
 
   G1UncommitRegionTask* uncommit_task = instance();
   if (!uncommit_task->is_active()) {
-    // Change state to active and schedule using G1UncommitDelay.
+    // Change state to active and schedule.
     uncommit_task->set_active(true);
     G1CollectedHeap::heap()->service_thread()->schedule_task(uncommit_task, G1UncommitInitialDelay);
   }
