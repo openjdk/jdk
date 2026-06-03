@@ -336,12 +336,8 @@ bool NativeInstruction::is_movk() {
   return Instruction_aarch64::extract(int_at(0), 30, 23) == 0b11100101;
 }
 
-void NativeIllegalInstruction::insert(address code_pos) {
-  *(juint*)code_pos = 0xd4bbd5a1; // dcps1 #0xdead
-}
-
 bool NativeInstruction::is_stop() {
-  return uint_at(0) == 0xd4bbd5c1; // dcps1 #0xdeae
+  return is_udf(udf_marker_stop);
 }
 
 //-------------------------------------------------------------------
@@ -388,15 +384,8 @@ void NativeDeoptInstruction::verify() {
 
 // Inserts an undefined instruction at a given pc
 void NativeDeoptInstruction::insert(address code_pos) {
-  // 1 1 0 1 | 0 1 0 0 | 1 0 1 imm16 0 0 0 0 1
-  // d       | 4       | a      | de | 0 | 0 |
-  // 0xd4, 0x20, 0x00, 0x00
-  uint32_t insn = 0xd4ade001;
+  uint32_t insn = make_udf(udf_marker_deopt);
   uint32_t *pos = (uint32_t *) code_pos;
   *pos = insn;
-  /**code_pos = 0xd4;
-  *(code_pos+1) = 0x60;
-  *(code_pos+2) = 0x00;
-  *(code_pos+3) = 0x00;*/
   ICache::invalidate_range(code_pos, 4);
 }

@@ -1028,6 +1028,13 @@ public:
 
 #undef INSN
 
+  // UDF
+  void udf(uint16_t imm) {
+    starti;
+    f(0, 31, 16);
+    f(imm, 15, 0);
+  }
+
   // System
   void system(int op0, int op1, int CRn, int CRm, int op2,
               Register rt = dummy_reg)

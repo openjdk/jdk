@@ -3379,7 +3379,7 @@ void MacroAssembler::stop(const char* msg) {
   // load msg into r0 so we can access it from the signal handler
   // ExternalAddress enables saving and restoring via the code cache
   lea(c_rarg0, ExternalAddress((address) str));
-  dcps1(0xdeae);
+  udf(NativeInstruction::udf_marker_stop);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
