@@ -333,18 +333,24 @@ final class LazyConstantTest {
 
         AtomicInteger interruptedAfterGet = new AtomicInteger(unset);
 
-        Thread t = Thread.ofPlatform().start(() -> {
-            assertEquals(VALUE, constant.get());
-            interruptedAfterGet.set(Thread.currentThread().isInterrupted() ? interrupted : notInterrupted);
-        });
-
-        assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
-        t.interrupt();
+        Thread t = null;
         try {
+            t = Thread.ofPlatform().start(() -> {
+                assertEquals(VALUE, constant.get());
+                interruptedAfterGet.set(Thread.currentThread().isInterrupted() ? interrupted : notInterrupted);
+            });
+
+            assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
+            t.interrupt();
             assertTrue(interruptOccured.await(TIME_OUT_S, TimeUnit.SECONDS));
         } finally {
+            // Safety net: if the test fails or is interrupted before the worker observes
+            // the interrupt, the latch is opened so the worker is not left parked
+            // until timeout and join has a chance to complete promptly.
             release.countDown();
-            t.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            if (t != null) {
+                t.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            }
         }
         assertFalse(t.isAlive());
 
