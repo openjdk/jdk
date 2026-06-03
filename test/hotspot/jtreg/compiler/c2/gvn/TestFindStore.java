@@ -55,7 +55,8 @@ public class TestFindStore {
 
     @Run(test = {"testLoad", "testStore", "testLoadDependent1", "testLoadDependent2", "testLoadArray",
                  "testLoadArrayOverlap", "testLoadIndependentAliasClasses", "testLoadMismatched",
-                 "testLoadArrayCopy", "testLoadArrayCopyUnknownLength"})
+                 "testLoadArrayCopy", "testLoadArrayCopyUnknownLength",
+                 "testAllocationIndependence1", "testAllocationIndependence2"})
     public void run() {
         C1 c1 = new C1();
         C2 c2 = new C2();
@@ -81,6 +82,9 @@ public class TestFindStore {
         Asserts.assertEQ(1, testLoadArrayCopyUnknownLength(a1, a2, 100, 1));
         a1[2] = 0;
         Asserts.assertEQ(0, testLoadArrayCopyUnknownLength(a1, a2, 2, 1));
+
+        Asserts.assertEQ(3, testAllocationIndependence1(c1, 1, 2).v);
+        Asserts.assertEQ(3, testAllocationIndependence2(c1, 1, 2).v);
     }
 
     @Test
@@ -169,5 +173,26 @@ public class TestFindStore {
         // Cannot determine if this overwrites a1[2]
         System.arraycopy(a2, 0, a1, 0, len);
         return a1[2];
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    static C1 testAllocationIndependence1(C1 o1, int v1, int v2) {
+        // o1 and o2 are independent
+        o1.v = v1;
+        C1 o2 = new C1();
+        o2.v = o1.v + v2;
+        return o2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    static C1 testAllocationIndependence2(C1 o1, int v1, int v2) {
+        // o1 and o2 are independent, but we also want CastPP(o1) and o2 being independent
+        C1 o2 = new C1();
+        o1.v = v1;
+        o2.v = v2;
+        o2.v = o1.v + o2.v;
+        return o2;
     }
 }
