@@ -69,9 +69,9 @@ public class TestFloat16ScalarOperations {
     private static final Float16 RANDOM5 = Float16.valueOf(genF.next());
 
     // We have to ensure that the constants are not special values that lead the operations to
-    // constant fold. For example "x + 0" could constant fold to "x", so we need to avoid that
-    // the add constant is zero.
-    private static Generator<Float> genSmallRangeF = G.uniformFloats(0.1f, 0.9f);
+    // constant fold. For example "x + 0" could constant fold to "x" or "x / 0.5" could fold
+    // to "x * 2", so we need to avoid that the constants are zero or a reciprocal power of two.
+    private static Generator<Float> genSmallRangeF = G.uniformFloats(0.6f, 0.9f);
     private static final Float16 RANDOM_CON_ADD = Float16.valueOf(genSmallRangeF.next());
     private static final Float16 RANDOM_CON_SUB = Float16.valueOf(genSmallRangeF.next());
     private static final Float16 RANDOM_CON_MUL = Float16.valueOf(genSmallRangeF.next());
