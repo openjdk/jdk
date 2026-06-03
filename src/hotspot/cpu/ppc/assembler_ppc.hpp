@@ -1358,10 +1358,6 @@ class Assembler : public AbstractAssembler {
     return (0 == addr % a);
   }
 
-  void invalidate_icache() {
-    AbstractAssembler::invalidate_icache();
-  }
-
   inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
   inline void emit_data(int);
   inline void emit_data(int, RelocationHolder const&);

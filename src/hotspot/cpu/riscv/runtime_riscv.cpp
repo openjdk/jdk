@@ -240,7 +240,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Jump to interpreter
   __ ret();
 
-// Code will be copied. No ICache sync required.
+  // Code will be copied. No ICache sync required.
 
   return UncommonTrapBlob::create(&buffer, oop_maps,
                                                   SimpleRuntimeFrame::framesize >> 1);
