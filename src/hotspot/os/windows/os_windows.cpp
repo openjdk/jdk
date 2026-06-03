@@ -3307,7 +3307,7 @@ static char* reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_ta
   return aligned_base;
 }
 
-// Similar to reserve_memory_aligned, this code is race-prone.
+// Similar to reserve_memory_aligned, other reservation/mapping requests can race with this function.
 static char* map_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity");
