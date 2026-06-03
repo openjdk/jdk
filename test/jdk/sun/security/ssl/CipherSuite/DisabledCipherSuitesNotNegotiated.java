@@ -53,7 +53,6 @@ import javax.net.ssl.SSLHandshakeException;
 public class DisabledCipherSuitesNotNegotiated {
     private static final String TLS_PROTOCOL = "TLSv1.2";
     private static volatile int serverPort = 0;
-    private static volatile Exception serverException = null;
 
     private static final CountDownLatch waitForServer = new CountDownLatch(1);
     private static final int WAIT_FOR_SERVER_SECS = (int)Utils.adjustTimeout(5);
@@ -123,7 +122,7 @@ public class DisabledCipherSuitesNotNegotiated {
             try {
                 runClient(Boolean.parseBoolean(args[0]), Integer.parseInt(args[1]));
             } catch (Exception exc) {
-                Files.writeString(Path.of("client-failed"), "failed");
+                Files.createFile(Path.of("client-failed"));
                 throw exc;
             }
 
@@ -134,7 +133,7 @@ public class DisabledCipherSuitesNotNegotiated {
     }
 
     private static void runTest(final boolean disabledInClient) throws Exception {
-        try(ExecutorService executorService = Executors.newFixedThreadPool(2)) {
+        try(ExecutorService executorService = Executors.newSingleThreadExecutor()) {
             executorService.submit(() -> {
                 try {
                     if (!disabledInClient) {
@@ -144,7 +143,6 @@ public class DisabledCipherSuitesNotNegotiated {
                 } catch (Exception exc) {
                     System.out.println("Server Exception:");
                     exc.printStackTrace(System.out);
-                    serverException = exc;
                 }
             });
 
