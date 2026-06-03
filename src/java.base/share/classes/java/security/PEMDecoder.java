@@ -98,6 +98,9 @@ import java.util.Objects;
  *   <li>ENCRYPTED PRIVATE KEY: {@link X509EncodedKeySpec} (if the encoding contains a public key)</li>
  * </ul>
  *
+ * <p>If application code switches over a {@code BinaryEncodable} value, see
+ * {@link BinaryEncodable} for the required handling of non-exhaustive switches.
+ *
  * <p> A new {@code PEMDecoder} instance is created when configured
  * with {@link #withFactoriesOf(Provider)} or {@link #withDecryption(char[])}.
  * The {@link #withFactoriesOf(Provider)} method uses the specified provider when
@@ -108,11 +111,6 @@ import java.util.Objects;
  * If an encrypted PEM is processed by a decoder not configured
  * for decryption, an {@link EncryptedPrivateKeyInfo} is returned.
  * A {@code PEMDecoder} configured for decryption can also decode unencrypted PEM.
- *
- * <p> The {@code BinaryEncodable} interface may evolve. When using a decode method
- * with {@code switch}, always include a {@code default} case rather than
- * relying on the classes specified in the permits clause to remain fixed.
- * An exhaustive {@code switch} may result in a {@link MatchException}.
  *
  * <p> This class is immutable and thread-safe.
  *
@@ -136,6 +134,7 @@ import java.util.Objects;
  * @see PEMEncoder
  * @see PEM
  * @see EncryptedPrivateKeyInfo
+ * @see BinaryEncodable
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
  *       RFC 1421: Privacy Enhancement for Internet Electronic Mail
