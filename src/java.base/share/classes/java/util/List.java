@@ -47,7 +47,7 @@ import java.util.function.UnaryOperator;
  *
  * The {@code List} interface places additional stipulations, beyond those
  * specified in the {@code Collection} interface, on the contracts of the
- * {@code iterator}, {@code add}, {@code remove}, {@code removeAtIndex},
+ * {@code iterator}, {@code add}, {@code remove}, {@code removeAt},
  * {@code equals}, and {@code hashCode} methods.  Declarations for other
  * inherited methods are also included here for convenience.<p>
  *
