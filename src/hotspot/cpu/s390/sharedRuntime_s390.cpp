@@ -3543,7 +3543,6 @@ void SharedRuntime::generate_deopt_blob() {
   // return to the interpreter entry point.
   __ z_br(Z_R14);
 
-  // Make sure all code is generated
   // Code will be copied. No ICache sync required.
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, SuperwordUseVX)/wordSize);
