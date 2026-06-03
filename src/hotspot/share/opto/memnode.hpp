@@ -238,7 +238,7 @@ public:
     DependsOnlyOnTest
   };
 
-private:
+protected:
   // LoadNode::hash() doesn't take the _control_dependency field
   // into account: If the graph already has a non-pinned LoadNode and
   // we add a pinned LoadNode with the same inputs, it's safe for GVN
@@ -250,15 +250,17 @@ private:
   // non-pinned LoadNode by the pinned LoadNode.
   ControlDependency _control_dependency;
 
+#ifdef ASSERT
+  // Was the Range Check removed because it was proven always successful?
+  bool _rc_constant_folded;
+#endif
+
+private:
   // On platforms with weak memory ordering (e.g., PPC) we distinguish
   // loads that can be reordered, and such requiring acquire semantics to
   // adhere to the Java specification.  The required behaviour is stored in
   // this field.
   const MemOrd _mo;
-#ifdef ASSERT
-  // Was the Range Check removed because it was proven always successful?
-  bool _rc_constant_folded;
-#endif
 
   AllocateNode* is_new_object_mark_load() const;
 
@@ -274,10 +276,11 @@ protected:
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency, bool rc_constant_folded)
-    : MemNode(c, mem, adr, at), _control_dependency(control_dependency), _mo(mo),
+    : MemNode(c, mem, adr, at), _control_dependency(control_dependency),
 #ifdef ASSERT
       _rc_constant_folded(rc_constant_folded),
 #endif
+      _mo(mo),
       _type(rt) {
     init_class_id(Class_Load);
   }

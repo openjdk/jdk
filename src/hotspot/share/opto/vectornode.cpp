@@ -1555,7 +1555,7 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
-        return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type()));
+        return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type(), _control_dependency, _rc_constant_folded));
       }
     }
   }
