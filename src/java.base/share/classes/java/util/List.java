@@ -1242,10 +1242,11 @@ public interface List<E> extends SequencedCollection<E> {
      * {@linkplain Object#hashCode() hashCode()}, and
      * {@linkplain Object#toString() toString()} methods may trigger initialization of
      * one or more lazy elements. If initialization fails for at least one element,
-     * the {@linkplain List#hashCode()} and {@linkplain List#toString()} methods throw
-     * {@linkplain NoSuchElementException}, and the {@linkplain List#equals(Object)}
-     * <em>may</em> throw {@linkplain NoSuchElementException} depending on which
-     * elements (if any) are compared.
+     * the {@linkplain Object#hashCode() hashCode()} and
+     * {@linkplain Object#toString() toString()} methods throw
+     * {@linkplain NoSuchElementException}, and the {@linkplain Object#equals(Object)}
+     * throw {@linkplain NoSuchElementException} if attempting to compare an element that
+     * could not be computed.
      * <p>
      * The returned lazy list strongly references its computing
      * function used to compute elements at least as long as there are uninitialized
