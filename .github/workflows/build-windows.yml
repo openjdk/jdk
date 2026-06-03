@@ -107,49 +107,27 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
-      - name: 'Check toolchain installed for x64'
-        id: toolchain-check-x64
+      - name: 'Check toolchain installed'
+        id: toolchain-check
         run: |
           set +e
-          '/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
+          vcvars=${{ inputs.architecture == 'ARM64' && 'vcvarsarm64.bat' || 'vcvars64.bat' }}
+          "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/${vcvars}" -vcvars_ver=${{ inputs.msvc-toolset-version }}
           if [ $? -eq 0 ]; then
-            echo "Toolchain is already installed for x64"
+            echo "Toolchain is already installed"
             echo "toolchain-installed=true" >> $GITHUB_OUTPUT
           else
-            echo "Toolchain is not yet installed for x64"
+            echo "Toolchain is not yet installed"
             echo "toolchain-installed=false" >> $GITHUB_OUTPUT
           fi
-        if: ${{ inputs.architecture == 'x86.x64' }}
 
-      - name: 'Check toolchain installed for ARM64'
-        id: toolchain-check-arm64
-        run: |
-          set +e
-          "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/vcvarsarm64.bat" -vcvars_ver=${{ inputs.msvc-toolset-version }}
-          if [ $? -eq 0 ]; then
-            echo "Toolchain is already installed for ARM64"
-            echo "toolchain-installed=true" >> $GITHUB_OUTPUT
-          else
-            echo "Toolchain is not yet installed for ARM64"
-            echo "toolchain-installed=false" >> $GITHUB_OUTPUT
-          fi
-        if: ${{ inputs.architecture == 'ARM64' }}
-
-      - name: 'Install toolchain and dependencies for x64'
+      - name: 'Install toolchain and dependencies'
         run: |
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
             modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' \
-            --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.x86.x64
-        if: ${{ (inputs.architecture == 'x86.x64') && (steps.toolchain-check-x64.outputs.toolchain-installed != 'true') }}
-
-      - name: 'Install toolchain and dependencies for ARM64'
-        run: |
-          # Run Visual Studio Installer
-          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
-            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' \
-            --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.ARM64
-        if: ${{ ( inputs.architecture == 'ARM64') && (steps.toolchain-check-arm64.outputs.toolchain-installed != 'true') }}
+            --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.architecture }}
+        if: ${{ steps.toolchain-check.outputs.toolchain-installed != 'true' }}
 
       - name: 'Configure'
         run: >

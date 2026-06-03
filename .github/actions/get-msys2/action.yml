@@ -33,37 +33,22 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: 'Install MSYS2 on x86.x64'
-      id: msys2-x64
+    - name: 'Install MSYS2'
+      id: msys2
       uses: msys2/setup-msys2@v2.31.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
-        release: false
-      if: ${{ inputs.architecture == 'x86.x64' }}
-
-    - name: 'Install MSYS2 on ARM64'
-      id: msys2-arm64
-      uses: msys2/setup-msys2@v2.31.0
-      with:
-        install: 'autoconf tar unzip zip make'
-        path-type: minimal
-        release: true
-        location: ${{ runner.tool_cache }}/msys2
-      if: ${{ inputs.architecture == 'ARM64' }}
+        # x86.x64 runners include MSYS2 pre-installed, so release: false reuses it.
+        release: ${{ inputs.architecture == 'ARM64' }}
+        # ARM64 runners don't, so a fresh release is downloaded to a custom location.
+        location: ${{ inputs.architecture == 'ARM64' && format('{0}/msys2', runner.tool_cache) || '' }}
 
       # We can't run bash until this is completed, so stick with pwsh
-    - name: 'Set MSYS2 path for x64'
+    - name: 'Set MSYS2 path'
       run: |
-        echo "${{ steps.msys2-x64.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
+        echo "${{ steps.msys2.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh
-      if: ${{ inputs.architecture == 'x86.x64' }}
-
-    - name: 'Set MSYS2 path for ARM64'
-      run: |
-        echo "${{ steps.msys2-arm64.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
-      shell: pwsh
-      if: ${{ inputs.architecture == 'ARM64' }}
 
     # Remove the default config.site file provided by MSYS2 to ensure config.guess accurately detects the host system.
     - name: 'Remove default config.site'
