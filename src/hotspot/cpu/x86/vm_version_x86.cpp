@@ -994,6 +994,12 @@ void VM_Version::set_vendor_agnostic_vm_config() {
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
+
+  // CopyAVX3Threshold is the threshold at which 64-byte vector instructions
+  // are used for implementing the array copy, fill and clear operations.
+  if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
+    FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
+  }
 }
 
 void VM_Version::zx_config() {
@@ -1104,8 +1110,7 @@ void VM_Version::amd_config() {
     }
     // CopyAVX3Threshold is the threshold at which 64-byte vector instructions
     // are used for implementing the array copy, fill and clear operations.
-    // The Intel platforms that support the serialize instruction and the AMD
-    // platforms with native 512-bit datapath have improved implementation of
+    // The AMD platforms with native 512-bit datapath have improved implementation of
     // 64-byte load/stores and so the default threshold is set to 0 for these
     // platforms.
     if (FLAG_IS_DEFAULT(CopyAVX3Threshold) && is_amd_avx512_datapath_server_family()) {
