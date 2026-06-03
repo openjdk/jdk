@@ -30,6 +30,7 @@
  * @run junit LazyConstantSafePublicationTest
  */
 
+import jdk.internal.lang.LazyConstantImpl;
 import jdk.test.lib.Utils;
 import org.junit.jupiter.api.Test;
 
@@ -64,18 +65,18 @@ final class LazyConstantSafePublicationTest {
 
     static final class Consumer implements Runnable {
 
-        final LazyConstant<Holder>[] constants;
+        final LazyConstantImpl<Holder>[] constants;
         final int[] observations = new int[SIZE];
         int i = 0;
 
-        public Consumer(LazyConstant<Holder>[] constants) {
+        public Consumer(LazyConstantImpl<Holder>[] constants) {
             this.constants = constants;
         }
 
         @Override
         public void run() {
             for (; i < SIZE; i++) {
-                LazyConstant<Holder> s = constants[i];
+                LazyConstantImpl<Holder> s = constants[i];
                 Holder h;
                 // Wait until the ComputedConstant has a holder value
                 while ((h = s.orElse(null)) == null) { Thread.onSpinWait();}
@@ -91,15 +92,15 @@ final class LazyConstantSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final LazyConstant<Holder>[] constants;
+        final LazyConstantImpl<Holder>[] constants;
 
-        public Producer(LazyConstant<Holder>[] constants) {
+        public Producer(LazyConstantImpl<Holder>[] constants) {
             this.constants = constants;
         }
 
         @Override
         public void run() {
-            LazyConstant<Holder> s;
+            LazyConstantImpl<Holder> s;
             long deadlineNs = System.nanoTime();
             for (int i = 0; i < SIZE; i++) {
                 s = constants[i];
@@ -114,7 +115,7 @@ final class LazyConstantSafePublicationTest {
 
     @Test
     void mainTest() {
-        final LazyConstant<Holder>[] constants = constants();
+        final LazyConstantImpl<Holder>[] constants = constants();
         List<Consumer> consumers = IntStream.range(0, THREADS)
                 .mapToObj(_ -> new Consumer(constants))
                 .toList();
@@ -150,7 +151,7 @@ final class LazyConstantSafePublicationTest {
         assertEquals(THREADS * SIZE, histogram[63]);
     }
 
-    static void join(final LazyConstant<Holder>[] constants, List<Consumer> consumers, Thread... threads) {
+    static void join(final LazyConstantImpl<Holder>[] constants, List<Consumer> consumers, Thread... threads) {
         try {
             for (Thread t:threads) {
                 long deadline = System.nanoTime() + Utils.adjustTimeout(TimeUnit.MINUTES.toNanos(4));
@@ -180,11 +181,11 @@ final class LazyConstantSafePublicationTest {
         }
     }
 
-    static LazyConstant<Holder>[] constants() {
+    static LazyConstantImpl<Holder>[] constants() {
         @SuppressWarnings("unchecked")
-        LazyConstant<Holder>[] constants = (LazyConstant<Holder>[]) new LazyConstant[SIZE];
+        LazyConstantImpl<Holder>[] constants = (LazyConstantImpl<Holder>[]) new LazyConstantImpl[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            constants[i] = LazyConstant.of(Holder::new);
+            constants[i] = LazyConstantImpl.ofLazy(Holder::new);
         }
         return constants;
     }
