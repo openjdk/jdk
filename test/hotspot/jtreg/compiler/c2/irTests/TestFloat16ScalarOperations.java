@@ -98,9 +98,7 @@ public class TestFloat16ScalarOperations {
     private short GOLDEN_QNAN;
 
     public static void main(String args[]) {
-        Scenario s0 = new Scenario(0, "--add-modules=jdk.incubator.vector", "-Xint");
-        Scenario s1 = new Scenario(1, "--add-modules=jdk.incubator.vector");
-        new TestFramework().addScenarios(s1).start();
+        new TestFramework().addFlags("--add-modules=jdk.incubator.vector").start();
     }
 
     public TestFloat16ScalarOperations() {
