@@ -249,7 +249,13 @@ public final class ImageResourcesTree {
                         j = resPath.indexOf('/', i + 1);
                         parentNode = getDirectoryNode(resPath.substring(i + 1, j), parentNode);
                     }
-                    new ResourceNode(resPath.substring(pathEnd + 1), parentNode);
+                    String resourceName = resPath.substring(pathEnd + 1);
+                    Node resourceNode = parentNode.getChildren(resourceName);
+                    if (resourceNode == null) {
+                        new ResourceNode(resourceName, parentNode);
+                    } else if (!(resourceNode instanceof ResourceNode)) {
+                        throw new InvalidTreeException(resourceNode);
+                    }
                     return;
                 }
                 // For preview paths, process nodes relative to the preview directory.

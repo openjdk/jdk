@@ -84,6 +84,8 @@ public class ImageReaderTest {
                     "com.foo.bar.NormalBar",
                     "!META-INF/maven/com.google.code.findbugs/jsr305/pom.properties",
                     "!META-INF/z",
+                    "!META-INF/collision/child.properties",
+                    "!META-INF/collision",
                     // Replaces original class in preview mode.
                     "@com.foo.HasPreviewVersion",
                     // New class in existing package in preview mode.
@@ -149,7 +151,9 @@ public class ImageReaderTest {
             try (ImageReader reader = ImageReader.open(image, mode)) {
                 assertResource(reader, "modfoo", "META-INF/maven/com.google.code.findbugs/jsr305/pom.properties");
                 assertResource(reader, "modfoo", "META-INF/z");
-                assertDirContents(reader, "/modules/modfoo/META-INF", "MANIFEST.MF", "maven", "z");
+                assertResource(reader, "modfoo", "META-INF/collision/child.properties");
+                assertDirContents(reader, "/modules/modfoo/META-INF", "MANIFEST.MF", "collision", "maven", "z");
+                assertDirContents(reader, "/modules/modfoo/META-INF/collision", "child.properties");
                 assertDirContents(reader, "/modules/modfoo/META-INF/maven", "com.google.code.findbugs");
                 assertDirContents(reader, "/modules/modfoo/META-INF/maven/com.google.code.findbugs", "jsr305");
                 assertDirContents(reader, "/modules/modfoo/META-INF/maven/com.google.code.findbugs/jsr305", "pom.properties");
