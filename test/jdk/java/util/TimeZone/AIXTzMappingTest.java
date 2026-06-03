@@ -44,7 +44,6 @@ public class AIXTzMappingTest {
     private static String TZ_CET = "CET-1CEST,M3.5.0,M10.5.0";
     // MEZ-1MESZ,M3.5.0,M10.5.0/3 should map to Europe/Berlin
     private static String TZ_MEZ = "MEZ-1MESZ,M3.5.0,M10.5.0/3";
-    
     public static void main(String args[]) throws Throwable {
         if (args.length == 0) {
             // Test 1: CET-1CEST with comma suffix
@@ -52,7 +51,6 @@ public class AIXTzMappingTest {
             pb.environment().put("TZ", TZ_CET);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);
-            
             // Test 2: MEZ-1MESZ with comma suffix
             pb.environment().put("TZ", TZ_MEZ);
             output = ProcessTools.executeProcess(pb);
@@ -73,11 +71,9 @@ public class AIXTzMappingTest {
         String tzStr = System.getenv("TZ");
         if (tzStr == null)
             throw new RuntimeException("Got unexpected timezone information: TZ is null");
-        
         // Get the default timezone set by the JVM
         TimeZone tz = TimeZone.getDefault();
         String tzId = tz.getID();
-        
         // Verify we got a proper IANA timezone ID, not a GMT offset
         // AIX should map to Europe/Paris or Europe/Berlin, not GMT+01:00
         if (tzId.startsWith("GMT")) {
@@ -85,7 +81,6 @@ public class AIXTzMappingTest {
                 "Expected IANA timezone ID but got GMT offset: " + tzId + 
                 " for TZ=" + tzStr);
         }
-        
         // Verify DST transitions work correctly
         // For CET/MEZ: Standard time = GMT+1, DST = GMT+2
         if (tz.inDaylightTime(time)) {
@@ -107,7 +102,6 @@ public class AIXTzMappingTest {
                 return;
             }
         }
-
         // Reaching here means time zone did not match up as expected
         throw new RuntimeException(
             "Got unexpected timezone information: TZ=" + tzStr + 
