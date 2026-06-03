@@ -56,9 +56,9 @@ public final class SegmentBulkOperations {
 
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
-    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr(PROPERTY_PATH + "fill", 5);
-    private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr(PROPERTY_PATH + "mismatch", 6);
-    private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr(PROPERTY_PATH + "copy", 6);
+    private static final int NATIVE_THRESHOLD_FILL = Utils.powerOfPropertyOr(PROPERTY_PATH + "fill", 5);
+    private static final int NATIVE_THRESHOLD_MISMATCH = Utils.powerOfPropertyOr(PROPERTY_PATH + "mismatch", 6);
+    private static final int NATIVE_THRESHOLD_COPY = Utils.powerOfPropertyOr(PROPERTY_PATH + "copy", 6);
 
     @ForceInline
     public static MemorySegment fill(AbstractMemorySegmentImpl dst, byte value) {
@@ -377,12 +377,6 @@ public final class SegmentBulkOperations {
             remaining -= i;
         }
         return ~remaining;
-    }
-
-    // The returned value is in the interval [0, 2^30]
-    static int powerOfPropertyOr(String name, int defaultPower) {
-        final int power = Integer.getInteger(name, defaultPower);
-        return 1 << Math.clamp(power, 0, Integer.SIZE - 2);
     }
 
 }
