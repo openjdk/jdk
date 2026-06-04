@@ -86,6 +86,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
 
     // Case 1: Negative mask (-2L = 0xFFFF_FFFF_FFFF_FFFE).
     @Test
+    @IR(counts = {IRNode.AND_VL, " >0 ", IRNode.MUL_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx", "true"})
     public static void testNegativeMask() {
         LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
@@ -105,6 +106,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
 
     // Case 3: Mask = 0x1_0000_0000L (bit 32 set, exceeds uint range).
     @Test
+    @IR(counts = {IRNode.AND_VL, " >0 ", IRNode.MUL_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx", "true"})
     public static void testBit32SetMask() {
         LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
@@ -124,6 +126,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
 
     // Case 4: Mask = Long.MIN_VALUE (0x8000_0000_0000_0000).
     @Test
+    @IR(counts = {IRNode.AND_VL, " >0 ", IRNode.MUL_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx", "true"})
     public static void testMinValueMask() {
         LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
@@ -203,6 +206,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
 
     // Case 8: Asymmetric — one input valid uint mask, other negative mask.
     @Test
+    @IR(counts = {IRNode.AND_VL, " >0 ", IRNode.MUL_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx", "true"})
     public static void testAsymmetricMask() {
         LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
@@ -223,6 +227,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     // Case 9: Mixed — one input URShift (valid), other negative mask (invalid).
     // Note: -2L is used (not -1L) since AND with -1L is identity and gets folded.
     @Test
+    @IR(counts = {IRNode.URSHIFT_VL, " >0 ", IRNode.AND_VL, " >0 ", IRNode.MUL_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx", "true"})
     public static void testMixedURShiftAndNegMask() {
         LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
@@ -242,6 +247,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
 
     // Case 10: Predicated AndV (uint path). Inactive lanes preserves destination with non-zero upper 32 bits.
     @Test
+    @IR(counts = {IRNode.AND_VL, " >0 ", IRNode.MUL_VL, " >0 "}, applyIfCPUFeature = {"avx512f", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx512f", "true"})
     public static void testPredicatedAndMask() {
         LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
@@ -263,6 +269,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
 
     // Case 11: Predicated URShiftVL by 32 (uint path). Inactive lanes preserves destination with non-zero upper 32 bits.
     @Test
+    @IR(counts = {IRNode.URSHIFT_VL, " >0 ", IRNode.MUL_VL, " >0 "}, applyIfCPUFeature = {"avx512f", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx512f", "true"})
     public static void testPredicatedURShift32() {
         LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
@@ -284,6 +291,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
 
     // Case 12: Predicated RShiftVL (arithmetic) by 32.
     @Test
+    @IR(counts = {IRNode.RSHIFT_VL, " >0 ", IRNode.MUL_VL, " >0 "}, applyIfCPUFeature = {"avx512f", "true"})
     @IR(failOn = {IRNode.X86_VMULDQ_REG}, phase = CompilePhase.MATCHING, applyIfCPUFeature = {"avx512f", "true"})
     public static void testPredicatedRShift32() {
         LongVector v1 = LongVector.fromArray(SPECIES, src1, 0);
