@@ -2392,26 +2392,6 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L_MASKED, "vand_notL_masked");
     }
 
-    public static final String VBITWISE_BLEND_NEON_SVE1 = PREFIX + "VBITWISE_BLEND_NEON_SVE1" + POSTFIX;
-    static {
-        machOnlyNameRegex(VBITWISE_BLEND_NEON_SVE1, "vbitwise_blend_neon_sve1");
-    }
-
-    public static final String VBITWISE_BLEND_SVE2 = PREFIX + "VBITWISE_BLEND_SVE2" + POSTFIX;
-    static {
-        machOnlyNameRegex(VBITWISE_BLEND_SVE2, "vbitwise_blend_sve2");
-    }
-
-    public static final String VBITWISE_BLEND_MASKED_SVE1 = PREFIX + "VBITWISE_BLEND_MASKED_SVE1" + POSTFIX;
-    static {
-        machOnlyNameRegex(VBITWISE_BLEND_MASKED_SVE1, "vbitwise_blend_masked_sve1");
-    }
-
-    public static final String VBITWISE_BLEND_MASKED_SVE2 = PREFIX + "VBITWISE_BLEND_MASKED_SVE2" + POSTFIX;
-    static {
-        machOnlyNameRegex(VBITWISE_BLEND_MASKED_SVE2, "vbitwise_blend_masked_sve2");
-    }
-
     public static final String RISCV_VAND_NOTI_VX = PREFIX + "RISCV_VAND_NOTI_VX" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX, "vand_notI_vx");
@@ -2460,6 +2440,12 @@ public class IRNode {
     public static final String VECTOR_BLEND_D = VECTOR_PREFIX + "VECTOR_BLEND_D" + POSTFIX;
     static {
         vectorNode(VECTOR_BLEND_D, "VectorBlend", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_BITWISE_BLEND = PREFIX + "VECTOR_BITWISE_BLEND" + POSTFIX;
+    static {
+        String regex = START + "VectorBitwiseBlend" + MID + END;
+        afterBarrierExpansionToBeforeMatching(VECTOR_BITWISE_BLEND, regex);
     }
 
     public static final String VECTOR_MASK_CMP_I = VECTOR_PREFIX + "VECTOR_MASK_CMP_I" + POSTFIX;

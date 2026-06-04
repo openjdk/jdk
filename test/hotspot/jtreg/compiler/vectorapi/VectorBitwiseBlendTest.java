@@ -93,10 +93,10 @@ public class VectorBitwiseBlendTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VBITWISE_BLEND_NEON_SVE1, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve2", "false" },
         applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_SVE2, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeature = { "sve2", "true" })
     public static void testUnmaskedBlendByte() {
         ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -106,10 +106,10 @@ public class VectorBitwiseBlendTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VBITWISE_BLEND_NEON_SVE1, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve2", "false" },
         applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_SVE2, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeature = { "sve2", "true" })
     public static void testUnmaskedBlendShort() {
         ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
@@ -119,10 +119,10 @@ public class VectorBitwiseBlendTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VBITWISE_BLEND_NEON_SVE1, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve2", "false" },
         applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_SVE2, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeature = { "sve2", "true" })
     public static void testUnmaskedBlendInt() {
         IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -132,10 +132,10 @@ public class VectorBitwiseBlendTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VBITWISE_BLEND_NEON_SVE1, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve2", "false" },
         applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_SVE2, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeature = { "sve2", "true" })
     public static void testUnmaskedBlendLong() {
         LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
@@ -145,13 +145,12 @@ public class VectorBitwiseBlendTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VBITWISE_BLEND_NEON_SVE1, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
+    @IR(counts = { IRNode.VECTOR_BLEND_B, "= 1",
+                   IRNode.VECTOR_BITWISE_BLEND, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve2", "false" },
         applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_MASKED_SVE1, "= 1" },
-        applyIfCPUFeatureAnd = { "sve", "true", "sve2", "false" },
-        applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_MASKED_SVE2, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BLEND_B, "= 1",
+                   IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeature = { "sve2", "true" })
     public static void testMaskedBlendByte() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, mask_arr, 0);
@@ -162,13 +161,12 @@ public class VectorBitwiseBlendTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VBITWISE_BLEND_NEON_SVE1, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
+    @IR(counts = { IRNode.VECTOR_BLEND_S, "= 1",
+                   IRNode.VECTOR_BITWISE_BLEND, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve2", "false" },
         applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_MASKED_SVE1, "= 1" },
-        applyIfCPUFeatureAnd = { "sve", "true", "sve2", "false" },
-        applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_MASKED_SVE2, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BLEND_S, "= 1",
+                   IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeature = { "sve2", "true" })
     public static void testMaskedBlendShort() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, mask_arr, 0);
@@ -179,13 +177,12 @@ public class VectorBitwiseBlendTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VBITWISE_BLEND_NEON_SVE1, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
+    @IR(counts = { IRNode.VECTOR_BLEND_I, "= 1",
+                   IRNode.VECTOR_BITWISE_BLEND, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve2", "false" },
         applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_MASKED_SVE1, "= 1" },
-        applyIfCPUFeatureAnd = { "sve", "true", "sve2", "false" },
-        applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_MASKED_SVE2, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BLEND_I, "= 1",
+                   IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeature = { "sve2", "true" })
     public static void testMaskedBlendInt() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, mask_arr, 0);
@@ -196,13 +193,12 @@ public class VectorBitwiseBlendTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VBITWISE_BLEND_NEON_SVE1, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
+    @IR(counts = { IRNode.VECTOR_BLEND_L, "= 1",
+                   IRNode.VECTOR_BITWISE_BLEND, "= 1" },
+        applyIfCPUFeatureAnd = { "asimd", "true", "sve2", "false" },
         applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_MASKED_SVE1, "= 1" },
-        applyIfCPUFeatureAnd = { "sve", "true", "sve2", "false" },
-        applyIf = { "MaxVectorSize", "<= 16" })
-    @IR(counts = { IRNode.VBITWISE_BLEND_MASKED_SVE2, "= 1" },
+    @IR(counts = { IRNode.VECTOR_BLEND_L, "= 1",
+                   IRNode.VECTOR_BITWISE_BLEND, "= 1" },
         applyIfCPUFeature = { "sve2", "true" })
     public static void testMaskedBlendLong() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, mask_arr, 0);
