@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ private:
 
   Arena*                           _arena;
   GrowableArray<ciMetadata*>       _ci_metadata;
+  // Local copy of shared ciInstanceKlass init state for current compilation
+  GrowableArray<u1>                _cached_init_state;
   GrowableArray<ciMethod*>         _unloaded_methods;
   GrowableArray<ciKlass*>          _unloaded_klasses;
   GrowableArray<ciInstance*>       _unloaded_instances;
@@ -102,6 +104,11 @@ public:
   ciMetadata* get_metadata(Metadata* key);
   ciMetadata* cached_metadata(Metadata* key);
   ciSymbol* get_symbol(Symbol* key);
+
+  // Get cached init state of shared ciInstanceKlass
+  u1 cached_init_state(uint id) {
+    return _cached_init_state.at(id);
+  }
 
   // Get the ciSymbol corresponding to one of the vmSymbols.
   static ciSymbol* vm_symbol_at(vmSymbolID index);

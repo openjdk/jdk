@@ -24,6 +24,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
@@ -154,7 +155,8 @@ static bool check_compiled_frame(JavaThread* thread) {
 bool OptoRuntime::generate(ciEnv* env) {
 
   C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB)
-
+  // disallow any further c2 stub generation
+  AOTCodeCache::set_c2_stubs_complete();
   return true;
 }
 
@@ -207,6 +209,7 @@ const TypeFunc* OptoRuntime::_digestBase_implCompress_without_sha3_Type   = null
 const TypeFunc* OptoRuntime::_digestBase_implCompressMB_with_sha3_Type    = nullptr;
 const TypeFunc* OptoRuntime::_digestBase_implCompressMB_without_sha3_Type = nullptr;
 const TypeFunc* OptoRuntime::_double_keccak_Type                  = nullptr;
+const TypeFunc* OptoRuntime::_quad_keccak_Type                    = nullptr;
 const TypeFunc* OptoRuntime::_multiplyToLen_Type                  = nullptr;
 const TypeFunc* OptoRuntime::_montgomeryMultiply_Type             = nullptr;
 const TypeFunc* OptoRuntime::_montgomerySquare_Type               = nullptr;
@@ -254,11 +257,10 @@ address OptoRuntime::generate_stub(ciEnv* env,
                                    bool return_pc) {
 
   // Matching the default directive, we currently have no method to match.
-  DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
-  CompilationMemoryStatisticMark cmsm(directive);
+  CompilerDirectiveMatcher default_directive(CompileBroker::compiler(CompLevel_full_optimization));
+  CompilationMemoryStatisticMark cmsm(default_directive.directive_set());
   ResourceMark rm;
-  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, directive);
-  DirectivesStack::release(directive);
+  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, default_directive.directive_set());
   return  C.stub_entry_point();
 }
 
@@ -1209,6 +1211,26 @@ static const TypeFunc* make_double_keccak_Type() {
     int argp = TypeFunc::Parms;
     fields[argp++] = TypePtr::NOTNULL;      // status0
     fields[argp++] = TypePtr::NOTNULL;      // status1
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_quad_keccak_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // status0
+    fields[argp++] = TypePtr::NOTNULL;      // status1
+    fields[argp++] = TypePtr::NOTNULL;      // status2
+    fields[argp++] = TypePtr::NOTNULL;      // status3
 
     assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
     const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
@@ -2304,6 +2326,7 @@ void OptoRuntime::initialize_types() {
   _digestBase_implCompressMB_with_sha3_Type    = make_digestBase_implCompressMB_Type(/* is_sha3= */ true);
   _digestBase_implCompressMB_without_sha3_Type = make_digestBase_implCompressMB_Type(/* is_sha3= */ false);
   _double_keccak_Type                 = make_double_keccak_Type();
+  _quad_keccak_Type                   = make_quad_keccak_Type();
   _multiplyToLen_Type                 = make_multiplyToLen_Type();
   _montgomeryMultiply_Type            = make_montgomeryMultiply_Type();
   _montgomerySquare_Type              = make_montgomerySquare_Type();

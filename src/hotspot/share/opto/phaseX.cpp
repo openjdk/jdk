@@ -2123,7 +2123,12 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
 
   if (n->is_Vector()) {
     // Found with tier1-3. Not investigated yet.
-    // The observed issue was with AndVNode::Identity
+    // The observed issue was with AndVNode::Identity and
+    // VectorStoreMaskNode::Identity (see JDK-8370863).
+    //
+    // Found with:
+    //   compiler/vectorapi/VectorStoreMaskIdentityTest.java
+    //   -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
     return;
   }
 

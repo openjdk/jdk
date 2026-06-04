@@ -256,11 +256,6 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  if ((gc_mode() != servicing_old) && (gc_mode() != stw_degenerated)) {
-    // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
-    _heap->reset_bytes_allocated_since_gc_start();
-  }
-
   MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
   // If GC was requested, we are sampling the counters even without actual triggers
@@ -274,7 +269,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
 
-    // When a whitebox full GC is requested, set the tenuring threshold to zero
+    // When a whitebox full GC is requested, set the age census to always tenure
     // so that all young objects are promoted to old. This ensures that tests
     // using WB.fullGC() to promote objects to old gen will not loop forever.
     ShenandoahTenuringOverride tenuring_override(request.cause == GCCause::_wb_full_gc,
@@ -580,7 +575,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
     assert(generation->is_global(), "If not young, must be GLOBAL");
     assert(!do_old_gc_bootstrap, "Do not bootstrap with GLOBAL GC");
     if (_heap->cancelled_gc()) {
-      msg = "At end of Interrupted Concurrent GLOBAL GC";
+      msg = "At end of Interrupted Concurrent Global GC";
     } else {
       // We only record GC results if GC was successful
       msg = "At end of Concurrent Global GC";
@@ -628,11 +623,10 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
 
 void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
   assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
-  request.generation->heuristics()->record_degenerated_cycle_start(ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle
-                                                                  == _degen_point);
   _heap->increment_total_collections(false);
 
-  ShenandoahGCSession session(request.cause, request.generation);
+  ShenandoahGCSession session(request.cause, request.generation, true,
+                              _degen_point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
   ShenandoahDegenGC gc(_degen_point, request.generation);
   gc.collect(request.cause);
   _degen_point = ShenandoahGC::_degenerated_unset;

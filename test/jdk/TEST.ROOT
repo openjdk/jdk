@@ -95,7 +95,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.cds \
@@ -109,8 +108,6 @@ requires.properties= \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \
-    vm.jvmci \
-    vm.jvmci.enabled \
     vm.jvmti \
     vm.cpu.features \
     container.support \

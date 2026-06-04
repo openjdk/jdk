@@ -31,7 +31,7 @@
  *        ReferenceTracker CancelRequestTest
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.enableAllMethodRetry=true
- *                     CancelRequestTest
+ *                     ${test.main.class}
  */
 // *                     -Dseed=3582896013206826205L
 // *                     -Dseed=5784221742235559231L

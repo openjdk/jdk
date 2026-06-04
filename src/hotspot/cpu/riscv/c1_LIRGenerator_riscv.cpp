@@ -1169,4 +1169,5 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
   __ volatile_load_mem_reg(address, result, info);
+  __ membar_acquire();
 }

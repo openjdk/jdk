@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
 /*
  * @test
  * @compile TestKit.java
- * @run junit TestKitTest
+ * @run junit ${test.main.class}
  */
 public final class TestKitTest {
 

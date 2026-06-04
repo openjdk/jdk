@@ -334,14 +334,14 @@ void os::init_system_properties_values() {
     home_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + 1, mtInternal);
     strcpy(home_path, home_dir);
     Arguments::set_java_home(home_path);
-    FREE_C_HEAP_ARRAY(char, home_path);
+    FREE_C_HEAP_ARRAY(home_path);
 
     dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1,
                                 mtInternal);
     strcpy(dll_path, home_dir);
     strcat(dll_path, bin);
     Arguments::set_dll_dir(dll_path);
-    FREE_C_HEAP_ARRAY(char, dll_path);
+    FREE_C_HEAP_ARRAY(dll_path);
 
     if (!set_boot_path('\\', ';')) {
       vm_exit_during_initialization("Failed setting boot class path.", nullptr);
@@ -396,7 +396,7 @@ void os::init_system_properties_values() {
     strcat(library_path, ";.");
 
     Arguments::set_library_path(library_path);
-    FREE_C_HEAP_ARRAY(char, library_path);
+    FREE_C_HEAP_ARRAY(library_path);
   }
 
   // Default extensions directory
@@ -465,36 +465,63 @@ void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   *stack_size = size;
 }
 
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  MEMORY_BASIC_INFORMATION minfo;
-  committed_start = nullptr;
-  committed_size = 0;
-  address top = start + size;
-  const address start_addr = start;
-  while (start < top) {
-    VirtualQuery(start, &minfo, sizeof(minfo));
-    if ((minfo.State & MEM_COMMIT) == 0) {  // not committed
-      if (committed_start != nullptr) {
-        break;
-      }
-    } else {  // committed
-      if (committed_start == nullptr) {
-        committed_start = start;
-      }
-      size_t offset = start - (address)minfo.BaseAddress;
-      committed_size += minfo.RegionSize - offset;
-    }
-    start = (address)minfo.BaseAddress + minfo.RegionSize;
-  }
+bool os::first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
+  constexpr size_t stripe = 1024;  // query this many pages each time
+  PSAPI_WORKING_SET_EX_INFORMATION wsinfo[stripe];
 
-  if (committed_start == nullptr) {
-    assert(committed_size == 0, "Sanity");
-    return false;
-  } else {
-    assert(committed_start >= start_addr && committed_start < top, "Out of range");
-    // current region may go beyond the limit, trim to the limit
-    committed_size = MIN2(committed_size, size_t(top - committed_start));
+  size_t page_sz = os::vm_page_size();
+  uintx pages_left = size / page_sz;
+
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
+  assert(is_aligned(size, page_sz), "Size must be page aligned");
+
+  resident_start = nullptr;
+
+  uintx loops = (pages_left + stripe - 1) / stripe;
+  uintx resident_pages = 0;
+  address pos = start;
+  bool found_range = false;
+
+  for (uintx index = 0; index < loops && !found_range; index++) {
+    assert(pages_left > 0, "Nothing to do");
+    uintx pages_to_query = MIN2(pages_left, stripe);
+    pages_left -= pages_to_query;
+
+    for (uintx i = 0; i < pages_to_query; i++) {
+      wsinfo[i].VirtualAddress = (PVOID)(pos + i * page_sz);
+    }
+
+    BOOL success = QueryWorkingSetEx(GetCurrentProcess(), wsinfo, pages_to_query * sizeof(PSAPI_WORKING_SET_EX_INFORMATION));
+    if (!success) {
+      return false;
+    }
+
+    for (uintx i = 0; i < pages_to_query; i++) {
+      if (wsinfo[i].VirtualAttributes.Valid == 0) {
+        if (resident_start != nullptr) {
+          found_range = true;
+          break;
+        }
+        // Still searching for start of resident region
+      } else {
+        if (resident_start == nullptr) {
+          // Found first resident page in region
+          resident_start = pos + i * page_sz;
+        }
+        resident_pages++;
+      }
+    }
+    pos += pages_to_query * page_sz;
+  }
+  if (resident_start != nullptr) {
+    assert(resident_pages > 0, "Must have a resident region");
+    assert(resident_pages <= size / page_sz, "Resident size exceeds region size");
+    assert(resident_start >= start && resident_start < start + size, "Out of range");
+    resident_size = page_sz * resident_pages;
     return true;
+  } else {
+    assert(resident_pages == 0, "Should not have a resident region");
+    return false;
   }
 }
 
@@ -1079,7 +1106,7 @@ void os::set_native_thread_name(const char *name) {
       HRESULT hr = _SetThreadDescription(current, unicode_name);
       if (FAILED(hr)) {
         log_debug(os, thread)("set_native_thread_name: SetThreadDescription failed - falling back to debugger method");
-        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+        FREE_C_HEAP_ARRAY(unicode_name);
       } else {
         log_trace(os, thread)("set_native_thread_name: SetThreadDescription succeeded - new name: %s", name);
 
@@ -1102,7 +1129,7 @@ void os::set_native_thread_name(const char *name) {
           LocalFree(thread_name);
         }
 #endif
-        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+        FREE_C_HEAP_ARRAY(unicode_name);
         return;
       }
     } else {
@@ -2897,7 +2924,7 @@ class NUMANodeListHolder {
   int _numa_used_node_count;
 
   void free_node_list() {
-    FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
+    FREE_C_HEAP_ARRAY(_numa_used_node_list);
   }
 
  public:
@@ -4744,7 +4771,7 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
 
   LPWSTR unicode_path = nullptr;
   err = convert_to_unicode(buf, &unicode_path);
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
   if (err != ERROR_SUCCESS) {
     return nullptr;
   }
@@ -4772,9 +4799,9 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
   }
 
   if (converted_path != unicode_path) {
-    FREE_C_HEAP_ARRAY(WCHAR, converted_path);
+    FREE_C_HEAP_ARRAY(converted_path);
   }
-  FREE_C_HEAP_ARRAY(WCHAR, unicode_path);
+  FREE_C_HEAP_ARRAY(unicode_path);
 
   return static_cast<wchar_t*>(result); // LPWSTR and wchat_t* are the same type on Windows.
 }
@@ -5827,7 +5854,7 @@ int os::fork_and_exec(const char* cmd) {
     exit_code = -1;
   }
 
-  FREE_C_HEAP_ARRAY(char, cmd_string);
+  FREE_C_HEAP_ARRAY(cmd_string);
   return (int)exit_code;
 }
 

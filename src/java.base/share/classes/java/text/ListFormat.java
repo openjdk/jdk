@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
@@ -112,6 +111,7 @@ public final class ListFormat extends Format {
     private static final int TWO = 3;
     private static final int THREE = 4;
     private static final int PATTERN_ARRAY_LENGTH = THREE + 1;
+    private static final int PLACEHOLDER_LENGTH = 3; // i.e., "{i}".length()
 
     /**
      * The locale to use for formatting list patterns.
@@ -126,14 +126,11 @@ public final class ListFormat extends Format {
      */
     private final String[] patterns;
 
-    private static final Pattern PARSE_START = Pattern.compile("(.*?)\\{0}(.*?)\\{1}");
-    private static final Pattern PARSE_MIDDLE = Pattern.compile("\\{0}(.*?)\\{1}");
-    private static final Pattern PARSE_END = Pattern.compile("\\{0}(.*?)\\{1}(.*?)");
-    private static final Pattern PARSE_TWO = Pattern.compile("(.*?)\\{0}(.*?)\\{1}(.*?)");
-    private static final Pattern PARSE_THREE = Pattern.compile("(.*?)\\{0}(.*?)\\{1}(.*?)\\{2}(.*?)");
-    private transient Pattern startPattern;
+    private transient String startBefore;
+    private transient String startBetween;
     private transient String middleBetween;
-    private transient Pattern endPattern;
+    private transient String endBetween;
+    private transient String endAfter;
 
     private ListFormat(Locale l, String[] patterns) {
         locale = l;
@@ -149,50 +146,60 @@ public final class ListFormat extends Format {
             }
         }
 
-        // get pattern strings
-        var m = PARSE_START.matcher(patterns[START]);
-        String startBefore;
-        String startBetween;
-        if (m.matches()) {
-            startBefore = m.group(1);
-            startBetween = m.group(2);
+        // Get pattern strings. Pattern conditions from LDML are:
+        // - it contains the placeholders {0}, {1}, and {2} ("3"-pattern only) in order
+        // - "start" and "middle" patterns end with the {1} placeholder
+        // - "middle" and "end" patterns begin with the {0} placeholder
+        var pattern = patterns[START];
+        var placeholderPositions = findPlaceholders(pattern);
+        if (placeholderPositions != null &&
+                placeholderPositions[1] + PLACEHOLDER_LENGTH == pattern.length()) {
+            startBefore = pattern.substring(0, placeholderPositions[0]);
+            startBetween = pattern.substring(placeholderPositions[0] + PLACEHOLDER_LENGTH,
+                    placeholderPositions[1]);
         } else {
-            throw new IllegalArgumentException("start pattern is incorrect: " + patterns[START]);
+            throw new IllegalArgumentException("start pattern is incorrect: " + pattern);
         }
-        m = PARSE_MIDDLE.matcher(patterns[MIDDLE]);
-        if (m.matches()) {
-            middleBetween = m.group(1);
+
+        pattern = patterns[MIDDLE];
+        placeholderPositions = findPlaceholders(pattern);
+        if (placeholderPositions != null &&
+                placeholderPositions[0] == 0 &&
+                placeholderPositions[1] + PLACEHOLDER_LENGTH == pattern.length()) {
+            middleBetween = pattern.substring(placeholderPositions[0] + PLACEHOLDER_LENGTH,
+                    placeholderPositions[1]);
         } else {
-            throw new IllegalArgumentException("middle pattern is incorrect: " + patterns[MIDDLE]);
+            throw new IllegalArgumentException("middle pattern is incorrect: " + pattern);
         }
-        m = PARSE_END.matcher(patterns[END]);
-        String endBetween;
-        String endAfter;
-        if (m.matches()) {
-            endBetween = m.group(1);
-            endAfter = m.group(2);
+
+        pattern = patterns[END];
+        placeholderPositions = findPlaceholders(pattern);
+        if (placeholderPositions != null && placeholderPositions[0] == 0) {
+            endBetween = pattern.substring(placeholderPositions[0] + PLACEHOLDER_LENGTH,
+                    placeholderPositions[1]);
+            endAfter = pattern.substring(placeholderPositions[1] + PLACEHOLDER_LENGTH);
         } else {
-            throw new IllegalArgumentException("end pattern is incorrect: " + patterns[END]);
+            throw new IllegalArgumentException("end pattern is incorrect: " + pattern);
         }
 
         // Validate two/three patterns, if given. Otherwise, generate them
-        if (!patterns[TWO].isEmpty()) {
-            if (!PARSE_TWO.matcher(patterns[TWO]).matches()) {
-                throw new IllegalArgumentException("pattern for two is incorrect: " + patterns[TWO]);
+        pattern = patterns[TWO];
+        if (!pattern.isEmpty()) {
+            if (findPlaceholders(pattern) == null) {
+                throw new IllegalArgumentException("pattern for two is incorrect: " + pattern);
             }
         } else {
             patterns[TWO] = startBefore + "{0}" + endBetween + "{1}" + endAfter;
         }
-        if (!patterns[THREE].isEmpty()) {
-            if (!PARSE_THREE.matcher(patterns[THREE]).matches()) {
-                throw new IllegalArgumentException("pattern for three is incorrect: " + patterns[THREE]);
+        pattern = patterns[THREE];
+        if (!pattern.isEmpty()) {
+            placeholderPositions = findPlaceholders(pattern);
+            if (placeholderPositions == null || placeholderPositions[2] == -1) {
+                throw new IllegalArgumentException("pattern for three is incorrect: " + pattern);
             }
         } else {
             patterns[THREE] = startBefore + "{0}" + startBetween + "{1}" + endBetween + "{2}" + endAfter;
         }
-
-        startPattern = Pattern.compile(startBefore + "(.+?)" + startBetween);
-        endPattern = Pattern.compile(endBetween + "(.+?)" + endAfter);
     }
 
     /**
@@ -455,21 +462,29 @@ public final class ListFormat extends Format {
     public Object parseObject(String source, ParsePosition parsePos) {
         Objects.requireNonNull(source);
         Objects.requireNonNull(parsePos);
-        var sm = startPattern.matcher(source);
-        var em = endPattern.matcher(source);
+        var startPattern = findPattern(source, parsePos.getIndex(), startBefore, startBetween);
+        var endPattern = findPattern(source, parsePos.getIndex(), endBetween, endAfter);
         Object parsed = null;
-        if (sm.find(parsePos.getIndex()) && em.find(parsePos.getIndex())) {
-            // get em to the last
-            var c = em.start();
-            while (em.find()) {
-                c = em.start();
+        if (startPattern != null && endPattern != null) {
+            // get endPattern to the last
+            var ep = endPattern;
+            while ((ep = findPattern(source, ep[1], endBetween, endAfter)) != null) {
+                endPattern = ep;
             }
-            em.find(c);
-            var startEnd = sm.end();
-            var endStart = em.start();
+
+            var startEnd = startPattern[1];
+            var endStart = endPattern[0];
             if (startEnd <= endStart) {
                 var mid = source.substring(startEnd, endStart);
-                var count = mid.split(middleBetween).length + 2;
+                var count = 3;
+                var mbLength = middleBetween.length();
+                if (mbLength > 0) {
+                    var midIndex = 0;
+                    while ((midIndex = mid.indexOf(middleBetween, midIndex)) >= 0) {
+                        count++;
+                        midIndex += mbLength;
+                    }
+                }
                 parsed = new MessageFormat(createMessageFormatString(count), locale).parseObject(source, parsePos);
             }
         }
@@ -565,7 +580,9 @@ public final class ListFormat extends Format {
     private String createMessageFormatString(int count) {
         var sb = new StringBuilder(256).append(patterns[START]);
         IntStream.range(2, count - 1).forEach(i -> sb.append(middleBetween).append("{").append(i).append("}"));
-        sb.append(patterns[END].replaceFirst("\\{0}", "").replaceFirst("\\{1}", "\\{" + (count - 1) + "\\}"));
+        sb.append(endBetween)
+            .append("{").append(count - 1).append("}")
+            .append(endAfter);
         return sb.toString();
     }
 
@@ -642,5 +659,52 @@ public final class ListFormat extends Format {
          * Suitable for elements, such as "M", "T", "W", etc.
          */
         NARROW
+    }
+
+    /**
+     * {@return the positions of the "{0}", "{1}", and "{2}" placeholders in the
+     * given pattern string, or null if the pattern is invalid}
+     *
+     * The returned array contains -1 for "{2}" if that placeholder is absent.
+     *
+     * @param pattern pattern string to parse
+     */
+    private static int[] findPlaceholders(String pattern) {
+        var positions = new int[3];
+        for (int i = 0; i < positions.length; i++) {
+            positions[i] = pattern.indexOf("{" + i + "}");
+        }
+
+        // Check the existence and order of the placeholders
+        if (positions[0] == -1 ||
+            positions[1] == -1 ||
+            positions[0] + PLACEHOLDER_LENGTH > positions[1] ||
+            positions[2] != -1 && positions[1] + PLACEHOLDER_LENGTH > positions[2]) {
+            return null;
+        }
+
+        return positions;
+    }
+
+    /**
+     * {@return the start and end positions of the first pattern found in
+     * the given {@code source} starting at {@code pos}, or null if no such
+     * pattern exists}
+     *
+     * The pattern must contain at least one character between the
+     * {@code prefix} and {@code suffix} strings. The returned end position is
+     * exclusive.
+     *
+     * @param source string to search
+     * @param pos position at which to start the search
+     * @param prefix starting string within the pattern
+     * @param suffix ending string within the pattern
+     */
+    private static int[] findPattern(String source, int pos, String prefix, String suffix) {
+        var prefixPos = source.indexOf(prefix, pos);
+        var suffixPos = prefixPos != -1 ? source.indexOf(suffix, prefixPos + prefix.length() + 1) : -1;
+
+        return prefixPos < suffixPos ?
+            new int[] {prefixPos, suffixPos + suffix.length()} : null;
     }
 }

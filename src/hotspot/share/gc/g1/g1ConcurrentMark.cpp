@@ -249,7 +249,7 @@ G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
     }
   }
 
-  FREE_C_HEAP_ARRAY(TaskQueueEntryChunk*, _buckets);
+  FREE_C_HEAP_ARRAY(_buckets);
 }
 
 bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
@@ -524,7 +524,10 @@ void G1ConcurrentMark::fully_initialize() {
 
   uint max_num_regions = _g1h->max_num_regions();
   ::new (_region_mark_stats) G1RegionMarkStats[max_num_regions]{};
-  ::new (_top_at_mark_starts) Atomic<HeapWord*>[max_num_regions]{};
+  for (uint i = 0; i < max_num_regions; i++) {
+    ::new (&_top_at_mark_starts[i]) Atomic<HeapWord*>(_g1h->bottom_addr_for_region(i));
+  }
+  // Contrary to TAMS, the default value of _top_at_rebuild_starts needs to be null.
   ::new (_top_at_rebuild_starts) Atomic<HeapWord*>[max_num_regions]{};
 
   reset_at_marking_complete();
@@ -676,9 +679,9 @@ void G1ConcurrentMark::reset_at_marking_complete() {
 }
 
 G1ConcurrentMark::~G1ConcurrentMark() {
-  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _top_at_mark_starts);
-  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _top_at_rebuild_starts);
-  FREE_C_HEAP_ARRAY(G1RegionMarkStats, _region_mark_stats);
+  FREE_C_HEAP_ARRAY(_top_at_mark_starts);
+  FREE_C_HEAP_ARRAY(_top_at_rebuild_starts);
+  FREE_C_HEAP_ARRAY(_region_mark_stats);
   // The G1ConcurrentMark instance is never freed.
   ShouldNotReachHere();
 }
@@ -1146,7 +1149,6 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
     // completing this work during GC.
     const uint num_workers = MIN2(num_remaining,
                                   _max_concurrent_workers);
-    assert(num_workers > 0, "no more remaining root regions to process");
 
     G1CMRootRegionScanTask task(this, concurrent);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
@@ -2173,8 +2175,7 @@ void G1CMTask::reset_for_restart() {
 void G1CMTask::register_partial_array_splitter() {
 
   ::new (&_partial_array_splitter) PartialArraySplitter(_cm->partial_array_state_manager(),
-                                                        _cm->max_num_tasks(),
-                                                        ObjArrayMarkingStride);
+                                                        _cm->max_num_tasks());
 }
 
 void G1CMTask::unregister_partial_array_splitter() {
@@ -2359,7 +2360,7 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
-  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj, nullptr, array_length);
+  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj, nullptr, array_length, ObjArrayMarkingStride);
 
   process_array_chunk(obj, 0, initial_chunk_size);
 
@@ -2917,7 +2918,7 @@ G1CMTask::G1CMTask(uint worker_id,
   _cm(cm),
   _mark_bitmap(nullptr),
   _task_queue(task_queue),
-  _partial_array_splitter(_cm->partial_array_state_manager(), _cm->max_num_tasks(), ObjArrayMarkingStride),
+  _partial_array_splitter(_cm->partial_array_state_manager(), _cm->max_num_tasks()),
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
   _time_target_ms(0.0),

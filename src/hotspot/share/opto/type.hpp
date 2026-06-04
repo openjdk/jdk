@@ -63,7 +63,7 @@ class     TypeVectD;
 class     TypeVectX;
 class     TypeVectY;
 class     TypeVectZ;
-class     TypeVectMask;
+class     TypePVectMask;
 class   TypePtr;
 class     TypeRawPtr;
 class     TypeOopPtr;
@@ -157,7 +157,6 @@ private:
     const char*          msg;
     bool                 isa_oop;
     uint                 ideal_reg;
-    relocInfo::relocType reloc;
   } TypeInfo;
 
   // Dictionary of types shared among compilations.
@@ -313,8 +312,8 @@ public:
   const TypeAry    *isa_ary() const;             // Returns null of not ary
   const TypeVect   *is_vect() const;             // Vector
   const TypeVect   *isa_vect() const;            // Returns null if not a Vector
-  const TypeVectMask *is_vectmask() const;       // Predicate/Mask Vector
-  const TypeVectMask *isa_vectmask() const;      // Returns null if not a Vector Predicate/Mask
+  const TypePVectMask *is_pvectmask() const;     // Predicate/Mask Vector
+  const TypePVectMask *isa_pvectmask() const;    // Returns null if not a Vector Predicate/Mask
   const TypePtr    *is_ptr() const;              // Asserts it is a ptr type
   const TypePtr    *isa_ptr() const;             // Returns null if not ptr type
   const TypeRawPtr *isa_rawptr() const;          // NOT Java oop
@@ -459,7 +458,6 @@ public:
   uint ideal_reg() const             { return _type_info[_base].ideal_reg; }
   const char* msg() const            { return _type_info[_base].msg; }
   bool isa_oop_ptr() const           { return _type_info[_base].isa_oop; }
-  relocInfo::relocType reloc() const { return _type_info[_base].reloc; }
 
   // Mapping from CI type system to compiler type:
   static const Type* get_typeflow_type(ciType* type);
@@ -908,7 +906,7 @@ public:
 #endif // ASSERT
 
   // Check for positive 32-bit value.
-  int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
+  bool is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
 
   virtual bool        is_finite() const;  // Has a finite value
 
@@ -1108,14 +1106,14 @@ class TypeVectZ : public TypeVect {
   TypeVectZ(BasicType elem_bt, uint length) : TypeVect(VectorZ, elem_bt, length) {}
 };
 
-// Class of TypeVectMask, representing vector masks with "PVectMask" layout (see
+// Class of TypePVectMask, representing vector masks with "PVectMask" layout (see
 // vectornode.hpp for detailed notes on vector mask representations), mapped to
 // dedicated hardware predicate/mask registers.
-class TypeVectMask : public TypeVect {
+class TypePVectMask : public TypeVect {
 public:
   friend class TypeVect;
-  TypeVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
-  static const TypeVectMask* make(const BasicType elem_bt, uint length);
+  TypePVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
+  static const TypePVectMask* make(const BasicType elem_bt, uint length);
 };
 
 // Set of implemented interfaces. Referenced from TypeOopPtr and TypeKlassPtr.
@@ -1139,6 +1137,7 @@ public:
   static const TypeInterfaces* make(GrowableArray<ciInstanceKlass*>* interfaces = nullptr);
   bool eq(const Type* other) const;
   bool eq(ciInstanceKlass* k) const;
+  bool is_subset(ciInstanceKlass* k) const;
   uint hash() const;
   const Type *xdual() const;
   void dump(outputStream* st) const;
@@ -1176,10 +1175,11 @@ public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
 protected:
   TypePtr(TYPES t, PTR ptr, int offset,
+          relocInfo::relocType reloc,
           const TypePtr* speculative = nullptr,
           int inline_depth = InlineDepthBottom) :
     Type(t), _speculative(speculative), _inline_depth(inline_depth), _offset(offset),
-    _ptr(ptr) {}
+    _ptr(ptr), _reloc(reloc) {}
   static const PTR ptr_meet[lastPTR][lastPTR];
   static const PTR ptr_dual[lastPTR];
   static const char * const ptr_msg[lastPTR];
@@ -1247,13 +1247,16 @@ protected:
 public:
   const int _offset;            // Offset into oop, with TOP & BOT
   const PTR _ptr;               // Pointer equivalence class
+  const relocInfo::relocType _reloc;
 
   int offset() const { return _offset; }
   PTR ptr()    const { return _ptr; }
+  relocInfo::relocType reloc() const { return _reloc; }
 
   static const TypePtr *make(TYPES t, PTR ptr, int offset,
                              const TypePtr* speculative = nullptr,
-                             int inline_depth = InlineDepthBottom);
+                             int inline_depth = InlineDepthBottom,
+                             relocInfo::relocType reloc = relocInfo::none);
 
   // Return a 'ptr' version of this type
   virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
@@ -1316,15 +1319,15 @@ public:
 // include the stack pointer, top of heap, card-marking area, handles, etc.
 class TypeRawPtr : public TypePtr {
 protected:
-  TypeRawPtr( PTR ptr, address bits ) : TypePtr(RawPtr,ptr,0), _bits(bits){}
+  TypeRawPtr(PTR ptr, address bits, relocInfo::relocType reloc) : TypePtr(RawPtr, ptr, 0, reloc), _bits(bits){}
 public:
   virtual bool eq( const Type *t ) const;
   virtual uint hash() const;    // Type specific hashing
 
   const address _bits;          // Constant value, if applicable
 
-  static const TypeRawPtr *make( PTR ptr );
-  static const TypeRawPtr *make( address bits );
+  static const TypeRawPtr* make(PTR ptr);
+  static const TypeRawPtr* make(address bits, relocInfo::relocType reloc = relocInfo::external_word_type);
 
   // Return a 'ptr' version of this type
   virtual const TypeRawPtr* cast_to_ptr_type(PTR ptr) const;
@@ -1585,9 +1588,6 @@ public:
     const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(ptr, k, interfaces, xk, o, offset, instance_id);
   }
-
-  /** Create constant type for a constant boxed value */
-  const Type* get_const_boxed_value() const;
 
   // If this is a java.lang.Class constant, return the type for it or null.
   // Pass to Type::get_const_type to turn it to a type, which will usually
@@ -2305,13 +2305,13 @@ inline const TypeAry *Type::isa_ary() const {
   return ((_base == Array) ? (TypeAry*)this : nullptr);
 }
 
-inline const TypeVectMask *Type::is_vectmask() const {
+inline const TypePVectMask *Type::is_pvectmask() const {
   assert( _base == VectorMask, "Not a Vector Mask" );
-  return (TypeVectMask*)this;
+  return (TypePVectMask*)this;
 }
 
-inline const TypeVectMask *Type::isa_vectmask() const {
-  return (_base == VectorMask) ? (TypeVectMask*)this : nullptr;
+inline const TypePVectMask *Type::isa_pvectmask() const {
+  return (_base == VectorMask) ? (TypePVectMask*)this : nullptr;
 }
 
 inline const TypeVect *Type::is_vect() const {
@@ -2509,7 +2509,7 @@ inline const TypeLong* Type::try_cast<TypeLong>() const {
 #define RShiftXNode  RShiftLNode
 // For card marks and hashcodes
 #define URShiftXNode URShiftLNode
-// For shenandoahSupport
+// For pointer-sized accesses
 #define LoadXNode    LoadLNode
 #define StoreXNode   StoreLNode
 // Opcodes
@@ -2555,7 +2555,7 @@ inline const TypeLong* Type::try_cast<TypeLong>() const {
 #define RShiftXNode  RShiftINode
 // For card marks and hashcodes
 #define URShiftXNode URShiftINode
-// For shenandoahSupport
+// For pointer-sized accesses
 #define LoadXNode    LoadINode
 #define StoreXNode   StoreINode
 // Opcodes

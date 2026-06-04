@@ -70,7 +70,6 @@
 class G1YoungGCTraceTime {
   G1YoungCollector* _collector;
 
-  G1CollectorState::Pause _pause_type;
   GCCause::Cause _pause_cause;
 
   static const uint MaxYoungGCNameLength = 128;
@@ -90,10 +89,11 @@ class G1YoungGCTraceTime {
                            _collector->evacuation_alloc_failed() && _collector->evacuation_pinned() ? " / " : "",
                            _collector->evacuation_pinned() ? "Pinned" : "");
     }
+    G1CollectorState::Pause pause = _collector->collector_state()->gc_pause_type(_collector->concurrent_operation_is_full_mark());
     os::snprintf_checked(_young_gc_name_data,
                          MaxYoungGCNameLength,
                          "Pause Young (%s) (%s)%s",
-                         G1CollectorState::to_string(_pause_type),
+                         G1CollectorState::to_string(pause),
                          GCCause::to_string(_pause_cause),
                          evacuation_failed_string);
     return _young_gc_name_data;
@@ -102,10 +102,6 @@ class G1YoungGCTraceTime {
 public:
   G1YoungGCTraceTime(G1YoungCollector* collector, GCCause::Cause cause) :
     _collector(collector),
-    // Take snapshot of current pause type at start as it may be modified during gc.
-    // The strings for all Concurrent Start pauses are the same, so the parameter
-    // does not matter here.
-    _pause_type(_collector->collector_state()->gc_pause_type(false /* concurrent_operation_is_full_mark */)),
     _pause_cause(cause),
     // Fake a "no cause" and manually add the correct string in update_young_gc_name()
     // to make the string look more natural.
@@ -131,24 +127,23 @@ public:
 };
 
 class G1YoungGCJFRTracerMark : public G1JFRTracerMark {
+  G1YoungCollector* _young_collector;
   G1EvacInfo _evacuation_info;
 
   G1NewTracer* tracer() const { return (G1NewTracer*)_tracer; }
 
 public:
-
   G1EvacInfo* evacuation_info() { return &_evacuation_info; }
 
-  G1YoungGCJFRTracerMark(STWGCTimer* gc_timer_stw, G1NewTracer* gc_tracer_stw, GCCause::Cause cause) :
-    G1JFRTracerMark(gc_timer_stw, gc_tracer_stw), _evacuation_info() { }
-
-  void report_pause_type(G1CollectorState::Pause type) {
-    tracer()->report_young_gc_pause(type);
-  }
+  G1YoungGCJFRTracerMark(G1YoungCollector* young_collector) :
+    G1JFRTracerMark(young_collector->gc_timer_stw(), young_collector->gc_tracer_stw()),
+    _young_collector(young_collector),
+    _evacuation_info() { }
 
   ~G1YoungGCJFRTracerMark() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
+    tracer()->report_young_gc_pause(g1h->collector_state()->gc_pause_type(_young_collector->concurrent_operation_is_full_mark()));
     tracer()->report_evacuation_info(&_evacuation_info);
     tracer()->report_tenuring_threshold(g1h->policy()->tenuring_threshold());
   }
@@ -246,8 +241,6 @@ G1YoungGCAllocationFailureInjector* G1YoungCollector::allocation_failure_injecto
 
 void G1YoungCollector::complete_root_region_scan() {
   Ticks start = Ticks::now();
-  // We have to complete root region scan as it's the only way to ensure that all the
-  // objects on them have been correctly scanned before we start moving them during the GC.
   if (concurrent_mark()->complete_root_regions_scan_in_safepoint()) {
     phase_times()->record_root_region_scan_time((Ticks::now() - start).seconds() * MILLIUNITS);
   }
@@ -565,9 +558,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 
   assert(_g1h->verifier()->check_region_attr_table(), "Inconsistency in the region attributes table.");
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 
   allocation_failure_injector()->arm_if_needed();
 }
@@ -1109,6 +1102,7 @@ G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
   _allocation_word_size(allocation_word_size),
+  _next_state(),
   _concurrent_operation_is_full_mark(false),
   _evac_failure_regions()
 {
@@ -1124,7 +1118,7 @@ void G1YoungCollector::collect() {
   G1YoungGCTraceTime tm(this, _gc_cause);
 
   // JFR
-  G1YoungGCJFRTracerMark jtm(gc_timer_stw(), gc_tracer_stw(), _gc_cause);
+  G1YoungGCJFRTracerMark jtm(this);
   // JStat/MXBeans
   G1YoungGCMonitoringScope ms(monitoring_support(),
                               !collection_set()->candidates()->is_empty() /* all_memory_pools_affected */);
@@ -1138,9 +1132,7 @@ void G1YoungCollector::collect() {
   // Individual parallel phases may override this.
   set_young_collection_default_active_worker_threads();
 
-  // Wait for root region scan here to make sure that it is done before any
-  // use of the STW workers to maximize cpu use (i.e. all cores are available
-  // just to do that).
+  // Complete root region scan before moving any objects to preserve the SATB invariant.
   complete_root_region_scan();
 
   G1YoungGCVerifierMark vm(this);
@@ -1172,10 +1164,6 @@ void G1YoungCollector::collect() {
     // evacuation, eventually aborting it.
     _concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP", _allocation_word_size);
 
-    // Need to report the collection pause now since record_collection_pause_end()
-    // modifies it to the next state.
-    jtm.report_pause_type(collector_state()->gc_pause_type(_concurrent_operation_is_full_mark));
-
-    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
+    _next_state = policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
   }
 }

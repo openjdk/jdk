@@ -44,6 +44,7 @@
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/reachability.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -611,7 +612,7 @@ Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, co
 }
 
 // Check the possibility of scalar replacement.
-bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode *alloc, GrowableArray <SafePointNode *>* safepoints) {
+bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List* safepoints) {
   //  Scan the uses of the allocation to check for anything that would
   //  prevent us from eliminating it.
   NOT_PRODUCT( const char* fail_eliminate = nullptr; )
@@ -683,6 +684,8 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
                   use->as_ArrayCopy()->is_copyofrange_validated()) &&
                  use->in(ArrayCopyNode::Dest) == res) {
         // ok to eliminate
+      } else if (use->is_ReachabilityFence() && OptimizeReachabilityFences) {
+        // ok to eliminate
       } else if (use->is_SafePoint()) {
         SafePointNode* sfpt = use->as_SafePoint();
         if (sfpt->is_Call() && sfpt->as_Call()->has_non_debug_use(res)) {
@@ -697,7 +700,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           NOT_PRODUCT(fail_eliminate = "null or TOP memory";)
           can_eliminate = false;
         } else if (!reduce_merge_precheck) {
-          safepoints->append_if_missing(sfpt);
+          safepoints->push(sfpt);
         }
       } else if (reduce_merge_precheck &&
                  (use->is_Phi() || use->is_EncodeP() ||
@@ -756,7 +759,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   return can_eliminate;
 }
 
-void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode *> safepoints_done, AllocateNode* alloc) {
+void PhaseMacroExpand::undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc) {
   Node* res = alloc->result_cast();
   int nfields = 0;
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
@@ -776,9 +779,15 @@ void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode
   }
 
   // rollback processed safepoints
-  while (safepoints_done.length() > 0) {
-    SafePointNode* sfpt_done = safepoints_done.pop();
+  while (safepoints_done.size() > 0) {
+    SafePointNode* sfpt_done = safepoints_done.pop()->as_SafePoint();
+
+    SafePointNode::NodeEdgeTempStorage non_debug_edges_worklist(igvn());
+
+    sfpt_done->remove_non_debug_edges(non_debug_edges_worklist);
+
     // remove any extra entries we added to the safepoint
+    assert(sfpt_done->jvms()->endoff() == sfpt_done->req(), "no extra edges past debug info allowed");
     uint last = sfpt_done->req() - 1;
     for (int k = 0;  k < nfields; k++) {
       sfpt_done->del_req(last--);
@@ -799,6 +808,9 @@ void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode
         }
       }
     }
+
+    sfpt_done->restore_non_debug_edges(non_debug_edges_worklist);
+
     _igvn._worklist.push(sfpt_done);
   }
 }
@@ -839,6 +851,8 @@ void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode
 #endif
 
 SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt) {
+  assert(sfpt->jvms()->endoff() == sfpt->req(), "no extra edges past debug info allowed");
+
   // Fields of scalar objs are referenced only at the end
   // of regular debuginfo at the last (youngest) JVMS.
   // Record relative start index.
@@ -964,17 +978,25 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 }
 
 // Do scalar replacement.
-bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
-  GrowableArray <SafePointNode *> safepoints_done;
+bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints) {
+  Unique_Node_List safepoints_done;
   Node* res = alloc->result_cast();
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
 
   // Process the safepoint uses
-  while (safepoints.length() > 0) {
-    SafePointNode* sfpt = safepoints.pop();
+  while (safepoints.size() > 0) {
+    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
+
+    SafePointNode::NodeEdgeTempStorage non_debug_edges_worklist(igvn());
+
+    // All sfpt inputs are implicitly included into debug info during the scalarization process below.
+    // Keep non-debug inputs separately, so they stay non-debug.
+    sfpt->remove_non_debug_edges(non_debug_edges_worklist);
+
     SafePointScalarObjectNode* sobj = create_scalarized_object_description(alloc, sfpt);
 
     if (sobj == nullptr) {
+      sfpt->restore_non_debug_edges(non_debug_edges_worklist);
       undo_previous_scalarizations(safepoints_done, alloc);
       return false;
     }
@@ -983,10 +1005,12 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     // to the allocated object with "sobj"
     JVMState *jvms = sfpt->jvms();
     sfpt->replace_edges_in_range(res, sobj, jvms->debug_start(), jvms->debug_end(), &_igvn);
+    non_debug_edges_worklist.remove_edge_if_present(res); // drop scalarized input from non-debug info
+    sfpt->restore_non_debug_edges(non_debug_edges_worklist);
     _igvn._worklist.push(sfpt);
 
     // keep it for rollback
-    safepoints_done.append_if_missing(sfpt);
+    safepoints_done.push(sfpt);
   }
 
   return true;
@@ -1073,6 +1097,8 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           }
         }
         _igvn._worklist.push(ac);
+      } else if (use->is_ReachabilityFence() && OptimizeReachabilityFences) {
+        use->as_ReachabilityFence()->clear_referent(_igvn); // redundant fence; will be removed during IGVN
       } else {
         eliminate_gc_barrier(use);
       }
@@ -1173,7 +1199,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
 
   alloc->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
-  GrowableArray <SafePointNode *> safepoints;
+  Unique_Node_List safepoints;
   if (!can_eliminate_allocation(&_igvn, alloc, &safepoints)) {
     return false;
   }
@@ -1183,7 +1209,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     // We can only eliminate allocation if all debug info references
     // are already replaced with SafePointScalarObject because
     // we can't search for a fields value without instance_id.
-    if (safepoints.length() > 0) {
+    if (safepoints.size() > 0) {
       return false;
     }
   }
