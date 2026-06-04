@@ -200,16 +200,25 @@ public:
       decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
     }
     const TypeInt*    sizetype = array_type->size();
-    if (element_ptr != nullptr && element_ptr->is_inlinetypeptr() && !array_type->is_null_free()) {
+    if (element_ptr != nullptr && element_ptr->can_be_inline_type() && !array_type->is_null_free()) {
       ciArrayLoadData* array_load = profile_data();
-      if (array_load != nullptr && array_load->not_flat_nullable_count() == 0 && array_load->not_flat_null_free_count() > 0 &&
-          !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+      Deoptimization::DeoptReason reason = Deoptimization::Reason_none;
+      if (array_type->speculative() != nullptr &&
+        !array_type->speculative()->isa_aryptr()->is_not_null_free() &&
+        !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
+        reason = Deoptimization::Reason_speculate_class_check;
+      } else if (array_load != nullptr && array_load->not_flat_nullable_count() == 0 && array_load->
+                 not_flat_null_free_count() > 0 &&
+                 !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+        reason = Deoptimization::Reason_class_check;
+      }
+      if (reason != Deoptimization::Reason_none) {
         Node* test = _parse.null_free_array_test(_array, false);
         IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
         _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
         {
           PreserveJVMState pjvms(&_parse);
-          _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+          _parse.uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
         }
         _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
         if (_parse.stopped()) {
@@ -499,6 +508,24 @@ public:
         }
       }
     }
+    if (!array_type->is_flat() && !array_type->is_not_flat()) {
+      const TypePtr* speculative = array_type->speculative();
+      Deoptimization::DeoptReason reason = Deoptimization::Reason_speculate_class_check;
+      if (array_type->speculative() != nullptr &&
+          array_type->speculative()->is_aryptr()->is_not_flat() &&
+          !_parse.too_many_traps_or_recompiles(reason)) {
+        { // Deoptimize if flat array
+          BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ false), PROB_MAX);
+          _parse.uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+        }
+        assert(!_parse.stopped(), "flat array should have been caught earlier");
+        Node* casted_array = _gvn.transform(new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
+        _parse.replace_in_map(_array, casted_array);
+        array_type = _gvn.type(casted_array)->is_aryptr();
+        _elemtype = array_type->elem();
+        _array = casted_array;
+      }
+    }
   }
 
   bool emit() {
@@ -520,6 +547,7 @@ public:
       Node* ld = emit_plain_load(_array, false, true);
       // pop_stack();
       _parse.push_node(_bt, ld);
+      ld = _parse.record_profile_for_speculation_at_array_load(ld);
       // record_array_profile_for_speculation();
       return true;
     }
@@ -543,6 +571,16 @@ public:
       ciArrayLoadData* array_load = profile_data();
       if (array_load != nullptr) {
         int not_flat_count = profiled_not_flat_count();
+        Deoptimization::DeoptReason not_flat_reason = Deoptimization::Reason_none;
+        if (not_flat_count != 0) {
+          if (array_type->speculative() != nullptr &&
+              array_type->speculative()->is_aryptr()->is_flat()) {
+            not_flat_count = 0;
+            not_flat_reason = Deoptimization::Reason_speculate_class_check;
+          }
+        } else {
+          not_flat_reason = Deoptimization::Reason_class_check;
+        }
         ciCallProfile profile = _parse.method()->call_profile_at_bci(_parse.bci());
         int flat_count = profile.count();
         int flat_and_not_flat_count = saturated_add(flat_count, not_flat_count);
@@ -557,11 +595,11 @@ public:
             int count = i < limit ? profile.receiver_count(i) : not_flat_count;
             if (not_flat_count >= count && !not_flat_checked) {
               not_flat_checked = true;
-              if (profile.morphism() > 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+              if (profile.morphism() > 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(not_flat_reason)) {
                 PreserveJVMState pjvms(&_parse);
-                _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+                _parse.uncommon_trap_exact(not_flat_reason, Deoptimization::Action_maybe_recompile);
                 done = true;
-              } else if (profile.morphism() <= 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+              } else if (profile.morphism() <= 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(not_flat_reason)) {
                 const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
                 Node* test = _parse.flat_array_test(_array, /* flat = */ false);
                 IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
@@ -570,7 +608,7 @@ public:
                        "Should be found");
                 {
                   PreserveJVMState pjvms(&_parse);
-                  _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+                  _parse.uncommon_trap_exact(not_flat_reason, Deoptimization::Action_maybe_recompile);
                 }
                 _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
                 load_from_unknown_flat_array(element_ptr);
@@ -617,11 +655,11 @@ public:
           record_array_profile_for_speculation();
           return true;
         }
-        if (flat_count != 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+        if (flat_count != 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(not_flat_reason)) {
           {
             // Deoptimize if not flat array
             BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ true), PROB_MAX);
-            _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+            _parse.uncommon_trap_exact(not_flat_reason, Deoptimization::Action_maybe_recompile);
           }
           assert(!_parse.stopped(), "non flat array should have been caught earlier");
           Node* ld = load_from_unknown_flat_array(element_ptr);
