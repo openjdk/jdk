@@ -31,11 +31,10 @@
 
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.Utils;
@@ -120,12 +119,8 @@ public class DisabledCipherSuitesNotNegotiated {
             if (disabledInClient) {
                 SecurityUtils.addToDisabledTlsAlgs(DISABLED_CIPHER_WILDCARD);
             }
-            try {
-                runClient(Boolean.parseBoolean(args[0]), Integer.parseInt(args[1]));
-            } catch (Exception exc) {
-                Files.createFile(Path.of("client-failed"));
-                throw exc;
-            }
+
+            runClient(Boolean.parseBoolean(args[0]), Integer.parseInt(args[1]));
 
         } else {
             throw new Exception(
@@ -135,7 +130,7 @@ public class DisabledCipherSuitesNotNegotiated {
 
     private static void runTest(final boolean disabledInClient) throws Exception {
         try(ExecutorService executorService = Executors.newSingleThreadExecutor()) {
-            executorService.submit(() -> {
+            Future<?> serverThread = executorService.submit(() -> {
                 try {
                     if (!disabledInClient) {
                         SecurityUtils.addToDisabledTlsAlgs(DISABLED_CIPHER_WILDCARD);
@@ -160,6 +155,8 @@ public class DisabledCipherSuitesNotNegotiated {
                             "DisabledCipherSuitesNotNegotiated",
                             "" + disabledInClient, "" + serverPort));
             oa.waitFor();
+            serverThread.get();
+
             System.out.printf("Client process return %d%nCLIENT OUTPUT%n%s%n",
                     oa.getExitValue(), oa.getOutput());
             if (serverException != null) {
