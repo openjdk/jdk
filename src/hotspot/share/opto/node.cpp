@@ -42,6 +42,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -1244,6 +1245,10 @@ bool Node::has_special_unique_user() const {
     return true;
   } else if (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) {
     // Condition for XorVMask(VectorMaskCmp(x,y,cond), MaskAll(true)) ==> VectorMaskCmp(x,y,ncond)
+    return true;
+  } else if (n->Opcode() == Op_VectorBlend &&
+             VectorNode::is_lanewise_binary_op(this)) {
+    // Condition for VectorBlend(op(A,C), op(B,C), m) ==> op(VectorBlend(A,B,m), C)
     return true;
   } else {
     return false;

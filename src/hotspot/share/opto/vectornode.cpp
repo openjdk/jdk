@@ -2764,6 +2764,101 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return VectorNode::Ideal(phase, can_reshape);
 }
 
+// Per-lane, pure binary vector ops. Used by VectorBlendNode::Ideal to factor:
+//   (VectorBlend (op A C) (op B C) M) => (op (VectorBlend A B M) C)
+bool VectorNode::is_lanewise_binary_op(const Node* n) {
+  if (is_commutative_vector_operation(n->Opcode())) {
+    return true;
+  }
+  switch (n->Opcode()) {
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVL:
+    case Op_SubVF:
+    case Op_SubVD:
+    case Op_DivVF:
+    case Op_DivVD:
+    case Op_LShiftVB:
+    case Op_LShiftVS:
+    case Op_LShiftVI:
+    case Op_LShiftVL:
+    case Op_RShiftVB:
+    case Op_RShiftVS:
+    case Op_RShiftVI:
+    case Op_RShiftVL:
+    case Op_URShiftVB:
+    case Op_URShiftVS:
+    case Op_URShiftVI:
+    case Op_URShiftVL:
+    case Op_RotateLeftV:
+    case Op_RotateRightV:
+    case Op_CompressBitsV:
+    case Op_ExpandBitsV:
+    case Op_SaturatingSubV:
+      return true;
+    default:
+      return false;
+  }
+}
+
+// Factoring out a shared operand from two matching lane-wise binary ops, see
+// is_lanewise_binary_op for the list of supported ops. For commutative ops the
+// common operand may be in either position; for non-commutative ops it must
+// appear in the same slot in both inner ops, and the rebuilt op puts it back in
+// that slot. Predicated inner ops are not supported yet. This rewrite
+// synthesizes a new op node, so we must avoid leaving both original inner ops
+// alive afterwards, that would net +1 node.
+Node* VectorBlendNode::Ideal_VectorBlend_lanewise_binary_op(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  Node* mask = in(3);
+  int op = in1->Opcode();
+  if (!VectorNode::is_lanewise_binary_op(in1) ||
+      in2->Opcode() != op ||
+      in1->is_predicated_vector() ||
+      in2->is_predicated_vector() ||
+      (in1->outcnt() != 1 && in2->outcnt() != 1)) {
+    return nullptr;
+  }
+  bool commutative = is_commutative_vector_operation(op);
+  bool is_shift = in1->is_ShiftV();
+  // For shifts and rotates, putting a VectorBlend into slot 2 turns a
+  // constant shift/rotate amount into a non-constant one, which is not
+  // guaranteed to be a win in codegen. Skip the rewrite in that case.
+  bool slot2_sensitive = is_shift || op == Op_RotateLeftV || op == Op_RotateRightV;
+  Node* common = nullptr;
+  Node* a = nullptr;            // operand of in1 that is not common
+  Node* b = nullptr;            // operand of in2 that is not common
+  bool common_on_left = false;  // position of common in the rebuilt op
+  if (in1->in(2) == in2->in(2)) {
+    // (VectorBlend (op A C) (op B C) M) => (op (VectorBlend A B M) C)
+    common = in1->in(2); a = in1->in(1); b = in2->in(1);
+    common_on_left = false;
+  } else if (in1->in(1) == in2->in(1) && !slot2_sensitive) {
+    // (VectorBlend (op C A) (op C B) M) => (op C (VectorBlend A B M))
+    common = in1->in(1); a = in1->in(2); b = in2->in(2);
+    common_on_left = true;
+  } else if (commutative && in1->in(1) == in2->in(2)) {
+    // (VectorBlend (op C A) (op B C) M) => (op (VectorBlend A B M) C)
+    common = in1->in(1); a = in1->in(2); b = in2->in(1);
+    common_on_left = false;
+  } else if (commutative && in1->in(2) == in2->in(1)) {
+    // (VectorBlend (op A C) (op C B) M) => (op (VectorBlend A B M) C)
+    common = in1->in(2); a = in1->in(1); b = in2->in(2);
+    common_on_left = false;
+  }
+  if (common == nullptr) {
+    return nullptr;
+  }
+  Node* blend = phase->transform(new VectorBlendNode(a, b, mask));
+  Node* lhs = common_on_left ? common : blend;
+  Node* rhs = common_on_left ? blend  : common;
+  bool is_var_shift = is_shift && in1->as_ShiftV()->is_var_shift();
+  return VectorNode::make(op, lhs, rhs, vect_type(),
+                          false /*is_mask*/, is_var_shift);
+}
+
 Node* VectorBlendNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
@@ -2793,6 +2888,11 @@ Node* VectorBlendNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (m != nullptr) {
       return new VectorBlendNode(in2, in1, m);
     }
+  }
+
+  Node* res = Ideal_VectorBlend_lanewise_binary_op(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
   }
 
   return VectorNode::Ideal(phase, can_reshape);
@@ -2825,6 +2925,22 @@ static bool is_replicate_uint_constant(const Node* n) {
          n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
 }
 
+// Extract the two vector inputs of a VectorBlend node. The matcher rewrites
+// VectorBlend to (VectorBlend (Binary vec1 vec2) mask) during post-visit (see
+// Matcher::find_shared_post_visit), so by the time match-rule predicates run
+// the Binary wrapper is in place. Handle both forms transparently.
+static void vector_blend_vec_inputs(const Node* n, Node*& vec1, Node*& vec2) {
+  assert(n->Opcode() == Op_VectorBlend, "expected VectorBlend");
+  Node* in1 = n->in(1);
+  if (in1 != nullptr && in1->Opcode() == Op_Binary) {
+    vec1 = in1->in(1);
+    vec2 = in1->in(2);
+  } else {
+    vec1 = in1;
+    vec2 = n->in(2);
+  }
+}
+
 static bool has_vector_elements_fit_uint(Node* n) {
   auto is_lower_doubleword_mask_pattern = [](const Node* n) {
     return n->Opcode() == Op_AndV &&
@@ -2838,6 +2954,16 @@ static bool has_vector_elements_fit_uint(Node* n) {
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
   };
+
+  // (VectorBlend A B M): each output lane is taken from either A or B, so
+  // the result fits when both branches independently fit.
+  if (n->Opcode() == Op_VectorBlend) {
+    Node* vec1; Node* vec2;
+    vector_blend_vec_inputs(n, vec1, vec2);
+    return has_vector_elements_fit_uint(vec1) &&
+           has_vector_elements_fit_uint(vec2);
+  }
+
   return is_lower_doubleword_mask_pattern(n) ||             // (AndV     SRC (Replicate C)) where C <= 0xFFFFFFFF
          is_clear_upper_doubleword_uright_shift_pattern(n); // (URShiftV SRC S) where S >= 32
 }
@@ -2853,6 +2979,15 @@ static bool has_vector_elements_fit_int(Node* n) {
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
   };
+
+  // (VectorBlend A B M): each output lane is taken from either A or B, so
+  // the result fits when both branches independently fit.
+  if (n->Opcode() == Op_VectorBlend) {
+    Node* vec1; Node* vec2;
+    vector_blend_vec_inputs(n, vec1, vec2);
+    return has_vector_elements_fit_int(vec1) &&
+           has_vector_elements_fit_int(vec2);
+  }
 
   return is_cast_integer_to_long_pattern(n) ||             // (VectorCastI2X SRC)
          is_clear_upper_doubleword_right_shift_pattern(n); // (RShiftV SRC S) where S >= 32

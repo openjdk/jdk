@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.lang.reflect.Array;
 
 /**
  * @test
- * @bug 8341137
+ * @bug 8341137 8385051
  * @key randomness
  * @summary Optimize long vector multiplication using x86 VPMUL[U]DQ instruction.
  * @modules jdk.incubator.vector
@@ -43,9 +43,11 @@ public class VectorMultiplyOpt {
 
     public static int[] isrc1;
     public static int[] isrc2;
+    public static int[] isrc3;
     public static long[] lsrc1;
     public static long[] lsrc2;
     public static long[] res;
+    public static boolean[] mskArr;
 
     public static final int SIZE = 1024;
     public static final Random r = jdk.test.lib.Utils.getRandomInstance();
@@ -71,10 +73,14 @@ public class VectorMultiplyOpt {
         res  = new long[SIZE];
         isrc1 = new int[SIZE + 16];
         isrc2 = new int[SIZE + 16];
+        isrc3 = new int[SIZE + 16];
+        mskArr = new boolean[SIZE + 16];
         IntStream.range(0, SIZE).forEach(i -> { lsrc1[i] = Long.MAX_VALUE * r.nextLong(); });
         IntStream.range(0, SIZE).forEach(i -> { lsrc2[i] = Long.MAX_VALUE * r.nextLong(); });
         IntStream.range(0, SIZE).forEach(i -> { isrc1[i] = Integer.MAX_VALUE * r.nextInt(); });
         IntStream.range(0, SIZE).forEach(i -> { isrc2[i] = Integer.MAX_VALUE * r.nextInt(); });
+        IntStream.range(0, SIZE).forEach(i -> { isrc3[i] = Integer.MAX_VALUE * r.nextInt(); });
+        IntStream.range(0, SIZE).forEach(i -> { mskArr[i] = (i & 1) == 1; });
     }
 
 
@@ -245,6 +251,53 @@ public class VectorMultiplyOpt {
     @Check(test = "test_pattern6")
     public void test_pattern6_validate() {
         validate("pattern6 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >> shift5) * (l2 >> shift5));
+    }
+
+    // Verifies that the VectorBlend(MulVL(I2L(a), I2L(c)), MulVL(I2L(b), I2L(c)), m)
+    //  => MulVL(VectorBlend(I2L(a), I2L(b), m), I2L(c))
+    // factoring (in VectorBlendNode::Ideal) does not regress the MulVL ->
+    // vmuldq narrowing.
+    @Test
+    @IR(counts = {IRNode.MUL_VL, " >0 ",
+                  IRNode.VECTOR_BLEND_L, " >0 ",
+                  IRNode.VECTOR_CAST_I2L, " >0 "},
+        applyIfCPUFeature = {"avx2", "true"})
+    @IR(counts = {"vmuldq", " >0 "},
+        applyIfCPUFeature = {"avx2", "true"},
+        phase = CompilePhase.FINAL_CODE)
+    @Warmup(value = 10000)
+    public static void test_pattern7() {
+        int i = 0;
+        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
+            VectorMask<Long> mask = VectorMask.fromArray(LSP, mskArr, i);
+            LongVector va = IntVector.fromArray(ISP, isrc1, i)
+                                     .convert(VectorOperators.I2L, 0)
+                                     .reinterpretAsLongs();
+            LongVector vb = IntVector.fromArray(ISP, isrc2, i)
+                                     .convert(VectorOperators.I2L, 0)
+                                     .reinterpretAsLongs();
+            LongVector vc = IntVector.fromArray(ISP, isrc3, i)
+                                     .convert(VectorOperators.I2L, 0)
+                                     .reinterpretAsLongs();
+            va.lanewise(VectorOperators.MUL, vc)
+              .blend(vb.lanewise(VectorOperators.MUL, vc), mask)
+              .intoArray(res, i);
+        }
+        for (; i < res.length; i++) {
+            res[i] = mskArr[i] ? Math.multiplyFull(isrc2[i], isrc3[i])
+                               : Math.multiplyFull(isrc1[i], isrc3[i]);
+        }
+    }
+
+    @Check(test = "test_pattern7")
+    public void test_pattern7_validate() {
+        for (int i = 0; i < res.length; i++) {
+            long expected = mskArr[i] ? Math.multiplyFull(isrc2[i], isrc3[i])
+                                      : Math.multiplyFull(isrc1[i], isrc3[i]);
+            if (res[i] != expected) {
+                throw new AssertionError("pattern7 index " + i + ": actual=" + res[i] + " expected=" + expected);
+            }
+        }
     }
 
 }
