@@ -1342,7 +1342,8 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
     markWord mw = (markWord)(uintptr_t)(addr);
-    if (mw.has_no_hash() && Klass::is_valid(mw.klass_without_asserts()) ) {
+    if (mw.has_no_hash() && Klass::is_valid(mw.klass_without_asserts()) 
+        && (mw.value() & markWord::unused_gap_mask_in_place) == 0 && !mw.is_forwarded()) {
       st->print(PTR_FORMAT " is a valid markword: ", p2i(addr));
       mw.print_on(st);
       st->print(" ");

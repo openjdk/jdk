@@ -108,7 +108,8 @@ class markWord {
   static const int lock_shift                     = 0;
   static const int self_fwd_shift                 = lock_shift + lock_bits;
   static const int age_shift                      = self_fwd_shift + self_fwd_bits;
-  static const int hash_shift                     = age_shift + age_bits + unused_gap_bits;
+  static const int unused_gap_shift               = age_shift + age_bits;
+  static const int hash_shift                     = unused_gap_shift + unused_gap_bits;
 
   static const uintptr_t lock_mask                = right_n_bits(lock_bits);
   static const uintptr_t lock_mask_in_place       = lock_mask << lock_shift;
@@ -116,6 +117,8 @@ class markWord {
   static const uintptr_t self_fwd_mask_in_place   = self_fwd_mask << self_fwd_shift;
   static const uintptr_t age_mask                 = right_n_bits(age_bits);
   static const uintptr_t age_mask_in_place        = age_mask << age_shift;
+  static const uintptr_t unused_gap_mask          = right_n_bits(unused_gap_bits);
+  static const uintptr_t unused_gap_mask_in_place = unused_gap_mask << unused_gap_shift;
   static const uintptr_t hash_mask                = right_n_bits(hash_bits);
   static const uintptr_t hash_mask_in_place       = hash_mask << hash_shift;
 
