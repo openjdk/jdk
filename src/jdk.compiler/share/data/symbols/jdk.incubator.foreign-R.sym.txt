@@ -30,6 +30,10 @@ class name jdk/internal/foreign/AbstractMemorySegmentImpl
 method name getString descriptor (JLjava/nio/charset/Charset;J)Ljava/lang/String; flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name copy descriptor (Ljava/lang/String;Ljava/nio/charset/Charset;ILjava/lang/foreign/MemorySegment;JI)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
+class name jdk/internal/foreign/FunctionDescriptorImpl
+header extends java/lang/Object implements java/lang/foreign/FunctionDescriptor flags 31 runtimeAnnotations @Ljdk/internal/ValueBased;
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name jdk/internal/foreign/HeapMemorySegmentImpl$OfByte
 header extends jdk/internal/foreign/HeapMemorySegmentImpl nestHost jdk/internal/foreign/HeapMemorySegmentImpl flags 31 runtimeAnnotations @Ljdk/internal/ValueBased;
 innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
