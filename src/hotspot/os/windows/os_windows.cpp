@@ -3302,7 +3302,7 @@ static char* reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_ta
   }
 
   assert(aligned_base != nullptr,
-      "Did not manage to re-map after %d attempts (size %zu, alignment %zu)", max_attempts, size, alignment);
+      "Did not manage to reserve after %d attempts (size %zu, alignment %zu)", max_attempts, size, alignment);
 
   return aligned_base;
 }
