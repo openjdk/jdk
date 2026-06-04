@@ -26,6 +26,9 @@
  * @library /test/lib
  * @summary This test will ensure that daylight savings rules are followed
  * appropriately when setting a custom timezone ID via the TZ env variable.
+ * AIX is excluded because it uses a different timezone mapping mechanism
+ * through the tzmappings file; see AIXTzMappingTest.java for AIX-specific
+ * coverage.
  * @requires os.family != "windows" & os.family != "aix"
  * @run main/othervm CustomTzIDCheckDST
  */
