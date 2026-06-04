@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build RetransformWithMethodParametersTest InstrumentationHandoff
  * @run compile -g -parameters RetransformWithMethodParametersTest.java
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff retransformAgent.jar Can-Retransform-Classes:true
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff retransformAgent.jar Can-Retransform-Classes:true Can-Redefine-Classes:false
  *
  * @run main/othervm -javaagent:retransformAgent.jar RetransformWithMethodParametersTest
  */

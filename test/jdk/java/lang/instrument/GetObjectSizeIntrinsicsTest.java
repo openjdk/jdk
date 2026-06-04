@@ -30,7 +30,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -58,7 +58,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -86,7 +86,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -114,7 +114,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -146,7 +146,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -178,7 +178,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -210,7 +210,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -242,7 +242,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -275,7 +275,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run build GetObjectSizeIntrinsicsTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *

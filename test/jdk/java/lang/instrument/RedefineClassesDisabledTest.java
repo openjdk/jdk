@@ -30,7 +30,7 @@
  * @library /test/lib
  * @run build RedefineClassesDisabledTest RedefineSetUpDriver InstrumentationHandoff
  * @run driver RedefineSetUpDriver
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  * @run main/othervm -javaagent:basicAgent.jar RedefineClassesDisabledTest RedefineClassesDisabledTest
  */
 

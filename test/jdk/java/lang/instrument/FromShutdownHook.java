@@ -28,7 +28,7 @@
  *          shutdown hook
  * @library /test/lib
  * @run build FromShutdownHook InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  * @run main/othervm -javaagent:basicAgent.jar FromShutdownHook FromShutdownHook
  */
 import java.lang.instrument.Instrumentation;

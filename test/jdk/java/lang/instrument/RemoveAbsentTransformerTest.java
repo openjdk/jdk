@@ -29,7 +29,7 @@
  *
  * @library /test/lib
  * @run build RemoveAbsentTransformerTest InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff redefineAgent.jar Can-Redefine-Classes:true
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff redefineAgent.jar Can-Redefine-Classes:true Can-Retransform-Classes:false
  * @run main/othervm -javaagent:redefineAgent.jar RemoveAbsentTransformerTest RemoveAbsentTransformerTest
  */
 import java.lang.instrument.*;

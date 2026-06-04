@@ -30,7 +30,7 @@
  * @library /test/lib
  * @run build VerifyLocalVariableTableOnRetransformTest InstrumentationHandoff
  * @run compile -g DummyClassWithLVT.java
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff retransformAgent.jar Can-Retransform-Classes:true
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff retransformAgent.jar Can-Retransform-Classes:true Can-Redefine-Classes:false
  * @run main/othervm -javaagent:retransformAgent.jar VerifyLocalVariableTableOnRetransformTest VerifyLocalVariableTableOnRetransformTest
  */
 

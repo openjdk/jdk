@@ -29,7 +29,7 @@
  *
  * @library /test/lib
  * @run build GetAllLoadedClassesTest DummyClass InstrumentationHandoff
- * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar
+ * @run driver jdk.test.lib.util.JavaAgentBuilder InstrumentationHandoff basicAgent.jar Can-Redefine-Classes:false Can-Retransform-Classes:false
  * @run main/othervm -javaagent:basicAgent.jar GetAllLoadedClassesTest GetAllLoadedClassesTest
  */
 
