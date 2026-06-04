@@ -28,7 +28,6 @@
 #include "utilities/globalCounter.hpp"
 
 #include "runtime/atomic.hpp"
-#include "runtime/javaThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
 
 inline GlobalCounter::CSContext
@@ -40,8 +39,8 @@ GlobalCounter::critical_section_begin(Thread *thread) {
   uintx new_cnt = old_cnt;
   if ((new_cnt & COUNTER_ACTIVE) == 0) {
     new_cnt = _global_counter._counter.load_relaxed() | COUNTER_ACTIVE;
+    thread->get_rcu_counter()->release_store_fence(new_cnt);
   }
-  thread->get_rcu_counter()->release_store_fence(new_cnt);
   return static_cast<CSContext>(old_cnt);
 }
 
