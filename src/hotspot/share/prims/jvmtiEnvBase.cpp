@@ -2472,9 +2472,8 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
     }
   }
 
-  // Update the thread state to reflect that the top frame is popped
-  // so that cur_stack_depth is maintained properly and all frameIDs
-  // are invalidated.
+  // Update the thread state to reflect that the top frame is popped.
+  //
   // The current frame will be popped later when the suspended thread
   // is resumed and right before returning from VM to Java.
   // (see call_VM_base() in assembler_<cpu>.cpp).

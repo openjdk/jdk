@@ -179,7 +179,7 @@ public:
   bool has_frame_pops();
 
   // quickly test whether we should deliver a frame pop event on return from sp
-  bool is_frame_pop(int cur_stack_depth);
+  bool is_frame_pop(int cur_frame_number);
 
   void set_frame_pop(int frame_number);
   void clear_frame_pop(int frame_number);

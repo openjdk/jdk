@@ -227,7 +227,6 @@ class EnterInterpOnlyModeClosure : public HandshakeClosure {
     }
     state->set_pending_interp_only_mode(false);  // Clear the pending flag.
 
-    // invalidate_cur_stack_depth is called in enter_interp_only_mode
     state->enter_interp_only_mode();
 
     Continuation::set_cont_fastpath_thread_state(jt);

@@ -157,9 +157,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   JvmtiClassLoadKind    _class_load_kind;
   GrowableArray<Klass*>* _classes_being_redefined;
 
-  // This is only valid when is_interp_only_mode() returns true
-  int               _cur_stack_depth;
-
   JvmtiThreadEventEnable _thread_event_enable;
 
   // for support of JvmtiEnvThreadState
@@ -264,14 +261,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     AtomicAccess::store(&_frame_pop_cnt, AtomicAccess::load(&_frame_pop_cnt) - delta);
     assert(_frame_pop_cnt >= 0, "Unexpected count: %d", _frame_pop_cnt);
   }
-
-  // Current stack depth is only valid when is_interp_only_mode() returns true.
-  // These functions should only be called at a safepoint - usually called from same thread.
-  // Returns the number of Java activations on the stack.
-  int cur_stack_depth();
-  void invalidate_cur_stack_depth();
-  void incr_cur_stack_depth();
-  void decr_cur_stack_depth();
 
   int count_frames();
 

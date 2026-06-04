@@ -73,7 +73,6 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _sampled_object_alloc_event_collector = nullptr;
   _the_class_for_redefinition_verification = nullptr;
   _scratch_class_for_redefinition_verification = nullptr;
-  _cur_stack_depth = UNKNOWN_STACK_DEPTH;
   _saved_interp_only_mode = false;
 
   // JVMTI ForceEarlyReturn support
@@ -331,7 +330,6 @@ void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread->jvmti_thread_state() == this, "sanity check");
   _saved_interp_only_mode = true;
   _thread->set_interp_only_mode(true);
-  invalidate_cur_stack_depth();
 }
 
 void JvmtiThreadState::leave_interp_only_mode() {
@@ -370,57 +368,6 @@ int JvmtiThreadState::count_frames() {
     jvf = JvmtiEnvBase::check_and_skip_hidden_frames(thread, jvf);
   }
   return (int)JvmtiEnvBase::get_frame_count(jvf);
-}
-
-
-void JvmtiThreadState::invalidate_cur_stack_depth() {
-  assert(SafepointSynchronize::is_at_safepoint() ||
-         get_thread()->is_handshake_safe_for(Thread::current()),
-         "bad synchronization with owner thread");
-
-  _cur_stack_depth = UNKNOWN_STACK_DEPTH;
-}
-
-void JvmtiThreadState::incr_cur_stack_depth() {
-  guarantee(JavaThread::current() == get_thread(), "must be current thread");
-
-  if (!is_interp_only_mode()) {
-    _cur_stack_depth = UNKNOWN_STACK_DEPTH;
-  }
-  if (_cur_stack_depth != UNKNOWN_STACK_DEPTH) {
-    ++_cur_stack_depth;
-  }
-}
-
-void JvmtiThreadState::decr_cur_stack_depth() {
-  guarantee(JavaThread::current() == get_thread(), "must be current thread");
-
-  if (!is_interp_only_mode()) {
-    _cur_stack_depth = UNKNOWN_STACK_DEPTH;
-  }
-  if (_cur_stack_depth != UNKNOWN_STACK_DEPTH) {
-    --_cur_stack_depth;
-    assert(_cur_stack_depth >= 0, "incr/decr_cur_stack_depth mismatch");
-  }
-}
-
-int JvmtiThreadState::cur_stack_depth() {
-  Thread *current = Thread::current();
-  guarantee(get_thread()->is_handshake_safe_for(current),
-            "must be current thread or direct handshake");
-
-  if (!is_interp_only_mode() || _cur_stack_depth == UNKNOWN_STACK_DEPTH) {
-    _cur_stack_depth = count_frames();
-  } else {
-#ifdef ASSERT
-    if (EnableJVMTIStackDepthAsserts) {
-      // heavy weight assert
-      jint num_frames = count_frames();
-      assert(_cur_stack_depth == num_frames, "cur_stack_depth out of sync _cur_stack_depth: %d num_frames: %d", _cur_stack_depth, num_frames);
-    }
-#endif
-  }
-  return _cur_stack_depth;
 }
 
 void JvmtiThreadState::process_pending_step_for_popframe() {
@@ -474,7 +421,7 @@ void JvmtiThreadState::process_pending_step_for_popframe() {
 void JvmtiThreadState::update_for_pop_top_frame() {
   // remove any frame pop notification request for the top frame
   // in any environment
-  int popframe_number = cur_stack_depth();
+  int popframe_number = count_frames();
   {
     JvmtiEnvThreadStateIterator it(this);
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
@@ -483,8 +430,6 @@ void JvmtiThreadState::update_for_pop_top_frame() {
       }
     }
   }
-  // force stack depth to be recalculated
-  invalidate_cur_stack_depth();
 }
 
 
