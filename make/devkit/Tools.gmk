@@ -258,11 +258,6 @@ ifeq ($(filter riscv64 ppc64le s390x armhfp, $(ARCH)), )
   ENABLE_MULTILIB := --enable-multilib
 endif
 
-# --enable-multilib would be specified to other than x86_64
-ifneq (x86_64, $(ARCH))
-  BINUTILS_CFG += --enable-multilib
-endif
-
 # Makefile creation. Simply run configure in build dir.
 # Setting CFLAGS to -O2 generates a much faster ld.
 $(BFDMAKES) \
