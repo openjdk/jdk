@@ -574,8 +574,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "Lib.Base _",
-               "or.use.default");
+               "Lib.Rec _");
     }
 
     @Test
@@ -623,7 +622,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Box(Lib.Base base) {}
                }
                """,
-               "Test.Box(Lib.Base _)");
+               "Test.Box(Lib.Rec _)");
     }
 
     @Test
@@ -777,7 +776,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Box(Lib.Base base) {}
                }
                """,
-               "Test.Box(Lib.Base _)");
+               "Test.Box(Lib.Rec _)");
     }
 
     @Test
@@ -807,6 +806,32 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                               }
                """,
                "Test.IOp(Lib.I _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType12(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private sealed interface Intermediate1 extends Base {}
+                   private sealed interface Intermediate2 extends Intermediate1 {}
+                   record Rec1() implements Intermediate2 {}
+                   record Rec2() implements Intermediate2 {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+//                           case Lib.Rec1 _ -> 0;
+//                           case Lib.Rec2 _ -> 0;
+                       };
+                   }
+               }
+               """,
+               "Lib.Rec1 _", "Lib.Rec2 _");
     }
 
     @Test
@@ -886,6 +911,61 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                """,
                "lib.Lib.Base _",
                "or.use.default");
+    }
+
+    @Test
+    public void testMissingFromMultipleHierarchiesAtTopLevel(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed interface Sealed {}
+                   sealed interface A extends Sealed {}
+                   sealed interface B extends Sealed {}
+                   sealed interface C extends Sealed {}
+                   record A1() implements A {}
+                   record A2() implements A {}
+                   record B1() implements B {}
+                   record B2() implements B {}
+                   record C1() implements C {}
+                   record C2() implements C {}
+
+                   int t(Sealed s) {
+                       return switch (s) {
+                           case A1 _ -> 0;
+                           case B1 _ -> 0;
+                           case C1 _ -> 0;
+                           //all of A2, B2 and C2 as missing
+                       };
+                   }
+               }
+               """,
+               "Test.B2 _", "Test.C2 _", "Test.A2 _");
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed interface Sealed {}
+                   sealed interface A extends Sealed {}
+                   sealed interface B extends Sealed {}
+                   sealed interface C extends Sealed {}
+                   record A1() implements A {}
+                   record A2() implements A {}
+                   record B1() implements B {}
+                   record B2() implements B {}
+                   record C1() implements C {}
+                   record C2() implements C {}
+
+                   int t(Sealed s) {
+                       return switch (s) {
+                           case A1 _ -> 0;
+                           case B1 _ -> 0;
+                           //all of A2, B2, C1 and C2 as missing
+                       };
+                   }
+               }
+               """,
+               "Test.B2 _", "Test.C _", "Test.A2 _");
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {

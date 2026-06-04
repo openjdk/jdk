@@ -78,6 +78,7 @@ public class ExhaustivenessComputer {
     private final Resolve rs;
     private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new LinkedHashMap<>();
     private final long maxBaseChecks;
+    private Env<AttrContext> env;
     private long baseChecks = NO_BASE_CHECKS_COUNTING;
 
     public static ExhaustivenessComputer instance(Context context) {
@@ -111,6 +112,15 @@ public class ExhaustivenessComputer {
     }
 
     public ExhaustivenessResult exhausts(Env<AttrContext> env, JCExpression selector, List<JCCase> cases) {
+        this.env = env;
+        try {
+            return doExhausts(selector, cases);
+        } finally {
+            this.env = null;
+        }
+    }
+
+    private ExhaustivenessResult doExhausts(JCExpression selector, List<JCCase> cases) {
         Set<PatternDescription> patternSet = new LinkedHashSet<>();
         Map<Symbol, Set<Symbol>> enum2Constants = new LinkedHashMap<>();
         Set<Object> booleanLiterals = new LinkedHashSet<>(Set.of(0, 1));
@@ -159,7 +169,7 @@ public class ExhaustivenessComputer {
             }
 
             Set<PatternDescription> details =
-                    this.computeMissingPatternDescriptions(env, selector.type, coveredResult.incompletePatterns())
+                    this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
                         .stream()
                         .flatMap(pd -> {
                             if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
@@ -858,8 +868,7 @@ public class ExhaustivenessComputer {
     }
 
     //computation of missing patterns:
-    protected Set<PatternDescription> computeMissingPatternDescriptions(Env<AttrContext> env,
-                                                                        Type selectorType,
+    protected Set<PatternDescription> computeMissingPatternDescriptions(Type selectorType,
                                                                         Set<PatternDescription> incompletePatterns) {
         if (maxBaseChecks == 0) {
             return Set.of();
@@ -873,7 +882,7 @@ public class ExhaustivenessComputer {
                                                      defaultPattern,
                                                      incompletePatterns,
                                                      Set.of(defaultPattern));
-            missingPatterns = generalizeInaccessibleTypes(env, selectorType, missingPatterns);
+            missingPatterns = generalizeInaccessibleTypes(selectorType, missingPatterns);
             return missingPatterns;
         } catch (TooManyChecksException ex) {
             return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
@@ -882,12 +891,11 @@ public class ExhaustivenessComputer {
         }
     }
 
-    private Set<PatternDescription> generalizeInaccessibleTypes(Env<AttrContext> env,
-                                                                Type selectorType,
+    private Set<PatternDescription> generalizeInaccessibleTypes(Type selectorType,
                                                                 Set<PatternDescription> forPatterns) {
         Set<PatternDescription> generalized =
                 forPatterns.stream()
-                           .map(pd -> generalizeInaccessibleTypes(env, selectorType, pd))
+                           .map(pd -> generalizeInaccessibleTypes(selectorType, pd))
                            .collect(Collectors.toCollection(LinkedHashSet::new));
 
         OUTER: for (Iterator<PatternDescription> it = generalized.iterator(); it.hasNext(); ) {
@@ -903,12 +911,11 @@ public class ExhaustivenessComputer {
         return generalized;
     }
 
-    private PatternDescription generalizeInaccessibleTypes(Env<AttrContext> env,
-                                                           Type targetType,
+    private PatternDescription generalizeInaccessibleTypes(Type targetType,
                                                            PatternDescription forPattern) {
         switch (forPattern) {
             case BindingPattern _, EnumConstantPattern _ -> {
-                Type generalized = generalizeInaccessibleTypes(env, targetType, forPattern.type());
+                Type generalized = generalizeInaccessibleTypes(targetType, forPattern.type());
                 if (generalized != forPattern.type()) {
                     return new BindingPattern(generalized);
                 } else {
@@ -916,7 +923,7 @@ public class ExhaustivenessComputer {
                 }
             }
             case RecordPattern rp -> {
-                Type generalized = generalizeInaccessibleTypes(env, targetType, rp.type());
+                Type generalized = generalizeInaccessibleTypes(targetType, rp.type());
                 if (generalized != rp.type()) {
                     return new BindingPattern(generalized);
                 } else {
@@ -925,7 +932,7 @@ public class ExhaustivenessComputer {
 
                     for (int i = 0; i < rp.nested().length; i++) {
                         PatternDescription orig = rp.nested()[i];
-                        PatternDescription nue = generalizeInaccessibleTypes(env, rp.fullComponentTypes()[i], orig);
+                        PatternDescription nue = generalizeInaccessibleTypes(rp.fullComponentTypes()[i], orig);
 
                         newNested[i] = nue;
                         modified = modified || orig != nue;
@@ -937,11 +944,10 @@ public class ExhaustivenessComputer {
         }
     }
 
-    private Type generalizeInaccessibleTypes(Env<AttrContext> env,
-                                             Type targetType,
+    private Type generalizeInaccessibleTypes(Type targetType,
                                              Type generalized) {
         boolean cont = true;
-        while (cont && !isAccessible(env, generalized.tsym)) {
+        while (cont && !isAccessible(generalized.tsym)) {
             cont = false;
 
             for (Type generalizedSuper : types.directSupertypes(generalized)) {
@@ -956,7 +962,7 @@ public class ExhaustivenessComputer {
         return generalized;
     }
 
-    private boolean isAccessible(Env<AttrContext> env, Symbol candidate) {
+    private boolean isAccessible(Symbol candidate) {
         while (candidate.kind == Kind.TYP) {
             if (!rs.isAccessible(env, (TypeSymbol) candidate)) {
                 return false;
@@ -1026,7 +1032,8 @@ public class ExhaustivenessComputer {
             if (bp.type.tsym.isSealed()) {
                 //try to replace binding patterns for sealed types with all their immediate permitted applicable types:
                 Set<PatternDescription> applicableDirectPermittedPatterns =
-                        directPermittedSubTypes(bp.type)
+                        leafPermittedSubTypes(bp.type.tsym, isApplicableSubtypePredicate(targetType))
+                                 .stream()
                                  .map(csym -> new BindingPattern(types.erasure(csym.type)))
                                  .collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -1035,16 +1042,18 @@ public class ExhaustivenessComputer {
                         removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, applicableDirectPermittedPatterns);
 
                 if (!reduced && !hasMatchingRecordPattern(basePatterns, inMissingPatterns, toExpand)) {
-                    //if all immediate permitted subtypes are needed
+                    //if all permitted subtypes are needed
                     //give up, and simply use the current pattern:
                     return inMissingPatterns;
                 }
 
+                Set<PatternDescription> simplifiedPatterns =
+                        simplifyPatterns(selectorType, targetType, bp, basePatterns, inMissingPatterns, applicableDirectPermittedPatterns);
                 Set<PatternDescription> currentMissingPatterns =
-                        replace(inMissingPatterns, toExpand, applicableDirectPermittedPatterns);
+                        replace(inMissingPatterns, toExpand, simplifiedPatterns);
 
                 //try to recursively expand on each viable pattern:
-                for (PatternDescription viable : applicableDirectPermittedPatterns) {
+                for (PatternDescription viable : simplifiedPatterns) {
                     currentMissingPatterns = expandMissingPatternDescriptions(selectorType, targetType,
                                                                               viable, basePatterns,
                                                                               currentMissingPatterns);
@@ -1096,26 +1105,12 @@ public class ExhaustivenessComputer {
 
                 removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, combinatorialPatterns);
 
-                CoverageResult coverageResult = computeCoverage(targetType, combinatorialPatterns, PatternEquivalence.LOOSE);
-
-                if (!coverageResult.covered()) {
-                    //use the partially merged/combined patterns:
-                    combinatorialPatterns = coverageResult.incompletePatterns();
-                }
-
-                //combine sealed subtypes into the supertype, if all is covered.
-                //but preserve more specific record types in positions where there are record patterns in the original patterns
-                //this is particularly important for the case where the sealed supertype only has one permitted type, the record
-                //the base type could be used instead of the record otherwise, which would produce less specific missing pattern:
-                Set<PatternDescription> sortedCandidates =
-                        partialSortPattern(combinatorialPatterns, basePatterns, replace(inMissingPatterns, toExpand, combinatorialPatterns));
-
-                removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, sortedCandidates);
-
+                Set<PatternDescription> simplifiedPatterns =
+                        simplifyPatterns(selectorType, targetType, bp, basePatterns, inMissingPatterns, combinatorialPatterns);
                 Set<PatternDescription> currentMissingPatterns =
-                        replace(inMissingPatterns, toExpand, sortedCandidates);
+                        replace(inMissingPatterns, toExpand, simplifiedPatterns);
 
-                for (PatternDescription addedPattern : sortedCandidates) {
+                for (PatternDescription addedPattern : simplifiedPatterns) {
                     if (addedPattern instanceof RecordPattern addedRP) {
                         for (int c = 0; c < addedRP.nested.length; c++) {
                             currentMissingPatterns = expandMissingPatternDescriptions(selectorType,
@@ -1176,6 +1171,34 @@ public class ExhaustivenessComputer {
                 return null; //binding patterns have no children
             }
         }
+
+    /* Simplifies patterns, e.g. when the input patterns include all permitted subtypes
+     * of a type, the supertype will be used.
+     */
+    private Set<PatternDescription> simplifyPatterns(Type selectorType,
+                                  Type targetType,
+                                  PatternDescription toExpand,
+                                  Set<? extends PatternDescription> basePatterns,
+                                  Set<PatternDescription> inMissingPatterns,
+                                  Set<PatternDescription> toReduce) {
+        CoverageResult coverageResult = computeCoverage(targetType, toReduce, PatternEquivalence.LOOSE);
+
+        if (!coverageResult.covered()) {
+            //use the partially merged/combined patterns:
+            toReduce = coverageResult.incompletePatterns();
+        }
+
+        //combine sealed subtypes into the supertype, if all is covered.
+        //but preserve more specific record types in positions where there are record patterns in the original patterns
+        //this is particularly important for the case where the sealed supertype only has one permitted type, the record
+        //the base type could be used instead of the record otherwise, which would produce less specific missing pattern:
+        Set<PatternDescription> sortedCandidates =
+                partialSortPattern(toReduce, basePatterns, replace(inMissingPatterns, toExpand, toReduce));
+
+        removeUnnecessaryPatterns(selectorType, toExpand, basePatterns, inMissingPatterns, sortedCandidates);
+
+        return sortedCandidates;
+    }
 
     /* Out of "candidates" remove patterns that are not necessary to achieve exhaustiveness.
      * Note that iteration order of "candidates" is important - if the set contains
@@ -1249,18 +1272,26 @@ public class ExhaustivenessComputer {
             } else if (pd1 instanceof BindingPattern bp1 && pd2 instanceof BindingPattern bp2) {
                 Type t1 = bp1.type();
                 Type t2 = bp2.type();
-                boolean t1IsImportantRecord =
-                        (t1.tsym.flags_field & RECORD) != 0 &&
-                        hasMatchingRecordPattern(basePatterns, missingPatterns, bp1);
-                boolean t2IsImportantRecord =
-                        (t2.tsym.flags_field & RECORD) != 0 &&
-                        hasMatchingRecordPattern(basePatterns, missingPatterns, bp2);
-                if (t1IsImportantRecord && !t2IsImportantRecord) {
-                    return false;
-                }
-                if (!t1IsImportantRecord && t2IsImportantRecord) {
+
+                //put types with a single permitted subtype (when the other type is the permitted subtype)
+                //to the front, so that are preferrably removed:
+                List<Type> t1PermittedSubClasses = ((ClassSymbol) t1.tsym).getPermittedSubclasses();
+                if (t1PermittedSubClasses.size() == 1 && t1PermittedSubClasses.head.tsym == t2.tsym) {
                     return true;
                 }
+                List<Type> t2PermittedSubClasses = ((ClassSymbol) t2.tsym).getPermittedSubclasses();
+                if (t2PermittedSubClasses.size() == 1 && t2PermittedSubClasses.head.tsym == t1.tsym) {
+                    return false;
+                }
+
+                //put inaccessible types in front, so they are preferrably removed:
+                if (isAccessible(t1.tsym) && !isAccessible(t2.tsym)) {
+                    return false;
+                }
+                if (!isAccessible(t1.tsym) && isAccessible(t2.tsym)) {
+                    return true;
+                }
+
                 if (!types.isSameType(t1, t2) && types.isSubtype(t1, t2)) {
                     return true;
                 }
