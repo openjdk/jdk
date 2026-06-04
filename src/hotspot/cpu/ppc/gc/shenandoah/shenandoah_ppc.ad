@@ -26,192 +26,476 @@
 source_hpp %{
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+
+bool need_acquire_load(const Node* n);
+bool need_acquire_load_store(const Node *load);
 %}
 
-// Weak compareAndSwap operations are treated as strong compareAndSwap operations.
-// This is motivated by the retry logic of ShenandoahBarrierSetAssembler::cmpxchg_oop which is hard to realise
-// using weak CAS operations.
+source %{
+bool need_acquire_load(const Node* n) {
+  return !n->as_Load()->is_unordered() && !followed_by_acquire(n);
+}
+bool need_acquire_load_store(const Node* n) {
+  MemNode::MemOrd order = ((CompareAndSwapNode*)n->as_LoadStore())->order();
+  return (order == MemNode::acquire) || (order == MemNode::seqcst);
+}
+%}
 
-instruct compareAndSwapP_shenandoah(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
-                                    iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr) %{
-  match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));
-  match(Set res (ShenandoahWeakCompareAndSwapP mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
+// ---------------------------------- LOADS ---------------------------------------
+//
 
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire
-            && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
-
-  format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
+instruct loadN_shenandoah(iRegNdst dst, memory mem, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, flagsRegCR0 cr0) %{
+  match(Set dst (LoadN mem));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, KILL cr0);
+  predicate(UseShenandoahGC && (n->as_Load()->barrier_data() != 0) && !need_acquire_load(n));
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "shenandoah_load $dst, $mem\t# ptr" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        masm,
-        $mem$$Register, $oldval$$Register, $newval$$Register,
-        $tmp1$$Register, $tmp2$$Register,
-        false, $res$$Register
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm,
+      $dst$$Register,
+      $mem$$base$$Register,
+      $mem$$disp,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      /* narrow = */ true,
+      /* acquire = */ false
     );
+  %}
+  ins_cost(MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct loadN_acq_shenandoah(iRegNdst dst, memory mem, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, flagsRegCR0 cr0) %{
+  match(Set dst (LoadN mem));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, KILL cr0);
+  predicate(UseShenandoahGC && (n->as_Load()->barrier_data() != 0) && need_acquire_load(n));
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "shenandoah_load $dst, $mem\t# ptr (acquire)" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm,
+      $dst$$Register,
+      $mem$$base$$Register,
+      $mem$$disp,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      /* narrow = */ true,
+      /* acquire = */ true
+    );
+  %}
+  ins_cost(3*MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct loadP_shenandoah(iRegPdst dst, memoryAlg4 mem, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, flagsRegCR0 cr0) %{
+  match(Set dst (LoadP mem));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, KILL cr0);
+  predicate(UseShenandoahGC && (n->as_Load()->barrier_data() != 0) && !need_acquire_load(n));
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "shenandoah_load $dst, $mem\t# ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm,
+      $dst$$Register,
+      $mem$$base$$Register,
+      $mem$$disp,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      /* narrow = */ false,
+      /* acquire = */ false
+    );
+  %}
+  ins_cost(MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct loadP_acq_shenandoah(iRegPdst dst, memoryAlg4 mem, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, flagsRegCR0 cr0) %{
+  match(Set dst (LoadP mem));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, KILL cr0);
+  predicate(UseShenandoahGC && (n->as_Load()->barrier_data() != 0) && need_acquire_load(n));
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "shenandoah_load $dst, $mem\t# ptr (acquire)" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm,
+      $dst$$Register,
+      $mem$$base$$Register,
+      $mem$$disp,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      /* narrow = */ false,
+      /* acquire = */ true
+    );
+  %}
+  ins_cost(3*MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+// ---------------------------------- STORES ---------------------------------------
+//
+
+instruct storeN_shenandoah(memory dst, iRegN_P2N src, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set dst (StoreN dst src));
+  predicate(UseShenandoahGC && (n->as_Store()->barrier_data() != 0));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "shenandoah_store $dst, $src\t# compressed ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+      $dst$$base$$Register,
+      $dst$$disp,
+      /* dst_narrow = */ true,
+      $src$$Register,
+      /* src_narrow = */ true,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register
+    );
+  %}
+  ins_cost(MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeP_shenandoah(memoryAlg4 dst, iRegPsrc src, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set dst (StoreP dst src));
+  predicate(UseShenandoahGC && (n->as_Store()->barrier_data() != 0));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "shenandoah_store $dst, $src\t# ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+      $dst$$base$$Register,
+      $dst$$disp,
+      /* dst_narrow = */ false,
+      $src$$Register,
+      /* src_narrow = */ false,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register
+    );
+  %}
+  ins_cost(MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct encodePAndStoreN_shenandoah(memory dst, iRegPsrc src, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set dst (StoreN dst (EncodeP src)));
+  predicate(UseShenandoahGC && (n->as_Store()->barrier_data() != 0));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "shenandoah_store $dst, $src\t# compressed ptr (with encoding)" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+      $dst$$base$$Register,
+      $dst$$disp,
+      /* dst_narrow = */ true,
+      $src$$Register,
+      /* src_narrow = */ false,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register
+    );
+  %}
+  ins_cost(MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+// ---------------------- LOAD-STORES -----------------------------------
+//
+
+instruct compareAndSwapN_regP_regN_regN_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (CompareAndSwapN mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && !need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0); // TEMP_DEF to avoid jump
+  format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ false,
+      /* is_narrow */ true,
+      /* weak */ false,
+      /* acquire */ false);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndSwapN_shenandoah(iRegIdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval,
-                                    iRegNdst tmp1, iRegNdst tmp2, flagsRegCR0 cr) %{
-  match(Set res (ShenandoahCompareAndSwapN mem (Binary oldval newval)));
-  match(Set res (ShenandoahWeakCompareAndSwapN mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
-
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire
-            && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
-
-  format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
+instruct compareAndSwapN_acq_regP_regN_regN_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (CompareAndSwapN mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0); // TEMP_DEF to avoid jump
+  format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        masm,
-        $mem$$Register, $oldval$$Register, $newval$$Register,
-        $tmp1$$Register, $tmp2$$Register,
-        false, $res$$Register
-    );
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ false,
+      /* is_narrow */ true,
+      /* weak */ false,
+      /* acquire */ true);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndSwapP_acq_shenandoah(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
-                                       iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr) %{
-  match(Set res (ShenandoahCompareAndSwapP mem (Binary oldval newval)));
-  match(Set res (ShenandoahWeakCompareAndSwapP mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
-
-  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire
-            || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
-
-  format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as bool; ptr" %}
+instruct compareAndSwapP_regP_regP_regP_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (CompareAndSwapP mem_ptr (Binary src1 src2)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0); // TEMP_DEF to avoid jump
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && !need_acquire_load_store(n));
+  format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        masm,
-        $mem$$Register, $oldval$$Register, $newval$$Register,
-        $tmp1$$Register, $tmp2$$Register,
-        false, $res$$Register
-    );
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ false,
+      /* is_narrow */ false,
+      /* weak */ false,
+      /* acquire */ false);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndSwapN_acq_shenandoah(iRegIdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval,
-                                        iRegNdst tmp1, iRegNdst tmp2, flagsRegCR0 cr) %{
-  match(Set res (ShenandoahCompareAndSwapN mem (Binary oldval newval)));
-  match(Set res (ShenandoahWeakCompareAndSwapN mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
-
-  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire
-            || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
-
-  format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as bool; ptr" %}
+instruct compareAndSwapP_acq_regP_regP_regP_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (CompareAndSwapP mem_ptr (Binary src1 src2)));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0); // TEMP_DEF to avoid jump
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && need_acquire_load_store(n));
+  format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        masm,
-        $mem$$Register, $oldval$$Register, $newval$$Register,
-        $tmp1$$Register, $tmp2$$Register,
-        false, $res$$Register
-    );
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ false,
+      /* is_narrow */ false,
+      /* weak */ false,
+      /* acquire */ true);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeP_shenandoah(iRegPdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
-                                        iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr) %{
-  match(Set res (ShenandoahCompareAndExchangeP mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
-
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire
-            && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
-
-  format %{ "CMPXCHGD $res, $mem, $oldval, $newval; as ptr; ptr" %}
+instruct weakCompareAndSwapN_regP_regN_regN_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (WeakCompareAndSwapN mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && !need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0); // TEMP_DEF to avoid jump
+  format %{ "weak CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        masm,
-        $mem$$Register, $oldval$$Register, $newval$$Register,
-        $tmp1$$Register, $tmp2$$Register,
-        true, $res$$Register
-    );
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ false,
+      /* is_narrow */ true,
+      /* weak */ true,
+      /* acquire */ false);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeN_shenandoah(iRegNdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval,
-                                        iRegNdst tmp1, iRegNdst tmp2, flagsRegCR0 cr) %{
-  match(Set res (ShenandoahCompareAndExchangeN mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
-
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire
-            && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
-
-  format %{ "CMPXCHGD $res, $mem, $oldval, $newval; as ptr; ptr" %}
+instruct weakCompareAndSwapN_acq_regP_regN_regN_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (WeakCompareAndSwapN mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0); // TEMP_DEF to avoid jump
+  format %{ "weak CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        masm,
-        $mem$$Register, $oldval$$Register, $newval$$Register,
-        $tmp1$$Register, $tmp2$$Register,
-        true, $res$$Register
-    );
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ false,
+      /* is_narrow */ true,
+      /* weak */ true,
+      /* acquire */ true);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangePAcq_shenandoah(iRegPdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
-                                           iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr) %{
-  match(Set res (ShenandoahCompareAndExchangeP mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
-
-  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire
-            || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
-
-  format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
+instruct weakCompareAndSwapP_regP_regP_regP_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (WeakCompareAndSwapP mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && !need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0); // TEMP_DEF to avoid jump
+  format %{ "weak CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        masm,
-        $mem$$Register, $oldval$$Register, $newval$$Register,
-        $tmp1$$Register, $tmp2$$Register,
-        true, $res$$Register
-    );
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ false,
+      /* is_narrow */ false,
+      /* weak */ true,
+      /* acquire */ false);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeNAcq_shenandoah(iRegNdst res, indirect mem, iRegNsrc oldval, iRegNsrc newval,
-                                           iRegNdst tmp1, iRegNdst tmp2, flagsRegCR0 cr) %{
-  match(Set res (ShenandoahCompareAndExchangeN mem (Binary oldval newval)));
-  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr);
-
-  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire
-            || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
-
-  format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
+instruct weakCompareAndSwapP_acq_regP_regP_regP_shenandoah(iRegIdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (WeakCompareAndSwapP mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0); // TEMP_DEF to avoid jump
+  format %{ "weak CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        masm,
-        $mem$$Register, $oldval$$Register, $newval$$Register,
-        $tmp1$$Register, $tmp2$$Register,
-        true, $res$$Register
-    );
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ false,
+      /* is_narrow */ false,
+      /* weak */ true,
+      /* acquire */ true);
   %}
   ins_pipe(pipe_class_default);
 %}
+
+instruct compareAndExchangeN_regP_regN_regN_shenandoah(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (CompareAndExchangeN mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && !need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as narrow oop" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ true,
+      /* is_narrow */ true,
+      /* weak */ false,
+      /* acquire */ false);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndExchangeN_acq_regP_regN_regN_shenandoah(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (CompareAndExchangeN mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as narrow oop" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ true,
+      /* is_narrow */ true,
+      /* weak */ false,
+      /* acquire */ true);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndExchangeP_regP_regP_regP_shenandoah(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (CompareAndExchangeP mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && !need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ true,
+      /* is_narrow */ false,
+      /* weak */ false,
+      /* acquire */ false);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct compareAndExchangeP_acq_regP_regP_regP_shenandoah(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (CompareAndExchangeP mem_ptr (Binary src1 src2)));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0) && need_acquire_load_store(n));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem_ptr$$Register,
+      $src1$$Register,
+      $src2$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register,
+      /* exchange */ true,
+      /* is_narrow */ false,
+      /* weak */ false,
+      /* acquire */ true);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct getAndSetP_shenandoah(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (GetAndSetP mem_ptr src));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "GetAndSetP $res, $mem_ptr, $src" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
+      $res$$Register,
+      $src$$Register,
+      $mem_ptr$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct getAndSetN_shenandoah(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set res (GetAndSetN mem_ptr src));
+  predicate(UseShenandoahGC && (n->as_LoadStore()->barrier_data() != 0));
+  effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "GetAndSetN $res, $mem_ptr, $src" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
+      $res$$Register,
+      $src$$Register,
+      $mem_ptr$$Register,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
