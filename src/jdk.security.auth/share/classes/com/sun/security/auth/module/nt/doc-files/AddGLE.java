@@ -62,14 +62,13 @@ void main(String[] args) throws IOException {
                             .downcallHandle(%1$s$address(), %1$s$descriptor(), CCS_GLE);
 
                     private int %1$sGLE(%2$s) {
-                        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
-                                CAPTURE_LAYOUT.byteAlignment())) {
+                        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT)) {
                             MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
                             int output = (int) MH_%1$sGLE.invokeExact(
                                     cs, %3$s);
                             if (output == 0) {
                                 if (debug) {
-                                    DisplayErrorText(arena, "%1$s", cs);
+                                    displayErrorText("%1$s", cs);
                                 }
                             }
                             return output;

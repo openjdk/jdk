@@ -60,35 +60,37 @@ public class NTSystem {
     private static final VarHandle VH_ERROR = Linker.Option.captureStateLayout()
             .varHandle(groupElement("GetLastError"));
 
-    private static void DisplayErrorText(Arena scope, String label, MemorySegment cs) {
+    private static void displayErrorText(String label, MemorySegment cs) {
         int dwFormatFlags = FORMAT_MESSAGE_ALLOCATE_BUFFER() |
                 FORMAT_MESSAGE_FROM_SYSTEM() |
                 FORMAT_MESSAGE_IGNORE_INSERTS();
-        MemorySegment buffer = scope.allocate(C_POINTER);
-        MemorySegment hModule = NULL;
-        int errno = (int) VH_ERROR.get(cs, 0);
-        if (errno >= NERR_BASE() && errno <= MAX_NERR()) {
-            MemorySegment dllName = scope.allocateFrom("netmsg.dll");
-            hModule = LoadLibraryExA(
-                    dllName,
-                    NULL,
-                    LOAD_LIBRARY_AS_DATAFILE()
-            );
-            if(hModule != NULL) {
-                dwFormatFlags |= FORMAT_MESSAGE_FROM_HMODULE();
+        try (Arena scope = Arena.ofConfined()) {
+            MemorySegment buffer = scope.allocate(C_POINTER);
+            MemorySegment hModule = NULL;
+            int errno = (int) VH_ERROR.get(cs, 0);
+            if (errno >= NERR_BASE() && errno <= MAX_NERR()) {
+                MemorySegment dllName = scope.allocateFrom("netmsg.dll");
+                hModule = LoadLibraryExA(
+                        dllName,
+                        NULL,
+                        LOAD_LIBRARY_AS_DATAFILE()
+                );
+                if (hModule != NULL) {
+                    dwFormatFlags |= FORMAT_MESSAGE_FROM_HMODULE();
+                }
             }
-        }
-        // dwLanguageId = 0 uses the caller's language preferences
-        if (FormatMessageA(dwFormatFlags, hModule, errno, 0, buffer, 0, NULL) > 0) {
-            MemorySegment msg = buffer.get(C_POINTER, 0);
-            System.out.println(label + " error [" + errno + "]: "
-                    + msg.getString(0));
-            LocalFree(msg);
-        } else {
-            System.out.println(label + " error [" + errno + "]");
-        }
-        if (hModule != NULL) {
-            FreeLibrary(hModule);
+            // dwLanguageId = 0 uses the caller's language preferences
+            if (FormatMessageA(dwFormatFlags, hModule, errno, 0, buffer, 0, NULL) > 0) {
+                MemorySegment msg = buffer.get(C_POINTER, 0);
+                System.out.println(label + " error [" + errno + "]: "
+                        + msg.getString(0));
+                LocalFree(msg);
+            } else {
+                System.out.println(label + " error [" + errno + "]");
+            }
+            if (hModule != NULL) {
+                FreeLibrary(hModule);
+            }
         }
     }
 
@@ -106,14 +108,13 @@ public class NTSystem {
             .downcallHandle(OpenThreadToken$address(), OpenThreadToken$descriptor(), CCS_GLE);
 
     private int OpenThreadTokenGLE(MemorySegment ThreadHandle, int DesiredAccess, int OpenAsSelf, MemorySegment TokenHandle) {
-        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
-                CAPTURE_LAYOUT.byteAlignment())) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT)) {
             MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
             int output = (int) MH_OpenThreadTokenGLE.invokeExact(
                     cs, ThreadHandle, DesiredAccess, OpenAsSelf, TokenHandle);
             if (output == 0) {
                 if (debug) {
-                    DisplayErrorText(arena, "OpenThreadToken", cs);
+                    displayErrorText("OpenThreadToken", cs);
                 }
             }
             return output;
@@ -128,14 +129,13 @@ public class NTSystem {
             .downcallHandle(OpenProcessToken$address(), OpenProcessToken$descriptor(), CCS_GLE);
 
     private int OpenProcessTokenGLE(MemorySegment ProcessHandle_, int DesiredAccess, MemorySegment TokenHandle) {
-        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
-                CAPTURE_LAYOUT.byteAlignment())) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT)) {
             MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
             int output = (int) MH_OpenProcessTokenGLE.invokeExact(
                     cs, ProcessHandle_, DesiredAccess, TokenHandle);
             if (output == 0) {
                 if (debug) {
-                    DisplayErrorText(arena, "OpenProcessToken", cs);
+                    displayErrorText("OpenProcessToken", cs);
                 }
             }
             return output;
@@ -150,14 +150,13 @@ public class NTSystem {
             .downcallHandle(GetTokenInformation$address(), GetTokenInformation$descriptor(), CCS_GLE);
 
     private int GetTokenInformationGLE(MemorySegment TokenHandle, int TokenInformationClass, MemorySegment TokenInformation, int TokenInformationLength, MemorySegment ReturnLength) {
-        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
-                CAPTURE_LAYOUT.byteAlignment())) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT)) {
             MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
             int output = (int) MH_GetTokenInformationGLE.invokeExact(
                     cs, TokenHandle, TokenInformationClass, TokenInformation, TokenInformationLength, ReturnLength);
             if (output == 0) {
                 if (debug) {
-                    DisplayErrorText(arena, "GetTokenInformation", cs);
+                    displayErrorText("GetTokenInformation", cs);
                 }
             }
             return output;
@@ -172,14 +171,13 @@ public class NTSystem {
             .downcallHandle(LookupAccountSidA$address(), LookupAccountSidA$descriptor(), CCS_GLE);
 
     private int LookupAccountSidAGLE(MemorySegment lpSystemName, MemorySegment Sid, MemorySegment Name, MemorySegment cchName, MemorySegment ReferencedDomainName, MemorySegment cchReferencedDomainName, MemorySegment peUse) {
-        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
-                CAPTURE_LAYOUT.byteAlignment())) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT)) {
             MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
             int output = (int) MH_LookupAccountSidAGLE.invokeExact(
                     cs, lpSystemName, Sid, Name, cchName, ReferencedDomainName, cchReferencedDomainName, peUse);
             if (output == 0) {
                 if (debug) {
-                    DisplayErrorText(arena, "LookupAccountSidA", cs);
+                    displayErrorText("LookupAccountSidA", cs);
                 }
             }
             return output;
@@ -194,14 +192,13 @@ public class NTSystem {
             .downcallHandle(LookupAccountNameA$address(), LookupAccountNameA$descriptor(), CCS_GLE);
 
     private int LookupAccountNameAGLE(MemorySegment lpSystemName, MemorySegment lpAccountName, MemorySegment Sid, MemorySegment cbSid, MemorySegment ReferencedDomainName, MemorySegment cchReferencedDomainName, MemorySegment peUse) {
-        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
-                CAPTURE_LAYOUT.byteAlignment())) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT)) {
             MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
             int output = (int) MH_LookupAccountNameAGLE.invokeExact(
                     cs, lpSystemName, lpAccountName, Sid, cbSid, ReferencedDomainName, cchReferencedDomainName, peUse);
             if (output == 0) {
                 if (debug) {
-                    DisplayErrorText(arena, "LookupAccountNameA", cs);
+                    displayErrorText("LookupAccountNameA", cs);
                 }
             }
             return output;
@@ -216,14 +213,13 @@ public class NTSystem {
             .downcallHandle(DuplicateToken$address(), DuplicateToken$descriptor(), CCS_GLE);
 
     private int DuplicateTokenGLE(MemorySegment ExistingTokenHandle, int ImpersonationLevel, MemorySegment DuplicateTokenHandle) {
-        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
-                CAPTURE_LAYOUT.byteAlignment())) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT)) {
             MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
             int output = (int) MH_DuplicateTokenGLE.invokeExact(
                     cs, ExistingTokenHandle, ImpersonationLevel, DuplicateTokenHandle);
             if (output == 0) {
                 if (debug) {
-                    DisplayErrorText(arena, "DuplicateToken", cs);
+                    displayErrorText("DuplicateToken", cs);
                 }
             }
             return output;
