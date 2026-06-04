@@ -34,7 +34,6 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
  public:
   // cpuid result register layouts.  These are all unions of a uint32_t
@@ -373,7 +372,6 @@ protected:
   /*
    * Update following files when declaring new flags:
    * test/lib-test/jdk/test/whitebox/CPUInfoTest.java
-   * src/jdk.internal.vm.ci/share/classes/jdk/vm/ci/amd64/AMD64.java
    */
   enum Feature_Flag {
 #define CPU_FEATURE_FLAGS(decl) \
@@ -383,6 +381,8 @@ protected:
     decl(HT,                ht                )  \
     decl(3DNOW_PREFETCH,    3dnowpref         )  /* Processor supports 3dnow prefetch and prefetchw instructions */ \
                                                  /* may not necessarily support other 3dnow instructions */ \
+    decl(SSE,               sse               )  \
+    decl(SSE2,              sse2              )  \
     decl(SSE3,              sse3              ) /* SSE3 comes from cpuid 1 (ECX) */ \
     decl(SSSE3,             ssse3             ) \
     decl(SSE4A,             sse4a             ) \
@@ -449,7 +449,6 @@ protected:
 
   class VM_Features {
     friend class VMStructs;
-    friend class JVMCIVMStructs;
 
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURES / BitsPerLong) + 1];
@@ -479,7 +478,6 @@ protected:
       return (1ULL << (feature & features_bitmap_element_mask()));
     }
 
-    static int _features_bitmap_size; // for JVMCI purposes
    public:
     VM_Features() {
       for (int i = 0; i < features_bitmap_element_count(); i++) {

@@ -151,7 +151,6 @@ private:
   AOTStreamedHeapHeader _streamed_heap_header;
 
   // The following are parameters that affect MethodData layout.
-  u1      _compiler_type;
   uint    _type_profile_level;
   int     _type_profile_args_limit;
   int     _type_profile_parms_limit;

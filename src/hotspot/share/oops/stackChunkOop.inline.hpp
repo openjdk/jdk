@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,15 @@ inline bool stackChunkOopDesc::has_bitmap() const                  { return is_f
 inline void stackChunkOopDesc::set_has_bitmap(bool value)          { set_flag(FLAG_HAS_BITMAP, value); }
 
 inline bool stackChunkOopDesc::has_thaw_slowpath_condition() const { return flags() != 0; }
+
+inline void stackChunkOopDesc::force_slow_path() {
+#if INCLUDE_ZGC || INCLUDE_SHENANDOAHGC
+  if (UseZGC || UseShenandoahGC) {
+    relativize_derived_pointers_concurrently();
+  }
+#endif
+  set_flag(FLAG_HAS_INTERPRETED_FRAMES, true);
+}
 
 inline bool stackChunkOopDesc::requires_barriers() {
   return Universe::heap()->requires_barriers(this);
