@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package jdk.xml.internal;
 import javax.xml.XMLConstants;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
 import jdk.xml.internal.JdkProperty.State;
+
+import static jdk.xml.internal.JdkConstants.XPATH_ALLOW_NON_XSLT_SYS_PROPS;
 import static jdk.xml.internal.JdkXmlUtils.SP_USE_CATALOG;
 
 /**
@@ -72,7 +74,16 @@ public class JdkXmlFeatures implements Cloneable {
          * FSP: not enforced by FSP.
          */
         JDK_OVERRIDE_PARSER(ImplPropMap.OVERRIDEPARSER, null, null, false,
-                null, null, false, false, true, false);
+                null, null, false, false, true, false),
+
+        /**
+         * Feature allowNonXSLTSysProps: controls whether XPath's system-property()
+         * function is permitted to access non-XSLT-defined JVM system properties.
+         * FSP: when FSP is on, accessing non-XSLT-defined JVM system properties is disabled
+         */
+        JDK_XPATH_SYSTEM_PROPERTY(null, XPATH_ALLOW_NON_XSLT_SYS_PROPS,
+                XPATH_ALLOW_NON_XSLT_SYS_PROPS, false,
+                null, null, false, false, true, true);
 
         private final ImplPropMap implMap;
         private final String name;
