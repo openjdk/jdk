@@ -106,6 +106,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.TYP;
 import static com.sun.tools.javac.code.Kinds.Kind.VAR;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree.JCThrow;
 
 /**
@@ -129,6 +130,7 @@ public class LambdaToMethod extends TreeTranslator {
     private TreeMaker make;
     private final Types types;
     private final TransTypes transTypes;
+    private final Target target;
     private Env<AttrContext> attrEnv;
 
     /** info about the current class being processed */
@@ -189,6 +191,7 @@ public class LambdaToMethod extends TreeTranslator {
         make = TreeMaker.instance(context);
         types = Types.instance(context);
         transTypes = TransTypes.instance(context);
+        target = Target.instance(context);
         Options options = Options.instance(context);
         dumpLambdaToMethodStats = options.isSet("debug.dumpLambdaToMethodStats");
         dumpLambdaDeserializationStats = options.isSet("debug.dumpLambdaDeserializationStats");
@@ -786,8 +789,9 @@ public class LambdaToMethod extends TreeTranslator {
         int implMethodKind = refSym.referenceKind();
 
         DeserializationCase deserializationCase = kInfo.deserializeCases.computeIfAbsent(implMethodName, _ -> {
-            Name currentDeserializationMethodName =
-                    names.deserializeLambda.append(implMethodNameAsName);
+            Name currentDeserializationMethodName = implMethodNameAsName == names.init
+                    ? names.deserializeLambda.append(names.fromString("init"))
+                    : names.deserializeLambda.append(target.syntheticNameChar(), implMethodNameAsName);
             MethodSymbol caseDeserializationMethod = makePrivateSyntheticMethod(STATIC, currentDeserializationMethodName,
                                                                                 kInfo.deserMethodSym.type, kInfo.clazz.sym);
             VarSymbol caseDeserializationParam = new VarSymbol(FINAL, names.fromString("lambda"),

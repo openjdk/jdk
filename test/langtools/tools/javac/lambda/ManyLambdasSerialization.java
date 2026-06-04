@@ -338,4 +338,51 @@ public class ManyLambdasSerialization {
 
         tb.checkEqual(List.of("OK"), output);
     }
+
+    @Test
+    public void testVerifyWeirdImplNameWorks() {
+        //make sure method references with name "init" and "<init>"
+        //don't clash in deserialization method name:
+        String code = """
+                      import java.io.*;
+                      import java.util.function.Supplier;
+                      public class Test {
+                          public static Test init() { return new Test("factory"); }
+                          public Test() { this("constructor"); }
+
+                          private final String origin;
+                          private Test(String origin) { this.origin = origin;}
+                          public static void main() throws Exception {
+                              Supplier<Test> fromConstructor = (Supplier<Test> & Serializable) Test::new;
+                              Supplier<Test> fromFactory = (Supplier<Test> & Serializable) Test::init;
+
+                              ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                              try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                                  oos.writeObject(fromConstructor);
+                                  oos.writeObject(fromFactory);
+                                  oos.close();
+                              }
+                              try (ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
+                                   ObjectInputStream ois = new ObjectInputStream(in)) {
+                                  System.err.println(((Supplier<Test>) ois.readObject()).get().origin);
+                                  System.err.println(((Supplier<Test>) ois.readObject()).get().origin);
+                              }
+                          }
+                      }
+                      """;
+        new JavacTask(tb)
+                .sources(code.toString())
+                .outdir(".")
+                .run()
+                .writeAll();
+
+        List<String> output = new JavaTask(tb)
+                .classpath(".")
+                .className("Test")
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDERR);
+
+        tb.checkEqual(List.of("constructor", "factory"), output);
+    }
 }
