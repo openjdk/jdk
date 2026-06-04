@@ -1148,8 +1148,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     option is disabled.
 
 [`-XX:FlightRecorderOptions=`]{#-XX_FlightRecorderOptions}*parameter*`=`*value* (or) `-XX:FlightRecorderOptions:`*parameter*`=`*value*
-:   Sets the parameters that control the behavior of JFR. Multiple parameters can be specified
-    by separating them with a comma.
+:   Sets the parameters that control the behavior of JFR.
+    `-XX:FlightRecorderOptions:help` prints the available options, default
+    redaction filters, and example command lines. Multiple parameters can be
+    specified by separating them with a comma.
 
     The following list contains the available JFR *parameter*`=`*value*
     entries:
@@ -1195,6 +1197,43 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     :   Specifies whether event classes should be retransformed using JVMTI. If
         false, instrumentation is added when event classes are loaded. By
         default, this parameter is enabled.
+
+    `redact-argument=`argument-filter
+    :   Replace command-line arguments that match a semicolon-separated list
+        of glob patterns, for example, `*secret*;password*`. Matching is
+        case-insensitive, and the supported wildcards are `*` and `?`. To redact
+        multiple arguments, use a literal space (`' '`) as a separator.
+        For example, to match the two arguments `--auth username:token`, use the
+        filter `--auth *:*`. Filters containing spaces must be quoted as a single
+        command-line argument, for example,
+        `-XX:FlightRecorderOptions='redact-argument=--auth *:*'`.
+        Arguments containing spaces might not be matched as expected. To load
+        patterns from a file (one per line) use `@<filename>`. To add to the
+        default patterns instead of replacing them, prefix the whole list with
+        `+`, for example, `+*foo*;@redact.txt`. Use `none` (lowercase) to disable
+        all redaction filters for command-line arguments. Redacted arguments will
+        be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
+        and applies only to command-line arguments in the `jdk.JVMInformation`
+        event and to the `java.command` system property in the
+        `jdk.InitialSystemProperty` event. Other events, such as `jdk.ProcessStart`
+        (child processes), are not redacted. Use `-XX:FlightRecorderOptions:help`
+        to see the default filters used by the `redact-argument` option.
+
+    `redact-key=`key-filter
+    :   Replace the value of environment variables and system properties
+        whose key matches a semicolon-separated list of glob patterns,
+        for example, `*password*;*token*`. Matching is case-insensitive, and
+        the supported wildcards are `*` and `?`. To load patterns from a file
+        (one per line), use `@<filename>`. To add to the default patterns
+        instead of replacing them, prefix the whole list with `+`,
+        for example, `+*cred*;@keys.txt`. Use `none` (lowercase) to
+        disable all redaction filters for key matching. Redacted values
+        will be replaced with `[REDACTED]`. The option `redact-key` is
+        best-effort and applies only to the `jdk.InitialSystemProperty`,
+        `jdk.InitialEnvironmentVariable` and `jdk.JVMInformation` (-Dkey=...)
+        events. Other events, such as `jdk.InitialSecurityProperty`, are not
+        redacted. Use `-XX:FlightRecorderOptions:help` to see the default filters
+        used by the `redact-key` option.
 
     `stackdepth=`*depth*
     :   Stack depth for stack traces. By default, the depth is set to 64 method
@@ -4108,13 +4147,17 @@ The AOT cache can be used with the following command-line options:
 
 [`-XX:AOTMode=`]{#-XX_AOTMode}*mode*
 :   Specifies the AOT Mode for this run.
-    *mode* must be one of the following: `auto`, `off`, `record`, `create`, or `on`.
+    *mode* must be one of the following: `auto`, `off`, `record`, `create`, `on`, or `required`.
+
+    Note that `on` is an alias for `required`. All discussion below about `required`
+    also applies to `on`. The use of `on` is discouraged. The support of `on` may be deprecated and
+    removed in future releases.
 
 -   `auto`: This AOT mode is the default, and takes effect if no `-XX:AOTMode` option
-    is present.  It automatically sets the AOT mode to `record`, `on`, or `off`, as follows:
+    is present.  It automatically sets the AOT mode to `record`, `required`, or `off`, as follows:
      - If `-XX:AOTCacheOutput=`*cachefile* is specified, the AOT mode is changed to `record`
        (a training run, with a subsequent `create` operation).
-     - Otherwise, if an AOT cache can be loaded, the AOT mode is changed to `on` (a production run).
+     - Otherwise, if an AOT cache can be loaded, the AOT mode is changed to `required` (a production run).
      - Otherwise, the AOT mode is changed to `off` (a production run with no AOT cache).
 
 -   `off`: No AOT cache is used.
@@ -4142,10 +4185,9 @@ The AOT cache can be used with the following command-line options:
      from *configfile* and writes the optimization artifacts into *cachefile*.
      Note that the application itself is not executed in this phase.
 
--   `on`: Execute the application in the Production phase.
-     If `-XX:AOTCache=`*cachefile* is specified, the JVM tries to
-     load *cachefile* as the AOT cache. Otherwise, the JVM tries to load
-     a *default CDS archive* from the JDK installation directory as the AOT cache.
+-   `required`: Execute the application in the Production phase.
+     `-XX:AOTCache=`*cachefile* must be specified. The JVM tries to
+     load *cachefile* as the AOT cache.
 
      The loading of an AOT cache can fail for a number of reasons:
 
@@ -4173,10 +4215,15 @@ The AOT cache can be used with the following command-line options:
        This allows your application to function correctly, although sometimes it may not
        benefit from the AOT cache.
 
-     - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
+     - If `AOTMode` was originally `required`, the JVM will print an error message and exit immediately. This
        mode should be used only as a "fail-fast" debugging aid to check if your command-line
        options are compatible with the AOT cache. An alternative is to run your application with
        `-XX:AOTMode=auto -Xlog:aot` to see if the AOT cache can be used or not.
+
+     In production environments, `-XX:AOTMode=required` should be used with care. Your application may
+     fail to launch if an incompatible VM option is added without your knowledge. For example,
+     a cloud provider might run your JVM with a JVMTI class-file load hook for monitoring purposes.
+
 
 [`-XX:+AOTClassLinking`]{#-XX__AOTClassLinking}
 :   If this option is enabled, the JVM will perform more advanced optimizations (such

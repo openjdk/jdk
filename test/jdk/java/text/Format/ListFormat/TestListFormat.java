@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8041488 8316974 8318569 8306116
+ * @bug 8041488 8316974 8318569 8306116 8385736
  * @summary Tests for ListFormat class
  * @run junit TestListFormat
  */
@@ -63,6 +63,14 @@ public class TestListFormat {
             "sbef {0} sbet {1}",
             "{0} mid {1}",
             "{0} ebet {1} eaft",
+            "",
+            "",
+    };
+    // Ensures regex metacharacters in custom patterns are treated as literals.
+    private static final String[] CUSTOM_PATTERNS_METACHAR = {
+            ". {0} * {1}",
+            "{0} + {1}",
+            "{0} | {1} [",
             "",
             "",
     };
@@ -120,7 +128,7 @@ public class TestListFormat {
         assertEquals(ListFormat.getInstance(), ListFormat.getInstance(Locale.getDefault(Locale.Category.FORMAT), ListFormat.Type.STANDARD, ListFormat.Style.FULL));
     }
 
-    static Arguments[] getInstance_1Arg() {
+    private static Arguments[] getInstance_1Arg() {
         return new Arguments[] {
                 arguments(CUSTOM_PATTERNS_FULL, SAMPLE1, "foo"),
                 arguments(CUSTOM_PATTERNS_FULL, SAMPLE2, "twobef foo two bar twoaft"),
@@ -130,10 +138,14 @@ public class TestListFormat {
                 arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE2, "sbef foo ebet bar eaft"),
                 arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE3, "sbef foo sbet bar ebet baz eaft"),
                 arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE4, "sbef foo sbet bar mid baz ebet qux eaft"),
+                arguments(CUSTOM_PATTERNS_METACHAR, SAMPLE1, "foo"),
+                arguments(CUSTOM_PATTERNS_METACHAR, SAMPLE2, ". foo | bar ["),
+                arguments(CUSTOM_PATTERNS_METACHAR, SAMPLE3, ". foo * bar | baz ["),
+                arguments(CUSTOM_PATTERNS_METACHAR, SAMPLE4, ". foo * bar + baz | qux ["),
         };
     }
 
-    static Arguments[] getInstance_1Arg_IAE() {
+    private static Arguments[] getInstance_1Arg_IAE() {
         return new Arguments[] {
                 arguments(new String[1], "Pattern array length should be 5"),
                 arguments(new String[6], "Pattern array length should be 5"),
@@ -146,7 +158,7 @@ public class TestListFormat {
         };
     }
 
-    static Arguments[] getInstance_3Arg() {
+    private static Arguments[] getInstance_3Arg() {
         return new Arguments[] {
                 arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL,
                         "foo, bar, and baz", true),
@@ -188,7 +200,7 @@ public class TestListFormat {
         };
     }
 
-    static Arguments[] parseObject_parsePos() {
+    private static Arguments[] parseObject_parsePos() {
         return new Arguments[] {
                 arguments(CUSTOM_PATTERNS_FULL, SAMPLE1),
                 arguments(CUSTOM_PATTERNS_FULL, SAMPLE2),
@@ -201,7 +213,7 @@ public class TestListFormat {
         };
     }
 
-    static Arguments[] getInstance_3Arg_InheritPatterns() {
+    private static Arguments[] getInstance_3Arg_InheritPatterns() {
         return new Arguments[] {
                 arguments(ListFormat.Type.STANDARD, ListFormat.Style.FULL),
                 arguments(ListFormat.Type.STANDARD, ListFormat.Style.SHORT),
@@ -215,13 +227,23 @@ public class TestListFormat {
         };
     }
 
-    static Arguments[] getLocale_localeDependent() {
+    private static Arguments[] getLocale_localeDependent() {
         return new Arguments[] {
                 arguments(Locale.ROOT),
                 arguments(Locale.US),
                 arguments(Locale.GERMANY),
                 arguments(Locale.JAPAN),
                 arguments(Locale.SIMPLIFIED_CHINESE),
+        };
+    }
+
+    private static Arguments[] getInstance_1Arg_InvalidLongPattern() {
+        return new Arguments[] {
+                arguments(0, "start pattern is incorrect:"),
+                arguments(1, "middle pattern is incorrect:"),
+                arguments(2, "end pattern is incorrect:"),
+                arguments(3, "pattern for two is incorrect:"),
+                arguments(4, "pattern for three is incorrect:"),
         };
     }
 
@@ -238,6 +260,25 @@ public class TestListFormat {
         var ex = assertThrows(IllegalArgumentException.class,
                 () -> ListFormat.getInstance(invalidPatterns));
         assertEquals(errorMsg, ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void getInstance_1Arg_InvalidLongPattern(int index, String expected) {
+        var patterns = new String[]{
+            "{0}, {1}",
+            "{0}, {1}",
+            "{0}, and {1}",
+            "{0} and {1}",
+            "{0} {1} {2}"
+        };
+        patterns[index] = "{0}".repeat(100_000);
+
+        // Ensures validation of invalid long patterns completes without timing out
+        var msg = assertThrows(IllegalArgumentException.class,
+                               () -> ListFormat.getInstance(patterns))
+            .getMessage();
+        assertEquals(expected, msg.substring(0, Math.min(msg.length(), expected.length())));
     }
 
     @ParameterizedTest
@@ -348,6 +389,7 @@ public class TestListFormat {
         // should be inherited from parent locales.
         Locale.availableLocales().forEach(l -> ListFormat.getInstance(l, type, style));
     }
+
     @Test
     void getInstance_3Arg_InheritanceValidation() {
         // Tests if inheritance works as expected.

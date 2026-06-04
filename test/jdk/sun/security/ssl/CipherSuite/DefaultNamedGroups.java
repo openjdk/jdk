@@ -52,9 +52,7 @@ public class DefaultNamedGroups extends SSLEngineTemplate {
                     "x448",
                     "ffdhe2048",
                     "ffdhe3072",
-                    "ffdhe4096",
-                    "ffdhe6144",
-                    "ffdhe8192")
+                    "ffdhe4096")
             .sorted()
             .toList();
 

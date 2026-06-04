@@ -3569,7 +3569,7 @@ public class Lower extends TreeTranslator {
          *             int #len = array.length;
          *             int #i = 0; };
          *           #i < #len; i$++ ) {
-         *         T v = arr$[#i]; // also cast to (T) if it is safe narrowing
+         *         T v = (T) arr$[#i];
          *         stmt;
          *     }
          * }</pre>
@@ -3608,11 +3608,12 @@ public class Lower extends TreeTranslator {
 
             Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
             JCVariableDecl jcVariableDecl = (JCVariableDecl) tree.varOrRecordPattern;
+
             loopvarinit = transTypes.coerce(attrEnv, loopvarinit, jcVariableDecl.type);
             JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(jcVariableDecl.mods,
-                    jcVariableDecl.name,
-                    jcVariableDecl.vartype,
-                    loopvarinit).setType(jcVariableDecl.type);
+                                                  jcVariableDecl.name,
+                                                  jcVariableDecl.vartype,
+                                                  loopvarinit).setType(jcVariableDecl.type);
             loopvardef.sym = jcVariableDecl.sym;
             JCBlock body = make.
                     Block(0, List.of(loopvardef, tree.body));
