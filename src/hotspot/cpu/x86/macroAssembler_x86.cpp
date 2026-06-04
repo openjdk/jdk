@@ -5201,14 +5201,11 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
   assert(flat_nullfree_not_atomic_count_offset << LogBytesPerWord == real_flat_nullfree_not_atomic_count_offset, "poly counter math");
 #endif
 
-  // Corner case: no profile table. Increment poly counter and exit.
-  if (ReceiverTypeData::row_limit() == 0) {
-    ShouldNotReachHere();
-    return;
-  }
-
   Label L_found_recv;
-  profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ArrayLoadData::base_of_megamorphic_type_data(), ArrayLoadData::row_limit());
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() != 0) {
+    profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ArrayLoadData::base_of_megamorphic_type_data(), ArrayLoadData::row_limit());
+  }
   Register offset = rscratch1;
   int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
   Label null_free_non_atomic, null_free_atomic, nullable_atomic_flat, failure, L_count_update;
@@ -5232,9 +5229,11 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
   bind(failure);
   stop("unexpected flat array");
 
-  // Found a receiver, convert its slot offset to corresponding count offset.
-  bind(L_found_recv);
-  addptr(offset, receiver_to_count_step);
+  if (ReceiverTypeData::row_limit() != 0) {
+    // Found a receiver, convert its slot offset to corresponding count offset.
+    bind(L_found_recv);
+    addptr(offset, receiver_to_count_step);
+  }
 
   bind(L_count_update);
   addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
