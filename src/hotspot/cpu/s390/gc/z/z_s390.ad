@@ -36,6 +36,8 @@ source %{
 
 long zLoadP_fubar = 0;
 long zcolor_fubar = 0;
+long keep_alive_fubar = 0;
+long GetAndSet_fubar = 0;
 
 static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
   assert_different_registers(src, dst);
@@ -52,12 +54,17 @@ static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) 
 
 // Purpose: Compare the reference with the mask and jump to the runtime if not equal, else just uncolor it
 static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
-  __ stop("z keep alive load barrier");
+  //__ z_ldgr(Z_F0, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&keep_alive_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F0);
+
+  __ z_lgr(Z_R0_scratch, ref);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
-  __ z_cghi(ref, barrier_Relocation::unpatched);
+  __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
 
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-  __ branch_optimized(Assembler::bcondNotEqual, *stub->entry());
+  __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
 
   z_uncolor(masm, node, ref);
 
@@ -72,13 +79,11 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
       ((node->barrier_data() & ZBarrierPhantom) != 0);
 
   if (on_non_strong) {
-    __ stop("load_barrier on_non_strong");
     z_keep_alive_load_barrier(masm, node, ref_addr, ref);
     return;
   }
 
   if (node->barrier_data() == ZBarrierElided) {
-    __ stop("load_barrier ZBarrierElided");
     z_uncolor(masm, node, ref);
     return;
   }
@@ -118,6 +123,7 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
   // TODO: recheck these 2 below
   ins_is_late_expanded_null_check_candidate(true);
   ins_cost(MEMORY_REF_COST);
+  size(100);
 
   format %{ "LG      $dst,$mem\t # ptr" %}
 
@@ -140,9 +146,10 @@ instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP temp, KILL cr);
+  size(100);
 
   //TODO: double check the instruction cost
-  ins_cost(MEMORY_REF_COST);
+  ins_cost(2 * MEMORY_REF_COST);
   format %{ "STG     $mem, $src\t # ptr" %}
   ins_encode %{
     z_store_barrier(masm, this, $mem$$Address, $src$$Register, $temp$$Register, false /* is_atomic */);
@@ -156,6 +163,7 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem zero));
   effect(TEMP temp, KILL cr);
+  size(100);
 
   ins_cost(MEMORY_REF_COST);
   format %{ "STG     $mem, null\t # ptr" %}
@@ -167,19 +175,21 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
 %}
 
 // TODO: current implementation of z_color requires an extra register, either verify we have that or change the implementation
-instruct zCompareAndExchangeP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iRegP oldval_temp, iRegP oldval, flagsReg cr) %{
+instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP newval, iRegP newval_temp, iRegP oldval_temp, iRegP oldval, flagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP temp, TEMP oldval_temp, TEMP oldval, KILL cr);
+  effect(TEMP res, TEMP newval_temp, TEMP oldval_temp, USE mem, KILL cr);
+  size(200);
 
-  format %{ "CompareAndSwapP $oldval, $newval, $mem" %}
+  format %{ "CompareAndExchangeP $oldval, $newval, $mem" %}
   ins_encode %{
-    __ stop("zCompareAndExchangeP");
+    //__ stop("zCompareAndExchangeP");
     assert_different_registers($oldval$$Register, $mem$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
-    z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp$$Register, true /* is_atomic */);
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
     z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
-    __ z_csg($oldval_temp$$Register, $newval$$Register, mem_addr);
+    __ z_lg($res$$Register, mem_addr);
+    __ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
     z_uncolor(masm, this, $res$$Register);
 // TODO: Check which register we need to uncolor
   %}
@@ -192,6 +202,7 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, 
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP res, TEMP newval_temp, TEMP oldval_temp, USE mem, USE oldval, KILL cr);
+  size(100);
 
   format %{ "$res = CompareAndSwapP $oldval,$newval,$mem" %}
 
@@ -218,24 +229,27 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, 
 %}
 
 // TODO: Double check this implementation currently this is copied form g1_s390.ad g1GetAndSetP
-instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
+instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp1, iRegP temp2, flagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP temp, KILL cr);
+  effect(TEMP temp1,TEMP temp2, KILL cr);
+  size(100);
 
-  format %{ "XCHGP $newval, $mem" %}
+  format %{ "XCHGP   $newval,[$mem]\t # EXCHANGE (oop, atomic), temp $temp1" %}
 
   ins_encode %{
-    __ stop("zGetAndSetP");
     Label retry;
     const Address mem_addr = Address($mem$$Register, 0);
 
-    z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp$$Register, true /* is_atomic */);
-    __ z_lg($temp$$Register, mem_addr);
+    //__ load_const_optimized($temp1$$Register, (uintptr_t)&GetAndSet_fubar);
+    //__ z_agsi(0, $temp1$$Register, 1);
+
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp1$$Register, true /* is_atomic */);
+    __ z_lg($temp2$$Register, mem_addr);
     __ bind(retry);
-    __ z_csg($temp$$Register, $newval$$Register, mem_addr);
+    __ z_csg($temp2$$Register, $temp1$$Register, mem_addr);
     __ branch_optimized(Assembler::bcondNotEqual, retry);
-    __ z_lgr($newval$$Register, $temp$$Register);
+    __ z_lgr($newval$$Register, $temp2$$Register);
     z_uncolor(masm, this, $newval$$Register);
   %}
   ins_pipe(pipe_class_dummy);
