@@ -1343,7 +1343,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   if (UseCompactObjectHeaders) {
     markWord mw = (markWord)(uintptr_t)(addr);
     static const uintptr_t valhalla_reserved_bits_in_place = right_n_bits(markWord::valhalla_reserved_bits) << markWord::valhalla_reserved_shift;
-    if (mw.has_no_hash() && Klass::is_valid(mw.klass_without_asserts()) 
+    if (mw.has_no_hash() && Klass::is_valid(mw.klass_without_asserts())
         && (mw.value() & valhalla_reserved_bits_in_place) == 0 && !mw.is_forwarded()) {
       st->print(PTR_FORMAT " is a valid markword: ", p2i(addr));
       mw.print_on(st);
