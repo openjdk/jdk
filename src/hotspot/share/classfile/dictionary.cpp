@@ -248,16 +248,18 @@ void Dictionary::print_table_statistics(outputStream* st, const char* table_name
   };
   Thread* thread = Thread::current();
   ConcurrentTable::StatisticsTask sts(_table);
-  if (sts.prepare(thread)) {
-    TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, perf));
-    while (sts.do_task(thread, sz)) {
-      sts.pause(thread);
-      if (thread->is_Java_thread()) {
-        ThreadBlockInVM tbivm(JavaThread::cast(thread));
-      }
-      sts.cont(thread);
-    }
-    stats = sts.done(thread);
+  if (!sts.prepare(thread)) {
+    st->print_cr("Failed to take statistics");
+    return;
   }
+  TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, perf));
+  while (sts.do_task(thread, sz)) {
+    sts.pause(thread);
+    if (thread->is_Java_thread()) {
+      ThreadBlockInVM tbivm(JavaThread::cast(thread));
+    }
+    sts.cont(thread);
+  }
+  stats = sts.done(thread);
   stats.print(st, table_name);
 }
