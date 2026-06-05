@@ -21,7 +21,7 @@
 # questions.
 #
 
-com/sun/jdi/EATests.java#id0                                    8264699 generic-all
+com/sun/jdi/EATests.java 8264699 generic-all
 
 ##########
 ## Tests failing when main() is executed in additional vthread or in vthread instead of thread

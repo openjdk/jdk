@@ -999,7 +999,23 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
-void AOTMetaspace::adjust_heap_sizes_for_dumping() {
+void AOTMetaspace::init_heap_settings() {
+  if (UseCompressedOops) {
+    if (!AOTCodeCache::is_caching_enabled()) {
+      // We don't need it -- always disable for better jitted code.
+      FLAG_SET_ERGO(AOTCompatibleOopCompression, false);
+    } else if (CDSConfig::is_dumping_final_static_archive()) {
+      // Obey the command-line switch. Do not override
+    } else if (CDSConfig::is_using_archive()) {
+      precond(FileMapInfo::current_info() == nullptr);
+      FileMapInfo* static_mapinfo = open_static_archive();
+      if (static_mapinfo != nullptr && static_mapinfo->header()->compatible_oop_compression()) {
+        // Use the same setting as recorded in the archive.
+        FLAG_SET_ERGO(AOTCompatibleOopCompression, true);
+      }
+    }
+  }
+
   if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
     return;
   }
@@ -1502,7 +1518,10 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
 
-  FileMapInfo* static_mapinfo = open_static_archive();
+  FileMapInfo* static_mapinfo = FileMapInfo::current_info(); // may have been opened by init_heap_settings()
+  if (static_mapinfo == nullptr) {
+    static_mapinfo = open_static_archive();
+  }
   FileMapInfo* dynamic_mapinfo = nullptr;
 
   if (static_mapinfo != nullptr) {

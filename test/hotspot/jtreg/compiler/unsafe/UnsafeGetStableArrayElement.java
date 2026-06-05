@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,12 +228,7 @@ public class UnsafeGetStableArrayElement {
     }
 
     static void testMismatched(Callable<?> c, Runnable setDefaultAction, boolean objectArray, boolean aligned) throws Exception {
-        if (Compiler.isGraalEnabled() && !objectArray && aligned) {
-            // Graal will constant fold mismatched reads from primitive stable arrays, except unaligned ones
-            run(c, setDefaultAction, null);
-        } else {
-            run(c, null, setDefaultAction);
-        }
+        run(c, null, setDefaultAction);
         Setter.reset();
     }
 
