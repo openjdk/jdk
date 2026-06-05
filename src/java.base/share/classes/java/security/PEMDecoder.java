@@ -48,8 +48,8 @@ import java.util.Objects;
  * PEM is a textual encoding used to store and transfer cryptographic
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRLs). It is defined in RFC 1421 and RFC 7468. PEM consists of
- * Base64-encoded content enclosed by a type-identifying header
- * and footer that identify the type of the content.
+ * Base64-encoded content enclosed by a header and footer that identify the
+ * type of the content.
  *
  * <p> The {@link #decode(String)} and {@link #decode(InputStream)} methods
  * return an instance of a class that matches the PEM type and implements
@@ -80,8 +80,8 @@ import java.util.Objects;
  * might be added in the future.
  *
  * <p> The {@link #decode(String, Class)} and {@link #decode(InputStream, Class)}
- * methods accept a {@code class} parameter specifying the desired {@code BinaryEncodable}
- * type result. These methods avoid the need for casting and are useful when multiple
+ * methods accept a parameter specifying the desired {@code BinaryEncodable}
+ * result. These methods avoid the need for casting and are useful when multiple
  * representations are possible. For example, if the PEM contains both public and
  * private keys, specifying {@code PrivateKey.class} returns only the private key.
  * If {@code X509EncodedKeySpec.class} is provided, the public key encoding is
