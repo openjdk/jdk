@@ -433,7 +433,7 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
     tz_buf = strdup(tz);
     if (tz_buf == NULL) {
         jio_fprintf(stderr, "Failed to allocate timezone buffer\n");
-	goto tzerr;
+        goto tzerr;
     }
     tz_len = strlen(tz_buf);
 
