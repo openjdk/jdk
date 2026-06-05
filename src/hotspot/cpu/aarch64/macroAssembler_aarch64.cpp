@@ -505,21 +505,6 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   return instructions * NativeInstruction::instruction_size;
 }
 
-int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
-  // Metadata pointers are either narrow (32 bits) or wide (48 bits).
-  // We encode narrow ones by setting the upper 16 bits in the first
-  // instruction.
-  NativeInstruction *insn = nativeInstruction_at(insn_addr);
-  assert(Instruction_aarch64::extract(insn->encoding(), 31, 21) == 0b11010010101 &&
-         nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
-
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
-
-  Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
-  Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
-  return 2 * NativeInstruction::instruction_size;
-}
-
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
   ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   if (at_return) {
@@ -2162,7 +2147,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   Register offset = rscratch2;
 
   Label L_loop_search_receiver, L_loop_search_empty;
-  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+  Label L_restart, L_found_recv, L_found_empty, L_count_update;
 
   // The code here recognizes three major cases:
   //   A. Fastest: receiver found in the table
@@ -2192,20 +2177,19 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //     if (receiver(i) == recv) goto found_recv(i);
   //   }
   //
-  //   // Fast: no receiver, but profile is full
+  //   // Fast: no receiver, but profile is not full
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == null) goto found_null(i);
   //   }
-  //   goto polymorphic
+  //
+  //   // Slow: profile is full, polymorphic case
+  //   count++;
+  //   return
   //
   //   // Slow: try to install receiver
   // found_null(i):
   //   CAS(&receiver(i), null, recv);
   //   goto restart
-  //
-  // polymorphic:
-  //   count++;
-  //   return
   //
   // found_recv(i):
   //   *receiver_count(i)++
@@ -2223,7 +2207,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   sub(rscratch1, offset, end_receiver_offset);
   cbnz(rscratch1, L_loop_search_receiver);
 
-  // Fast: no receiver, but profile is full
+  // Fast: no receiver, but profile is not full
   mov(offset, base_receiver_offset);
   bind(L_loop_search_empty);
     ldr(rscratch1, Address(mdp, offset));
@@ -2231,9 +2215,13 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add(offset, offset, receiver_step);
   sub(rscratch1, offset, end_receiver_offset);
   cbnz(rscratch1, L_loop_search_empty);
-  b(L_polymorphic);
 
-  // Slow: try to install receiver
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  mov(offset, poly_count_offset);
+  b(L_count_update);
+
+  // Slowest: try to install receiver
   bind(L_found_empty);
 
   // Atomically swing receiver slot: null -> recv.
@@ -2252,17 +2240,11 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // and just restart the search from the beginning.
   b(L_restart);
 
-  // Counter updates:
-
-  // Increment polymorphic counter instead of receiver slot.
-  bind(L_polymorphic);
-  mov(offset, poly_count_offset);
-  b(L_count_update);
-
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
   add(offset, offset, receiver_to_count_step);
 
+  // Finally, update the counter
   bind(L_count_update);
   increment(Address(mdp, offset), DataLayout::counter_increment);
 }
@@ -2667,7 +2649,7 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
 
 void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address prev = pc() - NativeMembar::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
     if (AlwaysMergeDMB) {
@@ -2687,10 +2669,11 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
       BLOCK_COMMENT("merged membar");
       return;
     } else {
-      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped
-      // We need check the last 2 instructions
+      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped.
+      // We need to check the second-to-last instruction, only if it is inside
+      // the current code section.
       address prev2 = prev - NativeMembar::instruction_size;
-      if (last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
+      if (prev2 >= begin() && last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
         NativeMembar *bar2 = NativeMembar_at(prev2);
         assert(bar2->get_kind() == order_constraint, "it should be merged before");
         BLOCK_COMMENT("merged membar(elided)");
@@ -2698,21 +2681,21 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
       }
     }
   }
-  code()->set_last_insn(pc());
+  code()->set_last_merge_candidate(pc());
   dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
   if (ldst_can_merge(rt, adr, size_in_bytes, is_store)) {
     merge_ldst(rt, adr, size_in_bytes, is_store);
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
     return true;
   } else {
     assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
     const uint64_t mask = size_in_bytes - 1;
     if (adr.getMode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
-      code()->set_last_insn(pc());
+      code()->set_last_merge_candidate(pc());
     }
     return false;
   }
@@ -3875,7 +3858,7 @@ bool MacroAssembler::ldst_can_merge(Register rt,
                                     size_t cur_size_in_bytes,
                                     bool is_store) const {
   address prev = pc() - NativeInstruction::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
 
   if (last == nullptr || !nativeInstruction_at(last)->is_Imm_LdSt()) {
     return false;
@@ -7291,4 +7274,27 @@ void MacroAssembler::neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
     ushr(dst, T, src, esize - lshift);
     sli(dst, T, src, lshift);
   }
+}
+
+void MacroAssembler::try_to_replace_prev_vector_copy_with_movprfx(FloatRegister dst) {
+  if (code_section()->is_empty()) {
+    return;
+  }
+
+  address prev = pc() - NativeInstruction::instruction_size;
+  uint32_t insn = nativeInstruction_at(prev)->encoding();
+  if (!NativeInstruction::is_neon_vector_mov_alias(insn) &&
+      !NativeInstruction::is_sve_vector_mov_alias(insn)) {
+    return;
+  }
+
+  // The destructive instruction must reuse the mov alias destination.
+  uint32_t rd = Instruction_aarch64::extract(insn, 4, 0);
+  if (rd != (uint32_t)dst->encoding()) {
+    return;
+  }
+
+  uint32_t rn = Instruction_aarch64::extract(insn, 9, 5);
+  Instruction_aarch64::patch(prev, 31, 0,
+                             NativeInstruction::encode_sve_movprfx(rd, rn));
 }

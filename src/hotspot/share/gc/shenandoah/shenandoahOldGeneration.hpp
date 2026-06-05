@@ -353,7 +353,6 @@ public:
 
   static const char* state_name(State state);
 
-  size_t bytes_allocated_since_gc_start() const override;
   size_t used() const override;
   size_t used_regions() const override;
   size_t used_regions_size() const override;
