@@ -105,6 +105,18 @@ public class ObjectsCheckIndex {
 
     // ===== Per-iteration checks =====
 
+    public static int checkFromIndexSize(int fromIndex, int size, int length) {
+        if ((length | fromIndex | size) < 0 || size > length - fromIndex)
+            throw new IndexOutOfBoundsException();
+        return fromIndex;
+    }
+
+    public static int checkFromToIndex(int fromIndex, int toIndex, int length) {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > length)
+            throw new IndexOutOfBoundsException();
+        return fromIndex;
+    }
+
     @Benchmark
     public void checkIndex_loop(Blackhole bh) {
         int len = array.length;
@@ -124,10 +136,28 @@ public class ObjectsCheckIndex {
     }
 
     @Benchmark
+    public void manual_checkFromToIndex_perIteration(Blackhole bh) {
+        int len = array.length;
+        for (int i = from; i < to; i++) {
+            checkFromToIndex(i, i + 1, len);
+            bh.consume(array[i]);
+        }
+    }
+
+    @Benchmark
     public void checkFromIndexSize_perIteration(Blackhole bh) {
         int len = array.length;
         for (int i = from; i < to; i++) {
             Objects.checkFromIndexSize(i, 1, len);
+            bh.consume(array[i]);
+        }
+    }
+
+    @Benchmark
+    public void manual_checkFromIndexSize_perIteration(Blackhole bh) {
+        int len = array.length;
+        for (int i = from; i < to; i++) {
+            checkFromIndexSize(i, 1, len);
             bh.consume(array[i]);
         }
     }
