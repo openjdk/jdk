@@ -44,23 +44,23 @@ import jdk.internal.javac.PreviewFeature;
  * convert their instances to and from standardized binary representations.
  * Other kinds of cryptographic objects, such as certificate requests, have
  * no corresponding API but can still be expressed as standardized binary
- * representations. The {@code BinaryEncodable} interface allows the {@link
- * PEMEncoder} and {@link PEMDecoder} classes to operate uniformly on binary
- * representations of key or certificate material.
+ * representations. The {@code BinaryEncodable} interface allows the
+ * {@link PEMEncoder} and {@link PEMDecoder} classes to operate uniformly on
+ * binary representations of key or certificate material.
  *
- * <p>The permitted subtype {@code PEM} is notable for supporting the encoding
+ * <p> The permitted subtype {@code PEM} is notable for supporting the encoding
  * and decoding of PEM text that represents cryptographic objects for which no
  * API exists. In future releases, other permitted subtypes may be added to
  * support the encoding and decoding of such cryptographic objects.
  *
  * <p> The list of permitted subtypes shown after {@code permits} is not
- * exhaustive. If application code switches over a {@code BinaryEncodable}
- * value, the {@code switch} cannot be made exhaustive simply by providing a
- * {@code case} label for every permitted subtype shown in the list; there
- * must also be a {@code default} or {@code case BinaryEncodable} label to
- * handle additional subtypes. This allows the list of permitted subtypes
- * to change over time without causing pre-existing switches to fail because
- * of an unrecognized subtype.
+ * exhaustive. This means if application code switches over a
+ * {@code BinaryEncodable} value, the {@code switch} cannot be made exhaustive
+ * simply by providing a {@code case} label for every permitted subtype shown
+ * in the list; there also must be a {@code default} or
+ * {@code case BinaryEncodable} label to handle additional subtypes. This
+ * allows the list of permitted subtypes to change over time without causing
+ * pre-existing switches to fail because of an unrecognized subtype.
  *
  * @see AsymmetricKey
  * @see KeyPair
