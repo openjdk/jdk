@@ -118,7 +118,7 @@ public class TestArrayLoadProfiling {
 
     static void trapAndRecompile(String name, Runnable causesTrap) throws Exception {
         Method m = TestArrayLoadProfiling.class.getDeclaredMethod(name, I[].class);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+        if (TestFramework.isStableDeopt(m, CompLevel.C2) && (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
             throw new RuntimeException("should be compiled");
         }
         int i = 0;
@@ -126,11 +126,15 @@ public class TestArrayLoadProfiling {
             causesTrap.run();
             i++;
             if (i > 10) {
-                throw new RuntimeException("should not be compiled anymore");
+                if (TestFramework.isStableDeopt(m, CompLevel.C2)) {
+                    throw new RuntimeException("should not be compiled anymore");
+                } else {
+                    break;
+                }
             }
         } while (WHITE_BOX.isMethodCompiled(m));
         WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+        if (TestFramework.isStableDeopt(m, CompLevel.C2) && (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
             throw new RuntimeException("should be compiled");
         }
     }
