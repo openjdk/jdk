@@ -883,38 +883,85 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
   heap->set_affiliation(this, new_affiliation);
 }
 
-struct ShenandoahClearSelfForwarded : ObjectClosure {
-  explicit ShenandoahClearSelfForwarded(ShenandoahScanRemembered* cards) : _cards(cards) {}
+struct ShenandoahReclaimSelfForwarded : ObjectClosure {
+  explicit ShenandoahReclaimSelfForwarded(ShenandoahScanRemembered* cards, ShenandoahHeapRegion* region)
+    : _cards(cards), _previous(region->bottom()), _index(region->index()) {}
 
   void do_object(oop obj) override {
-    if (obj->is_forwarded()) {
-      if (obj->is_self_forwarded()) {
-        obj->unset_self_forwarded();
-      } else {
-        // We may also have regularly forwarded objects left in this region.
-        // We must clear them for old before they are walked for the remembered
-        // set scan. We clear objects in young region for hygiene purposes. These
-        // regions could be walked for a heap dump or something else and the
-        // forwarding pointer is not maintained (and the mark word is not usable
-        // in this state when compact object headers are enabled).
-        HeapWord* p = cast_from_oop<HeapWord*>(obj);
-        CollectedHeap::fill_with_object(p, ShenandoahForwarding::size(obj));
+    HeapWord* current = cast_from_oop<HeapWord*>(obj);
+    assert(obj->is_forwarded(), "Marked object " PTR_FORMAT " in cset region (%zu) should be forwarded", p2i(current), _index);
+
+    if (obj->is_self_forwarded()) {
+      const size_t object_size = ShenandoahForwarding::size(obj);
+
+      // clear the self forwarded bit, this is just a regular object in a regular region now
+      obj->unset_self_forwarded();
+
+      if (_cards != nullptr) {
+        // we will have reset registrations and cards before iterating here, so we need to (conservatively)
+        // update the card table and object registrations
+        _cards->register_object_without_lock(current);
+        _cards->mark_range_as_dirty(current, object_size);
+      }
+
+      if (_previous != current) {
+        CollectedHeap::fill_with_object(_previous, pointer_delta(current, _previous));
         if (_cards != nullptr) {
-          _cards->register_object_without_lock(p);
+          // We created a filler object that could span multiple original objects, we know there are
+          // no pointers in these filler objects, so we don't need to dirty cards, but we stil need
+          // to register the object.
+          _cards->register_object_without_lock(_previous);
         }
       }
+      _previous = current + object_size;
     }
+  }
+
+  HeapWord* last_self_forwarded_object() const {
+    return _previous;
   }
 private:
   ShenandoahScanRemembered* _cards;
+  HeapWord* _previous;
+  size_t _index;
 };
 
 void ShenandoahHeapRegion::clear_self_forwarded_mark_words() {
   assert(has_self_forwards(), "Region %zu must have self forwarded objects", index());
+
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahScanRemembered* cards = is_old() ? heap->old_generation()->card_scan() : nullptr;
-  ShenandoahClearSelfForwarded clear_self_forwarded(cards);
-  heap->marked_object_iterate(this, &clear_self_forwarded);
+  if (cards) {
+    // Some of the objects here may be dead or forwarded, we don't want any stale object registrations or dirty cards.
+    // We will rebuild the registrations and dirty cards for self-forwarded objects that stay in this region.
+    cards->mark_range_as_empty(this->bottom(), region_size_words());
+  }
+
+  // We would like to reclaim what we can from this region. We may have a mixture of objects that were self-forwarded
+  // and objects that were successfully evacuated to another region. The simplest thing we can do is slide top to the
+  // end of the last self forwarded object.
+  //
+  // We must also leave this region in a walkable state in case it is visited by a remembered set scan or a heap dump.
+  // The non-self forwarded pointers for compact objects are only valid for _this_ cycle. Note that unmarked objects
+  // may also exist in this region and may their classes unloaded at this point, so these too must also be avoided.
+  // We must, therefore, fill in these spaces (unless and until we have a more sophisticated enhancement for the
+  // allocation path).
+  //
+  // We also cannot simply walk backward from top because the mark bitmap only covers up to TAMS for this region. For
+  // this reason, we make a forward pass over the region that keeps two pointers. When the lead pointer encounters a
+  // a self-forwarded object, the space between it and the trailing pointer is filled in. When the loop exits, the
+  // trailing pointer references the last self forwarded object. This avoids creating filler objects above the new top
+  // as such objects must also be registered with the card table.
+  ShenandoahReclaimSelfForwarded reclaimer(cards, this);
+  heap->marked_object_iterate(this, &reclaimer);
+
+  const HeapWord* old_top = top();
+  clear_live_data();
+  reset_alloc_metadata();
+  heap->marking_context()->reset_top_at_mark_start(this);
+  set_top(reclaimer.last_self_forwarded_object());
+  const size_t reclaimed_bytes = pointer_delta(old_top, top()) * HeapWordSize;
+  log_info(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
 }
 
 void ShenandoahHeapRegion::decrement_humongous_waste() {
