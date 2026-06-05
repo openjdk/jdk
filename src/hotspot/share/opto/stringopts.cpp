@@ -52,6 +52,7 @@ class StringConcat : public ResourceObj {
   Node_List           _control;        // List of control nodes that will be deleted
   Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
                                        // to restart at the initial JVMState.
+  Unique_Node_List    _allowed_compares; // A list of allowed compare uses of call results that is persisted across merges.
 
   static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
                                                           // The value 256 was derived by measuring
@@ -311,6 +312,14 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
         result->append(other->argument(y), other->mode(y));
       }
       arguments_appended += other->num_arguments();
+      if (argument(x)->is_Phi()) {
+        // Cache compares from diamond / null-check phis as these are used
+        // to verify merged concat comparisons in validate_control_flow().
+        Node* phi = argument(x);
+        assert(phi->as_Phi()->is_diamond_phi() > 0, "must be a Phi since argx isn't (ref. skip_string_null_check).");
+        Node* cmpp = argument(x)->in(0)->in(1)->in(0)->in(1)->as_Bool()->in(1);
+        result->_allowed_compares.push(cmpp);
+      }
     } else {
       result->append(argx, mode(x));
       arguments_appended++;
@@ -333,6 +342,13 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   }
   for (uint i = 0; i < other->_constructors.size(); i++) {
     result->add_constructor(other->_constructors.at(i));
+  }
+  // We add previous _allowed_compares in case of repeated stacked concatenation.
+  for (uint i = 0; i < _allowed_compares.size(); i++) {
+    result->_allowed_compares.push(_allowed_compares.at(i));
+  }
+  for (uint i = 0; i < other->_allowed_compares.size(); i++) {
+    result->_allowed_compares.push(other->_allowed_compares.at(i));
   }
   result->_multiple = true;
   return result;
@@ -935,11 +951,9 @@ bool StringConcat::validate_control_flow() {
 
   int null_check_count = 0;
   Unique_Node_List ctrl_path;
-  VectorSet argument_set;
 
-  for (int i = 0; i < num_arguments(); i++) {
-    argument_set.set(argument(i)->_idx);
-  }
+  // Local version of _allowed_compares that stores allowed comparisons discovered during traversal
+  Unique_Node_List local_allowed_compares;
 
   assert(_control.contains(_begin), "missing");
   assert(_control.contains(_end), "missing");
@@ -998,11 +1012,32 @@ bool StringConcat::validate_control_flow() {
       Node* v2 = cmp->in(2);
       Node* otherproj = iff->proj_out(1 - ptr->as_Proj()->_con);
 
-      // Null check of the return of append which can simply be eliminated
+      // Either a null check of the return of append which can simply be eliminated,
+      // or possibly of a toString during stacked concats.
       if (b->_test._test == BoolTest::ne &&
           v2->bottom_type() == TypePtr::NULL_PTR &&
           v1->is_Proj() && ctrl_path.member(v1->in(0))) {
-        // null check of the return value of the append
+        if (!is_SB_toString(v1->in(0))) {
+          // append type
+          assert(v1->in(0)->as_CallStaticJava()->method()->name() == ciSymbols::append_name(), "must be");
+          local_allowed_compares.push(cmp);
+        } else {
+          // toString
+          assert(_multiple, "if not _multiple, we should not have a toString on this control path");
+          if (!_allowed_compares.member(cmp)) {
+            // This should have been pre-populated. Do not store the use in local allowed compares,
+            // as we could be confusing toString null checks with other null checks / uncommon traps.
+            // This would also be caught in result use verification later but we can fail early here.
+            fail = true;
+#ifndef PRODUCT
+            if (PrintOptimizeStringConcat) {
+              tty->print_cr("Failing as this is not a recognized string null check.");
+              cmp->dump();
+            }
+#endif
+            break;
+          }
+        }
         null_check_count++;
         if (otherproj->outcnt() == 1) {
           CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
@@ -1026,7 +1061,7 @@ bool StringConcat::validate_control_flow() {
           if (_multiple &&
               ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
                (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
-            // iftrue <- if <- bool <- cmpp <- resproj <- tostring
+            // iftrue -> if -> bool -> cmpp -> resproj -> tostring
             fail = true;
             break;
           }
@@ -1084,31 +1119,6 @@ bool StringConcat::validate_control_flow() {
         // The IGVN will make this simple diamond go away when it
         // transforms the Region. Make sure it sees it.
 
-        // First exclude the following pattern:
-        // append <- Phi <- Region <- (True, False) <- If <- Bool <- CmpP <- Proj (Result) <- toString;
-        // in order to prevent an unsafe transformation in eliminate_unneeded_control,
-        // where the Bool would be replaced by a constant zero but the Phi stays live
-        // as it is a parameter of the concatenation itself.
-        Node* iff = ptr->in(1)->in(0);
-        Node* bol = iff->in(1);
-        Node* cmp = bol->in(1);
-        assert(cmp->is_Cmp(), "unexpected if shape");
-        Node* v1 = cmp->in(1);
-        Node* v2 = cmp->in(2);
-        if (_multiple &&
-            ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
-             (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
-          for (SimpleDUIterator i(ptr); i.has_next(); i.next()) {
-            Node* use = i.get();
-            if (use->is_Phi() && argument_set.test(use->_idx)) {
-              fail = true;
-              break;
-            }
-          }
-          if (fail) {
-            break;
-          }
-        }
         Compile::current()->record_for_igvn(ptr);
         _control.push(ptr);
         ptr = ptr->in(1)->in(0)->in(0);
@@ -1178,7 +1188,9 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
       int opc = use->Opcode();
-      if (opc == Op_CmpP || opc == Op_Node) {
+      if (opc == Op_Node ||
+         (opc == Op_CmpP && (use->outcnt() == 1) // Shared use?
+                         && (local_allowed_compares.member(use) || _allowed_compares.member(use)))) {
         ctrl_path.push(use);
         continue;
       }

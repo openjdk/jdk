@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,18 @@
 /*
  * @test
  * @bug 8362117
- * @summary Test stacked string concatenations where the toString result
+ * @summary f: Test stacked string concatenations where the toString result
  *          of the first StringBuilder chain is used as a test for a
  *          simple diamond in the second StringBuilder. If the region of
  *          the simple diamond has a Phi that is used as a parameter in the
  *          concatenation, a wrong result should not be produced.
+ *
+ *          g: Test compare that depends on an append call result of an unresolved StringBuilder chain.
+ *
  * @library /test/lib /
  * @run main/othervm compiler.stringopts.TestStackedConcatsPhiUseOfDiamondRegion
  * @run main/othervm -XX:-TieredCompilation -Xcomp
- *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsPhiUseOfDiamondRegion::f
+ *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsPhiUseOfDiamondRegion::*
  *                   compiler.stringopts.TestStackedConcatsPhiUseOfDiamondRegion
  */
 
@@ -45,12 +48,23 @@ public class TestStackedConcatsPhiUseOfDiamondRegion {
     public static void main (String... args) {
         new StringBuilder(); // load the class
         f();
+        g();
     }
 
     static String f() {
         String s = "a";
         s = new StringBuilder().append(s).append(s).toString();
         s = new StringBuilder().append(s).append((s == "xx") ? s : "aa").toString();
+        Asserts.assertEQ(s, "aaaa"); // in particular, we should not have s.equals("aaxx");
+        return s;
+    }
+
+    static String g() {
+        String s = "a";
+        StringBuilder sb0 = new StringBuilder();
+        s = new StringBuilder().append(s).append(s).toString();
+        StringBuilder sb2 = new StringBuilder().append(s);
+        s = sb2.append((sb2 == sb0) ? "xx" : "aa").toString();
         Asserts.assertEQ(s, "aaaa"); // in particular, we should not have s.equals("aaxx").
         return s;
     }
