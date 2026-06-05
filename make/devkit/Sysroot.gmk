@@ -109,7 +109,7 @@ endif
 EMPTY :=
 SPACE := $(EMPTY) $(EMPTY)
 COMMA := ,
-DNF_ARCHS := $(subst $(SPACE),$(COMMA),$(RPM_ARCHS))
+DNF_ARCHS := $(foreach arch,$(RPM_ARCHS),--arch $(arch))
 
 # Specify a dummy installation root, otherwise dnf will run into
 # problems trying to reconcile with the local/system state
@@ -123,7 +123,7 @@ DNF_DOWNLOAD_FLAGS := \
     --disablerepo='*' \
     $(DNF_REPOS) \
     --resolve \
-    --archlist $(DNF_ARCHS) \
+    $(DNF_ARCHS) \
     --forcearch $(RPM_ARCH) \
     --installroot $(DNF_DUMMY_INSTALL_ROOT) \
     --releasever $(BASE_OS_VERSION) \
