@@ -69,8 +69,6 @@ private:
                                    MacroAssembler::PreservationLevel preservation_level);
 
   /* ==== Helper methods for barrier implementations ==== */
-  void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp);
-
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register addr, Register count,
                                         Register preserve);
@@ -102,11 +100,6 @@ public:
                               Register dst,
                               Register tmp1, Register tmp2,
                               MacroAssembler::PreservationLevel preservation_level);
-
-  /* ==== Helper methods used by C1 and C2 ==== */
-  void cmpxchg_oop(MacroAssembler* masm, Register base_addr, Register expected, Register new_val,
-                   Register tmp1, Register tmp2,
-                   bool is_cae, Register result);
 
   /* ==== Access api ==== */
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,

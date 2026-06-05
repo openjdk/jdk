@@ -31,7 +31,6 @@
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -333,43 +332,6 @@ void ShenandoahBarrierSetAssembler::satb_barrier_impl(MacroAssembler *masm, Deco
   }
 
   __ bind(skip_barrier);
-}
-
-void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler *masm, Register dst, Register tmp) {
-  __ block_comment("resolve_forward_pointer_not_null (shenandoahgc) {");
-
-  Register tmp1 = tmp,
-           R0_tmp2 = R0;
-  assert_different_registers(dst, tmp1, R0_tmp2, noreg);
-
-  // If the object has been evacuated, the mark word layout is as follows:
-  // | forwarding pointer (62-bit) | '11' (2-bit) |
-
-  // The invariant that stack/thread pointers have the lowest two bits cleared permits retrieving
-  // the forwarding pointer solely by inversing the lowest two bits.
-  // This invariant follows inevitably from hotspot's minimal alignment.
-  assert(markWord::marked_value <= (unsigned long) MinObjAlignmentInBytes,
-         "marked value must not be higher than hotspot's minimal alignment");
-
-  Label done;
-
-  // Load the object's mark word.
-  __ ld(tmp1, oopDesc::mark_offset_in_bytes(), dst);
-
-  // Load the bit mask for the lock bits.
-  __ li(R0_tmp2, markWord::lock_mask_in_place);
-
-  // Check whether all bits matching the bit mask are set.
-  // If that is the case, the object has been evacuated and the most significant bits form the forward pointer.
-  __ andc_(R0_tmp2, R0_tmp2, tmp1);
-
-  assert(markWord::lock_mask_in_place == markWord::marked_value,
-         "marked value must equal the value obtained when all lock bits are being set");
-  __ xori(tmp1, tmp1, markWord::lock_mask_in_place);
-  __ isel(dst, CR0, Assembler::equal, false, tmp1);
-
-  __ bind(done);
-  __ block_comment("} resolve_forward_pointer_not_null (shenandoahgc)");
 }
 
 // base:        Base register of the reference's address.
@@ -693,125 +655,6 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
   __ block_comment("} try_peek_weak_handle_in_nmethod (shenandoahgc)");
 }
 
-// Special shenandoah CAS implementation that handles false negatives due
-// to concurrent evacuation.  That is, the CAS operation is intended to succeed in
-// the following scenarios (success criteria):
-//  s1) The reference pointer ('base_addr') equals the expected ('expected') pointer.
-//  s2) The reference pointer refers to the from-space version of an already-evacuated
-//      object, whereas the expected pointer refers to the to-space version of the same object.
-// Situations in which the reference pointer refers to the to-space version of an object
-// and the expected pointer refers to the from-space version of the same object can not occur due to
-// shenandoah's strong to-space invariant.  This also implies that the reference stored in 'new_val'
-// can not refer to the from-space version of an already-evacuated object.
-//
-// To guarantee correct behavior in concurrent environments, two races must be addressed:
-//  r1) A concurrent thread may heal the reference pointer (i.e., it is no longer referring to the
-//      from-space version but to the to-space version of the object in question).
-//      In this case, the CAS operation should succeed.
-//  r2) A concurrent thread may mutate the reference (i.e., the reference pointer refers to an entirely different object).
-//      In this case, the CAS operation should fail.
-//
-// By default, the value held in the 'result' register is zero to indicate failure of CAS,
-// non-zero to indicate success.  If 'is_cae' is set, the result is the most recently fetched
-// value from 'base_addr' rather than a boolean success indicator.
-void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register base_addr,
-                                                Register expected, Register new_val, Register tmp1, Register tmp2,
-                                                bool is_cae, Register result) {
-  __ block_comment("cmpxchg_oop (shenandoahgc) {");
-
-  assert_different_registers(base_addr, new_val, tmp1, tmp2, result, R0);
-  assert_different_registers(base_addr, expected, tmp1, tmp2, result, R0);
-
-  // Potential clash of 'success_flag' and 'tmp' is being accounted for.
-  Register success_flag  = is_cae ? noreg  : result,
-           current_value = is_cae ? result : tmp1,
-           tmp           = is_cae ? tmp1   : result,
-           initial_value = tmp2;
-
-  Label done, step_four;
-
-  __ bind(step_four);
-
-  /* ==== Step 1 ("Standard" CAS) ==== */
-  // Fast path: The values stored in 'expected' and 'base_addr' are equal.
-  // Given that 'expected' must refer to the to-space object of an evacuated object (strong to-space invariant),
-  // no special processing is required.
-  if (UseCompressedOops) {
-    __ cmpxchgw(CR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
-                false, success_flag, nullptr, true);
-  } else {
-    __ cmpxchgd(CR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
-                false, success_flag, nullptr, true);
-  }
-
-  // Skip the rest of the barrier if the CAS operation succeeds immediately.
-  // If it does not, the value stored at the address is either the from-space pointer of the
-  // referenced object (success criteria s2)) or simply another object.
-  __ beq(CR0, done);
-
-  /* ==== Step 2 (Null check) ==== */
-  // The success criteria s2) cannot be matched with a null pointer
-  // (null pointers cannot be subject to concurrent evacuation).  The failure of the CAS operation is thus legitimate.
-  __ cmpdi(CR0, current_value, 0);
-  __ beq(CR0, done);
-
-  /* ==== Step 3 (reference pointer refers to from-space version; success criteria s2)) ==== */
-  // To check whether the reference pointer refers to the from-space version, the forward
-  // pointer of the object referred to by the reference is resolved and compared against the expected pointer.
-  // If this check succeed, another CAS operation is issued with the from-space pointer being the expected pointer.
-  //
-  // Save the potential from-space pointer.
-  __ mr(initial_value, current_value);
-
-  // Resolve forward pointer.
-  if (UseCompressedOops) { __ decode_heap_oop_not_null(current_value); }
-  resolve_forward_pointer_not_null(masm, current_value, tmp);
-  if (UseCompressedOops) { __ encode_heap_oop_not_null(current_value); }
-
-  if (!is_cae) {
-    // 'success_flag' was overwritten by call to 'resovle_forward_pointer_not_null'.
-    // Load zero into register for the potential failure case.
-    __ li(success_flag, 0);
-  }
-  __ cmpd(CR0, current_value, expected);
-  __ bne(CR0, done);
-
-  // Discard fetched value as it might be a reference to the from-space version of an object.
-  if (UseCompressedOops) {
-    __ cmpxchgw(CR0, R0, initial_value, new_val, base_addr, MacroAssembler::MemBarNone,
-                false, success_flag);
-  } else {
-    __ cmpxchgd(CR0, R0, initial_value, new_val, base_addr, MacroAssembler::MemBarNone,
-                false, success_flag);
-  }
-
-  /* ==== Step 4 (Retry CAS with to-space pointer (success criteria s2) under race r1)) ==== */
-  // The reference pointer could have been healed whilst the previous CAS operation was being performed.
-  // Another CAS operation must thus be issued with the to-space pointer being the expected pointer.
-  // If that CAS operation fails as well, race r2) must have occurred, indicating that
-  // the operation failure is legitimate.
-  //
-  // To keep the code's size small and thus improving cache (icache) performance, this highly
-  // unlikely case should be handled by the smallest possible code.  Instead of emitting a third,
-  // explicit CAS operation, the code jumps back and reuses the first CAS operation (step 1)
-  // (passed arguments are identical).
-  //
-  // A failure of the CAS operation in step 1 would imply that the overall CAS operation is supposed
-  // to fail.  Jumping back to step 1 requires, however, that step 2 and step 3 are re-executed as well.
-  // It is thus important to ensure that a re-execution of those steps does not put program correctness
-  // at risk:
-  // - Step 2: Either terminates in failure (desired result) or falls through to step 3.
-  // - Step 3: Terminates if the comparison between the forwarded, fetched pointer and the expected value
-  //           fails.  Unless the reference has been updated in the meanwhile once again, this is
-  //           guaranteed to be the case.
-  //           In case of a concurrent update, the CAS would be retried again. This is legitimate
-  //           in terms of program correctness (even though it is not desired).
-  __ bne(CR0, step_four);
-
-  __ bind(done);
-  __ block_comment("} cmpxchg_oop (shenandoahgc)");
-}
-
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                      Register addr, Register count, Register preserve) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
@@ -1115,7 +958,7 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
 void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm,
     Register dst, int disp, bool dst_narrow, Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3) {
 
-  ShenandoahBarrierStubC2::store_pre(masm, node, tmp1, Address(dst, disp), tmp2, tmp3, dst_narrow);
+  ShenandoahBarrierStubC2::store_pre(masm, node, Address(dst, disp), tmp1, tmp2, tmp3, dst_narrow);
 
   if (dst_narrow && !src_narrow) {
     // Need to encode into tmp, because we cannot clobber src.
@@ -1137,7 +980,7 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
 void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr,
       Register oldval, Register newval, Register tmp1, Register tmp2, bool exchange, bool narrow, bool weak, bool acquire) {
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, res, addr, tmp1, tmp2, narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, res, tmp1, tmp2, narrow);
 
   Register dest_current = exchange ? res : R0;
   Label no_update;
@@ -1168,7 +1011,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval, Register newval, Register addr, Register tmp1, Register tmp2) {
   bool is_narrow = node->bottom_type()->isa_narrowoop();
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, preval, addr, tmp1, tmp2, is_narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, preval, tmp1, tmp2, is_narrow);
 
   if (is_narrow) {
     __ getandsetw(preval, newval, addr, MacroAssembler::cmpxchgx_hint_atomic_update());
