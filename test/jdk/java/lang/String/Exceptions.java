@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4472841 4703640 4705681 4705683 4833095 5005831
+ * @bug 4472841 4703640 4705681 4705683 4833095 5005831 8372353
  * @summary Verify that constructor exceptions are thrown as expected.
  */
 
@@ -397,6 +397,14 @@ public class Exceptions {
                 }});
     }
 
+    private static void encodedLength() {
+        System.out.println("encodedLength(Charset charset)");
+        tryCatch("  null", NullPointerException.class, new Runnable() {
+                public void run() {
+                    "foo".encodedLength((Charset)null);
+                }});
+    }
+
     private static void contentEquals() {
         System.out.println("contentEquals(StringBuffer sb)");
         tryCatch("  null", NullPointerException.class, new Runnable() {
@@ -640,6 +648,7 @@ public class Exceptions {
                               //   getBytes(Locale)
                               //   getBytes(String)
                               //   getBytes(Charset)
+        encodedLength();      // encodedLength(Charset)
         contentEquals();      // contentEquals(StringBuffer)
         compareTo();          // compareTo(String), compareTo(Object)
         compareToIgnoreCase();// compareToIgnoreCase(String)

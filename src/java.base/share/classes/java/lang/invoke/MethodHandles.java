@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3429,12 +3429,15 @@ return mh1;
          *         or if the field is {@code final} and write access
          *         is not enabled on the {@code Field} object
          * @throws NullPointerException if the argument is null
+         * @see <a href="{@docRoot}/java.base/java/lang/reflect/doc-files/MutationMethods.html">Mutation methods</a>
          */
         public MethodHandle unreflectSetter(Field f) throws IllegalAccessException {
             return unreflectField(f, true);
         }
 
         private MethodHandle unreflectField(Field f, boolean isSetter) throws IllegalAccessException {
+            @SuppressWarnings("deprecation")
+            boolean isAccessible = f.isAccessible();
             MemberName field = new MemberName(f, isSetter);
             if (isSetter && field.isFinal()) {
                 if (field.isTrustedFinalField()) {
@@ -3442,12 +3445,15 @@ return mh1;
                                                   : "final field has no write access";
                     throw field.makeAccessException(msg, this);
                 }
+                // check if write access to final field allowed
+                if (!field.isStatic() && isAccessible) {
+                    SharedSecrets.getJavaLangReflectAccess().checkAllowedToUnreflectFinalSetter(lookupClass, f);
+                }
             }
             assert(isSetter
                     ? MethodHandleNatives.refKindIsSetter(field.getReferenceKind())
                     : MethodHandleNatives.refKindIsGetter(field.getReferenceKind()));
-            @SuppressWarnings("deprecation")
-            Lookup lookup = f.isAccessible() ? IMPL_LOOKUP : this;
+            Lookup lookup = isAccessible ? IMPL_LOOKUP : this;
             return lookup.getDirectField(field.getReferenceKind(), f.getDeclaringClass(), field);
         }
 
@@ -4820,7 +4826,9 @@ assert((int)twice.invokeExact(21) == 42);
      * Before the method handle is returned, the passed-in value is converted to the requested type.
      * If the requested type is primitive, widening primitive conversions are attempted,
      * else reference conversions are attempted.
-     * <p>The returned method handle is equivalent to {@code identity(type).bindTo(value)}.
+     * <p>The returned method handle is equivalent to {@code identity(type).bindTo(value)},
+     * for reference types.  For all types it is equivalent to
+     * {@code insertArguments(identity(type), 0, value)}.
      * @param type the return type of the desired method handle
      * @param value the value to return
      * @return a method handle of the given return type and no arguments, which always returns the given value

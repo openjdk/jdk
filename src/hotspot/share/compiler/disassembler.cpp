@@ -607,10 +607,27 @@ void decode_env::print_address(address adr) {
       return;
     }
 
+    address card_table_base = nullptr;
     BarrierSet* bs = BarrierSet::barrier_set();
-    if (bs->is_a(BarrierSet::CardTableBarrierSet) &&
-        adr == ci_card_table_address_as<address>()) {
-      st->print("word_map_base");
+#if INCLUDE_G1GC
+    if (bs->is_a(BarrierSet::G1BarrierSet)) {
+      G1BarrierSet* g1bs = barrier_set_cast<G1BarrierSet>(bs);
+      card_table_base = g1bs->card_table()->byte_map_base();
+    } else
+#endif
+#if INCLUDE_SHENANDOAHGC
+    if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+      ShenandoahBarrierSet* sbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
+      if (sbs->card_table() != nullptr) {
+        card_table_base = sbs->card_table()->byte_map_base();
+      }
+    } else
+#endif
+    if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+      card_table_base = ci_card_table_address_as<address>();
+    }
+    if (card_table_base != nullptr && adr == card_table_base) {
+      st->print("card_table_base");
       if (WizardMode) st->print(" " INTPTR_FORMAT, p2i(adr));
       return;
     }

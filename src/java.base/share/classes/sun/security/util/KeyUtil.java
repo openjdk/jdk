@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,14 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 import jdk.internal.access.SharedSecrets;
 
+import com.sun.crypto.provider.PBKDF2KeyImpl;
 import sun.security.jca.JCAUtil;
+import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
 
 /**
@@ -430,7 +433,7 @@ public final class KeyUtil {
      * @return the hash algorithm
      * @throws NoSuchAlgorithmException if key is from an unknown configuration
      */
-    public static String hashAlgFromHSS(PublicKey publicKey)
+    public static ObjectIdentifier hashAlgFromHSS(PublicKey publicKey)
             throws NoSuchAlgorithmException {
         try {
             DerValue val = new DerValue(publicKey.getEncoded());
@@ -441,15 +444,16 @@ public final class KeyUtil {
             // is the LMS public key for the top-level tree.
             // Section 5.3: LMS public key is u32str(type) || u32str(otstype) || I || T[1]
             // Section 8: type is the numeric identifier for an LMS specification.
-            // This RFC defines 5 SHA-256 based types, value from 5 to 9.
             if (rawKey.length < 8) {
                 throw new NoSuchAlgorithmException("Cannot decode public key");
             }
             int num = ((rawKey[4] & 0xff) << 24) + ((rawKey[5] & 0xff) << 16)
                     + ((rawKey[6] & 0xff) << 8) + (rawKey[7] & 0xff);
             return switch (num) {
-                // RFC 8554 only supports SHA_256 hash algorithm
-                case 5, 6, 7, 8, 9 -> "SHA-256";
+                // RFC 8554 only supports SHA_256 hash algorithms
+                case 5, 6, 7, 8, 9 -> AlgorithmId.SHA256_oid;
+                // RFC 9858 supports SHAKE_256 hash algorithms
+                case 15, 16, 17, 18, 19 -> AlgorithmId.SHAKE256_512_oid;
                 default -> throw new NoSuchAlgorithmException("Unknown LMS type: " + num);
             };
         } catch (IOException e) {
@@ -469,6 +473,8 @@ public final class KeyUtil {
                 if (k instanceof SecretKeySpec sk) {
                     SharedSecrets.getJavaxCryptoSpecAccess()
                             .clearSecretKeySpec(sk);
+                } else if (k instanceof PBKDF2KeyImpl p2k) {
+                    p2k.clear();
                 } else {
                     try {
                         k.destroy();
@@ -545,6 +551,22 @@ public final class KeyUtil {
         throw new IOException("No algorithm detected");
     }
 
-
+    // Generic method for zeroing arrays and objects
+    public static void clear(Object... list) {
+        for (Object o: list) {
+            switch (o) {
+                case byte[] b -> Arrays.fill(b, (byte)0);
+                case char[] c -> Arrays.fill(c, (char)0);
+                case PKCS8Key p8 -> p8.clear();
+                case PKCS8EncodedKeySpec p8 ->
+                    SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(p8);
+                case PBEKeySpec pbe -> pbe.clearPassword();
+                case null -> {}
+                default ->
+                    throw new IllegalArgumentException(
+                    o.getClass().getName() + " not defined in KeyUtil.clear()");
+            }
+        }
+    }
 }
 

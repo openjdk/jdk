@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test proper operation of integer field arithmetic
  * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
  * @build BigIntegerModuloP
- * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial25519 32 0
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial25519 31 0
  */
 
  /*

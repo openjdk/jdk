@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  * @library /test/lib ..
  * @run main/othervm TestChaCha20
  */
+import jtreg.SkippedException;
+
 import java.security.Provider;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
@@ -54,8 +56,7 @@ public class TestChaCha20 extends PKCS11Test {
         try {
             kg = KeyGenerator.getInstance(ALGO, p);
         } catch (NoSuchAlgorithmException nsae) {
-            System.out.println("Skip; no support for " + ALGO);
-            return;
+            throw new SkippedException("Skip; no support for " + ALGO, nsae);
         }
 
         try {

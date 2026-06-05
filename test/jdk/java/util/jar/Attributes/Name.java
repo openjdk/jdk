@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,20 @@
    @bug 4199981
    @summary Make sure empty string is not a valid
             Attributes name.
-   */
+   @run junit Name
+ */
 
+import org.junit.jupiter.api.Test;
 
 import java.util.jar.Attributes;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class Name {
-    public static void main(String[] args) throws Exception {
-        try {
-            Attributes.Name name = new Attributes.Name("");
-            throw new Exception("empty string should be rejected");
-        } catch (IllegalArgumentException e) {
-        }
+
+    @Test
+    void emptyStringTest() {
+        assertThrows(IllegalArgumentException.class, () -> new Attributes.Name(""),
+                "empty string should be rejected");
     }
 }

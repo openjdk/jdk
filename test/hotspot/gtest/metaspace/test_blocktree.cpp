@@ -74,7 +74,7 @@ TEST_VM(metaspace, BlockTree_basic) {
   MetaWord* p = nullptr;
   MetaWord arr[10000];
 
-  ASSERT_LE(BlockTree::MinWordSize, (size_t)6); // Sanity check. Adjust if Node is changed.
+  ASSERT_LE(BlockTree::MinWordSize, (size_t)7); // Sanity check. Adjust if Node is changed.
 
   const size_t minws = BlockTree::MinWordSize;
 

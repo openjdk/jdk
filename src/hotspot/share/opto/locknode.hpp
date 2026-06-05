@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 //------------------------------BoxLockNode------------------------------------
 class BoxLockNode : public Node {
 private:
-  const int     _slot; // stack slot
-  RegMask     _inmask; // OptoReg corresponding to stack slot
+  const int _slot;       // stack slot
+  const RegMask _inmask; // OptoReg corresponding to stack slot
   enum {
     Regular = 0,       // Normal locking region
     Local,             // EA found that local not escaping object is used for locking
@@ -147,6 +147,9 @@ public:
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 
@@ -169,6 +172,8 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 #endif // SHARE_OPTO_LOCKNODE_HPP

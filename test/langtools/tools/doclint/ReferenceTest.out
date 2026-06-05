@@ -31,12 +31,24 @@ ReferenceTest.java:71: error: reference not found
 ReferenceTest.java:74: error: reference not found
      * @see not.Found<String>
             ^
+ReferenceTest.java:79: error: reference not found
+     * {@link java.lang.String[]}
+              ^
+ReferenceTest.java:80: error: reference not found
+     * {@link java.lang.String[]#equals}
+              ^
 ReferenceTest.java:81: error: reference not found
      * {@link not.Found[]}
               ^
+ReferenceTest.java:82: error: reference not found
+     * @see java.lang.String[]
+            ^
+ReferenceTest.java:83: error: reference not found
+     * @see java.lang.String[]#equals
+            ^
 ReferenceTest.java:84: error: reference not found
      * @see not.Found[]
             ^
-12 errors
+16 errors
 1 warning
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,14 @@
  * @run main/othervm DisableRevocation subca
  * @run main/othervm DisableRevocation subci
  * @run main/othervm DisableRevocation alice
+ * @enablePreview
  * @author Xuelei Fan
  */
 
 import java.io.*;
 import java.net.SocketException;
+import java.security.DEREncodable;
+import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
@@ -143,49 +146,29 @@ public final class DisableRevocation {
         "G93Dcf0U1JRO77juc61Br5paAy8Bok18Y/MeG7uKgB2MAEJYKhGKbCrfMw==\n" +
         "-----END CERTIFICATE-----";
 
+    private static final PEMDecoder PEM_DECODER = PEMDecoder.of();
+
     private static Set<TrustAnchor> generateTrustAnchors()
             throws CertificateException {
         // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        Certificate selfSignedCert = cf.generateCertificate(is);
+        X509Certificate selfSignedCert = PEM_DECODER.decode(selfSignedCertStr, X509Certificate.class);
 
         // generate a trust anchor
         TrustAnchor anchor =
-            new TrustAnchor((X509Certificate)selfSignedCert, null);
+            new TrustAnchor(selfSignedCert, null);
 
         return Collections.singleton(anchor);
     }
 
     private static CertStore generateCertificateStore() throws Exception {
-        Collection entries = new HashSet();
+        Collection<DEREncodable> entries = new HashSet<>();
 
         // generate certificate from certificate string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        ByteArrayInputStream is;
-
-        is = new ByteArrayInputStream(targetCertStr.getBytes());
-        Certificate cert = cf.generateCertificate(is);
-        entries.add(cert);
-
-        is = new ByteArrayInputStream(subCaCertStr.getBytes());
-        cert = cf.generateCertificate(is);
-        entries.add(cert);
-
-        is = new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        cert = cf.generateCertificate(is);
-        entries.add(cert);
-
-        is = new ByteArrayInputStream(topCrlIssuerCertStr.getBytes());
-        cert = cf.generateCertificate(is);
-        entries.add(cert);
-
-        is = new ByteArrayInputStream(subCrlIssuerCertStr.getBytes());
-        cert = cf.generateCertificate(is);
-        entries.add(cert);
+        entries.add(PEM_DECODER.decode(targetCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(subCaCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(selfSignedCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(topCrlIssuerCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(subCrlIssuerCertStr, X509Certificate.class));
 
         return CertStore.getInstance("Collection",
                             new CollectionCertStoreParameters(entries));
@@ -198,15 +181,16 @@ public final class DisableRevocation {
         // generate certificate from certificate string
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         ByteArrayInputStream is = null;
+        String cert;
         if (name.equals("subca")) {
-            is = new ByteArrayInputStream(subCaCertStr.getBytes());
+            cert = subCaCertStr;
         } else if (name.equals("subci")) {
-            is = new ByteArrayInputStream(subCrlIssuerCertStr.getBytes());
+            cert = subCrlIssuerCertStr;
         } else {
-            is = new ByteArrayInputStream(targetCertStr.getBytes());
+            cert = targetCertStr;
         }
 
-        X509Certificate target = (X509Certificate)cf.generateCertificate(is);
+        X509Certificate target = PEM_DECODER.decode(cert, X509Certificate.class);
         byte[] extVal = target.getExtensionValue("2.5.29.14");
         if (extVal != null) {
             DerInputStream in = new DerInputStream(extVal);
@@ -222,19 +206,17 @@ public final class DisableRevocation {
 
     private static boolean match(String name, Certificate cert)
                 throws Exception {
-        X509CertSelector selector = new X509CertSelector();
 
         // generate certificate from certificate string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        ByteArrayInputStream is = null;
+        String newCert;
         if (name.equals("subca")) {
-            is = new ByteArrayInputStream(subCaCertStr.getBytes());
+            newCert = subCaCertStr;
         } else if (name.equals("subci")) {
-            is = new ByteArrayInputStream(subCrlIssuerCertStr.getBytes());
+            newCert = subCrlIssuerCertStr;
         } else {
-            is = new ByteArrayInputStream(targetCertStr.getBytes());
+            newCert = targetCertStr;
         }
-        X509Certificate target = (X509Certificate)cf.generateCertificate(is);
+        X509Certificate target = PEM_DECODER.decode(newCert, X509Certificate.class);
 
         return target.equals(cert);
     }

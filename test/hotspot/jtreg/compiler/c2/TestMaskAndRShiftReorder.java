@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8361700
+ * @bug 8361700 8371534
  * @summary An expression of the form "(x & mask) >> shift", where the mask
  *          is a constant, should be transformed to "(x >> shift) & (mask >> shift)"
  *          VerifyIterativeGVN checks that this optimization was applied
  * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:CompileCommand=compileonly,compiler.c2.TestMaskAndRShiftReorder::test
+ *      -XX:CompileCommand=compileonly,compiler.c2.TestMaskAndRShiftReorder::test*
  *      -XX:VerifyIterativeGVN=1110 compiler.c2.TestMaskAndRShiftReorder
  * @run main compiler.c2.TestMaskAndRShiftReorder
  *
@@ -41,13 +41,15 @@ public class TestMaskAndRShiftReorder {
 
 
     public static void main(String[] strArr) {
-        test();
+        // No known reproducer with URShiftI so far
+        testRShiftI();
+        testRShiftL();
+        testURShiftL();
     }
 
-    static long test() {
+    static void testRShiftI() {
         int x = 10;
         int y = -17;
-        int iArr[] = new int[10];
         for (int i = 1; i < 7; i++) {
             for (int j = 1; j < 2; j++) {
                 x <<= lFld;
@@ -55,6 +57,29 @@ public class TestMaskAndRShiftReorder {
             y &= x;
             y >>= 1;
         }
-        return iArr.length;
+    }
+
+    static void testRShiftL() {
+        long x = 10;
+        long y = -17L;
+        for (int i = 1; i < 7; i++) {
+            for (int j = 1; j < 2; j++) {
+                x <<= lFld;
+            }
+            y &= x;
+            y >>= 1;
+        }
+    }
+
+    static void testURShiftL() {
+        long x = 10;
+        long y = -17L;
+        for (int i = 1; i < 7; i++) {
+            for (int j = 1; j < 2; j++) {
+                x <<= lFld;
+            }
+            y &= x;
+            y >>>= 1;
+        }
     }
 }

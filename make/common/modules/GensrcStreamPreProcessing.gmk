@@ -1,0 +1,228 @@
+#
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+# This file defines macros that sets up rules for running the spp.Spp build tool
+################################################################################
+
+include Execute.gmk
+include $(TOPDIR)/make/ToolsJdk.gmk
+
+NON_BYTE_NUMBER_TYPES := char short int long float double
+NUMBER_TYPES := byte $(NON_BYTE_NUMBER_TYPES)
+PRIMITIVE_TYPES := boolean $(NUMBER_TYPES)
+
+################################################################################
+# The Conv function converts a type given as first argument (as a normal Java
+# native type name), into one of several corresponding strings, depending on
+# the aspect given in the second argument
+#
+# The implementation dispatches the call to one of several Conv_<aspect> macros.
+#
+# arg $1: the type to convert
+# arg $2: the aspect to convert for
+# arg $3: byte order (only needed for certain aspects)
+#
+Conv = \
+  $(strip $(call Conv_$(strip $2),$(strip $1),$(strip $3)))
+
+################################################################################
+# Conv_<aspect> implementations
+
+# Return a single letter representing the type (lowercase first letter)
+Conv_x = \
+  $(call firstchar, $1)
+
+# Return capitalized type name
+Conv_Type = \
+  $(call titlecase, $1)
+
+# Return the full descriptive name of the type, e.g. int -> integer
+Conv_fulltype = \
+  $(if $(filter char, $1), \
+    character, \
+    $(if $(filter int, $1), \
+      integer, \
+      $1 \
+    ) \
+  )
+
+# Return the capitalized full descriptive name of the type, e.g. int -> Integer
+Conv_Fulltype = \
+  $(call titlecase, $(call Conv_fulltype, $1))
+
+# Return log2 bits per value (0-3)
+Conv_LBPV = \
+  $(if $(filter byte, $1), \
+    0, \
+    $(if $(filter char short, $1), \
+      1, \
+      $(if $(filter int float, $1), \
+        2, \
+        $(if $(filter long double, $1), \
+          3))))
+
+# Return float or int category
+Conv_category = \
+    $(if $(filter float double, $1), \
+      floatingPointType, \
+      integralType \
+    )
+
+# Return stream information for char
+Conv_streams = \
+  $(if $(filter char, $1), streamableType)
+
+# Return stream type information for char
+Conv_streamtype = \
+  $(if $(filter char, $1), int)
+
+# Return capitalized stream type information for char
+Conv_Streamtype = \
+  $(if $(filter char, $1), Int)
+
+# Return article to use for type in English text
+Conv_a = \
+  $(if $(filter int, $1), an, a)
+
+# Return capitalized article to use for type in English text
+Conv_A = \
+  $(if $(filter int, $1), An, A)
+
+# Return integer type with same size as the type
+Conv_memtype = \
+  $(if $(filter float, $1), int, $(if $(filter double, $1), long, $1))
+
+# Return capitalized integer type with same size as the type
+Conv_Memtype = \
+  $(call titlecase, $(call Conv, $1, memtype))
+
+# Return capitalized full descriptive name for integer type with same size as the type
+Conv_FullMemtype = \
+  $(call Conv, $(call Conv, $1, memtype), Fulltype)
+
+# Return Type or Memtype depending on byte order
+# arg $2: BYTE_ORDER
+Conv_Swaptype = \
+  $(if $(filter U, $2), \
+      $(call Conv, $1, Type), \
+      $(call Conv, $1, Memtype))
+
+# Return fromBits method name for floating types, depending on byte order
+# arg $2: BYTE_ORDER
+Conv_fromBits = \
+  $(if $(filter float double, $1), \
+    $(if $(filter U, $2), , \
+      $(call Conv, $1, Type).$(call Conv, $1, memtype)BitsTo$(call Conv, $1, Type)))
+
+# Return toBits method name for floating types, depending on byte order
+# arg $2: BYTE_ORDER
+Conv_toBits = \
+  $(if $(filter float double, $1), \
+    $(if $(filter U, $2), , \
+      $(call Conv, $1, Type).$1ToRaw$(call Conv, $(call Conv, $1, memtype), Type)Bits))
+
+# Return swap method name, depending on byte order
+# arg $2: BYTE_ORDER
+Conv_swap = \
+  $(if $(filter S, $2), Bits.swap)
+
+# Return word describing the number of bytes required by type
+Conv_nbytes = \
+  $(if $(filter 0, $(call Conv, $1, LBPV)), one, \
+    $(if $(filter 1, $(call Conv, $1, LBPV)), two, \
+      $(if $(filter 2, $(call Conv, $1, LBPV)), four, \
+        $(if $(filter 3, $(call Conv, $1, LBPV)), eight))))
+
+# Return word describing the number of bytes required by type, minus one
+Conv_nbytesButOne = \
+  $(if $(filter 0, $(call Conv, $1, LBPV)), zero, \
+    $(if $(filter 1, $(call Conv, $1, LBPV)), one, \
+      $(if $(filter 2, $(call Conv, $1, LBPV)), three, \
+        $(if $(filter 3, $(call Conv, $1, LBPV)), seven))))
+
+################################################################################
+# Setup make rules that runs the spp.Spp build tool on an input file.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   BEGIN_END Set to true to exclude everything outside #begin/#end (default: false)
+#   SUBST_EMPTY_LINES Set to false to not generate empty lines for removed lines (default: true)
+#   SOURCE_FILE The input file to process (required)
+#   OUTPUT_FILE The output file (required)
+#   INFO Override default message to print (optional)
+#   KEYS One or more keys to control the generation (optional)
+#   REPLACEMENTS one or more text replacement patterns, using the syntax:
+#       VAR=VALUE [VAR=VALUE] ...
+#
+SetupStreamPreProcessing = $(NamedParamsMacroTemplate)
+define SetupStreamPreProcessingBody
+  # Verify arguments
+  ifeq ($$($1_SOURCE_FILE), )
+    $$(error Must specify SOURCE_FILE (in $1))
+  endif
+  ifeq ($$($1_OUTPUT_FILE), )
+    $$(error Must specify OUTPUT_FILE (in $1))
+  endif
+
+  $1_COMMAND_LINE :=
+  ifeq ($$($1_BEGIN_END), true)
+    $1_COMMAND_LINE += -be
+  endif
+
+  ifeq ($$($1_SUBST_EMPTY_LINES), false)
+    $1_COMMAND_LINE += -nel
+  endif
+
+  $1_COMMAND_LINE += $$(foreach k, $$($1_KEYS), -K$$k)
+  $1_COMMAND_LINE += $$(subst $$$$(SPACE), ,$$(foreach d, $$($1_REPLACEMENTS), -D$$d))
+
+  $1_COMMAND_LINE += -i$$($1_SOURCE_FILE) -o$$($1_OUTPUT_FILE).tmp
+
+  ifeq ($$($1_INFO), )
+    $1_INFO := Preprocessing $$(notdir $$($1_SOURCE_FILE)) for $(MODULE)
+  endif
+
+  $$(eval $$(call SetupExecute, RUN_SPP_$1, \
+      INFO := $$($1_INFO), \
+      DEPS := $$($1_SOURCE_FILE) $$(BUILD_TOOLS_JDK), \
+      OUTPUT_FILE := $$($1_OUTPUT_FILE), \
+      COMMAND := $$(TOOL_SPP) $$($1_COMMAND_LINE), \
+      PRE_COMMAND := $$(RM) $$($1_OUTPUT_FILE).tmp $$($1_OUTPUT_FILE), \
+      POST_COMMAND := $$(MV) $$($1_OUTPUT_FILE).tmp $$($1_OUTPUT_FILE), \
+))
+
+  $1 += $$(RUN_SPP_$1)
+endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

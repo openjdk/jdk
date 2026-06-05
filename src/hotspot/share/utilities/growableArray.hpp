@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,6 +297,11 @@ public:
     }
     tty->print("}\n");
   }
+
+  // MetaspaceClosure support
+  E** data_addr() {
+    return &_data;
+  }
 };
 
 template <typename E>
@@ -317,8 +322,6 @@ public:
 //  - void Derived::deallocate(E*) - member function responsible for deallocation
 template <typename E, typename Derived>
 class GrowableArrayWithAllocator : public GrowableArrayView<E> {
-  friend class VMStructs;
-
   void expand_to(int j);
   void grow(int j);
 
@@ -489,16 +492,16 @@ public:
     return false;
   }
 
-  // Remove all elements up to the index (exclusive). The order is preserved.
-  void remove_till(int idx) {
-    remove_range(0, idx);
+  // Remove all elements in the range [0; end). The order is preserved.
+  void remove_till(int end) {
+    remove_range(0, end);
   }
 
-  // Remove all elements in the range [start - end). The order is preserved.
+  // Remove all elements in the range [start; end). The order is preserved.
   void remove_range(int start, int end) {
     assert(0 <= start, "illegal start index %d", start);
-    assert(start < end && end <= this->_len,
-           "erase called with invalid range (%d, %d) for length %d",
+    assert(start <= end && end <= this->_len,
+           "erase called with invalid range [%d, %d) for length %d",
            start, end, this->_len);
 
     for (int i = start, j = end; j < this->length(); i++, j++) {
@@ -714,6 +717,7 @@ public:
 
 template <typename E>
 class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
+  friend class VMStructs;
   friend class GrowableArrayWithAllocator<E, GrowableArray>;
   friend class GrowableArrayTest;
 
@@ -816,6 +820,8 @@ public:
       this->clear_and_deallocate();
     }
   }
+
+  void assert_on_C_heap() { assert(on_C_heap(), "must be on C heap"); }
 };
 
 // Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MemTag.

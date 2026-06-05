@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,8 @@ public class OutlineTextRenderer implements TextPipe {
 
     public void drawString(SunGraphics2D g2d, String str, double x, double y) {
 
-        if ("".equals(str)) {
-            return; // TextLayout constructor throws IAE on "".
+        if (str.length() == 0) {
+            return;
         }
         TextLayout tl = new TextLayout(str, g2d.getFont(),
                                        g2d.getFontRenderContext());

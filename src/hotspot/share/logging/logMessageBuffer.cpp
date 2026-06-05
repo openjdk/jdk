@@ -31,7 +31,7 @@ static void grow(T*& buffer, size_t& capacity, size_t minimum_length = 0) {
   if (new_size < minimum_length) {
     new_size = minimum_length;
   }
-  buffer = REALLOC_C_HEAP_ARRAY(T, buffer, new_size, mtLogging);
+  buffer = REALLOC_C_HEAP_ARRAY(buffer, new_size, mtLogging);
   capacity = new_size;
 }
 
@@ -48,8 +48,8 @@ LogMessageBuffer::LogMessageBuffer() : _message_buffer_size(0),
 
 LogMessageBuffer::~LogMessageBuffer() {
   if (_allocated) {
-    FREE_C_HEAP_ARRAY(char, _message_buffer);
-    FREE_C_HEAP_ARRAY(LogLine, _lines);
+    FREE_C_HEAP_ARRAY(_message_buffer);
+    FREE_C_HEAP_ARRAY(_lines);
   }
 }
 

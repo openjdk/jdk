@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class SSLSocketBruteForceClose extends SSLSocketTemplate {
     protected void configureClientSocket(SSLSocket socket) {
         try {
             socket.setSoLinger(true, 3);
-            socket.setSoTimeout(1000);
+            socket.setSoTimeout(5000);
         } catch (SocketException exc) {
             throw new RuntimeException("Could not configure client socket", exc);
         }

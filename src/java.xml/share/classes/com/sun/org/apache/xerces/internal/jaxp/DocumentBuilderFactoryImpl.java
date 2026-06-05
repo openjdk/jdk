@@ -41,7 +41,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @LastModified: May 2025
+ * @LastModified: June 2025
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -59,11 +59,24 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     XMLSecurityManager fSecurityManager;
     XMLSecurityPropertyManager fSecurityPropertyMgr;
 
+    /**
+     * Creates a new {@code DocumentBuilderFactory} instance.
+     */
     public DocumentBuilderFactoryImpl() {
+        this(null, null);
+    }
+
+    /**
+     * Creates a new {@code DocumentBuilderFactory} instance with a {@code XMLSecurityManager}
+     * and {@code XMLSecurityPropertyManager}.
+     * @param xsm the {@code XMLSecurityManager}
+     * @param xspm the {@code XMLSecurityPropertyManager}
+     */
+    public DocumentBuilderFactoryImpl(XMLSecurityManager xsm, XMLSecurityPropertyManager xspm) {
         JdkXmlConfig config = JdkXmlConfig.getInstance(false);
         // security (property) managers updated with current system properties
-        fSecurityManager = config.getXMLSecurityManager(true);
-        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
+        fSecurityManager = (xsm == null) ? config.getXMLSecurityManager(true) : xsm;
+        fSecurityPropertyMgr = (xspm == null) ? config.getXMLSecurityPropertyManager(true) : xspm;
     }
 
     /**

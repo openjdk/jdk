@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,18 @@ public class FdlibmTranslit {
 
     public static double tanh(double x) {
         return Tanh.compute(x);
+    }
+
+    public static double asinh(double x) {
+        return Asinh.compute(x);
+    }
+
+    public static double acosh(double x) {
+        return Acosh.compute(x);
+    }
+
+    public static double atanh(double x) {
+        return Atanh.compute(x);
     }
 
     public static double IEEEremainder(double f1, double f2) {
@@ -2750,6 +2762,133 @@ public class FdlibmTranslit {
                 x *= one;           /* create necessary signal */
             }
             return x;               /* exact output */
+        }
+    }
+
+    /*
+    *  Return the Inverse Hyperbolic Sine of x
+    *
+    *  Method :
+    *
+    *   Based on
+    *     asinh(x) = sign(x) * log [ |x| + sqrt(x*x+1) ]
+    *    we have
+    *    asinh(x) := x  if  1+x*x=1,
+    *             := sign(x)*(log(x)+ln2)) for large |x|, else
+    *             := sign(x)*log(2|x|+1/(|x|+sqrt(x*x+1))) if|x|>2, else
+    *             := sign(x)*log1p(|x| + x^2/(1 + sqrt(1+x^2)))
+    */
+    private static final class Asinh {
+        private static final double one = 1.0;
+        private static final double ln2 = 6.93147180559945286227e-01;
+        private static final double huge = 1.0e300;
+
+        static double compute(double x) {
+            double t,w;
+            int hx,ix;
+            hx = __HI(x);
+            ix = hx&0x7fffffff;
+            if(ix>=0x7ff00000) return x+x;  /* x is inf or NaN */
+            if(ix< 0x3e300000) {    /* |x|<2**-28 */
+                if(huge+x>one) return x;    /* return x inexact except 0 */
+            }
+            if(ix>0x41b00000) { /* |x| > 2**28 */
+                w = log(Math.abs(x))+ln2;
+            } else if (ix>0x40000000) { /* 2**28 > |x| > 2.0 */
+                t = Math.abs(x);
+                w = log(2.0*t+one/(sqrt(x*x+one)+t));
+            } else {        /* 2.0 > |x| > 2**-28 */
+                t = x*x;
+                w =log1p(Math.abs(x)+t/(one+sqrt(one+t)));
+            }
+            if(hx>0) return w; else return -w;
+        }
+    }
+
+    /*
+     *  Return the Inverse Hyperbolic Cosine of x
+     *
+     *  Method :
+     *  Based on
+     *   acosh(x) = log [ x + sqrt(x*x-1) ]
+     *   we have
+     *    acosh(x) := log(x)+ln2,    if x is large; else
+     *             := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
+     *             := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
+     *
+     *  Special cases:
+     *   acosh(x) is NaN with signal if x<1.
+     *   acosh(NaN) is NaN without signal.
+     */
+    private static final class Acosh {
+        private static final double one = 1.0;
+        private static final double ln2 = 6.93147180559945286227e-01;
+        static double compute(double x) {
+            double t;
+            int hx;
+            hx = __HI(x);
+            if(hx<0x3ff00000) {      /* x < 1 */
+                return (x-x)/(x-x);
+            } else if(hx >=0x41b00000) {    /* x > 2**28 */
+                if(hx >=0x7ff00000) {    /* x is inf of NaN */
+                    return x+x;
+                } else
+                    return log(x)+ln2;   /* acosh(huge)=log(2x) */
+            } else if(((hx-0x3ff00000)|__LO(x))==0) {
+                return 0.0;         /* acosh(1) = 0 */
+            } else if (hx > 0x40000000) {   /* 2**28 > x > 2 */
+                t=x*x;
+                return log(2.0*x-one/(x+sqrt(t-one)));
+            } else {            /* 1<x<2 */
+                t = x-one;
+                return log1p(t+sqrt(2.0*t+t*t));
+            }
+        }
+    }
+
+    /*
+     *  Return the Inverse Hyperbolic Tangent of x
+     *
+     *  Method :
+     *    1.Reduced x to positive by atanh(-x) = -atanh(x)
+     *    2.For x>=0.5
+     *                1              2x                          x
+     *    atanh(x) = --- * log(1 + -------) = 0.5 * log1p(2 * --------)
+     *                2             1 - x                      1 - x
+     *
+     *  For x<0.5
+     *   atanh(x) = 0.5*log1p(2x+2x*x/(1-x))
+     *
+     *  Special cases:
+     *    atanh(x) is NaN if |x| > 1 with signal;
+     *    atanh(NaN) is that NaN with no signal;
+     *    atanh(+-1) is +-INF with signal.
+     *
+     */
+    private static final class Atanh {
+        private static final double zero = 0.0;
+        private static final double one = 1.0;
+        private static final double huge = 1.0e300;
+
+        static double compute(double x) {
+            double t;
+            int hx,ix;
+            /*unsigned*/ int lx;
+            hx = __HI(x);       /* high word */
+            lx = __LO(x);       /* low word */
+            ix = hx&0x7fffffff;
+            if ((ix|((lx|(-lx))>>>31))>0x3ff00000) /* |x|>1 */
+                return (x-x)/(x-x);
+            if(ix==0x3ff00000)
+                return x/zero;
+            if(ix<0x3e300000&&(huge+x)>zero) return x;  /* x<2**-28 */
+            x = __HI(x, ix);     /* x <- |x| */
+            if(ix<0x3fe00000) {     /* x < 0.5 */
+                t = x+x;
+                t = 0.5*log1p(t+t*x/(one-x));
+            } else
+                t = 0.5*log1p((x+x)/(one-x));
+            if(hx>=0) return t; else return -t;
         }
     }
 }

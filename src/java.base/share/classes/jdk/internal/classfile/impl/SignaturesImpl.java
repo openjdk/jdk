@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public final class SignaturesImpl {
             while (!match(')')) {
                 if (paramTypes == null)
                     paramTypes = new ArrayList<>();
-                paramTypes.add(typeSig());
+                paramTypes.add(validateNonVoid(typeSig()));
             }
             Signature returnType = typeSig();
             ArrayList<ThrowableSig> throwsTypes = null;
@@ -113,8 +113,22 @@ public final class SignaturesImpl {
                 RefTypeSig classBound = null;
                 ArrayList<RefTypeSig> interfaceBounds = null;
                 require(':');
-                if (sig.charAt(sigp) != ':')
-                    classBound = referenceTypeSig();
+                if (sig.charAt(sigp) != ':') {
+                    int p = nextIdentifierEnd(sig, sigp);
+                    // For non-identifier chars:
+                    // . / < indicates class type (inner, package, type arg)
+                    // [ indicates array type
+                    // ; indicates class/type var type
+                    // > and : are illegal, such as in <P:R:>
+                    if (p < sig.length()) {
+                        char limit = sig.charAt(p);
+                        if (limit != '>' && limit != ':') {
+                            classBound = referenceTypeSig();
+                        }
+                    }
+                    // If classBound is absent here, we start tokenizing
+                    // next type parameter, which can trigger failures
+                }
                 while (match(':')) {
                     if (interfaceBounds == null)
                         interfaceBounds = new ArrayList<>();
@@ -226,19 +240,86 @@ public final class SignaturesImpl {
      */
     private int requireIdentifier() {
         int start = sigp;
-        l:
         while (sigp < sig.length()) {
-            switch (sig.charAt(sigp)) {
-                case '.', ';', '[', '/', '<', '>', ':' -> {
-                    break l;
-                }
-            }
+            if (isNonIdentifierChar(sig.charAt(sigp)))
+                break;
             sigp++;
         }
         if (start == sigp) {
             throw unexpectedError("an identifier");
         }
         return sigp;
+    }
+
+    // Non-identifier chars in ascii 0 to 63, note [ is larger
+    private static final long SMALL_NON_IDENTIFIER_CHARS_SET = (1L << '.')
+            | (1L << ';')
+            | (1L << '/')
+            | (1L << '<')
+            | (1L << '>')
+            | (1L << ':');
+
+    private static boolean isNonIdentifierChar(char c) {
+        return c < Long.SIZE ? (SMALL_NON_IDENTIFIER_CHARS_SET & (1L << c)) != 0 : c == '[';
+    }
+
+    /// {@return exclusive end of the next identifier}
+    public static int nextIdentifierEnd(String st, int start) {
+        int end = st.length();
+        for (int i = start; i < end; i++) {
+            if (isNonIdentifierChar(st.charAt(i))) {
+                return i;
+            }
+        }
+        return end;
+    }
+
+    /// Validates this string as a simple identifier.
+    public static String validateIdentifier(String st) {
+        var len = st.length(); // implicit null check
+        if (len == 0 || nextIdentifierEnd(st, 0) != len) {
+            throw new IllegalArgumentException("Not a valid identifier: " + st);
+        }
+        return st;
+    }
+
+    /// Validates this string as slash-separated one or more identifiers.
+    public static String validatePackageSpecifierPlusIdentifier(String st) {
+        int nextIdentifierStart = 0;
+        int len = st.length();
+        while (nextIdentifierStart < len) {
+            int end = nextIdentifierEnd(st, nextIdentifierStart);
+            if (end == len)
+                return st;
+            if (end == nextIdentifierStart || st.charAt(end) != '/')
+                throw new IllegalArgumentException("Not a class name: " + st);
+            nextIdentifierStart = end + 1;
+        }
+        // Couldn't get an identifier initially or after a separator.
+        throw new IllegalArgumentException("Not a class name: " + st);
+    }
+
+    /// Validates the signature to be non-void (a valid field type).
+    public static Signature validateNonVoid(Signature incoming) {
+        Objects.requireNonNull(incoming);
+        if (incoming instanceof Signature.BaseTypeSig baseType && baseType.baseType() == 'V')
+            throw new IllegalArgumentException("void");
+        return incoming;
+    }
+
+    /// Returns the validated immutable argument list or fails with IAE.
+    public static List<Signature> validateArgumentList(Signature[] signatures) {
+        return validateArgumentList(List.of(signatures));
+    }
+
+    /// Returns the validated immutable argument list or fails with IAE.
+    public static List<Signature> validateArgumentList(List<Signature> signatures) {
+        var res = List.copyOf(signatures); // deep null checks
+        for (var sig : signatures) {
+            if (sig instanceof Signature.BaseTypeSig baseType && baseType.baseType() == 'V')
+                throw new IllegalArgumentException("void");
+        }
+        return res;
     }
 
     public static record BaseTypeSigImpl(char baseType) implements Signature.BaseTypeSig {
@@ -316,13 +397,13 @@ public final class SignaturesImpl {
 
     private static StringBuilder printTypeParameters(List<TypeParam> typeParameters) {
         var sb = new StringBuilder();
-        if (typeParameters != null && !typeParameters.isEmpty()) {
+        if (!typeParameters.isEmpty()) {
             sb.append('<');
             for (var tp : typeParameters) {
                 sb.append(tp.identifier()).append(':');
                 if (tp.classBound().isPresent())
                     sb.append(tp.classBound().get().signatureString());
-                if (tp.interfaceBounds() != null) for (var is : tp.interfaceBounds())
+                for (var is : tp.interfaceBounds())
                     sb.append(':').append(is.signatureString());
             }
             sb.append('>');
@@ -337,7 +418,7 @@ public final class SignaturesImpl {
         public String signatureString() {
             var sb = printTypeParameters(typeParameters);
             sb.append(superclassSignature.signatureString());
-            if (superinterfaceSignatures != null) for (var in : superinterfaceSignatures)
+            for (var in : superinterfaceSignatures)
                 sb.append(in.signatureString());
             return sb.toString();
         }

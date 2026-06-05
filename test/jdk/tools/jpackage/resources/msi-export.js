@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ function exportTables(db, outputDir, requestedTableNames) {
   var msi = WScript.arguments(0)
   var outputDir = WScript.arguments(1)
   var tables = {}
-  for (var i = 0; i !== WScript.arguments.Count(); i++) {
+  for (var i = 2; i !== WScript.arguments.Count(); i++) {
     tables[WScript.arguments(i)] = true
   }
 

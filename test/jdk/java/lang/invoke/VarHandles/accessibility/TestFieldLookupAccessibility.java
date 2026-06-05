@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,11 @@
  * @compile TestFieldLookupAccessibility.java
  *          pkg/A.java pkg/B_extends_A.java pkg/C.java
  *          pkg/subpkg/B_extends_A.java pkg/subpkg/C.java
- * @run testng/othervm TestFieldLookupAccessibility
+ * @run junit/othervm --enable-final-field-mutation=ALL-UNNAMED -DwriteAccess=true TestFieldLookupAccessibility
+ * @run junit/othervm --illegal-final-field-mutation=deny -DwriteAccess=false TestFieldLookupAccessibility
  */
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import pkg.B_extends_A;
 
 import java.lang.invoke.MethodHandles;
@@ -46,8 +45,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class TestFieldLookupAccessibility {
+    static boolean writeAccess;
+
+    @BeforeAll
+    static void setup() {
+        String s = System.getProperty("writeAccess");
+        assertNotNull(s);
+        writeAccess = Boolean.valueOf(s);
+    }
 
     // The set of possible field lookup mechanisms
     enum FieldLookup {
@@ -118,7 +128,11 @@ public class TestFieldLookupAccessibility {
             }
 
             boolean isAccessible(Field f) {
-                return !(Modifier.isStatic(f.getModifiers()) && Modifier.isFinal(f.getModifiers()));
+                if (Modifier.isFinal(f.getModifiers())) {
+                    return !Modifier.isStatic(f.getModifiers()) && writeAccess;
+                } else {
+                    return true;
+                }
             }
 
             // Setting the accessibility bit of a Field grants access to non-static
@@ -174,8 +188,7 @@ public class TestFieldLookupAccessibility {
         }
     }
 
-    @DataProvider
-    public Object[][] lookupProvider() throws Exception {
+    public static Object[][] lookupProvider() throws Exception {
         Stream<List<Object>> baseCases = Stream.of(
                 // Look up from same package
                 List.of(pkg.A.class, pkg.A.lookup(), pkg.A.inaccessibleFields()),
@@ -201,7 +214,8 @@ public class TestFieldLookupAccessibility {
         return pl.toArray();
     }
 
-    @Test(dataProvider = "lookupProvider")
+    @ParameterizedTest
+    @MethodSource("lookupProvider")
     public void test(FieldLookup fl, Class<?> src, MethodHandles.Lookup l, Set<String> inaccessibleFields) {
         // Add to the expected failures all inaccessible fields due to accessibility modifiers
         Set<String> expected = fl.inaccessibleFields(inaccessibleFields);
@@ -226,15 +240,15 @@ public class TestFieldLookupAccessibility {
                 collect(Collectors.toSet());
         if (!actualFieldNames.equals(expected)) {
             if (actualFieldNames.isEmpty()) {
-                Assert.assertEquals(actualFieldNames, expected, "No accessibility failures:");
+                assertEquals(expected, actualFieldNames, "No accessibility failures:");
             }
             else {
-                Assert.assertEquals(actualFieldNames, expected, "Accessibility failures differ:");
+                assertEquals(expected, actualFieldNames, "Accessibility failures differ:");
             }
         }
         else {
             if (!actual.values().stream().allMatch(IllegalAccessException.class::isInstance)) {
-                Assert.fail("Expecting an IllegalArgumentException for all failures " + actual);
+                fail("Expecting an IllegalArgumentException for all failures " + actual);
             }
         }
     }

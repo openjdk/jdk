@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MaxIdleConnectionsTest {
@@ -132,7 +133,7 @@ public class MaxIdleConnectionsTest {
             System.out.println("Request " + exchange.getRequestURI() + " received");
             System.out.println("Sending response for request " + exchange.getRequestURI() + " from " + exchange.getRemoteAddress());
             reqFinishedProcessing.countDown();
-            exchange.sendResponseHeaders(200, 0);
+            exchange.sendResponseHeaders(200, RSPBODY_CHUNKED);
             exchange.getResponseBody().close();
         });
 

@@ -245,28 +245,6 @@ public final class TestActiveSettingEvent {
         System.out.println("Testing configuration " + configurationName);
         Configuration c = Configuration.getConfiguration(configurationName);
         Map<String, String> settingValues = c.getSettings();
-        // Don't want to add these settings to the jfc-files we ship since they
-        // are not useful to configure. They are however needed to make the test
-        // pass.
-        settingValues.put(EventNames.ActiveSetting + "#stackTrace", "false");
-        settingValues.put(EventNames.ActiveSetting + "#threshold", "0 ns");
-        settingValues.put(EventNames.ActiveRecording + "#stackTrace", "false");
-        settingValues.put(EventNames.ActiveRecording + "#threshold", "0 ns");
-        settingValues.put(EventNames.InitialSecurityProperty + "#threshold", "0 ns");
-        settingValues.put(EventNames.JavaExceptionThrow + "#threshold", "0 ns");
-        settingValues.put(EventNames.JavaErrorThrow + "#threshold", "0 ns");
-        settingValues.put(EventNames.SecurityProperty + "#threshold", "0 ns");
-        settingValues.put(EventNames.TLSHandshake + "#threshold", "0 ns");
-        settingValues.put(EventNames.X509Certificate + "#threshold", "0 ns");
-        settingValues.put(EventNames.X509Validation + "#threshold", "0 ns");
-        settingValues.put(EventNames.ProcessStart + "#threshold", "0 ns");
-        settingValues.put(EventNames.Deserialization + "#threshold", "0 ns");
-        settingValues.put(EventNames.VirtualThreadStart + "#threshold", "0 ns");
-        settingValues.put(EventNames.VirtualThreadEnd + "#stackTrace", "false");
-        settingValues.put(EventNames.VirtualThreadEnd + "#threshold", "0 ns");
-        settingValues.put(EventNames.VirtualThreadSubmitFailed + "#threshold", "0 ns");
-        settingValues.put(EventNames.SecurityProviderService + "#threshold", "0 ns");
-
         try (Recording recording = new Recording(c)) {
             Map<Long, EventType> eventTypes = new HashMap<>();
             for (EventType et : FlightRecorder.getFlightRecorder().getEventTypes()) {
@@ -279,7 +257,11 @@ public final class TestActiveSettingEvent {
                     String settingName = type.getName() + "#" + s.getName();
                     String value = settingValues.get(settingName);
                     if (value == null) {
-                        throw new Exception("Could not find setting with name " + settingName);
+                        String message = "Could not find setting with name " + settingName + ".";
+                        if (settingName.equals("duration") || settingName.equals("stackTrace")) {
+                            message += " Use @RemoveFields(\"" + settingName + "\") to drop the field.";
+                        }
+                        throw new Exception(message);
                     }
                     // Prefer to have ms unit in jfc file
                     if (value.equals("0 ms")) {

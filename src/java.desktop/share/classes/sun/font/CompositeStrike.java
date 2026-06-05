@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,45 +169,6 @@ public final class CompositeStrike extends FontStrike {
 
         PhysicalStrike strike = getStrikeForGlyph(glyphCode);
         GeneralPath path = strike.getGlyphOutline(glyphCode & SLOTMASK, x, y);
-        if (path == null) {
-            return new GeneralPath();
-        } else {
-            return path;
-        }
-    }
-
-    /* The physical font slot for each glyph is encoded in the glyph ID
-     * To be as efficient as possible we find a run of glyphs from the
-     * same slot and create a temporary array of these glyphs decoded
-     * to the slot. The slot font is then queried for the GeneralPath
-     * for that run of glyphs. GeneralPaths from each run are appended
-     * to create the shape for the whole glyph array.
-     */
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        GeneralPath path = null;
-        GeneralPath gp;
-        int glyphIndex = 0;
-        int[] tmpGlyphs;
-
-        while (glyphIndex < glyphs.length) {
-            int start = glyphIndex;
-            int slot = glyphs[glyphIndex] >>> 24;
-            while (glyphIndex < glyphs.length &&
-                   (glyphs[glyphIndex+1] >>> 24) == slot) {
-                glyphIndex++;
-            }
-            int tmpLen = glyphIndex-start+1;
-            tmpGlyphs = new int[tmpLen];
-            for (int i=0;i<tmpLen;i++) {
-                tmpGlyphs[i] = glyphs[i] & SLOTMASK;
-            }
-            gp = getStrikeForSlot(slot).getGlyphVectorOutline(tmpGlyphs, x, y);
-            if (path == null) {
-                path = gp;
-            } else if (gp != null) {
-                path.append(gp, false);
-            }
-        }
         if (path == null) {
             return new GeneralPath();
         } else {

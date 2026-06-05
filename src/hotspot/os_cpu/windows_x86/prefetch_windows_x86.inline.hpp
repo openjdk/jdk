@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,20 @@
 #ifndef OS_CPU_WINDOWS_X86_PREFETCH_WINDOWS_X86_INLINE_HPP
 #define OS_CPU_WINDOWS_X86_PREFETCH_WINDOWS_X86_INLINE_HPP
 
-#include "runtime/prefetch.hpp"
+// Included in runtime/prefetch.inline.hpp
 
-inline void Prefetch::read (const void *loc, intx interval) {}
-inline void Prefetch::write(void *loc, intx interval) {}
+#include <intrin.h>
+
+inline void Prefetch::read (const void *loc, intx interval) {
+  if (interval >= 0) {
+    _mm_prefetch((const char*) loc + interval, _MM_HINT_T0);
+  }
+}
+
+inline void Prefetch::write(void *loc, intx interval) {
+  if (interval >= 0) {
+    _mm_prefetch((const char*) loc + interval, _MM_HINT_T0);
+  }
+}
 
 #endif // OS_CPU_WINDOWS_X86_PREFETCH_WINDOWS_X86_INLINE_HPP

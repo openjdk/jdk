@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  */
 
 /* @test
- * @bug 8356678
+ * @bug 8356678 8374441
  * @requires (os.family != "windows")
- * @summary Test Files operations when a path component is not a directory
+ * @summary Test Files and FileSystemProvider operations when a path component
+ *          is not a directory
  * @run junit NotADirectory
  */
 
@@ -32,10 +33,12 @@ import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.FileSystemException;
+import java.nio.file.FileSystems;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -51,10 +54,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NotADirectory {
+    private static final FileSystemProvider PROVIDER =
+        FileSystems.getDefault().provider();
+
     private static final Path ROOT      = Path.of(".");
     private static final Path NOT_EXIST = ROOT.resolve("notExist");
     private static final Path DIR       = ROOT.resolve("dir");
@@ -141,6 +148,18 @@ public class NotADirectory {
     public void readPosix() throws IOException {
         assertThrows(NoSuchFileException.class,
                      () -> Files.readAttributes(BOGUS, PosixFileAttributes.class));
+    }
+
+    @Test
+    public void readBasicIfExists() throws IOException {
+        assertNull(
+            PROVIDER.readAttributesIfExists(BOGUS, BasicFileAttributes.class));
+    }
+
+    @Test
+    public void readPosixIfExists() throws IOException {
+        assertNull(
+            PROVIDER.readAttributesIfExists(BOGUS, PosixFileAttributes.class));
     }
 
     @Test

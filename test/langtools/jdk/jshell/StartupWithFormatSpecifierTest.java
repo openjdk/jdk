@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,16 @@
  * @library /tools/lib
  * @build toolbox.ToolBox
  * @build KullaTesting Compiler
- * @run testng StartupWithFormatSpecifierTest
+ * @run junit StartupWithFormatSpecifierTest
  */
 
 import java.nio.file.Path;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class StartupWithFormatSpecifierTest extends ReplToolTesting {
 
+    @Test
     public void testStartupWithFormatSpecifier() {
         Compiler compiler = new Compiler();
         String startupScript = "String.format(\"This is a %s.\", \"test\");";

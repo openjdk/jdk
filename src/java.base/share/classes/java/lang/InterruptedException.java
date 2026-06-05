@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,19 @@
 package java.lang;
 
 /**
- * Thrown when a thread is waiting, sleeping, or otherwise occupied,
- * and the thread is interrupted, either before or during the activity.
- * Occasionally a method may wish to test whether the current
- * thread has been interrupted, and if so, to immediately throw
- * this exception.  The following code can be used to achieve
- * this effect:
- * {@snippet lang=java :
- * if (Thread.interrupted())  // Clears interrupted status!
- *     throw new InterruptedException();
- * }
+ * Thrown when a thread executing a blocking method is {@linkplain Thread#interrupt()
+ * interrupted}. {@link Thread#sleep(long) Thread.sleep}, {@link Object#wait()
+ * Object.wait} and many other blocking methods throw this exception if interrupted.
+ *
+ * <p> Blocking methods that throw {@code InterruptedException} clear the thread's
+ * interrupted status before throwing the exception. Code that catches {@code
+ * InterruptedException} should rethrow the exception, or restore the current thread's
+ * interrupted status, with {@link Thread#currentThread()
+ * Thread.currentThread()}.{@link Thread#interrupt() interrupt()}, before continuing
+ * normally or handling it by throwing another type of exception.
  *
  * @author  Frank Yellin
- * @see     java.lang.Object#wait()
- * @see     java.lang.Object#wait(long)
- * @see     java.lang.Object#wait(long, int)
- * @see     java.lang.Thread#sleep(long)
- * @see     java.lang.Thread#interrupt()
- * @see     java.lang.Thread#interrupted()
+ * @see     Thread##thread-interruption Thread Interruption
  * @since   1.0
  */
 public class InterruptedException extends Exception {

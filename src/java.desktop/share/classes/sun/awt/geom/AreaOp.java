@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,8 @@ public abstract class AreaOp {
     public static final int RSTAG_INSIDE = 1;
     public static final int RSTAG_OUTSIDE = -1;
 
+    public static final int MAX_LINK_COUNT = 1024;
+
     public abstract void newRow();
 
     public abstract int classify(Edge e);
@@ -195,6 +197,25 @@ public abstract class AreaOp {
         }
     };
 
+    private void consumeSubCurves(Vector<CurveLink> subcurves,
+                                  Vector<ChainEnd> chains,
+                                  Vector<Curve> curve) {
+        finalizeSubCurves(subcurves, chains);
+        Enumeration<CurveLink> enum_ = subcurves.elements();
+        while (enum_.hasMoreElements()) {
+            CurveLink link = enum_.nextElement();
+            curve.add(link.getMoveto());
+            CurveLink nextlink = link;
+            while ((nextlink = nextlink.getNext()) != null) {
+                if (!link.absorb(nextlink)) {
+                    curve.add(link.getSubCurve());
+                    link = nextlink;
+                }
+            }
+            curve.add(link.getSubCurve());
+        }
+    }
+
     private Vector<Curve> pruneEdges(Vector<Edge> edges) {
         int numedges = edges.size();
         if (numedges < 2) {
@@ -218,6 +239,8 @@ public abstract class AreaOp {
         Vector<CurveLink> subcurves = new Vector<>();
         Vector<ChainEnd> chains = new Vector<>();
         Vector<CurveLink> links = new Vector<>();
+        Vector<Curve> ret = new Vector<>();
+        int linkCount = 0;
         // Active edges are between left (inclusive) and right (exclusive)
         while (left < numedges) {
             double y = yrange[0];
@@ -390,27 +413,22 @@ public abstract class AreaOp {
                     System.out.println("  "+link.getSubCurve());
                 }
             }
+            // If we have complex area calculation, we should consume the
+            // intermediate subcurves to optimize memory footprint
+            if (linkCount >= MAX_LINK_COUNT) {
+                consumeSubCurves(subcurves, chains, ret);
+                linkCount = 0;
+                chains.clear();
+                subcurves.clear();
+            }
+            linkCount += links.size();
             resolveLinks(subcurves, chains, links);
             links.clear();
             // Finally capture the bottom of the valid Y range as the top
             // of the next Y range.
             yrange[0] = yend;
         }
-        finalizeSubCurves(subcurves, chains);
-        Vector<Curve> ret = new Vector<>();
-        Enumeration<CurveLink> enum_ = subcurves.elements();
-        while (enum_.hasMoreElements()) {
-            CurveLink link = enum_.nextElement();
-            ret.add(link.getMoveto());
-            CurveLink nextlink = link;
-            while ((nextlink = nextlink.getNext()) != null) {
-                if (!link.absorb(nextlink)) {
-                    ret.add(link.getSubCurve());
-                    link = nextlink;
-                }
-            }
-            ret.add(link.getSubCurve());
-        }
+        consumeSubCurves(subcurves, chains, ret);
         return ret;
     }
 

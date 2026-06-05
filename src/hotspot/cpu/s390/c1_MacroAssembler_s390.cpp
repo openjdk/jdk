@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,7 +67,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   z_stg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
 
-  lightweight_lock(Rbox, Roop, Rmark, tmp, slow_case);
+  fast_lock(Rbox, Roop, Rmark, tmp, slow_case);
 }
 
 void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
@@ -77,7 +77,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   z_lg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
   verify_oop(Roop, FILE_AND_LINE);
 
-  lightweight_unlock(Roop, Rmark, Z_R1_scratch, slow_case);
+  fast_unlock(Roop, Rmark, Z_R1_scratch, slow_case);
 }
 
 void C1_MacroAssembler::try_allocate(
@@ -107,10 +107,10 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   }
 
   if (len->is_valid()) {
-    // Length will be in the klass gap, if one exists.
+    // Length will be in the klass gap.
     z_st(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
-    store_klass_gap(Rzero, obj);  // Zero klass gap for compressed oops.
+  } else if (!UseCompactObjectHeaders) {
+    store_klass_gap(Rzero, obj);  // Zero klass gap.
   }
 }
 

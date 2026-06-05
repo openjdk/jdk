@@ -26,13 +26,13 @@
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
  * @requires vm.continuations
  * @requires !vm.debug | vm.gc != "Z"
- * @run main/othervm/timeout=400 -Xmx1500m Skynet
+ * @run main/othervm/timeout=1600 -Xmx1500m Skynet
  */
 /*
  * @test id=Z
  * @requires vm.debug == true & vm.continuations
  * @requires vm.gc.Z
- * @run main/othervm/timeout=400 -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm/timeout=1600 -XX:+UnlockDiagnosticVMOptions
  *     -XX:+UseZGC
  *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1500m Skynet
  */

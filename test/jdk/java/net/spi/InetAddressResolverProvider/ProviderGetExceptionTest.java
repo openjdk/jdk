@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import java.net.InetAddress;
 import java.util.Arrays;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import static impl.FaultyResolverProviderGetImpl.EXCEPTION_MESSAGE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -35,7 +37,7 @@ import static impl.FaultyResolverProviderGetImpl.EXCEPTION_MESSAGE;
  *  instantiate a resolver.
  * @library providers/faulty
  * @build faulty.provider/impl.FaultyResolverProviderGetImpl
- * @run testng/othervm ProviderGetExceptionTest
+ * @run junit/othervm ProviderGetExceptionTest
  */
 
 public class ProviderGetExceptionTest {
@@ -54,10 +56,10 @@ public class ProviderGetExceptionTest {
         callInetAddressAndCheckException(() -> InetAddress.getByAddress(address).getHostName());
     }
 
-    private void callInetAddressAndCheckException(Assert.ThrowingRunnable apiCall) {
-        IllegalArgumentException iae = Assert.expectThrows(IllegalArgumentException.class, apiCall);
+    private void callInetAddressAndCheckException(Executable apiCall) {
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, apiCall);
         System.out.println("Got exception of expected type:" + iae);
-        Assert.assertNull(iae.getCause(), "cause is not null");
-        Assert.assertEquals(iae.getMessage(), EXCEPTION_MESSAGE);
+        assertNull(iae.getCause(), "cause is not null");
+        assertEquals(EXCEPTION_MESSAGE, iae.getMessage());
     }
 }

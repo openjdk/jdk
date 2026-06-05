@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ class MemDetailReporter : public MemSummaryReporter {
   int report_virtual_memory_allocation_sites();
 
   // Report a virtual memory region
-  void report_virtual_memory_region(const ReservedMemoryRegion* rgn);
+  void report_virtual_memory_region(const VirtualMemoryRegion* rgn);
 };
 
 /*

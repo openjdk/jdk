@@ -1,0 +1,3 @@
+HeapPollutionParam.java:7:56: compiler.warn.unchecked.varargs.non.reifiable.type: A
+HeapPollutionParam.java:9:87: compiler.warn.unchecked.varargs.non.reifiable.type: A
+2 warnings

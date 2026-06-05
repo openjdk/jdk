@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
  * @run main/othervm TestCipherMode
  */
 
+import jtreg.SkippedException;
+
 import java.security.Provider;
 import java.security.Key;
 import java.security.KeyPair;
@@ -38,20 +40,22 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class TestCipherMode extends PKCS11Test {
 
-    private static String[] TRANSFORMATIONS = {
-        "AES/ECB/PKCS5Padding", "AES/GCM/NoPadding",
-        "RSA/ECB/PKCS1Padding"
+    private static final String[] TRANSFORMATIONS = {
+            "AES/ECB/PKCS5Padding", "AES/GCM/NoPadding",
+            "RSA/ECB/PKCS1Padding"
     };
 
-    private static byte[] BYTES16 =
-            Arrays.copyOf(TRANSFORMATIONS[0].getBytes(), 16);
+    private static final byte[] BYTES16 =
+            Arrays.copyOf("AES/ECB/PKCS5Padding".getBytes(), 16);
     private static SecretKey AES_KEY = new SecretKeySpec(BYTES16, "AES");
     private static PublicKey RSA_PUBKEY = null;
     private static PrivateKey RSA_PRIVKEY = null;
@@ -97,18 +101,29 @@ public class TestCipherMode extends PKCS11Test {
 
         // test all cipher impls, e.g. P11Cipher, P11AEADCipher, and
         // P11RSACipher
-        for (String t : TRANSFORMATIONS) {
-            checkModes(t, p);
+        List<String> skipped = new ArrayList<>();
+        for (final String t : TRANSFORMATIONS) {
+            try {
+                checkModes(t, p);
+            } catch (SkippedException skippedException) {
+                // printing to System.out, so it's easier to see which test it relates to
+                skippedException.printStackTrace(System.out);
+                skipped.add(t);
+            }
         }
-        System.out.println("All tests passed");
+
+        if (!skipped.isEmpty()) {
+            throw new SkippedException("Some tests skipped: " + skipped);
+        } else {
+            System.out.println("All tests passed");
+        }
     }
 
     private static void checkModes(String t, Provider p) throws Exception {
         try {
             Cipher.getInstance(t, p);
         } catch (Exception e) {
-            System.out.println("Skip " + t + " due to " + e.getMessage());
-            return;
+            throw new SkippedException("Skip " + t + " due to " + e.getMessage());
         }
 
         for (CipherMode m : CipherMode.values()) {

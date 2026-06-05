@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,8 @@
 class JvmtiDeferredEvent;
 
 class ServiceThread : public JavaThread {
-  friend class VMStructs;
  private:
-  DEBUG_ONLY(static JavaThread* _instance;)
+  static JavaThread* _instance;
   static JvmtiDeferredEvent* _jvmti_event;
   static JvmtiDeferredEventQueue _jvmti_service_queue;
 
@@ -45,6 +44,7 @@ class ServiceThread : public JavaThread {
 
  public:
   static void initialize();
+  static bool has_started() { return  _instance != nullptr; }
 
   // Hide this thread from external view.
   bool is_hidden_from_external_view() const      { return true; }

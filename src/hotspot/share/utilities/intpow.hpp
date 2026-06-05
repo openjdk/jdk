@@ -25,10 +25,9 @@
 #ifndef SHARE_UTILITIES_INTPOW_HPP
 #define SHARE_UTILITIES_INTPOW_HPP
 
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
-
-#include <limits>
-#include <type_traits>
 
 // Raise v to the power p mod 2**N, where N is the width of the type T.
 template <typename T, ENABLE_IF(std::is_integral<T>::value && std::is_unsigned<T>::value)>

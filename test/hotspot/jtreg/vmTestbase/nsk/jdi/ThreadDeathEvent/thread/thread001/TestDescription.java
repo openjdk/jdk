@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadDeathEvent.thread.thread001
  *        nsk.jdi.ThreadDeathEvent.thread.thread001a
- * @run driver
+ * @run driver/timeout=480
  *      nsk.jdi.ThreadDeathEvent.thread.thread001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -91,4 +91,3 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
-

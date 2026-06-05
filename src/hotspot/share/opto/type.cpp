@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@
 #include "opto/type.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -57,66 +59,66 @@ Dict* Type::_shared_type_dict = nullptr;
 
 // Array which maps compiler types to Basic Types
 const Type::TypeInfo Type::_type_info[Type::lastype] = {
-  { Bad,             T_ILLEGAL,    "bad",           false, Node::NotAMachineReg, relocInfo::none          },  // Bad
-  { Control,         T_ILLEGAL,    "control",       false, 0,                    relocInfo::none          },  // Control
-  { Bottom,          T_VOID,       "top",           false, 0,                    relocInfo::none          },  // Top
-  { Bad,             T_INT,        "int:",          false, Op_RegI,              relocInfo::none          },  // Int
-  { Bad,             T_LONG,       "long:",         false, Op_RegL,              relocInfo::none          },  // Long
-  { Half,            T_VOID,       "half",          false, 0,                    relocInfo::none          },  // Half
-  { Bad,             T_NARROWOOP,  "narrowoop:",    false, Op_RegN,              relocInfo::none          },  // NarrowOop
-  { Bad,             T_NARROWKLASS,"narrowklass:",  false, Op_RegN,              relocInfo::none          },  // NarrowKlass
-  { Bad,             T_ILLEGAL,    "tuple:",        false, Node::NotAMachineReg, relocInfo::none          },  // Tuple
-  { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
-  { Bad,             T_ARRAY,      "interfaces:",   false, Node::NotAMachineReg, relocInfo::none          },  // Interfaces
+  { Bad,             T_ILLEGAL,    "bad",           false, Node::NotAMachineReg},  // Bad
+  { Control,         T_ILLEGAL,    "control",       false, 0                   },  // Control
+  { Bottom,          T_VOID,       "top",           false, 0                   },  // Top
+  { Bad,             T_INT,        "int:",          false, Op_RegI             },  // Int
+  { Bad,             T_LONG,       "long:",         false, Op_RegL             },  // Long
+  { Half,            T_VOID,       "half",          false, 0                   },  // Half
+  { Bad,             T_NARROWOOP,  "narrowoop:",    false, Op_RegN             },  // NarrowOop
+  { Bad,             T_NARROWKLASS,"narrowklass:",  false, Op_RegN             },  // NarrowKlass
+  { Bad,             T_ILLEGAL,    "tuple:",        false, Node::NotAMachineReg},  // Tuple
+  { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg},  // Array
+  { Bad,             T_ARRAY,      "interfaces:",   false, Node::NotAMachineReg},  // Interfaces
 
 #if defined(PPC64)
-  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask,       relocInfo::none          },  // VectorMask.
-  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
-  { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
-  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
-  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
-  { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
-  { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
+  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
+  { Bad,             T_ILLEGAL,    "vectors:",      false, 0                   },  // VectorS
+  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL             },  // VectorD
+  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
+  { Bad,             T_ILLEGAL,    "vectory:",      false, 0                   },  // VectorY
+  { Bad,             T_ILLEGAL,    "vectorz:",      false, 0                   },  // VectorZ
 #elif defined(S390)
-  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask,       relocInfo::none          },  // VectorMask.
-  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
-  { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
-  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
-  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
-  { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
-  { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
+  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
+  { Bad,             T_ILLEGAL,    "vectors:",      false, 0                   },  // VectorS
+  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL             },  // VectorD
+  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
+  { Bad,             T_ILLEGAL,    "vectory:",      false, 0                   },  // VectorY
+  { Bad,             T_ILLEGAL,    "vectorz:",      false, 0                   },  // VectorZ
 #else // all other
-  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask,       relocInfo::none          },  // VectorMask.
-  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
-  { Bad,             T_ILLEGAL,    "vectors:",      false, Op_VecS,              relocInfo::none          },  // VectorS
-  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_VecD,              relocInfo::none          },  // VectorD
-  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
-  { Bad,             T_ILLEGAL,    "vectory:",      false, Op_VecY,              relocInfo::none          },  // VectorY
-  { Bad,             T_ILLEGAL,    "vectorz:",      false, Op_VecZ,              relocInfo::none          },  // VectorZ
+  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask      },  // VectorMask.
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA             },  // VectorA.
+  { Bad,             T_ILLEGAL,    "vectors:",      false, Op_VecS             },  // VectorS
+  { Bad,             T_ILLEGAL,    "vectord:",      false, Op_VecD             },  // VectorD
+  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX             },  // VectorX
+  { Bad,             T_ILLEGAL,    "vectory:",      false, Op_VecY             },  // VectorY
+  { Bad,             T_ILLEGAL,    "vectorz:",      false, Op_VecZ             },  // VectorZ
 #endif
-  { Bad,             T_ADDRESS,    "anyptr:",       false, Op_RegP,              relocInfo::none          },  // AnyPtr
-  { Bad,             T_ADDRESS,    "rawptr:",       false, Op_RegP,              relocInfo::none          },  // RawPtr
-  { Bad,             T_OBJECT,     "oop:",          true,  Op_RegP,              relocInfo::oop_type      },  // OopPtr
-  { Bad,             T_OBJECT,     "inst:",         true,  Op_RegP,              relocInfo::oop_type      },  // InstPtr
-  { Bad,             T_OBJECT,     "ary:",          true,  Op_RegP,              relocInfo::oop_type      },  // AryPtr
-  { Bad,             T_METADATA,   "metadata:",     false, Op_RegP,              relocInfo::metadata_type },  // MetadataPtr
-  { Bad,             T_METADATA,   "klass:",        false, Op_RegP,              relocInfo::metadata_type },  // KlassPtr
-  { Bad,             T_METADATA,   "instklass:",    false, Op_RegP,              relocInfo::metadata_type },  // InstKlassPtr
-  { Bad,             T_METADATA,   "aryklass:",     false, Op_RegP,              relocInfo::metadata_type },  // AryKlassPtr
-  { Bad,             T_OBJECT,     "func",          false, 0,                    relocInfo::none          },  // Function
-  { Abio,            T_ILLEGAL,    "abIO",          false, 0,                    relocInfo::none          },  // Abio
-  { Return_Address,  T_ADDRESS,    "return_address",false, Op_RegP,              relocInfo::none          },  // Return_Address
-  { Memory,          T_ILLEGAL,    "memory",        false, 0,                    relocInfo::none          },  // Memory
-  { HalfFloatBot,    T_SHORT,      "halffloat_top", false, Op_RegF,              relocInfo::none          },  // HalfFloatTop
-  { HalfFloatCon,    T_SHORT,      "hfcon:",        false, Op_RegF,              relocInfo::none          },  // HalfFloatCon
-  { HalfFloatTop,    T_SHORT,      "short",         false, Op_RegF,              relocInfo::none          },  // HalfFloatBot
-  { FloatBot,        T_FLOAT,      "float_top",     false, Op_RegF,              relocInfo::none          },  // FloatTop
-  { FloatCon,        T_FLOAT,      "ftcon:",        false, Op_RegF,              relocInfo::none          },  // FloatCon
-  { FloatTop,        T_FLOAT,      "float",         false, Op_RegF,              relocInfo::none          },  // FloatBot
-  { DoubleBot,       T_DOUBLE,     "double_top",    false, Op_RegD,              relocInfo::none          },  // DoubleTop
-  { DoubleCon,       T_DOUBLE,     "dblcon:",       false, Op_RegD,              relocInfo::none          },  // DoubleCon
-  { DoubleTop,       T_DOUBLE,     "double",        false, Op_RegD,              relocInfo::none          },  // DoubleBot
-  { Top,             T_ILLEGAL,    "bottom",        false, 0,                    relocInfo::none          }   // Bottom
+  { Bad,             T_ADDRESS,    "anyptr:",       false, Op_RegP             },  // AnyPtr
+  { Bad,             T_ADDRESS,    "rawptr:",       false, Op_RegP             },  // RawPtr
+  { Bad,             T_OBJECT,     "oop:",          true,  Op_RegP             },  // OopPtr
+  { Bad,             T_OBJECT,     "inst:",         true,  Op_RegP             },  // InstPtr
+  { Bad,             T_OBJECT,     "ary:",          true,  Op_RegP             },  // AryPtr
+  { Bad,             T_METADATA,   "metadata:",     false, Op_RegP             },  // MetadataPtr
+  { Bad,             T_METADATA,   "klass:",        false, Op_RegP             },  // KlassPtr
+  { Bad,             T_METADATA,   "instklass:",    false, Op_RegP             },  // InstKlassPtr
+  { Bad,             T_METADATA,   "aryklass:",     false, Op_RegP             },  // AryKlassPtr
+  { Bad,             T_OBJECT,     "func",          false, 0                   },  // Function
+  { Abio,            T_ILLEGAL,    "abIO",          false, 0                   },  // Abio
+  { Return_Address,  T_ADDRESS,    "return_address",false, Op_RegP             },  // Return_Address
+  { Memory,          T_ILLEGAL,    "memory",        false, 0                   },  // Memory
+  { HalfFloatBot,    T_SHORT,      "halffloat_top", false, Op_RegF             },  // HalfFloatTop
+  { HalfFloatCon,    T_SHORT,      "hfcon:",        false, Op_RegF             },  // HalfFloatCon
+  { HalfFloatTop,    T_SHORT,      "short",         false, Op_RegF             },  // HalfFloatBot
+  { FloatBot,        T_FLOAT,      "float_top",     false, Op_RegF             },  // FloatTop
+  { FloatCon,        T_FLOAT,      "ftcon:",        false, Op_RegF             },  // FloatCon
+  { FloatTop,        T_FLOAT,      "float",         false, Op_RegF             },  // FloatBot
+  { DoubleBot,       T_DOUBLE,     "double_top",    false, Op_RegD             },  // DoubleTop
+  { DoubleCon,       T_DOUBLE,     "dblcon:",       false, Op_RegD             },  // DoubleCon
+  { DoubleTop,       T_DOUBLE,     "double",        false, Op_RegD             },  // DoubleBot
+  { Top,             T_ILLEGAL,    "bottom",        false, 0                   }   // Bottom
 };
 
 // Map ideal registers (machine types) to ideal types
@@ -230,7 +232,7 @@ const Type* Type::get_typeflow_type(ciType* type) {
 
   case T_ADDRESS:
     assert(type->is_return_address(), "");
-    return TypeRawPtr::make((address)(intptr_t)type->as_return_address()->bci());
+    return TypeRawPtr::make((address)(intptr_t)type->as_return_address()->bci(), relocInfo::none);
 
   default:
     // make sure we did not mix up the cases:
@@ -699,7 +701,7 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= nullptr;
 
-  TypeVect::VECTMASK = (TypeVect*)(new TypeVectMask(T_BOOLEAN, MaxVectorSize))->hashcons();
+  TypeVect::VECTMASK = (TypeVect*)(new TypePVectMask(T_BOOLEAN, MaxVectorSize))->hashcons();
   mreg2type[Op_RegVectMask] = TypeVect::VECTMASK;
 
   if (Matcher::supports_scalable_vector()) {
@@ -730,6 +732,7 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecY] = TypeVect::VECTY;
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
 
+  BarrierSetC2::make_clone_type();
   LockNode::initialize_lock_Type();
   ArrayCopyNode::initialize_arraycopy_Type();
   OptoRuntime::initialize_types();
@@ -1814,6 +1817,13 @@ bool TypeInt::contains(const TypeInt* t) const {
   return TypeIntHelper::int_type_is_subset(this, t);
 }
 
+#ifdef ASSERT
+bool TypeInt::strictly_contains(const TypeInt* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_is_subset(this, t) && !TypeIntHelper::int_type_is_equal(this, t);
+}
+#endif // ASSERT
+
 const Type* TypeInt::xmeet(const Type* t) const {
   return TypeIntHelper::int_type_xmeet(this, t);
 }
@@ -1941,6 +1951,13 @@ bool TypeLong::contains(const TypeLong* t) const {
   assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
   return TypeIntHelper::int_type_is_subset(this, t);
 }
+
+#ifdef ASSERT
+bool TypeLong::strictly_contains(const TypeLong* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_is_subset(this, t) && !TypeIntHelper::int_type_is_equal(this, t);
+}
+#endif // ASSERT
 
 const Type* TypeLong::xmeet(const Type* t) const {
   return TypeIntHelper::int_type_xmeet(this, t);
@@ -2345,7 +2362,7 @@ const TypePtr* TypePtr::with_inline_depth(int depth) const {
   if (!UseInlineDepthForSpeculativeTypes) {
     return this;
   }
-  return make(AnyPtr, _ptr, _offset, _speculative, depth);
+  return make(AnyPtr, _ptr, _offset, _speculative, depth, _reloc);
 }
 
 //------------------------------dump2------------------------------------------
@@ -2441,10 +2458,16 @@ const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
   return nullptr;
 }
 
+// Create a vector mask type with the given element basic type and length.
+// - Returns "TypePVectMask" (PVectMask) for platforms that support the predicate
+//   feature and it is implemented properly in the backend, allowing the mask to
+//   be stored in a predicate/mask register.
+// - Returns a normal vector type "TypeVectA ~ TypeVectZ" (NVectMask) otherwise,
+//   where the vector mask is stored in a vector register.
 const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
   if (Matcher::has_predicated_vectors() &&
       Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
-    return TypeVectMask::make(elem_bt, length);
+    return TypePVectMask::make(elem_bt, length);
   } else {
     return make(elem_bt, length);
   }
@@ -2544,8 +2567,8 @@ void TypeVect::dump2(Dict& d, uint depth, outputStream* st) const {
 }
 #endif
 
-const TypeVectMask* TypeVectMask::make(const BasicType elem_bt, uint length) {
-  return (TypeVectMask*) (new TypeVectMask(elem_bt, length))->hashcons();
+const TypePVectMask* TypePVectMask::make(const BasicType elem_bt, uint length) {
+  return (TypePVectMask*) (new TypePVectMask(elem_bt, length))->hashcons();
 }
 
 //=============================================================================
@@ -2567,15 +2590,17 @@ const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
 };
 
 //------------------------------make-------------------------------------------
-const TypePtr *TypePtr::make(TYPES t, enum PTR ptr, int offset, const TypePtr* speculative, int inline_depth) {
-  return (TypePtr*)(new TypePtr(t,ptr,offset, speculative, inline_depth))->hashcons();
+const TypePtr* TypePtr::make(TYPES t, enum PTR ptr, int offset,
+                             const TypePtr* speculative, int inline_depth,
+                             relocInfo::relocType reloc) {
+  return (TypePtr*)(new TypePtr(t, ptr, offset, reloc, speculative, inline_depth))->hashcons();
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
 const TypePtr* TypePtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == AnyPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
-  return make(_base, ptr, _offset, _speculative, _inline_depth);
+  return make(_base, ptr, _offset, _speculative, _inline_depth, _reloc);
 }
 
 //------------------------------get_con----------------------------------------
@@ -2677,7 +2702,7 @@ const TypePtr::PTR TypePtr::ptr_dual[TypePtr::lastPTR] = {
   BotPTR, NotNull, Constant, Null, AnyNull, TopPTR
 };
 const Type *TypePtr::xdual() const {
-  return new TypePtr(AnyPtr, dual_ptr(), dual_offset(), dual_speculative(), dual_inline_depth());
+  return new TypePtr(AnyPtr, dual_ptr(), dual_offset(), relocInfo::none, dual_speculative(), dual_inline_depth());
 }
 
 //------------------------------xadd_offset------------------------------------
@@ -2698,24 +2723,25 @@ int TypePtr::xadd_offset( intptr_t offset ) const {
 
 //------------------------------add_offset-------------------------------------
 const TypePtr *TypePtr::add_offset( intptr_t offset ) const {
-  return make(AnyPtr, _ptr, xadd_offset(offset), _speculative, _inline_depth);
+  return make(AnyPtr, _ptr, xadd_offset(offset), _speculative, _inline_depth, _reloc);
 }
 
 const TypePtr *TypePtr::with_offset(intptr_t offset) const {
-  return make(AnyPtr, _ptr, offset, _speculative, _inline_depth);
+  return make(AnyPtr, _ptr, offset, _speculative, _inline_depth, _reloc);
 }
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypePtr::eq( const Type *t ) const {
   const TypePtr *a = (const TypePtr*)t;
-  return _ptr == a->ptr() && _offset == a->offset() && eq_speculative(a) && _inline_depth == a->_inline_depth;
+  return _ptr == a->ptr() && _offset == a->offset() && _reloc == a->reloc() &&
+         eq_speculative(a) && _inline_depth == a->_inline_depth;
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 uint TypePtr::hash(void) const {
-  return (uint)_ptr + (uint)_offset + (uint)hash_speculative() + (uint)_inline_depth;
+  return (uint)_ptr + (uint)_offset + (uint)_reloc + (uint)hash_speculative() + (uint)_inline_depth;
 }
 
 /**
@@ -2726,7 +2752,7 @@ const TypePtr* TypePtr::remove_speculative() const {
     return this;
   }
   assert(_inline_depth == InlineDepthTop || _inline_depth == InlineDepthBottom, "non speculative type shouldn't have inline depth");
-  return make(AnyPtr, _ptr, _offset, nullptr, _inline_depth);
+  return make(AnyPtr, _ptr, _offset, nullptr, _inline_depth, _reloc);
 }
 
 /**
@@ -2979,13 +3005,20 @@ const char *const TypePtr::ptr_msg[TypePtr::lastPTR] = {
 
 #ifndef PRODUCT
 void TypePtr::dump2( Dict &d, uint depth, outputStream *st ) const {
-  if( _ptr == Null ) st->print("null");
-  else st->print("%s *", ptr_msg[_ptr]);
-  if( _offset == OffsetTop ) st->print("+top");
-  else if( _offset == OffsetBot ) st->print("+bot");
-  else if( _offset ) st->print("+%d", _offset);
+  st->print("ptr:%s", ptr_msg[_ptr]);
+  dump_offset(st);
   dump_inline_depth(st);
   dump_speculative(st);
+}
+
+void TypePtr::dump_offset(outputStream* st) const {
+  if (_offset == OffsetBot) {
+    st->print("+bot");
+  } else if (_offset == OffsetTop) {
+    st->print("+top");
+  } else {
+    st->print("+%d", _offset);
+  }
 }
 
 /**
@@ -3034,12 +3067,12 @@ const TypeRawPtr *TypeRawPtr::NOTNULL;
 const TypeRawPtr *TypeRawPtr::make( enum PTR ptr ) {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for null" );
-  return (TypeRawPtr*)(new TypeRawPtr(ptr,nullptr))->hashcons();
+  return (TypeRawPtr*)(new TypeRawPtr(ptr, nullptr, relocInfo::none))->hashcons();
 }
 
-const TypeRawPtr *TypeRawPtr::make(address bits) {
+const TypeRawPtr* TypeRawPtr::make(address bits, relocInfo::relocType reloc) {
   assert(bits != nullptr, "Use TypePtr for null");
-  return (TypeRawPtr*)(new TypeRawPtr(Constant,bits))->hashcons();
+  return (TypeRawPtr*)(new TypeRawPtr(Constant, bits, reloc))->hashcons();
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
@@ -3114,7 +3147,7 @@ const Type *TypeRawPtr::xmeet( const Type *t ) const {
 //------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeRawPtr::xdual() const {
-  return new TypeRawPtr( dual_ptr(), _bits );
+  return new TypeRawPtr(dual_ptr(), _bits, _reloc);
 }
 
 //------------------------------add_offset-------------------------------------
@@ -3137,7 +3170,7 @@ const TypePtr* TypeRawPtr::add_offset(intptr_t offset) const {
     } else if ( sum == 0 ) {
       return TypePtr::NULL_PTR;
     } else {
-      return make( (address)sum );
+      return make((address)sum, _reloc);
     }
   }
   default:  ShouldNotReachHere();
@@ -3159,11 +3192,12 @@ uint TypeRawPtr::hash(void) const {
 
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
-void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
-  if( _ptr == Constant )
-    st->print(INTPTR_FORMAT, p2i(_bits));
-  else
+void TypeRawPtr::dump2(Dict& d, uint depth, outputStream* st) const {
+  if (_ptr == Constant) {
+    st->print("rawptr:Constant:" INTPTR_FORMAT, p2i(_bits));
+  } else {
     st->print("rawptr:%s", ptr_msg[_ptr]);
+  }
 }
 #endif
 
@@ -3431,7 +3465,7 @@ bool TypeInterfaces::has_non_array_interface() const {
 //------------------------------TypeOopPtr-------------------------------------
 TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* interfaces, bool xk, ciObject* o, int offset,
                        int instance_id, const TypePtr* speculative, int inline_depth)
-  : TypePtr(t, ptr, offset, speculative, inline_depth),
+  : TypePtr(t, ptr, offset, relocInfo::oop_type, speculative, inline_depth),
     _const_oop(o), _klass(k),
     _interfaces(interfaces),
     _klass_is_exact(xk),
@@ -3451,7 +3485,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
 #ifdef _LP64
   if (_offset > 0 || _offset == Type::OffsetTop || _offset == Type::OffsetBot) {
     if (_offset == oopDesc::klass_offset_in_bytes()) {
-      _is_ptr_to_narrowklass = UseCompressedClassPointers;
+      _is_ptr_to_narrowklass = true;
     } else if (klass() == nullptr) {
       // Array with unknown body type
       assert(this->isa_aryptr(), "only arrays without klass");
@@ -3478,13 +3512,12 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
         } else if (klass() == ciEnv::current()->Class_klass() &&
                    _offset >= InstanceMirrorKlass::offset_of_static_fields()) {
           // Static fields
-          ciField* field = nullptr;
+          BasicType basic_elem_type = T_ILLEGAL;
           if (const_oop() != nullptr) {
             ciInstanceKlass* k = const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
-            field = k->get_field_by_offset(_offset, true);
+            basic_elem_type = k->get_field_type_by_offset(_offset, true);
           }
-          if (field != nullptr) {
-            BasicType basic_elem_type = field->layout_type();
+          if (basic_elem_type != T_ILLEGAL) {
             _is_ptr_to_narrowoop = UseCompressedOops && ::is_reference_type(basic_elem_type);
           } else {
             // unsafe access
@@ -3492,9 +3525,8 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
           }
         } else {
           // Instance fields which contains a compressed oop references.
-          ciField* field = ik->get_field_by_offset(_offset, false);
-          if (field != nullptr) {
-            BasicType basic_elem_type = field->layout_type();
+          BasicType basic_elem_type = ik->get_field_type_by_offset(_offset, false);
+          if (basic_elem_type != T_ILLEGAL) {
             _is_ptr_to_narrowoop = UseCompressedOops && ::is_reference_type(basic_elem_type);
           } else if (klass()->equals(ciEnv::current()->Object_klass())) {
             // Compile::find_alias_type() cast exactness on all types to verify
@@ -3800,23 +3832,28 @@ uint TypeOopPtr::hash(void) const {
 
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
-void TypeOopPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
+void TypeOopPtr::dump2(Dict& d, uint depth, outputStream* st) const {
   st->print("oopptr:%s", ptr_msg[_ptr]);
-  if( _klass_is_exact ) st->print(":exact");
-  if( const_oop() ) st->print(INTPTR_FORMAT, p2i(const_oop()));
-  switch( _offset ) {
-  case OffsetTop: st->print("+top"); break;
-  case OffsetBot: st->print("+any"); break;
-  case         0: break;
-  default:        st->print("+%d",_offset); break;
+  if (_klass_is_exact) {
+    st->print(":exact");
   }
-  if (_instance_id == InstanceTop)
-    st->print(",iid=top");
-  else if (_instance_id != InstanceBot)
-    st->print(",iid=%d",_instance_id);
-
+  if (const_oop() != nullptr) {
+    st->print(":" INTPTR_FORMAT, p2i(const_oop()));
+  }
+  dump_offset(st);
+  dump_instance_id(st);
   dump_inline_depth(st);
   dump_speculative(st);
+}
+
+void TypeOopPtr::dump_instance_id(outputStream* st) const {
+  if (_instance_id == InstanceTop) {
+    st->print(",iid=top");
+  } else if (_instance_id == InstanceBot) {
+    st->print(",iid=bot");
+  } else {
+    st->print(",iid=%d", _instance_id);
+  }
 }
 #endif
 
@@ -4023,29 +4060,6 @@ const TypeInterfaces* TypePtr::interfaces(ciKlass*& k, bool klass, bool interfac
     }
   }
   return TypeAryPtr::_array_interfaces;
-}
-
-/**
- *  Create constant type for a constant boxed value
- */
-const Type* TypeInstPtr::get_const_boxed_value() const {
-  assert(is_ptr_to_boxed_value(), "should be called only for boxed value");
-  assert((const_oop() != nullptr), "should be called only for constant object");
-  ciConstant constant = const_oop()->as_instance()->field_value_by_offset(offset());
-  BasicType bt = constant.basic_type();
-  switch (bt) {
-    case T_BOOLEAN:  return TypeInt::make(constant.as_boolean());
-    case T_INT:      return TypeInt::make(constant.as_int());
-    case T_CHAR:     return TypeInt::make(constant.as_char());
-    case T_BYTE:     return TypeInt::make(constant.as_byte());
-    case T_SHORT:    return TypeInt::make(constant.as_short());
-    case T_FLOAT:    return TypeF::make(constant.as_float());
-    case T_DOUBLE:   return TypeD::make(constant.as_double());
-    case T_LONG:     return TypeLong::make(constant.as_long());
-    default:         break;
-  }
-  fatal("Invalid boxed value type '%s'", type2name(bt));
-  return nullptr;
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
@@ -4455,50 +4469,30 @@ bool TypeInstPtr::maybe_java_subtype_of_helper(const TypeOopPtr* other, bool thi
 #ifndef PRODUCT
 void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
   // Print the name of the klass.
+  st->print("instptr:");
   klass()->print_name_on(st);
   _interfaces->dump(st);
 
-  switch( _ptr ) {
-  case Constant:
-    if (WizardMode || Verbose) {
-      ResourceMark rm;
-      stringStream ss;
+  if (_ptr == Constant && (WizardMode || Verbose)) {
+    ResourceMark rm;
+    stringStream ss;
 
-      st->print(" ");
-      const_oop()->print_oop(&ss);
-      // 'const_oop->print_oop()' may emit newlines('\n') into ss.
-      // suppress newlines from it so -XX:+Verbose -XX:+PrintIdeal dumps one-liner for each node.
-      char* buf = ss.as_string(/* c_heap= */false);
-      StringUtils::replace_no_expand(buf, "\n", "");
-      st->print_raw(buf);
-    }
-  case BotPTR:
-    if (!WizardMode && !Verbose) {
-      if( _klass_is_exact ) st->print(":exact");
-      break;
-    }
-  case TopPTR:
-  case AnyNull:
-  case NotNull:
-    st->print(":%s", ptr_msg[_ptr]);
-    if( _klass_is_exact ) st->print(":exact");
-    break;
-  default:
-    break;
+    st->print(" ");
+    const_oop()->print_oop(&ss);
+    // 'const_oop->print_oop()' may emit newlines('\n') into ss.
+    // suppress newlines from it so -XX:+Verbose -XX:+PrintIdeal dumps one-liner for each node.
+    char* buf = ss.as_string(/* c_heap= */false);
+    StringUtils::replace_no_expand(buf, "\n", "");
+    st->print_raw(buf);
   }
 
-  if( _offset ) {               // Dump offset, if any
-    if( _offset == OffsetBot )      st->print("+any");
-    else if( _offset == OffsetTop ) st->print("+unknown");
-    else st->print("+%d", _offset);
+  st->print(":%s", ptr_msg[_ptr]);
+  if (_klass_is_exact) {
+    st->print(":exact");
   }
 
-  st->print(" *");
-  if (_instance_id == InstanceTop)
-    st->print(",iid=top");
-  else if (_instance_id != InstanceBot)
-    st->print(",iid=%d",_instance_id);
-
+  dump_offset(st);
+  dump_instance_id(st);
   dump_inline_depth(st);
   dump_speculative(st);
 }
@@ -5091,26 +5085,17 @@ const Type *TypeAryPtr::xdual() const {
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
-  _ary->dump2(d,depth,st);
+  st->print("aryptr:");
+  _ary->dump2(d, depth, st);
   _interfaces->dump(st);
 
-  switch( _ptr ) {
-  case Constant:
+  if (_ptr == Constant) {
     const_oop()->print(st);
-    break;
-  case BotPTR:
-    if (!WizardMode && !Verbose) {
-      if( _klass_is_exact ) st->print(":exact");
-      break;
-    }
-  case TopPTR:
-  case AnyNull:
-  case NotNull:
-    st->print(":%s", ptr_msg[_ptr]);
-    if( _klass_is_exact ) st->print(":exact");
-    break;
-  default:
-    break;
+  }
+
+  st->print(":%s", ptr_msg[_ptr]);
+  if (_klass_is_exact) {
+    st->print(":exact");
   }
 
   if( _offset != 0 ) {
@@ -5128,12 +5113,8 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
       }
     }
   }
-  st->print(" *");
-  if (_instance_id == InstanceTop)
-    st->print(",iid=top");
-  else if (_instance_id != InstanceBot)
-    st->print(",iid=%d",_instance_id);
 
+  dump_instance_id(st);
   dump_inline_depth(st);
   dump_speculative(st);
 }
@@ -5492,13 +5473,10 @@ const Type *TypeMetadataPtr::xdual() const {
 #ifndef PRODUCT
 void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("metadataptr:%s", ptr_msg[_ptr]);
-  if( metadata() ) st->print(INTPTR_FORMAT, p2i(metadata()));
-  switch( _offset ) {
-  case OffsetTop: st->print("+top"); break;
-  case OffsetBot: st->print("+any"); break;
-  case         0: break;
-  default:        st->print("+%d",_offset); break;
+  if (metadata() != nullptr) {
+    st->print(":" INTPTR_FORMAT, p2i(metadata()));
   }
+  dump_offset(st);
 }
 #endif
 
@@ -5508,7 +5486,7 @@ void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 const TypeMetadataPtr *TypeMetadataPtr::BOTTOM;
 
 TypeMetadataPtr::TypeMetadataPtr(PTR ptr, ciMetadata* metadata, int offset):
-  TypePtr(MetadataPtr, ptr, offset), _metadata(metadata) {
+  TypePtr(MetadataPtr, ptr, offset, relocInfo::metadata_type), _metadata(metadata) {
 }
 
 const TypeMetadataPtr* TypeMetadataPtr::make(ciMethod* m) {
@@ -5556,7 +5534,7 @@ const TypeKlassPtr* TypeKlassPtr::make(PTR ptr, ciKlass* klass, int offset, Inte
 
 //------------------------------TypeKlassPtr-----------------------------------
 TypeKlassPtr::TypeKlassPtr(TYPES t, PTR ptr, ciKlass* klass, const TypeInterfaces* interfaces, int offset)
-  : TypePtr(t, ptr, offset), _klass(klass), _interfaces(interfaces) {
+  : TypePtr(t, ptr, offset, relocInfo::metadata_type), _klass(klass), _interfaces(interfaces) {
   assert(klass == nullptr || !klass->is_loaded() || (klass->is_instance_klass() && !klass->is_interface()) ||
          klass->is_type_array_klass() || !klass->as_obj_array_klass()->base_element_klass()->is_interface(), "no interface here");
 }
@@ -5645,44 +5623,6 @@ intptr_t TypeKlassPtr::get_con() const {
 
   return (intptr_t)k->constant_encoding();
 }
-
-//------------------------------dump2------------------------------------------
-// Dump Klass Type
-#ifndef PRODUCT
-void TypeKlassPtr::dump2(Dict & d, uint depth, outputStream *st) const {
-  switch(_ptr) {
-  case Constant:
-    st->print("precise ");
-  case NotNull:
-    {
-      const char *name = klass()->name()->as_utf8();
-      if (name) {
-        st->print("%s: " INTPTR_FORMAT, name, p2i(klass()));
-      } else {
-        ShouldNotReachHere();
-      }
-      _interfaces->dump(st);
-    }
-  case BotPTR:
-    if (!WizardMode && !Verbose && _ptr != Constant) break;
-  case TopPTR:
-  case AnyNull:
-    st->print(":%s", ptr_msg[_ptr]);
-    if (_ptr == Constant) st->print(":exact");
-    break;
-  default:
-    break;
-  }
-
-  if (_offset) {               // Dump offset, if any
-    if (_offset == OffsetBot)      { st->print("+any"); }
-    else if (_offset == OffsetTop) { st->print("+unknown"); }
-    else                            { st->print("+%d", _offset); }
-  }
-
-  st->print(" *");
-}
-#endif
 
 //=============================================================================
 // Convenience common pre-built types.
@@ -6038,6 +5978,15 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
   return this;
 }
 
+#ifndef PRODUCT
+void TypeInstKlassPtr::dump2(Dict& d, uint depth, outputStream* st) const {
+  st->print("instklassptr:");
+  klass()->print_name_on(st);
+  _interfaces->dump(st);
+  st->print(":%s", ptr_msg[_ptr]);
+  dump_offset(st);
+}
+#endif // PRODUCT
 
 const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, int offset) {
   return (TypeAryKlassPtr*)(new TypeAryKlassPtr(ptr, elem, k, offset))->hashcons();
@@ -6509,34 +6458,11 @@ ciKlass* TypeAryKlassPtr::klass() const {
 // Dump Klass Type
 #ifndef PRODUCT
 void TypeAryKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
-  switch( _ptr ) {
-  case Constant:
-    st->print("precise ");
-  case NotNull:
-    {
-      st->print("[");
-      _elem->dump2(d, depth, st);
-      _interfaces->dump(st);
-      st->print(": ");
-    }
-  case BotPTR:
-    if( !WizardMode && !Verbose && _ptr != Constant ) break;
-  case TopPTR:
-  case AnyNull:
-    st->print(":%s", ptr_msg[_ptr]);
-    if( _ptr == Constant ) st->print(":exact");
-    break;
-  default:
-    break;
-  }
-
-  if( _offset ) {               // Dump offset, if any
-    if( _offset == OffsetBot )      { st->print("+any"); }
-    else if( _offset == OffsetTop ) { st->print("+unknown"); }
-    else                            { st->print("+%d", _offset); }
-  }
-
-  st->print(" *");
+  st->print("aryklassptr:[");
+  _elem->dump2(d, depth, st);
+  _interfaces->dump(st);
+  st->print(":%s", ptr_msg[_ptr]);
+  dump_offset(st);
 }
 #endif
 

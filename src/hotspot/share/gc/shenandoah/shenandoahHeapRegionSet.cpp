@@ -27,7 +27,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahHeapRegionSetIterator::ShenandoahHeapRegionSetIterator(const ShenandoahHeapRegionSet* const set) :
@@ -47,7 +47,7 @@ ShenandoahHeapRegionSet::ShenandoahHeapRegionSet() :
 }
 
 ShenandoahHeapRegionSet::~ShenandoahHeapRegionSet() {
-  FREE_C_HEAP_ARRAY(jbyte, _set_map);
+  FREE_C_HEAP_ARRAY(_set_map);
 }
 
 void ShenandoahHeapRegionSet::add_region(ShenandoahHeapRegion* r) {

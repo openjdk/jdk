@@ -54,7 +54,8 @@ import static sun.font.EAttribute.*;
 /**
  * This class handles underlining, strikethrough, and foreground and
  * background styles on text.  Clients simply acquire instances
- * of this class and hand them off to ExtendedTextLabels or GraphicComponents.
+ * of this class and hand them off to ExtendedTextSourceLabels or
+ * GraphicComponents.
  */
 public class Decoration {
 

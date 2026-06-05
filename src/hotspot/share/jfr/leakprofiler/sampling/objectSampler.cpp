@@ -41,7 +41,7 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -88,8 +88,8 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
     // The ObjectSampler instance may have already been cleaned or a new
     // instance was created concurrently.  This allows for a small race where cleaning
     // could be done again.
-    Atomic::store(&_dead_samples, true);
-    Atomic::store(&_last_sweep, (int64_t)JfrTicks::now().value());
+    AtomicAccess::store(&_dead_samples, true);
+    AtomicAccess::store(&_last_sweep, (int64_t)JfrTicks::now().value());
   }
 }
 
@@ -113,8 +113,8 @@ ObjectSampler::ObjectSampler(size_t size) :
         _total_allocated(0),
         _threshold(0),
         _size(size) {
-  Atomic::store(&_dead_samples, false);
-  Atomic::store(&_last_sweep, (int64_t)JfrTicks::now().value());
+  AtomicAccess::store(&_dead_samples, false);
+  AtomicAccess::store(&_last_sweep, (int64_t)JfrTicks::now().value());
 }
 
 ObjectSampler::~ObjectSampler() {
@@ -156,7 +156,7 @@ void ObjectSampler::destroy() {
 static volatile int _lock = 0;
 
 ObjectSampler* ObjectSampler::acquire() {
-  while (Atomic::cmpxchg(&_lock, 0, 1) == 1) {}
+  while (AtomicAccess::cmpxchg(&_lock, 0, 1) == 1) {}
   return _instance;
 }
 
@@ -240,10 +240,10 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
   assert(thread_id != 0, "invariant");
   assert(thread != nullptr, "invariant");
 
-  if (Atomic::load(&_dead_samples)) {
+  if (AtomicAccess::load(&_dead_samples)) {
     // There's a small race where a GC scan might reset this to true, potentially
     // causing a back-to-back scavenge.
-    Atomic::store(&_dead_samples, false);
+    AtomicAccess::store(&_dead_samples, false);
     scavenge();
   }
 
@@ -360,5 +360,5 @@ ObjectSample* ObjectSampler::item_at(int index) {
 }
 
 int64_t ObjectSampler::last_sweep() {
-  return Atomic::load(&_last_sweep);
+  return AtomicAccess::load(&_last_sweep);
 }

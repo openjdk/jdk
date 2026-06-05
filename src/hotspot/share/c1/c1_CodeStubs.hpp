@@ -127,36 +127,6 @@ public:
 
 };
 
-class ConversionStub: public CodeStub {
- private:
-  Bytecodes::Code _bytecode;
-  LIR_Opr         _input;
-  LIR_Opr         _result;
-
-  static float float_zero;
-  static double double_zero;
- public:
-  ConversionStub(Bytecodes::Code bytecode, LIR_Opr input, LIR_Opr result)
-    : _bytecode(bytecode), _input(input), _result(result) {
-    NOT_IA32( ShouldNotReachHere(); ) // used only on x86-32
-  }
-
-  Bytecodes::Code bytecode() { return _bytecode; }
-  LIR_Opr         input()    { return _input; }
-  LIR_Opr         result()   { return _result; }
-
-  virtual void emit_code(LIR_Assembler* e);
-  virtual void visit(LIR_OpVisitState* visitor) {
-    visitor->do_slow_case();
-    visitor->do_input(_input);
-    visitor->do_output(_result);
-  }
-#ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("ConversionStub"); }
-#endif // PRODUCT
-};
-
-
 // Throws ArrayIndexOutOfBoundsException by default but can be
 // configured to throw IndexOutOfBoundsException in constructor
 class RangeCheckStub: public CodeStub {
@@ -371,21 +341,16 @@ class MonitorEnterStub: public MonitorAccessStub {
 
 class MonitorExitStub: public MonitorAccessStub {
  private:
-  bool _compute_lock;
   int  _monitor_ix;
 
  public:
-  MonitorExitStub(LIR_Opr lock_reg, bool compute_lock, int monitor_ix)
+  MonitorExitStub(LIR_Opr lock_reg, int monitor_ix)
     : MonitorAccessStub(LIR_OprFact::illegalOpr, lock_reg),
-      _compute_lock(compute_lock), _monitor_ix(monitor_ix) { }
+      _monitor_ix(monitor_ix) { }
   virtual void emit_code(LIR_Assembler* e);
   virtual void visit(LIR_OpVisitState* visitor) {
     assert(_obj_reg->is_illegal(), "unused");
-    if (_compute_lock) {
-      visitor->do_temp(_lock_reg);
-    } else {
-      visitor->do_input(_lock_reg);
-    }
+    visitor->do_temp(_lock_reg);
   }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("MonitorExitStub"); }

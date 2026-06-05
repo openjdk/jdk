@@ -67,16 +67,21 @@ public class CDSArchiveUtils {
     private static int staticArchiveHeaderSize;    // static archive file header size
     private static int dynamicArchiveHeaderSize;   // dynamic archive file header size
     private static int cdsFileMapRegionSize;       // size of CDSFileMapRegion
-    private static long alignment;                 // MetaspaceShared::core_region_alignment
+    private static long alignment;                 // AOTMetaspace::core_region_alignment
 
-    // The following should be consistent with the enum in the C++ MetaspaceShared class
+    // The following should be consistent with the enum in the C++ AOTMetaspace class
     private static String[] shared_region_name = {
         "rw",          // ReadWrite
         "ro",          // ReadOnly
         "bm",          // relocation bitmaps
         "hp",          // heap
+        "ac",          // aot code
     };
     private static int num_regions = shared_region_name.length;
+
+    public static String[] getRegions() {
+        return shared_region_name;
+    }
 
     static {
         WhiteBox wb;

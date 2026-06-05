@@ -96,13 +96,15 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     const size_t start_page = (size_t)start_idx * _pages_per_region;
     const size_t size_in_pages = num_regions * _pages_per_region;
     bool zero_filled = _storage.commit(start_page, size_in_pages);
-    if (_memory_tag == mtJavaHeap) {
+
+    if (should_distribute_across_numa_nodes()) {
       for (uint region_index = start_idx; region_index < start_idx + num_regions; region_index++ ) {
         void* address = _storage.page_start(region_index * _pages_per_region);
         size_t size_in_bytes = _storage.page_size() * _pages_per_region;
         G1NUMA::numa()->request_memory_on_node(address, size_in_bytes, region_index);
       }
     }
+
     if (AlwaysPreTouch) {
       _storage.pretouch(start_page, size_in_pages, pretouch_workers);
     }
@@ -122,7 +124,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
 // G1RegionToSpaceMapper implementation where the region granularity is smaller
 // than the commit granularity.
-// Basically, the contents of one OS page span several regions.
+// Basically, the contents of one OS page spans several regions.
 class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   size_t _regions_per_page;
   // Lock to prevent bitmap updates and the actual underlying
@@ -148,13 +150,18 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     return _region_commit_map.find_first_set_bit(region, region_limit) != region_limit;
   }
 
-  void numa_request_on_node(size_t page_idx) {
-    if (_memory_tag == mtJavaHeap) {
-      uint region = (uint)(page_idx * _regions_per_page);
-      void* address = _storage.page_start(page_idx);
-      size_t size_in_bytes = _storage.page_size();
-      G1NUMA::numa()->request_memory_on_node(address, size_in_bytes, region);
+  bool commit_pages(size_t start_page, size_t size_in_pages) {
+    bool result = _storage.commit(start_page, size_in_pages);
+
+    if (should_distribute_across_numa_nodes()) {
+      for (size_t page = start_page; page < start_page + size_in_pages; page++) {
+        uint region = checked_cast<uint>(page * _regions_per_page);
+        void* address = _storage.page_start(page);
+        size_t size_in_bytes = _storage.page_size();
+        G1NUMA::numa()->request_memory_on_node(address, size_in_bytes, region);
+      }
     }
+    return result;
   }
 
  public:
@@ -171,6 +178,21 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
   }
 
+  size_t find_first_uncommitted(size_t page, size_t end) {
+    assert(page < end, "must be");
+    while (page < end && is_page_committed(page)) {
+      page++;
+    }
+    return page;
+  }
+
+  size_t find_first_committed(size_t page, size_t end) {
+    while (page < end && !is_page_committed(page)) {
+      page++;
+    }
+    return MIN2(page, end);
+  }
+
   virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_workers) {
     uint region_limit = (uint)(start_idx + num_regions);
     assert(num_regions > 0, "Must commit at least one region");
@@ -179,11 +201,11 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
     size_t const NoPage = SIZE_MAX;
 
-    size_t first_committed = NoPage;
-    size_t num_committed = 0;
+    size_t first_newly_committed = NoPage;
+    size_t num_committed_pages = 0;
 
-    size_t start_page = region_idx_to_page_idx(start_idx);
-    size_t end_page = region_idx_to_page_idx(region_limit - 1);
+    size_t const start_page = region_idx_to_page_idx(start_idx);
+    size_t const end_page = region_idx_to_page_idx(region_limit - 1) + 1;
 
     bool all_zero_filled = true;
 
@@ -191,34 +213,27 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     // underlying OS page. See lock declaration for more details.
     {
       MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-      for (size_t page = start_page; page <= end_page; page++) {
-        if (!is_page_committed(page)) {
-          // Page not committed.
-          if (num_committed == 0) {
-            first_committed = page;
-          }
-          num_committed++;
 
-          if (!_storage.commit(page, 1)) {
-            // Found dirty region during commit.
-            all_zero_filled = false;
-          }
+      size_t uncommitted_l = find_first_uncommitted(start_page, end_page);
+      size_t uncommitted_r = find_first_committed(uncommitted_l + 1, end_page);
 
-          // Move memory to correct NUMA node for the heap.
-          numa_request_on_node(page);
-        } else {
-          // Page already committed.
-          all_zero_filled = false;
-        }
+      first_newly_committed = uncommitted_l;
+      num_committed_pages = uncommitted_r - uncommitted_l;
+
+      if (num_committed_pages > 0 &&
+          !commit_pages(first_newly_committed, num_committed_pages)) {
+        all_zero_filled = false;
       }
+
+      all_zero_filled &= (uncommitted_l == start_page) && (uncommitted_r == end_page);
 
       // Update the commit map for the given range. Not using the par_set_range
       // since updates to _region_commit_map for this mapper is protected by _lock.
       _region_commit_map.set_range(start_idx, region_limit, BitMap::unknown_range);
     }
 
-    if (AlwaysPreTouch && num_committed > 0) {
-      _storage.pretouch(first_committed, num_committed, pretouch_workers);
+    if (AlwaysPreTouch && num_committed_pages > 0) {
+      _storage.pretouch(first_newly_committed, num_committed_pages, pretouch_workers);
     }
 
     fire_on_commit(start_idx, num_regions, all_zero_filled);
@@ -230,8 +245,8 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     assert(_region_commit_map.find_first_clear_bit(start_idx, region_limit) == region_limit,
            "Should only be committed regions in the range [%u, %u)", start_idx, region_limit);
 
-    size_t start_page = region_idx_to_page_idx(start_idx);
-    size_t end_page = region_idx_to_page_idx(region_limit - 1);
+    size_t const start_page = region_idx_to_page_idx(start_idx);
+    size_t const end_page = region_idx_to_page_idx(region_limit - 1) + 1;
 
     // Concurrent operations might operate on regions sharing the same
     // underlying OS page. See lock declaration for more details.
@@ -240,13 +255,16 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     // updates to _region_commit_map for this mapper is protected by _lock.
     _region_commit_map.clear_range(start_idx, region_limit, BitMap::unknown_range);
 
-    for (size_t page = start_page; page <= end_page; page++) {
-      // We know all pages were committed before clearing the map. If the
-      // the page is still marked as committed after the clear we should
-      // not uncommit it.
-      if (!is_page_committed(page)) {
-        _storage.uncommit(page, 1);
-      }
+    // We know all pages were committed before clearing the map. If the
+    // the page is still marked as committed after the clear we should
+    // not uncommit it.
+    size_t uncommitted_l = find_first_uncommitted(start_page, end_page);
+    size_t uncommitted_r = find_first_committed(uncommitted_l + 1, end_page);
+
+    size_t num_uncommitted_pages_found = uncommitted_r - uncommitted_l;
+
+    if (num_uncommitted_pages_found > 0) {
+      _storage.uncommit(uncommitted_l, num_uncommitted_pages_found);
     }
   }
 };
@@ -255,6 +273,10 @@ void G1RegionToSpaceMapper::fire_on_commit(uint start_idx, size_t num_regions, b
   if (_listener != nullptr) {
     _listener->on_commit(start_idx, num_regions, zero_filled);
   }
+}
+
+bool G1RegionToSpaceMapper::should_distribute_across_numa_nodes() const {
+  return _memory_tag == mtJavaHeap && G1NUMA::numa()->is_enabled();
 }
 
 G1RegionToSpaceMapper* G1RegionToSpaceMapper::create_mapper(ReservedSpace rs,

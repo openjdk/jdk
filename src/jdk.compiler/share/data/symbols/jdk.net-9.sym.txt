@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,51 +32,26 @@ header exports jdk/net requires name\u0020;java.base\u0020;flags\u0020;8000 flag
 class name jdk/net/ExtendedSocketOptions
 header extends java/lang/Object flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-field name SO_FLOW_SLA descriptor Ljava/net/SocketOption; flags 19 signature Ljava/net/SocketOption<Ljdk/net/SocketFlow;>;
+-field name TCP_KEEPIDLE descriptor Ljava/net/SocketOption;
+-field name TCP_KEEPINTERVAL descriptor Ljava/net/SocketOption;
+-field name TCP_KEEPCOUNT descriptor Ljava/net/SocketOption;
 
 class name jdk/net/NetworkPermission
 header extends java/security/BasicPermission flags 31
-method name <init> descriptor (Ljava/lang/String;)V flags 1
-method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;)V flags 1
 
 class name jdk/net/SocketFlow
 header extends java/lang/Object flags 21
 innerclass innerClass jdk/net/SocketFlow$Status outerClass jdk/net/SocketFlow innerClassName Status flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 field name UNSET descriptor I constantValue -1 flags 19
-field name NORMAL_PRIORITY descriptor I constantValue 1 flags 19
-field name HIGH_PRIORITY descriptor I constantValue 2 flags 19
-method name create descriptor ()Ljdk/net/SocketFlow; flags 9
-method name priority descriptor (I)Ljdk/net/SocketFlow; flags 1
-method name bandwidth descriptor (J)Ljdk/net/SocketFlow; flags 1
-method name priority descriptor ()I flags 1
-method name bandwidth descriptor ()J flags 1
-method name status descriptor ()Ljdk/net/SocketFlow$Status; flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
 
 class name jdk/net/SocketFlow$Status
 header extends java/lang/Enum flags 4031 signature Ljava/lang/Enum<Ljdk/net/SocketFlow$Status;>;
 innerclass innerClass jdk/net/SocketFlow$Status outerClass jdk/net/SocketFlow innerClassName Status flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-field name NO_STATUS descriptor Ljdk/net/SocketFlow$Status; flags 4019
-field name OK descriptor Ljdk/net/SocketFlow$Status; flags 4019
-field name NO_PERMISSION descriptor Ljdk/net/SocketFlow$Status; flags 4019
-field name NOT_CONNECTED descriptor Ljdk/net/SocketFlow$Status; flags 4019
-field name NOT_SUPPORTED descriptor Ljdk/net/SocketFlow$Status; flags 4019
-field name ALREADY_CREATED descriptor Ljdk/net/SocketFlow$Status; flags 4019
-field name IN_PROGRESS descriptor Ljdk/net/SocketFlow$Status; flags 4019
-field name OTHER descriptor Ljdk/net/SocketFlow$Status; flags 4019
-method name values descriptor ()[Ljdk/net/SocketFlow$Status; flags 9
-method name valueOf descriptor (Ljava/lang/String;)Ljdk/net/SocketFlow$Status; flags 9
 
 class name jdk/net/Sockets
 header extends java/lang/Object flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-method name setOption descriptor (Ljava/net/Socket;Ljava/net/SocketOption;Ljava/lang/Object;)V thrownTypes java/io/IOException flags 9 signature <T:Ljava/lang/Object;>(Ljava/net/Socket;Ljava/net/SocketOption<TT;>;TT;)V
-method name getOption descriptor (Ljava/net/Socket;Ljava/net/SocketOption;)Ljava/lang/Object; thrownTypes java/io/IOException flags 9 signature <T:Ljava/lang/Object;>(Ljava/net/Socket;Ljava/net/SocketOption<TT;>;)TT;
-method name setOption descriptor (Ljava/net/ServerSocket;Ljava/net/SocketOption;Ljava/lang/Object;)V thrownTypes java/io/IOException flags 9 signature <T:Ljava/lang/Object;>(Ljava/net/ServerSocket;Ljava/net/SocketOption<TT;>;TT;)V
-method name getOption descriptor (Ljava/net/ServerSocket;Ljava/net/SocketOption;)Ljava/lang/Object; thrownTypes java/io/IOException flags 9 signature <T:Ljava/lang/Object;>(Ljava/net/ServerSocket;Ljava/net/SocketOption<TT;>;)TT;
-method name setOption descriptor (Ljava/net/DatagramSocket;Ljava/net/SocketOption;Ljava/lang/Object;)V thrownTypes java/io/IOException flags 9 signature <T:Ljava/lang/Object;>(Ljava/net/DatagramSocket;Ljava/net/SocketOption<TT;>;TT;)V
-method name getOption descriptor (Ljava/net/DatagramSocket;Ljava/net/SocketOption;)Ljava/lang/Object; thrownTypes java/io/IOException flags 9 signature <T:Ljava/lang/Object;>(Ljava/net/DatagramSocket;Ljava/net/SocketOption<TT;>;)TT;
-method name supportedOptions descriptor (Ljava/lang/Class;)Ljava/util/Set; flags 9 signature (Ljava/lang/Class<*>;)Ljava/util/Set<Ljava/net/SocketOption<*>;>;
 

@@ -136,9 +136,9 @@ void *AdlArena::Acalloc( size_t items, size_t x ) {
 }
 
 //------------------------------realloc----------------------------------------
-static size_t pointer_delta(const void *left, const void *right) {
-  assert(left >= right, "pointer delta underflow");
-  return (uintptr_t)left - (uintptr_t)right;
+static size_t pointer_delta(const void* high, const void* low) {
+  assert(high >= low, "pointer delta underflow");
+  return (uintptr_t)high - (uintptr_t)low;
 }
 
 // Reallocate storage in AdlArena.

@@ -181,7 +181,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   const Register lock_reg = _lock_reg->as_pointer_register();
 
   ce->verify_reserved_argument_area_size(2);
-  if (obj_reg < lock_reg) {
+  if (obj_reg->encoding() < lock_reg->encoding()) {
     __ stmia(SP, RegisterSet(obj_reg) | RegisterSet(lock_reg));
   } else {
     __ str(obj_reg, Address(SP));
@@ -200,9 +200,10 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  if (_compute_lock) {
-    ce->monitor_address(_monitor_ix, _lock_reg);
-  }
+
+  // lock_reg was destroyed by fast unlocking attempt => recompute it
+  ce->monitor_address(_monitor_ix, _lock_reg);
+
   const Register lock_reg = _lock_reg->as_pointer_register();
 
   ce->verify_reserved_argument_area_size(1);

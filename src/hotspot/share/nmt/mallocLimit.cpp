@@ -26,11 +26,11 @@
 #include "nmt/mallocLimit.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "runtime/java.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/parseInteger.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/parseInteger.hpp"
 
 MallocLimitSet MallocLimitHandler::_limits;
 bool MallocLimitHandler::_have_limit = false;

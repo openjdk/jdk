@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import com.sun.net.httpserver.*;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class B6529200 {
 
@@ -127,7 +128,7 @@ public class B6529200 {
                 is = t.getRequestBody();
                 while (is.read() != -1) ;
                 is.close();
-                t.sendResponseHeaders (200, 0);
+                t.sendResponseHeaders (200, RSPBODY_CHUNKED);
                 os = t.getResponseBody();
                 os.write ("hello world".getBytes());
                 os.close();

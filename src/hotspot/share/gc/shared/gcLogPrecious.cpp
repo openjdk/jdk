@@ -25,6 +25,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 
 stringStream* GCLogPrecious::_lines = nullptr;
@@ -83,7 +84,8 @@ void GCLogPrecious::print_on_error(outputStream* st) {
     return;
   }
 
-  if (!_lock->try_lock_without_rank_check()) {
+  if (Thread::current_or_null_safe() == nullptr ||
+      !_lock->try_lock_without_rank_check()) {
     st->print_cr("<Skipped>\n");
     return;
   }

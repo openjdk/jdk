@@ -70,6 +70,8 @@ public final class TestClassDefineEvent {
                     "Expected type " + cl.getClass().getName() + ", got type " + definingClassLoaderType.getName());
                 Asserts.assertEquals(cl.getName(), definingClassLoader.getName(),
                     "Defining Class Loader should have the same name as the original class loader");
+                Asserts.assertTrue(event.getString("source").startsWith("file:/"), "Invalid source location");
+                Asserts.assertTrue(event.getString("source").endsWith(TEST_CLASS_NAME.substring(TEST_CLASS_NAME.lastIndexOf('.') + 1) + ".class"), "Invalid source location");
                 foundTestClasses = true;
             }
         }

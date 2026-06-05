@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ import sun.swing.WindowsPlacesBar;
  *
  * @author Jeff Dinkins
  */
-public final class WindowsFileChooserUI extends BasicFileChooserUI {
+public class WindowsFileChooserUI extends BasicFileChooserUI {
 
     // The following are private because the implementation of the
     // Windows FileChooser L&F is not complete yet.
@@ -1122,7 +1122,7 @@ public final class WindowsFileChooserUI extends BasicFileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected final class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
+    protected class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
         Vector<File> directories = new Vector<File>();
         int[] depths = null;
         File selectedDirectory = null;
@@ -1252,7 +1252,7 @@ public final class WindowsFileChooserUI extends BasicFileChooserUI {
      * Render different type sizes and styles.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public final class FilterComboBoxRenderer extends DefaultListCellRenderer {
+    public class FilterComboBoxRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list,
             Object value, int index, boolean isSelected,
@@ -1279,7 +1279,7 @@ public final class WindowsFileChooserUI extends BasicFileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected final class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
+    protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
             PropertyChangeListener {
         protected FileFilter[] filters;
         protected FilterComboBoxModel() {
@@ -1362,7 +1362,7 @@ public final class WindowsFileChooserUI extends BasicFileChooserUI {
     /**
      * Acts when DirectoryComboBox has changed the selected item.
      */
-    protected final class DirectoryComboBoxAction implements ActionListener {
+    protected class DirectoryComboBoxAction implements ActionListener {
 
 
 
@@ -1387,7 +1387,7 @@ public final class WindowsFileChooserUI extends BasicFileChooserUI {
     // ***********************
     // * FileView operations *
     // ***********************
-    protected final class WindowsFileView extends BasicFileView {
+    protected class WindowsFileView extends BasicFileView {
         /* FileView type descriptions */
 
         @Override

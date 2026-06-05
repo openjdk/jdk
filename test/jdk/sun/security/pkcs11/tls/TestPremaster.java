@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.security.Provider;
 import java.security.InvalidAlgorithmParameterException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+
+import jtreg.SkippedException;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 
 public class TestPremaster extends PKCS11Test {
@@ -48,8 +50,7 @@ public class TestPremaster extends PKCS11Test {
     public void main(Provider provider) throws Exception {
         if (provider.getService(
                 "KeyGenerator", "SunTlsRsaPremasterSecret") == null) {
-            System.out.println("Not supported by provider, skipping");
-            return;
+            throw new SkippedException("Not supported by provider, skipping");
         }
         KeyGenerator kg;
         kg = KeyGenerator.getInstance("SunTlsRsaPremasterSecret", provider);
@@ -87,8 +88,7 @@ public class TestPremaster extends PKCS11Test {
         } catch (InvalidAlgorithmParameterException iape) {
             // S12 removed support for SSL v3.0
             if (clientVersion == 0x300 || serverVersion == 0x300) {
-                System.out.println("Skip testing SSLv3 due to no support");
-                return;
+                throw new SkippedException("Skip testing SSLv3 due to no support");
             }
             // unexpected, pass it up
             throw iape;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * @bug 6383095
  * @summary CRL revoked certificate failures masked by OCSP failures
  * @run main/othervm FailoverToCRL
+ * @enablePreview
  * @author Xuelei Fan
  */
 
@@ -136,11 +137,14 @@
 
 import java.io.*;
 import java.net.SocketException;
+import java.security.DEREncodable;
+import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.cert.CertPathValidatorException.BasicReason;
+import java.util.Collections;
 
 public class FailoverToCRL {
 
@@ -193,32 +197,29 @@ public class FailoverToCRL {
         "-----END X509 CRL-----";
 
 
+    private static final PEMDecoder PEM_DECODER = PEMDecoder.of();
+
     private static CertPath generateCertificatePath()
-            throws CertificateException {
+            throws CertificateException, IOException {
         // generate certificate from cert strings
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
         ByteArrayInputStream is =
                 new ByteArrayInputStream(targetCertStr.getBytes());
-        Certificate targetCert = cf.generateCertificate(is);
 
         // generate certification path
-        List<Certificate> list = Arrays.asList(new Certificate[] {targetCert});
+        List<Certificate> list = Collections.singletonList(PEM_DECODER.decode
+                (is, X509Certificate.class));
 
         return cf.generateCertPath(list);
     }
 
-    private static Set<TrustAnchor> generateTrustAnchors()
-            throws CertificateException {
+    private static Set<TrustAnchor> generateTrustAnchors() {
         // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(trusedCertStr.getBytes());
-        Certificate trusedCert = cf.generateCertificate(is);
+        X509Certificate trustedCert = PEM_DECODER.decode(trusedCertStr, X509Certificate.class);
 
         // generate a trust anchor
-        TrustAnchor anchor = new TrustAnchor((X509Certificate)trusedCert, null);
+        TrustAnchor anchor = new TrustAnchor(trustedCert, null);
 
         return Collections.singleton(anchor);
     }
@@ -231,7 +232,10 @@ public class FailoverToCRL {
                     new ByteArrayInputStream(crlStr.getBytes());
 
         // generate a cert store
-        Collection<? extends CRL> crls = cf.generateCRLs(is);
+        Collection<DEREncodable> crls = new HashSet<>();
+
+        crls.add(PEM_DECODER.decode(crlStr, X509CRL.class));
+
         return CertStore.getInstance("Collection",
                             new CollectionCertStoreParameters(crls));
     }

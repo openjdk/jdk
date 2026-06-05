@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,37 +326,15 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     return expand_vbox_alloc_node(vbox_alloc, vect, box_type, vect_type);
   }
 
-  // Handle the case when both the allocation input and vector input to
-  // VectorBoxNode are Phi. This case is generated after the transformation of
-  // Phi: Phi (VectorBox1 VectorBox2) => VectorBox (Phi1 Phi2).
-  // With this optimization, the relative two allocation inputs of VectorBox1 and
-  // VectorBox2 are gathered into Phi1 now. Similarly, the original vector
-  // inputs of two VectorBox nodes are in Phi2.
-  //
-  // See PhiNode::merge_through_phi in cfg.cpp for more details.
-  if (vbox->is_Phi() && vect->is_Phi()) {
-    assert(vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
+  // Handle the case when the allocation input to VectorBoxNode is a Phi.
+  // This is generated after the transformation in PhiNode::merge_through_phi:
+  //   Phi (VectorBox1 VectorBox2) => VectorBox (Phi1 Phi2)
+  // The vector input may also be a Phi (Phi2 above), or it may have been
+  // value-numbered to a single node if all inputs were identical.
+  if (vbox->is_Phi()) {
+    bool same_region = vect->is_Phi() && vbox->as_Phi()->region() == vect->as_Phi()->region();
     for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i),
-                                              box_type, vect_type, visited);
-      if (!new_box->is_Phi()) {
-        C->initial_gvn()->hash_delete(vbox);
-        vbox->set_req(i, new_box);
-      }
-    }
-    return C->initial_gvn()->transform(vbox);
-  }
-
-  // Handle the case when the allocation input to VectorBoxNode is a phi
-  // but the vector input is not, which can definitely be the case if the
-  // vector input has been value-numbered. It seems to be safe to do by
-  // construction because VectorBoxNode and VectorBoxAllocate come in a
-  // specific order as a result of expanding an intrinsic call. After that, if
-  // any of the inputs to VectorBoxNode are value-numbered they can only
-  // move up and are guaranteed to dominate.
-  if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
-    for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect,
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), same_region ? vect->in(i) : vect,
                                               box_type, vect_type, visited);
       if (!new_box->is_Phi()) {
         C->initial_gvn()->hash_delete(vbox);
@@ -387,7 +365,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // If boxed mask value is present in a predicate register, it must be
   // spilled to a vector though a VectorStoreMaskOperation before actual StoreVector
   // operation to vector payload field.
-  if (is_mask && (value->bottom_type()->isa_vectmask() || bt != T_BOOLEAN)) {
+  if (is_mask && (value->bottom_type()->isa_pvectmask() || bt != T_BOOLEAN)) {
     value = gvn.transform(VectorStoreMaskNode::make(gvn, value, bt, num_elem));
     // Although type of mask depends on its definition, in terms of storage everything is stored in boolean array.
     bt = T_BOOLEAN;
@@ -477,14 +455,12 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
       gvn.record_for_igvn(local_mem);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, addr);
-      const Type* type = TypeOopPtr::make_from_klass(field->type()->as_klass());
-      vec_field_ld = bs->load_at(access, type);
-    }
 
-    // For proper aliasing, attach concrete payload type.
-    ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
-    const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
-    vec_field_ld = gvn.transform(new CastPPNode(nullptr, vec_field_ld, payload_type));
+      // For proper aliasing, attach concrete payload type.
+      ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
+      const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
+      vec_field_ld = bs->load_at(access, payload_type);
+    }
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
     const TypePtr* adr_type = adr->bottom_type()->is_ptr();

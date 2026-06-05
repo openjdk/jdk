@@ -27,6 +27,7 @@
 
 #include "gc/shared/workerThread.hpp"
 
+class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
 class ShenandoahRegionIterator;
@@ -36,13 +37,14 @@ class ShenandoahRegionIterator;
 class ShenandoahGenerationalEvacuationTask : public WorkerTask {
 private:
   ShenandoahGenerationalHeap* const _heap;
+  ShenandoahGeneration* const _generation;
   ShenandoahRegionIterator* _regions;
   bool _concurrent;
   bool _only_promote_regions;
-  uint _tenuring_threshold;
 
 public:
   ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* sh,
+                                       ShenandoahGeneration* generation,
                                        ShenandoahRegionIterator* iterator,
                                        bool concurrent, bool only_promote_regions);
   void work(uint worker_id) override;

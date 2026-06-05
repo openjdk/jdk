@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,9 @@ public class TestPreview extends JavadocTester {
         checkOutput("m/pkg/TestPreviewDeclarationUse.html", true,
                     "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
-                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class or interface in preview\" class="
+                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class in preview\" class="
                         + "\"external-link\">Core</a><sup class=\"preview-mark\"><a href=\"" + doc + "java.base/pr"
-                        + "eview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\""
+                        + "eview/Core.html#preview-preview.Core\" class=\""
                         + "external-link\">PREVIEW</a>");
         checkOutput("m/pkg/DocAnnotation.html", true,
                 "<span class=\"modifiers\">public @interface </span><span class=\"element-name type-name-label\">DocAnnotation</span>");
@@ -160,15 +160,15 @@ public class TestPreview extends JavadocTester {
         checkOutput("java.base/preview/package-summary.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html" class="current-selection">preview</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview" class="current-selection">preview</a></li>
                     </ol>""");
         checkOutput("java.base/preview/Core.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html">preview</a></li>
-                    <li><a href="Core.html" class="current-selection">Core</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview">preview</a></li>
+                    <li><a href="Core.html" title="Class Core" class="current-selection">Core</a></li>
                     </ol>""",
                 """
                     <div class="block">Preview feature. Links: <a href="CoreRecord.html" title="cla\
@@ -254,7 +254,7 @@ public class TestPreview extends JavadocTester {
         checkOutput("api2/api/API.html", true,
                     "<p><a href=\"#test()\"><code>test()</code></a></p>",
                     "<p><a href=\"#testNoPreviewInSig()\"><code>testNoPreviewInSig()</code></a></p>",
-                    "title=\"class or interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
+                    "title=\"interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
                             + "tml\" title=\"class in api\">API</a><sup class=\"preview-mark\"><a href=\"#preview-"
                             + "api.API\">PREVIEW</a></sup>&gt;");
         checkOutput("api2/api/API2.html", true,

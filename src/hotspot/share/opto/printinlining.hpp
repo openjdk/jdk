@@ -67,8 +67,10 @@ private:
   };
 
   struct Cmp {
-    static int cmp(int a, int b) {
-      return a - b;
+    static RBTreeOrdering cmp(int a, int b) {
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
   };
 

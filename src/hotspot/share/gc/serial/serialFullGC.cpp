@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,11 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
@@ -72,9 +70,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 Stack<oop, mtGC>              SerialFullGC::_marking_stack;
 Stack<ObjArrayTask, mtGC>     SerialFullGC::_objarray_stack;
@@ -414,7 +409,7 @@ void SerialFullGC::follow_array_chunk(objArrayOop array, int index) {
   const int stride = MIN2(len - beg_index, (int) ObjArrayMarkingStride);
   const int end_index = beg_index + stride;
 
-  array->oop_iterate_range(&mark_and_push_closure, beg_index, end_index);
+  array->oop_iterate_elements_range(&mark_and_push_closure, beg_index, end_index);
 
   if (end_index < len) {
     SerialFullGC::push_objarray(array, end_index); // Push the continuation.
@@ -483,11 +478,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   ref_processor()->start_discovery(clear_all_softrefs);
 
   {
-    StrongRootsScope srs(0);
-
-    MarkingNMethodClosure mark_code_closure(&follow_root_closure,
-                                            !NMethodToOopClosure::FixRelocations,
-                                            true);
+    GCTraceTime(Debug, gc, phases) tm_m("Marking From Roots", gc_timer());
 
     // Start tracing from roots, there are 3 kinds of roots in full-gc.
     //
@@ -496,8 +487,13 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     // strong CLDs.
     ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
 
-    // 2. Threads stack frames and active nmethods in them.
-    Threads::oops_do(&follow_root_closure, &mark_code_closure);
+    {
+      // 2. Threads stack frames and active nmethods in them.
+      NMethodMarkingScope nmethod_marking_scope;
+      MarkingNMethodClosure mark_code_closure(&follow_root_closure);
+
+      Threads::oops_do(&follow_root_closure, &mark_code_closure);
+    }
 
     // 3. VM internal roots.
     OopStorageSet::strong_oops_do(&follow_root_closure);
@@ -554,9 +550,6 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     // Prune dead klasses from subklass/sibling/implementor lists.
     Klass::clean_weak_klass_links(unloading_occurred);
-
-    // Clean JVMCI metadata handles.
-    JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
   }
 
   {
@@ -727,10 +720,10 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   }
 
   // Don't add any more derived pointers during phase3
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_active(), "Sanity");
   DerivedPointerTable::set_active(false);
-#endif
+#endif // COMPILER2
 
   {
     // Adjust the pointers to reflect the new locations

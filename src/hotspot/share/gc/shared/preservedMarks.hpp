@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,7 @@ public:
   size_t size() const { return _stack.size(); }
   inline void push_if_necessary(oop obj, markWord m);
   inline void push_always(oop obj, markWord m);
-  // Iterate over the stack, restore all preserved marks, and
-  // reclaim the memory taken up by the stack segments.
+  // Restore all preserved marks, and reclaim the memory taken up by the stack segments.
   void restore();
 
   // Adjust the preserved mark according to its
@@ -70,8 +69,6 @@ public:
   // Iterate over the stack, adjust all preserved marks according
   // to their forwarding location stored in the mark.
   void adjust_during_full_gc();
-
-  void restore_and_increment(volatile size_t* const _total_size_addr);
 
   // Assert the stack is empty and has no cached segments.
   void assert_empty() PRODUCT_RETURN;

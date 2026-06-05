@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -58,9 +58,6 @@
 #ifdef COMPILER2
 #include "adfiles/ad_riscv.hpp"
 #include "opto/runtime.hpp"
-#endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciJavaClasses.hpp"
 #endif
 
 #define __ masm->
@@ -202,18 +199,16 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::scalable_vector_reg_size(T_BYTE));
 #else
-#if !INCLUDE_JVMCI
-  assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
-#endif
+  assert(!_save_vectors, "vectors are generated only by C2");
   __ pop_CPU_state(_save_vectors);
-#endif
+#endif // COMPILER2
   __ leave();
 }
 
 // Is vector's size (in bytes) bigger than a size saved by default?
 // riscv does not ovlerlay the floating-point registers on vector registers like aarch64.
 bool SharedRuntime::is_wide_vector(int size) {
-  return UseRVV;
+  return UseRVV && size > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -492,18 +487,6 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // Pre-load the register-jump target early, to schedule it better.
   __ ld(t1, Address(xmethod, in_bytes(Method::from_compiled_offset())));
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    // check if this call should be routed towards a specific entry point
-    __ ld(t0, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
-    Label no_alternative_target;
-    __ beqz(t0, no_alternative_target);
-    __ mv(t1, t0);
-    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
-    __ bind(no_alternative_target);
-  }
-#endif // INCLUDE_JVMCI
-
   // Now generate the shuffle code.
   for (int i = 0; i < total_args_passed; i++) {
     if (sig_bt[i] == T_VOID) {
@@ -602,11 +585,11 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
-  address i2c_entry = __ pc();
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+  entry_address[AdapterBlob::I2C] = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
-  address c2i_unverified_entry = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified] = __ pc();
   Label skip_fixup;
 
   const Register receiver = j_rarg0;
@@ -633,33 +616,29 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
     __ block_comment("} c2i_unverified_entry");
   }
 
-  address c2i_entry = __ pc();
+  entry_address[AdapterBlob::C2I] = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
 
-    { // Bypass the barrier for non-static methods
-      __ load_unsigned_short(t0, Address(xmethod, Method::access_flags_offset()));
-      __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
-      __ beqz(t1, L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  __ load_unsigned_short(t0, Address(xmethod, Method::access_flags_offset()));
+  __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
+  __ beqz(t1, L_skip_barrier); // non-static
 
-    __ load_method_holder(t1, xmethod);
-    __ clinit_barrier(t1, t0, &L_skip_barrier);
-    __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+  __ load_method_holder(t1, xmethod);
+  __ clinit_barrier(t1, t0, &L_skip_barrier);
+  __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-    __ bind(L_skip_barrier);
-    c2i_no_clinit_check_entry = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm);
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
-
-  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
   return;
 }
 
@@ -887,11 +866,8 @@ static void fill_continuation_entry(MacroAssembler* masm) {
 
   __ ld(t0, Address(xthread, JavaThread::cont_fastpath_offset()));
   __ sd(t0, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ ld(t0, Address(xthread, JavaThread::held_monitor_count_offset()));
-  __ sd(t0, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
 
   __ sd(zr, Address(xthread, JavaThread::cont_fastpath_offset()));
-  __ sd(zr, Address(xthread, JavaThread::held_monitor_count_offset()));
 }
 
 // on entry, sp points to the ContinuationEntry
@@ -907,50 +883,6 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ ld(t0, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ sd(t0, Address(xthread, JavaThread::cont_fastpath_offset()));
-
-  if (CheckJNICalls) {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ lwu(t0, Address(sp, ContinuationEntry::flags_offset()));
-    __ beqz(t0, L_skip_vthread_code);
-
-    // If the held monitor count is > 0 and this vthread is terminating then
-    // it failed to release a JNI monitor. So we issue the same log message
-    // that JavaThread::exit does.
-    __ ld(t0, Address(xthread, JavaThread::jni_monitor_count_offset()));
-    __ beqz(t0, L_skip_vthread_code);
-
-    // Save return value potentially containing the exception oop in callee-saved x9
-    __ mv(x9, x10);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    // Restore potential return value
-    __ mv(x10, x9);
-
-    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
-    // on termination. The held count is implicitly zeroed below when we restore from
-    // the parent held count (which has to be zero).
-    __ sd(zr, Address(xthread, JavaThread::jni_monitor_count_offset()));
-
-    __ bind(L_skip_vthread_code);
-  }
-#ifdef ASSERT
-  else {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ lwu(t0, Address(sp, ContinuationEntry::flags_offset()));
-    __ beqz(t0, L_skip_vthread_code);
-
-    // See comment just above. If not checking JNI calls the JNI count is only
-    // needed for assertion checking.
-    __ sd(zr, Address(xthread, JavaThread::jni_monitor_count_offset()));
-
-    __ bind(L_skip_vthread_code);
-  }
-#endif
-
-  __ ld(t0, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ sd(t0, Address(xthread, JavaThread::held_monitor_count_offset()));
-
   __ ld(t0, Address(sp, ContinuationEntry::parent_offset()));
   __ sd(t0, Address(xthread, JavaThread::cont_entry_offset()));
   __ add(fp, sp, (int)ContinuationEntry::size() + 2 * wordSize /* 2 extra words to match up with leave() */);
@@ -1004,20 +936,23 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     __ bnez(c_rarg2, call_thaw);
 
-    // Make sure the call is patchable
-    __ align(NativeInstruction::instruction_size);
+    address call_pc;
+    {
+      Assembler::IncompressibleScope scope(masm);
+      // Make sure the call is patchable
+      __ align(NativeInstruction::instruction_size);
 
-    const address tr_call = __ reloc_call(resolve);
-    if (tr_call == nullptr) {
-      fatal("CodeCache is full at gen_continuation_enter");
+      call_pc = __ reloc_call(resolve);
+      if (call_pc == nullptr) {
+        fatal("CodeCache is full at gen_continuation_enter");
+      }
+
+      oop_maps->add_gc_map(__ pc() - start, map);
+      __ post_call_nop();
     }
-
-    oop_maps->add_gc_map(__ pc() - start, map);
-    __ post_call_nop();
-
     __ j(exit);
 
-    address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1036,26 +971,36 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bnez(c_rarg2, call_thaw);
 
-  // Make sure the call is patchable
-  __ align(NativeInstruction::instruction_size);
+  address call_pc;
+  {
+    Assembler::IncompressibleScope scope(masm);
+    // Make sure the call is patchable
+    __ align(NativeInstruction::instruction_size);
 
-  const address tr_call = __ reloc_call(resolve);
-  if (tr_call == nullptr) {
-    fatal("CodeCache is full at gen_continuation_enter");
+    call_pc = __ reloc_call(resolve);
+    if (call_pc == nullptr) {
+      fatal("CodeCache is full at gen_continuation_enter");
+    }
+
+    oop_maps->add_gc_map(__ pc() - start, map);
+    __ post_call_nop();
   }
-
-  oop_maps->add_gc_map(__ pc() - start, map);
-  __ post_call_nop();
 
   __ j(exit);
 
   __ bind(call_thaw);
 
-  ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
-  __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
-  oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
-  ContinuationEntry::_return_pc_offset = __ pc() - start;
-  __ post_call_nop();
+  // Post call nops must be natural aligned due to cmodx rules.
+  {
+    Assembler::IncompressibleScope scope(masm);
+    __ align(NativeInstruction::instruction_size);
+
+    ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
+    __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
+    oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
+    ContinuationEntry::_return_pc_offset = __ pc() - start;
+    __ post_call_nop();
+  }
 
   __ bind(exit);
   ContinuationEntry::_cleanup_offset = __ pc() - start;
@@ -1084,7 +1029,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ jr(x11); // the exception handler
   }
 
-  address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
@@ -1117,10 +1062,16 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   __ mv(c_rarg1, sp);
 
+  // Post call nops must be natural aligned due to cmodx rules.
+  __ align(NativeInstruction::instruction_size);
+
   frame_complete = __ pc() - start;
   address the_pc = __ pc();
 
-  __ post_call_nop(); // this must be exactly after the pc value that is pushed into the frame info, we use this nop for fast CodeBlob lookup
+  {
+    Assembler::IncompressibleScope scope(masm);
+    __ post_call_nop(); // this must be exactly after the pc value that is pushed into the frame info, we use this nop for fast CodeBlob lookup
+  }
 
   __ mv(c_rarg0, xthread);
   __ set_last_Java_frame(sp, fp, the_pc, t0);
@@ -1473,7 +1424,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ nop();  // 4 bytes
   }
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     __ mov_metadata(t1, method->method_holder()); // InstanceKlass*
     __ clinit_barrier(t1, t0, &L_skip_barrier);
@@ -1672,15 +1624,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register obj_reg  = x9;  // Will contain the oop
   const Register lock_reg = x30;  // Address of compiler lock object (BasicLock)
   const Register old_hdr  = x30;  // value of old header at unlock time
-  const Register lock_tmp = x31;  // Temporary used by lightweight_lock/unlock
+  const Register lock_tmp = x31;  // Temporary used by fast_lock/unlock
   const Register tmp      = ra;
 
   Label slow_path_lock;
   Label lock_done;
 
   if (method->is_synchronized()) {
-    const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
-
     // Get the handle (the 2nd argument)
     __ mv(oop_handle_reg, c_rarg1);
 
@@ -1691,7 +1641,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ld(obj_reg, Address(oop_handle_reg, 0));
 
-    __ lightweight_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
+    __ fast_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -1786,7 +1736,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
+    __ fast_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
 
     // slow path re-enters here
     __ bind(unlock_done);
@@ -2028,11 +1978,6 @@ void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
   // Setup code generation tools
   int pad = 0;
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    pad += 512; // Increase the buffer size when compiling for JVMCI
-  }
-#endif
   const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
   CodeBuffer buffer(name, 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
@@ -2040,7 +1985,7 @@ void SharedRuntime::generate_deopt_blob() {
   OopMap* map = nullptr;
   OopMapSet *oop_maps = new OopMapSet();
   assert_cond(masm != nullptr && oop_maps != nullptr);
-  RegisterSaver reg_saver(COMPILER2_OR_JVMCI != 0);
+  RegisterSaver reg_saver(COMPILER2_PRESENT(true) NOT_COMPILER2(false));
 
   // -------------
   // This code enters when returning to a de-optimized nmethod.  A return
@@ -2085,13 +2030,6 @@ void SharedRuntime::generate_deopt_blob() {
   __ j(cont);
 
   int reexecute_offset = __ pc() - start;
-#if INCLUDE_JVMCI && !defined(COMPILER1)
-  if (UseJVMCICompiler) {
-    // JVMCI does not use this kind of deoptimization
-    __ should_not_reach_here();
-  }
-#endif
-
   // Reexecute case
   // return address is the pc describes what bci to do re-execute at
 
@@ -2100,42 +2038,6 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ mv(xcpool, Deoptimization::Unpack_reexecute); // callee-saved
   __ j(cont);
-
-#if INCLUDE_JVMCI
-  Label after_fetch_unroll_info_call;
-  int implicit_exception_uncommon_trap_offset = 0;
-  int uncommon_trap_offset = 0;
-
-  if (EnableJVMCI) {
-    implicit_exception_uncommon_trap_offset = __ pc() - start;
-
-    __ ld(ra, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-
-    uncommon_trap_offset = __ pc() - start;
-
-    // Save everything in sight.
-    reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
-    // fetch_unroll_info needs to call last_java_frame()
-    Label retaddr;
-    __ set_last_Java_frame(sp, noreg, retaddr, t0);
-
-    __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
-    __ mv(t0, -1);
-    __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
-
-    __ mv(xcpool, Deoptimization::Unpack_reexecute);
-    __ mv(c_rarg0, xthread);
-    __ orrw(c_rarg2, zr, xcpool); // exec mode
-    __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
-    __ bind(retaddr);
-    oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
-
-    __ reset_last_Java_frame(false);
-
-    __ j(after_fetch_unroll_info_call);
-  } // EnableJVMCI
-#endif // INCLUDE_JVMCI
 
   int exception_offset = __ pc() - start;
 
@@ -2227,12 +2129,6 @@ void SharedRuntime::generate_deopt_blob() {
   oop_maps->add_gc_map(__ pc() - start, map);
 
   __ reset_last_Java_frame(false);
-
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    __ bind(after_fetch_unroll_info_call);
-  }
-#endif
 
   // Load UnrollBlock* into x15
   __ mv(x15, x10);
@@ -2387,12 +2283,6 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   assert(_deopt_blob != nullptr, "create deoptimization blob fail!");
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
-    _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
-  }
-#endif
 }
 
 // Number of stack slots between incoming argument block and the start of
@@ -2400,7 +2290,7 @@ void SharedRuntime::generate_deopt_blob() {
 // EPILOG must remove this many slots.
 // RISCV needs two words for RA (return address) and FP (frame pointer).
 uint SharedRuntime::in_preserve_stack_slots() {
-  return 2 * VMRegImpl::slots_per_word;
+  return 2 * VMRegImpl::slots_per_word + (VerifyStackAtCalls ? 0 : 2) ;
 }
 
 uint SharedRuntime::out_preserve_stack_slots() {

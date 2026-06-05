@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/lockStack.inline.hpp"
@@ -47,14 +47,14 @@ inline void JavaThread::set_suspend_flag(SuspendFlags f) {
   do {
     flags = _suspend_flags;
   }
-  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
+  while (AtomicAccess::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
 }
 inline void JavaThread::clear_suspend_flag(SuspendFlags f) {
   uint32_t flags;
   do {
     flags = _suspend_flags;
   }
-  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
+  while (AtomicAccess::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
 }
 
 inline void JavaThread::set_obj_deopt_flag() {
@@ -66,10 +66,10 @@ inline void JavaThread::clear_obj_deopt_flag() {
 
 #if INCLUDE_JVMTI
 inline bool JavaThread::set_carrier_thread_suspended() {
-  return Atomic::cmpxchg(&_carrier_thread_suspended, false, true) == false;
+  return AtomicAccess::cmpxchg(&_carrier_thread_suspended, false, true) == false;
 }
 inline bool JavaThread::clear_carrier_thread_suspended() {
-  return Atomic::cmpxchg(&_carrier_thread_suspended, true, false) == true;
+  return AtomicAccess::cmpxchg(&_carrier_thread_suspended, true, false) == true;
 }
 #endif
 
@@ -91,10 +91,14 @@ class AsyncExceptionHandshakeClosure : public AsyncHandshakeClosure {
   }
 
   void do_thread(Thread* thr) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
     self->handle_async_exception(exception());
+    PRAGMA_DIAG_POP
   }
   oop exception() {
     assert(!_exception.is_empty(), "invariant");
@@ -137,9 +141,9 @@ inline JavaThreadState JavaThread::thread_state() const    {
 #if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  return Atomic::load_acquire(&_thread_state);
+  return AtomicAccess::load_acquire(&_thread_state);
 #else
-  return Atomic::load(&_thread_state);
+  return AtomicAccess::load(&_thread_state);
 #endif
 }
 
@@ -149,9 +153,9 @@ inline void JavaThread::set_thread_state(JavaThreadState s) {
 #if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  Atomic::release_store(&_thread_state, s);
+  AtomicAccess::release_store(&_thread_state, s);
 #else
-  Atomic::store(&_thread_state, s);
+  AtomicAccess::store(&_thread_state, s);
 #endif
 }
 
@@ -192,31 +196,39 @@ void JavaThread::enter_critical() {
   _jni_active_critical++;
 }
 
+void JavaThread::enter_jni_deferred_suspension() {
+  precond(JavaThread::current() == this);
+  assert(_thread_state != _thread_in_native && _thread_state != _thread_blocked,
+         "Must not defer suspension when handshake-safe");
+  int sc = AtomicAccess::load(&_jni_deferred_suspension_count);
+  AtomicAccess::store(&_jni_deferred_suspension_count, sc + 1);
+}
+
 inline void JavaThread::set_done_attaching_via_jni() {
   _jni_attach_state = _attached_via_jni;
   OrderAccess::fence();
 }
 
 inline bool JavaThread::is_exiting() const {
-  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
+  TerminatedTypes l_terminated = AtomicAccess::load_acquire(&_terminated);
   return l_terminated == _thread_exiting ||
          l_terminated == _thread_gc_barrier_detached ||
          check_is_terminated(l_terminated);
 }
 
 inline bool JavaThread::is_oop_safe() const {
-  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
+  TerminatedTypes l_terminated = AtomicAccess::load_acquire(&_terminated);
   return l_terminated != _thread_gc_barrier_detached &&
          !check_is_terminated(l_terminated);
 }
 
 inline bool JavaThread::is_terminated() const {
-  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
+  TerminatedTypes l_terminated = AtomicAccess::load_acquire(&_terminated);
   return check_is_terminated(l_terminated);
 }
 
 inline void JavaThread::set_terminated(TerminatedTypes t) {
-  Atomic::release_store(&_terminated, t);
+  AtomicAccess::release_store(&_terminated, t);
 }
 
 inline bool JavaThread::is_active_Java_thread() const {

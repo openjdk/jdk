@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.InvalidObjectException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.security.*;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosCredMessage;
@@ -1332,6 +1333,7 @@ class Krb5Context implements GSSContextSpi {
      * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
      */
     static class KerberosSessionKey implements Key {
+        @Serial
         private static final long serialVersionUID = 699307378954123869L;
 
         @SuppressWarnings("serial") // Not statically typed as Serializable
@@ -1369,7 +1371,7 @@ class Krb5Context implements GSSContextSpi {
          * @throws IOException if an I/O error occurs
          * @throws ClassNotFoundException if a serialized class cannot be loaded
          */
-        @java.io.Serial
+        @Serial
         private void readObject(ObjectInputStream stream)
                 throws IOException, ClassNotFoundException {
             throw new InvalidObjectException

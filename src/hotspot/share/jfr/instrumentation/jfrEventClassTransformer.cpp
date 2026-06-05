@@ -214,7 +214,7 @@ static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_t
   if (has_annotation(ik, annotation_type, default_value, value)) {
     return true;
   }
-  InstanceKlass* const super = InstanceKlass::cast(ik->super());
+  InstanceKlass* const super = ik->super();
   return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, default_value, value) : false;
 }
 
@@ -1427,10 +1427,10 @@ static void transform(InstanceKlass*& ik, ClassFileParser& parser, JavaThread* t
   } else {
     JfrClassTransformer::cache_class_file_data(new_ik, stream, thread);
   }
+  JfrClassTransformer::copy_traceid(ik, new_ik);
   if (is_instrumented && JdkJfrEvent::is_subklass(new_ik)) {
     bless_commit_method(new_ik);
   }
-  JfrClassTransformer::copy_traceid(ik, new_ik);
   JfrClassTransformer::rewrite_klass_pointer(ik, new_ik, parser, thread);
 }
 

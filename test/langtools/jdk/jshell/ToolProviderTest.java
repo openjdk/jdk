@@ -29,8 +29,8 @@ import java.util.function.Function;
 import javax.tools.Tool;
 import jdk.internal.jshell.tool.JShellToolProvider;
 import jdk.jshell.tool.JavaShellToolBuilder;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -43,9 +43,8 @@ import static org.testng.Assert.assertTrue;
  *          jdk.jshell/jdk.internal.jshell.tool.resources:+open
  * @library /tools/lib
  * @build Compiler toolbox.ToolBox
- * @run testng/othervm --patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch ToolProviderTest
+ * @run junit/othervm --patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch ToolProviderTest
  */
-@Test
 public class ToolProviderTest extends StartOptionTest {
 
     // Through the provider, the console and console go to command out (we assume,
@@ -102,6 +101,7 @@ public class ToolProviderTest extends StartOptionTest {
 
     // Test --show-version
     @Override
+    @Test
     public void testShowVersion() {
         startCo(s -> {
             assertTrue(s.startsWith("jshell "), "unexpected version: " + s);
