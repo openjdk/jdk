@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8369699
+ * @bug 8369699 8381618
  * @key randomness
  * @summary Test the Template Library's expression generation for the Vector API.
  * @modules jdk.incubator.vector
@@ -33,14 +33,6 @@
  * @run driver ${test.main.class}
  */
 
-// TODO: remove the x64 and linux restriction above. I added that for now so we are not flooded
-//       with failures in the CI. We should remove these restriction once more bugs are fixed.
-//       x64 linux is the easiest to debug on for me, that's why I picked it.
-//       In addition, I put a UseAVX=2 restriction below, to avoid AVX512 bugs for now.
-//
-//       A trick to extend this to other platforms: create a new run block, so you have full
-//       freedom to restrict it as necessary for platform and vector features.
-//
 // TODO: Some compilation bailouts are to be expected, for example, we've encountered this before:
 //         COMPILE SKIPPED: out of virtual registers in LIR generator (retry at different tier)
 //       Which manifested in:
