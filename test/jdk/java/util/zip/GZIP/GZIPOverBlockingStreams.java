@@ -65,8 +65,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class GZIPOverBlockingStreams {
 
     private static final Random random = RandomFactory.getRandom();
-    private static final String MEMBER_CONTENT_FORMAT =
-            "Hello member %d, greetings from Java " + System.getProperty("java.version") + "\n";
+    private static final String MEMBER_CONTENT_FORMAT = "Hello member %d, foo bar hello world\n";
 
     private static Server nonHttpServer;
     private static HttpServer httpServer;
