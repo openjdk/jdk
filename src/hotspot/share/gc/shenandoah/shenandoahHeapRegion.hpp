@@ -525,7 +525,7 @@ public:
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
 
-  void clear_self_forwarded_mark_words();
+  void partially_recycle();
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
