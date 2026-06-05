@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,10 @@ public class CheckReleaseFile {
 
         String[] values = valueString.split(" ");
 
-        // First value MUST start with ".:" regardless of Oracle or OpenJDK
+        // First value should start with ".:" or SOURCE value should be empty,
+        // regardless of Oracle or OpenJDK.
         String rootRegexp = "\\." + SRC_HASH_REGEXP;
-        if (!values[0].matches(rootRegexp)) {
+        if (values[0] != "" && !values[0].matches(rootRegexp)) {
             throw new RuntimeException("The test failed, first element did not match regexp: " + rootRegexp);
         }
 
@@ -127,7 +128,7 @@ public class CheckReleaseFile {
         String vendor = System.getProperty("java.vendor");
         if (runtime.contains("OpenJDK") && vendor.contains("Oracle Corporation")) {
             System.out.println("Oracle built OpenJDK, verifying SOURCE format");
-            if (values.length != 1) {
+            if (values.length != 1 || values[0] == "") {
                 throw new RuntimeException("The test failed, wrong number of elements in SOURCE list." +
                                            " Should be 1 for Oracle built OpenJDK.");
             }
