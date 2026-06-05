@@ -34,6 +34,6 @@ public final class TLSHandshakeEvent extends Event {
     public int peerPort;
     public String protocolVersion;
     public String cipherSuite;
-    public long certificateId;
     public String namedGroup;
+    public long certificateId;
 }
