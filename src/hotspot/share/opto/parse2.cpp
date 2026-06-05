@@ -246,7 +246,7 @@ public:
       pop_stack();
       _parse.replace_in_map(_array, array);
     }
-    return _gvn.transform(ld);
+    return ld;
   }
 
   void test_non_flat_array_and_emit_reference_load(float p) {
