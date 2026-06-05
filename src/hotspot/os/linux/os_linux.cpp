@@ -1547,11 +1547,31 @@ int os::current_process_id() {
   return ::getpid();
 }
 
-// DLL functions
+static bool is_writeable_directory(const char* name) {
+  struct stat mystat;
+  int ret_val = stat(name, &mystat);
+  return (ret_val != -1 && S_ISDIR(mystat.st_mode) > 0 && access(name, R_OK|W_OK|X_OK) == 0);
+}
 
-// This must be hard coded because it's the system's temporary
-// directory not the java application's temp directory, ala java.io.tmpdir.
-const char* os::get_temp_directory() { return "/tmp"; }
+// We need to check that any given alternate temporary directory name isn't too long
+// and is a writeable directory.  Revert back to hardcoded /tmp.
+void os::pd_check_temp_directory() {
+  if (AltTempDir != nullptr && AltTempDir[0] != '\0') {
+    size_t safe_max = PATH_MAX - 100; // accounting for /proc/%pid composition in containers
+    if (strlen(AltTempDir) > safe_max) {
+      log_warning(os)("Error: AltTempDir is ignored because it's longer than %zd bytes", safe_max);
+      AltTempDir = nullptr;
+    } else if (!is_writeable_directory(AltTempDir)) {
+      log_warning(os)("Error: AltTempDir is ignored because it is not present or writable");
+      AltTempDir = nullptr;
+    }
+  }
+}
+
+const char* os::get_temp_directory() {
+  // AltTempDir is already checked.
+  return (AltTempDir != nullptr && AltTempDir[0] != '\0') ? AltTempDir : "/tmp";
+}
 
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {

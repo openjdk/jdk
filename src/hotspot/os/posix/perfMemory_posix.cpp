@@ -135,18 +135,18 @@ static void save_memory_to_file(char* addr, size_t size) {
 // return the user specific temporary directory name.
 // the caller is expected to free the allocated memory.
 //
-#define TMP_BUFFER_LEN (4+22)
 static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   char* tmpdir = (char *)os::get_temp_directory();
+  char buffer[PATH_MAX] = {0};
 #if defined(LINUX)
   // On linux, if containerized process, get dirname of
   // /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}
   // otherwise /tmp/{PERFDATA_NAME_user}
-  char buffer[TMP_BUFFER_LEN];
-  assert(strlen(tmpdir) == 4, "No longer using /tmp - update buffer size");
+  // The /tmp directory can be overridden with AltTempDir.
 
   if (nspid != -1) {
-    jio_snprintf(buffer, TMP_BUFFER_LEN, "/proc/%d/root%s", vmid, tmpdir);
+    int val = jio_snprintf(buffer, PATH_MAX, "/proc/%d/root%s", vmid, tmpdir);
+    assert(val != -1, "should not truncate, because length was already checked");
     tmpdir = buffer;
   }
 #endif
@@ -524,7 +524,6 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   char* tmpdirname = (char *)os::get_temp_directory();
 #if defined(LINUX)
   char buffer[MAXPATHLEN + 1];
-  assert(strlen(tmpdirname) == 4, "No longer using /tmp - update buffer size");
 
   // On Linux, if nspid != -1, look in /proc/{vmid}/root/tmp for directories
   // containing nspid, otherwise just look for vmid in /tmp.

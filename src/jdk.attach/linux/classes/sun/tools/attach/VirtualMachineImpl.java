@@ -45,6 +45,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import sun.jvmstat.monitor.MonitoredHost;
 import sun.jvmstat.monitor.MonitorException;
+import sun.jvmstat.PlatformSupport;
 
 /*
  * Linux implementation of HotSpotVirtualMachine
@@ -55,12 +56,13 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // .java_pid<pid>. and .attach_pid<pid>. It is important that this
     // location is the same for all processes, otherwise the tools
     // will not be able to find all Hotspot processes.
-    // Any changes to this needs to be synchronized with HotSpot.
-    private static final Path TMPDIR = Path.of("/tmp");
+    // This calls a Hotspot native method to get a consistent temporary
+    // directory.
+    private static final String vmTemp = PlatformSupport.getTemporaryDirectory();
+    private static final Path TMPDIR = Path.of(vmTemp);
 
     private static final Path PROC     = Path.of("/proc");
     private static final Path STATUS   = Path.of("status");
-    private static final Path ROOT_TMP = Path.of("root/tmp");
 
     String socket_path;
     private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
@@ -255,7 +257,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     private String findTargetProcessTmpDirectory(long pid) throws IOException {
-        final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
+        final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve("root")
+                        .resolve(vmTemp.startsWith("/") ? vmTemp.substring(1) : vmTemp);
 
         /* We need to handle at least 4 different cases:
          * 1. Caller and target processes share PID namespace and root
@@ -280,6 +283,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             if (Files.isWritable(tmpOnProcPidRoot)) {
                 return tmpOnProcPidRoot.toString();
             } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
+                return TMPDIR.toString();
+            } else if (Files.isWritable(TMPDIR)) {
                 return TMPDIR.toString();
             } else {
                 throw new AttachOperationFailedException("Unable to access the filesystem of the target process");

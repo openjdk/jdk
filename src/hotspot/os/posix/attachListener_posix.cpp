@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,8 +346,12 @@ void AttachListener::vm_start() {
   struct stat st;
   int ret;
 
-  os::snprintf_checked(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
+  int n = os::snprintf(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
                        os::get_temp_directory(), os::current_process_id());
+  if (n > (int)UNIX_PATH_MAX) {
+    log_warning(attach)("Failed to attach using temporary file %s", fn);
+    return;
+  }
 
   RESTARTABLE(::stat(fn, &st), ret);
   if (ret == 0) {
