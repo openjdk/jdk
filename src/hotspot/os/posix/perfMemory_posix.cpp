@@ -151,7 +151,6 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   }
 #endif
 #ifdef __APPLE__
-  char buffer[PATH_MAX] = {0};
   // Check if the current user is root and the target VM is running as non-root.
   // Otherwise the output of os::get_temp_directory() is used.
   //
