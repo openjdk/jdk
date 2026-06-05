@@ -138,7 +138,7 @@ TEST_VM(os, test_print_markword) {
   assert(nmark == nresult, "misconfigured test/result arrays; sizes differ");
   #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    for (int i=0; i<nmark; i++ ) {
+    for (int i = 0; i < nmark; i++) {
       stringStream st;
       os::print_location(&st, (intptr_t) markWords[i].to_pointer(), true);
       out->print("\n====================\nword 0x%p, '%s' result:\n%s\n", markWords[i].to_pointer(), expected[i], st.base());
