@@ -6276,6 +6276,24 @@ class StubGenerator: public StubCodeGenerator {
   // static int implKyberNttMult(
   //              short[] result, short[] ntta, short[] nttb, short[] zetas) {}
   //
+  // The actual algorithm that is used here differs from the one in the Java
+  // implementation, it uses Montgomery multiplications instead of Barrett
+  // reduction, but the end result modulo MLKEM_Q is the same. This is the
+  // Java equivalent of this intrinsic implementation:
+  // static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
+  //         for (int m = 0; m < ML_KEM_N / 2; m++) {
+  //             int a0 = ntta[2 * m];
+  //             int a1 = ntta[2 * m + 1];
+  //             int b0 = nttb[2 * m];
+  //             int b1 = nttb[2 * m + 1];
+  //             int r = montMul(a0, b0) +
+  //                     montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
+  //             result[2 * m] = (short) montMul(r, MONT_R_SQUARE_MOD_Q);
+  //             result[2 * m + 1] = (short) montMul(
+  //                     (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
+  //          }
+  // }
+  //
   // result (short[256]) = c_rarg0
   // ntta (short[256]) = c_rarg1
   // nttb (short[256]) = c_rarg2
@@ -12752,7 +12770,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
     if (UseSVE == 0) {
       generate_iota_indices(StubId::stubgen_vector_iota_indices_id);
@@ -12780,7 +12798,6 @@ class StubGenerator: public StubCodeGenerator {
 
     generate_string_indexof_stubs();
 
-#ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
@@ -12827,8 +12844,6 @@ class StubGenerator: public StubCodeGenerator {
       }
       StubRoutines::_montgomerySquare = start;
     }
-
-#endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
       StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
@@ -12915,7 +12930,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   }
 
  public:
