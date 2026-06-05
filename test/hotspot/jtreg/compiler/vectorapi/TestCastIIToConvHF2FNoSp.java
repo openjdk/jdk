@@ -24,7 +24,7 @@
 
 /**
 * @test
-* @bug 8373574
+* @bug 8370691 8373574
 * @summary Verify correct execution of CastII -> ConvHF2F IR sequence on AArch64
 * @modules jdk.incubator.vector
 * @library /test/lib /
