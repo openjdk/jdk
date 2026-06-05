@@ -665,7 +665,7 @@ private:
                       int level,
                       int compile_id)
       : TrainingData(),  // empty key
-        _method(mtd), _level(level), _compile_id(compile_id), _init_deps_left(0) { }
+        _method(mtd), _level(level), _compile_id(compile_id), _init_deps_left(-1) { }
 public:
   ciRecords& ci_records() { return _ci_records; }
   static CompileTrainingData* make(CompileTask* task) NOT_CDS_RETURN_(nullptr);
@@ -751,10 +751,19 @@ class MethodTrainingData : public TrainingData {
 
   KlassTrainingData* _klass;
   Method* _holder;
-  CompileTrainingData* _last_toplevel_compiles[CompLevel_count - 1];
-  int _highest_top_level;
-  int _level_mask;  // bit-set of all possible levels
-  bool _was_toplevel;
+  enum { CURRENT = 0, NEXT = 1  };
+  struct TrainingIteration {
+    CompileTrainingData* _last_toplevel_compiles[CompLevel_count - 1];
+    int _highest_top_level;
+    int _level_mask; // bit-set of all possible levels
+    bool _was_toplevel;
+    TrainingIteration() : _highest_top_level(CompLevel_none), _level_mask(0), _was_toplevel(false) {
+      for (int i = 0; i < CompLevel_count - 1; i++) {
+        _last_toplevel_compiles[i] = nullptr;
+      }
+    }
+  };
+  TrainingIteration _iterations[2]; // CURRENT and NEXT
   // metadata snapshots of final state:
   MethodCounters* _final_counters;
   MethodData*     _final_profile;
@@ -766,12 +775,6 @@ class MethodTrainingData : public TrainingData {
   MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
     _klass = ktd;
     _holder = method;
-    for (int i = 0; i < CompLevel_count - 1; i++) {
-      _last_toplevel_compiles[i] = nullptr;
-    }
-    _highest_top_level = CompLevel_none;
-    _level_mask = 0;
-    _was_toplevel = false;
     _invocation_count = 0;
     _backedge_count = 0;
   }
@@ -784,9 +787,9 @@ class MethodTrainingData : public TrainingData {
   KlassTrainingData* klass()  const { return _klass; }
   bool has_holder()           const { return _holder != nullptr; }
   Method* holder()            const { return _holder; }
-  bool only_inlined()         const { return !_was_toplevel; }
-  bool saw_level(CompLevel l) const { return (_level_mask & level_mask(l)) != 0; }
-  int highest_top_level()     const { return _highest_top_level; }
+  bool only_inlined()         const { return !_iterations[CURRENT]._was_toplevel; }
+  bool saw_level(CompLevel l) const { return (_iterations[CURRENT]._level_mask & level_mask(l)) != 0; }
+  int highest_top_level()     const { return _iterations[CURRENT]._highest_top_level; }
   MethodData* final_profile() const { return _final_profile; }
   int invocation_count() const { return _invocation_count; }
   int backedge_count() const { return _backedge_count; }
@@ -802,20 +805,20 @@ class MethodTrainingData : public TrainingData {
 
   CompileTrainingData* last_toplevel_compile(int level) const {
     if (level > CompLevel_none) {
-      return _last_toplevel_compiles[level - 1];
+      return _iterations[CURRENT]._last_toplevel_compiles[level - 1];
     }
     return nullptr;
   }
 
   void notice_compilation(int level, bool inlined = false) {
     if (!inlined) {
-      _was_toplevel = true;
+      _iterations[NEXT]._was_toplevel = true;
     }
-    _level_mask |= level_mask(level);
+    _iterations[NEXT]._level_mask |= level_mask(level);
   }
 
   void notice_toplevel_compilation(int level) {
-    _highest_top_level = MAX2(_highest_top_level, level);
+    _iterations[NEXT]._highest_top_level = MAX2(_iterations[NEXT]._highest_top_level, level);
   }
 
   static MethodTrainingData* make(const methodHandle& method,
@@ -838,7 +841,12 @@ class MethodTrainingData : public TrainingData {
   template<typename Function>
   void iterate_compiles(Function fn) const { // lambda enabled API
     for (int i = 0; i < CompLevel_count - 1; i++) {
-      CompileTrainingData* ctd = _last_toplevel_compiles[i];
+      CompileTrainingData* ctd;
+      ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
+      if (ctd != nullptr) {
+        fn(ctd);
+      }
+      ctd = _iterations[NEXT]._last_toplevel_compiles[i];
       if (ctd != nullptr) {
         fn(ctd);
       }

@@ -221,8 +221,11 @@ void MethodTrainingData::print_on(outputStream* st, bool name_only) const {
   if (!has_holder()) {
     st->print("[SYM]");
   }
-  if (_level_mask) {
-    st->print(" LM%d", _level_mask);
+  if (_iterations[CURRENT]._level_mask) {
+    st->print(" LMC%d", _iterations[CURRENT]._level_mask);
+  }
+  if (_iterations[NEXT]._level_mask) {
+    st->print(" LMN%d", _iterations[NEXT]._level_mask);
   }
   st->print(" mc=%p mdo=%p", _final_counters, _final_profile);
 }
@@ -244,9 +247,9 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
   TrainingDataLocker l;
   CompileTrainingData* ctd = CompileTrainingData::allocate(mtd, level, compile_id);
   if (ctd != nullptr) {
-    CompileTrainingData*& last_ctd = mtd->_last_toplevel_compiles[level - 1];
+    CompileTrainingData*& last_ctd = mtd->_iterations[MethodTrainingData::NEXT]._last_toplevel_compiles[level - 1];
     if (last_ctd != nullptr) {
-      assert(mtd->highest_top_level() >= level, "consistency");
+      assert(mtd->_iterations[MethodTrainingData::NEXT]._highest_top_level >= level, "consistency");
       if (last_ctd->compile_id() < compile_id) {
         last_ctd->clear_init_deps();
         last_ctd = ctd;
@@ -261,6 +264,10 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
 
 
 void CompileTrainingData::dec_init_deps_left_release(KlassTrainingData* ktd) {
+  if (_init_deps_left == -1) {
+    assert(need_data(), "init_deps_left can only be -1 when we are in training mode");
+    return;
+  }
   LogStreamHandle(Trace, training) log;
   if (log.is_enabled()) {
     log.print("CTD "); print_on(&log); log.cr();
@@ -376,8 +383,23 @@ void MethodTrainingData::prepare(Visitor& visitor) {
     _invocation_count = holder()->invocation_count();
     _backedge_count = holder()->backedge_count();
   }
+  // Merge CURRENT and NEXT iterations
+  _iterations[CURRENT]._highest_top_level = MAX2(_iterations[CURRENT]._highest_top_level, _iterations[NEXT]._highest_top_level);
+  _iterations[CURRENT]._level_mask = _iterations[CURRENT]._level_mask | _iterations[NEXT]._level_mask;
+  _iterations[CURRENT]._was_toplevel = _iterations[CURRENT]._was_toplevel || _iterations[NEXT]._was_toplevel;
+  _iterations[NEXT]._highest_top_level = CompLevel_none;
+  _iterations[NEXT]._level_mask = 0;
+  _iterations[NEXT]._was_toplevel = false;
   for (int i = 0; i < CompLevel_count - 1; i++) {
-    CompileTrainingData* ctd = _last_toplevel_compiles[i];
+    CompileTrainingData*& ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
+    CompileTrainingData*& new_ctd = _iterations[NEXT]._last_toplevel_compiles[i];
+    if (new_ctd != nullptr) {
+      if (ctd != nullptr) {
+        ctd->clear_init_deps();
+      }
+      ctd = new_ctd;
+      new_ctd = nullptr;
+    }
     if (ctd != nullptr) {
       ctd->prepare(visitor);
     }
@@ -496,7 +518,6 @@ void TrainingData::init_dumptime_table(TRAPS) {
   if (need_data()) {
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     TrainingDataLocker l;
-    TrainingDataLocker::snapshot();
     ResourceMark rm;
     Visitor visitor(training_data_set()->size());
     training_data_set()->iterate([&](TrainingData* td) {
@@ -505,6 +526,7 @@ void TrainingData::init_dumptime_table(TRAPS) {
         _dumptime_training_data_dictionary->append(td);
       }
     });
+    TrainingDataLocker::snapshot();
   }
 
   if (AOTVerifyTrainingData) {
@@ -609,7 +631,12 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
     }
   }
   for (int i = 0; i < CompLevel_count - 1; i++) {
-    CompileTrainingData* ctd = _last_toplevel_compiles[i];
+    CompileTrainingData* ctd;
+    ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
+    if (ctd != nullptr) {
+      ctd->cleanup(visitor);
+    }
+    ctd = _iterations[NEXT]._last_toplevel_compiles[i];
     if (ctd != nullptr) {
       ctd->cleanup(visitor);
     }
@@ -774,7 +801,8 @@ void MethodTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
   iter->push(&_klass);
   iter->push((Method**)&_holder);
   for (int i = 0; i < CompLevel_count - 1; i++) {
-    iter->push(&_last_toplevel_compiles[i]);
+    iter->push(&(_iterations[CURRENT]._last_toplevel_compiles[i]));
+    iter->push(&(_iterations[NEXT]._last_toplevel_compiles[i]));
   }
   iter->push(&_final_profile);
   iter->push(&_final_counters);
