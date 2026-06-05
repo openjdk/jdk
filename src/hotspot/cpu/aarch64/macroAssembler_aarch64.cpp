@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6105,22 +6106,43 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 }
 
 // Compare Strings
-
-// For Strings we're passed the address of the first characters in a1
-// and a2 and the length in cnt1.
-// There are two implementations.  For arrays >= 8 bytes, all
-// comparisons (including the final one, which may overlap) are
-// performed 8 bytes at a time.  For strings < 8 bytes, we compare a
-// halfword, then a short, and then a byte.
+//
+// Inputs:
+//   a1, a2  - byte addresses of the first elements
+//   cnt1    - byte length
+//
+// Invariants and memory contract:
+//   - cnt1 is the number of bytes to compare.
+//   - The 8 bytes immediately preceding a1/a2 are readable
+//     (Java object header guarantee). This allows a pre-read at
+//     (base + len - 8) even when len < 8.
+//   - No read is performed beyond (base + len - 1).
+//
+// Strategy:
+//   1) Preload the final 8-byte window at (base + len - 8).
+//      This covers the last up to 8 bytes and serves as a fast-fail check.
+//   2) For len <= 8, handle entirely in SMALL using shift/mask logic.
+//   3) For medium sizes (9..23) and post-loop remainders,
+//      TAIL15 compares head and tail windows with overlap as needed.
+//   4) For larger inputs (>= 24), MAINLOOP processes 16-byte blocks
+//      using LDP + CMP/CCMP to allow a single branch on inequality.
+//      Any remaining <16 bytes fall back to TAIL15.
+//
+// SMALL path:
+//   For lengths <= 8, the preloaded 8-byte window is shifted
+//   so that only the valid low-order bytes participate in comparison.
 
 void MacroAssembler::string_equals(Register a1, Register a2,
-                                   Register result, Register cnt1)
+                                   Register result, Register cnt1,
+                                   Register a1_hi, Register a2_hi)
 {
-  Label SAME, DONE, SHORT, NEXT_WORD;
-  Register tmp1 = rscratch1;
-  Register tmp2 = rscratch2;
+  Label MAINLOOP, TAIL15, SMALL, END, DONE, SMALL2;
+  Register a1_low = rscratch1;
+  Register a2_low = rscratch2;
 
-  assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
+  assert_different_registers(a1, a2, cnt1, a1_hi, a2_hi, a1_low, a2_low);
+  assert(result != a1, "result must not alias a1");
+  assert(result != a2, "result must not alias a2");
 
 #ifndef PRODUCT
   {
@@ -6130,61 +6152,71 @@ void MacroAssembler::string_equals(Register a1, Register a2,
   }
 #endif
 
-  mov(result, false);
+  subs(cnt1, cnt1, 8);
+  ldr(a1_low, Address(a1, cnt1));       // Load last 8 bytes from a1
+  ldr(a2_low, Address(a2, cnt1));       // Load last 8 bytes from a2
+  br(Assembler::LE, SMALL);
+  subs(cnt1, cnt1, 16);
+  br(Assembler::LT, TAIL15);
+  cmp(a1_low, a2_low);
+  br(Assembler::NE, END);
+  // ---- MAINLOOP: process two 8B via ldp/ccmp ----
+  bind(MAINLOOP);
+    ldp(a1_low, a1_hi, Address(post(a1,16)));       // A1: low/high 8B
+    ldp(a2_low, a2_hi, Address(post(a2,16)));       // A2: low/high 8B
+    cmp(a1_low, a2_low);
+    ccmp(a1_hi, a2_hi, /*nzcv=*/0, Assembler::EQ);
+    br(Assembler::NE, END);
+    subs(cnt1, cnt1, 16);
+    br(Assembler::HS, MAINLOOP);           // while remaining >= 16
 
-  // Check for short strings, i.e. smaller than wordSize.
-  subs(cnt1, cnt1, wordSize);
-  br(Assembler::LT, SHORT);
-  // Main 8 byte comparison loop.
-  bind(NEXT_WORD); {
-    ldr(tmp1, Address(post(a1, wordSize)));
-    ldr(tmp2, Address(post(a2, wordSize)));
-    subs(cnt1, cnt1, wordSize);
-    eor(tmp1, tmp1, tmp2);
-    cbnz(tmp1, DONE);
-  } br(GT, NEXT_WORD);
-  // Last longword.  In the case where length == 4 we compare the
-  // same longword twice, but that's still faster than another
-  // conditional branch.
-  // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
-  // length == 4.
-  ldr(tmp1, Address(a1, cnt1));
-  ldr(tmp2, Address(a2, cnt1));
-  eor(tmp2, tmp1, tmp2);
-  cbnz(tmp2, DONE);
-  b(SAME);
+  adds(zr, cnt1, 16);           // If cnt1 == -16, skip tail handling.
+  br(Assembler::EQ, END);
 
-  bind(SHORT);
-  Label TAIL03, TAIL01;
+  // ---- TAIL15: medium sizes and post-loop tail.
+  // Entered when (initial len < 24) or when MAINLOOP leaves a <16B tail.
+  // At entry, cnt1 is in [-15 .. -1] ----
+  bind(TAIL15);
+    // cnt1 := remaining length - 8 ; if remaining lengths <= 8 goto SMALL2
+    adds(cnt1, cnt1, 8);
+    br(Assembler::LE, SMALL2);
+    cmp(a1_low, a2_low);
 
-  tbz(cnt1, 2, TAIL03); // 0-7 bytes left.
-  {
-    ldrw(tmp1, Address(post(a1, 4)));
-    ldrw(tmp2, Address(post(a2, 4)));
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  bind(TAIL03);
-  tbz(cnt1, 1, TAIL01); // 0-3 bytes left.
-  {
-    ldrh(tmp1, Address(post(a1, 2)));
-    ldrh(tmp2, Address(post(a2, 2)));
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  bind(TAIL01);
-  tbz(cnt1, 0, SAME); // 0-1 bytes left.
-    {
-    ldrb(tmp1, a1);
-    ldrb(tmp2, a2);
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  // Arrays are equal.
-  bind(SAME);
-  mov(result, true);
+    // We have more than 8 bytes unchecked and 8 bytes from end previously read
+    // One ldp can cover all remained bytes
+    ldp(a1_low, a1_hi, Address(a1));         // A1 high 8B
+    ldp(a2_low, a2_hi, Address(a2));         // A2 high 8B
+    ccmp(a1_hi, a2_hi, 0, Assembler::EQ);
+    ccmp(a1_low, a2_low, /*nzcv=*/0, Assembler::EQ);
+    b(END);
+  // Tail <= 16B case: compare head 8 bytes and tail 8 bytes (tail 8 bytes was preloaded).
+  bind(SMALL2);
+    ldr(a1_hi, Address(a1));
+    ldr(a2_hi, Address(a2));
+    cmp(a1_low, a2_low);
+    ccmp(a1_hi, a2_hi, /*nzcv=*/0, Assembler::EQ);
+    b(END);
+  // For lengths <= 8 we avoid 4/2/1-byte tail branches and extra loads.
+  // Compute shift = (8 - len) * 8 and right-shift the preloaded 8B window
+  // so that only the valid low-order len bytes remain for comparison.
+  //
+  // The load at (base + len - 8) produces an 8B window ending at the last
+  // string byte. When len < 8, the leading bytes in this window are
+  // outside the logical string. On little-endian AArch64, lower-address
+  // bytes occupy the least significant bits of the 64-bit word, so a
+  // logical right shift cleanly discards those unused prefix bytes.
+  //
+  // a2_hi is reused as a temporary register holding the shift amount.
+  bind(SMALL);
+    neg(a2_hi, cnt1, LSL, 3);
+    lsrv(a1_low, a1_low, a2_hi);
+    lsrv(a2_low, a2_low, a2_hi);
+    adds(zr, cnt1, 8);         // Prepare flags for length==0 handling
+    ccmp(a1_low, a2_low, /*nzcv=*/4, Assembler::NE);
 
-  // That's it.
+  bind(END);
+    cset(result, Assembler::EQ);
+
   bind(DONE);
   BLOCK_COMMENT("} string_equals");
 }

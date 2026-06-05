@@ -1124,6 +1124,43 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
   BIND(DONE);
 }
 
+void C2_MacroAssembler::string_equals_sve(Register a1, Register a2,
+                                      Register result, Register cnt1,
+                                      FloatRegister ztmp1, FloatRegister ztmp2,
+                                      PRegister pg, PRegister pdata) {
+  Label LOOP, TAIL, END;
+  Register vec_len = rscratch1;
+  Register tmp_cnt1     = rscratch2;
+  sve_cntb(vec_len);
+  // Keep original cnt1 for the len <= VL tail decision.
+  // If length(cnt1) <= VL go to the tail
+  subs(tmp_cnt1, cnt1, vec_len);
+  br(Assembler::LE, TAIL);
+  sve_ptrue(pg, B);
+  bind(LOOP);
+    sve_ld1b(ztmp1, B, pg, Address(a1));
+    sve_ld1b(ztmp2, B, pg, Address(a2));
+    add(a1, a1, vec_len);
+    add(a2, a2, vec_len);
+    sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+    br(Assembler::NE, END);
+    subs(tmp_cnt1, tmp_cnt1, vec_len);
+    br(Assembler::HI, LOOP);
+  // Final overlapped full-VL compare.
+  sve_ld1b(ztmp1, B, pg, Address(a1, tmp_cnt1));
+  sve_ld1b(ztmp2, B, pg, Address(a2, tmp_cnt1));
+  sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+  b(END);
+
+  bind(TAIL);
+    sve_whilelt(pg, B, zr, cnt1);
+    sve_ld1b(ztmp1, B, pg, Address(a1));
+    sve_ld1b(ztmp2, B, pg, Address(a2));
+    sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+  bind(END);
+    cset(result, Assembler::EQ);
+}
+
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
     Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
