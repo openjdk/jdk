@@ -4487,23 +4487,69 @@ static const TypeKlassPtr* exact_if_leaf(const TypeKlassPtr* tk) {
   return tk;
 }
 
+static const TypeKlassPtr* exact_if_leaf(const TypeKlassPtr* tk) {
+  if (tk->klass_is_exact()) {
+    return tk;
+  }
+
+  const Type* elem_t = tk;
+  if (elem_t->isa_aryklassptr()) {
+    int ignored;
+    elem_t = tk->is_aryklassptr()->base_element_type(ignored);
+  }
+
+  if (elem_t->isa_instklassptr()) {
+    ciInstanceKlass* elem_ik = elem_t->is_instklassptr()->instance_klass();
+    if (!elem_ik->has_subklass()) {
+      if (!elem_ik->is_final()) {
+        Compile::current()->dependencies()->assert_leaf_type(elem_ik);
+      }
+      return tk->cast_to_exactness(true);
+    }
+  }
+
+  return tk;
+}
+
 //----------------------------static_subtype_check-----------------------------
 Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk, bool skip) {
   if (skip) {
     return SSC_full_test;       // Let caller generate the general case.
   }
 
+   if (!superk->is_loaded() || !subk->is_loaded()) {
+    return SSC_full_test;
+  }
+
   bool superk_is_exact = superk->klass_is_exact();
-  const TypeKlassPtr* subk_e   = exact_if_leaf(subk);
+  const TypeKlassPtr* subk_e = exact_if_leaf(subk);
   const TypeKlassPtr* superk_e = exact_if_leaf(superk->cast_to_exactness(false));
 
-  if (subk_e->higher_equal(superk_e) && (superk_is_exact || superk_e->klass_is_exact())) {
+  bool subk_e_higher = subk_e->higher_equal(superk_e);
+
+  if (subk_e_higher && (superk_is_exact || superk_e->klass_is_exact())) {
     return SSC_always_true;
   }
 
-  const Type* tboth = subk_e->filter_speculative(superk_e);
-  if (tboth == Type::TOP && (subk_e->klass_is_exact() || superk_e->klass_is_exact())) {
+  if (!subk_e_higher && subk_e->klass_is_exact()) {
     return SSC_always_false;
+  }
+
+  const Type* tboth = subk_e->filter_speculative(superk_e);
+  if (tboth == Type::TOP) {
+    if (superk_e->klass_is_exact()) {
+      return SSC_always_false;
+    }
+
+    ciInstanceKlass* ik_super = superk_e->isa_instklassptr() ? superk_e->is_instklassptr()->instance_klass() : nullptr;
+    ciInstanceKlass* ik_sub = subk_e->isa_instklassptr() ? subk_e->is_instklassptr()->instance_klass() : nullptr;
+    if (ik_super != nullptr && ik_sub != nullptr) {
+      if(!ik_sub->is_subtype_of(ik_super) && !ik_super->is_subtype_of(ik_sub)) {
+        return SSC_always_false;
+      }
+    } else {
+      return SSC_always_false;
+    }
   }
 
   const Type* superelem = superk_e;

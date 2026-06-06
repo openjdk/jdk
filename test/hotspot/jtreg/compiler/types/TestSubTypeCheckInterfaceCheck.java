@@ -33,45 +33,49 @@
 package compiler.types;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 
 public class TestSubTypeCheckInterfaceCheck {
     static abstract class B {}
     static final class C extends B {}
 
     interface I {}
-    static final class D implements I {}
+    static class D implements I {}
+    static class E implements I {}
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:CompileCommand=compileonly,compiler.types.TestSubTypeCheckInterfaceCheck::*");
     }
 
-    boolean testHelper2(Object o) {
-        return true;
+    int testHelper2(Object o) {
+        return 1;
     }
 
     @Test
     @IR(counts = {IRNode.SUBTYPE_CHECK, "1"},
         phase = CompilePhase.AFTER_PARSING)
-    boolean test1(Object o) {
+    int test1(Object o) {
         Object o1 = (I) o ;
         if (o1 instanceof B) {
             return testHelper2(o1);
         } else {
-            return false;
+            return 2;;
         }
     }
 
     @Run(test = "test1")
-    boolean runTest() {
-        Object[] arr = new Object[] { new C(), new D() };
-        for (int i = 0; i < 2; i++){
+    void runTest() {
+        int sum = 0;
+        Object[] arr = new Object[] { new C(), new D(), new E() };
+        for (int i = 0; i < 3; i++){
             Object o = arr[i];
             if (o instanceof I) {
-                return test1(o);
+                sum += test1(o);
             } else {
-                return false;
+                sum += 3;
             }
         }
-        return true;
+        Asserts.assertEquals(sum, 7);
+        return;
     }
 }
