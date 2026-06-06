@@ -78,7 +78,7 @@ public:
   }
 
   void work(uint worker_id) override {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_coalesce_and_fill, ShenandoahPhaseTimings::ScanClusters, worker_id);
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_coalesce_and_fill, ShenandoahPhaseTimings::Work, worker_id);
     for (uint region_idx = worker_id; region_idx < _coalesce_and_fill_region_count; region_idx += _nworkers) {
       ShenandoahHeapRegion* r = _coalesce_and_fill_region_array[region_idx];
       if (r->is_humongous()) {
@@ -794,11 +794,6 @@ void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
 
 size_t ShenandoahOldGeneration::used() const {
   return _free_set->old_used();
-}
-
-size_t ShenandoahOldGeneration::bytes_allocated_since_gc_start() const {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
-  return 0;
 }
 
 size_t ShenandoahOldGeneration::get_affiliated_region_count() const {

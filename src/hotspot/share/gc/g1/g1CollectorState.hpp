@@ -111,11 +111,6 @@ public:
   // Pause kind queries
   inline static void assert_is_young_pause(Pause type);
 
-  inline static bool is_young_only_pause(Pause type);
-  inline static bool is_concurrent_start_pause(Pause type);
-  inline static bool is_prepare_mixed_pause(Pause type);
-  inline static bool is_mixed_pause(Pause type);
-
   inline static bool is_concurrent_cycle_pause(Pause type);
 };
 

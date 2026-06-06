@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Globals;
+import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.model.JPackageException;
@@ -491,8 +492,35 @@ public class MainTest extends JUnitAdapter {
 
             var os = OperatingSystem.current();
             var exitCode = Main.run(os, () -> {
-                CliBundlingEnvironment bundlingEnv = JPackageMockUtils.createBundlingEnvironment(os);
-                return bundlingEnv;
+                return new CliBundlingEnvironment() {
+                    @Override
+                    public Optional<BundlingOperationDescriptor> defaultOperation() {
+                        switch (os) {
+                            case LINUX -> {
+                                return Optional.of(StandardBundlingOperation.CREATE_LINUX_DEB.descriptor());
+                            }
+                            case WINDOWS -> {
+                                return Optional.of(StandardBundlingOperation.CREATE_WIN_MSI.descriptor());
+                            }
+                            case MACOS -> {
+                                return Optional.of(StandardBundlingOperation.CREATE_MAC_PKG.descriptor());
+                            }
+                            default -> {
+                                throw new AssertionError();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void createBundle(BundlingOperationDescriptor op, Options cmdline) {
+                        if (StandardBundlingOperation.CREATE_APP_IMAGE.contains(StandardBundlingOperation.valueOf(op).orElseThrow())) {
+                            CliBundlingEnvironment bundlingEnv = JPackageMockUtils.createBundlingEnvironment(os);
+                            bundlingEnv.createBundle(op, cmdline);
+                        } else {
+                            throw new AssertionError();
+                        }
+                    }
+                };
             }, new PrintWriter(stdout), new PrintWriter(stderr), args);
 
             return new ExecutionResult(lines(stdout.toString()), lines(stderr.toString()), exitCode);

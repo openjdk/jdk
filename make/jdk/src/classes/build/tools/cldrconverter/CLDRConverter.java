@@ -1228,7 +1228,7 @@ public class CLDRConverter {
                     String zone001 = handlerMetaZones.zidMap().get(meta);
                     return zone001 == null ? "" :
                             String.format("        \"%s\", \"%s\", \"%s\",",
-                                            id, meta, zone001);
+                                escape(id), escape(meta), escape(zone001));
                 })
                 .filter(s -> !s.isEmpty())
                 .sorted();
