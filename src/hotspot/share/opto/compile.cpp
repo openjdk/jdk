@@ -4487,30 +4487,6 @@ static const TypeKlassPtr* exact_if_leaf(const TypeKlassPtr* tk) {
   return tk;
 }
 
-static const TypeKlassPtr* exact_if_leaf(const TypeKlassPtr* tk) {
-  if (tk->klass_is_exact()) {
-    return tk;
-  }
-
-  const Type* elem_t = tk;
-  if (elem_t->isa_aryklassptr()) {
-    int ignored;
-    elem_t = tk->is_aryklassptr()->base_element_type(ignored);
-  }
-
-  if (elem_t->isa_instklassptr()) {
-    ciInstanceKlass* elem_ik = elem_t->is_instklassptr()->instance_klass();
-    if (!elem_ik->has_subklass()) {
-      if (!elem_ik->is_final()) {
-        Compile::current()->dependencies()->assert_leaf_type(elem_ik);
-      }
-      return tk->cast_to_exactness(true);
-    }
-  }
-
-  return tk;
-}
-
 //----------------------------static_subtype_check-----------------------------
 Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk, bool skip) {
   if (skip) {
