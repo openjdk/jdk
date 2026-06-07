@@ -319,6 +319,7 @@ private:
   bool is_CompileTrainingData() const { return as_CompileTrainingData() != nullptr; }
 
   virtual void prepare(Visitor& visitor) = 0;
+  virtual void merge(Visitor& visitor) = 0;
   virtual void cleanup(Visitor& visitor) = 0;
 
   static void initialize() NOT_CDS_RETURN;
@@ -343,6 +344,15 @@ private:
         }
         _deps = nullptr;
       }
+    }
+    void at_put(int i, E dep) const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
+      assert(i >= 0 && i < length(), "oob");
+      if (_deps_dyn != nullptr) {
+        return _deps_dyn->at_put(i, dep);
+      } else if (_deps != nullptr) {
+        return _deps->at_put(i, dep);
+      } else ShouldNotReachHere();
     }
   public:
     DepList() {
@@ -407,6 +417,18 @@ private:
         }
       }
       return false; // not found
+    }
+    void replace_or_append(E old_dep, E new_dep) {
+      int i = 0;
+      for (; i < length(); i++) {
+        if (at(i) == old_dep) {
+          at_put(i, new_dep);
+          break;
+        }
+      }
+      if (i == length()) {
+        append(new_dep);
+      }
     }
 
 #if INCLUDE_CDS
@@ -500,6 +522,7 @@ class KlassTrainingData : public TrainingData {
   virtual void print_value_on(outputStream* st) const { print_on(st, true); }
 
   virtual void prepare(Visitor& visitor);
+  virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
 
   MetaspaceObj::Type type() const {
@@ -562,6 +585,7 @@ public:
     public:
       bool operator==(const Arguments<>&) const { return true; }
       void metaspace_pointers_do(MetaspaceClosure *iter) { }
+      void prepare(Visitor& visitor) { }
     };
     template <typename T, typename... Ts> class Arguments<T, Ts...> {
     private:
@@ -583,6 +607,15 @@ public:
       template<typename U = T, ENABLE_IF(!(std::is_pointer<U>::value && std::is_base_of<MetaspaceObj, typename std::remove_pointer<U>::type>::value))>
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _remaining.metaspace_pointers_do(iter);
+      }
+      template<typename U = T, ENABLE_IF(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value)>
+      void prepare(Visitor& visitor) {
+        _first->prepare(visitor);
+        _remaining.prepare(visitor);
+      }
+      template<typename U = T, ENABLE_IF(!(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value))>
+      void prepare(Visitor& visitor) {
+        _remaining.prepare(visitor);
       }
     };
 
@@ -608,6 +641,7 @@ public:
         ArgumentsType arguments() const { return _arguments; }
         bool operator==(const Record& that) { return _arguments == that._arguments; }
         void metaspace_pointers_do(MetaspaceClosure *iter) { _arguments.metaspace_pointers_do(iter); }
+        void prepare(Visitor& visitor) { _arguments.prepare(visitor); }
       };
       DepList<Record> _data;
     public:
@@ -624,13 +658,17 @@ public:
       void append_if_missing(const ReturnType& result, const Args&... args) {
         TrainingDataLocker l;
         if (l.can_add()) {
-          _data.append_if_missing(Record(result, ArgumentsType(args...)));
+          Record r(result, ArgumentsType(args...));
+          _data.replace_or_append(r, r); // == operator will match on arguments only.
         }
       }
 #if INCLUDE_CDS
       void remove_unshareable_info() { _data.remove_unshareable_info(); }
 #endif
-      void prepare() {
+      void prepare(Visitor& visitor) {
+        for (int i = 0; i < _data.length(); i++) {
+          _data.at(i).prepare(visitor);
+        }
         _data.prepare();
       }
       void metaspace_pointers_do(MetaspaceClosure *iter) {
@@ -649,8 +687,8 @@ public:
       ciMethod__inline_instructions_size.remove_unshareable_info();
     }
 #endif
-    void prepare() {
-      ciMethod__inline_instructions_size.prepare();
+    void prepare(Visitor& visitor) {
+      ciMethod__inline_instructions_size.prepare(visitor);
     }
     void metaspace_pointers_do(MetaspaceClosure *iter) {
       ciMethod__inline_instructions_size.metaspace_pointers_do(iter);
@@ -711,6 +749,7 @@ public:
   void notice_jit_observation(ciEnv* env, ciBaseObject* what) NOT_CDS_RETURN;
 
   virtual void prepare(Visitor& visitor);
+  virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
 
   void print_on(outputStream* st, bool name_only) const;
@@ -836,6 +875,7 @@ class MethodTrainingData : public TrainingData {
   virtual void print_value_on(outputStream* st) const { print_on(st, true); }
 
   virtual void prepare(Visitor& visitor);
+  virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
 
   template<typename Function>
