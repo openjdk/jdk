@@ -55,18 +55,18 @@ public class TestSubTypeCheckInterfaceCheck {
     @IR(counts = {IRNode.SUBTYPE_CHECK, "1"},
         phase = CompilePhase.AFTER_PARSING)
     int test1(Object o) {
-        Object o1 = (I) o ;
+        Object o1 = (I) o;
         if (o1 instanceof B) {
             return testHelper2(o1);
         } else {
-            return 2;;
+            return 2;
         }
     }
 
     @Run(test = "test1")
     void runTest() {
         int sum = 0;
-        Object[] arr = new Object[] { new C(), new D(), new E() };
+        Object[] arr = new Object[] {new C(), new D(), new E()};
         for (int i = 0; i < 3; i++){
             Object o = arr[i];
             if (o instanceof I) {
