@@ -33,8 +33,8 @@
  * represent a Java language declaration in a class or interface not available
  * at compile time, allowing {@linkplain ##accessor programmatic use} of this
  * declaration within encapsulation and security restrictions.
- *
- * <p>{@link Array} provides static methods to dynamically create and
+ * <p>
+ * {@link Array} provides static methods to dynamically create and
  * access arrays.
  *
  * <h2 id="accessor">Using the Declarations</h2>
@@ -54,11 +54,25 @@
  * the use happened on the member in A, while in the Java Language and JVM,
  * the use can happen on an inherited member in another class or interface, and
  * access control proceeds differently. (JLS {@jls 6.6.1}, JVMS {@jvms 5.4.4})
- *
- * <p>In contrast, {@link MethodHandles.Lookup} performs a single access check
+ * <p>
+ * Consider this example:
+ * {@snippet lang=java :
+ * class A { public void act() {} }
+ * public class B extends A {}
+ * }
+ * A call {@code B.class.getMethod("act", null)} returns the {@code Method}
+ * object representing the {@code act()} method declared in {@code A}.  There
+ * is no distinct {@code Method} for the reference {@code B::act()} because
+ * there is no distinct declaration.  {@link Method#invoke(Object, Object...)
+ * invoke} on this {@code Method} object from a caller that can access {@code B}
+ * but is not in the same package as {@code A} fails access control incorrectly.
+ * <p>
+ * In contrast, {@link MethodHandles.Lookup} performs a single access check
  * to produce a {@link MethodHandle} that performs no additional access checks.
  * If the accessed declaration is a member, the single check is performed
- * against the correct class or interface of the member.
+ * against the correct class or interface of the member.  In the example above,
+ * {@code MethodHandles.lookup().findVirtual(B.class, "act", MethodType.methodType(void.class))}
+ * performs the right access checks for the same caller.
  *
  * <h3 id="conversions">Value Conversions</h3>
  * The accessors perform conversions from accessor arguments to values accepted
