@@ -3500,6 +3500,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @return a string representation of this {@code BigDecimal}
      * without an exponent field.
      * @since 1.5
+     * @see <a href="#algorithmicComplexity">Algorithmic Complexity</a>
      * @see #toString()
      * @see #toEngineeringString()
      */
