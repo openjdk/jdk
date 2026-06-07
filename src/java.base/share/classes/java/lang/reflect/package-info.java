@@ -44,13 +44,13 @@
  * using {@link MethodHandles.Lookup} to produce a {@link MethodHandle} instead.
  *
  * <h3 id="access-control">Access Control</h3>
- * An accessor of a reflected object perform access control against the caller
+ * An accessor of a reflected object performs access control against the caller
  * every time the accessor is used, unless that reflected object {@linkplain
  * AccessibleObject#setAccessible(boolean) suppresses checks}.  For a class or
  * interface A, core reflection represents a member declared in A and the same
  * member inherited by another reference type from A with equivalent reflective
  * objects, with A as the {@linkplain Member#getDeclaringClass() declaring class
- * or interface}.  Therefore, access checks of such a reflected object assumes
+ * or interface}.  Therefore, access checks of such a reflected object assume
  * the use happened on the member in A, while in the Java Language and JVM,
  * the use can happen on an inherited member in another class or interface, and
  * access control proceeds differently. (JLS {@jls 6.6.1}, JVMS {@jvms 5.4.4})
@@ -137,7 +137,7 @@
  * </tr>
  * </tbody>
  * </table>
- * The conversions to {@code Object} accessor return value never throw an
+ * The conversions to accessor return type {@code Object} never throw an
  * {@code IllegalArgumentException}.
  *
  * <h2 id="LanguageJvmModel">Java programming language and JVM modeling in core reflection</h2>

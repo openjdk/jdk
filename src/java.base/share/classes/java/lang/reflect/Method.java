@@ -536,11 +536,10 @@ public final class Method extends Executable {
      *              is not an instance of the class or interface
      *              declaring the underlying method (or of a subclass
      *              or implementor thereof); if the number of actual
-     *              and formal parameters differ; if an unwrapping
-     *              conversion for primitive arguments fails; or if,
-     *              after possible unwrapping, a parameter value
-     *              cannot be converted to the corresponding formal
-     *              parameter type by a method invocation conversion.
+     *              and formal parameters differ; or if the {@linkplain
+     *              java.lang.reflect##input-conversions conversion}
+     *              of any method call argument from {@code Object} to
+     *              the type of its corresponding formal parameter fails.
      * @throws    InvocationTargetException if the underlying method
      *              throws an exception.
      * @throws    NullPointerException      if the specified object is null

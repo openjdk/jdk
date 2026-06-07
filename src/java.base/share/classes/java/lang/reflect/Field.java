@@ -926,7 +926,7 @@ class Field extends AccessibleObject implements Member {
     /**
      * Sets the static or instance field represented by this {@code Field}
      * to the new value {@linkplain java.lang.reflect##input-conversions
-     * converted} from the specified {@code Object} value.  The operation
+     * converted} from the specified {@code boolean} value.  The operation
      * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
