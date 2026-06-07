@@ -684,9 +684,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
      *              underlying field (or a subclass or implementor
-     *              thereof), or if the field value cannot be
-     *              converted to the type {@code long} by a
-     *              widening conversion.
+     *              thereof), or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -723,9 +721,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
      *              underlying field (or a subclass or implementor
-     *              thereof), or if the field value cannot be
-     *              converted to the type {@code float} by a
-     *              widening conversion.
+     *              thereof), or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -762,9 +758,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
      *              underlying field (or a subclass or implementor
-     *              thereof), or if the field value cannot be
-     *              converted to the type {@code double} by a
-     *              widening conversion.
+     *              thereof), or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked

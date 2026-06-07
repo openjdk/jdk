@@ -67,7 +67,7 @@
  * If the specified conversion does not exist or fails at run-time, these
  * accessors throw an {@link IllegalArgumentException}.
  *
- * <p id="input-conversions">For accessor arguments to underlying values:
+ * <h4 id="input-conversions">Input Conversions</h4>
  * <table class="striped">
  * <caption style="display:none">accessor argument to underlying value</caption>
  * <thead>
@@ -103,7 +103,7 @@
  * </tbody>
  * </table>
  *
- * <p id="output-conversions">For underlying values to accessor return values:
+ * <h4 id="output-conversions">Output Conversions</h4>
  * <table class="striped">
  * <caption style="display:none">underlying value to accessor return type</caption>
  * <thead>
