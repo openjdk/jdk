@@ -4511,7 +4511,7 @@ Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* su
     return SSC_always_false;
   }
 
-  const Type* tboth = subk_e->filter_speculative(superk_e);
+  const Type* tboth = subk_e->filter(superk_e);
   if (tboth == Type::TOP) {
     if (superk_e->klass_is_exact()) {
       return SSC_always_false;

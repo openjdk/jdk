@@ -37,6 +37,16 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
   assert(sub_t != Type::TOP && !TypePtr::NULL_PTR->higher_equal(sub_t), "should be not null");
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();
 
+  // Oop can't be a subtype of abstract type that has no subclass.
+  if (sub_t->isa_oopptr() && superk->isa_instklassptr() && superk->klass_is_exact()) {
+    ciKlass* superklass = superk->exact_klass();
+    if (!superklass->is_interface() && superklass->is_abstract() &&
+        !superklass->as_instance_klass()->has_subklass()) {
+      Compile::current()->dependencies()->assert_leaf_type(superklass);
+      return TypeInt::CC_GT;
+    }
+  }
+
   if (subk != nullptr) {
     switch (Compile::current()->static_subtype_check(superk, subk, false)) {
       case Compile::SSC_always_false:
