@@ -1508,8 +1508,6 @@ source %{
     case Op_CompareAndSwapL:
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN:
-    case Op_ShenandoahCompareAndSwapP:
-    case Op_ShenandoahCompareAndSwapN:
     case Op_CompareAndSwapB:
     case Op_CompareAndSwapS:
     case Op_GetAndSetI:
@@ -1531,10 +1529,6 @@ source %{
     case Op_WeakCompareAndSwapL:
     case Op_WeakCompareAndSwapP:
     case Op_WeakCompareAndSwapN:
-    case Op_ShenandoahWeakCompareAndSwapP:
-    case Op_ShenandoahWeakCompareAndSwapN:
-    case Op_ShenandoahCompareAndExchangeP:
-    case Op_ShenandoahCompareAndExchangeN:
       return maybe_volatile;
     default:
       return false;
@@ -1986,7 +1980,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad && !bottom_type()->isa_vectmask()) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->isa_pvectmask()) {
     assert((src_lo&1)==0 && src_lo+1==src_hi &&
            (dst_lo&1)==0 && dst_lo+1==dst_hi,
            "expected aligned-adjacent pairs");
@@ -2001,7 +1995,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   int src_offset = ra_->reg2offset(src_lo);
   int dst_offset = ra_->reg2offset(dst_lo);
 
-  if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
+  if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
     uint ireg = ideal_reg();
     DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ireg), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
     assert((src_lo_rc != rc_stack) || is_aligned(src_offset, algm), "unaligned vector spill sp offset %d (src)", src_offset);
@@ -2149,7 +2143,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
+    if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
       int vsize = 0;
       switch (ideal_reg()) {
       case Op_VecD:
@@ -2647,11 +2641,36 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 }
 
 // (XorV src (Replicate m1))
-// (XorVMask src (MaskAll m1))
 static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
   if (n != nullptr && m != nullptr) {
-    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
+    return n->Opcode() == Op_XorV &&
            VectorNode::is_all_ones_vector(m);
+  }
+  return false;
+}
+
+// Returns true if (n, m) matches "(XorVMask vm2 (MaskAll m1))" and that XorVMask
+// is used only by an AndVMask. In that case, cloning m (the MaskAll) lets the
+// matcher avoid sharing the MaskAll node and subsume the pattern into rule:
+//   "(AndVMask vm1 (XorVMask vm2 (MaskAll m1)))".
+//
+// Limitation: the "andNot" rule still cannot be matched if "m" has other
+// uses outside this pattern.
+static bool is_vector_mask_not_operand_in_andnot_pattern(Node* n, Node* m) {
+  if (n == nullptr || m == nullptr) {
+    return false;
+  }
+
+  if (VectorNode::is_all_ones_vector(m) &&
+      n->Opcode() == Op_XorVMask &&
+      n->outcnt() == 1 &&
+      n->unique_out()->Opcode() == Op_AndVMask) {
+    // If another input of the AndVMask is also a mask-not pattern that would
+    // qualify for the `maskAll` cloning, do not clone the "maskAll" here,
+    // because the match rule can only consume one such pattern.
+    Node* use = n->unique_out();
+    Node* other_input = use->in(1) == n ? use->in(2) : use->in(1);
+    return !VectorNode::is_vectormask_bitwise_not_pattern(other_input);
   }
   return false;
 }
@@ -2660,6 +2679,7 @@ static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   if (is_vshift_con_pattern(n, m) ||
       is_vector_bitwise_not_pattern(n, m) ||
+      is_vector_mask_not_operand_in_andnot_pattern(n, m) ||
       is_valid_sve_arith_imm_pattern(n, m) ||
       is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);
@@ -3389,12 +3409,13 @@ encode %{
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
         // load fake address constants using a normal move
         if (! __ is_valid_AArch64_address(con) ||
-            con < (address)(uintptr_t)os::vm_page_size()) {
+            con < (address)(uintptr_t)os::vm_page_size() ||
+            rtype == relocInfo::none) {
           __ mov(dst_reg, con);
         } else {
-          // no reloc so just use adrp and add
+          // use shorter adrp/add sequence for external_word relocation
           uint64_t offset;
-          __ adrp(dst_reg, con, offset);
+          __ adrp(dst_reg, Address(con, rtype), offset);
           __ add(dst_reg, dst_reg, offset);
         }
       }

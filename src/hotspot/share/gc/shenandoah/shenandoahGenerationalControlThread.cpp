@@ -256,11 +256,6 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  if ((gc_mode() != servicing_old) && (gc_mode() != stw_degenerated)) {
-    // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
-    _heap->reset_bytes_allocated_since_gc_start();
-  }
-
   MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
   // If GC was requested, we are sampling the counters even without actual triggers
@@ -274,7 +269,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
 
-    // When a whitebox full GC is requested, set the tenuring threshold to zero
+    // When a whitebox full GC is requested, set the age census to always tenure
     // so that all young objects are promoted to old. This ensures that tests
     // using WB.fullGC() to promote objects to old gen will not loop forever.
     ShenandoahTenuringOverride tenuring_override(request.cause == GCCause::_wb_full_gc,

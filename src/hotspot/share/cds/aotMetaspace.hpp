@@ -77,7 +77,7 @@ class AOTMetaspace : AllStatic {
 
   static void dump_static_archive(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
-  static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
+ static void init_heap_settings() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:

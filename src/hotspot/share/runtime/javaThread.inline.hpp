@@ -196,6 +196,14 @@ void JavaThread::enter_critical() {
   _jni_active_critical++;
 }
 
+void JavaThread::enter_jni_deferred_suspension() {
+  precond(JavaThread::current() == this);
+  assert(_thread_state != _thread_in_native && _thread_state != _thread_blocked,
+         "Must not defer suspension when handshake-safe");
+  int sc = AtomicAccess::load(&_jni_deferred_suspension_count);
+  AtomicAccess::store(&_jni_deferred_suspension_count, sc + 1);
+}
+
 inline void JavaThread::set_done_attaching_via_jni() {
   _jni_attach_state = _attached_via_jni;
   OrderAccess::fence();

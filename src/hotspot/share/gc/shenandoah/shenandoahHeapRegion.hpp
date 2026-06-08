@@ -211,6 +211,7 @@ public:
   bool is_committed()              const { return !is_empty_uncommitted(); }
   bool is_cset()                   const { auto cur_state = state(); return cur_state == _cset || cur_state == _pinned_cset; }
   bool is_pinned()                 const { auto cur_state = state(); return cur_state == _pinned || cur_state == _pinned_cset || cur_state == _pinned_humongous_start; }
+  bool is_regular_or_regular_pinned() const { auto cur_state = state(); return cur_state == _regular || cur_state == _pinned; }
 
   inline bool is_young() const;
   inline bool is_old() const;
@@ -384,12 +385,6 @@ public:
 
   HeapWord* get_top_at_evac_start() const { return _top_at_evac_start; }
   void record_top_at_evac_start()         { _top_at_evac_start = _top; }
-
-  // If next available memory is not aligned on address that is multiple of alignment, fill the empty space
-  // so that returned object is aligned on an address that is a multiple of alignment_in_bytes.  Requested
-  // size is in words.  It is assumed that this->is_old().  A pad object is allocated, filled, and registered
-  // if necessary to assure the new allocation is properly aligned.  Return nullptr if memory is not available.
-  inline HeapWord* allocate_aligned(size_t word_size, ShenandoahAllocRequest &req, size_t alignment_in_bytes);
 
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);

@@ -642,7 +642,6 @@ inline void Assembler::crorc( ConditionRegister crdst, Condition cdst, Condition
   crorc(dst_bit, src_bit, dst_bit);
 }
 
-// Conditional move (>= Power7)
 inline void Assembler::isel(Register d, ConditionRegister cr, Condition cc, bool inv, Register a, Register b) {
   if (b == noreg) {
     b = d; // Can be omitted if old value should be kept in "else" case.
@@ -689,7 +688,7 @@ inline void Assembler::elemental_membar(int e) { assert(0 < e && e < 16, "invali
 
 // Wait instructions for polling.
 inline void Assembler::wait()    { emit_int32( WAIT_OPCODE); }
-inline void Assembler::waitrsv() { emit_int32( WAIT_OPCODE | 1<<(31-10)); } // WC=0b01 >=Power7
+inline void Assembler::waitrsv() { emit_int32( WAIT_OPCODE | 1<<(31-10)); } // WC=0b01
 
 // atomics
 // Use ra0mem to disallow R0 as base.
@@ -709,19 +708,16 @@ inline void Assembler::stwcx_(Register s, Register a, Register b)               
 inline void Assembler::stdcx_(Register s, Register a, Register b)                             { emit_int32( STDCX_OPCODE | rs(s) | ra0mem(a) | rb(b) | rc(1)); }
 inline void Assembler::stqcx_(Register s, Register a, Register b)                             { emit_int32( STQCX_OPCODE | rs(s) | ra0mem(a) | rb(b) | rc(1)); }
 
-// Instructions for adjusting thread priority
-// for simultaneous multithreading (SMT) on >= POWER5.
+// Instructions for adjusting thread priority for simultaneous multithreading (SMT).
 inline void Assembler::smt_prio_very_low()    { Assembler::or_unchecked(R31, R31, R31); }
 inline void Assembler::smt_prio_low()         { Assembler::or_unchecked(R1,  R1,  R1); }
 inline void Assembler::smt_prio_medium_low()  { Assembler::or_unchecked(R6,  R6,  R6); }
 inline void Assembler::smt_prio_medium()      { Assembler::or_unchecked(R2,  R2,  R2); }
 inline void Assembler::smt_prio_medium_high() { Assembler::or_unchecked(R5,  R5,  R5); }
-inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,  R3); }
-// >= Power7
+inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,  R3); }  // Restricted to supervisor state since Power9.
 inline void Assembler::smt_yield()            { Assembler::or_unchecked(R27, R27, R27); } // never actually implemented
-inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); } // never actually implemetned
+inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); } // never actually implemented
 inline void Assembler::smt_mdoom()            { Assembler::or_unchecked(R30, R30, R30); } // never actually implemented
-// Power8
 inline void Assembler::smt_miso()             { Assembler::or_unchecked(R26, R26, R26); } // never actually implemented
 
 inline void Assembler::twi_0(Register a)      { twi_unchecked(0, a, 0);}
@@ -766,10 +762,6 @@ inline void Assembler::frin( FloatRegister d, FloatRegister b) { emit_int32( FRI
 inline void Assembler::frip( FloatRegister d, FloatRegister b) { emit_int32( FRIP_OPCODE | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::frim( FloatRegister d, FloatRegister b) { emit_int32( FRIM_OPCODE | frt(d) | frb(b) | rc(0)); }
 
-// These are special Power6 opcodes, reused for "lfdepx" and "stfdepx"
-// on Power7.  Do not use.
-//inline void Assembler::mffgpr( FloatRegister d, Register b)   { emit_int32( MFFGPR_OPCODE | frt(d) | rb(b) | rc(0)); }
-//inline void Assembler::mftgpr( Register d, FloatRegister b)   { emit_int32( MFTGPR_OPCODE | rt(d) | frb(b) | rc(0)); }
 // add cmpb and popcntb to detect ppc power version.
 inline void Assembler::cmpb(   Register a, Register s, Register b) { emit_int32( CMPB_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }
 inline void Assembler::popcntb(Register a, Register s)             { emit_int32( POPCNTB_OPCODE | rta(a) | rs(s)); };
@@ -837,7 +829,7 @@ inline void Assembler::fcmpu( ConditionRegister crx, FloatRegister a, FloatRegis
 inline void Assembler::fsqrt( FloatRegister d, FloatRegister b) { emit_int32( FSQRT_OPCODE  | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::fsqrts(FloatRegister d, FloatRegister b) { emit_int32( FSQRTS_OPCODE | frt(d) | frb(b) | rc(0)); }
 
-// Vector instructions for >= Power6.
+// Vector instructions.
 inline void Assembler::lvebx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEBX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::lvehx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEHX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::lvewx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEWX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }

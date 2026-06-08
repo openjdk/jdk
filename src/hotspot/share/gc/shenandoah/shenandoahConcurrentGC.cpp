@@ -991,7 +991,7 @@ public:
       // state is cached, therefore, during concurrent class unloading phase,
       // we will not touch the metadata of unloading nmethods
       {
-        ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+        ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCache, worker_id);
         ShenandoahIsNMethodAliveClosure is_nmethod_alive;
         _nmethod_itr.nmethods_do(&is_nmethod_alive);
       }
@@ -1004,9 +1004,8 @@ void ShenandoahConcurrentGC::op_weak_roots() {
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
   {
     // Concurrent weak root processing
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahConcurrentWeakRootsEvacUpdateTask task(_generation, ShenandoahPhaseTimings::conc_weak_roots_work);
+    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots);
+    ShenandoahConcurrentWeakRootsEvacUpdateTask task(_generation, ShenandoahPhaseTimings::conc_weak_roots);
     heap->workers()->run_task(&task);
   }
 
@@ -1080,7 +1079,7 @@ public:
     }
 
     if (!ShenandoahHeap::heap()->unload_classes()) {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCache, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
       _nmethod_itr.nmethods_do(&cl);
     }
