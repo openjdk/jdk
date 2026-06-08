@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,6 +509,8 @@ public abstract class SSLEngine {
      * @throws  IllegalArgumentException
      *          if either {@code src} or {@code dst}
      *          is null.
+     * @throws  IllegalStateException if the client/server mode
+     *          has not yet been set.
      * @see     #wrap(ByteBuffer[], int, int, ByteBuffer)
      */
     public SSLEngineResult wrap(ByteBuffer src,
@@ -544,6 +546,8 @@ public abstract class SSLEngine {
      * @throws  IllegalArgumentException
      *          if either {@code srcs} or {@code dst}
      *          is null, or if any element in {@code srcs} is null.
+     * @throws  IllegalStateException if the client/server mode
+     *          has not yet been set.
      * @see     #wrap(ByteBuffer[], int, int, ByteBuffer)
      */
     public SSLEngineResult wrap(ByteBuffer [] srcs,
@@ -624,6 +628,8 @@ public abstract class SSLEngine {
      *          if either {@code srcs} or {@code dst}
      *          is null, or if any element in the {@code srcs}
      *          subsequence specified is null.
+     * @throws  IllegalStateException if the client/server mode
+     *          has not yet been set.
      * @see     java.nio.channels.GatheringByteChannel
      * @see     java.nio.channels.GatheringByteChannel#write(
      *              ByteBuffer[], int, int)
@@ -658,6 +664,8 @@ public abstract class SSLEngine {
      * @throws  IllegalArgumentException
      *          if either {@code src} or {@code dst}
      *          is null.
+     * @throws  IllegalStateException if the client/server mode
+     *          has not yet been set.
      * @see     #unwrap(ByteBuffer, ByteBuffer[], int, int)
      */
     public SSLEngineResult unwrap(ByteBuffer src,
@@ -693,6 +701,8 @@ public abstract class SSLEngine {
      * @throws  IllegalArgumentException
      *          if either {@code src} or {@code dsts}
      *          is null, or if any element in {@code dsts} is null.
+     * @throws  IllegalStateException if the client/server mode
+     *          has not yet been set.
      * @see     #unwrap(ByteBuffer, ByteBuffer[], int, int)
      */
     public SSLEngineResult unwrap(ByteBuffer src,
@@ -777,6 +787,8 @@ public abstract class SSLEngine {
      *          if either {@code src} or {@code dsts}
      *          is null, or if any element in the {@code dsts}
      *          subsequence specified is null.
+     * @throws  IllegalStateException if the client/server mode
+     *          has not yet been set.
      * @see     java.nio.channels.ScatteringByteChannel
      * @see     java.nio.channels.ScatteringByteChannel#read(
      *              ByteBuffer[], int, int)
@@ -1108,6 +1120,8 @@ public abstract class SSLEngine {
      *          {@code SSLEngine} to begin a new handshake.
      *          See the class description for more information on
      *          engine closure.
+     * @throws  IllegalStateException if the client/server mode
+     *          has not yet been set.
      * @see     SSLSession#invalidate()
      */
     public abstract void beginHandshake() throws SSLException;
