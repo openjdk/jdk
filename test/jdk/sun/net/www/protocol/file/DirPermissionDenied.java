@@ -26,7 +26,7 @@
  * @bug 6977851 8385906
  * @summary NPE from FileURLConnection.connect
  * @library /test/lib
- * @build DirPermissionDenied jdk.test.lib.util.FileUtils jtreg.SkippedException
+ * @build DirPermissionDenied jdk.test.lib.util.FileUtils
  * @run junit ${test.main.class}
  */
 
@@ -49,8 +49,8 @@ import java.util.List;
 import java.util.Set;
 
 import jdk.test.lib.util.FileUtils;
-import jtreg.SkippedException;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -88,9 +88,8 @@ public class DirPermissionDenied {
         Files.createDirectories(TEST_DIR);
         try {
             makeDirectoryUnreadable();
-            if (TEST_DIR.toFile().list() != null) {
-                throw new SkippedException("Could not make directory inaccessible");
-            }
+            Assumptions.assumeTrue(TEST_DIR.toFile().list() == null,
+                    "Could not make directory inaccessible");
         } catch (Throwable exception) {
             restorePermissions();
             throw exception;
@@ -130,7 +129,8 @@ public class DirPermissionDenied {
             entries.addAll(aclEntries);
             view.setAcl(entries);
         } else {
-            throw new SkippedException("Required file attribute view not supported");
+            Assumptions.assumeTrue(false,
+                    "Required file attribute view not supported");
         }
     }
 
