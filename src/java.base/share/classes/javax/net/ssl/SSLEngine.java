@@ -624,8 +624,6 @@ public abstract class SSLEngine {
      *          if either {@code srcs} or {@code dst}
      *          is null, or if any element in the {@code srcs}
      *          subsequence specified is null.
-     * @throws  IllegalStateException if the client/server mode
-     *          has not yet been set.
      * @see     java.nio.channels.GatheringByteChannel
      * @see     java.nio.channels.GatheringByteChannel#write(
      *              ByteBuffer[], int, int)
@@ -660,8 +658,6 @@ public abstract class SSLEngine {
      * @throws  IllegalArgumentException
      *          if either {@code src} or {@code dst}
      *          is null.
-     * @throws  IllegalStateException if the client/server mode
-     *          has not yet been set.
      * @see     #unwrap(ByteBuffer, ByteBuffer[], int, int)
      */
     public SSLEngineResult unwrap(ByteBuffer src,
@@ -697,8 +693,6 @@ public abstract class SSLEngine {
      * @throws  IllegalArgumentException
      *          if either {@code src} or {@code dsts}
      *          is null, or if any element in {@code dsts} is null.
-     * @throws  IllegalStateException if the client/server mode
-     *          has not yet been set.
      * @see     #unwrap(ByteBuffer, ByteBuffer[], int, int)
      */
     public SSLEngineResult unwrap(ByteBuffer src,
@@ -783,8 +777,6 @@ public abstract class SSLEngine {
      *          if either {@code src} or {@code dsts}
      *          is null, or if any element in the {@code dsts}
      *          subsequence specified is null.
-     * @throws  IllegalStateException if the client/server mode
-     *          has not yet been set.
      * @see     java.nio.channels.ScatteringByteChannel
      * @see     java.nio.channels.ScatteringByteChannel#read(
      *              ByteBuffer[], int, int)
@@ -1116,8 +1108,6 @@ public abstract class SSLEngine {
      *          {@code SSLEngine} to begin a new handshake.
      *          See the class description for more information on
      *          engine closure.
-     * @throws  IllegalStateException if the client/server mode
-     *          has not yet been set.
      * @see     SSLSession#invalidate()
      */
     public abstract void beginHandshake() throws SSLException;
