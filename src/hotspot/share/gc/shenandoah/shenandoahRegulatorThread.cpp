@@ -132,7 +132,7 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   _young_heuristics->update_should_start_query_times(_most_recent_wake_time, double(_sleep) / 1000.0);
   if (LogTarget(Debug, gc, thread)::is_enabled()) {
     double elapsed = _most_recent_wake_time - before_sleep_time;
-    double hiccup = elapsed - double(_sleep);
+    double hiccup = elapsed - double(_sleep) / 1000.0;
     if (hiccup > 0.001) {
       log_debug(gc, thread)("Regulator hiccup time: %.3fs", hiccup);
     }
