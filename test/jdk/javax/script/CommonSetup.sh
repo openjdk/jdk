@@ -45,11 +45,16 @@ case "$OS" in
     OS="Windows"
     FS="\\"
     ;;
-  CYGWIN* )
+  CYGWIN* | MSYS* | MINGW* )
     PS=";"
     OS="Windows"
     FS="\\"
     isCygwin=true
+    ;;
+  MSYS* | MINGW* )
+    PS=";"
+    OS="Windows"
+    FS="\\"
     ;;
   * )
     echo "Unrecognized system!"

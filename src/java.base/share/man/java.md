@@ -1148,8 +1148,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     option is disabled.
 
 [`-XX:FlightRecorderOptions=`]{#-XX_FlightRecorderOptions}*parameter*`=`*value* (or) `-XX:FlightRecorderOptions:`*parameter*`=`*value*
-:   Sets the parameters that control the behavior of JFR. Multiple parameters can be specified
-    by separating them with a comma.
+:   Sets the parameters that control the behavior of JFR.
+    `-XX:FlightRecorderOptions:help` prints the available options, default
+    redaction filters, and example command lines. Multiple parameters can be
+    specified by separating them with a comma.
 
     The following list contains the available JFR *parameter*`=`*value*
     entries:
@@ -1195,6 +1197,43 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     :   Specifies whether event classes should be retransformed using JVMTI. If
         false, instrumentation is added when event classes are loaded. By
         default, this parameter is enabled.
+
+    `redact-argument=`argument-filter
+    :   Replace command-line arguments that match a semicolon-separated list
+        of glob patterns, for example, `*secret*;password*`. Matching is
+        case-insensitive, and the supported wildcards are `*` and `?`. To redact
+        multiple arguments, use a literal space (`' '`) as a separator.
+        For example, to match the two arguments `--auth username:token`, use the
+        filter `--auth *:*`. Filters containing spaces must be quoted as a single
+        command-line argument, for example,
+        `-XX:FlightRecorderOptions='redact-argument=--auth *:*'`.
+        Arguments containing spaces might not be matched as expected. To load
+        patterns from a file (one per line) use `@<filename>`. To add to the
+        default patterns instead of replacing them, prefix the whole list with
+        `+`, for example, `+*foo*;@redact.txt`. Use `none` (lowercase) to disable
+        all redaction filters for command-line arguments. Redacted arguments will
+        be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
+        and applies only to command-line arguments in the `jdk.JVMInformation`
+        event and to the `java.command` system property in the
+        `jdk.InitialSystemProperty` event. Other events, such as `jdk.ProcessStart`
+        (child processes), are not redacted. Use `-XX:FlightRecorderOptions:help`
+        to see the default filters used by the `redact-argument` option.
+
+    `redact-key=`key-filter
+    :   Replace the value of environment variables and system properties
+        whose key matches a semicolon-separated list of glob patterns,
+        for example, `*password*;*token*`. Matching is case-insensitive, and
+        the supported wildcards are `*` and `?`. To load patterns from a file
+        (one per line), use `@<filename>`. To add to the default patterns
+        instead of replacing them, prefix the whole list with `+`,
+        for example, `+*cred*;@keys.txt`. Use `none` (lowercase) to
+        disable all redaction filters for key matching. Redacted values
+        will be replaced with `[REDACTED]`. The option `redact-key` is
+        best-effort and applies only to the `jdk.InitialSystemProperty`,
+        `jdk.InitialEnvironmentVariable` and `jdk.JVMInformation` (-Dkey=...)
+        events. Other events, such as `jdk.InitialSecurityProperty`, are not
+        redacted. Use `-XX:FlightRecorderOptions:help` to see the default filters
+        used by the `redact-key` option.
 
     `stackdepth=`*depth*
     :   Stack depth for stack traces. By default, the depth is set to 64 method
@@ -1800,6 +1839,35 @@ performed by the Java HotSpot VM.
         You can suppress this by specifying the `-XX:CompileCommand=quiet`
         option before other `-XX:CompileCommand` options.
 
+    Compilation levels can be specified in the `compileonly`, `exclude`, `print`,
+    and `break` commands using a bitmask as an optional value:
+
+    ```
+    -XX:CompileCommand=exclude,java/lang/String.indexOf,1011
+    -XX:CompileCommand=compileonly,java/lang/String.indexOf,100
+    -XX:CompileCommand=print,java/lang/String.indexOf,100
+    -XX:CompileCommand=break,java/lang/StringBuffer.append,1000
+    ```
+
+    The bitmask is calculated by summing the desired compilation level values:
+
+    `1`
+    : C1 JIT compiler without profiling.
+
+    `10`
+    : C1 JIT compiler with limited profiling.
+
+    `100`
+    : C1 JIT compiler with full profiling.
+
+    `1000`
+    : C2 JIT compiler: no profiling, full optimization.
+
+    If the bitmask is not specified, all levels are assumed.
+
+    Note: Excluding specific compilation levels may disrupt normal state transitions
+    between the levels, as the VM will not automatically work around the excluded ones.
+
 [`-XX:CompileCommandFile=`]{#-XX_CompileCommandFile}*filename*
 :   Sets the file from which JIT compiler commands are read. By default, the
     `.hotspot_compiler` file is used to store commands performed by the JIT
@@ -2350,11 +2418,11 @@ Java HotSpot VM.
     option is disabled by default and can be enabled only with the `-XX:+UseG1GC` option.
 
 [`-XX:G1AdaptiveIHOPNumInitialSamples=`]{#-XX_G1AdaptiveIHOPNumInitialSamples}*number*
-:   When `-XX:UseAdaptiveIHOP` is enabled, this option sets the number of
-    completed marking cycles used to gather samples until G1 adaptively
-    determines the optimum value of `-XX:InitiatingHeapOccupancyPercent`. Before,
-    G1 uses the value of `-XX:InitiatingHeapOccupancyPercent` directly for
-    this purpose. The default value is 3.
+:   When `-XX:UseAdaptiveIHOP` is enabled, this option sets the number
+    of completed concurrent cycles used to gather samples until G1
+    adaptively determines the optimum value of `-XX:G1IHOP`. Before,
+    G1 uses the value of `-XX:G1IHOP` directly for this purpose. The
+    default value is 3.
 
 [`-XX:G1HeapRegionSize=`]{#-XX_G1HeapRegionSize}*size*
 :   Sets the size of the regions into which the Java heap is subdivided when
@@ -2416,15 +2484,14 @@ Java HotSpot VM.
     >   `-XX:G1ReservePercent=20`
 
 [`-XX:+G1UseAdaptiveIHOP`]{#-XX__G1UseAdaptiveIHOP}
-:   Controls adaptive calculation of the old generation occupancy to start
-    background work preparing for an old generation collection. If enabled,
-    G1 uses `-XX:InitiatingHeapOccupancyPercent` for the first few times as
-    specified by the value of `-XX:G1AdaptiveIHOPNumInitialSamples`, and after
-    that adaptively calculates a new optimum value for the initiating
-    occupancy automatically.
-    Otherwise, the old generation collection process always starts at the
-    old generation occupancy determined by
-    `-XX:InitiatingHeapOccupancyPercent`.
+:   Controls adaptive calculation of the old generation occupancy to
+    start background work preparing for an old generation collection.
+    If enabled, G1 uses `-XX:G1IHOP` for the first few times as
+    specified by the value of `-XX:G1AdaptiveIHOPNumInitialSamples`,
+    and after that adaptively calculates a new optimum value for the
+    initiating occupancy automatically. Otherwise, the old generation
+    collection process always starts at the old generation occupancy
+    determined by `-XX:G1IHOP`.
 
     The default is enabled.
 
@@ -2491,7 +2558,7 @@ Java HotSpot VM.
 
     >   `-XX:InitialSurvivorRatio=4`
 
-[`-XX:InitiatingHeapOccupancyPercent=`]{#-XX_InitiatingHeapOccupancyPercent}*percent*
+[`-XX:G1IHOP=`]{#-XX_G1IHOP}*percent*
 :   Sets the percentage of the old generation occupancy (0 to 100) at which to
     start the first few concurrent marking cycles for the G1 garbage collector.
 
@@ -2504,7 +2571,7 @@ Java HotSpot VM.
 
     The following example shows how to set the initiating heap occupancy to 75%:
 
-    >   `-XX:InitiatingHeapOccupancyPercent=75`
+    >   `-XX:G1IHOP=75`
 
 [`-XX:MaxGCPauseMillis=`]{#-XX_MaxGCPauseMillis}*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
@@ -2938,12 +3005,6 @@ they're used.
     (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
     threads always perform reference processing in parallel.
 
-[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
-:   Enables Java heap optimization. This sets various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    is disabled and the heap sizes are configured less aggressively.
-
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -2975,6 +3036,12 @@ when they're used.
     -XX:{+|-}EnableJVMCI
     -XX:{+|-}UseJVMCICompiler
     ```
+
+[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
+:   Enabled Java heap optimization. This set various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    was disabled and the heap sizes configured less aggressively.
 
 ## Removed Java Options
 
@@ -4080,13 +4147,17 @@ The AOT cache can be used with the following command-line options:
 
 [`-XX:AOTMode=`]{#-XX_AOTMode}*mode*
 :   Specifies the AOT Mode for this run.
-    *mode* must be one of the following: `auto`, `off`, `record`, `create`, or `on`.
+    *mode* must be one of the following: `auto`, `off`, `record`, `create`, `on`, or `required`.
+
+    Note that `on` is an alias for `required`. All discussion below about `required`
+    also applies to `on`. The use of `on` is discouraged. The support of `on` may be deprecated and
+    removed in future releases.
 
 -   `auto`: This AOT mode is the default, and takes effect if no `-XX:AOTMode` option
-    is present.  It automatically sets the AOT mode to `record`, `on`, or `off`, as follows:
+    is present.  It automatically sets the AOT mode to `record`, `required`, or `off`, as follows:
      - If `-XX:AOTCacheOutput=`*cachefile* is specified, the AOT mode is changed to `record`
        (a training run, with a subsequent `create` operation).
-     - Otherwise, if an AOT cache can be loaded, the AOT mode is changed to `on` (a production run).
+     - Otherwise, if an AOT cache can be loaded, the AOT mode is changed to `required` (a production run).
      - Otherwise, the AOT mode is changed to `off` (a production run with no AOT cache).
 
 -   `off`: No AOT cache is used.
@@ -4114,10 +4185,9 @@ The AOT cache can be used with the following command-line options:
      from *configfile* and writes the optimization artifacts into *cachefile*.
      Note that the application itself is not executed in this phase.
 
--   `on`: Execute the application in the Production phase.
-     If `-XX:AOTCache=`*cachefile* is specified, the JVM tries to
-     load *cachefile* as the AOT cache. Otherwise, the JVM tries to load
-     a *default CDS archive* from the JDK installation directory as the AOT cache.
+-   `required`: Execute the application in the Production phase.
+     `-XX:AOTCache=`*cachefile* must be specified. The JVM tries to
+     load *cachefile* as the AOT cache.
 
      The loading of an AOT cache can fail for a number of reasons:
 
@@ -4145,10 +4215,15 @@ The AOT cache can be used with the following command-line options:
        This allows your application to function correctly, although sometimes it may not
        benefit from the AOT cache.
 
-     - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
+     - If `AOTMode` was originally `required`, the JVM will print an error message and exit immediately. This
        mode should be used only as a "fail-fast" debugging aid to check if your command-line
        options are compatible with the AOT cache. An alternative is to run your application with
        `-XX:AOTMode=auto -Xlog:aot` to see if the AOT cache can be used or not.
+
+     In production environments, `-XX:AOTMode=required` should be used with care. Your application may
+     fail to launch if an incompatible VM option is added without your knowledge. For example,
+     a cloud provider might run your JVM with a JVMTI class-file load hook for monitoring purposes.
+
 
 [`-XX:+AOTClassLinking`]{#-XX__AOTClassLinking}
 :   If this option is enabled, the JVM will perform more advanced optimizations (such

@@ -1757,6 +1757,12 @@ static bool match_type_check(PhaseGVN& gvn,
     //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
     // or the narrowOop equivalent.
     (*obj) = extract_obj_from_klass_load(&gvn, val);
+    // Some klass comparisons are not directly in the form
+    // Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq]),
+    // e.g. Bool(CmpP(CastPP(LoadKlass(...)), ConP(klass)), [eq]).
+    // These patterns with nullable klasses arise from example from
+    // load_array_klass_from_mirror.
+    if (*obj == nullptr) { return false; }
     (*cast_type) = tcon->isa_klassptr()->as_instance_type();
     return true; // found
   }
@@ -1797,8 +1803,8 @@ static bool match_type_check(PhaseGVN& gvn,
       assert(idx == 1 || idx == 2, "");
       Node* vcon = val->in(idx);
 
-      assert(val->find_edge(con) > 0, "");
       if ((btest == BoolTest::eq && vcon == con) || (btest == BoolTest::ne && vcon != con)) {
+        assert(val->find_edge(con) > 0, "mismatch");
         SubTypeCheckNode* sub = b1->in(1)->as_SubTypeCheck();
         Node* obj_or_subklass = sub->in(SubTypeCheckNode::ObjOrSubKlass);
         Node* superklass = sub->in(SubTypeCheckNode::SuperKlass);
@@ -1827,17 +1833,21 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
                        &obj, &cast_type)) {
     assert(obj != nullptr && cast_type != nullptr, "missing type check info");
     const Type* obj_type = _gvn.type(obj);
-    const TypeOopPtr* tboth = obj_type->join_speculative(cast_type)->isa_oopptr();
-    if (tboth != nullptr && tboth != obj_type && tboth->higher_equal(obj_type)) {
+    const Type* tboth = obj_type->filter_speculative(cast_type);
+    assert(tboth->higher_equal(obj_type) && tboth->higher_equal(cast_type), "sanity");
+    if (tboth == Type::TOP && KillPathsReachableByDeadTypeNode) {
+      // Let dead type node cleaning logic prune effectively dead path for us.
+      // CheckCastPP::Value() == TOP and it will trigger the cleanup during GVN.
+      // Don't materialize the cast when cleanup is disabled, because
+      // it kills data and control leaving IR in broken state.
+      tboth = cast_type;
+    }
+    if (tboth != Type::TOP && tboth != obj_type) {
       int obj_in_map = map()->find_edge(obj);
-      JVMState* jvms = this->jvms();
       if (obj_in_map >= 0 &&
-          (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
+          (jvms()->is_loc(obj_in_map) || jvms()->is_stk(obj_in_map))) {
         TypeNode* ccast = new CheckCastPPNode(control(), obj, tboth);
-        const Type* tcc = ccast->as_Type()->type();
-        assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
-        // Delay transform() call to allow recovery of pre-cast value
-        // at the control merge.
+        // Delay transform() call to allow recovery of pre-cast value at the control merge.
         _gvn.set_type_bottom(ccast);
         record_for_igvn(ccast);
         // Here's the payoff.

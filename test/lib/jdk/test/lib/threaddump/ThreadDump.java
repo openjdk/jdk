@@ -50,9 +50,10 @@ import jdk.test.lib.json.JSONValue;
  * <pre>{@code
  * {
  *   "threadDump": {
- *     "processId": "63406",
- *     "time": "2022-05-20T07:37:16.308017Z",
- *     "runtimeVersion": "19",
+ *     "formatVersion": 2,
+ *     "processId": 63406,
+ *     "time": "2026-03-25T09:20:08.591503Z",
+ *     "runtimeVersion": "27",
  *     "threadContainers": [
  *       {
  *         "container": "<root>",
@@ -60,12 +61,12 @@ import jdk.test.lib.json.JSONValue;
  *         "owner": null,
  *         "threads": [
  *          {
- *            "tid": "1",
+ *            "tid": 1,
  *            "name": "main",
  *            "stack": [...]
  *          },
  *          {
- *            "tid": "8",
+ *            "tid": 8,
  *            "name": "Reference Handler",
  *            "state": "RUNNABLE",
  *            "stack": [
@@ -80,21 +81,21 @@ import jdk.test.lib.json.JSONValue;
  *          {"name": "Monitor Ctrl-Break"...},
  *          {"name": "Notification Thread"...}
  *         ],
- *         "threadCount": "7"
+ *         "threadCount": 7
  *       },
  *       {
  *         "container": "ForkJoinPool.commonPool\/jdk.internal.vm.SharedThreadContainer@56aac163",
  *         "parent": "<root>",
  *         "owner": null,
  *         "threads": [...],
- *         "threadCount": "1"
+ *         "threadCount": 1
  *       },
  *       {
  *         "container": "java.util.concurrent.ThreadPoolExecutor@20322d26\/jdk.internal.vm.SharedThreadContainer@184f6be2",
  *         "parent": "<root>",
  *         "owner": null,
  *         "threads": [...],
- *         "threadCount": "1"
+ *         "threadCount": 1
  *       }
  *     ]
  *   }
@@ -132,20 +133,6 @@ public final class ThreadDump {
     }
 
     /**
-     * Assert that a JSONValue is a JSONString and parse the string as an int.
-     */
-    private static int parseStringAsInt(JSONValue valueObj) {
-        return Integer.parseInt(valueObj.asString());
-    }
-
-    /**
-     * Assert that a JSONValue is a JSONString and parse the string as a long.
-     */
-    private static long parseStringAsLong(JSONValue valueObj) {
-        return Long.parseLong(valueObj.asString());
-    }
-
-    /**
      * Represents an element in the threadDump/threadContainers array.
      */
     public static class ThreadContainer {
@@ -178,9 +165,9 @@ public final class ThreadDump {
          * Return the thread identifier of the owner or empty OptionalLong if not owned.
          */
         public OptionalLong owner() {
-            return containerObj.get("owner")  // string or null
+            return containerObj.get("owner")  // number or null
                     .valueOrNull()
-                    .map(v -> OptionalLong.of(parseStringAsLong(v)))
+                    .map(v -> OptionalLong.of(v.asLong()))
                     .orElse(OptionalLong.empty());
         }
 
@@ -245,7 +232,7 @@ public final class ThreadDump {
         private final JSONValue threadObj;
 
         ThreadInfo(JSONValue threadObj) {
-            this.tid = parseStringAsLong(threadObj.get("tid"));
+            this.tid = threadObj.get("tid").asLong();
             this.threadObj = threadObj;
         }
 
@@ -293,7 +280,7 @@ public final class ThreadDump {
          */
         public OptionalLong parkBlockerOwner() {
             return threadObj.getOrAbsent("parkBlocker")
-                    .map(v -> OptionalLong.of(parseStringAsLong(v.get("owner"))))
+                    .map(v -> OptionalLong.of(v.get("owner").asLong()))
                     .orElse(OptionalLong.empty());
         }
 
@@ -334,7 +321,7 @@ public final class ThreadDump {
                     .map(JSONValue::elements)
                     .orElse(List.of())
                     .forEach(e -> {
-                        int depth = parseStringAsInt(e.get("depth"));
+                        int depth = e.get("depth").asInt();
                         List<String> locks = e.get("locks")
                                 .elements()
                                 .stream()
@@ -354,7 +341,7 @@ public final class ThreadDump {
          */
         public OptionalLong carrier() {
             return threadObj.getOrAbsent("carrier")
-                    .map(s -> OptionalLong.of(parseStringAsLong(s)))
+                    .map(v -> OptionalLong.of(v.asLong()))
                     .orElse(OptionalLong.empty());
         }
 
@@ -389,8 +376,7 @@ public final class ThreadDump {
      * Returns the value of threadDump/processId.
      */
     public long processId() {
-        return parseStringAsLong(threadDumpObj.get("processId"));
-    }
+        return threadDumpObj.get("processId").asLong(); }
 
     /**
      * Returns the value of threadDump/time.
@@ -436,6 +422,10 @@ public final class ThreadDump {
      */
     public static ThreadDump parse(String json) {
         JSONValue threadDumpObj = JSONValue.parse(json).get("threadDump");
+        int formatVersion = threadDumpObj.get("formatVersion").asInt();
+        if (formatVersion != 2) {
+            fail("Format " + formatVersion + " not supported");
+        }
 
         // threadContainers array, preserve insertion order (parents are added before children)
         Map<String, JSONValue> containerObjs = threadDumpObj.get("threadContainers")
@@ -444,7 +434,7 @@ public final class ThreadDump {
                 .collect(Collectors.toMap(
                         c -> c.get("container").asString(),
                         Function.identity(),
-                        (a, b) -> { throw new RuntimeException("Duplicate container"); },
+                        (a, b) -> { fail("Duplicate container"); return null; },
                         LinkedHashMap::new
                 ));
 
@@ -456,7 +446,7 @@ public final class ThreadDump {
             JSONValue parentObj = containerObj.get("parent");
             if (parentObj instanceof JSONValue.JSONNull) {
                 if (root != null) {
-                    throw new RuntimeException("More than one root container");
+                    fail("More than one root container");
                 }
                 root = new ThreadContainer(name, null, containerObj);
                 map.put(name, root);
@@ -464,7 +454,7 @@ public final class ThreadDump {
                 String parentName = parentObj.asString();
                 ThreadContainer parent = map.get(parentName);
                 if (parent == null) {
-                    throw new RuntimeException("Thread container " + name + " found before " + parentName);
+                    fail("Thread container " + name + " found before " + parentName);
                 }
                 var container = new ThreadContainer(name, parent, containerObj);
                 parent.addChild(container);
@@ -472,9 +462,13 @@ public final class ThreadDump {
             }
         }
         if (root == null) {
-            throw new RuntimeException("No root container");
+            fail("No root container");
         }
 
         return new ThreadDump(root, map, threadDumpObj);
+    }
+
+    private static void fail(String message) {
+        throw new RuntimeException(message);
     }
 }

@@ -33,7 +33,7 @@
  *                     -Dhttp3.test.server.decoderMaxTableCapacity=4096
  *                     -Dhttp3.test.server.encoderTableCapacityLimit=4096
  *                     -Djdk.internal.httpclient.qpack.log.level=NORMAL
- *                     H3HeadersEncoding
+ *                     ${test.main.class}
  * @summary this test verifies that when QPACK dynamic table is enabled multiple
  *          random headers can be encoded/decoded correctly
  */

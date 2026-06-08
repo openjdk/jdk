@@ -26,6 +26,7 @@ package org.openjdk.bench.vm.compiler;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.lang.foreign.MemorySegment;
 import jdk.incubator.vector.*;
 
 /**
@@ -93,6 +94,15 @@ public class VectorAlgorithmsImpl {
 
         public int[] oopsX4;
         public int[] memX4;
+
+        // Input for mismatchB
+        // We set m1B and m2B to have identical data, temporarily edit m2B at one position,
+        // run the mismatch implementation, and then reset that position. This means we
+        // perform as little mutation while randomizing the input data.
+        public byte[] m1B;
+        public byte[] m2B;
+        public int[] mismatchB_idx;
+        public int mismatchB_idx_idx = 0;
 
         public Data(int size, int seed, int numX4Objects, float branchProbability) {
             Random random = new Random(seed);
@@ -165,6 +175,30 @@ public class VectorAlgorithmsImpl {
                           ? (byte)(random.nextInt(16) + 'A')
                           : (byte)(random.nextInt(16) + 'a');
             }
+
+            // Input data for mismatchB
+            m1B = new byte[size];
+            m2B = new byte[size];
+            random.nextBytes(m1B);
+            System.arraycopy(m1B, 0, m2B, 0, size);
+
+            mismatchB_idx = new int[0x10000];
+            for (int i = 0; i < mismatchB_idx.length; i++) {
+                // Sometimes make no mutation (-1), sometimes pick index for mutation.
+                mismatchB_idx[i] = (random.nextInt(10) == 0) ? -1 : random.nextInt(m1B.length);
+            }
+        }
+
+        public interface MismatchBImpl {
+            int run(byte[] a, byte[] b);
+        }
+
+        public int wrap_mismatchB(int idx, MismatchBImpl impl) {
+            int i = mismatchB_idx[idx & 0xffff];
+            if (i != -1) { m2B[i]++; }
+            int res = impl.run(m1B, m2B);
+            if (i != -1) { m2B[i]--; }
+            return res;
         }
     }
 
@@ -344,6 +378,21 @@ public class VectorAlgorithmsImpl {
         float sum = sums.reduceLanes(VectorOperators.ADD);
         for (; i < a.length; i++) {
             sum += a[i] * b[i];
+        }
+        return sum;
+    }
+
+    public static float dotProductF_VectorAPI_fma(float[] a, float[] b) {
+        var sums = FloatVector.broadcast(SPECIES_F, 0.0f);
+        int i;
+        for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
+            var va = FloatVector.fromArray(SPECIES_F, a, i);
+            var vb = FloatVector.fromArray(SPECIES_F, b, i);
+            sums = va.fma(vb, sums);
+        }
+        float sum = sums.reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            sum = Math.fma(a[i], b[i], sum);
         }
         return sum;
     }
@@ -655,6 +704,44 @@ public class VectorAlgorithmsImpl {
         }
         return -1;
     }
+
+    public static int mismatchB_loop(byte[] a, byte[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int mismatchB_Arrays(byte[] a, byte[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int mismatchB_MemorySegment(byte[] a, byte[] b) {
+        var aMS = MemorySegment.ofArray(a);
+        var bMS = MemorySegment.ofArray(b);
+        return (int) aMS.mismatch(bMS);
+    }
+
+    public static int mismatchB_VectorAPI(byte[] a, byte[] b) {
+        int i = 0;
+        for (; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+            ByteVector va = ByteVector.fromArray(SPECIES_B, a, i);
+            ByteVector vb = ByteVector.fromArray(SPECIES_B, b, i);
+            var mask = va.compare(VectorOperators.NE, vb);
+            if (mask.anyTrue()) {
+                return i + mask.firstTrue();
+            }
+        }
+        for (; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 
     public static Object reverseI_loop(int[] a, int[] r) {
         for (int i = 0; i < a.length; i++) {

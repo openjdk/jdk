@@ -1104,6 +1104,10 @@ public class ShortVector512Tests extends AbstractVectorTest {
                 return fill(s * BUFFER_REPS,
                             i -> (((short)(i + 1) == 0) ? 1 : (short)(i + 1)));
             }),
+            withToString("short[smallOddValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(i % 7 == 0 ? -3 : (i % 3 == 0 ? -1 : 1)));
+            }),
             withToString("short[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> cornerCaseValue(i));

@@ -29,7 +29,7 @@
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
  *      -Djdk.httpclient.http3.maxConcurrentPushStreams=45
- *      H3ConcurrentPush
+ *      ${test.main.class}
  * @summary This test exercises some of the HTTP/3 specifities for PushPromises.
  *      It sends several concurrent requests, and the server sends a bunch of
  *      identical push promise frames to all of them. That is, there will be
