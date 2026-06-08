@@ -2714,7 +2714,7 @@ bool SuperWordVTransformBuilder::rc_constant_folded(const Node_List* pack) const
   if (rc_constant_folded) {
     for (uint i = 0; i < pack->size() && !rc_constant_folded; i++) {
       Node* n = pack->at(i);
-      assert(n->as_Load()->rc_constant_folded() || !n->as_Load()->depends_only_on_test(), "");
+      assert(n->as_Load()->rc_constant_folded() || !n->as_Load()->depends_only_on_test(), "RC optimized by RC elimination if not constant folded");
     }
   }
 #endif
