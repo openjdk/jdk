@@ -16031,15 +16031,15 @@ instruct stringU_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
 instruct string_equalsL_sve(
     iRegP_R1   str1,      // str1 (kill)
     iRegP_R3   str2,      // str2 (kill)
-    iRegI_R4   cnt,       // int length (kill)
-    iRegI_R0   result,    // boolean
+    iRegINoSp   cnt,       // int length
+    iRegINoSp   result,    // boolean
     vecA ztmp1, vecA ztmp2, // SVE z registers
     pRegGov pg, pReg pdata, // SVE predicate registers
     rFlagsReg  cr)
 %{
   predicate(UseSVE > 0 && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP ztmp1, TEMP ztmp2, TEMP pg, TEMP pdata, KILL cr);
+  effect(USE_KILL str1, USE_KILL str2, USE cnt, TEMP ztmp1, TEMP ztmp2, TEMP pg, TEMP pdata, KILL cr);
 
   format %{ "String Equals $str1,$str2,$cnt -> $result" %}
   ins_encode %{
