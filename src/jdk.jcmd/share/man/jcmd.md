@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -800,19 +800,35 @@ The following commands are available:
         no default value)
 
 `VM.classes` \[*options*\]
-:   Print all loaded classes
+:   Print all loaded classes.
+
+    Classes may be annotated with flags:
+        - `F` = has, or inherits, a non-empty finalize method,
+        - `f` = has final method,
+        - `W` = methods rewritten,
+        - `C` = marked with `@Contended` annotation,
+        - `R` = has been redefined,
+        - `S` = is shared class (if `-location` is specified then either 's' (static) or 'd' (dynamic) for AOT cache origin is appended)
 
     Impact: Medium: Depends on number of loaded classes.
 
-    The following *options* must be specified using either *key* or
-    *key*`=`*value* syntax.
+    The following *options* must be specified using either *key* or *key*`=`*value* syntax.
 
     *options*:
 
-    -   `-verbose`: (Optional) Dump the detailed content of a Java class.
-        Some classes are annotated with flags: `F` = has, or inherits, a non-empty finalize method,
-        `f` = has final method, `W` = methods rewritten, `C` = marked with `@Contended` annotation,
-        `R` = has been redefined, `S` = is shared class (BOOLEAN, false)
+    -   `-verbose`: (Optional) Dump the detailed content of a Java class. (BOOLEAN, false)
+
+    -   `-location`: (Optional) Print the location of the class file from which the class is loaded (if available).
+         If provided by its defining ClassLoader, this option will print a URL specifying the location of the
+         class file (directory, jar or other URL location) from which this class was initially loaded.
+
+         Note: JDK (and other classes) loaded by a ClassLoader that does not provide a location URL to the JVM will omit this field.
+
+         Note: if any classes are loaded from an AOT cache, their location reported is that of the original
+               URL from which they were loaded at the time of the training run that created the AOT cache.
+               Additionally the flags will also be annotated to indicate the AOT cache origin (static or dynamic).
+
+         The total number of classes loaded (if any) from either AOT cache (and the associated cache path location) are summarized.
 
 `VM.classloader_stats`
 :   Print statistics about all ClassLoaders.

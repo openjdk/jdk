@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,5 +59,9 @@ public class PrintClasses {
 
     // Test for previous bug in misc flags printing
     output.shouldNotContain("##name");
+
+    pb.command(new PidJcmdExecutor().getCommandLine("VM.classes", "-location"));
+    output = new OutputAnalyzer(pb.start());
+    output.stdoutShouldMatch("^.*(file:/|jar:).*$");
   }
 }
