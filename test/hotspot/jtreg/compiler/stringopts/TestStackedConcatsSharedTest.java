@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 8356246
+ * @bug 8356246 8362117
  * @summary Test stacked string concatenations where the toString of the first StringBuilder
  *          is used as a shared test by two diamond Ifs in the second StringBuilder.
+ *          (f): make sure we don't crash outright
+ *          (g): external null checks depending on the same test/removed call should not give a wrong result.
  * @run main/othervm compiler.stringopts.TestStackedConcatsSharedTest
  * @run main/othervm -XX:-TieredCompilation -Xcomp
  *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsSharedTest::*
@@ -42,6 +44,11 @@ public class TestStackedConcatsSharedTest {
         if (!s.equals("")) {
             throw new RuntimeException("wrong result");
         }
+        String z = g();
+        if (!z.equals("abcabcabc")) {
+            System.out.println(z);
+            throw new RuntimeException("wrong result");
+        }
     }
 
     static String f() {
@@ -50,6 +57,13 @@ public class TestStackedConcatsSharedTest {
         // Warming up with many iterations invalidated the optimization due to an unstable If
         // associated with the valueOf calls below. Using -Xcomp for the test.
         s = new StringBuilder(String.valueOf(s)).append(String.valueOf(s)).toString();
+        return s;
+    }
+
+    static String g() {
+        String s = "abc";
+        s = new StringBuilder(s).toString();
+        s = new StringBuilder(String.valueOf(s)).append(String.valueOf(s)).toString() + (s == null ? "def" : "abc");
         return s;
     }
 }
