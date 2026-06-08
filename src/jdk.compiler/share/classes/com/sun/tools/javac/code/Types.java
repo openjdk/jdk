@@ -2419,7 +2419,7 @@ public class Types {
 
         if (isConvertible(t, s, warn)) {
             return true;
-        } else if (allowEnhancedVariableDecls && isSafeDirectSubType(t, s)){
+        } else if (allowEnhancedVariableDecls && isSafeNarrowing(t, s)) {
             if (warn.pos() != null) {
                 preview.warnPreview(JCDiagnostic.DiagnosticFlag.SYNTAX, warn.pos(), Feature.ENHANCED_VARIABLE_DECLS);
             }
@@ -2431,19 +2431,18 @@ public class Types {
 
     /**
      * This method returns true if the checked narrowing reference conversion from
-     * {@code t} to {@code s} is unambiguously safe due to {@code s} being a unique
-     * subtype of {@code t}.
+     * {@code t} to {@code s} is unambiguously safe due to {@code s} being reachable
+     * from {@code t} through a unique permitted subtype path.
      *
      * The source type {@code t} must denote a sealed interface or an abstract
      * sealed class. The assignment to the target type {@code s} is checked
      * bottom-up: each upward edge must be the inverse of a safe direct subtype
-     * edge, i.e. the supertype names a sealed type and the current subtype names
-     * its unique permitted subtype.
+     * edge, i.e. the supertype names a sealed interface or abstract sealed class,
+     * and the current subtype names its unique permitted subtype.
      */
-    public boolean isSafeDirectSubType(Type t, Type s) {
+    public boolean isSafeNarrowing(Type t, Type s) {
         if (!(t.tsym instanceof ClassSymbol sourceSym)
-                || !sourceSym.isSealed()
-                || (!sourceSym.isInterface() && !sourceSym.isAbstract())
+                || !isSafeSupertypeCandidate(sourceSym)
                 || s.isPrimitive()) {
             return false;
         }
@@ -2466,7 +2465,7 @@ public class Types {
                     superSym.complete();
 
                     List<Type> permitted = superSym.getPermittedSubclasses();
-                    if (superSym.isSealed()
+                    if (isSafeSupertypeCandidate(superSym)
                             && permitted.size() == 1
                             && permitted.getFirst().tsym == current.tsym) {
                         pending.add(supertype);
@@ -2476,6 +2475,10 @@ public class Types {
         }
 
         return false;
+    }
+    // where
+    private boolean isSafeSupertypeCandidate(ClassSymbol sym) {
+        return sym.isSealed() && (sym.isInterface() || sym.isAbstract());
     }
 
     // </editor-fold>

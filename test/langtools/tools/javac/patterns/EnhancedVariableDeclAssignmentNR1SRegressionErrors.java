@@ -30,6 +30,14 @@ public class EnhancedVariableDeclAssignmentNR1SRegressionErrors {
         ConcreteSB sb = sa;     // always error
     }
 
+    static sealed interface ConcreteIntermediateRoot permits ConcreteIntermediateMid {}
+    static sealed /* non abstract */ class ConcreteIntermediateMid implements ConcreteIntermediateRoot permits ConcreteIntermediateLeaf {}
+    static final class ConcreteIntermediateLeaf extends ConcreteIntermediateMid {}
+    static void rejectConcreteSealedIntermediateAssignment() {
+        ConcreteIntermediateRoot root = new ConcreteIntermediateMid();
+        ConcreteIntermediateLeaf leaf = root; // always error
+    }
+
     static sealed abstract class MultiSA permits MultiSB1, MultiSB2 {}
     static final class MultiSB1 extends MultiSA {}
     static final class MultiSB2 extends MultiSA {}
