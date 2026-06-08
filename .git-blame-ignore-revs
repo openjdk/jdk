@@ -4,7 +4,7 @@
 # passed via the --ignore-revs-file command line option or is configured using
 # the blame.ignoreRevsFile key.
 #
-# Only add commits that obviously do not change semanitcs, e.g. mechanical refactorings
+# Only add commits that obviously do not change semantics, e.g. mechanical refactorings
 # or formatting. Always add the commit message as a comment above the revision
 # to keep the file readable.
 
