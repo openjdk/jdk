@@ -66,7 +66,6 @@ class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
 class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
-class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahUncommitThread;
 class ShenandoahVerifier;
@@ -534,7 +533,6 @@ private:
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
   ShenandoahFreeSet*         _free_set;
-  ShenandoahPacer*           _pacer;
   ShenandoahVerifier*        _verifier;
 
   ShenandoahPhaseTimings*       _phase_timings;
@@ -559,7 +557,6 @@ public:
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
-  ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
 
