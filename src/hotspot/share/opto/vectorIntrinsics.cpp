@@ -315,8 +315,8 @@ static BasicType get_vector_primitive_lane_type(VectorSupport::LaneType lanetype
   return T_ILLEGAL;
 }
 
-static bool is_unsupported_lane_type(VectorSupport::LaneType laneType) {
-  return laneType == VectorSupport::LaneType::LT_FLOAT16;
+static bool is_supported_lane_type(VectorSupport::LaneType laneType) {
+  return laneType >= VectorSupport::LT_FLOAT && laneType <= VectorSupport::LT_LONG;
 }
 
 //
@@ -562,7 +562,7 @@ bool LibraryCallKit::inline_vector_call(int arity) {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -661,7 +661,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -737,7 +737,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   }
 
   int  bcast_mode = mode->get_con();
-  if (is_unsupported_lane_type(vltype) && bcast_mode != VectorSupport::MODE_BROADCAST) {
+  if (!is_supported_lane_type(vltype) && bcast_mode != VectorSupport::MODE_BROADCAST) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false; // should be primitive type
   }
@@ -1316,7 +1316,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -1504,7 +1504,7 @@ bool LibraryCallKit::inline_vector_reduction() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -1653,7 +1653,7 @@ bool LibraryCallKit::inline_vector_test() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -1807,7 +1807,7 @@ bool LibraryCallKit::inline_vector_compare() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -1932,7 +1932,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -2072,7 +2072,7 @@ bool LibraryCallKit::inline_vector_select_from() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -2240,7 +2240,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -2422,12 +2422,12 @@ bool LibraryCallKit::inline_vector_convert() {
     return false; // should be primitive type
   }
 
-  if (is_unsupported_lane_type(vltype_from)) {
+  if (!is_supported_lane_type(vltype_from)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype_from));
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype_to)) {
+  if (!is_supported_lane_type(vltype_to)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype_to));
     return false;
   }
@@ -2612,7 +2612,7 @@ bool LibraryCallKit::inline_vector_insert() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -2705,7 +2705,7 @@ bool LibraryCallKit::inline_vector_extract() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -2894,7 +2894,7 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -3037,7 +3037,7 @@ bool LibraryCallKit::inline_vector_compress_expand() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -3117,7 +3117,7 @@ bool LibraryCallKit::inline_index_vector() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
@@ -3257,7 +3257,7 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
     return false;
   }
 
-  if (is_unsupported_lane_type(vltype)) {
+  if (!is_supported_lane_type(vltype)) {
     log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
     return false;
   }
