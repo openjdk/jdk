@@ -524,7 +524,10 @@ void G1ConcurrentMark::fully_initialize() {
 
   uint max_num_regions = _g1h->max_num_regions();
   ::new (_region_mark_stats) G1RegionMarkStats[max_num_regions]{};
-  ::new (_top_at_mark_starts) Atomic<HeapWord*>[max_num_regions]{};
+  for (uint i = 0; i < max_num_regions; i++) {
+    ::new (&_top_at_mark_starts[i]) Atomic<HeapWord*>(_g1h->bottom_addr_for_region(i));
+  }
+  // Contrary to TAMS, the default value of _top_at_rebuild_starts needs to be null.
   ::new (_top_at_rebuild_starts) Atomic<HeapWord*>[max_num_regions]{};
 
   reset_at_marking_complete();
@@ -1146,7 +1149,6 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
     // completing this work during GC.
     const uint num_workers = MIN2(num_remaining,
                                   _max_concurrent_workers);
-    assert(num_workers > 0, "no more remaining root regions to process");
 
     G1CMRootRegionScanTask task(this, concurrent);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
