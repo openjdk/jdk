@@ -2997,14 +2997,6 @@ they're used.
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
 
-[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
-:   Enables parallel reference processing. By default, collectors employing multiple
-    threads perform parallel reference processing if the number of parallel threads
-    to use is larger than one.
-    The option is available only when the throughput or G1 garbage collector is used
-    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
-    threads always perform reference processing in parallel.
-
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -3048,6 +3040,14 @@ These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and usin
     -XX:{+|-}EnableJVMCI
     -XX:{+|-}UseJVMCICompiler
     ```
+
+[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
 
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
 
