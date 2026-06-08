@@ -184,8 +184,8 @@ import java.util.Locale;
  *     <th scope="col">CLDR version</th></tr>
  * </thead>
  * <tbody>
- * <tr><th scope="row" style="text-align:left">JDK 26</th>
- *     <td>CLDR 48</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 27</th>
+ *     <td>CLDR 48.2</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 25</th>
  *     <td>CLDR 47</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 21</th>
@@ -208,6 +208,8 @@ import java.util.Locale;
  *     <th scope="col">CLDR version</th></tr>
  * </thead>
  * <tbody>
+ * <tr><th scope="row" style="text-align:left">JDK 26</th>
+ *     <td>CLDR 48</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 24</th>
  *     <td>CLDR 46</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 23</th>

@@ -4754,7 +4754,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 #undef __
 #define __ this->
@@ -6782,7 +6782,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   // x10 = input (float16)
   // f10 = result (float)

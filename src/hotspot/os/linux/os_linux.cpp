@@ -3310,7 +3310,10 @@ size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
 void os::Linux::build_numa_affinity_masks() {
   // We only build the affinity masks if running libnuma v2 (_numa_node_to_cpus_v2
   // is available) and we have the affinity mask of the process when it started.
-  if (_numa_node_to_cpus_v2 == nullptr || _numa_all_cpus_ptr == nullptr) {
+  if (_numa_node_to_cpus_v2 == nullptr ||
+      _numa_all_cpus_ptr == nullptr ||
+      _numa_allocate_cpumask == nullptr ||
+      nindex_to_node() == nullptr) {
     return;
   }
 
@@ -3320,16 +3323,24 @@ void os::Linux::build_numa_affinity_masks() {
   // the following NUMA setup:
   // NUMA 0: CPUs 0-3, NUMA 1: CPUs 4-7
   // We expect to get the following affinity masks:
-  // Affinity masks: idx 0 = (0, 1), idx 1 = (4, 5)
+  // Affinity masks: node 0 = (0, 1), node 1 = (4, 5)
+  //
+  // The array is indexed by OS NUMA node id because node ids can be sparse
 
-  const int num_nodes = get_existing_num_nodes();
+  const int highest_node_number = Linux::numa_max_node();
+  if (highest_node_number < 0) {
+    return;
+  }
+
   const unsigned num_cpus = (unsigned)os::processor_count();
 
-  for (int i = 0; i < num_nodes; i++) {
+  _numa_affinity_masks->at_grow(highest_node_number, nullptr);
+
+  for (int node : *nindex_to_node()) {
     struct bitmask* affinity_mask = _numa_allocate_cpumask();
 
-    // Fill the affinity mask with all CPUs belonging to NUMA node i
-    _numa_node_to_cpus_v2(i, affinity_mask);
+    // Fill the affinity mask with all CPUs belonging to the OS NUMA node id.
+    _numa_node_to_cpus_v2(node, affinity_mask);
 
     // Clear the bits of all CPUs that the process is not allowed to
     // execute tasks on
@@ -3339,7 +3350,7 @@ void os::Linux::build_numa_affinity_masks() {
       }
     }
 
-    _numa_affinity_masks->push(affinity_mask);
+    _numa_affinity_masks->at_put(node, affinity_mask);
   }
 }
 
@@ -3463,6 +3474,7 @@ void os::Linux::numa_set_thread_affinity(pid_t tid, int node) {
   // is available) and we have all affinity mask
   if (_numa_sched_setaffinity == nullptr ||
       _numa_all_cpus_ptr == nullptr ||
+      _numa_affinity_masks == nullptr ||
       _numa_affinity_masks->is_empty()) {
     return;
   }
@@ -3472,8 +3484,13 @@ void os::Linux::numa_set_thread_affinity(pid_t tid, int node) {
     // of the thread when the VM was started
     _numa_sched_setaffinity(tid, _numa_all_cpus_ptr);
   } else {
-    // Normal case, set the affinity to the corresponding affinity mask
-    _numa_sched_setaffinity(tid, _numa_affinity_masks->at(node));
+    // Normal case, set the affinity to the corresponding OS NUMA node id mask.
+    if (node >= 0 && node < _numa_affinity_masks->length()) {
+      struct bitmask* const affinity_mask = _numa_affinity_masks->at(node);
+      if (affinity_mask != nullptr) {
+        _numa_sched_setaffinity(tid, affinity_mask);
+      }
+    }
   }
 }
 
