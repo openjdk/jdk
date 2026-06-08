@@ -1061,6 +1061,7 @@ public:
   bool is_dead_loop_safe() const;
 
    void mark_not_dead_loop_safe() {
+     assert(is_dead_loop_safe(), "shouldn't be cleared yet");
     clear_flag(Node::Flag_is_dead_loop_safe);
   }
 
