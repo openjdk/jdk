@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,8 +509,6 @@ public abstract class SSLEngine {
      * @throws  IllegalArgumentException
      *          if either {@code src} or {@code dst}
      *          is null.
-     * @throws  IllegalStateException if the client/server mode
-     *          has not yet been set.
      * @see     #wrap(ByteBuffer[], int, int, ByteBuffer)
      */
     public SSLEngineResult wrap(ByteBuffer src,
@@ -546,8 +544,6 @@ public abstract class SSLEngine {
      * @throws  IllegalArgumentException
      *          if either {@code srcs} or {@code dst}
      *          is null, or if any element in {@code srcs} is null.
-     * @throws  IllegalStateException if the client/server mode
-     *          has not yet been set.
      * @see     #wrap(ByteBuffer[], int, int, ByteBuffer)
      */
     public SSLEngineResult wrap(ByteBuffer [] srcs,

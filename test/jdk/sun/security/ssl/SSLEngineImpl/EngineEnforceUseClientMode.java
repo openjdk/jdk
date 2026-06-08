@@ -41,6 +41,7 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
 
     private static boolean debug = Boolean.getBoolean("test.debug");
 
+    private SSLEngine clientEngine2;    // client
     private SSLEngine serverEngine2;    // server
     private SSLEngine serverEngine3;    // server
     private SSLEngine serverEngine4;    // server
@@ -50,9 +51,8 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
      */
     private void createAdditionalSSLEngines() throws Exception {
         SSLContext sslc = createServerSSLContext();
-        /*
-         * Note, these are not initialized to client/server
-         */
+        clientEngine2 = sslc.createSSLEngine();
+        clientEngine2.setUseClientMode(true);
         serverEngine2 = sslc.createSSLEngine();
         serverEngine3 = sslc.createSSLEngine();
         serverEngine4 = sslc.createSSLEngine();
@@ -60,7 +60,6 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
         if (serverEngine4.getUseClientMode()) {
             throw new RuntimeException("Expected default role to be server");
         }
-
     }
 
     private void runTest() throws Exception {
@@ -69,44 +68,23 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
 
         /*
          * First try the engines with no client/server initialization
-         * All should fail.
+         * All should pass.
          */
-        try {
-            System.out.println("Testing wrap()");
-            serverEngine2.wrap(clientOut, cTOs);
-            throw new RuntimeException(
-                "wrap():  Didn't catch the exception properly");
-        } catch (IllegalStateException e) {
-            System.out.println("Caught the correct exception.");
-            cTOs.flip();
-            if (cTOs.hasRemaining()) {
-                throw new Exception("wrap generated data");
-            }
-            cTOs.clear();
-        }
 
-        try {
-            System.out.println("Testing unwrap()");
-            serverEngine3.unwrap(cTOs, clientIn);
-            throw new RuntimeException(
-                "unwrap():  Didn't catch the exception properly");
-        } catch (IllegalStateException e) {
-            System.out.println("Caught the correct exception.");
-            clientIn.flip();
-            if (clientIn.hasRemaining()) {
-                throw new Exception("unwrap generated data");
-            }
-            clientIn.clear();
-        }
+        System.out.println("Testing wrap()");
+        serverEngine2.wrap(serverOut, sTOc);
 
-        try {
-            System.out.println("Testing beginHandshake()");
-            serverEngine4.beginHandshake();
-            throw new RuntimeException(
-                "unwrap():  Didn't catch the exception properly");
-        } catch (IllegalStateException e) {
-            System.out.println("Caught the correct exception.");
-        }
+        clientEngine2.wrap(clientOut, cTOs);
+        cTOs.flip();
+        System.out.println("Testing unwrap()");
+        serverEngine3.unwrap(cTOs, serverIn);
+
+        serverIn.clear();
+        sTOc.clear();
+        cTOs.clear();
+
+        System.out.println("Testing beginHandshake()");
+        serverEngine4.beginHandshake();
 
         boolean dataDone = false;
 

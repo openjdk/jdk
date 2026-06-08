@@ -53,7 +53,6 @@ final class TransportContext implements ConnectionContext {
     final OutputRecord              outputRecord;
 
     // connection status
-    boolean                         isUnsureMode;
     boolean                         isNegotiated = false;
     boolean                         isBroken = false;
     boolean                         isInputCloseNotified = false;
@@ -99,11 +98,11 @@ final class TransportContext implements ConnectionContext {
     // Please never use the transport parameter other than storing a
     // reference to this object.
     //
-    // Called by SSLEngineImpl
+    // Called by SSLEngineImpl, default mode is server.
     TransportContext(SSLContextImpl sslContext, SSLTransport transport,
             InputRecord inputRecord, OutputRecord outputRecord) {
         this(sslContext, transport, new SSLConfiguration(sslContext, false),
-                inputRecord, outputRecord, true);
+                inputRecord, outputRecord, false);
     }
 
     // Please never use the transport parameter other than storing a
@@ -125,22 +124,22 @@ final class TransportContext implements ConnectionContext {
     TransportContext(SSLContextImpl sslContext, SSLTransport transport,
             SSLConfiguration sslConfig,
             InputRecord inputRecord, OutputRecord outputRecord) {
-        this(sslContext, transport, (SSLConfiguration)sslConfig.clone(),
-                inputRecord, outputRecord, false);
+        this(sslContext, transport, sslConfig,
+                inputRecord, outputRecord, true);
     }
 
     private TransportContext(SSLContextImpl sslContext, SSLTransport transport,
             SSLConfiguration sslConfig, InputRecord inputRecord,
-            OutputRecord outputRecord, boolean isUnsureMode) {
+            OutputRecord outputRecord, boolean existingSSLConfig) {
         this.transport = transport;
         this.sslContext = sslContext;
         this.inputRecord = inputRecord;
         this.outputRecord = outputRecord;
-        this.sslConfig = sslConfig;
+        this.sslConfig = existingSSLConfig ?
+                (SSLConfiguration)sslConfig.clone() : sslConfig;
         if (this.sslConfig.maximumPacketSize == 0) {
             this.sslConfig.maximumPacketSize = outputRecord.getMaxPacketSize();
         }
-        this.isUnsureMode = isUnsureMode;
 
         // initial security parameters
         this.conSession = new SSLSessionImpl();
@@ -212,10 +211,6 @@ final class TransportContext implements ConnectionContext {
     }
 
     void kickstart() throws IOException {
-        if (isUnsureMode) {
-            throw new IllegalStateException("Client/Server mode not yet set.");
-        }
-
         // The threshold for allowing the method to continue processing
         // depends on whether we are doing a key update or kickstarting
         // a handshake.  In the former case, we only require the write-side
@@ -484,8 +479,6 @@ final class TransportContext implements ConnectionContext {
 
             sslConfig.toggleClientMode();
         }
-
-        isUnsureMode = false;
     }
 
     public void setQuic(boolean quic) {
