@@ -33,11 +33,15 @@
  * Pat Fisher, Mike Judd.
  */
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.Collection;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -670,6 +674,39 @@ public class SemaphoreTest extends JSR166TestCase {
         assertTrue(s.toString().contains("Permits = 3"));
         s.reducePermits(5);
         assertTrue(s.toString().contains("Permits = -2"));
+    }
+
+    /**
+     * test scenario for JDK-8386085
+     */
+    public void testShortTimeoutAcquisition() throws InterruptedException {
+        final int width = Runtime.getRuntime().availableProcessors();
+        try (var pool = Executors.newFixedThreadPool(width)) {
+            // Setup
+            final AtomicBoolean done = new AtomicBoolean(false);
+            final CountDownLatch waitingToRun = new CountDownLatch(width);
+            final Semaphore s = new Semaphore(0);
+            final Callable<Void> c = () -> {
+                waitingToRun.countDown();
+                do {
+                    s.tryAcquire(1, MICROSECONDS); // acquisition storm
+                } while (!done.get());
+                return null;
+            };
+
+            // Task creation
+            for(int i = 0; i < width; ++i)
+                pool.submit(c);
+
+            waitingToRun.await();     // Wait for all threads to have launched their tasks
+            Thread.sleep(3000); // Give the workers a bit of time to run acquisitions
+            s.release(width);         // Hand out permits
+            Thread.sleep(1000); // Give the workers a bit of time to react to the availability of permits
+
+            final int permitsAvailable = s.availablePermits();
+            done.set(true); // Try to make sure that for the successful cases the workers can exit cleanly
+            assertTrue(permitsAvailable < width); // Some permits should've been taken
+        }
     }
 
 }
