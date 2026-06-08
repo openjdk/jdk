@@ -63,7 +63,7 @@ public class StringEquals {
 
     @Setup
     public void setup() {
-        if(size > 0) {
+        if (size > 0) {
             test8 = "a".repeat(size);
             // NOTE 1: can't do test9 = new String(test8) or they'll share byte
             // arrays, which improves cache hit rate of the equal-string case
