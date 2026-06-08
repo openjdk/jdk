@@ -38,6 +38,9 @@ keys=stress headful intermittent randomness cgroups flag-sensitive external-dep
 
 groups=TEST.groups TEST.quick-groups
 
+# Resource-intensive tests that should not run concurrently with other tests
+exclusiveAccess.dirs=resourcehogs
+
 # Source files for classes that will be used at the beginning of each test suite run,
 # to determine additional characteristics of the system for use with the @requires tag.
 # Note: compiled bootlibs classes will be added to BCP.
