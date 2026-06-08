@@ -25,8 +25,6 @@
 
 package java.security;
 
-import sun.security.internal.InternalBinaryEncodable;
-
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -34,6 +32,8 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import jdk.internal.javac.PreviewFeature;
+import sun.security.internal.InternalBinaryEncodable;
+
 
 /**
  * This interface identifies the cryptographic objects that can be converted

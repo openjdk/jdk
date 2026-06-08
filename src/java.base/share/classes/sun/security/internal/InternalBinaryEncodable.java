@@ -35,4 +35,5 @@ import java.security.BinaryEncodable;
  */
 
 public final class InternalBinaryEncodable implements BinaryEncodable {
+    private InternalBinaryEncodable() {}
 }

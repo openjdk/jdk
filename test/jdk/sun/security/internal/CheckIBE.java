@@ -24,9 +24,10 @@
 /*
  * @test
  * @bug 8383608
- * @summary verify switches over BinaryEncodable are not exhaustive
+ * @summary check that InternalBinaryEncodable exists
  * @enablePreview
- * @compile/fail ExhaustiveBE.java
+ * @modules java.base/sun.security.internal
+ * @run main CheckIBE
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
@@ -39,15 +40,15 @@ import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import sun.security.internal.InternalBinaryEncodable;
+
 /*
- * This test verifies that application code cannot exhaustively switch over
- * BinaryEncodable by naming only the public permitted subtypes. Compilation
- * must fail because application code needs a default case, or a
- * BinaryEncodable case, to cover the internal permitted subtype
- * InternalBinaryEncodable.
+ * This test verifies that BinaryEncodable has the expected set of permitted
+ * subtypes, including InternalBinaryEncodable. If this switch stops compiling,
+ * update the cases to match the BinaryEncodable permits list.
  */
 
-public class ExhaustiveBE {
+public class CheckIBE {
     public static void main(String[] args) {
         BinaryEncodable be = new PEM("TEST", "TEST");
 
@@ -60,6 +61,7 @@ public class ExhaustiveBE {
             case X509Certificate ignored -> {}
             case X509CRL ignored -> {}
             case PEM ignored -> {}
+            case InternalBinaryEncodable ignored -> {}
         }
     }
 }
