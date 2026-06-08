@@ -1111,7 +1111,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                         incCompImageSize(1);
                     }
                     // Padding to word align absolute encoding
-                    if ( !isEven((int)Math.ceil((absVal-1)/2)) ) {
+                    if ( !isEven((int)Math.ceil((absVal-1)/2.0)) ) {
                         stream.writeByte(0);
                         incCompImageSize(1);
                     }
@@ -1247,7 +1247,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                         }
 
                         // Padding
-                        if ( !isEven((int)Math.ceil((absVal+1)/2)) ) {
+                        if ( !isEven((int)Math.ceil((absVal+1)/2.0)) ) {
                             stream.writeByte(0);
                             incCompImageSize(1);
                         }
