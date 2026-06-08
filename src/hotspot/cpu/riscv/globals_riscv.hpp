@@ -120,7 +120,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZvbb, false, EXPERIMENTAL, "Use Zvbb instructions")           \
   product(bool, UseZvbc, false, EXPERIMENTAL, "Use Zvbc instructions")           \
   product(bool, UseZvfh, false, DIAGNOSTIC, "Use Zvfh instructions")             \
-  product(bool, UseZvkn, false, DIAGNOSTIC,                                    \
+  product(bool, UseZvkn, false, DIAGNOSTIC,                                      \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \
   product(bool, UseCtxFencei, false, EXPERIMENTAL,                               \
           "Use PR_RISCV_CTX_SW_FENCEI_ON to avoid explicit icache flush")        \
