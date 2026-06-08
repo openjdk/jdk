@@ -47,6 +47,9 @@ ifeq ($(HSDIS_BACKEND), capstone)
   else ifeq ($(call isTargetCpuArch, arm), true)
     CAPSTONE_ARCH := CS_ARCH_ARM
     CAPSTONE_MODE := CS_MODE_ARM
+  else ifeq ($(call isTargetCpuArch, riscv), true)
+    CAPSTONE_ARCH := CS_ARCH_RISCV
+    CAPSTONE_MODE := CS_MODE_RISCV64
   else
     $(error No support for Capstone on this platform)
   endif
