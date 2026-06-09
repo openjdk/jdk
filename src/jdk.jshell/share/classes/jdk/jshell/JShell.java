@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,8 +434,8 @@ public class JShell implements AutoCloseable {
          *
          * @param binarySourceMapping the binary to source mapper
          * @return the {@code Builder} instance (for use in chained
-         * initialization)
-         * @since 27
+         *         initialization)
+         * @since 28
          */
         public Builder binarySourceMapping(Function<Path, Iterable<? extends Path>> binarySourceMapping) {
             this.binarySourceMapping = binarySourceMapping;

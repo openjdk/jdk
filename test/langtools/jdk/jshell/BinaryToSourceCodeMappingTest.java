@@ -140,7 +140,6 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
         closeCalled.set(false);
     }
 
-    //TODO: test classpath modification!
     @Override
     public void setUp(Consumer<JShell.Builder> bc) {
         super.setUp(bc.andThen(b -> {
