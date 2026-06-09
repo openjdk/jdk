@@ -252,8 +252,7 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR3: short loop, but without the necessary CmpI.
-    // TODO: why does this work?
+    // testIR3: short loop, and range in short range via CmpI before loop (for loop limit).
     public static int testIR3_gold = testIR3();
 
     @Run(test = "testIR3")
@@ -267,8 +266,15 @@ public class TestHasTruncationWrap {
     static int testIR3() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
-        // Missing CmpI, so init could be outside the short range.
         int sum = 0;
+        // While there is no explicit CmpI before the loop, we
+        // actually have "i < limit" in the for loop check, which
+        // is also checked before entering the loop.
+        // So also here, we have:
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in short range.
         for (int i = init; i < limit; i = (short)(i+1)) {
             sum = dontinline(sum); // work to keep loop alive
         }
@@ -289,12 +295,12 @@ public class TestHasTruncationWrap {
     static int testIR4() {
         int init  = Math.max(lo, 0);       // init  in [0..max_int]
         int limit = Math.min(hi, 100_000); // limit in [min_int..100_000]
-        if (init >= limit) { return -1; } // CmpI before loop
+        int sum = 0;
+        // Now, the check is not good enough:
         // -> init < limit <= 100_000
         // -> filtered_int_type return [min_int..99_999]
         // -> and intersected with its previous type [0..max_int]
         //    we get init in [0..99_999], which is NOT in short range.
-        int sum = 0;
         for (int i = init; i < limit; i = (short)(i+1)) {
             sum = dontinline(sum); // work to keep loop alive
             // Also: the backedge range is not good because
