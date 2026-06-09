@@ -52,12 +52,12 @@ public final class TLSHandshakeEvent extends MirrorEvent {
     @Label("Cipher Suite")
     public String cipherSuite;
 
+    @Label("Named Group")
+    public String namedGroup;
+
     @Label("Certificate Id")
     @Description("Peer Certificate Id")
     @CertificateId
     @Unsigned
     public long certificateId;
-
-    @Label("Named Group")
-    public String namedGroup;
 }
