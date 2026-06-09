@@ -53,8 +53,6 @@ private:
 
   void card_barrier(MacroAssembler* masm, Register obj);
 
-  void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, DecoratorSet decorators);
 
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
@@ -76,8 +74,6 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
   virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
                                                Register tmp, Label& slow_path);
-  void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
-                   bool acquire, bool release, bool is_cae, Register result);
 
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
