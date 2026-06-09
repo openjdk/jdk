@@ -745,7 +745,15 @@ public:
 
 class ClassesDCmd : public DCmdWithParser {
 private:
-  static constexpr const char *desc = "Print all loaded classes.\nClasses may be annotated with flags:\n F = has, or inherits, a non-empty finalize method\n f = has final method\n W = methods rewritten\n C = marked with @Contended annotation\n R = has been redefined\n S = is shared class (if -location is specified, append: 's' (static) or 'd' (dynamic) for AOT cache origin)";
+  static constexpr const char *desc =
+    "Print all loaded classes.\n"
+    "Classes may be annotated with flags:\n"
+    " F = has, or inherits, a non-empty finalize method\n"
+    " f = has final method\n"
+    " W = methods rewritten\n"
+    " C = marked with @Contended annotation\n"
+    " R = has been redefined\n"
+    " S = is shared class (if -location is specified, append: 's' (static) or 'd' (dynamic) for AOT cache origin)";
 
 protected:
   DCmdArgument<bool> _verbose;
