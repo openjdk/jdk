@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1COLLECTIONSET_HPP
 
 #include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -149,7 +150,7 @@ class G1CollectionSet {
   uint* _regions;
   uint _regions_max_length;
 
-  volatile uint _regions_cur_length;
+  uint _regions_cur_length;
 
   // Old gen groups selected for evacuation.
   G1CSetCandidateGroupList _groups;
@@ -174,7 +175,7 @@ class G1CollectionSet {
   CSetBuildType _inc_build_state;
 #endif
   // Index into the _regions indicating the start of the current collection set increment.
-  size_t _regions_inc_part_start;
+  uint _regions_inc_part_start;
   // Index into the _groups indicating the start of the current collection set increment.
   uint _groups_inc_part_start;
 
@@ -283,9 +284,9 @@ public:
   void iterate_incremental_part_from(G1HeapRegionClosure* cl, G1HeapRegionClaimer* hr_claimer, uint worker_id) const;
 
   // Returns the length of the current increment in number of regions.
-  size_t regions_cur_increment_length() const { return _regions_cur_length - _regions_inc_part_start; }
+  uint regions_cur_increment_length() const { return regions_cur_length() - _regions_inc_part_start; }
   // Returns the length of the whole current collection set in number of regions
-  size_t regions_cur_length() const { return _regions_cur_length; }
+  uint regions_cur_length() const { return _regions_cur_length; }
 
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given G1HeapRegionClosure on all of the regions.

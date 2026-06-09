@@ -83,8 +83,8 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
   _eden_region_length     = eden_cset_region_length;
   _survivor_region_length = survivor_cset_region_length;
 
-  assert((size_t)young_region_length() == _regions_cur_length,
-         "Young region length %u should match collection set length %u", young_region_length(), _regions_cur_length);
+  assert(young_region_length() == regions_cur_length(),
+         "Young region length %u should match collection set length %u", young_region_length(), regions_cur_length());
 
   _initial_old_region_length = 0;
   assert(_optional_groups.length() == 0, "Should not have any optional groups yet");
@@ -128,15 +128,15 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   _g1h->register_old_collection_set_region_with_region_attr(hr);
 
-  assert(_regions_cur_length < _regions_max_length, "Collection set now larger than maximum size.");
-  _regions[_regions_cur_length++] = hr->hrm_index();
+  assert(regions_cur_length() < _regions_max_length, "Collection set now larger than maximum size.");
+  _regions[_regions_cur_length.] = hr->hrm_index();
   _initial_old_region_length++;
 
   _g1h->old_set_remove(hr);
 }
 
 void G1CollectionSet::start() {
-  assert(_regions_cur_length == 0, "Collection set must be empty before starting a new collection set.");
+  assert(regions_cur_length() == 0, "Collection set must be empty before starting a new collection set.");
   assert(groups_cur_length() == 0, "Collection set groups must be empty before starting a new collection set.");
   assert(_optional_groups.length() == 0, "Collection set optional gorups must be empty before starting a new collection set.");
 
@@ -149,7 +149,7 @@ void G1CollectionSet::start() {
 void G1CollectionSet::continue_incremental_building() {
   assert(_inc_build_state == CSetBuildType::Inactive, "Precondition");
 
-  _regions_inc_part_start = _regions_cur_length;
+  _regions_inc_part_start = regions_cur_length();
   _groups_inc_part_start = groups_cur_length();
 
   DEBUG_ONLY(_inc_build_state = CSetBuildType::Active;)
@@ -223,13 +223,13 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   // Synchronize with the region attribute table.
   _g1h->register_young_region_with_region_attr(hr);
 
+  uint length = regions_cur_length();
   // We use UINT_MAX as "invalid" marker in verification.
-  assert(_regions_cur_length < (UINT_MAX - 1),
-         "Collection set is too large with %u entries", _regions_cur_length);
-  hr->set_young_index_in_cset(_regions_cur_length + 1);
+  assert(length < (UINT_MAX - 1), "Collection set is too large with %u entries", length);
+  hr->set_young_index_in_cset(length + 1);
 
-  assert(_regions_cur_length < _regions_max_length, "Collection set larger than maximum allowed.");
-  _regions[_regions_cur_length] = hr->hrm_index();
+  assert(length < _regions_max_length, "Collection set larger than maximum allowed.");
+  _regions[length++] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the length field.
   OrderAccess::storestore();
@@ -754,13 +754,12 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
 
 #ifdef ASSERT
 class G1VerifyYoungCSetIndicesClosure : public G1HeapRegionClosure {
-private:
-  size_t _young_length;
+  uint _young_length;
   uint* _heap_region_indices;
 public:
   G1VerifyYoungCSetIndicesClosure(size_t young_length) : G1HeapRegionClosure(), _young_length(young_length) {
     _heap_region_indices = NEW_C_HEAP_ARRAY(uint, young_length + 1, mtGC);
-    for (size_t i = 0; i < young_length + 1; i++) {
+    for (uint i = 0; i < young_length + 1; i++) {
       _heap_region_indices[i] = UINT_MAX;
     }
   }
@@ -787,7 +786,7 @@ public:
 void G1CollectionSet::verify_young_cset_indices() const {
   assert_at_safepoint_on_vm_thread();
 
-  G1VerifyYoungCSetIndicesClosure cl(_regions_cur_length);
+  G1VerifyYoungCSetIndicesClosure cl(regions_cur_length());
   iterate(&cl);
 }
 #endif
