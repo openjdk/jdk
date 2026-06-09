@@ -72,7 +72,7 @@ public class NMTPrintMallocSiteOfCorruptedMemory {
                 output.shouldContain("allocated from:");
                 // We will only have this if NMT can determine the name of the symbols in the stack trace.
                 // This will most likely be true if the platform is Linux and it's a debug build,
-                // so we limit the check to this type of platform.
+                // so we only check it for that platform and build.
                 if (Platform.isLinux() && Platform.isDebugBuild()) {
                     output.shouldMatch("\\[.*\\]WB_NMTMalloc\\+0x.*");
                 }
