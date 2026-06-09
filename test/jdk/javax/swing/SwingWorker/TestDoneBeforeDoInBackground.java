@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8081474
+ * @library /test/lib
  * @summary  Verifies if SwingWorker calls 'done'
  *           before the 'doInBackground' is finished
  * @run main TestDoneBeforeDoInBackground
@@ -34,9 +35,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jdk.test.lib.Utils;
+
 public class TestDoneBeforeDoInBackground {
 
-    private static final int WAIT_TIME = 200;
+    private static final int WAIT_TIME = (int)Utils.adjustTimeout(200);
     private static final long CLEANUP_TIME = 1000;
 
     private static final AtomicBoolean doInBackgroundStarted = new AtomicBoolean(false);
@@ -123,7 +126,9 @@ public class TestDoneBeforeDoInBackground {
                 }
             });
         worker.execute();
-        workerStarted.await();
+        if (!workerStarted.await(5 * WAIT_TIME, TimeUnit.MILLISECONDS)) {
+            throw new RuntimeException("worker didn't start in time");
+        }
 
         final long start = System.currentTimeMillis();
         worker.cancel(true);
