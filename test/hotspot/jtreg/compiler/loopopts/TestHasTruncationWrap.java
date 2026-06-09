@@ -201,6 +201,27 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
+    // testIR0b: just a regular int loop, but with NEQ exit check.
+    public static int testIR0b_gold = testIR0b();
+
+    @Run(test = "testIR0b")
+    private static void runIR0b() {
+        int val = testIR0b();
+        if (val != testIR0b_gold) { throw new RuntimeException("wrong value: " + testIR0b_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR0b() {
+        int init  = lo;
+        int limit = hi;
+        int sum = 0;
+        for (int i = init; i != limit; i++) {
+            sum = dontinline(sum);
+        }
+        return sum;
+    }
+
     // testIR1: short loop, but values are trivially in short range.
     public static int testIR1_gold = testIR1();
 
@@ -221,6 +242,7 @@ public class TestHasTruncationWrap {
         }
         return sum;
     }
+    // TODO: try the NEQ trick here as well, and in other cases below.
 
     // testIR2: short loop, ranges proved in short range via CmpI before loop.
     public static int testIR2_gold = testIR2();
