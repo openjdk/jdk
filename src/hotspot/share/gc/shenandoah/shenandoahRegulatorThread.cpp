@@ -124,7 +124,7 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   }
 
   SuspendibleThreadSetLeaver leaver;
-  const double before_sleep_time = os::elapsedTime(); 
+  const double before_sleep_time = os::elapsedTime();
   os::naked_short_sleep(_sleep);
   _most_recent_wake_time = os::elapsedTime();
   _young_heuristics->update_should_start_query_times(_most_recent_wake_time, double(_sleep) / 1000.0);
