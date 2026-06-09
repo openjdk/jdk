@@ -43,6 +43,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -155,17 +156,17 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
                     }
                     try {
                         FileSystem withNested = FileSystems.newFileSystem(srcZipWithNestedPath);
-                        class CloseableIterable implements AutoCloseable, Iterable<Path> {
+                        class CloseableIterable extends ArrayList<Path> implements AutoCloseable {
+                            public CloseableIterable() {
+                                super(List.of(withNested.getPath("root")));
+                            }
                             @Override
                             public void close() throws Exception {
                                 withNested.close();
                                 closeCalled.set(true);
                             }
-                            @Override
-                            public Iterator<Path> iterator() {
-                                return List.of(withNested.getPath("root")).iterator();
-                            }
                         }
+
                         return new CloseableIterable();
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);

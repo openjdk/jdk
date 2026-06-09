@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -101,7 +102,7 @@ public class JShell implements AutoCloseable {
     final List<String> extraRemoteVMOptions;
     final List<String> extraCompilerOptions;
     final Function<StandardJavaFileManager, StandardJavaFileManager> fileManagerMapping;
-    final Function<Path, Iterable<? extends Path>> binarySourceMapping;
+    final Function<Path, Collection<? extends Path>> binarySourceMapping;
 
     private int nextKeyIndex = 1;
 
@@ -186,7 +187,7 @@ public class JShell implements AutoCloseable {
         Map<String,String> executionControlParameters;
         String executionControlSpec;
         Function<StandardJavaFileManager, StandardJavaFileManager> fileManagerMapping;
-        Function<Path, Iterable<? extends Path>> binarySourceMapping;
+        Function<Path, Collection<? extends Path>> binarySourceMapping;
 
         Builder() { }
 
@@ -437,7 +438,7 @@ public class JShell implements AutoCloseable {
          *         initialization)
          * @since 28
          */
-        public Builder binarySourceMapping(Function<Path, Iterable<? extends Path>> binarySourceMapping) {
+        public Builder binarySourceMapping(Function<Path, Collection<? extends Path>> binarySourceMapping) {
             this.binarySourceMapping = binarySourceMapping;
             return this;
         }

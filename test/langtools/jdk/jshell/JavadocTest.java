@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -98,13 +99,7 @@ public class JavadocTest extends KullaTesting {
 
         compiler.compile(clazz);
 
-        try {
-            Field availableSources = getAnalysis().getClass().getDeclaredField("jdkSourcesOverride");
-            availableSources.setAccessible(true);
-            availableSources.set(getAnalysis(), Arrays.asList(srcZip));
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
-            throw new IllegalStateException(ex);
-        }
+        setJDKSourcesOverride(List.of(srcZip));
         addToClasspath(compiler.getClassDir());
     }
 
@@ -147,13 +142,22 @@ public class JavadocTest extends KullaTesting {
             throw new IllegalStateException(ex);
         }
 
+        setJDKSourcesOverride(List.of(srcZip));
+    }
+
+    @Override
+    public void tearDown() {
+        setJDKSourcesOverride(null);
+        super.tearDown();
+    }
+
+    private void setJDKSourcesOverride(List<Path> override) {
         try {
             Field availableSources = getAnalysis().getClass().getDeclaredField("jdkSourcesOverride");
             availableSources.setAccessible(true);
-            availableSources.set(getAnalysis(), Arrays.asList(srcZip));
+            availableSources.set(getAnalysis(), override);
         } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
             throw new IllegalStateException(ex);
         }
     }
-
 }

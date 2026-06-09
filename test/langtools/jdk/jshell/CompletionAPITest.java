@@ -284,7 +284,7 @@ public class CompletionAPITest extends KullaTesting {
         private final Path srcZip = Paths.get("src.zip");
 
     public void setUp(Consumer<JShell.Builder> bc) {
-        super.setUp(bc.andThen(b -> b.binarySourceMapping(p -> compiler.getClassDir().equals(p) ? srcZip : null)));
+        super.setUp(bc.andThen(b -> b.binarySourceMapping(p -> compiler.getClassDir().equals(p) ? List.of(srcZip) : null)));
     }
 
     static {
