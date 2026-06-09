@@ -126,6 +126,13 @@ public class TestMetaspaceFirstGC {
                 Asserts.assertLessThanOrEqual(Math.abs(gcThreshold - expectedSize), tolerance,
                     "gcThreshold (" + gcThreshold + ") should be close to MetaspaceSize (" + expectedSize + ")");
                 System.out.println("gcThreshold matches expected MetaspaceSize=" + expectedSize);
+            } else {
+                // No explicit MetaspaceSize — check default range (~12MB to ~20MB per tuning guide)
+                Asserts.assertGreaterThan(gcThreshold, 11_500_000L,
+                    "default gcThreshold (" + gcThreshold + ") too small");
+                Asserts.assertLessThan(gcThreshold, 22_500_000L,
+                    "default gcThreshold (" + gcThreshold + ") too large");
+                System.out.println("gcThreshold in expected default range");
             }
 
             System.out.println("PASSED");
