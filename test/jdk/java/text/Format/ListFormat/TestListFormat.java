@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8041488 8316974 8318569 8306116 8385736 8385834
+ * @bug 8041488 8316974 8318569 8306116 8385736 8385834 8386200
  * @summary Tests for ListFormat class
  * @run junit TestListFormat
  */
@@ -71,6 +71,14 @@ public class TestListFormat {
             ". {0} * {1}",
             "{0} + {1}",
             "{0} | {1} [",
+            "",
+            "",
+    };
+    // Ensures MessageFormat single quotes in custom patterns are treated as literals.
+    private static final String[] CUSTOM_PATTERNS_SINGLE_QUOTE = {
+            "' {0} ' {1}",
+            "{0} '' {1}",
+            "{0} ''' {1} '''",
             "",
             "",
     };
@@ -142,6 +150,10 @@ public class TestListFormat {
                 arguments(CUSTOM_PATTERNS_METACHAR, SAMPLE2, ". foo | bar ["),
                 arguments(CUSTOM_PATTERNS_METACHAR, SAMPLE3, ". foo * bar | baz ["),
                 arguments(CUSTOM_PATTERNS_METACHAR, SAMPLE4, ". foo * bar + baz | qux ["),
+                arguments(CUSTOM_PATTERNS_SINGLE_QUOTE, SAMPLE1, "foo"),
+                arguments(CUSTOM_PATTERNS_SINGLE_QUOTE, SAMPLE2, "' foo ''' bar '''"),
+                arguments(CUSTOM_PATTERNS_SINGLE_QUOTE, SAMPLE3, "' foo ' bar ''' baz '''"),
+                arguments(CUSTOM_PATTERNS_SINGLE_QUOTE, SAMPLE4, "' foo ' bar '' baz ''' qux '''")
         };
     }
 
