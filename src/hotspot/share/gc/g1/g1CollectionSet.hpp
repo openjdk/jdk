@@ -140,7 +140,7 @@ class G1CollectionSet {
 
   // The actual collection set as a set of region indices.
   //
-  // All regions in _regions below _regions_cur_length are assumed to be part of the
+  // All regions in _regions below _num_regions are assumed to be part of the
   // collection set.
   // We assume that at any time there is at most only one writer and (one or more)
   // concurrent readers. This means synchronization using storestore and loadload
@@ -148,18 +148,18 @@ class G1CollectionSet {
   //
   // This corresponds to the regions referenced by the candidate groups further below.
   uint* _regions;
-  uint _regions_max_length;
+  uint _max_regions;
 
-  uint _regions_cur_length;
+  uint _num_regions;
 
   // Old gen groups selected for evacuation.
   G1CSetCandidateGroupList _groups;
 
-  uint groups_cur_length() const;
+  uint num_groups() const;
 
-  uint _eden_region_length;
-  uint _survivor_region_length;
-  uint _initial_old_region_length;
+  uint _eden_region_count;
+  uint _survivor_region_count;
+  uint _initial_old_region_count;
 
   // When doing mixed collections we can add old regions to the collection set, which
   // will be collected only if there is enough time. We call these optional (old)
@@ -218,8 +218,8 @@ class G1CollectionSet {
   // to allow for more efficient parallel iteration.
   void iterate_part_from(G1HeapRegionClosure* cl,
                          G1HeapRegionClaimer* hr_claimer,
-                         size_t offset,
-                         size_t length,
+                         uint offset,
+                         uint length,
                          uint worker_id) const;
 
   // Adds the given group to the optional groups list (_optional_groups)
@@ -234,7 +234,7 @@ public:
   ~G1CollectionSet();
 
   // Initializes the collection set giving the maximum possible length of the collection set.
-  void initialize(uint max_region_length);
+  void initialize(uint max_regions);
 
   // Drop the collection set and collection set candidates.
   void abandon();
@@ -246,26 +246,26 @@ public:
 
   void prepare_for_scan();
 
-  void init_region_lengths(uint eden_cset_region_length,
-                           uint survivor_cset_region_length);
+  void init_region_counts(uint eden_cset_region_count,
+                          uint survivor_cset_region_count);
 
-  // Total length of the initial collection set in regions.
-  uint initial_region_length() const { return young_region_length() +
-                                              initial_old_region_length(); }
-  uint young_region_length() const { return eden_region_length() +
-                                            survivor_region_length(); }
+  // Total number of regions in the initial collection set.
+  uint initial_region_count() const { return young_region_count() +
+                                             initial_old_region_count(); }
+  uint young_region_count() const { return eden_region_count() +
+                                           survivor_region_count(); }
 
-  uint eden_region_length() const { return _eden_region_length; }
-  uint survivor_region_length() const { return _survivor_region_length; }
-  uint initial_old_region_length() const { return _initial_old_region_length; }
+  uint eden_region_count() const { return _eden_region_count; }
+  uint survivor_region_count() const { return _survivor_region_count; }
+  uint initial_old_region_count() const { return _initial_old_region_count; }
   uint num_optional_regions() const { return _optional_groups.num_regions(); }
 
-  bool only_contains_young_regions() const { return (initial_old_region_length() + num_optional_regions()) == 0; }
+  bool only_contains_young_regions() const { return (initial_old_region_count() + num_optional_regions()) == 0; }
 
   template <class CardOrRangeVisitor>
   inline void merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers);
 
-  uint groups_increment_length() const;
+  uint num_groups_in_increment() const;
 
   // Reset the contents of the collection set.
   void clear();
@@ -284,9 +284,9 @@ public:
   void iterate_incremental_part_from(G1HeapRegionClosure* cl, G1HeapRegionClaimer* hr_claimer, uint worker_id) const;
 
   // Returns the length of the current increment in number of regions.
-  uint regions_cur_increment_length() const { return regions_cur_length() - _regions_inc_part_start; }
+  uint num_regions_in_increment() const { return num_regions() - _regions_inc_part_start; }
   // Returns the length of the whole current collection set in number of regions
-  uint regions_cur_length() const { return _regions_cur_length; }
+  uint num_regions() const { return _num_regions; }
 
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given G1HeapRegionClosure on all of the regions.

@@ -1232,7 +1232,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   {
     WorkerThreads* workers = g1h->workers();
 
-    size_t const increment_length = g1h->collection_set()->groups_increment_length();
+    size_t const increment_length = g1h->collection_set()->num_groups_in_increment();
 
     uint const num_workers = initial_evacuation ? workers->active_workers() :
                                                   MIN2(workers->active_workers(), (uint)increment_length);

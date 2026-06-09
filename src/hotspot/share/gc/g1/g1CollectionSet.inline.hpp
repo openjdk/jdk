@@ -36,7 +36,7 @@ inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVis
     G1HeapRegionRemSet::iterate_for_merge(_g1h->young_regions_cset_group()->card_set(), cl);
   }
 
-  uint next_increment_length = groups_increment_length();
+  uint next_increment_length = num_groups_in_increment();
   if (next_increment_length == 0) {
     return;
   }
