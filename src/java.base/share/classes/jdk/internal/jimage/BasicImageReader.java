@@ -93,7 +93,8 @@ public class BasicImageReader implements AutoCloseable {
         this.byteOrder = Objects.requireNonNull(byteOrder);
         this.name = this.imagePath.toString();
 
-        // Only the current runtime image is loaded with the root class-loader.
+        // The image reader will be for the current run-time image when the this class
+        // is defined by the boot class loader.
         final boolean isCurrentRuntimeImage = BasicImageReader.class.getClassLoader() == null;
         ByteBuffer map = null;
 

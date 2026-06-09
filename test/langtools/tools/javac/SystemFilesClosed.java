@@ -56,14 +56,12 @@ public class SystemFilesClosed {
     @Test
     void testSystemFilesClosed() throws Exception {
         String targetSystem = base.toString();
-        try (PrintStream err = new PrintStream(OutputStream.nullOutputStream())) {
-            int ret = java.util.spi.ToolProvider.findFirst("jlink")
-                    .orElseThrow()
-                    .run(System.out, err, "--add-modules", "java.base", "--output", targetSystem);
-            if (ret != 0) {
-                System.out.println("It is most probably an exploded build. Skip testing.");
-                return;
-            }
+        int ret = java.util.spi.ToolProvider.findFirst("jlink")
+                .orElseThrow()
+                .run(System.out, System.err, "--add-modules", "java.base", "--output", targetSystem);
+        if (ret != 0) {
+            System.out.println("It is most probably an exploded build. Skip testing.");
+            return;
         }
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
