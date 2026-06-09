@@ -70,7 +70,12 @@ public class NMTPrintMallocSiteOfCorruptedMemory {
             case HEADER_AND_SITE_ARG, FOOTER_AND_SITE_ARG -> output.shouldContain("allocation-site cannot be shown since the marker is also corrupted.");
             case HEADER_ARG, FOOTER_ARG -> {
                 output.shouldContain("allocated from:");
-                output.shouldMatch("\\[.*\\]WB_NMTMalloc\\+0x.*");
+                // We will only have this if NMT can determine the name of the symbols in the stack trace.
+                // This will most likely be true if the platform is Linux and it's a debug build,
+                // so we limit the check to this type of platform.
+                if (Platform.isLinux() && Platform.isDebugBuild()) {
+                    output.shouldMatch("\\[.*\\]WB_NMTMalloc\\+0x.*");
+                }
             }
         }
     }
