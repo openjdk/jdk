@@ -427,7 +427,7 @@ public class JShell implements AutoCloseable {
          * and module path.
          *
          * <p>The results of calling {@code binarySourceMapping} may be cached, and the
-         * same file may not be queried again.
+         * same file may or may not be queried again.
          *
          * <p>If the result value is {@link AutoCloseable}, then it will
          * be closed when not needed anymore.

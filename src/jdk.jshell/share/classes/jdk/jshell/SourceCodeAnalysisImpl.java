@@ -174,7 +174,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private final JShell proc;
     private final CompletenessAnalyzer ca;
-    private final List<AutoCloseable> closeablesForSources = new ArrayList<>();
+    private final List<AutoCloseable> closeables = new ArrayList<>();
     private final Map<Path, ClassIndex> currentIndexes = new HashMap<>();
     private int indexVersion;
     private int classpathVersion;
@@ -370,7 +370,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private <Suggestion> List<Suggestion> computeSuggestions(OuterWrap code, String inputCode, int cursor, String prefix, ElementSuggestionConvertor<Suggestion> suggestionConvertor) {
         return proc.taskFactory.analyze(code, COMPLETION_EXTRA_PARAMETERS, at -> {
-            try (JavadocHelper javadoc = JavadocHelper.create(at.task, findSources())) {
+            try (CloseableSources sources = findSources();
+                 JavadocHelper javadoc = JavadocHelper.create(at.task, sources.paths())) {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
             TreePath tp = pathFor(topLevel, sp, code, cursor);
@@ -1410,20 +1411,13 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     void classpathChanged() {
-        List<AutoCloseable> toClose = new ArrayList<>();
-
         synchronized (currentIndexes) {
             int cpVersion = ++classpathVersion;
 
             INDEXER.submit(() -> refreshIndexes(cpVersion));
 
             allPaths = null;
-            availableSources = null;
-            toClose.addAll(closeablesForSources);
-            closeablesForSources.clear();
         }
-
-        close(toClose);
     }
 
     private Set<PackageElement> listPackages(AnalyzeTask at, String enclosingPackage) {
@@ -1913,7 +1907,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
             List<Documentation> result = Collections.emptyList();
 
-            try (JavadocHelper helper = JavadocHelper.create(at.task, findSources())) {
+            try (CloseableSources sources = findSources();
+                 JavadocHelper helper = JavadocHelper.create(at.task, sources.paths())) {
                 int parameterIndexFin = parameterIndex;
                 result = elements.map(el -> constructDocumentation(at, helper, el, parameterIndexFin, computeJavadoc))
                                  .filter(Objects::nonNull)
@@ -1943,7 +1938,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     public void close() {
-        close(closeablesForSources);
+        close(closeables);
     }
 
     private void close(List<AutoCloseable> toClose) {
@@ -1980,109 +1975,91 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                  .allMatch(param -> param.getSimpleName().toString().startsWith("arg"));
     }
 
-    private static List<Path> jdkSourcesOverride; //for tests
-    private List<Path> availableSources;
-    private final Map<Path, Iterable<Path>> mappedSourcesForBinaries =
-            new ConcurrentHashMap<>();
-
-    private List<Path> findSources() {
-        int originalClasspathVersion = classpathVersion;
-        synchronized (currentIndexes) {
-            if (availableSources != null) {
-                return availableSources;
-            }
-        }
-        List<AutoCloseable> toCloseFromResult = new ArrayList<>();
+    private CloseableSources findSources() {
+        List<AutoCloseable> toClose = new ArrayList<>();
         List<Path> result = new ArrayList<>();
-        if (jdkSourcesOverride == null) {
-            Path home = Paths.get(System.getProperty("java.home"));
-            Path srcZip = home.resolve("lib").resolve("src.zip");
-            if (!Files.isReadable(srcZip))
-                srcZip = home.getParent().resolve("src.zip");
-            if (Files.isReadable(srcZip)) {
-                boolean keepOpen = false;
-                FileSystem zipFO = null;
 
-                try {
-                    zipFO = FileSystems.newFileSystem(srcZip, Collections.emptyMap());
-                    Path root = zipFO.getRootDirectories().iterator().next();
-
-                    if (Files.exists(root.resolve("java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
-                        //non-modular format:
-                        result.add(srcZip);
-                    } else if (Files.exists(root.resolve("java.base/java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
-                        //modular format:
-                        try (DirectoryStream<Path> ds = Files.newDirectoryStream(root)) {
-                            for (Path p : ds) {
-                                if (Files.isDirectory(p)) {
-                                    result.add(p);
-                                }
-                            }
-                        }
-
-                        keepOpen = true;
-                    }
-                } catch (IOException ex) {
-                    proc.debug(ex, "SourceCodeAnalysisImpl.findSources()");
-                } finally {
-                    if (zipFO != null) {
-                        if (keepOpen) {
-                            toCloseFromResult.add(zipFO);
-                        } else {
-                            try {
-                                zipFO.close();
-                            } catch (IOException ex) {
-                                proc.debug(ex, "SourceCodeAnalysisImpl.findSources()");
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            result.addAll(jdkSourcesOverride);
-        }
+        result.addAll(jdkSources());
 
         if (proc.binarySourceMapping != null) {
             for (Path binaryPath : getAllPaths()) {
-                mappedSourcesForBinaries.computeIfAbsent(binaryPath, p -> {
-                    Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(p);
-                    List<Path> sources = new ArrayList<>();
+                Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(binaryPath);
 
-                    if (mappedSources != null) {
-                        if (mappedSources instanceof AutoCloseable closeable) {
-                            toCloseFromResult.add(closeable);
-                        }
-                        mappedSources.forEach(sources::add);
+                if (mappedSources != null) {
+                    if (mappedSources instanceof AutoCloseable closeable) {
+                        toClose.add(closeable);
                     }
 
-                    return sources;
-                }).forEach(result::add);
+                    mappedSources.forEach(result::add);
+                }
             }
         }
 
-        List<AutoCloseable> toClose = new ArrayList<>();
-
-        synchronized (currentIndexes) {
-            if (originalClasspathVersion != classpathVersion) {
-                result = null;
-                toClose.addAll(toCloseFromResult);
-            } else {
-                availableSources = result;
-                toClose.addAll(closeablesForSources);
-                closeablesForSources.clear();
-                closeablesForSources.addAll(toCloseFromResult);
-            }
-        }
-
-        close(toClose);
-
-        if (result == null) {
-            result = findSources();
-        }
-
-        return result;
+        return new CloseableSources(this, result, toClose);
     }
 
+    private static List<Path> jdkSourcesOverride; //for tests
+    private List<Path> jdkSources;
+
+    private synchronized List<Path> jdkSources() {
+        if (jdkSources != null) {
+            return jdkSources;
+        }
+        if (jdkSourcesOverride != null) {
+            return jdkSources = jdkSourcesOverride;
+        }
+
+        jdkSources = new ArrayList<>();
+
+        Path home = Paths.get(System.getProperty("java.home"));
+        Path srcZip = home.resolve("lib").resolve("src.zip");
+        if (!Files.isReadable(srcZip))
+            srcZip = home.getParent().resolve("src.zip");
+        if (Files.isReadable(srcZip)) {
+            boolean keepOpen = false;
+            FileSystem zipFO = null;
+
+            try {
+                zipFO = FileSystems.newFileSystem(srcZip, Collections.emptyMap());
+                Path root = zipFO.getRootDirectories().iterator().next();
+
+                if (Files.exists(root.resolve("java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
+                    //non-modular format:
+                    jdkSources.add(srcZip);
+                } else if (Files.exists(root.resolve("java.base/java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
+                    //modular format:
+                    try (DirectoryStream<Path> ds = Files.newDirectoryStream(root)) {
+                        for (Path p : ds) {
+                            if (Files.isDirectory(p)) {
+                                jdkSources.add(p);
+                            }
+                        }
+                    }
+
+                    keepOpen = true;
+                }
+            } catch (IOException ex) {
+                proc.debug(ex, "SourceCodeAnalysisImpl.findSources()");
+            } finally {
+                if (zipFO != null) {
+                    if (keepOpen) {
+                        closeables.add(zipFO);
+                    } else {
+                        close(List.of(zipFO));
+                    }
+                }
+            }
+        }
+
+        return jdkSources;
+    }
+
+    record CloseableSources(SourceCodeAnalysisImpl analysis, List<Path> paths, List<AutoCloseable> toClose) implements AutoCloseable {
+        @Override
+        public void close() {
+            analysis.close(toClose());
+        }
+    }
     private Element getOriginalEnclosingElement(Element el) {
         if (el instanceof Symbol s) el = s.baseSymbol();
         return el.getEnclosingElement();
