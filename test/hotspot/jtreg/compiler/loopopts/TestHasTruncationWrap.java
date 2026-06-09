@@ -54,26 +54,25 @@ public class TestHasTruncationWrap {
 
     // ------------------------- Failing cases for JDK-8385855 ------------------------------
 
-    // TODO: add back in
-    // // Test shape first reported in JDK-8385855, led to assert in JDK27:
-    // //   assert(cmp->Opcode() == Op_CmpI) failed: signed comparison required
-    // public static int   test0_start = 0;
-    // public static int   test0_stop  = 100;
-    // public static int[] test0_array = new int[100];
+    // Test shape first reported in JDK-8385855, led to assert in JDK27:
+    //   assert(cmp->Opcode() == Op_CmpI) failed: signed comparison required
+    public static int   test0_start = 0;
+    public static int   test0_stop  = 100;
+    public static int[] test0_array = new int[100];
 
-    // @Test
-    // public static void test0() {
-    //     int   start = test0_start;
-    //     int   stop  = test0_stop;
-    //     int[] array = test0_array;
+    @Test
+    public static void test0() {
+        int   start = test0_start;
+        int   stop  = test0_stop;
+        int[] array = test0_array;
 
-    //     stop = (stop << 16) >> 16;
-    //     int v = array[start]; // dominating CmpU detected by filtered_int_type
-    //     for (int i = start; i < stop;) {
-    //         i++;
-    //         i = (i << 16) >> 16; // iv truncation
-    //     }
-    // }
+        stop = (stop << 16) >> 16;
+        int v = array[start]; // dominating CmpU detected by filtered_int_type
+        for (int i = start; i < stop;) {
+            i++;
+            i = (i << 16) >> 16; // iv truncation
+        }
+    }
 
     // A second reproducer from JDK-8385855, leads to wrong result since JDK18 (JDK-8276162).
     // We make use of the CmpU via Integer.compareUnsigned, introduced by JDK-8276162.
@@ -172,6 +171,13 @@ public class TestHasTruncationWrap {
     }
 
     // ---- More general tests, Checking that truncated iv loops become CountedLoops ---------
+
+    // TODO: ensure coverage
+    // - char, byte and short truncation
+    // - check for IRNode.COUNTED_LOOP
+    // - dontinline call to prevent empty loop
+    // - increment and decrement cases
+    // - Cases with and without compare before loop: positive and negative tests
 
     // TODO: replace with real test!
     //@Test
