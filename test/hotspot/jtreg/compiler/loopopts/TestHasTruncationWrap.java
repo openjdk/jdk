@@ -75,8 +75,8 @@ public class TestHasTruncationWrap {
     //     }
     // }
 
-
     // A second reproducer from JDK-8385855, leads to wrong result since JDK18 (JDK-8276162).
+    // We make use of the CmpU via Integer.compareUnsigned, introduced by JDK-8276162.
     public static int test1_gold0 = test1(-2);
     public static int test1_gold1 = test1(2);
 
@@ -135,6 +135,40 @@ public class TestHasTruncationWrap {
             }
         }
         return i;
+    }
+
+    // A third reproducer from JDK-8385855, leads to wrong result since 6u.
+    // We make use of the CmpU in the RangeCheck of an array access.
+    // To flip the condition, we just use a try/catch.
+    static final int[] test2_A = new int[2];
+    public static int test2_gold0 = test2(-2);
+    public static int test2_gold1 = test2(2);
+
+    @Run(test = "test2")
+    private static void run2() {
+        int val0 = test2(-2);
+        int val1 = test2( 2);
+        if (val0 != test2_gold0) { throw new RuntimeException("wrong value test( 2): " + test2_gold0 + " vs " + val0); }
+        if (val1 != test2_gold1) { throw new RuntimeException("wrong value test(-2): " + test2_gold1 + " vs " + val1); }
+    }
+
+    @Test
+    static int test2(int start) {
+        try {
+            // CmpU Condition: start <u A.length = 2
+            return test2_A[start];
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            // From CmpU Condition: start >=u A.length = 2
+            int i = start;
+            while (i < 3) {
+                // Truncating induction-variable update.
+                i = (i + 1) & 0x7fff;
+                if (i < 1) {
+                    break;
+                }
+            }
+            return i;
+        }
     }
 
     // ---- More general tests, Checking that truncated iv loops become CountedLoops ---------
