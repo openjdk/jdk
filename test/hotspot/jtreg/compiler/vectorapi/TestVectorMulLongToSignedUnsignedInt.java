@@ -35,6 +35,7 @@ import compiler.lib.verify.*;
 /*
  * @test
  * @bug 8384963
+ * @key randomness
  * @summary C2: Incorrect uint constant match mishandles negative values in vectors
  * @modules jdk.incubator.vector
  * @library /test/lib /
