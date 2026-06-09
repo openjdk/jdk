@@ -253,6 +253,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIR3: short loop, but without the necessary CmpI.
+    // TODO: why does this work?
     public static int testIR3_gold = testIR3();
 
     @Run(test = "testIR3")
@@ -270,6 +271,35 @@ public class TestHasTruncationWrap {
         int sum = 0;
         for (int i = init; i < limit; i = (short)(i+1)) {
             sum = dontinline(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIR3: short loop, with a CmpI, but the limit ranges are bad.
+    public static int testIR4_gold = testIR4();
+
+    @Run(test = "testIR4")
+    private static void runIR4() {
+        int val = testIR4();
+        if (val != testIR4_gold) { throw new RuntimeException("wrong value: " + testIR4_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIR4() {
+        int init  = Math.max(lo, 0);       // init  in [0..max_int]
+        int limit = Math.min(hi, 100_000); // limit in [min_int..100_000]
+        if (init >= limit) { return -1; } // CmpI before loop
+        // -> init < limit <= 100_000
+        // -> filtered_int_type return [min_int..99_999]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99_999], which is NOT in short range.
+        int sum = 0;
+        for (int i = init; i < limit; i = (short)(i+1)) {
+            sum = dontinline(sum); // work to keep loop alive
+            // Also: the backedge range is not good because
+            // the exit check is not strong enough for short:
+            //   i < limit <= 100_000
         }
         return sum;
     }
