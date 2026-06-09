@@ -131,7 +131,7 @@ TEST_VM(os, test_print_markword) {
   markWord m0 = obj->mark();
   static markWord markWords[] = { markWord(0), m0, m0.set_age(2), m0.copy_set_hash(0x12345) };
 
-  static const char* expected[] = { "is null", "unknown", "age", "foo" };
+  static const char* expected[] = { "is null", "mark(is_unlocked no_hash age=0) java.lang.Byte", "age=2", "is an unknown value" };
   outputStream* out = fdStream::stdout_stream();
   int nmark = sizeof(markWords) / sizeof(int64_t);
   int nresult = sizeof(expected) / sizeof(const char*);
@@ -140,6 +140,7 @@ TEST_VM(os, test_print_markword) {
   if (UseCompactObjectHeaders) {
     for (int i = 0; i < nmark; i++) {
       stringStream st;
+      MutexLocker lock(ClassLoaderDataGraph_lock);
       os::print_location(&st, (intptr_t) markWords[i].to_pointer(), true);
       out->print("\n====================\nword 0x%p, '%s' result:\n%s\n", markWords[i].to_pointer(), expected[i], st.base());
       ASSERT_THAT(st.base(), testing::HasSubstr(expected[i]));
