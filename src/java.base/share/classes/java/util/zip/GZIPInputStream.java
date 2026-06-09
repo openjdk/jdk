@@ -348,7 +348,7 @@ public class GZIPInputStream extends InflaterInputStream {
                                                 // == at least 26 bytes needed for next member to
                                                 // be present
         if (!readNextMember) {
-            return true; // no more members exist
+            return true; // no need to read next member
         }
         // read next member's header
         int m = 8;  // this.trailer
@@ -363,8 +363,7 @@ public class GZIPInputStream extends InflaterInputStream {
         }
         inf.reset(); // reset the inflater for fresh input data from the next member
         if (numRemainingInInflater > m) {
-            // position the inflater's input buffer to the start of next member's deflated
-            // data
+            // position the inflater's input buffer to the start of next member's deflated data
             inf.setInput(buf, len - numRemainingInInflater + m, numRemainingInInflater - m);
         }
         return false; // next member exists
