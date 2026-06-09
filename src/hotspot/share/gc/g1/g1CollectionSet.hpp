@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,9 +283,9 @@ public:
   void iterate_incremental_part_from(G1HeapRegionClosure* cl, G1HeapRegionClaimer* hr_claimer, uint worker_id) const;
 
   // Returns the length of the current increment in number of regions.
-  size_t regions_cur_length() const { return _regions_cur_length - _regions_inc_part_start; }
+  size_t regions_cur_increment_length() const { return _regions_cur_length - _regions_inc_part_start; }
   // Returns the length of the whole current collection set in number of regions
-  size_t cur_length() const { return _regions_cur_length; }
+  size_t regions_cur_length() const { return _regions_cur_length; }
 
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given G1HeapRegionClosure on all of the regions.

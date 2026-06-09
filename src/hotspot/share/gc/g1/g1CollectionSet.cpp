@@ -182,7 +182,7 @@ void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
 void G1CollectionSet::par_iterate(G1HeapRegionClosure* cl,
                                   G1HeapRegionClaimer* hr_claimer,
                                   uint worker_id) const {
-  iterate_part_from(cl, hr_claimer, 0, cur_length(), worker_id);
+  iterate_part_from(cl, hr_claimer, 0, regions_cur_length(), worker_id);
 }
 
 void G1CollectionSet::iterate_optional(G1HeapRegionClosure* cl) const {
@@ -197,7 +197,7 @@ void G1CollectionSet::iterate_optional(G1HeapRegionClosure* cl) const {
 void G1CollectionSet::iterate_incremental_part_from(G1HeapRegionClosure* cl,
                                                     G1HeapRegionClaimer* hr_claimer,
                                                     uint worker_id) const {
-  iterate_part_from(cl, hr_claimer, _regions_inc_part_start, regions_cur_length(), worker_id);
+  iterate_part_from(cl, hr_claimer, _regions_inc_part_start, regions_cur_increment_length(), worker_id);
 }
 
 void G1CollectionSet::iterate_part_from(G1HeapRegionClosure* cl,
