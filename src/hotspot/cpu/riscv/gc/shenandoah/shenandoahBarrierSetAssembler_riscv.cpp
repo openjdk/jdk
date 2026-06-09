@@ -28,7 +28,6 @@
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
@@ -172,53 +171,6 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
   __ leave();
 
   __ bind(done);
-}
-
-void ShenandoahBarrierSetAssembler::resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp) {
-  assert(ShenandoahLoadRefBarrier || ShenandoahCASBarrier, "Should be enabled");
-
-  Label is_null;
-  __ beqz(dst, is_null);
-  resolve_forward_pointer_not_null(masm, dst, tmp);
-  __ bind(is_null);
-}
-
-// IMPORTANT: This must preserve all registers, even t0 and t1, except those explicitly
-// passed in.
-void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp) {
-  assert(ShenandoahLoadRefBarrier || ShenandoahCASBarrier, "Should be enabled");
-  // The below loads the mark word, checks if the lowest two bits are
-  // set, and if so, clear the lowest two bits and copy the result
-  // to dst. Otherwise it leaves dst alone.
-  // Implementing this is surprisingly awkward. I do it here by:
-  // - Inverting the mark word
-  // - Test lowest two bits == 0
-  // - If so, set the lowest two bits
-  // - Invert the result back, and copy to dst
-  RegSet saved_regs = RegSet::of(t2);
-  bool borrow_reg = (tmp == noreg);
-  if (borrow_reg) {
-    // No free registers available. Make one useful.
-    tmp = t0;
-    if (tmp == dst) {
-      tmp = t1;
-    }
-    saved_regs += RegSet::of(tmp);
-  }
-
-  assert_different_registers(tmp, dst, t2);
-  __ push_reg(saved_regs, sp);
-
-  Label done;
-  __ ld(tmp, Address(dst, oopDesc::mark_offset_in_bytes()));
-  __ xori(tmp, tmp, -1); // eon with 0 is equivalent to XOR with -1
-  __ andi(t2, tmp, markWord::lock_mask_in_place);
-  __ bnez(t2, done);
-  __ ori(tmp, tmp, markWord::marked_value);
-  __ xori(dst, tmp, -1); // eon with 0 is equivalent to XOR with -1
-  __ bind(done);
-
-  __ pop_reg(saved_regs, sp);
 }
 
 void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
@@ -481,90 +433,6 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
   __ bind(done);
 }
 
-// Special Shenandoah CAS implementation that handles false negatives due
-// to concurrent evacuation.  The service is more complex than a
-// traditional CAS operation because the CAS operation is intended to
-// succeed if the reference at addr exactly matches expected or if the
-// reference at addr holds a pointer to a from-space object that has
-// been relocated to the location named by expected.  There are two
-// races that must be addressed:
-//  a) A parallel thread may mutate the contents of addr so that it points
-//     to a different object.  In this case, the CAS operation should fail.
-//  b) A parallel thread may heal the contents of addr, replacing a
-//     from-space pointer held in addr with the to-space pointer
-//     representing the new location of the object.
-// Upon entry to cmpxchg_oop, it is assured that new_val equals null
-// or it refers to an object that is not being evacuated out of
-// from-space, or it refers to the to-space version of an object that
-// is being evacuated out of from-space.
-//
-// By default the value held in the result register following execution
-// of the generated code sequence is 0 to indicate failure of CAS,
-// non-zero to indicate success. If is_cae, the result is the value most
-// recently fetched from addr rather than a boolean success indicator.
-//
-// Clobbers t0, t1
-void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
-                                                Register addr,
-                                                Register expected,
-                                                Register new_val,
-                                                Assembler::Aqrl acquire,
-                                                Assembler::Aqrl release,
-                                                bool is_cae,
-                                                Register result) {
-  bool is_narrow = UseCompressedOops;
-  Assembler::operand_size size = is_narrow ? Assembler::uint32 : Assembler::int64;
-
-  assert_different_registers(addr, expected, t0, t1);
-  assert_different_registers(addr, new_val, t0, t1);
-
-  Label retry, success, fail, done;
-
-  __ bind(retry);
-
-  // Step1: Try to CAS.
-  __ cmpxchg(addr, expected, new_val, size, acquire, release, /* result */ t1);
-
-  // If success, then we are done.
-  __ beq(expected, t1, success);
-
-  // Step2: CAS failed, check the forwarded pointer.
-  __ mv(t0, t1);
-
-  if (is_narrow) {
-    __ decode_heap_oop(t0, t0);
-  }
-  resolve_forward_pointer(masm, t0);
-
-  __ encode_heap_oop(t0, t0);
-
-  // Report failure when the forwarded oop was not expected.
-  __ bne(t0, expected, fail);
-
-  // Step 3: CAS again using the forwarded oop.
-  __ cmpxchg(addr, t1, new_val, size, acquire, release, /* result */ t0);
-
-  // Retry when failed.
-  __ bne(t0, t1, retry);
-
-  __ bind(success);
-  if (is_cae) {
-    __ mv(result, expected);
-  } else {
-    __ mv(result, 1);
-  }
-  __ j(done);
-
-  __ bind(fail);
-  if (is_cae) {
-    __ mv(result, t0);
-  } else {
-    __ mv(result, zr);
-  }
-
-  __ bind(done);
-}
-
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                      Register start, Register count, Register tmp) {
   assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
@@ -792,7 +660,7 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
 void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow,
     Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3) {
 
-  ShenandoahBarrierStubC2::store_pre(masm, node, tmp1, dst, tmp2, tmp3, dst_narrow);
+  ShenandoahBarrierStubC2::store_pre(masm, node, dst, tmp1, tmp2, tmp3, dst_narrow);
 
   // Do the actual store
   if (dst_narrow) {
@@ -820,7 +688,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
   const Assembler::Aqrl release = Assembler::rl;
   const Assembler::operand_size size = narrow ? Assembler::uint32 : Assembler::int64;
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, Address(addr), tmp2, tmp3, narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, Address(addr), tmp1, tmp2, tmp3, narrow);
 
   // CAS!
   __ cmpxchg(addr, oldval, newval, size, acquire, release, /* result */ res, !exchange /* result_as_bool */);
@@ -832,7 +700,7 @@ void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAs
     Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3, bool is_acquire) {
   const bool is_narrow = node->bottom_type()->isa_narrowoop();
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp1, Address(addr, 0), tmp2, tmp3, is_narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, Address(addr, 0), tmp1, tmp2, tmp3, is_narrow);
 
   if (is_narrow) {
     if (is_acquire) {

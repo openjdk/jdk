@@ -2147,7 +2147,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   Register offset = rscratch2;
 
   Label L_loop_search_receiver, L_loop_search_empty;
-  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+  Label L_restart, L_found_recv, L_found_empty, L_count_update;
 
   // The code here recognizes three major cases:
   //   A. Fastest: receiver found in the table
@@ -2177,20 +2177,19 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //     if (receiver(i) == recv) goto found_recv(i);
   //   }
   //
-  //   // Fast: no receiver, but profile is full
+  //   // Fast: no receiver, but profile is not full
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == null) goto found_null(i);
   //   }
-  //   goto polymorphic
+  //
+  //   // Slow: profile is full, polymorphic case
+  //   count++;
+  //   return
   //
   //   // Slow: try to install receiver
   // found_null(i):
   //   CAS(&receiver(i), null, recv);
   //   goto restart
-  //
-  // polymorphic:
-  //   count++;
-  //   return
   //
   // found_recv(i):
   //   *receiver_count(i)++
@@ -2208,7 +2207,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   sub(rscratch1, offset, end_receiver_offset);
   cbnz(rscratch1, L_loop_search_receiver);
 
-  // Fast: no receiver, but profile is full
+  // Fast: no receiver, but profile is not full
   mov(offset, base_receiver_offset);
   bind(L_loop_search_empty);
     ldr(rscratch1, Address(mdp, offset));
@@ -2216,9 +2215,13 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add(offset, offset, receiver_step);
   sub(rscratch1, offset, end_receiver_offset);
   cbnz(rscratch1, L_loop_search_empty);
-  b(L_polymorphic);
 
-  // Slow: try to install receiver
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  mov(offset, poly_count_offset);
+  b(L_count_update);
+
+  // Slowest: try to install receiver
   bind(L_found_empty);
 
   // Atomically swing receiver slot: null -> recv.
@@ -2237,17 +2240,11 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // and just restart the search from the beginning.
   b(L_restart);
 
-  // Counter updates:
-
-  // Increment polymorphic counter instead of receiver slot.
-  bind(L_polymorphic);
-  mov(offset, poly_count_offset);
-  b(L_count_update);
-
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
   add(offset, offset, receiver_to_count_step);
 
+  // Finally, update the counter
   bind(L_count_update);
   increment(Address(mdp, offset), DataLayout::counter_increment);
 }
@@ -2816,7 +2813,7 @@ void MacroAssembler::decrementw(Register reg, int value)
 {
   if (value < 0)  { incrementw(reg, -value);      return; }
   if (value == 0) {                               return; }
-  if (value < (1 << 12)) { subw(reg, reg, value); return; }
+  if (value < (1 << 24)) { subw(reg, reg, value); return; }
   /* else */ {
     guarantee(reg != rscratch2, "invalid dst for register decrement");
     movw(rscratch2, (unsigned)value);
@@ -2828,7 +2825,7 @@ void MacroAssembler::decrement(Register reg, int value)
 {
   if (value < 0)  { increment(reg, -value);      return; }
   if (value == 0) {                              return; }
-  if (value < (1 << 12)) { sub(reg, reg, value); return; }
+  if (value < (1 << 24)) { sub(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register decrement");
     mov(rscratch2, (uint64_t)value);
@@ -2840,7 +2837,7 @@ void MacroAssembler::decrementw(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address decrement");
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
@@ -2853,7 +2850,7 @@ void MacroAssembler::decrement(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid address for decrement");
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
@@ -2866,7 +2863,7 @@ void MacroAssembler::incrementw(Register reg, int value)
 {
   if (value < 0)  { decrementw(reg, -value);      return; }
   if (value == 0) {                               return; }
-  if (value < (1 << 12)) { addw(reg, reg, value); return; }
+  if (value < (1 << 24)) { addw(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register increment");
     movw(rscratch2, (unsigned)value);
@@ -2878,7 +2875,7 @@ void MacroAssembler::increment(Register reg, int value)
 {
   if (value < 0)  { decrement(reg, -value);      return; }
   if (value == 0) {                              return; }
-  if (value < (1 << 12)) { add(reg, reg, value); return; }
+  if (value < (1 << 24)) { add(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register increment");
     movw(rscratch2, (unsigned)value);
@@ -2886,30 +2883,34 @@ void MacroAssembler::increment(Register reg, int value)
   }
 }
 
-void MacroAssembler::incrementw(Address dst, int value)
+void MacroAssembler::incrementw(Address dst, int value, Register result)
 {
-  assert(!dst.uses(rscratch1), "invalid dst for address increment");
+  assert(!dst.uses(result), "invalid dst for address increment");
+  assert(result->is_valid(), "must be");
+  assert_different_registers(result, rscratch2);
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
-  ldrw(rscratch1, dst);
-  incrementw(rscratch1, value);
-  strw(rscratch1, dst);
+  ldrw(result, dst);
+  incrementw(result, value);
+  strw(result, dst);
 }
 
-void MacroAssembler::increment(Address dst, int value)
+void MacroAssembler::increment(Address dst, int value, Register result)
 {
-  assert(!dst.uses(rscratch1), "invalid dst for address increment");
+  assert(!dst.uses(result), "invalid dst for address increment");
+  assert(result->is_valid(), "must be");
+  assert_different_registers(result, rscratch2);
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
-  ldr(rscratch1, dst);
-  increment(rscratch1, value);
-  str(rscratch1, dst);
+  ldr(result, dst);
+  increment(result, value);
+  str(result, dst);
 }
 
 // Push lots of registers in the bit set supplied.  Don't push sp.
