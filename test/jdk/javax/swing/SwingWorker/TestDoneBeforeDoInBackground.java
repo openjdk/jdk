@@ -53,8 +53,8 @@ public class TestDoneBeforeDoInBackground {
             @Override
             protected String doInBackground() throws Exception {
                 try {
+                    workerStarted.countDown();
                     while (true) {
-                        workerStarted.countDown();
                         System.out.println("Working...");
                         Thread.sleep(WAIT_TIME);
                     }
