@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package java.lang.foreign;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.ArenaImpl;
-import jdk.internal.foreign.NoInitAllocator;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
 import jdk.internal.vm.annotation.ForceInline;
@@ -770,22 +769,22 @@ public interface SegmentAllocator {
 
     @ForceInline
     private MemorySegment allocateNoInit(long byteSize) {
-        return this instanceof NoInitAllocator noInitAllocator ?
-                noInitAllocator.allocateNoInit(byteSize, 1) :
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(byteSize, 1) :
                 allocate(byteSize);
     }
 
     @ForceInline
     private MemorySegment allocateNoInit(MemoryLayout layout) {
-        return this instanceof NoInitAllocator noInitAllocator ?
-                noInitAllocator.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
                 allocate(layout);
     }
 
     @ForceInline
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
-        return this instanceof NoInitAllocator noInitAllocator ?
-                noInitAllocator.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
                 allocate(layout, size);
     }
 }

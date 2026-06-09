@@ -26,8 +26,6 @@
 
 package jdk.internal.foreign;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.GlobalSession.HeapSession;
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.ScopedMemoryAccess;
@@ -58,8 +56,6 @@ import java.util.Objects;
 public abstract sealed class MemorySessionImpl
         implements Scope
         permits ConfinedSession, GlobalSession, SharedSession {
-
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * The value of the {@code state} of a {@code MemorySessionImpl}. The only possible transition
@@ -142,23 +138,11 @@ public abstract sealed class MemorySessionImpl
     protected MemorySessionImpl(Thread owner, ResourceList resourceList) {
         this.owner = owner;
         this.resourceList = resourceList;
+        super();
     }
 
     public static MemorySessionImpl createConfined(Thread thread) {
         return new ConfinedSession(thread);
-    }
-
-    public static Arena createConfinedArena(Thread thread) {
-        AutoCloseable allocator = JLA.confinedArenaAllocator(thread);
-        if (allocator == null) {
-            allocator = ThreadConfinedSegmentPool.of(thread);
-            if (allocator == null) {
-                // Unable. Fall back to a non-pooled arena
-                return createConfined(thread).asArena();
-            }
-            JLA.setConfinedArenaAllocator(thread, allocator);
-        }
-        return ((ThreadConfinedSegmentPool) allocator).acquire(thread);
     }
 
     public static MemorySessionImpl createShared() {
@@ -227,6 +211,8 @@ public abstract sealed class MemorySessionImpl
      * @throws IllegalStateException if this session is already closed or if this is
      * a confined session and this method is called outside the owner thread.
      */
+
+    @ForceInline
     public void checkValidState() {
         try {
             checkValidStateRaw();
@@ -328,6 +314,8 @@ public abstract sealed class MemorySessionImpl
             }
         }
     }
+
+    abstract NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init);
 
     // helper functions to centralize error handling
 

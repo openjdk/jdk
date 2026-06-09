@@ -85,6 +85,7 @@ public final class Utils {
         }
     }
 
+    @ForceInline
     public static long alignUp(long n, long alignment) {
         return (n + alignment - 1) & -alignment;
     }
@@ -235,12 +236,14 @@ public final class Utils {
                 .orElse(1L);
     }
 
+    @ForceInline
     public static void checkAllocationSizeAndAlign(long byteSize, long byteAlignment) {
         // byteSize should be >= 0
         Utils.checkNonNegativeArgument(byteSize, "allocation size");
         checkAlign(byteAlignment);
     }
 
+    @ForceInline
     public static void checkAlign(long byteAlignment) {
         // alignment should be > 0, and power of two
         if (byteAlignment <= 0 ||
@@ -322,12 +325,6 @@ public final class Utils {
 
     public static String toHexString(long value) {
         return "0x" + Long.toHexString(value);
-    }
-
-    // The returned value is in the interval [0, 2^30]
-    static int powerOfPropertyOr(String name, int defaultPower) {
-        final int power = Integer.getInteger(name, defaultPower);
-        return 1 << Math.clamp(power, 0, Integer.SIZE - 2);
     }
 
     public record BaseAndScale(long base, long scale) {

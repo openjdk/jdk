@@ -25,9 +25,16 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.invoke.MhUtil;
+import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
@@ -39,7 +46,13 @@ import java.lang.invoke.VarHandle;
  */
 final class ConfinedSession extends MemorySessionImpl {
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final long POOL_SIZE = JLA.pooledMemorySize();
+
     private int asyncReleaseCount = 0;
+    @Stable
+    private long min;
+    private long sp;
 
     static final VarHandle ASYNC_RELEASE_COUNT= MhUtil.findVarHandle(MethodHandles.lookup(), "asyncReleaseCount", int.class);
 
@@ -77,24 +90,58 @@ final class ConfinedSession extends MemorySessionImpl {
         int acquire = acquireCount - asyncCount;
         if (acquire == 0) {
             state = CLOSED;
+            cleanupPool();
         } else {
             throw alreadyAcquired(acquire);
         }
     }
 
-    // Only call this method during thread cleanup!
-    void closeFromThreadCleanup() {
-        if (ownerThread().isVirtual()) {
-            // Allow thread cleanup to close a confined arena on behalf of the
-            // owning virtual thread after it has terminated.
-            if (state < OPEN) {
-                throw ALREADY_CLOSED.newRuntimeException();
-            }
-        } else {
+    @Override
+    @ForceInline
+    NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
+        if (byteSize <= POOL_SIZE) {
+            Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
             checkValidState();
+            long min = this.min;
+            if (min == 0) {
+                min = JLA.acquirePooledMemory(owner);
+                if (min > 0) {
+                    this.min = min;
+                }
+            }
+            final boolean zeroLength = byteSize == 0;
+            final long allocationByteSize = Math.max(1, byteSize);
+            NativeMemorySegmentImpl segment;
+            if (min > 0 && (segment = trySlice(min, allocationByteSize, byteAlignment)) != null) {
+                // Preserve the invariant that zero-sized segments have unique addresses
+                // for any given Arena
+                return zeroLength
+                        ? (NativeMemorySegmentImpl) segment.asSlice(0, 0)
+                        : segment;
+            }
         }
-        state = CLOSED;
-        resourceList.cleanup();
+        // Fall back to normal allocation
+        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, this, false, init);
+    }
+
+    @ForceInline
+    private NativeMemorySegmentImpl trySlice(long min, long byteSize, long byteAlignment) {
+        final long start = Utils.alignUp(min + sp, byteAlignment) - min;
+        if (start + byteSize <= POOL_SIZE) {
+            // We know the backing memory is zeroed out since the initial slab of memory
+            // is cleared and upon each recycle we zero out upon closing the arena.
+            final NativeMemorySegmentImpl slice = SegmentFactories.makeNativeSegmentUnchecked(min + start, byteSize, this);
+            sp = start + byteSize;
+            return slice;
+        }
+        return null;
+    }
+
+    @ForceInline
+    private void cleanupPool() {
+        if (min > 0) {
+            JLA.releaseAndZeroOutPooledMemory(owner, sp);
+        }
     }
 
     /**

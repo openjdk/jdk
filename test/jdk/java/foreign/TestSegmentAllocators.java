@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm TestSegmentAllocators
- * @run testng/othervm -Djava.lang.foreign.native.confined.arena.pool-slots=0 TestSegmentAllocators
+ * @run testng/othervm                                                       TestSegmentAllocators
+ * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=0 TestSegmentAllocators
+ * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=3 TestSegmentAllocators
+ * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=4 TestSegmentAllocators
+ * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=5 TestSegmentAllocators
  */
 
 import java.lang.foreign.*;

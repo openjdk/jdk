@@ -582,16 +582,6 @@ public interface JavaLangAccess {
     Object scopedValueBindings();
 
     /**
-     * Returns the thread's cached confined arena allocator, if any.
-     */
-    AutoCloseable confinedArenaAllocator(Thread thread);
-
-    /**
-     * Sets the thread's cached confined arena allocator.
-     */
-    void setConfinedArenaAllocator(Thread thread, AutoCloseable allocator);
-
-    /**
      * Returns the native thread ID for the given platform thread or 0 if not set.
      */
     long nativeThreadID(Thread thread);
@@ -669,4 +659,20 @@ public interface JavaLangAccess {
      * Finish initialization of the StackTraceElement objects in a stack trace.
      */
     void finishInit(StackTraceElement[] stackTrace);
+
+    /**
+     * Acquires and returns a pointer to the thread-local native memory pool, or returns
+     * zero if the pool cannot be allocated.
+     */
+    long acquirePooledMemory(Thread thread);
+
+    /**
+     * Zeros out and releases the thread-local native memory pool
+     */
+    void releaseAndZeroOutPooledMemory(Thread thread, long size);
+
+    /**
+     * Returns the size of the thread-local native memory pool
+     */
+    long pooledMemorySize();
 }

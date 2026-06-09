@@ -28,15 +28,12 @@ package jdk.internal.foreign;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment.Scope;
 
-public final class ArenaImpl implements Arena, NoInitAllocator {
+public final class ArenaImpl implements Arena {
 
     private final MemorySessionImpl session;
-    private final boolean shouldReserveMemory;
 
     ArenaImpl(MemorySessionImpl session) {
         this.session = session;
-        shouldReserveMemory = session instanceof ImplicitSession;
-        super();
     }
 
     @Override
@@ -49,13 +46,12 @@ public final class ArenaImpl implements Arena, NoInitAllocator {
         session.close();
     }
 
-    @Override
     public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
-        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserveMemory, false);
+        return session.allocateLowLevel(byteSize, byteAlignment, false);
     }
 
     @Override
     public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
-        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserveMemory, true);
+        return session.allocateLowLevel(byteSize, byteAlignment, true);
     }
 }

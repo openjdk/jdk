@@ -368,6 +368,110 @@ public class Thread implements Runnable {
         currentThread().scopedValueBindings = bindings;
     }
 
+    // Lazily load the POOLED_MEMORY_SIZE to avoid bootstrap issues
+    private static final class PoolConfigHolder {
+
+        // Providing "0" as a value for this property disables confined pooling
+        static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
+
+        // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
+        private static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
+
+        private static int clampedPowerOfPropertyOr(String name, int defaultPower) {
+            if (VM.isDirectMemoryPageAligned()) {
+                // Disable pooling regardless of the system property
+                return -1;
+            }
+            final int power = Integer.getInteger(name, defaultPower);
+
+            return power <= 0
+                    // -1 means it is disabled (i.e., it will never be allocated)
+                    ? -1
+                    // Min at 2^3 = Long.BYTES in order to use an optimized zero-out scheme
+                    // Max at 2^6 = 64 bytes in order to use an optimized zero-out scheme
+                    : 1 << Math.clamp(power, 3, 6);
+        }
+    }
+
+    /**
+     * Zero -> no pool allocated yet
+     * Positive -> Pool released (available)
+     * Negative -> Pool acquired (not available)
+     *
+     * PTRDIFF_MAX (usually 2<sup>63</sup>-1) allows us to use the sign bit
+     * as a flag for acquire state whithout conflicting with malloc() return values.
+     */
+    private long confinedMemoryPool;
+
+    static long pooledMemorySize() {
+        return PoolConfigHolder.POOLED_MEMORY_SIZE;
+    }
+
+    /**
+     * Returns a pointer to the pooled memory or zero if the pool cannot be acquired.
+     */
+    @ForceInline
+    long acquirePooledMemory() {
+        final long confinedMemoryPool = this.confinedMemoryPool;
+        if (confinedMemoryPool > 0) {
+            // Mark the pool as acquired
+            this.confinedMemoryPool = -confinedMemoryPool;
+            return confinedMemoryPool;
+        } else if (confinedMemoryPool == 0) {
+            // Lazily allocate native memory
+            return allocateAndAquirePooledMemory();
+        }
+        // No pool today ...
+        return 0;
+    }
+
+    // This only happens at most once per thread instance
+    private long allocateAndAquirePooledMemory() {
+        final long confinedMemoryPool;
+        try {
+            this.confinedMemoryPool = confinedMemoryPool = ThreadIdentifiers.U.allocateMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
+            if (confinedMemoryPool < 0) {
+                throw new InternalError("Allocated memory pool is negative contrary to" +
+                        " the non-negative pointer invariant: 0x" + Long.toHexString(confinedMemoryPool));
+            }
+        } catch (OutOfMemoryError e) {
+            // Failed to allocate a pool
+            return 0;
+        }
+        // Zero out memory in a non-performance sensitive way
+        ThreadIdentifiers.U.setMemory(confinedMemoryPool, pooledMemorySize(), (byte) 0);
+        // Mark the pool as acquired
+        this.confinedMemoryPool = -confinedMemoryPool;
+        return confinedMemoryPool;
+    }
+
+    @SuppressWarnings("fallthrough")
+    @ForceInline
+    void releasePooledMemory(long size) {
+        final long confinedMemoryPool = -this.confinedMemoryPool;
+        // zero adds an extra safety net for release on a pool that was never allocated.
+        if (confinedMemoryPool <= 0) {
+            throw new IllegalStateException("Cannot release pooled memory: " + confinedMemoryPool);
+        }
+        // Clear complete 8-byte buckets in bulk. It is safe to clear beyond `size`
+        // as long as we stay inside the pool which is at least 8 and at most 64-bytes.
+        switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
+            case 8: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x38, 0);
+            case 7: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x30, 0);
+            case 6: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x28, 0);
+            case 5: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x20, 0);
+            case 4: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x18, 0);
+            case 3: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x10, 0);
+            case 2: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x08, 0);
+            case 1: ThreadIdentifiers.U.putLong(confinedMemoryPool, 0);
+            case 0: break;
+            default: throw new AssertionError(size);
+        }
+
+        // Mark the pool as released
+        this.confinedMemoryPool = confinedMemoryPool;
+    }
+
     /**
      * Search the stack for the most recent scoped-value bindings.
      */
@@ -391,22 +495,6 @@ public class Thread implements Runnable {
 
             this.scopedValueBindings = bindings;
         }
-    }
-
-    /*
-     * Lazily initialized allocator used to speed up small allocations made by
-     * confined arenas owned by this thread.
-     */
-    @Stable
-    private AutoCloseable confinedArenaAllocator;
-
-    AutoCloseable confinedArenaAllocator() {
-        return confinedArenaAllocator;
-    }
-
-    void setConfinedArenaAllocator(AutoCloseable allocator) {
-        assert confinedArenaAllocator == null;
-        confinedArenaAllocator = allocator;
     }
 
     /*
@@ -1561,18 +1649,13 @@ public class Thread implements Runnable {
      * Null out reference after Thread termination.
      */
     void clearReferences() {
+        final long confinedMemoryPool = this.confinedMemoryPool;
+        if (confinedMemoryPool != 0) {
+            ThreadIdentifiers.U.freeMemory(Math.abs(confinedMemoryPool));
+        }
+        this.confinedMemoryPool = 0;
         threadLocals = null;
         inheritableThreadLocals = null;
-        if (confinedArenaAllocator != null) {
-            try {
-                confinedArenaAllocator.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        // It is safe to reset this variable to null even though it might be constant
-        // folded (as the thread died anyhow).
-        confinedArenaAllocator = null;
         if (uncaughtExceptionHandler != null)
             uncaughtExceptionHandler = null;
         if (nioBlocker != null)

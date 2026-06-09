@@ -80,6 +80,7 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationType;
@@ -2277,14 +2278,6 @@ public final class System {
                 return Thread.scopedValueBindings();
             }
 
-            public AutoCloseable confinedArenaAllocator(Thread thread) {
-                return thread.confinedArenaAllocator();
-            }
-
-            public void setConfinedArenaAllocator(Thread thread, AutoCloseable allocator) {
-                thread.setConfinedArenaAllocator(allocator);
-            }
-
             public long nativeThreadID(Thread thread) {
                 return thread.nativeThreadID();
             }
@@ -2359,6 +2352,24 @@ public final class System {
             public void finishInit(StackTraceElement[] stackTrace) {
                 StackTraceElement.finishInit(stackTrace);
             }
+
+            @Override
+            @ForceInline
+            public long acquirePooledMemory(Thread thread) {
+                return thread.acquirePooledMemory();
+            }
+
+            @Override
+            @ForceInline
+            public void releaseAndZeroOutPooledMemory(Thread thread, long size) {
+                thread.releasePooledMemory(size);
+            }
+
+            @Override
+            public long pooledMemorySize() {
+                return Thread.pooledMemorySize();
+            }
+
         });
     }
 }
