@@ -252,6 +252,28 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
+    // testIR3: short loop, but without the necessary CmpI.
+    public static int testIR3_gold = testIR3();
+
+    @Run(test = "testIR3")
+    private static void runIR3() {
+        int val = testIR3();
+        if (val != testIR3_gold) { throw new RuntimeException("wrong value: " + testIR3_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR3() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        // Missing CmpI, so init could be outside the short range.
+        int sum = 0;
+        for (int i = init; i < limit; i = (short)(i+1)) {
+            sum = dontinline(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
     // TODO: ensure coverage
     // - char, byte and short truncation
     // - check for IRNode.COUNTED_LOOP
