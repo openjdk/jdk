@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,7 +392,11 @@ public final class FileUtils {
             stream.forEach(sourcePath -> {
                 try {
                     Path destPath = dst.resolve(src.relativize(sourcePath));
-                    Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    if (Files.isDirectory(sourcePath)) {
+                        Files.createDirectories(destPath);
+                    } else {
+                        Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
                     destPath.toFile().setWritable(true);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
