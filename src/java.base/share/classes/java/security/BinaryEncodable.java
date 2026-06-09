@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,22 @@
 
 package java.security;
 
-import jdk.internal.javac.PreviewFeature;
-
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * This interface is implemented by security API classes that contain
- * binary-encodable key or certificate material.
- * These APIs or their subclasses typically provide methods to convert
- * their instances to and from byte arrays in the Distinguished
- * Encoding Rules (DER) format.
+ * binary-encodable cryptographic material.
+ *
+ * <p> This sealed interface may evolve. When using {@code switch}, always include a
+ * {@code default} case rather than relying on the classes specified in the
+ * {@code permits} clause to remain fixed.  An exhaustive {@code switch} may
+ * result in a {@link MatchException}.
  *
  * @see AsymmetricKey
  * @see KeyPair
@@ -49,11 +51,11 @@ import java.security.spec.X509EncodedKeySpec;
  * @see X509CRL
  * @see PEM
  *
- * @since 25
+ * @since 27
  */
 
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-public sealed interface DEREncodable permits AsymmetricKey, KeyPair,
+public sealed interface BinaryEncodable permits AsymmetricKey, KeyPair,
     PKCS8EncodedKeySpec, X509EncodedKeySpec, EncryptedPrivateKeyInfo,
     X509Certificate, X509CRL, PEM {
 }

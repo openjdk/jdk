@@ -228,10 +228,10 @@ public:
     return needs_load_ref_barrier(node) || needs_keep_alive_barrier(node);
   }
 
-  static void load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow);
-  static void store_pre(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow);
-  static void store_post(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2);
-  static void load_store_pre(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow);
+  static void       load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr,  Register tmp1, Register tmp2, bool narrow);
+  static void       store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);
+  static void      store_post(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2);
+  static void  load_store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);
   static void load_store_post(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2);
 
   void emit_code(MacroAssembler& masm);

@@ -534,11 +534,6 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   template <typename EVALUATE_FUNC, typename DELETE_FUNC>
   void bulk_delete(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f);
 
-  // Gets statistics if available, if not return old one. Item sizes are calculated with
-  // VALUE_SIZE_FUNC.
-  template <typename VALUE_SIZE_FUNC>
-  TableStatistics statistics_get(Thread* thread, VALUE_SIZE_FUNC& vs_f, TableStatistics old);
-
   // Moves all nodes from this table to to_cht with new hash code.
   // Must be done at a safepoint.
   void rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, MT>* to_cht);
