@@ -95,49 +95,19 @@ void oopDesc::init_mark() {
 }
 
 Klass* oopDesc::klass() const {
-  switch (ObjLayout::klass_mode()) {
-    case ObjLayout::Compact:
-      return mark().klass();
-    case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode_not_null(_compressed_klass);
-    default:
-      ShouldNotReachHere();
-  }
+  return CompressedKlassPointers::decode_not_null(narrow_klass());
 }
 
 Klass* oopDesc::klass_or_null() const {
-  switch (ObjLayout::klass_mode()) {
-    case ObjLayout::Compact:
-      return mark().klass_or_null();
-    case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode(_compressed_klass);
-    default:
-      ShouldNotReachHere();
-  }
+  return CompressedKlassPointers::decode(narrow_klass());
 }
 
 Klass* oopDesc::klass_or_null_acquire() const {
-  switch (ObjLayout::klass_mode()) {
-    case ObjLayout::Compact:
-      return mark_acquire().klass_or_null();
-    case ObjLayout::Compressed: {
-      narrowKlass narrow_klass = AtomicAccess::load_acquire(&_compressed_klass);
-      return CompressedKlassPointers::decode(narrow_klass);
-    }
-    default:
-      ShouldNotReachHere();
-  }
+  return CompressedKlassPointers::decode(narrow_klass_acquire());
 }
 
 Klass* oopDesc::klass_without_asserts() const {
-  switch (ObjLayout::klass_mode()) {
-    case ObjLayout::Compact:
-      return mark().klass_without_asserts();
-    case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode_without_asserts(_compressed_klass);
-    default:
-      ShouldNotReachHere();
-  }
+  return CompressedKlassPointers::decode_without_asserts(narrow_klass());
 }
 
 narrowKlass oopDesc::narrow_klass() const {
@@ -146,6 +116,17 @@ narrowKlass oopDesc::narrow_klass() const {
       return mark().narrow_klass();
     case ObjLayout::Compressed:
       return _compressed_klass;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+narrowKlass oopDesc::narrow_klass_acquire() const {
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return mark_acquire().narrow_klass();
+    case ObjLayout::Compressed:
+      return AtomicAccess::load_acquire(&_compressed_klass);
     default:
       ShouldNotReachHere();
   }

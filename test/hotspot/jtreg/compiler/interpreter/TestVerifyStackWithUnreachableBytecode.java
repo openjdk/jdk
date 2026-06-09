@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class TestVerifyStackWithUnreachableBytecode {
     public static void main(String[] args) {
         TestCase t = testCaseFromString(args[0]);
 
-        // The following is designed to cause a deopt with the reason `null_assert_or_unreached0`
+        // The following is designed to cause a deopt with the reason `null_assert`
         // when accessing A.val using getstatic due to the class B not being loaded and the consequent
         // assumption of A.val == null.
         TestVerifyStackWithUnreachableBytecodeA.val = null;

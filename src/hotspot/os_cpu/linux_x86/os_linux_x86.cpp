@@ -81,7 +81,7 @@
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
 
-address os::current_stack_pointer() {
+NOINLINE address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);
 }
 
