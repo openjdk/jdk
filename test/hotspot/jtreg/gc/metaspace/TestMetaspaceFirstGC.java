@@ -76,7 +76,7 @@ public class TestMetaspaceFirstGC {
 
             recording.stop();
 
-            List<RecordedEvent> events = Events.fromRecording(recording);
+            List<RecordedEvent> events = Events.fromRecordingOrdered(recording);
 
             // Find first GarbageCollection with cause "Metadata GC Threshold"
             RecordedEvent gcEvent = null;
