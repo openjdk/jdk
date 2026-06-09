@@ -28,13 +28,9 @@ package jdk.internal.foreign;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.invoke.MhUtil;
-import jdk.internal.misc.VM;
-import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
@@ -51,8 +47,8 @@ final class ConfinedSession extends MemorySessionImpl {
 
     private int asyncReleaseCount = 0;
     @Stable
-    private long min;
-    private long sp;
+    private long pool;
+    private long poolSp;
 
     static final VarHandle ASYNC_RELEASE_COUNT= MhUtil.findVarHandle(MethodHandles.lookup(), "asyncReleaseCount", int.class);
 
@@ -102,17 +98,17 @@ final class ConfinedSession extends MemorySessionImpl {
         if (byteSize <= POOL_SIZE) {
             Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
             checkValidState();
-            long min = this.min;
-            if (min == 0) {
-                min = JLA.acquirePooledMemory(owner);
-                if (min > 0) {
-                    this.min = min;
+            long pool = this.pool;
+            if (pool == 0) {
+                pool = JLA.acquirePooledMemory(owner);
+                if (pool > 0) {
+                    this.pool = pool;
                 }
             }
             final boolean zeroLength = byteSize == 0;
             final long allocationByteSize = Math.max(1, byteSize);
             NativeMemorySegmentImpl segment;
-            if (min > 0 && (segment = trySlice(min, allocationByteSize, byteAlignment)) != null) {
+            if (pool > 0 && (segment = trySlice(pool, allocationByteSize, byteAlignment)) != null) {
                 // Preserve the invariant that zero-sized segments have unique addresses
                 // for any given Arena
                 return zeroLength
@@ -125,13 +121,13 @@ final class ConfinedSession extends MemorySessionImpl {
     }
 
     @ForceInline
-    private NativeMemorySegmentImpl trySlice(long min, long byteSize, long byteAlignment) {
-        final long start = Utils.alignUp(min + sp, byteAlignment) - min;
+    private NativeMemorySegmentImpl trySlice(long pool, long byteSize, long byteAlignment) {
+        final long start = Utils.alignUp(pool + poolSp, byteAlignment) - pool;
         if (start + byteSize <= POOL_SIZE) {
             // We know the backing memory is zeroed out since the initial slab of memory
             // is cleared and upon each recycle we zero out upon closing the arena.
-            final NativeMemorySegmentImpl slice = SegmentFactories.makeNativeSegmentUnchecked(min + start, byteSize, this);
-            sp = start + byteSize;
+            final NativeMemorySegmentImpl slice = SegmentFactories.makeNativeSegmentUnchecked(pool + start, byteSize, this);
+            poolSp = start + byteSize;
             return slice;
         }
         return null;
@@ -139,8 +135,8 @@ final class ConfinedSession extends MemorySessionImpl {
 
     @ForceInline
     private void cleanupPool() {
-        if (min > 0) {
-            JLA.releaseAndZeroOutPooledMemory(owner, sp);
+        if (pool > 0) {
+            JLA.releaseAndZeroOutPooledMemory(owner, poolSp);
         }
     }
 

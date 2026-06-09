@@ -434,7 +434,7 @@ public class Thread implements Runnable {
                 throw new InternalError("Allocated memory pool is negative contrary to" +
                         " the non-negative pointer invariant: 0x" + Long.toHexString(confinedMemoryPool));
             }
-        } catch (OutOfMemoryError e) {
+        } catch (OutOfMemoryError _) {
             // Failed to allocate a pool
             return 0;
         }
@@ -454,7 +454,7 @@ public class Thread implements Runnable {
             throw new IllegalStateException("Cannot release pooled memory: " + confinedMemoryPool);
         }
         // Clear complete 8-byte buckets in bulk. It is safe to clear beyond `size`
-        // as long as we stay inside the pool which is at least 8 and at most 64-bytes.
+        // as long as we stay inside the pool which is at least 8 and at most 64 bytes.
         switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
             case 8: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x38, 0);
             case 7: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x30, 0);

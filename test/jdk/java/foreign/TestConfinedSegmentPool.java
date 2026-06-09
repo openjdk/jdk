@@ -361,19 +361,19 @@ final class TestConfinedSegmentPool {
 
         final class Holder {
 
-            private static Field sp;
+            private static Field poolSpField;
 
             static Field getOrSet(Arena arena) {
-                Field sp = Holder.sp;
-                if (sp == null) {
+                Field poolSpField = Holder.poolSpField;
+                if (poolSpField == null) {
                     try {
-                        Holder.sp = sp = arena.scope().getClass().getDeclaredField("sp");
-                        sp.setAccessible(true);
+                        Holder.poolSpField = poolSpField = arena.scope().getClass().getDeclaredField("poolSp");
+                        poolSpField.setAccessible(true);
                     }  catch (ReflectiveOperationException ex) {
                         throw new AssertionError(ex);
                     }
                 }
-                return sp;
+                return poolSpField;
             }
         }
 
