@@ -294,6 +294,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
     bind(inflated);
 
     const Register monitor = t;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::om_cache_monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::om_cache_obj_offset();
 
     if (!UseObjectMonitorTable) {
       assert(mark == monitor, "should be the same here");
@@ -301,17 +305,11 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       const Register hash = t;
       Label monitor_found;
 
-      // Look for the monitor in the om_cache.
+      // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
-      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
-      const int num_unrolled  = OMCache::CAPACITY;
-      for (int i = 0; i < num_unrolled; i++) {
-        movptr(monitor, Address(thread,  cache_offset + monitor_offset));
-        cmpptr(obj, Address(thread, cache_offset));
-        jccb(Assembler::equal, monitor_found);
-        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
-      }
+      movptr(monitor, Address(thread, thr_omc_offset + omc_monitor_offset));
+      cmpptr(obj,     Address(thread, thr_omc_offset + omc_obj_offset));
+      jccb(Assembler::equal, monitor_found);
 
       // Look for the monitor in the table.
 
@@ -353,6 +351,9 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       // Cache the monitor for unlock before trashing box. On failure to acquire
       // the lock, the slow path will reset the entry accordingly (see CacheSetter).
       movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), monitor);
+      // Store the monitor in the current thread's object monitor cache (omc).
+      movptr(Address(thread, thr_omc_offset + omc_monitor_offset), monitor);
+      movptr(Address(thread, thr_omc_offset + omc_obj_offset)    , obj);
     }
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).

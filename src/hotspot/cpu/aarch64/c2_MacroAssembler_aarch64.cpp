@@ -220,6 +220,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     bind(inflated);
 
     const Register t1_monitor = t1;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::om_cache_monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::om_cache_obj_offset();
 
     if (!UseObjectMonitorTable) {
       assert(t1_monitor == t1_mark, "should be the same here");
@@ -230,18 +234,12 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
       // Save the mark, we might need it to extract the hash.
       mov(t3, t1_mark);
 
-      // Look for the monitor in the om_cache.
+      // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
-      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
-      const int num_unrolled  = OMCache::CAPACITY;
-      for (int i = 0; i < num_unrolled; i++) {
-        ldr(t1_monitor, Address(rthread, cache_offset + monitor_offset));
-        ldr(t2, Address(rthread, cache_offset));
-        cmp(obj, t2);
-        br(Assembler::EQ, monitor_found);
-        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
-      }
+      ldr(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
+      ldr(t2,         Address(rthread, thr_omc_offset + omc_obj_offset));
+      cmp(obj, t2);
+      br(Assembler::EQ, monitor_found);
 
       // Look for the monitor in the table.
 
@@ -298,7 +296,12 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
 
     bind(monitor_locked);
     if (UseObjectMonitorTable) {
+      // Cache the monitor for unlock. On failure to acquire the lock,
+      // the slow path will reset the entry accordingly (see CacheSetter).
       str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+      // Store the monitor in the current thread's object monitor cache (omc).
+      str(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
+      str(obj,        Address(rthread, thr_omc_offset + omc_obj_offset));
     }
   }
 

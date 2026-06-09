@@ -6352,6 +6352,11 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     bind(inflated);
 
     const Register tmp1_monitor = tmp1;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::om_cache_monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::om_cache_obj_offset();
+
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == mark, "should be the same here");
     } else {
@@ -6362,17 +6367,11 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       // Save the mark, we might need it to extract the hash.
       z_lgr(hash, mark);
 
-      // Look for the monitor in the om_cache.
+      // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
-      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
-      const int num_unrolled  = OMCache::CAPACITY;
-      for (int i = 0; i < num_unrolled; i++) {
-        z_lg(tmp1_monitor, Address(Z_thread, cache_offset + monitor_offset));
-        z_cg(obj, Address(Z_thread, cache_offset));
-        z_bre(monitor_found);
-        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
-      }
+      z_lg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
+      z_cg(obj,          Address(Z_thread, thr_omc_offset + omc_obj_offset));
+      z_bre(monitor_found);
 
       // Get the hash code.
       z_srlg(hash, hash, markWord::hash_shift);
@@ -6428,8 +6427,12 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
 
     bind(monitor_locked);
     if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock
+      // Cache the monitor for unlock. On failure to acquire the lock,
+      // the slow path will reset the entry accordingly (see CacheSetter).
       z_stg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+      // Store the monitor in the current thread's object monitor cache (omc).
+      z_stg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
+      z_stg(obj,          Address(Z_thread, thr_omc_offset + omc_obj_offset));
     }
     // set the CC now
     z_cgr(obj, obj);
