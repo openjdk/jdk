@@ -64,11 +64,12 @@ import java.util.Objects;
  * bytes are available that may represent a subsequent member. If the
  * {@systemProperty jdk.util.gzip.tryReadAheadAfterTrailer} system property is set
  * to {@code true}, then the call to {@code InputStream.available()} is skipped and the
- * implementation instead attempts to read a subsequent member in the stream. The return value from
- * {@code InputStream.available()} may not always be accurate, so it may be necessary to set this
- * property in environments that process streams with a series of members. By default,
- * the {@code jdk.util.gzip.tryReadAheadAfterTrailer} system property is not set,
- * and {@code InputStream.available()} gets called.
+ * implementation instead attempts to read a subsequent member in the stream.
+ * {@code GZIPInputStream} depends on the return value of {@code InputStream.available()}
+ * to reliably process a stream with a series of members. Consequently, it may be necessary
+ * to set this property in environments that process streams with a series of members. By default,
+ * the {@code jdk.util.gzip.tryReadAheadAfterTrailer} system property is not set, and
+ * {@code InputStream.available()} gets called.
  *
  * @spec https://www.rfc-editor.org/info/rfc1952
  *       RFC 1952: GZIP file format specification version 4.3
