@@ -281,7 +281,7 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR3: short loop, with a CmpI, but the limit ranges are bad.
+    // testIR4: short loop, with a CmpI, but the limit ranges are bad.
     public static int testIR4_gold = testIR4();
 
     @Run(test = "testIR4")
@@ -307,6 +307,58 @@ public class TestHasTruncationWrap {
             // the exit check is not strong enough for short:
             //   i < limit <= 100_000
         }
+        return sum;
+    }
+
+    // testIR5: short do-while-loop, and range in short range via CmpI before loop (for loop limit).
+    public static int testIR5_gold = testIR5();
+
+    @Run(test = "testIR5")
+    private static void runIR5() {
+        int val = testIR5();
+        if (val != testIR5_gold) { throw new RuntimeException("wrong value: " + testIR5_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR5() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        if (init >= limit) { return -1; } // CmpI before loop
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in short range.
+        int sum = 0;
+        int i = init;
+        do {
+            sum = dontinline(sum); // work to keep loop alive
+            i = (short)(i+1);
+        } while (i < limit); // exit check at the end.
+        return sum;
+    }
+
+    // testIR6: short do-while-loop, missing the CmpI before the loop.
+    public static int testIR6_gold = testIR6();
+
+    @Run(test = "testIR6")
+    private static void runIR6() {
+        int val = testIR6();
+        if (val != testIR6_gold) { throw new RuntimeException("wrong value: " + testIR6_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIR6() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        // No CmpI before the loop!
+        int sum = 0;
+        int i = init;
+        do {
+            sum = dontinline(sum); // work to keep loop alive
+            i = (short)(i+1);
+        } while (i < limit); // exit check at the end.
         return sum;
     }
 
