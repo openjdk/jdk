@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -411,7 +411,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
-  resolve_oop_handle(result); // Load resolved references array itself.
+  resolve_oop_handle(result, Z_R0_scratch, Z_R1_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
@@ -1259,27 +1259,15 @@ void InterpreterMacroAssembler::profile_final_call(Register mdp) {
 
 void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
                                                      Register mdp,
-                                                     Register reg2,
-                                                     bool receiver_can_be_null) {
+                                                     Register reg2) {
   if (ProfileInterpreter) {
     NearLabel profile_continue;
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    NearLabel skip_receiver_profile;
-    if (receiver_can_be_null) {
-      NearLabel not_null;
-      compareU64_and_branch(receiver, (intptr_t)0L, bcondNotEqual, not_null);
-      // We are making a call. Increment the count for null receiver.
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-      z_bru(skip_receiver_profile);
-      bind(not_null);
-    }
-
     // Record the receiver type.
     record_klass_in_profile(receiver, mdp, reg2);
-    bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
@@ -2014,13 +2002,22 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
   // entry/exit events are sent for that thread to track stack
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
-  if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
-    Label jvmti_post_done;
-    MacroAssembler::load_and_test_int(Z_R0, Address(Z_thread, JavaThread::interp_only_mode_offset()));
-    z_bre(jvmti_post_done);
+  if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
+    NearLabel jvmti_post_done;
+
+    // if (thread->jvmti_thread_state() == nullptr) exit;
+    z_ltg(Z_R1_scratch, Address(Z_thread, JavaThread::jvmti_thread_state_offset()));
+    z_brz(jvmti_post_done);
+
+    // if (interp_only_mode() == false && frame_pop_cnt() == 0) exit;
+    z_lgf(Z_R1_scratch, Address(Z_R1_scratch, JvmtiThreadState::frame_pop_cnt_offset()));
+    z_o(Z_R1_scratch, Address(Z_thread, JavaThread::interp_only_mode_offset()));
+    z_brz(jvmti_post_done);
+
     if (!native_method) push(state); // see frame::interpreter_frame_result()
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     if (!native_method) pop(state);
+
     bind(jvmti_post_done);
   }
 }

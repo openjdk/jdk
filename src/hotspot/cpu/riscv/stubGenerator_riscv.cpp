@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2025, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -3194,8 +3194,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register tmp = x30, tmpLval = x12;
 
     int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    assert((base_offset % (UseCompactObjectHeaders ? 4 :
-                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+    assert((base_offset % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
 
 #ifdef ASSERT
     if (AvoidUnalignedAccesses) {
@@ -3252,8 +3251,7 @@ class StubGenerator: public StubCodeGenerator {
                    tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
 
     int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    assert((base_offset % (UseCompactObjectHeaders ? 4 :
-                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+    assert((base_offset % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
 
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
@@ -4880,7 +4878,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 #undef __
 #define __ this->
@@ -6908,7 +6906,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   // x10 = input (float16)
   // f10 = result (float)
@@ -7478,7 +7476,7 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 
  public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {
     switch(blob_id) {
     case BlobId::stubgen_preuniverse_id:
       generate_preuniverse_stubs();
@@ -7502,6 +7500,6 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 }; // end class declaration
 
-void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
-  StubGenerator g(code, blob_id);
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
+  StubGenerator g(code, blob_id, stub_data);
 }

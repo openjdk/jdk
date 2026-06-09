@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 
 import org.junit.jupiter.api.Test;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.Flow;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,17 +35,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @test
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::noBody` behavior
- * @build RecordingSubscriber
- * @run junit NoBodyTest
+ * @build ByteBufferUtils
+ *        RecordingSubscriber
+ *        ReplayTestSupport
+ * @run junit ${test.main.class}
  */
 
-class NoBodyTest {
+class NoBodyTest extends ReplayTestSupport {
 
     @Test
     void test() throws InterruptedException {
 
         // Create the publisher
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+        BodyPublisher publisher = BodyPublishers.noBody();
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -52,6 +57,13 @@ class NoBodyTest {
         subscription.request(Long.MAX_VALUE);
         assertEquals("onComplete", subscriber.invocations.take());
 
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        ByteBuffer expectedBuffer = ByteBuffer.wrap(new byte[0]);
+        BodyPublisher publisher = BodyPublishers.noBody();
+        return List.of(new ReplayTarget(expectedBuffer, publisher));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,14 +61,9 @@ bool DataLayout::needs_array_len(u1 tag) {
 // Perform generic initialization of the data.  More specific
 // initialization occurs in overrides of ProfileData::post_initialize.
 void DataLayout::initialize(u1 tag, u2 bci, int cell_count) {
-  DataLayout temp;
-  temp._header._bits = (intptr_t)0;
-  temp._header._struct._tag = tag;
-  temp._header._struct._bci = bci;
-  // Write the header using a single intptr_t write.  This ensures that if the layout is
-  // reinitialized readers will never see the transient state where the header is 0.
-  _header = temp._header;
-
+  _header._bits = (intptr_t)0;
+  _header._struct._tag = tag;
+  _header._struct._bci = bci;
   for (int i = 0; i < cell_count; i++) {
     set_cell_at(i, (intptr_t)0);
   }
@@ -329,7 +324,7 @@ static bool is_excluded(Klass* k) {
       log_debug(aot, training)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
       return true;
     } else {
-      bool excluded = SystemDictionaryShared::should_be_excluded(k);
+      bool excluded = SystemDictionaryShared::should_be_excluded(k) || !SystemDictionaryShared::is_builtin_loader(k->class_loader_data());
       if (excluded) {
         log_debug(aot, training)("Purged %s from MDO: excluded class", k->name()->as_C_string());
       }
@@ -667,8 +662,8 @@ void MultiBranchData::print_data_on(outputStream* st, const char* extra) const {
 
 void ArgInfoData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "ArgInfoData", extra);
-  int nargs = number_of_args();
-  for (int i = 0; i < nargs; i++) {
+  int args_size = size_of_args();
+  for (int i = 0; i < args_size; i++) {
     st->print("  0x%x", arg_modified(i));
   }
   st->cr();
@@ -858,117 +853,7 @@ bool MethodData::is_speculative_trap_bytecode(Bytecodes::Code code) {
   return false;
 }
 
-#if INCLUDE_JVMCI
-
-void* FailedSpeculation::operator new(size_t size, size_t fs_size) throw() {
-  return CHeapObj<mtCompiler>::operator new(fs_size, std::nothrow);
-}
-
-FailedSpeculation::FailedSpeculation(address speculation, int speculation_len) : _data_len(speculation_len), _next(nullptr) {
-  memcpy(data(), speculation, speculation_len);
-}
-
-// A heuristic check to detect nmethods that outlive a failed speculations list.
-static void guarantee_failed_speculations_alive(nmethod* nm, FailedSpeculation** failed_speculations_address) {
-  jlong head = (jlong)(address) *failed_speculations_address;
-  if ((head & 0x1) == 0x1) {
-    stringStream st;
-    if (nm != nullptr) {
-      st.print("%d", nm->compile_id());
-      Method* method = nm->method();
-      st.print_raw("{");
-      if (method != nullptr) {
-        method->print_name(&st);
-      } else {
-        const char* jvmci_name = nm->jvmci_name();
-        if (jvmci_name != nullptr) {
-          st.print_raw(jvmci_name);
-        }
-      }
-      st.print_raw("}");
-    } else {
-      st.print("<unknown>");
-    }
-    fatal("Adding to failed speculations list that appears to have been freed. Source: %s", st.as_string());
-  }
-}
-
-bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len) {
-  assert(failed_speculations_address != nullptr, "must be");
-  size_t fs_size = sizeof(FailedSpeculation) + speculation_len;
-
-  guarantee_failed_speculations_alive(nm, failed_speculations_address);
-
-  FailedSpeculation** cursor = failed_speculations_address;
-  FailedSpeculation* fs = nullptr;
-  do {
-    if (*cursor == nullptr) {
-      if (fs == nullptr) {
-        // lazily allocate FailedSpeculation
-        fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
-        if (fs == nullptr) {
-          // no memory -> ignore failed speculation
-          return false;
-        }
-        guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
-      }
-      FailedSpeculation* old_fs = AtomicAccess::cmpxchg(cursor, (FailedSpeculation*) nullptr, fs);
-      if (old_fs == nullptr) {
-        // Successfully appended fs to end of the list
-        return true;
-      }
-    }
-    guarantee(*cursor != nullptr, "cursor must point to non-null FailedSpeculation");
-    // check if the current entry matches this thread's failed speculation
-    if ((*cursor)->data_len() == speculation_len && memcmp(speculation, (*cursor)->data(), speculation_len) == 0) {
-      if (fs != nullptr) {
-        delete fs;
-      }
-      return false;
-    }
-    cursor = (*cursor)->next_adr();
-  } while (true);
-}
-
-void FailedSpeculation::free_failed_speculations(FailedSpeculation** failed_speculations_address) {
-  assert(failed_speculations_address != nullptr, "must be");
-  FailedSpeculation* fs = *failed_speculations_address;
-  while (fs != nullptr) {
-    FailedSpeculation* next = fs->next();
-    delete fs;
-    fs = next;
-  }
-
-  // Write an unaligned value to failed_speculations_address to denote
-  // that it is no longer a valid pointer. This is allows for the check
-  // in add_failed_speculation against adding to a freed failed
-  // speculations list.
-  long* head = (long*) failed_speculations_address;
-  (*head) = (*head) | 0x1;
-}
-#endif // INCLUDE_JVMCI
-
 int MethodData::compute_extra_data_count(int data_size, int empty_bc_count, bool needs_speculative_traps) {
-#if INCLUDE_JVMCI
-  if (ProfileTraps) {
-    // Assume that up to 30% of the possibly trapping BCIs with no MDP will need to allocate one.
-    int extra_data_count = MIN2(empty_bc_count, MAX2(4, (empty_bc_count * 30) / 100));
-
-    // Make sure we have a minimum number of extra data slots to
-    // allocate SpeculativeTrapData entries. We would want to have one
-    // entry per compilation that inlines this method and for which
-    // some type speculation assumption fails. So the room we need for
-    // the SpeculativeTrapData entries doesn't directly depend on the
-    // size of the method. Because it's hard to estimate, we reserve
-    // space for an arbitrary number of entries.
-    int spec_data_count = (needs_speculative_traps ? SpecTrapLimitExtraEntries : 0) *
-      (SpeculativeTrapData::static_cell_count() + DataLayout::header_size_in_cells());
-
-    return MAX2(extra_data_count, spec_data_count);
-  } else {
-    return 0;
-  }
-#else // INCLUDE_JVMCI
   if (ProfileTraps) {
     // Assume that up to 3% of BCIs with no MDP will need to allocate one.
     int extra_data_count = (uint)(empty_bc_count * 3) / 128 + 1;
@@ -994,7 +879,6 @@ int MethodData::compute_extra_data_count(int data_size, int empty_bc_count, bool
   } else {
     return 0;
   }
-#endif // INCLUDE_JVMCI
 }
 
 // Compute the size of the MethodData* necessary to store
@@ -1008,7 +892,9 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
   while ((c = stream.next()) >= 0) {
     int size_in_bytes = compute_data_size(&stream);
     data_size += size_in_bytes;
-    if (size_in_bytes == 0 JVMCI_ONLY(&& Bytecodes::can_trap(c)))  empty_bc_count += 1;
+    if (size_in_bytes == 0) {
+      empty_bc_count += 1;
+    }
     needs_speculative_traps = needs_speculative_traps || is_speculative_trap_bytecode(c);
   }
   int object_size = in_bytes(data_offset()) + data_size;
@@ -1296,28 +1182,6 @@ MethodData::MethodData() {
 }
 #endif
 
-// Reinitialize the storage of an existing MDO at a safepoint.  Doing it this way will ensure it's
-// not being accessed while the contents are being rewritten.
-class VM_ReinitializeMDO: public VM_Operation {
- private:
-  MethodData* _mdo;
- public:
-  VM_ReinitializeMDO(MethodData* mdo): _mdo(mdo) {}
-  VMOp_Type type() const                         { return VMOp_ReinitializeMDO; }
-  void doit() {
-    // The extra data is being zero'd, we'd like to acquire the extra_data_lock but it can't be held
-    // over a safepoint.  This means that we don't actually need to acquire the lock.
-    _mdo->initialize();
-  }
-  bool allow_nested_vm_operations() const        { return true; }
-};
-
-void MethodData::reinitialize() {
-  VM_ReinitializeMDO op(this);
-  VMThread::execute(&op);
-}
-
-
 void MethodData::initialize() {
   Thread* thread = Thread::current();
   NoSafepointVerifier no_safepoint;  // init function atomic wrt GC
@@ -1336,7 +1200,9 @@ void MethodData::initialize() {
   while ((c = stream.next()) >= 0) {
     int size_in_bytes = initialize_data(&stream, data_size);
     data_size += size_in_bytes;
-    if (size_in_bytes == 0 JVMCI_ONLY(&& Bytecodes::can_trap(c)))  empty_bc_count += 1;
+    if (size_in_bytes == 0) {
+      empty_bc_count += 1;
+    }
     needs_speculative_traps = needs_speculative_traps || is_speculative_trap_bytecode(c);
   }
   _data_size = data_size;
@@ -1420,11 +1286,6 @@ void MethodData::init() {
   _num_loops = 0;
   _num_blocks = 0;
   _would_profile = unknown;
-
-#if INCLUDE_JVMCI
-  _jvmci_ir_size = 0;
-  _failed_speculations = nullptr;
-#endif
 
   // Initialize escape flags.
   clear_escape_info();
@@ -1986,18 +1847,9 @@ void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
   release_C_heap_structures();
 }
 
-void MethodData::release_C_heap_structures() {
-#if INCLUDE_JVMCI
-  FailedSpeculation::free_failed_speculations(get_failed_speculations_address());
-#endif
-}
-
 #if INCLUDE_CDS
 void MethodData::remove_unshareable_info() {
   _extra_data_lock = nullptr;
-#if INCLUDE_JVMCI
-  _failed_speculations = nullptr;
-#endif
 }
 
 void MethodData::restore_unshareable_info(TRAPS) {

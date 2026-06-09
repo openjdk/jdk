@@ -47,7 +47,7 @@ ShenandoahHeapRegionSet::ShenandoahHeapRegionSet() :
 }
 
 ShenandoahHeapRegionSet::~ShenandoahHeapRegionSet() {
-  FREE_C_HEAP_ARRAY(jbyte, _set_map);
+  FREE_C_HEAP_ARRAY(_set_map);
 }
 
 void ShenandoahHeapRegionSet::add_region(ShenandoahHeapRegion* r) {

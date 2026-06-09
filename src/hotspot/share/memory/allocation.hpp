@@ -95,7 +95,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 //
 // char* AllocateHeap(size_t size, MemTag mem_tag, const NativeCallStack& stack, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 // char* AllocateHeap(size_t size, MemTag mem_tag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-// char* ReallocateHeap(char *old, size_t size, MemTag mem_tag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+// char* ReallocateHeap(char* old, size_t size, MemTag mem_tag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 // void FreeHeap(void* p);
 //
 
@@ -112,7 +112,7 @@ char* AllocateHeap(size_t size,
                    MemTag mem_tag,
                    AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
-char* ReallocateHeap(char *old,
+char* ReallocateHeap(char* old,
                      size_t size,
                      MemTag mem_tag,
                      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
@@ -260,11 +260,8 @@ class MetaspaceObj {
   //   void deallocate_contents(ClassLoaderData* loader_data);
 
   friend class VMStructs;
-  // All metsapce objects in the AOT cache (CDS archive) are mapped
-  // into a single contiguous memory block, so we can use these
-  // two pointers to quickly determine if a MetaspaceObj is in the
-  // AOT cache.
-  // When AOT/CDS is not enabled, both pointers are set to null.
+
+  // These are used by the Serviceability Agent even if CDS is disabled
   static void* _aot_metaspace_base;  // (inclusive) low address
   static void* _aot_metaspace_top;   // (exclusive) high address
 
@@ -275,28 +272,48 @@ class MetaspaceObj {
   // regular- or aot metaspace.
   static bool is_valid(const MetaspaceObj* p);
 
-#if INCLUDE_CDS
-  static bool in_aot_cache(const MetaspaceObj* p) {
+#if !INCLUDE_CDS
+  static bool is_pointer_in_aot_cache(const void* p) { return false; }
+  static bool is_pointer_in_aot_cache_no_init_check(const void* p) { return false; }
+#else
+private:
+  // All metsapce objects in the AOT cache (CDS archive) are mapped
+  // into a single contiguous memory block, so we can use these
+  // two pointers to quickly determine if a MetaspaceObj is in the
+  // AOT cache.
+  // When AOT/CDS is not enabled, both pointers are set to null.
+  static volatile bool _aot_metaspace_range_initialized;
+  static bool aot_metaspace_range_initialized();
+
+public:
+  inline static bool is_pointer_in_aot_cache(const void* p) {
+    return aot_metaspace_range_initialized() && is_pointer_in_aot_cache_no_init_check(p);
+  }
+
+  // Call this ONLY if you know that the AOT metaspace has already been initialized.
+  inline static bool is_pointer_in_aot_cache_no_init_check(const void* p) {
+    precond(aot_metaspace_range_initialized());
+
     // If no shared metaspace regions are mapped, _aot_metaspace_{base,top} will
     // both be null and all values of p will be rejected quickly.
-    return (((void*)p) < _aot_metaspace_top &&
-            ((void*)p) >= _aot_metaspace_base);
+    return (p < _aot_metaspace_top &&
+            p >= _aot_metaspace_base);
   }
-  bool in_aot_cache() const { return MetaspaceObj::in_aot_cache(this); }
-#else
-  static bool in_aot_cache(const MetaspaceObj* p) { return false; }
-  bool in_aot_cache() const { return false; }
-#endif
 
-  void print_address_on(outputStream* st) const;  // nonvirtual address printing
-
-  static void set_aot_metaspace_range(void* base, void* top) {
-    _aot_metaspace_base = base;
-    _aot_metaspace_top = top;
-  }
+  static void set_aot_metaspace_range(void* base, void* top);
 
   static void* aot_metaspace_base() { return _aot_metaspace_base; }
   static void* aot_metaspace_top()  { return _aot_metaspace_top;  }
+#endif // INCLUDE_CDS
+
+  bool in_aot_cache() const {
+    // MetaspaceObjects are only created or loaded from the AOT cache after
+    // the AOT metaspace has been initialized, so we can skip init checks.
+    return is_pointer_in_aot_cache_no_init_check(this);
+  }
+
+  void print_address_on(outputStream* st) const;  // nonvirtual address printing
+
 
 #define METASPACE_OBJ_TYPES_DO(f) \
   f(Class) \
@@ -374,9 +391,9 @@ extern char* resource_allocate_bytes(size_t size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 extern char* resource_allocate_bytes(Thread* thread, size_t size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size,
+extern char* resource_reallocate_bytes(char* old, size_t old_size, size_t new_size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-extern void resource_free_bytes( Thread* thread, char *old, size_t size );
+extern void resource_free_bytes(Thread* thread, char* obj, size_t size);
 
 //----------------------------------------------------------------------
 // Base class for objects allocated in the resource area.
@@ -479,6 +496,8 @@ protected:
 #endif // PRODUCT
 };
 
+#define REALLOC_RETURN_TYPE(old) typename std::remove_reference<decltype(old)>::type
+
 // One of the following macros must be used when allocating an array
 // or object to determine whether it should reside in the C heap on in
 // the resource area.
@@ -495,21 +514,18 @@ protected:
 #define NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(thread, type, size)\
   (type*) resource_allocate_bytes(thread, (size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
 
-#define REALLOC_RESOURCE_ARRAY(type, old, old_size, new_size)\
-  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type), (new_size) * sizeof(type))
+#define REALLOC_RESOURCE_ARRAY(old, old_size, new_size)\
+  (REALLOC_RETURN_TYPE(old)) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(*old), (new_size) * sizeof(*old))
 
-#define REALLOC_RESOURCE_ARRAY_RETURN_NULL(type, old, old_size, new_size)\
-  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type),\
-                                    (new_size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
+#define REALLOC_RESOURCE_ARRAY_RETURN_NULL(old, old_size, new_size)\
+  (REALLOC_RETURN_TYPE(old)) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(*old), \
+                                                       (new_size) * sizeof(*old), AllocFailStrategy::RETURN_NULL)
 
-#define FREE_RESOURCE_ARRAY(type, old, size)\
-  resource_free_bytes(Thread::current(), (char*)(old), (size) * sizeof(type))
+#define FREE_RESOURCE_ARRAY(obj, size)\
+  resource_free_bytes(Thread::current(), (char*)(obj), (size) * sizeof(*obj))
 
-#define FREE_RESOURCE_ARRAY_IN_THREAD(thread, type, old, size)\
-  resource_free_bytes(thread, (char*)(old), (size) * sizeof(type))
-
-#define FREE_FAST(old)\
-    /* nop */
+#define FREE_RESOURCE_ARRAY_IN_THREAD(thread, obj, size)\
+  resource_free_bytes(thread, (char*)(obj), (size) * sizeof(*obj))
 
 #define NEW_RESOURCE_OBJ(type)\
   NEW_RESOURCE_ARRAY(type, 1)
@@ -532,14 +548,14 @@ protected:
 #define NEW_C_HEAP_ARRAY_RETURN_NULL(type, size, mem_tag)\
   NEW_C_HEAP_ARRAY2(type, (size), mem_tag, AllocFailStrategy::RETURN_NULL)
 
-#define REALLOC_C_HEAP_ARRAY(type, old, size, mem_tag)\
-  (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), mem_tag))
+#define REALLOC_C_HEAP_ARRAY(old, size, mem_tag)\
+  (REALLOC_RETURN_TYPE(old)) ReallocateHeap((char*)(old), (size) * sizeof(*old), mem_tag)
 
-#define REALLOC_C_HEAP_ARRAY_RETURN_NULL(type, old, size, mem_tag)\
-  (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), mem_tag, AllocFailStrategy::RETURN_NULL))
+#define REALLOC_C_HEAP_ARRAY_RETURN_NULL(old, size, mem_tag)\
+  (REALLOC_RETURN_TYPE(old)) ReallocateHeap((char*)(old), (size) * sizeof(*old), mem_tag, AllocFailStrategy::RETURN_NULL)
 
-#define FREE_C_HEAP_ARRAY(type, old) \
-  FreeHeap((char*)(old))
+#define FREE_C_HEAP_ARRAY(obj) \
+  FreeHeap((void*)(obj))
 
 // allocate type in heap without calling ctor
 #define NEW_C_HEAP_OBJ(type, mem_tag)\
@@ -548,9 +564,9 @@ protected:
 #define NEW_C_HEAP_OBJ_RETURN_NULL(type, mem_tag)\
   NEW_C_HEAP_ARRAY_RETURN_NULL(type, 1, mem_tag)
 
-// deallocate obj of type in heap without calling dtor
-#define FREE_C_HEAP_OBJ(objname)\
-  FreeHeap((char*)objname);
+// deallocate obj in heap without calling dtor
+#define FREE_C_HEAP_OBJ(obj)\
+  FREE_C_HEAP_ARRAY(obj)
 
 
 //------------------------------ReallocMark---------------------------------

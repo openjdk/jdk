@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code short} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class ShortVector extends AbstractVector<Short> {
+public abstract sealed class ShortVector extends AbstractVector<Short>
+         permits ShortVector64, ShortVector128, ShortVector256, ShortVector512, ShortVectorMax {
 
     ShortVector(short[] vec) {
         super(vec);
@@ -2369,6 +2370,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortVector that = (ShortVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
         ShortVector filter = broadcast((short)origin);
         VectorMask<Short> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);

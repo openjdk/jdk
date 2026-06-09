@@ -44,6 +44,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/predicates.hpp"
+#include "opto/reachability.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/vectorization.hpp"
@@ -697,7 +698,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* he
     }
 #ifdef ASSERT
     if (mm != nullptr) {
-      _igvn.remove_dead_node(mm);
+      _igvn.remove_dead_node(mm, PhaseIterGVN::NodeOrigin::Speculative);
     }
 #endif
   }
@@ -2002,7 +2003,7 @@ bool CountedLoopConverter::stress_long_counted_loop() {
       Node* n = iv_nodes.at(i);
       Node* clone = old_new[n->_idx];
       if (clone != nullptr) {
-        igvn->remove_dead_node(clone);
+        igvn->remove_dead_node(clone, PhaseIterGVN::NodeOrigin::Speculative);
       }
     }
     return false;
@@ -2137,7 +2138,6 @@ bool CountedLoopConverter::is_counted_loop() {
   }
 
   assert(_head->Opcode() == Op_Loop || _head->Opcode() == Op_LongCountedLoop, "regular loops only");
-  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   // ===================================================
   // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
@@ -2411,6 +2411,12 @@ bool CountedLoopConverter::is_counted_loop() {
   _checked_for_counted_loop = true;
 #endif
 
+#ifndef PRODUCT
+  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
+    return false;
+  }
+#endif
+
   return true;
 }
 
@@ -2552,6 +2558,8 @@ IdealLoopTree* CountedLoopConverter::convert() {
 #endif
 
   PhaseIterGVN* igvn = &_phase->igvn();
+
+  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   if (_should_insert_stride_overflow_limit_check) {
     insert_stride_overflow_limit_check();
@@ -3927,6 +3935,7 @@ IdealLoopTree::IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail): _pa
                                                                              _has_range_checks(0), _has_range_checks_computed(0),
                                                                              _safepts(nullptr),
                                                                              _required_safept(nullptr),
+                                                                             _reachability_fences(nullptr),
                                                                              _allow_optimizations(true) {
   precond(_head != nullptr);
   precond(_tail != nullptr);
@@ -4338,8 +4347,13 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
   visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
-    if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
-      // Terminate this path
+    if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
+        && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+      // Terminate this path: guaranteed safepoint found.
+      // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+      // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
+      // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
+      // to avoid this additional check.
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
         if (_required_safept == nullptr) _required_safept = new Node_List();
@@ -4437,7 +4451,12 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     if (!_irreducible) {
       // Scan the dom-path nodes from tail to head
       for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
+        // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+        // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
+        // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
+        // to avoid this additional check.
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
+            && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
           has_call = true;
           _has_sfpt = 1;          // Then no need for a safept!
           break;
@@ -4659,7 +4678,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     _igvn.replace_node( phi2, add );
     // Sometimes an induction variable is unused
     if (add->outcnt() == 0) {
-      _igvn.remove_dead_node(add);
+      _igvn.remove_dead_node(add, PhaseIterGVN::NodeOrigin::Graph);
     }
     --i; // deleted this phi; rescan starting with next position
   }
@@ -4734,7 +4753,11 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
   } else if (_head->is_LongCountedLoop() || phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
-    assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
+    // When StressCountedLoop is enabled, this loop may intentionally avoid a counted loop conversion.
+    // This is expected behavior for the stress mode, which exercises alternative compilation paths.
+    if (!StressCountedLoop) {
+      assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
+    }
     if (_parent != nullptr && !_irreducible) {
       // Not a counted loop. Keep one safepoint.
       bool keep_one_sfpt = true;
@@ -4834,6 +4857,15 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
   return 0;
 }
 
+void IdealLoopTree::register_reachability_fence(ReachabilityFenceNode* rf) {
+  if (_reachability_fences == nullptr) {
+    _reachability_fences = new Node_List();
+  }
+  if (!_reachability_fences->contains(rf)) {
+    _reachability_fences->push(rf);
+  }
+}
+
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
@@ -4893,6 +4925,9 @@ void IdealLoopTree::dump_head() {
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
   if (_rce_candidate) tty->print(" rce");
+  if (_reachability_fences != nullptr && _reachability_fences->size() > 0) {
+    tty->print(" has_rf");
+  }
   if (_safepts != nullptr && _safepts->size() > 0) {
     tty->print(" sfpts={"); _safepts->dump_simple(); tty->print(" }");
   }
@@ -4900,6 +4935,9 @@ void IdealLoopTree::dump_head() {
     tty->print(" req={"); _required_safept->dump_simple(); tty->print(" }");
   }
   if (Verbose) {
+    if (_reachability_fences != nullptr && _reachability_fences->size() > 0) {
+      tty->print(" rfs={"); _reachability_fences->dump_simple(); tty->print(" }");
+    }
     tty->print(" body={"); _body.dump_simple(); tty->print(" }");
   }
   if (_head->is_Loop() && _head->as_Loop()->is_strip_mined()) {
@@ -5158,12 +5196,14 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
 void PhaseIdealLoop::build_and_optimize() {
-  assert(!C->post_loop_opts_phase(), "no loop opts allowed");
-
   bool do_split_ifs = (_mode == LoopOptsDefault);
   bool skip_loop_opts = (_mode == LoopOptsNone);
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
+  bool do_verify = (_mode == LoopOptsVerify);
+  bool do_expand_reachability_fences = (_mode == PostLoopOptsExpandReachabilityFences);
 
+  assert(!C->post_loop_opts_phase() || do_expand_reachability_fences || do_verify,
+         "no loop opts allowed");
 
   bool old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -5230,11 +5270,13 @@ void PhaseIdealLoop::build_and_optimize() {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
-  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll && !_verify_me &&
-          !_verify_only && !bs->is_gc_specific_loop_opts_pass(_mode);
+  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll &&
+                    !do_expand_reachability_fences && !_verify_me && !_verify_only &&
+                    !bs->is_gc_specific_loop_opts_pass(_mode) ;
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
+  bool do_optimize_reachability_fences = OptimizeReachabilityFences && (C->reachability_fences_count() > 0);
   bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
-  if (stop_early && !do_expensive_nodes) {
+  if (stop_early && !do_expensive_nodes && !do_optimize_reachability_fences) {
     return;
   }
 
@@ -5310,7 +5352,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Given early legal placement, try finding counted loops.  This placement
   // is good enough to discover most loop invariants.
-  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded) {
+  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded && !do_expand_reachability_fences) {
     _ltree_root->counted_loop( this );
   }
 
@@ -5333,15 +5375,21 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // clear out the dead code after build_loop_late
   while (_deadlist.size()) {
-    _igvn.remove_globally_dead_node(_deadlist.pop());
+    _igvn.remove_globally_dead_node(_deadlist.pop(), PhaseIterGVN::NodeOrigin::Graph);
   }
 
   eliminate_useless_zero_trip_guard();
   eliminate_useless_multiversion_if();
 
   if (stop_early) {
-    assert(do_expensive_nodes, "why are we here?");
-    if (process_expensive_nodes()) {
+    assert(do_expensive_nodes || do_optimize_reachability_fences, "why are we here?");
+    // Use the opportunity to optimize reachability fence nodes irrespective of
+    // whether loop optimizations are performed or not.
+    if (do_optimize_reachability_fences && optimize_reachability_fences()) {
+      recompute_dom_depth();
+      DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+    }
+    if (do_expensive_nodes && process_expensive_nodes()) {
       // If we made some progress when processing expensive nodes then
       // the IGVN may modify the graph in a way that will allow us to
       // make some more progress: we need to try processing expensive
@@ -5368,6 +5416,22 @@ void PhaseIdealLoop::build_and_optimize() {
     _ltree_root->dump();
   }
 #endif
+
+  if (do_optimize_reachability_fences && optimize_reachability_fences()) {
+    recompute_dom_depth();
+    DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+  }
+
+  if (do_expand_reachability_fences) {
+    assert(C->post_loop_opts_phase(), "required");
+    if (expand_reachability_fences()) {
+      recompute_dom_depth();
+      DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+    }
+    return;
+  }
+
+  assert(!C->post_loop_opts_phase(), "required");
 
   if (skip_loop_opts) {
     C->restore_major_progress(old_progress);
@@ -5874,8 +5938,8 @@ void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
   uint idx = d->_idx;
   if (idx >= _idom_size) {
     uint newsize = next_power_of_2(idx);
-    _idom      = REALLOC_ARENA_ARRAY(&_arena, Node*,     _idom,_idom_size,newsize);
-    _dom_depth = REALLOC_ARENA_ARRAY(&_arena,  uint, _dom_depth,_idom_size,newsize);
+    _idom      = REALLOC_ARENA_ARRAY(&_arena, _idom, _idom_size, newsize);
+    _dom_depth = REALLOC_ARENA_ARRAY(&_arena, _dom_depth, _idom_size, newsize);
     memset( _dom_depth + _idom_size, 0, (newsize - _idom_size) * sizeof(uint) );
     _idom_size = newsize;
   }
@@ -6265,6 +6329,8 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
         // Record all safepoints in this loop.
         if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List();
         innermost->_safepts->push(n);
+      } else if (n->is_ReachabilityFence()) {
+        innermost->register_reachability_fence(n->as_ReachabilityFence());
       }
     }
   }

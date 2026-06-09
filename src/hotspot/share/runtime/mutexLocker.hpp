@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,6 @@ extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" f
 extern Mutex*   G1OldSets_lock;                  // protects the G1 old region sets
 extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel GC operations.
 extern Mutex*   G1ReviseYoungLength_lock;        // Protects access to young gen length revising operations.
-extern Monitor* G1RootRegionScan_lock;           // used to notify that the G1 CM threads have finished scanning the root regions
 extern Mutex*   G1Uncommit_lock;                 // protects the G1 uncommit list when not at safepoints
 #endif
 
@@ -155,11 +154,6 @@ extern Mutex*   ExternalsRecorder_lock;          // used to guard access to the 
 extern Mutex*   AOTCodeCStrings_lock;            // used to guard access to the AOT code C strings table
 
 extern Monitor* ContinuationRelativize_lock;
-
-#if INCLUDE_JVMCI
-extern Monitor* JVMCI_lock;                      // protects global JVMCI critical sections
-extern Monitor* JVMCIRuntime_lock;               // protects critical sections for a specific JVMCIRuntime object
-#endif
 
 extern Mutex*   Bootclasspath_lock;
 

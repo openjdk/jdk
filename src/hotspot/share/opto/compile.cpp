@@ -74,6 +74,7 @@
 #include "opto/output.hpp"
 #include "opto/parse.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/reachability.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
@@ -396,6 +397,9 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->is_expensive()) {
     remove_expensive_node(dead);
   }
+  if (dead->is_ReachabilityFence()) {
+    remove_reachability_fence(dead->as_ReachabilityFence());
+  }
   if (dead->is_OpaqueTemplateAssertionPredicate()) {
     remove_template_assertion_predicate_opaque(dead->as_OpaqueTemplateAssertionPredicate());
   }
@@ -459,6 +463,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   // Remove useless Template Assertion Predicate opaque nodes
   remove_useless_nodes(_template_assertion_predicate_opaques, useful);
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
+  remove_useless_nodes(_reachability_fences, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_merge_stores_igvn, useful); // remove useless node recorded for merge stores IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
@@ -641,6 +646,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _stub_id(StubId::NO_STUBID),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
+      _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
       _allow_macro_nodes(true),
@@ -665,6 +671,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _parse_predicates(comp_arena(), 8, 0, nullptr),
       _template_assertion_predicate_opaques(comp_arena(), 8, 0, nullptr),
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
+      _reachability_fences(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
@@ -741,7 +748,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
       StressIncrementalInlining || StressMacroExpansion ||
       StressMacroElimination || StressUnstableIfTraps ||
-      StressBailout || StressLoopPeeling) {
+      StressBailout || StressLoopPeeling || StressCountedLoop) {
     initialize_stress_seed(directive);
   }
 
@@ -869,8 +876,10 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 #endif
 
-#ifdef ASSERT
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->final_refinement(this);
+
+#ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeCodeGen);
 #endif
 
@@ -895,6 +904,13 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   Code_Gen();
 }
 
+// C2 uses runtime stubs serialized generation to initialize its static tables
+// shared by all compilations, like Type::_shared_type_dict.
+// At least one stub have to be completely generated to execute intialization
+// before we can skip the rest stubs generation by loading AOT cached stubs.
+
+static bool c2_do_stub_init_complete = false;
+
 //------------------------------Compile----------------------------------------
 // Compile a runtime stub
 Compile::Compile(ciEnv* ci_env,
@@ -916,6 +932,7 @@ Compile::Compile(ciEnv* ci_env,
       _stub_id(stub_id),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
+      _node_count_inlining_cutoff(NodeCountInliningCutoff),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
       _allow_macro_nodes(true),
@@ -934,6 +951,7 @@ Compile::Compile(ciEnv* ci_env,
       _directive(directive),
       _log(ci_env->log()),
       _first_failure_details(nullptr),
+      _reachability_fences(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
@@ -967,7 +985,7 @@ Compile::Compile(ciEnv* ci_env,
   C = this;
 
   // try to reuse an existing stub
-  {
+  if (c2_do_stub_init_complete) {
     BlobId blob_id = StubInfo::blob(_stub_id);
     CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, blob_id);
     if (blob != nullptr) {
@@ -1012,6 +1030,10 @@ Compile::Compile(ciEnv* ci_env,
   NOT_PRODUCT( verify_graph_edges(); )
 
   Code_Gen();
+
+  // First successful stub generation will set it to `true`
+  // and it will stay `true` after that.
+  c2_do_stub_init_complete = c2_do_stub_init_complete || (_stub_entry_point != nullptr);
 }
 
 Compile::~Compile() {
@@ -1611,7 +1633,7 @@ void Compile::grow_alias_types() {
   const int new_ats  = old_ats;          // how many more?
   const int grow_ats = old_ats+new_ats;  // how many now?
   _max_alias_types = grow_ats;
-  _alias_types =  REALLOC_ARENA_ARRAY(comp_arena(), AliasType*, _alias_types, old_ats, grow_ats);
+  _alias_types =  REALLOC_ARENA_ARRAY(comp_arena(), _alias_types, old_ats, grow_ats);
   AliasType* ats =    NEW_ARENA_ARRAY(comp_arena(), AliasType, new_ats);
   Copy::zero_to_bytes(ats, sizeof(AliasType)*new_ats);
   for (int i = 0; i < new_ats; i++)  _alias_types[old_ats+i] = &ats[i];
@@ -2163,8 +2185,8 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   }
 
   while (_late_inlines.length() > 0) {
-    if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
-      if (low_live_nodes < (uint)LiveNodeCountInliningCutoff * 8 / 10) {
+    if (live_nodes() > node_count_inlining_cutoff()) {
+      if (low_live_nodes < node_count_inlining_cutoff() * 8 / 10) {
         TracePhase tp(_t_incrInline_ideal);
         // PhaseIdealLoop is expensive so we only try it once we are
         // out of live nodes and we only try it again if the previous
@@ -2175,7 +2197,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
         _major_progress = true;
       }
 
-      if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
+      if (live_nodes() > node_count_inlining_cutoff()) {
         bool do_print_inlining = print_inlining() || print_intrinsics();
         if (do_print_inlining || log() != nullptr) {
           // Print inlining message for candidates that we couldn't inline for lack of space.
@@ -2257,7 +2279,9 @@ bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
       PhaseIdealLoop::optimize(igvn, mode);
       _loop_opts_cnt--;
       if (failing())  return false;
-      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
+      if (major_progress()) {
+        print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
+      }
     }
   }
   return true;
@@ -2275,7 +2299,7 @@ void Compile::remove_root_to_sfpts_edges(PhaseIterGVN& igvn) {
       if (n != nullptr && n->is_SafePoint()) {
         r->rm_prec(i);
         if (n->outcnt() == 0) {
-          igvn.remove_dead_node(n);
+          igvn.remove_dead_node(n, PhaseIterGVN::NodeOrigin::Graph);
         }
         --i;
       }
@@ -2319,7 +2343,7 @@ void Compile::Optimize() {
 #endif
   {
     TracePhase tp(_t_iterGVN);
-    igvn.optimize();
+    igvn.optimize(true);
   }
 
   if (failing())  return;
@@ -2383,7 +2407,7 @@ void Compile::Optimize() {
       PhaseRenumberLive prl(initial_gvn(), *igvn_worklist());
     }
     igvn.reset();
-    igvn.optimize();
+    igvn.optimize(true);
     if (failing()) return;
   }
 
@@ -2416,7 +2440,7 @@ void Compile::Optimize() {
       int mcount = macro_count(); // Record number of allocations and locks before IGVN
 
       // Optimize out fields loads from scalar replaceable allocations.
-      igvn.optimize();
+      igvn.optimize(true);
       print_method(PHASE_ITER_GVN_AFTER_EA, 2);
 
       if (failing()) return;
@@ -2496,7 +2520,7 @@ void Compile::Optimize() {
   {
     TracePhase tp(_t_iterGVN2);
     igvn.reset_from_igvn(&ccp);
-    igvn.optimize();
+    igvn.optimize(true);
   }
   print_method(PHASE_ITER_GVN2, 2);
 
@@ -2508,11 +2532,22 @@ void Compile::Optimize() {
     return;
   }
 
-  if (failing())  return;
-
   C->clear_major_progress(); // ensure that major progress is now clear
 
   process_for_post_loop_opts_igvn(igvn);
+
+  if (failing())  return;
+
+  // Once loop optimizations are over, it is safe to get rid of all reachability fence nodes and
+  // migrate reachability edges to safepoints.
+  if (OptimizeReachabilityFences && _reachability_fences.length() > 0) {
+    TracePhase tp1(_t_idealLoop);
+    TracePhase tp2(_t_reachability);
+    PhaseIdealLoop::optimize(igvn, PostLoopOptsExpandReachabilityFences);
+    print_method(PHASE_EXPAND_REACHABILITY_FENCES, 2);
+    if (failing())  return;
+    assert(_reachability_fences.length() == 0 || PreserveReachabilityFencesOnConstants, "no RF nodes allowed");
+  }
 
   process_for_merge_stores_igvn(igvn);
 
@@ -2564,14 +2599,13 @@ void Compile::Optimize() {
 
   assert(igvn._worklist.size() == 0, "not empty");
 
-  assert(_late_inlines.length() == 0 || IncrementalInlineMH || IncrementalInlineVirtual, "not empty");
-
   if (_late_inlines.length() > 0) {
     // More opportunities to optimize virtual and MH calls.
     // Though it's maybe too late to perform inlining, strength-reducing them to direct calls is still an option.
     process_late_inline_calls_no_inline(igvn);
     if (failing())  return;
   }
+  assert(_late_inlines.length() == 0, "late inline queue must be drained");
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  check_no_dead_use();
@@ -2671,7 +2705,7 @@ static bool is_vector_bitwise_op(Node* n) {
 }
 
 static bool is_vector_bitwise_cone_root(Node* n) {
-  if (n->bottom_type()->isa_vectmask() || !is_vector_bitwise_op(n)) {
+  if (n->bottom_type()->isa_pvectmask() || !is_vector_bitwise_op(n)) {
     return false;
   }
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -3136,30 +3170,20 @@ void Compile::Code_Gen() {
 }
 
 //------------------------------Final_Reshape_Counts---------------------------
-// This class defines counters to help identify when a method
-// may/must be executed using hardware with only 24-bit precision.
+// This class defines counters and node lists collected during
+// the final graph reshaping.
 struct Final_Reshape_Counts : public StackObj {
-  int  _call_count;             // count non-inlined 'common' calls
-  int  _float_count;            // count float ops requiring 24-bit precision
-  int  _double_count;           // count double ops requiring more precision
   int  _java_call_count;        // count non-inlined 'java' calls
   int  _inner_loop_count;       // count loops which need alignment
   VectorSet _visited;           // Visitation flags
   Node_List _tests;             // Set of IfNodes & PCTableNodes
 
   Final_Reshape_Counts() :
-    _call_count(0), _float_count(0), _double_count(0),
     _java_call_count(0), _inner_loop_count(0) { }
 
-  void inc_call_count  () { _call_count  ++; }
-  void inc_float_count () { _float_count ++; }
-  void inc_double_count() { _double_count++; }
   void inc_java_call_count() { _java_call_count++; }
   void inc_inner_loop_count() { _inner_loop_count++; }
 
-  int  get_call_count  () const { return _call_count  ; }
-  int  get_float_count () const { return _float_count ; }
-  int  get_double_count() const { return _double_count; }
   int  get_java_call_count() const { return _java_call_count; }
   int  get_inner_loop_count() const { return _inner_loop_count; }
 };
@@ -3180,10 +3204,10 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
       !n->in(2)->is_Con() ) {   // right use is not a constant
     // Check for commutative opcode
     switch( nop ) {
-    case Op_AddI:  case Op_AddF:  case Op_AddD:  case Op_AddL:
+    case Op_AddI:  case Op_AddF:  case Op_AddD:  case Op_AddHF:  case Op_AddL:
     case Op_MaxI:  case Op_MaxL:  case Op_MaxF:  case Op_MaxD:
     case Op_MinI:  case Op_MinL:  case Op_MinF:  case Op_MinD:
-    case Op_MulI:  case Op_MulF:  case Op_MulD:  case Op_MulL:
+    case Op_MulI:  case Op_MulF:  case Op_MulD:  case Op_MulHF:  case Op_MulL:
     case Op_AndL:  case Op_XorL:  case Op_OrL:
     case Op_AndI:  case Op_XorI:  case Op_OrI: {
       // Move "last use" input to left by swapping inputs
@@ -3215,8 +3239,13 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
       assert(mb->trailing_membar()->leading_membar() == mb, "bad membar pair");
     }
   }
+  if (n->is_CallLeafPure()) {
+    // A pure call whose result projection is unused should have been
+    // eliminated by CallLeafPureNode::Ideal during IGVN.
+    assert(n->as_CallLeafPure()->proj_out_or_null(TypeFunc::Parms) != nullptr,
+           "unused CallLeafPureNode should have been removed before final graph reshaping");
+  }
 #endif
-  // Count FPU ops and common calls, implements item (3)
   bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop, dead_nodes);
   if (!gc_handled) {
     final_graph_reshaping_main_switch(n, frc, nop, dead_nodes);
@@ -3261,48 +3290,6 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
 
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
-  // Count all float operations that may use FPU
-  case Op_AddF:
-  case Op_SubF:
-  case Op_MulF:
-  case Op_DivF:
-  case Op_NegF:
-  case Op_ModF:
-  case Op_ConvI2F:
-  case Op_ConF:
-  case Op_CmpF:
-  case Op_CmpF3:
-  case Op_StoreF:
-  case Op_LoadF:
-  // case Op_ConvL2F: // longs are split into 32-bit halves
-    frc.inc_float_count();
-    break;
-
-  case Op_ConvF2D:
-  case Op_ConvD2F:
-    frc.inc_float_count();
-    frc.inc_double_count();
-    break;
-
-  // Count all double operations that may use FPU
-  case Op_AddD:
-  case Op_SubD:
-  case Op_MulD:
-  case Op_DivD:
-  case Op_NegD:
-  case Op_ModD:
-  case Op_ConvI2D:
-  case Op_ConvD2I:
-  // case Op_ConvL2D: // handled by leaf call
-  // case Op_ConvD2L: // handled by leaf call
-  case Op_ConD:
-  case Op_CmpD:
-  case Op_CmpD3:
-  case Op_StoreD:
-  case Op_LoadD:
-  case Op_LoadD_unaligned:
-    frc.inc_double_count();
-    break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
     break;
@@ -3322,7 +3309,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
       n->subsume_by(new_call, this);
     }
-    frc.inc_call_count();
     break;
   }
   case Op_CallStaticJava:
@@ -3335,13 +3321,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_CallLeafNoFP: {
     assert (n->is_Call(), "");
     CallNode *call = n->as_Call();
-    // Count call sites where the FP mode bit would have to be flipped.
-    // Do not count uncommon runtime calls:
-    // uncommon_trap, _complete_monitor_locking, _complete_monitor_unlocking,
-    // _new_Java, _new_typeArray, _new_objArray, _rethrow_Java, ...
-    if (!call->is_CallStaticJava() || !call->as_CallStaticJava()->_name) {
-      frc.inc_call_count();   // Count the call site
-    } else {                  // See if uncommon argument is shared
+    // See if uncommon argument is shared
+    if (call->is_CallStaticJava() && call->as_CallStaticJava()->_name) {
       Node *n = call->in(TypeFunc::Parms);
       int nop = n->Opcode();
       // Clone shared simple arguments to uncommon calls, item (1).
@@ -3359,6 +3340,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
+
+  // Mem nodes need explicit cases to satisfy assert(!n->is_Mem()) in default.
+  case Op_StoreF:
+  case Op_LoadF:
+  case Op_StoreD:
+  case Op_LoadD:
+  case Op_LoadD_unaligned:
   case Op_StoreB:
   case Op_StoreC:
   case Op_StoreI:
@@ -3406,14 +3394,19 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadN:
   case Op_LoadRange:
   case Op_LoadS:
+  case Op_LoadVectorGather:
+  case Op_StoreVectorScatter:
+  case Op_LoadVectorGatherMasked:
+  case Op_StoreVectorScatterMasked:
+  case Op_LoadVectorMasked:
+  case Op_StoreVectorMasked:
     break;
 
   case Op_AddP: {               // Assert sane base pointers
     Node *addp = n->in(AddPNode::Address);
     assert(n->as_AddP()->address_input_has_same_base(), "Base pointers must match (addp %u)", addp->_idx );
 #ifdef _LP64
-    if ((UseCompressedOops || UseCompressedClassPointers) &&
-        addp->Opcode() == Op_ConP &&
+    if (addp->Opcode() == Op_ConP &&
         addp == n->in(AddPNode::Base) &&
         n->in(AddPNode::Offset)->is_Con()) {
       // If the transformation of ConP to ConN+DecodeN is beneficial depends
@@ -3426,7 +3419,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       bool is_klass = t->isa_klassptr() != nullptr;
 
       if ((is_oop   && UseCompressedOops          && Matcher::const_oop_prefer_decode()  ) ||
-          (is_klass && UseCompressedClassPointers && Matcher::const_klass_prefer_decode() &&
+          (is_klass && Matcher::const_klass_prefer_decode() &&
            t->isa_klassptr()->exact_klass()->is_in_encoding_range())) {
         Node* nn = nullptr;
 
@@ -3757,33 +3750,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 #endif
     break;
 
-  case Op_LoadVectorGather:
-  case Op_StoreVectorScatter:
-  case Op_LoadVectorGatherMasked:
-  case Op_StoreVectorScatterMasked:
-  case Op_VectorCmpMasked:
-  case Op_VectorMaskGen:
-  case Op_LoadVectorMasked:
-  case Op_StoreVectorMasked:
-    break;
-
-  case Op_AddReductionVI:
-  case Op_AddReductionVL:
-  case Op_AddReductionVF:
-  case Op_AddReductionVD:
-  case Op_MulReductionVI:
-  case Op_MulReductionVL:
-  case Op_MulReductionVF:
-  case Op_MulReductionVD:
-  case Op_MinReductionV:
-  case Op_MaxReductionV:
-  case Op_UMinReductionV:
-  case Op_UMaxReductionV:
-  case Op_AndReductionV:
-  case Op_OrReductionV:
-  case Op_XorReductionV:
-    break;
-
   case Op_PackB:
   case Op_PackS:
   case Op_PackI:
@@ -3798,7 +3764,11 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   case Op_Loop:
-    assert(!n->as_Loop()->is_loop_nest_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
+    // When StressCountedLoop is enabled, this loop may intentionally avoid a counted loop conversion.
+    // This is expected behavior for the stress mode, which exercises alternative compilation paths.
+    if (!StressCountedLoop) {
+      assert(!n->as_Loop()->is_loop_nest_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
+    }
   case Op_CountedLoop:
   case Op_LongCountedLoop:
   case Op_OuterStripMinedLoop:
@@ -3855,8 +3825,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
-  case Op_Blackhole:
-    break;
   case Op_RangeCheck: {
     RangeCheckNode* rc = n->as_RangeCheck();
     Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);
@@ -3968,10 +3936,27 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
     }
   }
 
+  expand_reachability_edges(sfpt);
+
   // Skip next transformation if compressed oops are not used.
-  if ((UseCompressedOops && !Matcher::gen_narrow_oop_implicit_null_checks()) ||
-      (!UseCompressedOops && !UseCompressedClassPointers))
+  if (UseCompressedOops && !Matcher::gen_narrow_oop_implicit_null_checks())
     return;
+
+  // Go over ReachabilityFence nodes to skip DecodeN nodes for referents.
+  // The sole purpose of RF node is to keep the referent oop alive and
+  // decoding the oop for that is not needed.
+  for (int i = 0; i < C->reachability_fences_count(); i++) {
+    ReachabilityFenceNode* rf = C->reachability_fence(i);
+    DecodeNNode* dn = rf->in(1)->isa_DecodeN();
+    if (dn != nullptr) {
+      if (!dn->has_non_debug_uses() || Matcher::narrow_oop_use_complex_address()) {
+        rf->set_req(1, dn->in(1));
+        if (dn->outcnt() == 0) {
+          dn->disconnect_inputs(this);
+        }
+      }
+    }
+  }
 
   // Go over safepoints nodes to skip DecodeN/DecodeNKlass nodes for debug edges.
   // It could be done for an uncommon traps or any safepoints/calls
@@ -3986,21 +3971,8 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
                         n->as_CallStaticJava()->uncommon_trap_request() != 0);
     for (int j = start; j < end; j++) {
       Node* in = n->in(j);
-      if (in->is_DecodeNarrowPtr()) {
-        bool safe_to_skip = true;
-        if (!is_uncommon ) {
-          // Is it safe to skip?
-          for (uint i = 0; i < in->outcnt(); i++) {
-            Node* u = in->raw_out(i);
-            if (!u->is_SafePoint() ||
-                (u->is_Call() && u->as_Call()->has_non_debug_use(n))) {
-              safe_to_skip = false;
-            }
-          }
-        }
-        if (safe_to_skip) {
-          n->set_req(j, in->in(1));
-        }
+      if (in->is_DecodeNarrowPtr() && (is_uncommon || !in->has_non_debug_uses())) {
+        n->set_req(j, in->in(1));
         if (in->outcnt() == 0) {
           in->disconnect_inputs(this);
         }
@@ -4021,20 +3993,13 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
 //     Intel update-in-place two-address operations and better register usage
 //     on RISCs.  Must come after regular optimizations to avoid GVN Ideal
 //     calls canonicalizing them back.
-// (3) Count the number of double-precision FP ops, single-precision FP ops
-//     and call sites.  On Intel, we can get correct rounding either by
-//     forcing singles to memory (requires extra stores and loads after each
-//     FP bytecode) or we can set a rounding mode bit (requires setting and
-//     clearing the mode bit around call sites).  The mode bit is only used
-//     if the relative frequency of single FP ops to calls is low enough.
-//     This is a key transform for SPEC mpeg_audio.
-// (4) Detect infinite loops; blobs of code reachable from above but not
+// (3) Detect infinite loops; blobs of code reachable from above but not
 //     below.  Several of the Code_Gen algorithms fail on such code shapes,
 //     so we simply bail out.  Happens a lot in ZKM.jar, but also happens
 //     from time to time in other codes (such as -Xcomp finalizer loops, etc).
 //     Detection is by looking for IfNodes where only 1 projection is
 //     reachable from below or CatchNodes missing some targets.
-// (5) Assert for insane oop offsets in debug mode.
+// (4) Assert for insane oop offsets in debug mode.
 
 bool Compile::final_graph_reshaping() {
   // an infinite loop may have been eliminated by the optimizer,

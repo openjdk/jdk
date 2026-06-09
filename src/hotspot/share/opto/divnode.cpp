@@ -419,8 +419,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     if (!d_pos) {
       q = new SubLNode(phase->longcon(0), phase->transform(q));
     }
-  } else if ( !Matcher::use_asm_for_ldiv_by_con(d) ) { // Use hardware DIV instruction when
-                                                       // it is faster than code generated below.
+  } else {
     // Attempt the jlong constant divide -> multiply transform found in
     //   "Division by Invariant Integers using Multiplication"
     //     by Granlund and Montgomery

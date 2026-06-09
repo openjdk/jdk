@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -110,7 +110,7 @@ static INLINE int vavailability_i(int name) {
 
 #endif // #if !defined(SLEEF_GENHEADER)
 
-static INLINE void vprefetch_v_p(const void *ptr) { _mm_prefetch(ptr, _MM_HINT_T0); }
+static INLINE void vprefetch_v_p(const void *ptr) { _mm_prefetch((const char *)ptr, _MM_HINT_T0); }
 
 static INLINE int vtestallones_i_vo32(vopmask g) {
   return _mm_test_all_ones(_mm_and_si128(_mm256_extractf128_si256(g, 0), _mm256_extractf128_si256(g, 1)));
@@ -516,10 +516,10 @@ static INLINE float vcast_f_vf(vfloat v) {
 #endif
 //
 
-#define PNMASK ((vdouble) { +0.0, -0.0, +0.0, -0.0 })
-#define NPMASK ((vdouble) { -0.0, +0.0, -0.0, +0.0 })
-#define PNMASKf ((vfloat) { +0.0f, -0.0f, +0.0f, -0.0f, +0.0f, -0.0f, +0.0f, -0.0f })
-#define NPMASKf ((vfloat) { -0.0f, +0.0f, -0.0f, +0.0f, -0.0f, +0.0f, -0.0f, +0.0f })
+#define PNMASK _mm256_set_pd( -0.0, +0.0, -0.0, +0.0 )
+#define NPMASK _mm256_set_pd( +0.0, -0.0, +0.0, -0.0 )
+#define PNMASKf _mm256_set_ps( -0.0f, +0.0f, -0.0f, +0.0f, -0.0f, +0.0f, -0.0f, +0.0f )
+#define NPMASKf _mm256_set_ps( +0.0f, -0.0f, +0.0f, -0.0f, +0.0f, -0.0f, +0.0f, -0.0f )
 
 static INLINE vdouble vposneg_vd_vd(vdouble d) { return vreinterpret_vd_vm(vxor_vm_vm_vm(vreinterpret_vm_vd(d), vreinterpret_vm_vd(PNMASK))); }
 static INLINE vdouble vnegpos_vd_vd(vdouble d) { return vreinterpret_vd_vm(vxor_vm_vm_vm(vreinterpret_vm_vd(d), vreinterpret_vm_vd(NPMASK))); }
@@ -629,7 +629,7 @@ static INLINE vmask vcast_vm_vi(vint vi) {
 }
 static INLINE vint vcast_vi_vm(vmask vm) {
   return _mm_or_si128(_mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(_mm256_castsi256_si128(vm)), _mm_set1_ps(0), 0x08)),
-                      _mm_castps_si128(_mm_shuffle_ps(_mm_set1_ps(0), _mm_castsi128_ps(_mm256_extractf128_si256(vm, 1)), 0x80)));
+                        _mm_castps_si128(_mm_shuffle_ps(_mm_set1_ps(0), _mm_castsi128_ps(_mm256_extractf128_si256(vm, 1)), 0x80)));
 }
 
 static INLINE vmask vreinterpret_vm_vi64(vint64 v) { return v; }

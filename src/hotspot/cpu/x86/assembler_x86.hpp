@@ -1612,6 +1612,7 @@ private:
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, XMMRegister src);
   void movdqa(XMMRegister dst, Address src);
+  void movdqa(Address     dst, XMMRegister src);
 
   // Move Unaligned Double Quadword
   void movdqu(Address     dst, XMMRegister src);
@@ -1661,8 +1662,10 @@ private:
   void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
   // Move Aligned 512bit Vector
-  void evmovdqaq(XMMRegister dst, Address src, int vector_len);
-  void evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+  void evmovdqaq(XMMRegister dst, Address     src, int vector_len);
+  void evmovdqaq(Address     dst, XMMRegister src, int vector_len);
+  void evmovdqaq(XMMRegister dst, KRegister mask, Address     src, bool merge, int vector_len);
+  void evmovdqaq(Address     dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
   void vmovsldup(XMMRegister dst, XMMRegister src, int vector_len);
   void vmovshdup(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1694,8 +1697,11 @@ private:
   void movsbl(Register dst, Address src);
   void movsbl(Register dst, Register src);
 
-  void vmovw(XMMRegister dst, Register src);
-  void vmovw(Register dst, XMMRegister src);
+  void evmovw(XMMRegister dst, Register src);
+  void evmovw(Register dst, XMMRegister src);
+  void evmovw(XMMRegister dst, Address src);
+  void evmovw(Address dst, XMMRegister src);
+  void evmovw(XMMRegister dst, XMMRegister src);
 
   void movsbq(Register dst, Address src);
   void movsbq(Register dst, Register src);
@@ -2329,17 +2335,23 @@ private:
   void tzcntq(Register dst, Address src);
   void etzcntq(Register dst, Address src, bool no_flags);
 
+  // Unordered Compare Scalar Half-Precision Floating-Point Values and set EFLAGS
+  void evucomish(XMMRegister dst, Address src);
+  void evucomish(XMMRegister dst, XMMRegister src);
+  void evucomxsh(XMMRegister dst, Address src);
+  void evucomxsh(XMMRegister dst, XMMRegister src);
+
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
   void ucomisd(XMMRegister dst, XMMRegister src);
-  void vucomxsd(XMMRegister dst, Address src);
-  void vucomxsd(XMMRegister dst, XMMRegister src);
+  void evucomxsd(XMMRegister dst, Address src);
+  void evucomxsd(XMMRegister dst, XMMRegister src);
 
   // Unordered Compare Scalar Single-Precision Floating-Point Values and set EFLAGS
   void ucomiss(XMMRegister dst, Address src);
   void ucomiss(XMMRegister dst, XMMRegister src);
-  void vucomxss(XMMRegister dst, Address src);
-  void vucomxss(XMMRegister dst, XMMRegister src);
+  void evucomxss(XMMRegister dst, Address src);
+  void evucomxss(XMMRegister dst, XMMRegister src);
 
   void xabort(int8_t imm8);
 
@@ -2416,11 +2428,6 @@ private:
   void vsubsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsubss(XMMRegister dst, XMMRegister nds, Address src);
   void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-
-  void vmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vminss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vminsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
   void sarxl(Register dst, Register src1, Register src2);
   void sarxl(Register dst, Address src1, Register src2);
@@ -2552,8 +2559,6 @@ private:
   void vsubsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vmulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vdivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vminsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsqrtsh(XMMRegister dst, XMMRegister src);
   void vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
@@ -2790,9 +2795,9 @@ private:
   void vminpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
 
   // AVX10.2 floating point minmax instructions
-  void eminmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
-  void eminmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
-  void eminmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void evminmaxsh(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
+  void evminmaxss(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
+  void evminmaxsd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
   void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
   void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
   void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
@@ -2858,6 +2863,7 @@ private:
   void vpsllw(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpslld(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpsllq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void vpsllq(XMMRegister dst, XMMRegister src, Address shift, int vector_len);
   void vpslldq(XMMRegister dst, XMMRegister src, int shift, int vector_len);
 
   // Logical shift right packed integers
@@ -2873,6 +2879,7 @@ private:
   void vpsrlw(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpsrld(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpsrlq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void vpsrlq(XMMRegister dst, XMMRegister src, Address shift, int vector_len);
   void vpsrldq(XMMRegister dst, XMMRegister src, int shift, int vector_len);
   void evpsrlvw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpsllvw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2893,10 +2900,12 @@ private:
   // Variable shift left packed integers
   void vpsllvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpsllvq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void vpsllvq(XMMRegister dst, XMMRegister src, Address shift, int vector_len);
 
   // Variable shift right packed integers
   void vpsrlvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpsrlvq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+  void vpsrlvq(XMMRegister dst, XMMRegister src, Address shift, int vector_len);
 
   // Variable shift right arithmetic packed integers
   void vpsravd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);

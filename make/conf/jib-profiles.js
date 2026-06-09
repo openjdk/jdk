@@ -387,8 +387,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "25";
-    common.boot_jdk_build_number = "37";
+    common.boot_jdk_version = "26";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -1192,8 +1192,8 @@ var getJibProfilesDependencies = function (input, common) {
             server: "jpg",
             product: "jcov",
             version: "3.0",
-            build_number: "5",
-            file: "bundles/jcov-3.0+5.zip",
+            build_number: "6",
+            file: "bundles/jcov-3.0+6.zip",
             environment_name: "JCOV_HOME",
         },
 

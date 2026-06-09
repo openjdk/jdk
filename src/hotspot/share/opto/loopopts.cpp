@@ -161,7 +161,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
 
     if (the_clone != x) {
-      _igvn.remove_dead_node(the_clone);
+      _igvn.remove_dead_node(the_clone, PhaseIterGVN::NodeOrigin::Speculative);
     } else if (region->is_Loop() && i == LoopNode::LoopBackControl &&
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
@@ -172,7 +172,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   }
   // Too few wins?
   if (!wins.profitable(policy)) {
-    _igvn.remove_dead_node(phi);
+    _igvn.remove_dead_node(phi, PhaseIterGVN::NodeOrigin::Speculative);
     return nullptr;
   }
 
@@ -620,10 +620,10 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
         IdealLoopTree* n23_loop = get_loop(n23_ctrl);
         if (n22loop != n_loop && n22loop->is_member(n_loop) &&
             n23_loop == n_loop) {
-          Node* add1 = new AddPNode(n->in(1), n->in(2)->in(2), n->in(3));
+          Node* add1 = AddPNode::make_with_base(n->in(1), n->in(2)->in(2), n->in(3));
           // Stuff new AddP in the loop preheader
           register_new_node(add1, n_loop->_head->as_Loop()->skip_strip_mined(1)->in(LoopNode::EntryControl));
-          Node* add2 = new AddPNode(n->in(1), add1, n->in(2)->in(3));
+          Node* add2 = AddPNode::make_with_base(n->in(1), add1, n->in(2)->in(3));
           register_new_node(add2, n_ctrl);
           _igvn.replace_node(n, add2);
           return add2;
@@ -641,10 +641,10 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
           Node *tmp = V; V = I; I = tmp;
         }
         if (!ctrl_is_member(n_loop, I)) {
-          Node* add1 = new AddPNode(n->in(1), n->in(2), I);
+          Node* add1 = AddPNode::make_with_base(n->in(1), n->in(2), I);
           // Stuff new AddP in the loop preheader
           register_new_node(add1, n_loop->_head->as_Loop()->skip_strip_mined(1)->in(LoopNode::EntryControl));
-          Node* add2 = new AddPNode(n->in(1), add1, V);
+          Node* add2 = AddPNode::make_with_base(n->in(1), add1, V);
           register_new_node(add2, n_ctrl);
           _igvn.replace_node(n, add2);
           return add2;
@@ -1307,7 +1307,14 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
 
 
 bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
-  if (!n->is_If() || n->is_BaseCountedLoopEnd()) {
+  if (!n->is_If()) {
+    return false;
+  }
+  if (n->outcnt() != n->as_If()->required_outcnt()) {
+    assert(false, "malformed IfNode with %d outputs", n->outcnt());
+    return false;
+  }
+  if (n->is_BaseCountedLoopEnd()) {
     return false;
   }
   if (!n->in(0)->is_Region()) {
@@ -1433,7 +1440,10 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Check some safety conditions
     if (iff->is_If()) {        // Classic split-if?
-      if (iff->in(0) != n_ctrl) {
+      if (iff->outcnt() != iff->as_If()->required_outcnt()) {
+        assert(false, "malformed IfNode with %d outputs", iff->outcnt());
+        return;
+      } else if (iff->in(0) != n_ctrl) {
         return; // Compare must be in same blk as if
       }
     } else if (iff->is_CMove()) { // Trying to split-up a CMOVE
@@ -1478,9 +1488,11 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Now split the IF
     C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
-    if (TraceLoopOpts) {
-      tty->print_cr("Split-If");
+#ifndef PRODUCT
+    if (TraceLoopOpts || TraceSplitIf) {
+      tty->print_cr("Split-If: %d %s", iff->_idx, iff->Name());
     }
+#endif
     do_split_if(iff);
     C->print_method(PHASE_AFTER_SPLIT_IF, 4, iff);
     return;
@@ -1590,6 +1602,11 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
     // Now split the IF
     RegionNode* new_false_region;
     RegionNode* new_true_region;
+#ifndef PRODUCT
+    if (TraceLoopOpts || TraceSplitIf) {
+      tty->print_cr("Split-If Merging Identical Ifs: Dom-If: %d %s, If: %d %s", dom_if->_idx, dom_if->Name(), n->_idx, n->Name());
+    }
+#endif
     do_split_if(n, &new_false_region, &new_true_region);
     assert(new_false_region->req() == new_true_region->req(), "");
 #ifdef ASSERT
@@ -1859,7 +1876,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             assert(cast != nullptr, "must have added a cast to pin the node");
           }
         }
-        _igvn.remove_dead_node(n);
+        _igvn.remove_dead_node(n, PhaseIterGVN::NodeOrigin::Graph);
       }
       _dom_lca_tags_round = 0;
     }
@@ -2075,7 +2092,7 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
   // Register with optimizer
   Node *hit1 = _igvn.hash_find_insert(phi1);
   if (hit1) {                   // Hit, toss just made Phi
-    _igvn.remove_dead_node(phi1); // Remove new phi
+    _igvn.remove_dead_node(phi1, PhaseIterGVN::NodeOrigin::Speculative); // Remove new phi
     assert(hit1->is_Phi(), "" );
     phi1 = (PhiNode*)hit1;      // Use existing phi
   } else {                      // Miss
@@ -2083,7 +2100,7 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
   }
   Node *hit2 = _igvn.hash_find_insert(phi2);
   if (hit2) {                   // Hit, toss just made Phi
-    _igvn.remove_dead_node(phi2); // Remove new phi
+    _igvn.remove_dead_node(phi2, PhaseIterGVN::NodeOrigin::Speculative); // Remove new phi
     assert(hit2->is_Phi(), "" );
     phi2 = (PhiNode*)hit2;      // Use existing phi
   } else {                      // Miss
@@ -2158,7 +2175,7 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   // Register with optimizer
   Node *hit1 = _igvn.hash_find_insert(phi1);
   if( hit1 ) {                  // Hit, toss just made Phi
-    _igvn.remove_dead_node(phi1); // Remove new phi
+    _igvn.remove_dead_node(phi1, PhaseIterGVN::NodeOrigin::Speculative); // Remove new phi
     assert( hit1->is_Phi(), "" );
     phi1 = (PhiNode*)hit1;      // Use existing phi
   } else {                      // Miss
@@ -2166,7 +2183,7 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   }
   Node *hit2 = _igvn.hash_find_insert(phi2);
   if( hit2 ) {                  // Hit, toss just made Phi
-    _igvn.remove_dead_node(phi2); // Remove new phi
+    _igvn.remove_dead_node(phi2, PhaseIterGVN::NodeOrigin::Speculative); // Remove new phi
     assert( hit2->is_Phi(), "" );
     phi2 = (PhiNode*)hit2;      // Use existing phi
   } else {                      // Miss
@@ -2317,7 +2334,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
           _igvn.register_new_node_with_optimizer(phi); // Register new phi
         } else {                                      // or
           // Remove the new phi from the graph and use the hit
-          _igvn.remove_dead_node(phi);
+          _igvn.remove_dead_node(phi, phi == prev ? PhaseIterGVN::NodeOrigin::Graph : PhaseIterGVN::NodeOrigin::Speculative);
           phi = hit;                                  // Use existing phi
         }
         set_ctrl(phi, prev);
@@ -3465,7 +3482,7 @@ void PhaseIdealLoop::insert_phi_for_loop( Node* use, uint idx, Node* lp_entry_va
     set_ctrl(phi, lp);
   } else {
     // Remove the new phi from the graph and use the hit
-    _igvn.remove_dead_node(phi);
+    _igvn.remove_dead_node(phi, PhaseIterGVN::NodeOrigin::Speculative);
     phi = hit;
   }
   _igvn.replace_input_of(use, idx, phi);

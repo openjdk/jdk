@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,17 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
 ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation)
@@ -37,9 +41,9 @@ ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* 
 }
 
 
-void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                      RegionData* data, size_t size,
-                                                                      size_t actual_free) {
+void ShenandoahYoungHeuristics::select_collection_set_regions(ShenandoahCollectionSet* cset,
+                                                              RegionData* data, size_t size,
+                                                              size_t actual_free) {
   // See comments in ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata():
   // we do the same here, but with the following adjustments for generational mode:
   //
@@ -60,7 +64,7 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
   // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
   // young-gen reserve available following selection of the young-gen collection set, see if we can use
   // this memory to expand the old-gen evacuation collection set.
-  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(_add_regions_to_old);
+  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(cset, _add_regions_to_old);
   if (need_to_finalize_mixed) {
     heap->old_generation()->heuristics()->finalize_mixed_evacs();
   }
@@ -80,7 +84,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
   // If this is mixed evacuation, the old-gen candidate regions have already been added.
   size_t cur_cset = 0;
   size_t cur_young_garbage = cset->garbage();
-  const size_t max_cset = (size_t) (heap->young_generation()->get_evacuation_reserve() / ShenandoahEvacWaste);
+  const size_t max_cset = shenandoah_safe_size_cast(heap->young_generation()->get_evacuation_reserve() / ShenandoahEvacWaste);
   const size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
   const size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
@@ -90,7 +94,10 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    assert(!cset->is_in(r), "Region %zu should not already be in the collection set", idx);
+    if (cset->is_in(r) || r->get_top_before_promote() != nullptr) {
+      assert(heap->is_tenurable(r), "Region %zu already selected for promotion must be tenurable", idx);
+      continue;
+    }
 
     // Note that we do not add tenurable regions if they were not pre-selected.  They were not selected
     // because there is insufficient room in old-gen to hold their to-be-promoted live objects or because
@@ -110,38 +117,24 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
   }
 }
 
-
-bool ShenandoahYoungHeuristics::should_start_gc() {
-  auto heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahOldGeneration* old_generation = heap->old_generation();
-  ShenandoahOldHeuristics* old_heuristics = old_generation->heuristics();
-
-  // Checks that an old cycle has run for at least ShenandoahMinimumOldTimeMs before allowing a young cycle.
+bool ShenandoahYoungHeuristics::old_collection_needs_more_time(ShenandoahOldGeneration* old_generation, ShenandoahOldHeuristics* old_heuristics) {
   if (ShenandoahMinimumOldTimeMs > 0) {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
-      size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
-      if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
-        // Do not decline_trigger() when waiting for minimum quantum of Old-gen marking.  It is not at our discretion
-        // to trigger at this time.
-        log_debug(gc)("Young heuristics declines to trigger because old_time_elapsed < ShenandoahMinimumOldTimeMs");
-        return false;
-      }
+      const auto old_time_elapsed = shenandoah_safe_size_cast(old_heuristics->elapsed_cycle_time() * 1000);
+      return old_time_elapsed < ShenandoahMinimumOldTimeMs;
     }
   }
+  return false;
+}
 
-  // inherited triggers have already decided to start a cycle, so no further evaluation is required
-  if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
-    // ShenandoahAdaptiveHeuristics::should_start_gc() has already accepted trigger, or declined it.
-    return true;
-  }
-
+bool ShenandoahYoungHeuristics::trigger_expedite_promotions(ShenandoahGenerationalHeap* heap, ShenandoahOldGeneration* old_generation) {
   // Get through promotions and mixed evacuations as quickly as possible.  These cycles sometimes require significantly
   // more time than traditional young-generation cycles so start them up as soon as possible.  This is a "mitigation"
   // for the reality that old-gen and young-gen activities are not truly "concurrent".  If there is old-gen work to
   // be done, we start up the young-gen GC threads so they can do some of this old-gen work.  As implemented, promotion
   // gets priority over old-gen marking.
-  size_t promo_expedite_threshold = percent_of(heap->young_generation()->max_capacity(), ShenandoahExpeditePromotionsThreshold);
-  size_t promo_potential = old_generation->get_promotion_potential();
+  const size_t promo_expedite_threshold = percent_of(heap->young_generation()->max_capacity(), ShenandoahExpeditePromotionsThreshold);
+  const size_t promo_potential = old_generation->get_promotion_potential();
   if (promo_potential > promo_expedite_threshold) {
     // Detect unsigned arithmetic underflow
     assert(promo_potential < heap->capacity(), "Sanity");
@@ -149,8 +142,11 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     accept_trigger();
     return true;
   }
+  return false;
+}
 
-  size_t mixed_candidates = old_heuristics->unprocessed_old_collection_candidates();
+bool ShenandoahYoungHeuristics::trigger_expedite_mixed(ShenandoahGenerationalHeap* heap, ShenandoahOldHeuristics* old_heuristics) {
+  const size_t mixed_candidates = old_heuristics->unprocessed_old_collection_candidates();
   if (mixed_candidates > ShenandoahExpediteMixedThreshold && !heap->is_concurrent_weak_root_in_progress()) {
     // We need to run young GC in order to open up some free heap regions so we can finish mixed evacuations.
     // If concurrent weak root processing is in progress, it means the old cycle has chosen mixed collection
@@ -158,6 +154,33 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // cycle completes.
     log_trigger("Expedite mixed evacuation of %zu regions", mixed_candidates);
     accept_trigger();
+    return true;
+  }
+  return false;
+}
+
+bool ShenandoahYoungHeuristics::should_start_gc() {
+  auto heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahOldGeneration* old_generation = heap->old_generation();
+  ShenandoahOldHeuristics* old_heuristics = old_generation->heuristics();
+
+  // Checks that an old cycle has run for at least ShenandoahMinimumOldTimeMs before allowing a young cycle.
+  if (old_collection_needs_more_time(old_generation, old_heuristics)) {
+    log_debug(gc)("Young heuristics declines to trigger because old_time_elapsed < ShenandoahMinimumOldTimeMs");
+    return false;
+  }
+
+  if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
+    // Inherited triggers have already decided to start a cycle, so no further evaluation is required
+    // ShenandoahAdaptiveHeuristics::should_start_gc() has already accepted trigger, or declined it.
+    return true;
+  }
+
+  if (trigger_expedite_promotions(heap, old_generation)) {
+    return true;
+  }
+
+  if (trigger_expedite_mixed(heap, old_heuristics)) {
     return true;
   }
 
@@ -170,22 +193,16 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
 // generation at the end of the current cycle (as represented by young_regions_to_be_reclaimed) and on the anticipated
 // amount of time required to perform a GC.
 size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_reclaimed) {
-  size_t capacity = _space_info->max_capacity();
-  size_t usage = _space_info->used();
-  size_t available = (capacity > usage)? capacity - usage: 0;
-  size_t allocated = _free_set->get_bytes_allocated_since_gc_start();
+  const size_t capacity = _space_info->max_capacity();
+  const size_t usage = _space_info->used();
+  const size_t available = (capacity > usage) ? capacity - usage: 0;
+  const size_t anticipated_available = available + young_regions_to_be_reclaimed * ShenandoahHeapRegion::region_size_bytes();
 
-  size_t available_young_collected = ShenandoahHeap::heap()->collection_set()->get_young_available_bytes_collected();
-  size_t anticipated_available =
-          available + young_regions_to_be_reclaimed * ShenandoahHeapRegion::region_size_bytes() - available_young_collected;
-  size_t spike_headroom = capacity * ShenandoahAllocSpikeFactor / 100;
-  size_t penalties      = capacity * _gc_time_penalties / 100;
+  const size_t spike_headroom = capacity * ShenandoahAllocSpikeFactor / 100;
+  const size_t penalties      = capacity * _gc_time_penalties / 100;
 
-  double rate = _allocation_rate.sample(allocated);
-
-  // At what value of available, would avg and spike triggers occur?
+  // At what value of available, would avg rate trigger occur?
   //  if allocation_headroom < avg_cycle_time * avg_alloc_rate, then we experience avg trigger
-  //  if allocation_headroom < avg_cycle_time * rate, then we experience spike trigger if is_spiking
   //
   // allocation_headroom =
   //     0, if penalties > available or if penalties + spike_headroom > available
@@ -198,34 +215,19 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   // since avg_cycle_time * avg_alloc_rate > 0, the first test is sufficient to test both conditions
   //
   // thus, evac_slack_avg is MIN2(0,  available - avg_cycle_time * avg_alloc_rate + penalties + spike_headroom)
-  //
-  // similarly, evac_slack_spiking is MIN2(0, available - avg_cycle_time * rate + penalties + spike_headroom)
-  // but evac_slack_spiking is only relevant if is_spiking, as defined below.
 
-  double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
-  double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+  const double avg_cycle_time = _cycles.predict_duration(os::elapsedTime(), _margin_of_error_sd);
+  const double avg_alloc_rate = ShenandoahHeap::heap()->alloc_rate().upper_bound(_margin_of_error_sd);
+  const double remaining_before_gc = avg_cycle_time * avg_alloc_rate + penalties + spike_headroom;
   size_t evac_slack_avg;
-  if (anticipated_available > avg_cycle_time * avg_alloc_rate + penalties + spike_headroom) {
-    evac_slack_avg = anticipated_available - (avg_cycle_time * avg_alloc_rate + penalties + spike_headroom);
+  if (anticipated_available > remaining_before_gc) {
+    evac_slack_avg = shenandoah_safe_size_cast(anticipated_available - remaining_before_gc);
   } else {
     // we have no slack because it's already time to trigger
     evac_slack_avg = 0;
   }
 
-  bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
-  size_t evac_slack_spiking;
-  if (is_spiking) {
-    if (anticipated_available > avg_cycle_time * rate + penalties + spike_headroom) {
-      evac_slack_spiking = anticipated_available - (avg_cycle_time * rate + penalties + spike_headroom);
-    } else {
-      // we have no slack because it's already time to trigger
-      evac_slack_spiking = 0;
-    }
-  } else {
-    evac_slack_spiking = evac_slack_avg;
-  }
-
-  size_t threshold = min_free_threshold();
-  size_t evac_min_threshold = (anticipated_available > threshold)? anticipated_available - threshold: 0;
-  return MIN3(evac_slack_spiking, evac_slack_avg, evac_min_threshold);
+  const size_t threshold = min_free_threshold(capacity);
+  const size_t evac_min_threshold = anticipated_available > threshold ? anticipated_available - threshold : 0;
+  return MIN2(evac_slack_avg, evac_min_threshold);
 }

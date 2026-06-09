@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1POLICY_HPP
 
 #include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1ConcurrentStartToMixedTimeTracker.hpp"
+#include "gc/g1/g1ConcurrentCycleTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
@@ -56,10 +56,9 @@ class GCPolicyCounters;
 class STWGCTimer;
 
 class G1Policy: public CHeapObj<mtGC> {
- private:
+  using Pause = G1CollectorState::Pause;
 
-  static G1IHOPControl* create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
-                                            const G1Predictions* predictor);
+  static G1IHOPControl* create_ihop_control(const G1Predictions* predictor);
   // Update the IHOP control with the necessary statistics. Returns true if there
   // has been a significant update to the prediction.
   bool update_ihop_prediction(double mutator_time_s,
@@ -70,8 +69,9 @@ class G1Policy: public CHeapObj<mtGC> {
   G1RemSetTrackingPolicy _remset_tracker;
   G1MMUTracker* _mmu_tracker;
 
+  G1ConcurrentCycleTracker _concurrent_cycle_tracker;
   // Tracking the allocation in the old generation between
-  // two GCs.
+  // two pauses.
   G1OldGenAllocationTracker _old_gen_alloc_tracker;
   G1IHOPControl* _ihop_control;
 
@@ -91,9 +91,11 @@ class G1Policy: public CHeapObj<mtGC> {
   G1SurvRateGroup* _survivor_surv_rate_group;
 
   double _reserve_factor;
-  // This will be set when the heap is expanded
-  // for the first time during initialization.
-  uint   _reserve_regions;
+  // The allocation reserve in number of regions that we try to keep free.
+  // G1 allocation of new regions for eden is restrained when allocating into that reserve.
+  // This intentionally slows down the allocation when the heap is close to full to allow
+  // concurrent marking to finish and hopefully avoid a Full GC.
+  Atomic<uint> _reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
 
@@ -112,11 +114,7 @@ class G1Policy: public CHeapObj<mtGC> {
   // garbage collection or the most recent refinement sweep.
   size_t _to_collection_set_cards;
 
-  G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
-
-  bool should_update_surv_rate_group_predictors() {
-    return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
-  }
+  bool should_update_surv_rate_group_predictors();
 
   double pending_cards_processing_time() const;
 public:
@@ -160,12 +158,7 @@ public:
   // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
 
-  void cset_regions_freed() {
-    bool update = should_update_surv_rate_group_predictors();
-
-    _eden_surv_rate_group->all_surviving_words_recorded(predictor(), update);
-    _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
-  }
+  void cset_regions_freed();
 
   G1MMUTracker* mmu_tracker() {
     return _mmu_tracker;
@@ -231,9 +224,13 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) const;
+  uint calculate_young_desired_length(size_t pending_cards,
+                                      size_t card_rs_length,
+                                      size_t code_root_rs_length,
+                                      uint min_young_length_by_sizer,
+                                      uint max_young_length_by_sizer) const;
   // Limit the given desired young length to available free regions.
-  uint calculate_young_target_length(uint desired_young_length) const;
+  uint calculate_young_target_length(uint desired_young_length, uint min_young_length_by_sizer) const;
 
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
@@ -265,19 +262,16 @@ public:
 
 private:
   void abandon_collection_set_candidates();
-  // Sets up marking if proper conditions are met.
-  void maybe_start_marking(size_t allocation_word_size);
-  // Manage time-to-mixed tracking.
-  void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(G1GCPauseType gc_type,
+  void record_pause(Pause gc_type,
                     double start,
-                    double end);
+                    double end,
+                    size_t humongous_allocation_bytes = 0);
 
-  void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
+  void update_gc_pause_time_ratios(Pause gc_type, double start_sec, double end_sec);
 
   // Indicate that we aborted marking before doing any mixed GCs.
-  void abort_time_to_mixed_tracking();
+  void abort_concurrent_cycle_tracking();
 
 public:
 
@@ -303,7 +297,8 @@ public:
   void record_young_gc_pause_start();
   void record_young_gc_pause_end(bool evacuation_failed);
 
-  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size);
+  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size) const;
+  bool need_to_start_conc_mark(const char* source, const G1CollectorState& state, size_t allocation_word_size) const;
 
   bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
 
@@ -312,16 +307,14 @@ public:
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_pause_start_time();
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark,
-                                   bool allocation_failure,
-                                   size_t allocation_word_size);
+  // Returns the next CollectorState based on current state without modifying the latter.
+  G1CollectorState record_young_collection_end(bool concurrent_operation_is_full_mark,
+                                               bool allocation_failure,
+                                               size_t allocation_word_size);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
   void record_full_collection_end(size_t allocation_word_size);
-
-  // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end();
 
   void record_concurrent_mark_remark_end();
 
@@ -338,11 +331,6 @@ private:
   // Predict the number of bytes of surviving objects from survivor and old
   // regions and update the associated members.
   void update_survival_estimates_for_next_collection();
-
-  // Set the state to start a concurrent marking cycle and clear
-  // _initiate_conc_mark_if_possible because it has now been
-  // acted on.
-  void initiate_conc_mark();
 
 public:
   // This sets the initiate_conc_mark_if_possible() flag to start a

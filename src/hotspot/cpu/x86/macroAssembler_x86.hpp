@@ -162,6 +162,8 @@ class MacroAssembler: public Assembler {
 
   void incrementq(AddressLiteral dst, Register rscratch = noreg);
 
+  void movhlf(XMMRegister dst, XMMRegister src, Register rscratch = noreg);
+
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
     if (dst-> encoding() == src->encoding()) return;
@@ -351,8 +353,7 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 
-  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
-  // depending on UseCompressedClassPointers).
+  // Compares the narrow Klass pointer of an object to a given narrow Klass.
   void cmp_klass(Register klass, Register obj, Register tmp);
 
   // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
@@ -442,6 +443,9 @@ class MacroAssembler: public Assembler {
   // Sign extension
   void sign_extend_short(Register reg);
   void sign_extend_byte(Register reg);
+
+  // Clean up a subword typed value to the representation in compliance with JVMS §2.3
+  void narrow_subword_type(Register reg, BasicType bt);
 
   // Division by power of 2, rounding towards 0
   void division_with_shift(Register reg, int shift_value);
@@ -1177,6 +1181,8 @@ public:
   using Assembler::vmovdqa;
   void vmovdqa(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
   void vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vmovdqa(XMMRegister dst, Address        src, int vector_len);
+  void vmovdqa(Address     dst, XMMRegister    src, int vector_len);
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
@@ -1309,21 +1315,29 @@ public:
   void subss(XMMRegister dst, Address        src) { Assembler::subss(dst, src); }
   void subss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
+  void evucomish(XMMRegister dst, XMMRegister    src) { Assembler::evucomish(dst, src); }
+  void evucomish(XMMRegister dst, Address        src) { Assembler::evucomish(dst, src); }
+  void evucomish(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void evucomxsh(XMMRegister dst, XMMRegister    src) { Assembler::evucomxsh(dst, src); }
+  void evucomxsh(XMMRegister dst, Address        src) { Assembler::evucomxsh(dst, src); }
+  void evucomxsh(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
   void ucomiss(XMMRegister dst, XMMRegister    src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, Address        src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void vucomxss(XMMRegister dst, XMMRegister    src) { Assembler::vucomxss(dst, src); }
-  void vucomxss(XMMRegister dst, Address        src) { Assembler::vucomxss(dst, src); }
-  void vucomxss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void evucomxss(XMMRegister dst, XMMRegister    src) { Assembler::evucomxss(dst, src); }
+  void evucomxss(XMMRegister dst, Address        src) { Assembler::evucomxss(dst, src); }
+  void evucomxss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   void ucomisd(XMMRegister dst, XMMRegister    src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, Address        src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void vucomxsd(XMMRegister dst, XMMRegister    src) { Assembler::vucomxsd(dst, src); }
-  void vucomxsd(XMMRegister dst, Address        src) { Assembler::vucomxsd(dst, src); }
-  void vucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void evucomxsd(XMMRegister dst, XMMRegister    src) { Assembler::evucomxsd(dst, src); }
+  void evucomxsd(XMMRegister dst, Address        src) { Assembler::evucomxsd(dst, src); }
+  void evucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister    src);
@@ -2059,10 +2073,10 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
-#ifdef COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   void generate_fill_avx3(BasicType type, Register to, Register value,
                           Register count, Register rtmp, XMMRegister xtmp);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   void vallones(XMMRegister dst, int vector_len);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,8 +243,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_not_taken_branch(Register mdp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
-  void profile_virtual_call(Register receiver, Register mdp,
-                            bool receiver_can_be_null = false);
+  void profile_virtual_call(Register receiver, Register mdp);
   void profile_ret(Register return_bci, Register mdp);
   void profile_null_seen(Register mdp);
   void profile_typecheck(Register mdp, Register klass);

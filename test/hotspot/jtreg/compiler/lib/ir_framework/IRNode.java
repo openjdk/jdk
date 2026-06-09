@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.*;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -233,6 +233,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_P, "AddP");
     }
 
+    public static final String ADD_D = PREFIX + "ADD_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_D, "AddD");
+    }
+
     public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
         vectorNode(ADD_VD, "AddVD", TYPE_DOUBLE);
@@ -321,6 +326,11 @@ public class IRNode {
     public static final String ADD_REDUCTION_VF = PREFIX + "ADD_REDUCTION_VF" + POSTFIX;
     static {
         superWordNodes(ADD_REDUCTION_VF, "AddReductionVF");
+    }
+
+    public static final String ADD_REDUCTION_VHF = PREFIX + "ADD_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(ADD_REDUCTION_VHF, "AddReductionVHF");
     }
 
     public static final String ADD_REDUCTION_VI = PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
@@ -758,9 +768,19 @@ public class IRNode {
         vectorNode(DIV_VHF, "DivVHF", TYPE_SHORT);
     }
 
+    public static final String DIV_F = PREFIX + "DIV_F" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(DIV_F, "DivF");
+    }
+
     public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
     static {
         vectorNode(DIV_VF, "DivVF", TYPE_FLOAT);
+    }
+
+    public static final String DIV_D = PREFIX + "DIV_D" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(DIV_D, "DivD");
     }
 
     public static final String DIV_VD = VECTOR_PREFIX + "DIV_VD" + POSTFIX;
@@ -904,12 +924,6 @@ public class IRNode {
     public static final String IF = PREFIX + "IF" + POSTFIX;
     static {
         beforeMatchingNameRegex(IF, "If\\b");
-    }
-
-    // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
-    public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = PREFIX + "INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP" + POSTFIX;
-    static {
-        trapNodes(INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "intrinsic_or_type_checked_inlining");
     }
 
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
@@ -1203,29 +1217,9 @@ public class IRNode {
         beforeMatchingNameRegex(MAX_D, "MaxD");
     }
 
-    public static final String MAX_D_REDUCTION_REG = PREFIX + "MAX_D_REDUCTION_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_D_REDUCTION_REG, "maxD_reduction_reg");
-    }
-
-    public static final String MAX_D_REG = PREFIX + "MAX_D_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_D_REG, "maxD_reg");
-    }
-
     public static final String MAX_F = PREFIX + "MAX_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_F, "MaxF");
-    }
-
-    public static final String MAX_F_REDUCTION_REG = PREFIX + "MAX_F_REDUCTION_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_F_REDUCTION_REG, "maxF_reduction_reg");
-    }
-
-    public static final String MAX_F_REG = PREFIX + "MAX_F_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_F_REG, "maxF_reg");
     }
 
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
@@ -1241,6 +1235,16 @@ public class IRNode {
     public static final String MAX_VI = VECTOR_PREFIX + "MAX_VI" + POSTFIX;
     static {
         vectorNode(MAX_VI, "MaxV", TYPE_INT);
+    }
+
+    public static final String MAX_VB = VECTOR_PREFIX + "MAX_VB" + POSTFIX;
+    static {
+        vectorNode(MAX_VB, "MaxV", TYPE_BYTE);
+    }
+
+    public static final String MAX_VS = VECTOR_PREFIX + "MAX_VS" + POSTFIX;
+    static {
+        vectorNode(MAX_VS, "MaxV", TYPE_SHORT);
     }
 
     public static final String MAX_VHF = VECTOR_PREFIX + "MAX_VHF" + POSTFIX;
@@ -1309,14 +1313,14 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_D, "MinD");
     }
 
-    public static final String MIN_D_REDUCTION_REG = PREFIX + "MIN_D_REDUCTION_REG" + POSTFIX;
+    public static final String MINMAX_D_REDUCTION_REG = PREFIX + "MINMAX_D_REDUCTION_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_D_REDUCTION_REG, "minD_reduction_reg");
+        machOnlyNameRegex(MINMAX_D_REDUCTION_REG, "minmaxD_reduction_reg");
     }
 
-    public static final String MIN_D_REG = PREFIX + "MIN_D_REG" + POSTFIX;
+    public static final String MINMAX_D_REG = PREFIX + "MINMAX_D_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_D_REG, "minD_reg");
+        machOnlyNameRegex(MINMAX_D_REG, "minmaxD_reg");
     }
 
     public static final String MIN_F = PREFIX + "MIN_F" + POSTFIX;
@@ -1324,14 +1328,14 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_F, "MinF");
     }
 
-    public static final String MIN_F_REDUCTION_REG = PREFIX + "MIN_F_REDUCTION_REG" + POSTFIX;
+    public static final String MINMAX_F_REDUCTION_REG = PREFIX + "MINMAX_F_REDUCTION_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_F_REDUCTION_REG, "minF_reduction_reg");
+        machOnlyNameRegex(MINMAX_F_REDUCTION_REG, "minmaxF_reduction_reg");
     }
 
-    public static final String MIN_F_REG = PREFIX + "MIN_F_REG" + POSTFIX;
+    public static final String MINMAX_F_REG = PREFIX + "MINMAX_F_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_F_REG, "minF_reg");
+        machOnlyNameRegex(MINMAX_F_REG, "minmaxF_reg");
     }
 
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
@@ -1357,6 +1361,16 @@ public class IRNode {
     public static final String MIN_VI = VECTOR_PREFIX + "MIN_VI" + POSTFIX;
     static {
         vectorNode(MIN_VI, "MinV", TYPE_INT);
+    }
+
+    public static final String MIN_VB = VECTOR_PREFIX + "MIN_VB" + POSTFIX;
+    static {
+        vectorNode(MIN_VB, "MinV", TYPE_BYTE);
+    }
+
+    public static final String MIN_VS = VECTOR_PREFIX + "MIN_VS" + POSTFIX;
+    static {
+        vectorNode(MIN_VS, "MinV", TYPE_SHORT);
     }
 
     public static final String MIN_VHF = VECTOR_PREFIX + "MIN_VHF" + POSTFIX;
@@ -1469,6 +1483,16 @@ public class IRNode {
         beforeMatchingNameRegex(MASK_ALL, "MaskAll");
     }
 
+    public static final String AARCH64_VMASK_ALL_IMM_I = PREFIX + "AARCH64_VMASK_ALL_IMM_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_I, "vmaskAll_immI");
+    }
+
+    public static final String AARCH64_VMASK_ALL_IMM_L = PREFIX + "AARCH64_VMASK_ALL_IMM_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_L, "vmaskAll_immL");
+    }
+
     public static final String VECTOR_LONG_TO_MASK = PREFIX + "VECTOR_LONG_TO_MASK" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_LONG_TO_MASK, "VectorLongToMask");
@@ -1574,6 +1598,11 @@ public class IRNode {
     public static final String MUL_REDUCTION_VF = PREFIX + "MUL_REDUCTION_VF" + POSTFIX;
     static {
         superWordNodes(MUL_REDUCTION_VF, "MulReductionVF");
+    }
+
+    public static final String MUL_REDUCTION_VHF = PREFIX + "MUL_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(MUL_REDUCTION_VHF, "MulReductionVHF");
     }
 
     public static final String MUL_REDUCTION_VI = PREFIX + "MUL_REDUCTION_VI" + POSTFIX;
@@ -1794,6 +1823,11 @@ public class IRNode {
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;
     static {
         trapNodes(PREDICATE_TRAP, "predicate");
+    }
+
+    public static final String RANGE_CHECK = PREFIX + "RANGE_CHECK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(RANGE_CHECK, "RangeCheck");
     }
 
     public static final String RANGE_CHECK_TRAP = PREFIX + "RANGE_CHECK_TRAP" + POSTFIX;
@@ -2688,6 +2722,11 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VFMADD_MASKED, "vfmadd_masked");
     }
 
+    public static final String VMASK_AND_NOT_I = PREFIX + "VMASK_AND_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_AND_NOT_I, "vmask_and_notI");
+    }
+
     public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
     static {
         machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
@@ -3134,9 +3173,20 @@ public class IRNode {
         macroNodes(MOD_D, regex);
     }
 
+    public static final String POW_D = PREFIX + "POW_D" + POSTFIX;
+    static {
+        String regex = START + "PowD" + MID + END;
+        macroNodes(POW_D, regex);
+    }
+
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;
     static {
         fromBeforeRemoveUselessToFinalCode(BLACKHOLE, "Blackhole");
+    }
+
+    public static final String REACHABILITY_FENCE = PREFIX + "REACHABILITY_FENCE" + POSTFIX;
+    static {
+        fromBeforeRemoveUselessToFinalCode(REACHABILITY_FENCE, "ReachabilityFence");
     }
 
     public static final String SELECT_FROM_TWO_VECTOR_VB = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VB" + POSTFIX;
@@ -3551,12 +3601,6 @@ public class IRNode {
      */
     public static void checkIRNodeSupported(String node) throws CheckedTestFrameworkException {
         switch (node) {
-            case INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP -> {
-                if (!WhiteBox.getWhiteBox().isJVMCISupportedByGC()) {
-                    throw new CheckedTestFrameworkException("INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP is unsupported " +
-                                                            "in builds without JVMCI.");
-                }
-            }
             case CHECKCAST_ARRAYCOPY -> {
                 if (Platform.isS390x()) {
                     throw new CheckedTestFrameworkException("CHECKCAST_ARRAYCOPY is unsupported on s390.");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,6 @@ public class TestDriver {
         boolean isUseZGCon = GC.Z.isSelected();
         boolean isShenandoahGCon = GC.Shenandoah.isSelected();
         boolean isUseEpsilonGCon = GC.Epsilon.isSelected();
-
-        if (Compiler.isGraalEnabled() &&
-            (isUseZGCon || isUseEpsilonGCon || isShenandoahGCon)) {
-            return; // Graal does not support these GCs
-        }
 
         String keyPhrase;
         if ((isExplicitGCInvokesConcurrentOn && isUseG1GCon) || isUseZGCon || isShenandoahGCon) {

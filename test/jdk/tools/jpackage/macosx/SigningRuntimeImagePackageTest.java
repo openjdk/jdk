@@ -37,6 +37,8 @@ import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageOutputValidator;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacHelper.SignKeyOption;
@@ -98,6 +100,13 @@ public class SigningRuntimeImagePackageTest {
             cmd.ignoreDefaultRuntime(true);
             cmd.removeArgumentWithValue("--input");
             cmd.setArgumentValue("--runtime-image", predefinedRuntime.get());
+
+            // `warning.per.user.app.image.signed` warning doesn't apply to runtime bundling.
+            // Ensure the warning is not in the output.
+            new JPackageOutputValidator().add(TKit.assertTextStream(
+                    JPackageStringBundle.MAIN.cannedFormattedStringAsPattern("warning.per.user.app.image.signed", "file")
+            ).negate()).stdoutAndStderr().applyTo(cmd);
+
         }).addInstallVerifier(cmd -> {
             MacSignVerify.verifyAppImageSigned(cmd, signRuntime.certRequest());
         }).run();

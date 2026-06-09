@@ -342,20 +342,20 @@ class Command : public StackObj {
 
 int Command::level = 0;
 
-extern "C" DEBUGEXPORT void blob(CodeBlob* cb) {
+extern "C" NOINLINE void blob(CodeBlob* cb) {
   Command c("blob");
   cb->print();
 }
 
 
-extern "C" DEBUGEXPORT void dump_vtable(address p) {
+extern "C" NOINLINE void dump_vtable(address p) {
   Command c("dump_vtable");
   Klass* k = (Klass*)p;
   k->vtable().print();
 }
 
 
-extern "C" DEBUGEXPORT void nm(intptr_t p) {
+extern "C" NOINLINE void nm(intptr_t p) {
   // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatibility)
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
@@ -367,7 +367,7 @@ extern "C" DEBUGEXPORT void nm(intptr_t p) {
 }
 
 
-extern "C" DEBUGEXPORT void disnm(intptr_t p) {
+extern "C" NOINLINE void disnm(intptr_t p) {
   Command c("disnm");
   CodeBlob* cb = CodeCache::find_blob((address) p);
   if (cb != nullptr) {
@@ -382,7 +382,7 @@ extern "C" DEBUGEXPORT void disnm(intptr_t p) {
 }
 
 
-extern "C" DEBUGEXPORT void printnm(intptr_t p) {
+extern "C" NOINLINE void printnm(intptr_t p) {
   char buffer[256];
   os::snprintf_checked(buffer, sizeof(buffer), "printnm: " INTPTR_FORMAT, p);
   Command c(buffer);
@@ -396,14 +396,14 @@ extern "C" DEBUGEXPORT void printnm(intptr_t p) {
 }
 
 
-extern "C" DEBUGEXPORT void universe() {
+extern "C" NOINLINE void universe() {
   Command c("universe");
   if (!c.onThread()) return;
   Universe::print_on(tty);
 }
 
 
-extern "C" DEBUGEXPORT void verify() {
+extern "C" NOINLINE void verify() {
   // try to run a verify on the entire system
   // note: this may not be safe if we're not at a safepoint; for debugging,
   // this manipulates the safepoint settings to avoid assertion failures
@@ -421,7 +421,7 @@ extern "C" DEBUGEXPORT void verify() {
 }
 
 
-extern "C" DEBUGEXPORT void pp(void* p) {
+extern "C" NOINLINE void pp(void* p) {
   Command c("pp");
   if (!c.onThread()) return;
   FlagSetting fl(DisplayVMOutput, true);
@@ -445,7 +445,7 @@ extern "C" DEBUGEXPORT void pp(void* p) {
 }
 
 
-extern "C" DEBUGEXPORT void ps() { // print stack
+extern "C" NOINLINE void ps() { // print stack
   // Prints the stack of the current Java thread
   Command c("ps");
   if (!c.onThread()) return;
@@ -477,7 +477,7 @@ extern "C" DEBUGEXPORT void ps() { // print stack
   }
 }
 
-extern "C" DEBUGEXPORT void pfl() {
+extern "C" NOINLINE void pfl() {
   // print frame layout
   Command c("pfl");
   if (!c.onThread()) return;
@@ -494,7 +494,7 @@ extern "C" DEBUGEXPORT void pfl() {
   }
 }
 
-extern "C" DEBUGEXPORT void psf() { // print stack frames
+extern "C" NOINLINE void psf() { // print stack frames
   Command c("psf");
   if (!c.onThread()) return;
   JavaThread* p = JavaThread::active();
@@ -511,21 +511,21 @@ extern "C" DEBUGEXPORT void psf() { // print stack frames
 }
 
 
-extern "C" DEBUGEXPORT void threads() {
+extern "C" NOINLINE void threads() {
   Command c("threads");
   if (!c.onThread()) return;
   Threads::print(false, true);
 }
 
 
-extern "C" DEBUGEXPORT void psd() {
+extern "C" NOINLINE void psd() {
   Command c("psd");
   if (!c.onThread()) return;
   SystemDictionary::print();
 }
 
 
-extern "C" DEBUGEXPORT void pss() { // print all stacks
+extern "C" NOINLINE void pss() { // print all stacks
   Command c("pss");
   if (!c.onThread()) return;
   Threads::print(true, PRODUCT_ONLY(false) NOT_PRODUCT(true));
@@ -533,7 +533,7 @@ extern "C" DEBUGEXPORT void pss() { // print all stacks
 
 // #ifndef PRODUCT
 
-extern "C" DEBUGEXPORT void debug() {               // to set things up for compiler debugging
+extern "C" NOINLINE void debug() {               // to set things up for compiler debugging
   Command c("debug");
   NOT_PRODUCT(WizardMode = true;)
   PrintCompilation = true;
@@ -542,7 +542,7 @@ extern "C" DEBUGEXPORT void debug() {               // to set things up for comp
 }
 
 
-extern "C" DEBUGEXPORT void ndebug() {              // undo debug()
+extern "C" NOINLINE void ndebug() {              // undo debug()
   Command c("ndebug");
   PrintCompilation = false;
   PrintInlining = PrintAssembly = false;
@@ -550,36 +550,36 @@ extern "C" DEBUGEXPORT void ndebug() {              // undo debug()
 }
 
 
-extern "C" DEBUGEXPORT void flush()  {
+extern "C" NOINLINE void flush()  {
   Command c("flush");
   tty->flush();
 }
 
-extern "C" DEBUGEXPORT void events() {
+extern "C" NOINLINE void events() {
   Command c("events");
   Events::print();
 }
 
-extern "C" DEBUGEXPORT Method* findm(intptr_t pc) {
+extern "C" NOINLINE Method* findm(intptr_t pc) {
   Command c("findm");
   nmethod* nm = CodeCache::find_nmethod((address)pc);
   return (nm == nullptr) ? (Method*)nullptr : nm->method();
 }
 
 
-extern "C" DEBUGEXPORT nmethod* findnm(intptr_t addr) {
+extern "C" NOINLINE nmethod* findnm(intptr_t addr) {
   Command c("findnm");
   return  CodeCache::find_nmethod((address)addr);
 }
 
-extern "C" DEBUGEXPORT void find(intptr_t x) {
+extern "C" NOINLINE void find(intptr_t x) {
   Command c("find");
   if (!c.onThread()) return;
   os::print_location(tty, x, false);
 }
 
 
-extern "C" DEBUGEXPORT void findpc(intptr_t x) {
+extern "C" NOINLINE void findpc(intptr_t x) {
   Command c("findpc");
   if (!c.onThread()) return;
   os::print_location(tty, x, true);
@@ -591,15 +591,14 @@ extern "C" DEBUGEXPORT void findpc(intptr_t x) {
 //   call findclass("java/lang/Object", 0x3)             -> find j.l.Object and disasm all of its methods
 //   call findmethod("*ang/Object*", "wait", 0xff)       -> detailed disasm of all "wait" methods in j.l.Object
 //   call findmethod("*ang/Object*", "wait:(*J*)V", 0x1) -> list all "wait" methods in j.l.Object that have a long parameter
-extern "C" DEBUGEXPORT void findclass(const char* class_name_pattern, int flags) {
+extern "C" NOINLINE void findclass(const char* class_name_pattern, int flags) {
   Command c("findclass");
   if (!c.onThread()) return;
   ClassPrinter::print_flags_help(tty);
   ClassPrinter::print_classes(class_name_pattern, flags, tty);
 }
 
-extern "C" DEBUGEXPORT void findmethod(const char* class_name_pattern,
-                                     const char* method_pattern, int flags) {
+extern "C" NOINLINE void findmethod(const char* class_name_pattern, const char* method_pattern, int flags) {
   Command c("findmethod");
   if (!c.onThread()) return;
   ClassPrinter::print_flags_help(tty);
@@ -607,7 +606,7 @@ extern "C" DEBUGEXPORT void findmethod(const char* class_name_pattern,
 }
 
 // Need method pointer to find bcp
-extern "C" DEBUGEXPORT void findbcp(intptr_t method, intptr_t bcp) {
+extern "C" NOINLINE void findbcp(intptr_t method, intptr_t bcp) {
   Command c("findbcp");
   Method* mh = (Method*)method;
   if (!mh->is_native()) {
@@ -618,7 +617,7 @@ extern "C" DEBUGEXPORT void findbcp(intptr_t method, intptr_t bcp) {
 }
 
 // check and decode a single u5 value
-extern "C" DEBUGEXPORT u4 u5decode(intptr_t addr) {
+extern "C" NOINLINE u4 u5decode(intptr_t addr) {
   Command c("u5decode");
   u1* arr = (u1*)addr;
   size_t off = 0, lim = 5;
@@ -635,9 +634,7 @@ extern "C" DEBUGEXPORT u4 u5decode(intptr_t addr) {
 // there is no limit on the count of items printed; the
 // printing stops when an null is printed or at limit.
 // See documentation for UNSIGNED5::Reader::print(count).
-extern "C" DEBUGEXPORT intptr_t u5p(intptr_t addr,
-                                  intptr_t limit,
-                                  int count) {
+extern "C" NOINLINE intptr_t u5p(intptr_t addr, intptr_t limit, int count) {
   Command c("u5p");
   u1* arr = (u1*)addr;
   if (limit && limit < addr)  limit = addr;
@@ -650,10 +647,10 @@ extern "C" DEBUGEXPORT intptr_t u5p(intptr_t addr,
 
 // int versions of all methods to avoid having to type type casts in the debugger
 
-void pp(intptr_t p)          { pp((void*)p); }
-void pp(oop p)               { pp((void*)p); }
+NOINLINE void pp(intptr_t p)          { pp((void*)p); }
+NOINLINE void pp(oop p)               { pp((void*)p); }
 
-extern "C" DEBUGEXPORT void help() {
+extern "C" NOINLINE void help() {
   Command c("help");
   tty->print_cr("basic");
   tty->print_cr("  pp(void* p)         - try to make sense of p");
@@ -709,7 +706,7 @@ extern "C" DEBUGEXPORT void help() {
 }
 
 #ifndef PRODUCT
-extern "C" DEBUGEXPORT void pns(void* sp, void* fp, void* pc) { // print native stack
+extern "C" NOINLINE void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
   if (!c.onThread()) return;
   static char buf[O_BUFLEN];
@@ -728,7 +725,7 @@ extern "C" DEBUGEXPORT void pns(void* sp, void* fp, void* pc) { // print native 
 // WARNING: Only intended for use when debugging. Do not leave calls to
 // pns2() in committed source (product or debug).
 //
-extern "C" DEBUGEXPORT void pns2() { // print native stack
+extern "C" NOINLINE void pns2() { // print native stack
   Command c("pns2");
   if (!c.onThread()) return;
   static char buf[O_BUFLEN];
@@ -739,6 +736,43 @@ extern "C" DEBUGEXPORT void pns2() { // print native stack
 }
 #endif
 
+// just an exported helper; to avoid link time elimination of the referenced functions
+extern "C" JNIEXPORT void JVM_debug_helpers_keeper(void* p1, void* p2, void* p3, intptr_t ip, oop oh, address adr) {
+  blob((CodeBlob*)p1);
+  dump_vtable(adr);
+  nm(ip);
+  disnm(ip);
+  printnm(ip);
+  universe();
+  verify();
+  pp(p1);
+  ps();
+  pfl();
+  psf();
+  threads();
+  psd();
+  pss();
+  debug();
+  ndebug();
+  flush();
+  events();
+  findm(ip);
+  findnm(ip);
+  find(ip);
+  findpc(ip);
+  findclass("", 0);
+  findmethod("", "", 0);
+  findbcp(ip, ip);
+  u5decode(ip);
+  u5p(ip, ip, 0);
+  pp(ip);
+  pp(oh);
+  help();
+#ifndef PRODUCT
+  pns(p1, p2, p3);
+  pns2();
+#endif
+}
 
 // Returns true iff the address p is readable and *(intptr_t*)p != errvalue
 extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {

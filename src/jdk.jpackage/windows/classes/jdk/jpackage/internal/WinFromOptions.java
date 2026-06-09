@@ -39,6 +39,7 @@ import static jdk.jpackage.internal.cli.StandardOption.WIN_SHORTCUT_HINT;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_SHORTCUT_PROMPT;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_UPDATE_URL;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_UPGRADE_UUID;
+import static jdk.jpackage.internal.cli.StandardOption.WIN_WITH_UI;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
 import jdk.jpackage.internal.cli.Options;
@@ -49,6 +50,7 @@ import jdk.jpackage.internal.model.WinExePackage;
 import jdk.jpackage.internal.model.WinLauncher;
 import jdk.jpackage.internal.model.WinLauncherMixin;
 import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.summary.StandardProperty;
 
 final class WinFromOptions {
 
@@ -93,6 +95,7 @@ final class WinFromOptions {
         WIN_UPDATE_URL.ifPresentIn(options, pkgBuilder::updateURL);
         WIN_INSTALLDIR_CHOOSER.ifPresentIn(options, pkgBuilder::withInstallDirChooser);
         WIN_SHORTCUT_PROMPT.ifPresentIn(options, pkgBuilder::withShortcutPrompt);
+        WIN_WITH_UI.ifPresentIn(options, pkgBuilder::withUi);
 
         if (app.isService()) {
             RESOURCE_DIR.ifPresentIn(options, resourceDir -> {
@@ -102,7 +105,13 @@ final class WinFromOptions {
 
         WIN_UPGRADE_UUID.ifPresentIn(options, pkgBuilder::upgradeCode);
 
-        return pkgBuilder.create();
+        var pkg = pkgBuilder.create();
+
+        var summary = OptionUtils.summary(options);
+        summary.put(StandardProperty.WIN_MSI_PRODUCT_CODE, pkg.productCode());
+        summary.put(StandardProperty.WIN_MSI_UPGRADE_CODE, pkg.upgradeCode());
+
+        return pkg;
     }
 
     static WinExePackage createWinExePackage(Options options) {

@@ -43,6 +43,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
@@ -241,21 +242,39 @@ public class WindowsHelper {
 
     public enum WixType {
         WIX3,
-        WIX4
+        WIX4,
+        ;
+
+        /**
+         * Returns the file name of the WiX build tool outputting MSI files.
+         *
+         * @return the name of the WiX tool outputting MSI files
+         */
+        public String buildTool() {
+            return switch (this) {
+                case WIX3 -> "light.exe";
+                case WIX4 -> "wix.exe";
+            };
+        }
     }
 
     public static WixType getWixTypeFromVerboseJPackageOutput(Executor.Result result) {
-        return result.getOutput().stream().map(str -> {
-            if (str.contains("[light.exe]")) {
+
+        var summaryWixVersion = JPackageStringBundle.MAIN.cannedFormattedString(
+                "summary.property.win-wix-version").getValue() + ": ";
+
+        return result.stdout().stream().filter(str -> {
+            return str.startsWith(summaryWixVersion);
+        }).findFirst().map(str -> {
+            var ver = str.substring(summaryWixVersion.length());
+            if (DottedVersion.compareComponents(DottedVersion.lazy(ver), DottedVersion.greedy("4.0")) < 0) {
                 return WixType.WIX3;
-            } else if (str.contains("[wix.exe]")) {
-                return WixType.WIX4;
             } else {
-                return null;
+                return WixType.WIX4;
             }
-        }).filter(Objects::nonNull).reduce((a, b) -> {
-            throw new IllegalArgumentException("Invalid input: multiple invocations of WiX tools");
-        }).orElseThrow(() -> new IllegalArgumentException("Invalid input: no invocations of WiX tools"));
+        }).orElseThrow(() -> {
+            return new IllegalArgumentException("Failed to detect WiX version. Likely, the input is missing the summary");
+        });
     }
 
     static Optional<Path> toShortPath(Path path) {
@@ -276,13 +295,18 @@ public class WindowsHelper {
         return MsiDatabaseCache.INSTANCE.findProperty(cmd.outputBundle(), propertyName).orElseThrow();
     }
 
+    public static MsiDatabase.UIAlterations getUIAlterations(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        return MsiDatabaseCache.INSTANCE.uiAlterations(cmd.outputBundle());
+    }
+
     static Collection<MsiDatabase.Shortcut> getMsiShortcuts(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WIN_MSI);
         return MsiDatabaseCache.INSTANCE.listShortcuts(cmd.outputBundle());
     }
 
     public static String getExecutableDescription(Path pathToExeFile) {
-        Executor exec = Executor.of("powershell",
+        Executor exec = Executor.of(PowerShellPath(),
                 "-NoLogo",
                 "-NoProfile",
                 "-Command",
@@ -431,7 +455,7 @@ public class WindowsHelper {
         ;
 
         Path getPath() {
-            final var str = Executor.of("powershell", "-NoLogo", "-NoProfile",
+            final var str = Executor.of(PowerShellPath(), "-NoLogo", "-NoProfile",
                     "-NonInteractive", "-Command",
                     String.format("[Environment]::GetFolderPath('%s')", name())
                     ).saveFirstLineOfOutput().execute().getFirstLineOfOutput();
@@ -572,6 +596,10 @@ public class WindowsHelper {
             return ensureTables(msiPath, MsiDatabase.Table.LIST_SHORTCUTS_REQUIRED_TABLES).listShortcuts();
         }
 
+        MsiDatabase.UIAlterations uiAlterations(Path msiPath) {
+            return ensureTables(msiPath, MsiDatabase.Table.UI_ALTERATIONS_REQUIRED_TABLES).uiAlterations();
+        }
+
         MsiDatabase ensureTables(Path msiPath, Set<MsiDatabase.Table> tableNames) {
             Objects.requireNonNull(msiPath);
             try {
@@ -633,4 +661,11 @@ public class WindowsHelper {
     private static final String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
 
     private static final int WIN_MAX_PATH = 260;
+
+    public static String PowerShellPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        String suffix = "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+        String fullPath = systemRoot == null ? null : systemRoot + suffix;
+        return (fullPath != null && Files.exists(Path.of(fullPath))) ? fullPath : "powershell";
+    }
 }

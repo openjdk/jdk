@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,8 +322,6 @@ class CompilationPolicy : AllStatic {
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline static bool is_trivial(const methodHandle& method);
-  // Force method to be compiled at CompLevel_simple?
-  inline static bool force_comp_at_level_simple(const methodHandle& method);
 
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method);
@@ -358,7 +356,6 @@ class CompilationPolicy : AllStatic {
   static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   static bool is_compilation_enabled();
 
-  static CompileTask* select_task_helper(CompileQueue* compile_queue);
   // Return initial compile level to use with Xcomp (depends on compilation mode).
   static void reprofile(ScopeDesc* trap_scope, bool is_osr);
   static nmethod* event(const methodHandle& method, const methodHandle& inlinee,

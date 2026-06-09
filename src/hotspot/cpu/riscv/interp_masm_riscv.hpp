@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -274,8 +274,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_not_taken_branch(Register mdp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
-  void profile_virtual_call(Register receiver, Register mdp,
-                            bool receiver_can_be_null = false);
+  void profile_virtual_call(Register receiver, Register mdp);
   void profile_ret(Register return_bci, Register mdp);
   void profile_null_seen(Register mdp);
   void profile_typecheck(Register mdp, Register klass);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,11 @@ static BOOL                     UpdateInstance(JNIEnv *env);
        class InstanceAccess {
        public:
            INLINE   InstanceAccess() { devices = Devices::GetInstance(); }
-           INLINE  ~InstanceAccess() { devices->Release(); }
+           INLINE  ~InstanceAccess() { if (devices != NULL) devices->Release(); }
            Devices* operator->()     { return devices; }
+           INLINE AwtWin32GraphicsDevice* Device(int index, BOOL adjust = TRUE) {
+               return devices == NULL ? NULL : devices->GetDevice(index, adjust);
+           }
         private:
            Devices* devices;
            // prevent bad things like copying or getting address of

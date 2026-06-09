@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1055,14 +1055,8 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-#ifdef ASSERT
-  if (UseCompressedClassPointers) {
-    // Stricter checks for both correct alignment and placement
-    CompressedKlassPointers::check_encodable(this);
-  } else {
-    assert(Metaspace::contains((address)this), "Should be");
-  }
-#endif // ASSERT
+  // Stricter checks for both correct alignment and placement
+  DEBUG_ONLY(CompressedKlassPointers::check_encodable(this));
 
   guarantee(this->is_klass(),"should be klass");
 

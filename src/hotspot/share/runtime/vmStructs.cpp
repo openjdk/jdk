@@ -163,8 +163,7 @@
   /******************************************************************/                                                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
-  volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
-  volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
+  volatile_nonstatic_field(oopDesc,            _compressed_klass,                             narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    const int)                             \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
@@ -236,7 +235,7 @@
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
-  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
+  COMPILER2_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,              u2))                                   \
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
@@ -335,11 +334,11 @@
   nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste_limit,                           size_t)                                \
-     static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
+     static_field(ThreadLocalAllocBuffer,      _target_num_refills,                           unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _num_refills,                                  unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _gc_waste,                                     unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _slow_allocations,                             unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _num_slow_allocations,                         unsigned)                              \
   nonstatic_field(VirtualSpace,                _low_boundary,                                 char*)                                 \
   nonstatic_field(VirtualSpace,                _high_boundary,                                char*)                                 \
   nonstatic_field(VirtualSpace,                _low,                                          char*)                                 \
@@ -475,6 +474,7 @@
   /***********************************/                                                                                              \
                                                                                                                                      \
      static_field(StubRoutines,                _call_stub_return_address,                     address)                               \
+     static_field(StubRoutines,                _cont_returnBarrier,                           address)                               \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \
@@ -786,6 +786,7 @@
   static_field(Mutex,                          _mutex_array,                                  Mutex**)                               \
   static_field(Mutex,                          _num_mutex,                                    int)                                   \
   volatile_nonstatic_field(Mutex,              _owner,                                        Thread*)                               \
+  nonstatic_field(ContinuationEntry,           _parent,                                       ContinuationEntry*)                    \
   static_field(ContinuationEntry,              _return_pc,                                    address)
 
 //--------------------------------------------------------------------------------
@@ -1016,7 +1017,7 @@
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
         declare_type(JfrRecorderThread, JavaThread)                       \
-        DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
+        DEBUG_ONLY(COMPILER2_PRESENT(                                     \
           declare_type(DeoptimizeObjectsALotThread, JavaThread)))         \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
@@ -1576,9 +1577,6 @@
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
   declare_constant(Deoptimization::Reason_receiver_constraint)            \
   declare_constant(Deoptimization::Reason_not_compiled_exception_handler) \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_unresolved)))                     \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_jsr_mismatch)))                   \
   declare_constant(Deoptimization::Reason_tenured)                        \
   declare_constant(Deoptimization::Reason_LIMIT)                          \
   declare_constant(Deoptimization::Reason_RECORDED_LIMIT)                 \
@@ -1597,10 +1595,8 @@
                                                                           \
   declare_constant(Deoptimization::_action_bits)                          \
   declare_constant(Deoptimization::_reason_bits)                          \
-  declare_constant(Deoptimization::_debug_id_bits)                        \
   declare_constant(Deoptimization::_action_shift)                         \
   declare_constant(Deoptimization::_reason_shift)                         \
-  declare_constant(Deoptimization::_debug_id_shift)                       \
                                                                           \
   /******************************************/                            \
   /* BasicType enum (globalDefinitions.hpp) */                            \
@@ -1756,12 +1752,6 @@
   declare_constant(PerfData::U_Events)                                    \
   declare_constant(PerfData::U_String)                                    \
   declare_constant(PerfData::U_Hertz)                                     \
-                                                                          \
-  /****************/                                                      \
-  /* JVMCI */                                                             \
-  /****************/                                                      \
-                                                                          \
-  declare_preprocessor_constant("INCLUDE_JVMCI", INCLUDE_JVMCI)           \
                                                                           \
   /****************/                                                      \
   /*  VMRegImpl   */                                                      \
@@ -2085,10 +2075,10 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     s[len-1] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {
-      FREE_C_HEAP_ARRAY(char, s);
+      FREE_C_HEAP_ARRAY(s);
       return 1;
     }
-    FREE_C_HEAP_ARRAY(char, s);
+    FREE_C_HEAP_ARRAY(s);
   }
   const char* start = nullptr;
   if (strstr(typeName, "GrowableArray<") == typeName) {
@@ -2104,10 +2094,10 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     s[len-1] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {
-      FREE_C_HEAP_ARRAY(char, s);
+      FREE_C_HEAP_ARRAY(s);
       return 1;
     }
-    FREE_C_HEAP_ARRAY(char, s);
+    FREE_C_HEAP_ARRAY(s);
   }
   if (strstr(typeName, "const ") == typeName) {
     const char * s = typeName + strlen("const ");
@@ -2142,4 +2132,3 @@ void vmStructs_init() {
   VMStructs::init();
 }
 #endif // ASSERT
-

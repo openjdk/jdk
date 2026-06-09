@@ -166,6 +166,11 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
+    public float dotProductF_VectorAPI_fma() {
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_fma(d.aF, d.bF);
+    }
+
+    @Benchmark
     public int hashCodeB_loop() {
         return VectorAlgorithmsImpl.hashCodeB_loop(d.aB);
     }
@@ -225,6 +230,26 @@ public class VectorAlgorithms {
         d.eI_findI_idx = (d.eI_findI_idx + 1) & 0xffff;
         int e = d.eI_findI[d.eI_findI_idx];
         return VectorAlgorithmsImpl.findI_VectorAPI(d.aI, e);
+    }
+
+    @Benchmark
+    public int mismatchB_loop() {
+        return d.wrap_mismatchB(d.mismatchB_idx_idx++, VectorAlgorithmsImpl::mismatchB_loop);
+    }
+
+    @Benchmark
+    public int mismatchB_Arrays() {
+        return d.wrap_mismatchB(d.mismatchB_idx_idx++, VectorAlgorithmsImpl::mismatchB_Arrays);
+    }
+
+    @Benchmark
+    public int mismatchB_MemorySegment() {
+        return d.wrap_mismatchB(d.mismatchB_idx_idx++, VectorAlgorithmsImpl::mismatchB_MemorySegment);
+    }
+
+    @Benchmark
+    public int mismatchB_VectorAPI() {
+        return d.wrap_mismatchB(d.mismatchB_idx_idx++, VectorAlgorithmsImpl::mismatchB_VectorAPI);
     }
 
     @Benchmark

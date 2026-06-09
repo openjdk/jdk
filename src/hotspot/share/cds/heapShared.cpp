@@ -112,6 +112,11 @@ static Klass* _test_class = nullptr;
 static const ArchivedKlassSubGraphInfoRecord* _test_class_record = nullptr;
 #endif
 
+#ifdef ASSERT
+// All classes that have at least one instance in the cached heap.
+static ArchivableKlassTable* _dumptime_classes_with_cached_oops = nullptr;
+static Array<Klass*>* _runtime_classes_with_cached_oops = nullptr;
+#endif
 
 //
 // If you add new entries to the following tables, you should know what you're doing!
@@ -131,17 +136,14 @@ static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
   {"java/lang/module/Configuration",              "EMPTY_CONFIGURATION"},
   {"jdk/internal/math/FDBigInteger",              "archivedCaches"},
 
-#ifndef PRODUCT
-  {nullptr, nullptr}, // Extra slot for -XX:ArchiveHeapTestClass
-#endif
-  {nullptr, nullptr},
-};
-
-// full module graph
-static ArchivableStaticFieldInfo fmg_archive_subgraph_entry_fields[] = {
+  // full module graph support
   {"jdk/internal/loader/ArchivedClassLoaders",    "archivedClassLoaders"},
   {ARCHIVED_BOOT_LAYER_CLASS,                     ARCHIVED_BOOT_LAYER_FIELD},
   {"java/lang/Module$ArchivedData",               "archivedData"},
+
+#ifndef PRODUCT
+  {nullptr, nullptr}, // Extra slot for -XX:ArchiveHeapTestClass
+#endif
   {nullptr, nullptr},
 };
 
@@ -164,8 +166,7 @@ bool HeapShared::is_subgraph_root_class(InstanceKlass* ik) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
   if (CDSConfig::is_dumping_klass_subgraphs()) {
     // Legacy CDS archive support (to be deprecated)
-    return is_subgraph_root_class_of(archive_subgraph_entry_fields, ik) ||
-           is_subgraph_root_class_of(fmg_archive_subgraph_entry_fields, ik);
+    return is_subgraph_root_class_of(archive_subgraph_entry_fields, ik);
   } else {
     return false;
   }
@@ -395,6 +396,21 @@ void HeapShared::initialize_streaming() {
 }
 
 void HeapShared::enable_gc() {
+#ifdef ASSERT
+  // At this point, a GC may start and will be able to see some or all
+  // of the cached oops. The class of each oop seen by the GC must have
+  // already been loaded. One function with such a requirement is
+  // ClaimMetadataVisitingOopIterateClosure::do_klass().
+  if (is_archived_heap_in_use()) {
+    Array<Klass*>* klasses = _runtime_classes_with_cached_oops;
+
+    for (int i = 0; i < klasses->length(); i++) {
+      assert(klasses->at(i)->class_loader_data() != nullptr,
+             "class of cached oop must have been loaded");
+    }
+  }
+#endif
+
   if (AOTStreamedHeapLoader::is_in_use()) {
     AOTStreamedHeapLoader::enable_gc();
   }
@@ -568,8 +584,10 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
     return false;
   }
 
+  AOTArtifactFinder::add_cached_class(obj->klass());
   AOTOopChecker::check(obj); // Make sure contents of this oop are safe.
   count_allocation(obj->size());
+  DEBUG_ONLY(_dumptime_classes_with_cached_oops->add(obj->klass()));
 
   if (HeapShared::is_writing_streaming_mode()) {
     AOTStreamedHeapWriter::add_source_obj(obj);
@@ -612,9 +630,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
     } else if (java_lang_invoke_ResolvedMethodName::is_instance(obj)) {
       Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(obj);
       if (m != nullptr) {
-        if (RegeneratedClasses::has_been_regenerated(m)) {
-          m = RegeneratedClasses::get_regenerated_object(m);
-        }
+        m = RegeneratedClasses::maybe_get_regenerated_object(m);
         InstanceKlass* method_holder = m->method_holder();
         AOTArtifactFinder::add_cached_class(method_holder);
       }
@@ -671,11 +687,6 @@ public:
 };
 
 void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
-  if (CDSConfig::is_dumping_preimage_static_archive() && scratch_resolved_references(src) != nullptr) {
-    // We are in AOT training run. The class has been redefined and we are giving it a new resolved_reference.
-    // Ignore it, as this class will be excluded from the AOT config.
-    return;
-  }
   if (SystemDictionaryShared::is_builtin_loader(src->pool_holder()->class_loader_data())) {
     _scratch_objects_table->set_oop(src, dest);
   }
@@ -685,10 +696,17 @@ objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
   return (objArrayOop)_scratch_objects_table->get_oop(src);
 }
 
+void HeapShared::remove_scratch_resolved_references(ConstantPool* src) {
+  if (CDSConfig::is_dumping_heap()) {
+    _scratch_objects_table->remove_oop(src);
+  }
+}
+
 void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
   _pending_roots->append(nullptr); // root index 0 represents a null oop
+  DEBUG_ONLY(_dumptime_classes_with_cached_oops = new (mtClassShared)ArchivableKlassTable());
 }
 
 void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
@@ -925,7 +943,7 @@ void HeapShared::start_scanning_for_oops() {
 
     // The special subgraph doesn't belong to any class. We use Object_klass() here just
     // for convenience.
-    _dump_time_special_subgraph = init_subgraph_info(vmClasses::Object_klass(), false);
+    _dump_time_special_subgraph = init_subgraph_info(vmClasses::Object_klass());
 
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache();
@@ -970,6 +988,8 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
   ArchiveBuilder::OtherROAllocMark mark;
   write_subgraph_info_table();
 
+  DEBUG_ONLY(_runtime_classes_with_cached_oops = _dumptime_classes_with_cached_oops->write_ordered_array());
+
   delete _pending_roots;
   _pending_roots = nullptr;
 
@@ -1003,12 +1023,7 @@ void HeapShared::archive_subgraphs() {
   assert(CDSConfig::is_dumping_heap(), "must be");
 
   if (CDSConfig::is_dumping_klass_subgraphs()) {
-    archive_object_subgraphs(archive_subgraph_entry_fields,
-                             false /* is_full_module_graph */);
-    if (CDSConfig::is_dumping_full_module_graph()) {
-      archive_object_subgraphs(fmg_archive_subgraph_entry_fields,
-                               true /* is_full_module_graph */);
-    }
+    archive_object_subgraphs(archive_subgraph_entry_fields);
   }
 }
 
@@ -1021,12 +1036,11 @@ HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_
 // Get the subgraph_info for Klass k. A new subgraph_info is created if
 // there is no existing one for k. The subgraph_info records the "buffered"
 // address of the class.
-KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_graph) {
+KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
   bool created;
   KlassSubGraphInfo* info =
-    _dump_time_subgraph_info_table->put_if_absent(k, KlassSubGraphInfo(k, is_full_module_graph),
-                                                  &created);
+    _dump_time_subgraph_info_table->put_if_absent(k, KlassSubGraphInfo(k), &created);
   assert(created, "must not initialize twice");
   return info;
 }
@@ -1114,7 +1128,6 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   }
 
   _subgraph_object_klasses->append_if_missing(orig_k);
-  _has_non_early_klasses |= is_non_early_klass(orig_k);
 }
 
 void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
@@ -1157,45 +1170,11 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
   AOTMetaspace::unrecoverable_writing_error();
 }
 
-bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
-  if (k->is_objArray_klass()) {
-    k = ObjArrayKlass::cast(k)->bottom_klass();
-  }
-  if (k->is_instance_klass()) {
-    if (!SystemDictionaryShared::is_early_klass(InstanceKlass::cast(k))) {
-      ResourceMark rm;
-      log_info(aot, heap)("non-early: %s", k->external_name());
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
 void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   _k = ArchiveBuilder::get_buffered_klass(info->klass());
   _entry_field_records = nullptr;
   _subgraph_object_klasses = nullptr;
-  _is_full_module_graph = info->is_full_module_graph();
-
-  if (_is_full_module_graph) {
-    // Consider all classes referenced by the full module graph as early -- we will be
-    // allocating objects of these classes during JVMTI early phase, so they cannot
-    // be processed by (non-early) JVMTI ClassFileLoadHook
-    _has_non_early_klasses = false;
-  } else {
-    _has_non_early_klasses = info->has_non_early_klasses();
-  }
-
-  if (_has_non_early_klasses) {
-    ResourceMark rm;
-    log_info(aot, heap)(
-          "Subgraph of klass %s has non-early klasses and cannot be used when JVMTI ClassFileLoadHook is enabled",
-          _k->external_name());
-  }
 
   // populate the entry fields
   GrowableArray<int>* entry_fields = info->subgraph_entry_fields();
@@ -1322,6 +1301,7 @@ void HeapShared::serialize_tables(SerializeClosure* soc) {
 
   _run_time_subgraph_info_table.serialize_header(soc);
   soc->do_ptr(&_run_time_special_subgraph);
+  DEBUG_ONLY(soc->do_ptr(&_runtime_classes_with_cached_oops));
 }
 
 static void verify_the_heap(Klass* k, const char* which) {
@@ -1353,15 +1333,10 @@ static void verify_the_heap(Klass* k, const char* which) {
 
 // Before GC can execute, we must ensure that all oops reachable from HeapShared::roots()
 // have a valid klass. I.e., oopDesc::klass() must have already been resolved.
-//
-// Note: if a ArchivedKlassSubGraphInfoRecord contains non-early classes, and JVMTI
-// ClassFileLoadHook is enabled, it's possible for this class to be dynamically replaced. In
-// this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
 void HeapShared::resolve_classes(JavaThread* current) {
   assert(CDSConfig::is_using_archive(), "runtime only!");
   if (CDSConfig::is_using_klass_subgraphs()) {
     resolve_classes_for_subgraphs(current, archive_subgraph_entry_fields);
-    resolve_classes_for_subgraphs(current, fmg_archive_subgraph_entry_fields);
   }
 }
 
@@ -1509,24 +1484,6 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
     }
     return nullptr;
   } else {
-    if (record->is_full_module_graph() && !CDSConfig::is_using_full_module_graph()) {
-      if (log_is_enabled(Info, aot, heap)) {
-        ResourceMark rm(THREAD);
-        log_info(aot, heap)("subgraph %s cannot be used because full module graph is disabled",
-                            k->external_name());
-      }
-      return nullptr;
-    }
-
-    if (record->has_non_early_klasses() && JvmtiExport::should_post_class_file_load_hook()) {
-      if (log_is_enabled(Info, aot, heap)) {
-        ResourceMark rm(THREAD);
-        log_info(aot, heap)("subgraph %s cannot be used because JVMTI ClassFileLoadHook is enabled",
-                            k->external_name());
-      }
-      return nullptr;
-    }
-
     if (log_is_enabled(Info, aot, heap)) {
       ResourceMark rm;
       log_info(aot, heap)("%s subgraph %s ", do_init ? "init" : "resolve", k->external_name());
@@ -1608,8 +1565,8 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
     // mirror after this point.
     if (log_is_enabled(Info, aot, heap)) {
       ResourceMark rm;
-      log_info(aot, heap)("initialize_from_archived_subgraph %s " PTR_FORMAT "%s%s",
-                          k->external_name(), p2i(k), JvmtiExport::is_early_phase() ? " (early)" : "",
+      log_info(aot, heap)("initialize_from_archived_subgraph %s " PTR_FORMAT "%s",
+                          k->external_name(), p2i(k),
                           k->has_aot_initialized_mirror() ? " (aot-inited)" : "");
     }
   }
@@ -1794,10 +1751,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
   }
 
   if (java_lang_Class::is_instance(orig_obj)) {
-    Klass* k = java_lang_Class::as_Klass(orig_obj);
-    if (RegeneratedClasses::has_been_regenerated(k)) {
-      orig_obj = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
-    }
+    orig_obj = RegeneratedClasses::maybe_get_regenerated_mirror(orig_obj);
   }
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
@@ -2002,11 +1956,7 @@ void HeapShared::verify_subgraph_from(oop orig_obj) {
 void HeapShared::verify_reachable_objects_from(oop obj) {
   _num_total_verifications ++;
   if (java_lang_Class::is_instance(obj)) {
-    Klass* k = java_lang_Class::as_Klass(obj);
-    if (RegeneratedClasses::has_been_regenerated(k)) {
-      k = RegeneratedClasses::get_regenerated_object(k);
-      obj = k->java_mirror();
-    }
+    obj = RegeneratedClasses::maybe_get_regenerated_mirror(obj);
     obj = scratch_java_mirror(obj);
     assert(obj != nullptr, "must be");
   }
@@ -2075,9 +2025,9 @@ void HeapShared::set_has_been_seen_during_subgraph_recording(oop obj) {
   ++ _num_new_walked_objs;
 }
 
-void HeapShared::start_recording_subgraph(InstanceKlass *k, const char* class_name, bool is_full_module_graph) {
+void HeapShared::start_recording_subgraph(InstanceKlass *k, const char* class_name) {
   log_info(aot, heap)("Start recording subgraph(s) for archived fields in %s", class_name);
-  init_subgraph_info(k, is_full_module_graph);
+  init_subgraph_info(k);
   init_seen_objects_table();
   _num_new_walked_objs = 0;
   _num_new_archived_objs = 0;
@@ -2209,9 +2159,6 @@ void HeapShared::init_subgraph_entry_fields(TRAPS) {
   _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
   if (CDSConfig::is_dumping_klass_subgraphs()) {
     init_subgraph_entry_fields(archive_subgraph_entry_fields, CHECK);
-    if (CDSConfig::is_dumping_full_module_graph()) {
-      init_subgraph_entry_fields(fmg_archive_subgraph_entry_fields, CHECK);
-    }
   }
 }
 
@@ -2310,8 +2257,7 @@ void HeapShared::init_heap_writer() {
   }
 }
 
-void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
-                                          bool is_full_module_graph) {
+void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[]) {
   _num_total_subgraph_recordings = 0;
   _num_total_walked_objs = 0;
   _num_total_archived_objs = 0;
@@ -2327,7 +2273,7 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
   for (int i = 0; fields[i].valid(); ) {
     ArchivableStaticFieldInfo* info = &fields[i];
     const char* klass_name = info->klass_name;
-    start_recording_subgraph(info->klass, klass_name, is_full_module_graph);
+    start_recording_subgraph(info->klass, klass_name);
 
     // If you have specified consecutive fields of the same klass in
     // fields[], these will be archived in the same
@@ -2505,9 +2451,7 @@ void HeapShared::remap_dumped_metadata(oop src_obj, address archived_object) {
       return;
     }
 
-    if (RegeneratedClasses::has_been_regenerated(native_ptr)) {
-      native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
-    }
+    native_ptr = RegeneratedClasses::maybe_get_regenerated_object(native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);
