@@ -833,7 +833,7 @@ public abstract class AbstractQueuedSynchronizer
                     if ((s == null ? casTail(q, p) : s.casPrev(q, p)) &&
                         q.prev == p) {
                         if (s != null)
-                            p.casNext(q, s);         // OK if fails
+                            p.casNext(q, s);     // OK if fails
                         if (p.prev == null)
                             signalNext(p);
                     }

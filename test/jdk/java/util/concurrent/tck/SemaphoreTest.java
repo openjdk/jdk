@@ -698,13 +698,13 @@ public class SemaphoreTest extends JSR166TestCase {
             for(int i = 0; i < width; ++i)
                 pool.submit(c);
 
-            waitingToRun.await();     // Wait for all threads to have launched their tasks
-            Thread.sleep(3000); // Give the workers a bit of time to run acquisitions
-            s.release(width);         // Hand out permits
-            Thread.sleep(1000); // Give the workers a bit of time to react to the availability of permits
+            waitingToRun.await();                 // Wait for all tasks to start
+            Thread.sleep(3000);             // Wait a while for acquisitions
+            s.release(width);                     // Hand out permits
+            Thread.sleep(1000);             // Wait a while for permit acquisitions
 
             final int permitsAvailable = s.availablePermits();
-            done.set(true); // Try to make sure that for the successful cases the workers can exit cleanly
+            done.set(true);                       // Ensure that tasks can exit
             assertTrue(permitsAvailable < width); // Some permits should've been taken
         }
     }
