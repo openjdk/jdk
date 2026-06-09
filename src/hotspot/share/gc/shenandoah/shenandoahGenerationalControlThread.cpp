@@ -360,28 +360,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
   _heap->increment_total_collections(false);
 
   switch (original_state) {
-    case ShenandoahOldGeneration::FILLING: {
-      ShenandoahGCSession session(request.cause, old_generation);
-      set_gc_mode(servicing_old);
-      _allow_old_preemption.set();
-      old_generation->entry_coalesce_and_fill();
-      _allow_old_preemption.unset();
-
-      // Before bootstrapping begins, we must acknowledge any cancellation request.
-      // If the gc has not been cancelled, this does nothing. If it has been cancelled,
-      // this will clear the cancellation request and exit before starting the bootstrap
-      // phase. This will allow the young GC cycle to proceed normally. If we do not
-      // acknowledge the cancellation request, the subsequent young cycle will observe
-      // the request and essentially cancel itself.
-      if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-        log_info(gc, thread)("Preparation for old generation cycle was cancelled");
-        return;
-      }
-
-      // Coalescing threads completed and nothing was cancelled. it is safe to transition from this state.
-      old_generation->transition_to(ShenandoahOldGeneration::IDLE);
-      return;
-    }
     case ShenandoahOldGeneration::IDLE:
       set_gc_mode(bootstrapping_old);
       old_generation->transition_to(ShenandoahOldGeneration::MARKING);
@@ -396,24 +374,41 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       _heap->process_gc_stats();
 
       // Here we return to the top of the control loop so that we can test
-      // if memory was exhausted before we start marking old. If there is an
-      // alloc request pending and we just finished bootstrapping, we could
-      // escalate to a global cycle.
-      return;
+      // if memory was exhausted before we start marking old. This will notify alloc
+      // waiters and give them a chance to resume before old marking begins. If our
+      // bootstrap cycle did not free enough memory, we will escalate to a global cycle
+      // and skip old marking.
+      break;
     case ShenandoahOldGeneration::MARKING: {
       set_gc_mode(servicing_old);
       ShenandoahGCSession session(request.cause, old_generation);
-      bool marking_complete = resume_concurrent_old_cycle(old_generation, request.cause);
+      const bool marking_complete = resume_concurrent_old_cycle(old_generation, request.cause);
       if (marking_complete) {
         assert(old_generation->state() != ShenandoahOldGeneration::MARKING, "Should not still be marking");
-        if (original_state == ShenandoahOldGeneration::MARKING) {
-          _heap->mmu_tracker()->record_old_marking_increment(true);
-          _heap->log_heap_status("At end of Concurrent Old Marking finishing increment");
-        }
-      } else if (original_state == ShenandoahOldGeneration::MARKING) {
+        _heap->mmu_tracker()->record_old_marking_increment(true);
+        _heap->log_heap_status("At end of Concurrent Old Marking finishing increment");
+      } else {
+        assert(old_generation->state() == ShenandoahOldGeneration::MARKING, "Should still be marking");
         _heap->mmu_tracker()->record_old_marking_increment(false);
         _heap->log_heap_status("At end of Concurrent Old Marking increment");
       }
+      break;
+    }
+    case ShenandoahOldGeneration::FILLING: {
+      ShenandoahGCSession session(request.cause, old_generation);
+      set_gc_mode(servicing_old);
+      _allow_old_preemption.set();
+      const bool filling_complete = old_generation->entry_coalesce_and_fill();
+      _allow_old_preemption.unset();
+
+      if (!filling_complete) {
+        assert(old_generation->state() == ShenandoahOldGeneration::FILLING, "Should still be filling");
+        log_info(gc, thread)("Preparation for old generation cycle was cancelled");
+        break;
+      }
+
+      // Coalescing threads completed and nothing was cancelled. it is safe to transition from this state.
+      old_generation->transition_to(ShenandoahOldGeneration::IDLE);
       break;
     }
     default:

@@ -944,7 +944,7 @@ public:
 void ShenandoahHeapRegion::partially_recycle() {
   assert(has_self_forwards(), "Region %zu must have self forwarded objects", index());
 
-  // This is only allowed for partially evacuted cset regions
+  // This is only allowed for partially evacuated cset regions
   make_regular_allocation(affiliation());
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
