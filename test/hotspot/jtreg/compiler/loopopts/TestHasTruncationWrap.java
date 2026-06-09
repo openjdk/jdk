@@ -201,7 +201,7 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR1: short truncation, with checks before loop.
+    // testIR1: short loop, but values are trivially in short range.
     public static int testIR1_gold = testIR1();
 
     @Run(test = "testIR1")
@@ -213,13 +213,41 @@ public class TestHasTruncationWrap {
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIR1() {
-        int i     = (short)lo;
-        int limit = (short)hi;
-        if (i >= limit) { return -1; }
+        short init  = (short)lo;
+        short limit = (short)hi;
         int sum = 0;
-        while (i < limit) {
+        for (short i = init; i < limit; i++) {
             sum = dontinline(sum); // work to keep loop alive
-            i = (short)(i+1); // truncated iv
+        }
+        return sum;
+    }
+
+    // testIR2: short loop, ranges proved in short range via CmpI before loop.
+    public static int testIR2_gold = testIR2();
+
+    @Run(test = "testIR2")
+    private static void runIR2() {
+        int val = testIR2();
+        if (val != testIR2_gold) { throw new RuntimeException("wrong value: " + testIR2_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR2() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        if (init >= limit) { return -1; } // CmpI before loop
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in short range.
+        int sum = 0;
+        for (int i = init; i < limit; i = (short)(i+1)) {
+            sum = dontinline(sum); // work to keep loop alive
+            // The backedge value of i is also far
+            // enough from short boundaries, because of
+            // the loop exit check:
+            //   i < limit <= 100
         }
         return sum;
     }
