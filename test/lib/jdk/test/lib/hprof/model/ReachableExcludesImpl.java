@@ -57,7 +57,6 @@ public class ReachableExcludesImpl implements ReachableExcludes {
      * Create a new ReachableExcludesImpl over the given file.  The file will be
      * re-read whenever the timestamp changes.
      */
-    @SuppressWarnings("initialization")
     public ReachableExcludesImpl(File excludesFile) {
         this.excludesFile = excludesFile;
         readFile();

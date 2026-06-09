@@ -350,6 +350,8 @@ public class WhiteBox {
 
   // Compiler
 
+  public native boolean isC2Included();
+
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
   public native boolean shouldPrintAssembly(Executable method, int comp_level);
@@ -790,7 +792,6 @@ public class WhiteBox {
   public native Long    getMethodUintxOption(Executable method, String name);
   public native Double  getMethodDoubleOption(Executable method, String name);
   public native String  getMethodStringOption(Executable method, String name);
-  @SuppressWarnings("initialization")
   private final List<BiFunction<Executable,String,Object>> methodOptionGetters
       = Arrays.asList(this::getMethodBooleanOption, this::getMethodIntxOption,
           this::getMethodUintxOption, this::getMethodDoubleOption,

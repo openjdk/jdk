@@ -29,8 +29,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @run main EarlyLambdaReturn
- * @build SuperCallRemover
- * @compile -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyLambdaReturn.java
  */
 public class EarlyLambdaReturn {
 

@@ -132,7 +132,7 @@ import sun.util.calendar.LocalGregorianCalendar;
  */
 @jdk.internal.ValueBased
 @jdk.internal.MigratedValueClass
-public final class JapaneseDate
+public final /*value*/ class JapaneseDate
         extends ChronoLocalDateImpl<JapaneseDate>
         implements ChronoLocalDate, Serializable {
 

@@ -65,7 +65,7 @@ class TestClass {
         public Value0(int i) { value0_int = i; }
     }
 
-    // value class with the only value filed
+    // value class with the only value field
     // offset of flattened value_value0 is the same as offset of flattened Value
     public static value class Value {
         public Value0 value_value0;

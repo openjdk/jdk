@@ -7,8 +7,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @compile/fail/ref=SuperInitFails.out -XDrawDiagnostics SuperInitFails.java
- * @build SuperCallRemover
- * @compile/fail/ref=SuperInitFailsWarnings.out -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover SuperInitFails.java
  */
 import java.util.concurrent.atomic.AtomicReference;
 public class SuperInitFails extends AtomicReference<Object> implements Iterable<Object> {

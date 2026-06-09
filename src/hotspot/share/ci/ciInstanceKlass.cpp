@@ -567,7 +567,7 @@ void ciInstanceKlass::compute_nonstatic_fields() {
   ciInstanceKlass* super = this->super();
   assert(super != nullptr, "must have a super class, current class: %s", name()->as_utf8());
   super->compute_nonstatic_fields();
-  const GrowableArray<ciField*>* super_declared_fields = super->_declared_nonstatic_fields;;
+  const GrowableArray<ciField*>* super_declared_fields = super->_declared_nonstatic_fields;
   const GrowableArray<ciField*>* super_fields = super->_nonstatic_fields;
   assert(super_declared_fields != nullptr && super_fields != nullptr, "must have been initialized, current class: %s, super class: %s", name()->as_utf8(), super->name()->as_utf8());
 

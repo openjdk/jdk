@@ -626,7 +626,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_sha3_implCompress:
     return inline_digestBase_implCompress(intrinsic_id());
   case vmIntrinsics::_double_keccak:
-    return inline_double_keccak();
+  case vmIntrinsics::_quad_keccak:
+    return inline_keccak(intrinsic_id());
 
   case vmIntrinsics::_digestBase_implCompressMB:
     return inline_digestBase_implCompressMB(predicate);
@@ -5485,7 +5486,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
   if (!UseObjectMonitorTable) {
     // Test the header to see if it is safe to read w.r.t. locking.
-    // We cannot use the inline type mask as this may check bits that are overriden
+    // We cannot use the inline type mask as this may check bits that are overridden
     // by an object monitor's pointer when inflating locking.
     Node *lock_mask      = _gvn.MakeConX(markWord::lock_mask_in_place);
     Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
@@ -9201,33 +9202,60 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_double_keccak
-bool LibraryCallKit::inline_double_keccak() {
-  address stubAddr;
+//------------------------------inline_keccak
+bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
+  address stubAddr = nullptr;
   const char *stubName;
   assert(UseSHA3Intrinsics, "need SHA3 intrinsics support");
-  assert(callee()->signature()->size() == 2, "double_keccak has 2 parameters");
+  assert((id == vmIntrinsics::_double_keccak && callee()->signature()->size() == 2) ||
+         (id == vmIntrinsics::_quad_keccak && callee()->signature()->size() == 4),
+          "double_keccak wrong number of parameters");
 
-  stubAddr = StubRoutines::double_keccak();
-  stubName = "double_keccak";
+  int parmCnt = 0;
+  switch (id) {
+    case vmIntrinsics::_double_keccak:
+      stubAddr = StubRoutines::double_keccak();
+      stubName = "double_keccak";
+      parmCnt = 2;
+      break;
+    case vmIntrinsics::_quad_keccak:
+      stubAddr = StubRoutines::quad_keccak();
+      stubName = "quad_keccak";
+      parmCnt = 4;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
   if (!stubAddr) return false;
 
-  Node* status0        = argument(0);
-  Node* status1        = argument(1);
+  Node* state[4];
+  for (int i = 0; i<parmCnt; i++) {
+      state[i] = must_be_not_null(argument(i), true);
+      state[i] = array_element_address(state[i], intcon(0), T_LONG);
+      assert(state[i], "state[%d] is null", i);
+  }
 
-  status0 = must_be_not_null(status0, true);
-  status1 = must_be_not_null(status1, true);
-
-  Node* status0_start  = array_element_address(status0, intcon(0), T_LONG);
-  assert(status0_start, "status0 is null");
-  Node* status1_start  = array_element_address(status1, intcon(0), T_LONG);
-  assert(status1_start, "status1 is null");
-  Node* double_keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* keccak;
+  switch (id) {
+    case vmIntrinsics::_double_keccak:
+      keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
                                   OptoRuntime::double_keccak_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
-                                  status0_start, status1_start);
+                                  state[0], state[1]);
+      break;
+    case vmIntrinsics::_quad_keccak:
+      keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::quad_keccak_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  state[0], state[1], state[2], state[3]);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
   // return an int
-  Node* retvalue = _gvn.transform(new ProjNode(double_keccak, TypeFunc::Parms));
+  Node* retvalue = _gvn.transform(new ProjNode(keccak, TypeFunc::Parms));
   set_result(retvalue);
   return true;
 }

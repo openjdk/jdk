@@ -100,7 +100,7 @@ public:
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
-                          Register src, Register dst, Register inline_layout_info);
+                               Register src, Register dst, Register inline_layout_info);
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);

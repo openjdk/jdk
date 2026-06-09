@@ -137,7 +137,7 @@ import jdk.internal.util.DecimalDigits;
  */
 @jdk.internal.ValueBased
 @jdk.internal.MigratedValueClass
-public final class MonthDay
+public final /*value*/ class MonthDay
         implements TemporalAccessor, TemporalAdjuster, Comparable<MonthDay>, Serializable {
 
     /**

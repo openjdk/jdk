@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,8 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
   y = y->subst();
 
   Constant* y_const = y->as_Constant();
-  if (y_const != nullptr) {
+  // We must not optimize a substitutability check to a pointer comparison.
+  if (!substitutability_check && y_const != nullptr) {
     IfOp* x_ifop = x->as_IfOp();
     if (x_ifop != nullptr) {                 // x is an ifop, y is a constant
       Constant* x_tval_const = x_ifop->tval()->subst()->as_Constant();
@@ -310,7 +311,7 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
           if (new_tval == new_fval) {
             return new_tval;
           } else {
-            return new IfOp(x_ifop->x(), x_ifop_cond, x_ifop->y(), new_tval, new_fval, state_before, substitutability_check);
+            return new IfOp(x_ifop->x(), x_ifop_cond, x_ifop->y(), new_tval, new_fval, x_ifop->state_before(), x_ifop->substitutability_check());
           }
         }
       }

@@ -26,7 +26,6 @@
 package java.lang.invoke;
 
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
-import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ClassFileDumper;
 import sun.invoke.util.VerifyAccess;
@@ -40,7 +39,6 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -312,8 +310,7 @@ import sun.invoke.util.Wrapper;
         final byte[] classBytes = ClassFile.of().build(lambdaClassEntry, pool, new Consumer<ClassBuilder>() {
             @Override
             public void accept(ClassBuilder clb) {
-                clb.withVersion(ClassFileFormatVersion.latest().major(), (PreviewFeatures.isEnabled() ? ClassFile.PREVIEW_MINOR_VERSION : 0))
-                   .withFlags(ACC_SUPER | ACC_FINAL | ACC_SYNTHETIC)
+                clb.withFlags(ACC_SUPER | ACC_FINAL | ACC_SYNTHETIC)
                    .withInterfaceSymbols(interfaces);
                 // All Classes in the BSM argument method types are loaded; no need for LoadableDescriptors
 

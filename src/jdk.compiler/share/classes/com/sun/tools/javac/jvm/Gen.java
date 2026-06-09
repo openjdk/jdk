@@ -97,8 +97,6 @@ public class Gen extends JCTree.Visitor {
      */
     final PoolWriter poolWriter;
 
-    private final UnsetFieldsInfo unsetFieldsInfo;
-
     @SuppressWarnings("this-escape")
     protected Gen(Context context) {
         context.put(genKey, this);
@@ -130,7 +128,6 @@ public class Gen extends JCTree.Visitor {
         debugCode = options.isSet("debug.code");
         disableVirtualizedPrivateInvoke = options.isSet("disableVirtualizedPrivateInvoke");
         poolWriter = new PoolWriter(types, names);
-        unsetFieldsInfo = UnsetFieldsInfo.instance(context);
 
         // ignore cldc because we cannot have both stackmap formats
         this.stackMap = StackMapFormat.JSR202;
@@ -422,10 +419,9 @@ public class Gen extends JCTree.Visitor {
 
     /** Distribute member initializer code into constructors and {@code <clinit>}
      *  method.
-     *  @param defs         The list of class member declarations.
-     *  @param c            The enclosing class.
+     *  @param classDecl         The class declaration to normalize.
      */
-    List<JCTree> normalizeDefs(List<JCTree> defs, ClassSymbol c) {
+    List<JCTree> normalizeDefs(JCClassDecl classDecl) {
         ListBuffer<JCStatement> initCode = new ListBuffer<>();
         // only used for value classes
         ListBuffer<JCStatement> initBlocks = new ListBuffer<>();
@@ -437,7 +433,7 @@ public class Gen extends JCTree.Visitor {
         //  - initCode for instance initializers
         //  - clinitCode for class initializers
         //  - methodDefs for method definitions
-        for (List<JCTree> l = defs; l.nonEmpty(); l = l.tail) {
+        for (List<JCTree> l = classDecl.defs; l.nonEmpty(); l = l.tail) {
             JCTree def = l.head;
             switch (def.getTag()) {
             case BLOCK:
@@ -445,7 +441,7 @@ public class Gen extends JCTree.Visitor {
                 if ((block.flags & STATIC) != 0)
                     clinitCode.append(block);
                 else if ((block.flags & SYNTHETIC) == 0) {
-                    if (c.isValueClass()) {
+                    if (classDecl.sym.isValueClass()) {
                         initBlocks.append(block);
                     } else {
                         initCode.append(block);
@@ -489,24 +485,26 @@ public class Gen extends JCTree.Visitor {
             }
         }
         // Insert any instance initializers into all constructors.
-        if (initCode.length() != 0 || initBlocks.length() != 0) {
-            initTAs.addAll(c.getInitTypeAttributes());
-            List<Attribute.TypeCompound> initTAlist = initTAs.toList();
-            for (JCTree t : methodDefs) {
-                normalizeMethod((JCMethodDecl)t, initCode.toList(), initBlocks.toList(), initTAlist);
-            }
+        List<TypeCompound> initTAlist = List.nil();
+        if (initCode.nonEmpty() || initBlocks.nonEmpty()) {
+            initTAs.addAll(classDecl.sym.getInitTypeAttributes());
+            initTAlist = initTAs.toList();
         }
+        for (JCTree t : methodDefs) {
+            normalizeMethod((JCMethodDecl)t, initCode.toList(), initBlocks.toList(), initTAlist);
+        }
+        localProxyVarsGen.allFieldNormalized(classDecl.sym);
         // If there are class initializers, create a <clinit> method
         // that contains them as its body.
         if (clinitCode.length() != 0) {
             MethodSymbol clinit = new MethodSymbol(
-                STATIC | (c.flags() & STRICTFP),
+                STATIC | (classDecl.sym.flags() & STRICTFP),
                 names.clinit,
                 new MethodType(
                     List.nil(), syms.voidType,
                     List.nil(), syms.methodClass),
-                c);
-            c.members().enter(clinit);
+                    classDecl.sym);
+            classDecl.sym.members().enter(clinit);
             List<JCStatement> clinitStats = clinitCode.toList();
             JCBlock block = make.at(clinitStats.head.pos()).Block(0, clinitStats);
             block.bracePos = TreeInfo.endPos(clinitStats.last());
@@ -514,8 +512,8 @@ public class Gen extends JCTree.Visitor {
 
             if (!clinitTAs.isEmpty())
                 clinit.appendUniqueTypeAttributes(clinitTAs.toList());
-            if (!c.getClassInitTypeAttributes().isEmpty())
-                clinit.appendUniqueTypeAttributes(c.getClassInitTypeAttributes());
+            if (!classDecl.sym.getClassInitTypeAttributes().isEmpty())
+                clinit.appendUniqueTypeAttributes(classDecl.sym.getClassInitTypeAttributes());
         }
         // Return all method definitions.
         return methodDefs.toList();
@@ -557,69 +555,52 @@ public class Gen extends JCTree.Visitor {
      *  @param initTAs  Type annotations from the initializer expression.
      */
     void normalizeMethod(JCMethodDecl md, List<JCStatement> initCode, List<JCStatement> initBlocks,  List<TypeCompound> initTAs) {
-        Set<Symbol> fieldsWithInits;
-        List<JCStatement> inits;
-        if ((fieldsWithInits = localProxyVarsGen.initializersAlreadyInConst.get(md)) != null) {
-            ListBuffer<JCStatement> newInitCode = new ListBuffer<>();
-            for (JCStatement init : initCode) {
-                Symbol sym = ((JCIdent)((JCAssign)((JCExpressionStatement)init).expr).lhs).sym;
-                if (!fieldsWithInits.contains(sym)) {
-                    newInitCode.add(init);
-                }
-            }
-            inits = newInitCode.toList();
-            localProxyVarsGen.initializersAlreadyInConst.remove(md);
-        } else {
-            inits = initCode;
-        }
         if (TreeInfo.isConstructor(md) && TreeInfo.hasConstructorCall(md, names._super)) {
             // We are seeing a constructor that has a super() call.
             // Find the super() invocation and append the given initializer code.
-            if (allowValueClasses & (md.sym.owner.isValueClass() || ((md.sym.owner.flags_field & RECORD) != 0))) {
-                rewriteInitializersIfNeeded(md, inits);
-                md.body.stats = inits.appendList(md.body.stats);
-                TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, initBlocks.prepend(supercall)));
-            } else {
-                TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, inits.prepend(supercall)));
+            if (initCode.nonEmpty() || initBlocks.nonEmpty()) {
+                if (allowValueClasses &&
+                        (md.sym.owner.isValueClass() || ((md.sym.owner.flags_field & RECORD) != 0))) {
+                    rewriteEarlyInitializersIfNeeded(md, initCode);
+                    md.body.stats = initCode.appendList(md.body.stats);
+                    TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, initBlocks.prepend(supercall)));
+                } else {
+                    TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, initCode.prepend(supercall)));
+                }
+                md.sym.appendUniqueTypeAttributes(initTAs);
             }
+
+            localProxyVarsGen.patchConstructor(md, make);
 
             if (md.body.bracePos == Position.NOPOS)
                 md.body.bracePos = TreeInfo.endPos(md.body.stats.last());
-
-            md.sym.appendUniqueTypeAttributes(initTAs);
         }
     }
 
-    void rewriteInitializersIfNeeded(JCMethodDecl md, List<JCStatement> initCode) {
-        if (lower.initializerOuterThis.containsKey(md.sym.owner)) {
-            InitializerVisitor initializerVisitor = new InitializerVisitor(md, lower.initializerOuterThis.get(md.sym.owner));
-            for (JCStatement init : initCode) {
-                initializerVisitor.scan(init);
+    /**
+     * Some early field initializer might contain references to synthetic Lower symbols,
+     * such as 'this$0' or local var proxies. Since these are effectively "early reads",
+     * we need to replace such reference with a reference to the corresponding
+     * (synthetic) constructor parameter.
+     */
+    void rewriteEarlyInitializersIfNeeded(JCMethodDecl md, List<JCStatement> initCode) {
+        class EarlyInitializerVisitor extends TreeScanner {
+            @Override
+            public void visitIdent(JCIdent tree) {
+                if ((tree.sym.flags() & OUTER_THIS_FIELD) != 0) {
+                    tree.sym = md.sym.extraParams.head;
+                } else if ((tree.sym.flags() & LOCAL_CAPTURE_FIELD) != 0) {
+                    Symbol capturedSym = tree.sym.baseSymbol();
+                    tree.sym = md.sym.capturedLocals.stream()
+                            .filter(l -> l.baseSymbol() == capturedSym)
+                            .findAny().orElseThrow();
+                }
             }
         }
-    }
-
-    public static class InitializerVisitor extends TreeScanner {
-        JCMethodDecl md;
-        Set<JCExpression> exprSet;
-
-        public InitializerVisitor(JCMethodDecl md, Set<JCExpression> exprSet) {
-            this.md = md;
-            this.exprSet = exprSet;
-        }
-
-        @Override
-        public void visitTree(JCTree tree) {}
-
-        @Override
-        public void visitIdent(JCIdent tree) {
-            if (exprSet.contains(tree)) {
-                for (JCVariableDecl param: md.params) {
-                    if (param.name == tree.name &&
-                            ((param.sym.flags_field & (MANDATED | NOOUTERTHIS)) == (MANDATED | NOOUTERTHIS))) {
-                        tree.sym = param.sym;
-                    }
-                }
+        if (md.sym.capturedLocals.nonEmpty() || md.sym.extraParams.nonEmpty()) {
+            EarlyInitializerVisitor initializerVisitor = new EarlyInitializerVisitor();
+            for (JCStatement init : initCode) {
+                initializerVisitor.scan(init);
             }
         }
     }
@@ -1020,11 +1001,6 @@ public class Gen extends JCTree.Visitor {
             else if (tree.body != null) {
                 // Create a new code structure and initialize it.
                 int startpcCrt = initCode(tree, env, fatcode);
-                Set<VarSymbol> prevUnsetFields = code.currentUnsetFields;
-                if (meth.isConstructor()) {
-                    code.currentUnsetFields = unsetFieldsInfo.getUnsetFields(env.enclClass.sym, tree.body);
-                    code.initialUnsetFields = unsetFieldsInfo.getUnsetFields(env.enclClass.sym, tree.body);
-                }
 
                 try {
                     genStat(tree.body, env);
@@ -1032,8 +1008,6 @@ public class Gen extends JCTree.Visitor {
                     // Failed due to code limit, try again with jsr/ret
                     startpcCrt = initCode(tree, env, fatcode);
                     genStat(tree.body, env);
-                } finally {
-                    code.currentUnsetFields = prevUnsetFields;
                 }
 
                 if (code.state.stacksize != 0) {
@@ -1124,6 +1098,10 @@ public class Gen extends JCTree.Visitor {
             for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
                 checkDimension(l.head.pos(), l.head.sym.type);
                 code.setDefined(code.newLocal(l.head.sym));
+            }
+
+            if (allowValueClasses && meth.isConstructor()) {
+                code.initUnsetStrictFields(env.enclClass.sym);
             }
 
             // Get ready to generate code for method body.
@@ -1238,12 +1216,7 @@ public class Gen extends JCTree.Visitor {
                              JCExpression cond,
                              List<JCExpressionStatement> step,
                              boolean testFirst) {
-            Set<VarSymbol> prevCodeUnsetFields = code.currentUnsetFields;
-            try {
-                genLoopHelper(loop, body, cond, step, testFirst);
-            } finally {
-                code.currentUnsetFields = prevCodeUnsetFields;
-            }
+            genLoopHelper(loop, body, cond, step, testFirst);
         }
 
         private void genLoopHelper(JCStatement loop,
@@ -1309,13 +1282,11 @@ public class Gen extends JCTree.Visitor {
     public void visitSwitchExpression(JCSwitchExpression tree) {
         code.resolvePending();
         boolean prevInCondSwitchExpression = inCondSwitchExpression;
-        Set<VarSymbol> prevCodeUnsetFields = code.currentUnsetFields;
         try {
             inCondSwitchExpression = false;
             doHandleSwitchExpression(tree);
         } finally {
             inCondSwitchExpression = prevInCondSwitchExpression;
-            code.currentUnsetFields = prevCodeUnsetFields;
         }
         result = items.makeStackItem(pt);
     }
@@ -1391,12 +1362,7 @@ public class Gen extends JCTree.Visitor {
 
     private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases,
                               boolean patternSwitch) {
-        Set<VarSymbol> prevCodeUnsetFields = code.currentUnsetFields;
-        try {
-            handleSwitchHelper(swtch, selector, cases, patternSwitch);
-        } finally {
-            code.currentUnsetFields = prevCodeUnsetFields;
-        }
+        handleSwitchHelper(swtch, selector, cases, patternSwitch);
     }
 
     void handleSwitchHelper(JCTree swtch, JCExpression selector, List<JCCase> cases,
@@ -1412,13 +1378,13 @@ public class Gen extends JCTree.Visitor {
             sel.load().drop();
             if (genCrt)
                 code.crt.put(TreeInfo.skipParens(selector),
-                        CRT_FLOW_CONTROLLER, startpcCrt, code.curCP());
+                             CRT_FLOW_CONTROLLER, startpcCrt, code.curCP());
         } else {
             // We are seeing a nonempty switch.
             sel.load();
             if (genCrt)
                 code.crt.put(TreeInfo.skipParens(selector),
-                        CRT_FLOW_CONTROLLER, startpcCrt, code.curCP());
+                             CRT_FLOW_CONTROLLER, startpcCrt, code.curCP());
             Env<GenContext> switchEnv = env.dup(swtch, new GenContext());
             switchEnv.info.isSwitch = true;
 
@@ -1454,11 +1420,11 @@ public class Gen extends JCTree.Visitor {
             long lookup_space_cost = 3 + 2 * (long) nlabels;
             long lookup_time_cost = nlabels;
             int opcode =
-                    nlabels > 0 &&
-                            table_space_cost + 3 * table_time_cost <=
-                                    lookup_space_cost + 3 * lookup_time_cost
-                            ?
-                            tableswitch : lookupswitch;
+                nlabels > 0 &&
+                table_space_cost + 3 * table_time_cost <=
+                lookup_space_cost + 3 * lookup_time_cost
+                ?
+                tableswitch : lookupswitch;
 
             int startpc = code.curCP();    // the position of the selector operation
             code.emitop0(opcode);
@@ -1494,8 +1460,8 @@ public class Gen extends JCTree.Visitor {
                 if (i != defaultIndex) {
                     if (opcode == tableswitch) {
                         code.put4(
-                                tableBase + 4 * (labels[i] - lo + 3),
-                                pc - startpc);
+                            tableBase + 4 * (labels[i] - lo + 3),
+                            pc - startpc);
                     } else {
                         offsets[i] = pc - startpc;
                     }
@@ -1545,8 +1511,8 @@ public class Gen extends JCTree.Visitor {
             }
 
             if (swtch instanceof JCSwitchExpression) {
-                // Emit line position for the end of a switch expression
-                code.statBegin(TreeInfo.endPos(swtch));
+                 // Emit line position for the end of a switch expression
+                 code.statBegin(TreeInfo.endPos(swtch));
             }
         }
         code.endScopes(limit);
@@ -1649,12 +1615,7 @@ public class Gen extends JCTree.Visitor {
          *  @param env       The current environment of the body.
          */
         void genTry(JCTree body, List<JCCatch> catchers, Env<GenContext> env) {
-            Set<VarSymbol> prevCodeUnsetFields = code.currentUnsetFields;
-            try {
-                genTryHelper(body, catchers, env);
-            } finally {
-                code.currentUnsetFields = prevCodeUnsetFields;
-            }
+            genTryHelper(body, catchers, env);
         }
 
         void genTryHelper(JCTree body, List<JCCatch> catchers, Env<GenContext> env) {
@@ -1677,8 +1638,8 @@ public class Gen extends JCTree.Visitor {
             endFinalizerGap(env);
             env.info.finalize.afterBody();
             boolean hasFinalizer =
-                    env.info.finalize != null &&
-                            env.info.finalize.hasFinalizer();
+                env.info.finalize != null &&
+                env.info.finalize.hasFinalizer();
             if (startpc != endpc) for (List<JCCatch> l = catchers; l.nonEmpty(); l = l.tail) {
                 // start off with exception on stack
                 code.entryPoint(stateTry, l.head.param.sym.type);
@@ -1687,7 +1648,7 @@ public class Gen extends JCTree.Visitor {
                 if (hasFinalizer || l.tail.nonEmpty()) {
                     code.statBegin(TreeInfo.endPos(env.tree));
                     exitChain = Code.mergeChains(exitChain,
-                            code.branch(goto_));
+                                                 code.branch(goto_));
                 }
                 endFinalizerGap(env);
             }
@@ -1710,7 +1671,7 @@ public class Gen extends JCTree.Visitor {
                 while (env.info.gaps.nonEmpty()) {
                     int endseg = env.info.gaps.next().intValue();
                     registerCatch(body.pos(), startseg, endseg,
-                            catchallpc, 0);
+                                  catchallpc, 0);
                     startseg = env.info.gaps.next().intValue();
                 }
                 code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
@@ -1725,8 +1686,8 @@ public class Gen extends JCTree.Visitor {
 
                 excVar.load();
                 registerCatch(body.pos(), startseg,
-                        env.info.gaps.next().intValue(),
-                        catchallpc, 0);
+                              env.info.gaps.next().intValue(),
+                              catchallpc, 0);
                 code.emitop0(athrow);
                 code.markDead();
 
@@ -1869,12 +1830,7 @@ public class Gen extends JCTree.Visitor {
         }
 
     public void visitIf(JCIf tree) {
-        Set<VarSymbol> prevCodeUnsetFields = code.currentUnsetFields;
-        try {
-            visitIfHelper(tree);
-        } finally {
-            code.currentUnsetFields = prevCodeUnsetFields;
-        }
+        visitIfHelper(tree);
     }
 
     public void visitIfHelper(JCIf tree) {
@@ -1882,7 +1838,7 @@ public class Gen extends JCTree.Visitor {
         Chain thenExit = null;
         Assert.check(code.isStatementStart());
         CondItem c = genCond(TreeInfo.skipParens(tree.cond),
-                CRT_FLOW_CONTROLLER);
+                             CRT_FLOW_CONTROLLER);
         Chain elseChain = c.jumpFalse();
         Assert.check(code.isStatementStart());
         if (!c.isFalse()) {
@@ -2206,8 +2162,6 @@ public class Gen extends JCTree.Visitor {
     public void visitAssign(JCAssign tree) {
         Item l = genExpr(tree.lhs, tree.lhs.type);
         genExpr(tree.rhs, tree.lhs.type).load();
-        Set<VarSymbol> tmpUnsetSymbols = unsetFieldsInfo.getUnsetFields(env.enclClass.sym, tree);
-        code.currentUnsetFields = tmpUnsetSymbols != null ? tmpUnsetSymbols : code.currentUnsetFields;
         if (tree.rhs.type.hasTag(BOT)) {
             /* This is just a case of widening reference conversion that per 5.1.5 simply calls
                for "regarding a reference as having some other type in a manner that can be proved
@@ -2486,7 +2440,7 @@ public class Gen extends JCTree.Visitor {
             code.emitLdc((LoadableConstant)checkDimension(tree.pos(), tree.selected.type));
             result = items.makeStackItem(pt);
             return;
-        }
+       }
 
         Symbol ssym = TreeInfo.symbol(tree.selected);
 
@@ -2596,7 +2550,7 @@ public class Gen extends JCTree.Visitor {
             this.toplevel = env.toplevel;
             /* method normalizeDefs() can add references to external classes into the constant pool
              */
-            cdef.defs = normalizeDefs(cdef.defs, c);
+            cdef.defs = normalizeDefs(cdef);
             generateReferencesToPrunedTree(c);
             Env<GenContext> localEnv = new Env<>(cdef, new GenContext());
             localEnv.toplevel = env.toplevel;

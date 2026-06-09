@@ -87,7 +87,8 @@ class UnmountBeginMark : public StackObj {
   }
   ~UnmountBeginMark() {
     assert(!_current->is_suspended()
-           JVMTI_ONLY(|| (_current->is_vthread_transition_disabler() && _result != freeze_ok)), "must be");
+           JVMTI_ONLY(|| (_result != freeze_ok &&
+                          (_current->is_vthread_transition_disabler() || _current->is_disable_suspend()))), "must be");
     assert(_current->is_in_vthread_transition(), "must be");
 
     if (_result != freeze_ok) {
@@ -381,8 +382,9 @@ frame Continuation::continuation_bottom_sender(JavaThread* thread, const frame& 
   ContinuationEntry* ce = get_continuation_entry_for_sp(thread, callee.sp());
   assert(ce != nullptr, "callee.sp(): " INTPTR_FORMAT, p2i(callee.sp()));
 
-  log_develop_debug(continuations)("continuation_bottom_sender: [%d] callee: " INTPTR_FORMAT " sender_sp: " INTPTR_FORMAT,
-      thread->osthread()->thread_id(), p2i(callee.sp()), p2i(sender_sp));
+  log_develop_debug(continuations)("continuation_bottom_sender: [" UINT64_FORMAT "] [%d] callee: " INTPTR_FORMAT
+    " sender_sp: " INTPTR_FORMAT,
+    thread->monitor_owner_id(), thread->osthread()->thread_id(), p2i(callee.sp()), p2i(sender_sp));
 
   frame entry = ce->to_frame();
   if (callee.is_interpreted_frame()) {

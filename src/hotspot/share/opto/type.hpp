@@ -1173,6 +1173,7 @@ public:
   static const TypeInterfaces* make(GrowableArray<ciInstanceKlass*>* interfaces = nullptr);
   bool eq(const Type* other) const;
   bool eq(ciInstanceKlass* k) const;
+  bool is_subset(ciInstanceKlass* k) const;
   uint hash() const;
   const Type *xdual() const;
   void dump(outputStream* st) const;
@@ -2126,7 +2127,7 @@ class TypeAryKlassPtr : public TypeKlassPtr {
   const bool _refined_type;
 
   static const TypeInterfaces* _array_interfaces;
-  TypeAryKlassPtr(PTR ptr, const Type *elem, ciKlass* klass, Offset offset, bool not_flat, int not_null_free, bool flat, bool null_free, bool atomic, bool refined_type)
+  TypeAryKlassPtr(PTR ptr, const Type *elem, ciKlass* klass, Offset offset, bool not_flat, bool not_null_free, bool flat, bool null_free, bool atomic, bool refined_type)
     : TypeKlassPtr(AryKlassPtr, ptr, klass, _array_interfaces, offset), _elem(elem), _not_flat(not_flat), _not_null_free(not_null_free), _flat(flat), _null_free(null_free), _atomic(atomic), _refined_type(refined_type) {
     assert(klass == nullptr || klass->is_type_array_klass() || klass->is_flat_array_klass() || !klass->as_obj_array_klass()->base_element_klass()->is_interface(), "");
   }
@@ -2383,7 +2384,6 @@ public:
   const TypeTuple* domain_cc()  const { return _domain_cc; }
   const TypeTuple* range_sig()  const { return _range_sig; }
   const TypeTuple* range_cc()   const { return _range_cc; }
-  bool scalarized_return()      const { return _scalarized_return; }
 
   static const TypeFunc* make(ciMethod* method, bool is_call = true, bool is_osr_compilation = false);
   static const TypeFunc *make(const TypeTuple* domain_sig, const TypeTuple* domain_cc,

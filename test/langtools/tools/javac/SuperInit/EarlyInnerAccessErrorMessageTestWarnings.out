@@ -1,4 +1,0 @@
-EarlyInnerAccessErrorMessageTest.java:17:34: compiler.warn.would.not.be.allowed.in.prologue: x
-- compiler.err.warnings.and.werror
-1 error
-1 warning

@@ -7,8 +7,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @compile/fail/ref=EarlyLocalClass.out -XDrawDiagnostics EarlyLocalClass.java
- * @build SuperCallRemover
- * @compile/fail/ref=EarlyLocalClassWarnings.out -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyLocalClass.java
  */
 public class EarlyLocalClass {
     EarlyLocalClass() {

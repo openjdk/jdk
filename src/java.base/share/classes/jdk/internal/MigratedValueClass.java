@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,12 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.TYPE;
 
 /**
- * Indicates the API declaration in question is associated with a migrated value class.
+ * Indicates the annotated class would become a value class when preview
+ * features are enabled.
  *
- * Note this internal annotation is handled specially by the javac compiler.
- * To work properly with {@code --release older-release}, it requires special
- * handling in {@code make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java}
- * and {@code src/jdk.compiler/share/classes/com/sun/tools/javac/jvm/ClassReader.java}.
- *
- * @since 23
+ * @since Valhalla
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(value={TYPE})
 public @interface MigratedValueClass {
 }

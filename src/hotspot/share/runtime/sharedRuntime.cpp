@@ -1243,7 +1243,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
       }
     } else {
       assert(attached_method->has_scalarized_args(), "invalid use of attached method");
-      if (!attached_method->method_holder()->is_inline_klass()) {
+      if (!attached_method->method_holder()->is_inline_klass() || attached_method->is_static()) {
         // Ignore the attached method in this case to not confuse below code
         attached_method = methodHandle(current, nullptr);
       }
@@ -2816,7 +2816,6 @@ GrowableArray<Method*>* CompiledEntrySignature::get_supers() {
   Symbol* signature = _method->signature();
   const Klass* holder = _method->method_holder()->super();
   Symbol* holder_name = holder->name();
-  ThreadInVMfromUnknown tiv;
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
   Handle loader(current, _method->method_holder()->class_loader());
@@ -2845,8 +2844,63 @@ GrowableArray<Method*>* CompiledEntrySignature::get_supers() {
   return _supers;
 }
 
+bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "must be in vm state");
+
+  bool scalar_super = false;
+  bool non_scalar_super = false;
+
+  GrowableArray<Method*>* supers = get_supers();
+  for (int i = 0; i < supers->length(); ++i) {
+    Method* super_method = supers->at(i);
+    if (super_method->is_scalarized_arg(arg_num)) {
+      scalar_super = true;
+    } else {
+      non_scalar_super = true;
+    }
+  }
+#ifdef ASSERT
+  // Randomly enable below code paths for stress testing
+  bool stress = StressCallingConvention;
+  if (stress && (os::random() & 1) == 1) {
+    non_scalar_super = true;
+    if ((os::random() & 1) == 1) {
+      scalar_super = true;
+    }
+  }
+#endif
+  if (non_scalar_super) {
+    // Found a super method with a non-scalarized argument. Fall back to the non-scalarized calling convention.
+    if (scalar_super) {
+      // Found non-scalar *and* scalar super methods. We can't handle both.
+      // Mark the scalar method as mismatch and re-compile call sites to use non-scalarized calling convention.
+      for (int i = 0; i < supers->length(); ++i) {
+        Method* super_method = supers->at(i);
+        if (super_method->is_scalarized_arg(arg_num) DEBUG_ONLY(|| (stress && (os::random() & 1) == 1))) {
+          JavaThread* thread = JavaThread::current();
+          HandleMark hm(thread);
+          methodHandle mh(thread, super_method);
+          DeoptimizationScope deopt_scope;
+          {
+            // Keep the lock scope minimal. Prevent interference with other
+            // dependency checks by setting mismatch and marking within the lock.
+            MutexLocker ml(Compile_lock, Mutex::_safepoint_check_flag);
+            super_method->set_mismatch();
+            CodeCache::mark_for_deoptimization(&deopt_scope, mh());
+          }
+          deopt_scope.deoptimize_marked();
+        }
+      }
+    }
+  }
+
+  return non_scalar_super;
+}
+
 // Iterate over arguments and compute scalarized and non-scalarized signatures
-void CompiledEntrySignature::compute_calling_conventions(bool init) {
+void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
+  assert(JavaThread::current()->thread_state() != _thread_in_native, "must not be in native");
+  assert(link_time || (_method != nullptr && _method->adapter() != nullptr), "invariant");
   bool has_scalarized = false;
   if (_method != nullptr) {
     InstanceKlass* holder = _method->method_holder();
@@ -2854,7 +2908,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool init) {
     if (!_method->is_static()) {
       // We shouldn't scalarize 'this' in a value class constructor
       if (holder->is_inline_klass() && InlineKlass::cast(holder)->can_be_passed_as_fields() &&
-          !_method->is_object_constructor() && (init || _method->is_scalarized_arg(arg_num))) {
+          !_method->is_object_constructor() && (link_time || _method->is_scalarized_arg(arg_num))) {
         _sig_cc->appendAll(InlineKlass::cast(holder)->extended_sig());
         _sig_cc->insert_before(1, SigEntry(T_OBJECT, 0, nullptr, false, true)); // buffer argument
         has_scalarized = true;
@@ -2868,58 +2922,15 @@ void CompiledEntrySignature::compute_calling_conventions(bool init) {
       arg_num++;
     }
     for (SignatureStream ss(_method->signature()); !ss.at_return_type(); ss.next()) {
-      BasicType bt = ss.type();
+      const BasicType bt = ss.type();
       if (InlineTypePassFieldsAsArgs && bt == T_OBJECT) {
         InlineKlass* vk = ss.as_inline_klass(holder);
-        if (vk != nullptr && vk->can_be_passed_as_fields() && (init || _method->is_scalarized_arg(arg_num))) {
+        if (vk != nullptr && vk->can_be_passed_as_fields() && (link_time || _method->is_scalarized_arg(arg_num))) {
           // Check for a calling convention mismatch with super method(s)
-          bool scalar_super = false;
-          bool non_scalar_super = false;
-          GrowableArray<Method*>* supers = get_supers();
-          for (int i = 0; i < supers->length(); ++i) {
-            Method* super_method = supers->at(i);
-            if (super_method->is_scalarized_arg(arg_num)) {
-              scalar_super = true;
-            } else {
-              non_scalar_super = true;
-            }
-          }
-#ifdef ASSERT
-          // Randomly enable below code paths for stress testing
-          bool stress = init && StressCallingConvention;
-          if (stress && (os::random() & 1) == 1) {
-            non_scalar_super = true;
-            if ((os::random() & 1) == 1) {
-              scalar_super = true;
-            }
-          }
-#endif
-          if (non_scalar_super) {
-            // Found a super method with a non-scalarized argument. Fall back to the non-scalarized calling convention.
-            if (scalar_super) {
-              // Found non-scalar *and* scalar super methods. We can't handle both.
-              // Mark the scalar method as mismatch and re-compile call sites to use non-scalarized calling convention.
-              for (int i = 0; i < supers->length(); ++i) {
-                Method* super_method = supers->at(i);
-                if (super_method->is_scalarized_arg(arg_num) DEBUG_ONLY(|| (stress && (os::random() & 1) == 1))) {
-                  JavaThread* thread = JavaThread::current();
-                  HandleMark hm(thread);
-                  methodHandle mh(thread, super_method);
-                  DeoptimizationScope deopt_scope;
-                  {
-                    // Keep the lock scope minimal. Prevent interference with other
-                    // dependency checks by setting mismatch and marking within the lock.
-                    MutexLocker ml(Compile_lock, Mutex::_safepoint_check_flag);
-                    super_method->set_mismatch();
-                    CodeCache::mark_for_deoptimization(&deopt_scope, mh());
-                  }
-                  deopt_scope.deoptimize_marked();
-                }
-              }
-            }
-            // Fall back to non-scalarized calling convention
-            SigEntry::add_entry(_sig_cc, T_OBJECT, ss.as_symbol());
-            SigEntry::add_entry(_sig_cc_ro, T_OBJECT, ss.as_symbol());
+          if (link_time && check_supers_and_deoptimize(arg_num)) {
+             // Fall back to non-scalarized calling convention
+             SigEntry::add_entry(_sig_cc, T_OBJECT, ss.as_symbol());
+             SigEntry::add_entry(_sig_cc_ro, T_OBJECT, ss.as_symbol());
           } else {
             _num_inline_args++;
             has_scalarized = true;
@@ -2938,7 +2949,6 @@ void CompiledEntrySignature::compute_calling_conventions(bool init) {
           SigEntry::add_entry(_sig_cc, T_OBJECT, ss.as_symbol());
           SigEntry::add_entry(_sig_cc_ro, T_OBJECT, ss.as_symbol());
         }
-        bt = T_OBJECT;
       } else {
         SigEntry::add_entry(_sig_cc, ss.type(), ss.as_symbol());
         SigEntry::add_entry(_sig_cc_ro, ss.type(), ss.as_symbol());

@@ -1965,7 +1965,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
           LoadField* load = new LoadField(obj, offset, field, false, state_before, needs_patching);
           Value replacement = !needs_patching ? _memory->load(load) : load;
           if (replacement != load) {
-            assert(replacement->is_linked() || !replacement->can_be_linked(), "should already by linked");
+            assert(replacement->is_linked() || !replacement->can_be_linked(), "should already be linked");
             // Writing an (integer) value to a boolean, byte, char or short field includes an implicit narrowing
             // conversion. Emit an explicit conversion here to get the correct field value after the write.
             switch (field_basic_type) {

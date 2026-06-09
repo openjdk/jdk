@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Testing ClassFile Code Adaptation.
- * @enablePreview
  * @run junit AdaptCodeTest
  */
 

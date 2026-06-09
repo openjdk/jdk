@@ -3773,7 +3773,7 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
     assert(safe_for_replace, "must be");
     not_null_obj = null_check(obj);
   } else {
-    not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace, speculative_not_null);
+    not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, false /*safe_for_replace*/, speculative_not_null);
   }
 
   // If not_null_obj is dead, only null-path is taken
@@ -3805,7 +3805,7 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
     // a speculative type use it to perform an exact cast.
     ciKlass* spec_obj_type = obj_type->speculative_type();
     if (spec_obj_type != nullptr || data != nullptr) {
-      cast_obj = maybe_cast_profiled_receiver(not_null_obj, improved_klass_ptr_type, spec_obj_type, safe_for_replace);
+      cast_obj = maybe_cast_profiled_receiver(not_null_obj, improved_klass_ptr_type, spec_obj_type, false /*safe_for_replace*/);
       if (cast_obj != nullptr) {
         if (failure_control != nullptr) // failure is now impossible
           (*failure_control) = top();
@@ -3845,19 +3845,6 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   region->init_req(_obj_path, control());
   phi   ->init_req(_obj_path, cast_obj);
 
-  // A merge of null or Casted-NotNull obj
-  Node* res = _gvn.transform(phi);
-
-  // Note I do NOT always 'replace_in_map(obj,result)' here.
-  //  if( tk->klass()->can_be_primary_super()  )
-    // This means that if I successfully store an Object into an array-of-String
-    // I 'forget' that the Object is really now known to be a String.  I have to
-    // do this because we don't have true union types for interfaces - if I store
-    // a Baz into an array-of-Interface and then tell the optimizer it's an
-    // Interface, I forget that it's also a Baz and cannot do Baz-like field
-    // references to it.  FIX THIS WHEN UNION TYPES APPEAR!
-  //  replace_in_map( obj, res );
-
   // Return final merged results
   set_control( _gvn.transform(region) );
   record_for_igvn(region);
@@ -3865,16 +3852,17 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   bool not_inline = !toop->can_be_inline_type();
   bool not_flat_in_array = !UseArrayFlattening || not_inline || (toop->is_inlinetypeptr() && !toop->inline_klass()->maybe_flat_in_array());
   if (Arguments::is_valhalla_enabled() && (not_inline || not_flat_in_array)) {
-    // Check if obj has been loaded from an array
-    obj = obj->isa_DecodeN() ? obj->in(1) : obj;
+    // Check if obj has been loaded from an array. Keep obj unchanged for final
+    // map replacement below.
+    Node* array_obj = obj->isa_DecodeN() ? obj->in(1) : obj;
     Node* array = nullptr;
-    if (obj->isa_Load()) {
-      Node* address = obj->in(MemNode::Address);
+    if (array_obj->isa_Load()) {
+      Node* address = array_obj->in(MemNode::Address);
       if (address->isa_AddP()) {
         array = address->as_AddP()->in(AddPNode::Base);
       }
-    } else if (obj->is_Phi()) {
-      Node* region = obj->in(0);
+    } else if (array_obj->is_Phi()) {
+      Node* region = array_obj->in(0);
       // TODO make this more robust (see JDK-8231346)
       if (region->req() == 3 && region->in(2) != nullptr && region->in(2)->in(0) != nullptr) {
         IfNode* iff = region->in(2)->in(0)->isa_If();
@@ -3911,6 +3899,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
     }
   }
 
+  // A merge of null or Casted-NotNull obj
+  Node* res = _gvn.transform(phi);
   if (!stopped() && !res->is_InlineType()) {
     res = record_profiled_receiver_for_speculation(res);
     if (toop->is_inlinetypeptr() && !maybe_larval) {
@@ -3921,6 +3911,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
         replace_in_map(not_null_obj, vt);
         replace_in_map(res, vt);
       }
+    } else if (safe_for_replace) {
+      replace_in_map(obj, res);
     }
   }
   return res;
@@ -4824,13 +4816,13 @@ Node* GraphKit::load_String_value(Node* str, bool set_ctrl) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, nullptr, Type::Offset(0));
   const TypePtr* value_field_type = string_type->add_offset(value_offset);
-  const TypeAryPtr* value_type = TypeAryPtr::make(TypePtr::NotNull,
+  const TypeAryPtr* value_type = TypeAryPtr::make(TypePtr::BotPTR,
                                                   TypeAry::make(TypeInt::BYTE, TypeInt::POS, false, false, true, true, true),
                                                   ciTypeArrayKlass::make(T_BYTE), true, Type::Offset(0));
   Node* p = basic_plus_adr(str, str, value_offset);
   Node* load = access_load_at(str, p, value_field_type, value_type, T_OBJECT,
                               IN_HEAP | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0) | MO_UNORDERED);
-  return load;
+  return must_be_not_null(load, true);
 }
 
 Node* GraphKit::load_String_coder(Node* str, bool set_ctrl) {

@@ -41,7 +41,7 @@ class WriteAfterReadRefl {
     }
 */
 
-super class WriteAfterReadRefl version 71:65535
+super class WriteAfterReadRefl version 72:65535
 {
   strict static final  Field F1__STRICT:"Ljava/lang/String;";
   strict static final Field F2__STRICT:I;

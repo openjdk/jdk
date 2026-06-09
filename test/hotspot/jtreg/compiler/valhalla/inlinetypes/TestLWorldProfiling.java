@@ -168,8 +168,6 @@ public class TestLWorldProfiling {
     private static final MyInteger[] testMyIntegerArray = new MyInteger[] { new MyInteger(42) };
     private static final MyLong[] testMyLongArray = new MyLong[] { new MyLong(42L) };
     private static final MyValue1[] testValue1NotFlatArray = new MyValue1[] { testValue1 };
-    private static final MyValue1[][] testValue1ArrayArray = new MyValue1[][] { testValue1Array };
-
     // Wrap these variables into helper class because
     // WhiteBox API needs to be initialized by TestFramework first.
     static class WBFlags {

@@ -378,12 +378,6 @@ public class Annotate {
             }
 
             if (!c.type.isErroneous()
-                    && toAnnotate.kind == TYP
-                    && types.isSameType(c.type, syms.migratedValueClassType)) {
-                toAnnotate.flags_field |= Flags.MIGRATED_VALUE_CLASS;
-            }
-
-            if (!c.type.isErroneous()
                     && types.isSameType(c.type, syms.restrictedType)) {
                 toAnnotate.flags_field |= Flags.RESTRICTED;
             }

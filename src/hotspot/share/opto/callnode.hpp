@@ -910,7 +910,7 @@ public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
     : CallJavaNode(tf, addr, method), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
-    if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
+    if (C->eliminate_boxing() && (method != nullptr) && (method->is_boxing_method() || method->is_unboxing_method())) {
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
@@ -942,10 +942,15 @@ public:
   bool is_boxing_method() const {
     return is_macro() && (method() != nullptr) && method()->is_boxing_method();
   }
+
+  bool is_unboxing_method() const {
+    return is_macro() && (method() != nullptr) && method()->is_unboxing_method();
+  }
+
   // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
   virtual bool needs_deep_clone_jvms(Compile* C) {
-    return is_boxing_method() || CallNode::needs_deep_clone_jvms(C);
+    return is_boxing_method() || is_unboxing_method() || CallNode::needs_deep_clone_jvms(C);
   }
 
   virtual int         Opcode() const;

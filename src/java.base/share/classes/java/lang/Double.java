@@ -35,7 +35,7 @@ import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.util.DecimalDigits;
-import jdk.internal.value.DeserializeConstructor;
+import jdk.internal.value.Deserializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -367,7 +367,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  */
 @jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
-public final class Double extends Number
+public final /*value*/ class Double extends Number
         implements Comparable<Double>, Constable, ConstantDesc {
     /**
      * A constant holding the positive infinity of type
@@ -1085,7 +1085,7 @@ public final class Double extends Number
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
-    @DeserializeConstructor
+    @Deserializer("value")
     public Double(double value) {
         this.value = value;
     }

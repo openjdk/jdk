@@ -7,8 +7,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @compile/fail/ref=EarlyAssignments.out -XDrawDiagnostics EarlyAssignments.java
- * @build SuperCallRemover
- * @compile/fail/ref=EarlyAssignmentsWarnings.out -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyAssignments.java
  */
 public class EarlyAssignments {
 

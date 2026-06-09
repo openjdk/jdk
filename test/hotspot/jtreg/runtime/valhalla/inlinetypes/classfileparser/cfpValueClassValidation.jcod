@@ -30,7 +30,7 @@
 class InvalidClassFlags {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -94,7 +94,7 @@ class InvalidClassFlags {
 class AbstractValue {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -158,7 +158,7 @@ class AbstractValue {
 class FinalValue {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -222,7 +222,7 @@ class FinalValue {
 class AbstractClass {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -286,7 +286,7 @@ class AbstractClass {
 class ValueClass {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -350,7 +350,7 @@ class ValueClass {
 class IdentityClass {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -414,7 +414,7 @@ class IdentityClass {
 class ValueClass2 {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -478,7 +478,7 @@ class ValueClass2 {
 class AbstractValueClass2 {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -542,7 +542,7 @@ class AbstractValueClass2 {
 class AbstractIdentityClass2 {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -606,7 +606,7 @@ class AbstractIdentityClass2 {
 class AbstractValueClass3 {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -671,7 +671,7 @@ class AbstractValueClass3 {
 class NotStaticNotStrictInOldClass {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Field #2 #3; // #1
@@ -790,7 +790,7 @@ class NotStaticNotStrictInOldClass {
 class StaticSynchMethod {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -880,7 +880,7 @@ class StaticSynchMethod {
 class SynchMethod {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -970,7 +970,7 @@ class SynchMethod {
 class StaticSynchMethodInAbstractValue {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1060,7 +1060,7 @@ class StaticSynchMethodInAbstractValue {
 class SynchMethodInAbstractValue {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1156,7 +1156,7 @@ class SynchMethodInAbstractValue {
 class PrimitiveInLoadableDescriptors {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1

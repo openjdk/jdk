@@ -27,7 +27,7 @@ package java.lang;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.PreviewFeatures;
-import jdk.internal.value.DeserializeConstructor;
+import jdk.internal.value.Deserializer;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -71,7 +71,8 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  */
 @jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
-public final class Byte extends Number implements Comparable<Byte>, Constable {
+public final /*value*/ class Byte extends Number
+        implements Comparable<Byte>, Constable {
 
     /**
      * A constant holding the minimum value a {@code byte} can
@@ -378,7 +379,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
-    @DeserializeConstructor
+    @Deserializer("value")
     public Byte(byte value) {
         this.value = value;
     }

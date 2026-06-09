@@ -61,9 +61,6 @@ static LayoutKind field_layout_selection(FieldInfo field_info, Array<InlineLayou
   }
 
   if (field_info.access_flags().is_static()) {
-    assert(inline_layout_info_array == nullptr ||
-               inline_layout_info_array->adr_at(field_info.index())->klass() == nullptr,
-           "Static fields do not have inline layout info");
     // don't flatten static fields
     return LayoutKind::REFERENCE;
   }
@@ -79,16 +76,20 @@ static LayoutKind field_layout_selection(FieldInfo field_info, Array<InlineLayou
   if (field_info.field_flags().is_null_free_inline_type()) {
     assert(field_info.access_flags().is_strict(), "null-free fields must be strict");
     if (vk->must_be_atomic()) {
-      if (vk->is_naturally_atomic(true /* null-free */) && vk->has_null_free_non_atomic_layout()) return LayoutKind::NULL_FREE_NON_ATOMIC_FLAT;
+      if (vk->is_naturally_atomic(true /* null-free */) && vk->has_null_free_non_atomic_layout()) {
+        return LayoutKind::NULL_FREE_NON_ATOMIC_FLAT;
+      }
       return (vk->has_null_free_atomic_layout() && can_use_atomic_flat) ? LayoutKind::NULL_FREE_ATOMIC_FLAT : LayoutKind::REFERENCE;
     } else {
       return vk->has_null_free_non_atomic_layout() ? LayoutKind::NULL_FREE_NON_ATOMIC_FLAT : LayoutKind::REFERENCE;
     }
   } else {
     // To preserve the consistency between the null-marker and the field content, the NULLABLE_NON_ATOMIC_FLAT
-    // can only be used in containers that have atomicity quarantees (can_use_atomic_flat argument set to true)
+    // can only be used in containers that have atomicity guarantees (can_use_atomic_flat argument set to true)
     if (field_info.access_flags().is_strict() && field_info.access_flags().is_final() && can_use_atomic_flat) {
-      if (vk->has_nullable_non_atomic_layout()) return LayoutKind::NULLABLE_NON_ATOMIC_FLAT;
+      if (vk->has_nullable_non_atomic_layout()) {
+        return LayoutKind::NULLABLE_NON_ATOMIC_FLAT;
+      }
     }
     // Another special case where NULLABLE_NON_ATOMIC_FLAT can be used: nullable empty values, because the
     // payload of those values contains only the null-marker
@@ -161,11 +162,11 @@ LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
 
 
 LayoutRawBlock::LayoutRawBlock(int index, Kind kind, int size, int alignment) :
- _next_block(nullptr),
- _prev_block(nullptr),
- _inline_klass(nullptr),
- _block_kind(kind),
- _layout_kind(LayoutKind::UNKNOWN),
+  _next_block(nullptr),
+  _prev_block(nullptr),
+  _inline_klass(nullptr),
+  _block_kind(kind),
+  _layout_kind(LayoutKind::UNKNOWN),
  _offset(-1),
  _alignment(alignment),
  _size(size),
@@ -543,7 +544,7 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
   while (b->next_block() != nullptr) {
     if (b->next_block()->offset() > (b->offset() + b->size())) {
       int size = b->next_block()->offset() - (b->offset() + b->size());
-      // FIXME it would be better if initial empty block where tagged as PADDING for value classes
+      // FIXME it would be better if initial empty blocks were tagged as PADDING for value classes
       // Tracked by JDK-8383383
       LayoutRawBlock* empty = new LayoutRawBlock(filling_type, size);
       empty->set_offset(b->offset() + b->size());
@@ -1092,7 +1093,7 @@ void FieldLayoutBuilder::compute_regular_layout() {
 
 /* Computation of inline classes has a slightly different strategy than for
  * regular classes. Regular classes have their oop fields allocated at the end
- * of the layout to increase GC performances. Unfortunately, this strategy
+ * of the layout to increase GC performance. Unfortunately, this strategy
  * increases the number of empty slots inside an instance. Because the purpose
  * of inline classes is to be embedded into other containers, it is critical
  * to keep their size as small as possible. For this reason, the allocation
@@ -1143,7 +1144,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
     // No inherited fields, the layout must be empty except for the RESERVED block
     // PADDING is inserted if needed to ensure the correct alignment of the payload.
     if (_is_abstract_value && _has_nonstatic_fields) {
-      // non-static fields of the abstract class must be laid out without knowing
+      // Non-static fields of the abstract class must be laid out without knowing
       // the alignment constraints of the fields of the sub-classes, so the worst
       // case scenario is assumed, which is currently the alignment of T_LONG.
       // PADDING is added if needed to ensure the payload will respect this alignment.
@@ -1164,7 +1165,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       // This is the step where the layout of the final concrete value class' layout
       // is computed. Super abstract value classes might have been too conservative
       // regarding alignment constraints, but now that the full set of non-static fields is
-      // known, compute which alignment to use, then set first allowed field offset
+      // known, compute which alignment to use, then set first allowed field offset.
 
       assert(_has_nonstatic_fields, "Concrete value classes must have at least one field");
       if (_payload_alignment == -1) { // current class declares no local nonstatic fields
@@ -1214,8 +1215,8 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
   }
 
   // At this point, the characteristics of the raw layout (used in standalone instances) are known.
-  // From this, additional layouts will be computed: atomic and nullable layouts
-  // Once those additional layouts are computed, the raw layout might need some adjustments
+  // From this, additional layouts will be computed: atomic and nullable layouts.
+  // Once those additional layouts are computed, the raw layout might need some adjustments.
 
   bool vm_uses_flattening = UseFieldFlattening || UseArrayFlattening;
 
@@ -1234,7 +1235,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       }
     }
 
-    // Next step is the nullable layouts: they must include a null marker
+    // Next step is the nullable layouts: they must include a null marker.
     // Note about the special case of j.l.Double and j.l.Long: the introduction of
     // the NULLABLE_NON_ATOMIC_FLAT layout caused an increase of the size of their
     // instances which causes performance regression (see JDK-8379145).
@@ -1272,7 +1273,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
         }
       }
       assert(null_marker_offset != -1, "Sanity check");
-      // Now that the null marker is there, the size of the nullable layout must computed
+      // Now that the null marker is there, the size of the nullable layout must be computed
       int new_raw_size = _layout->last_block()->offset() - _layout->first_field_block()->offset();
       if (UseNullableNonAtomicValueFlattening) {
         _nullable_non_atomic_layout_size_in_bytes = new_raw_size;
@@ -1280,7 +1281,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
         _null_free_non_atomic_layout_alignment = _payload_alignment;
       }
       if (UseNullableAtomicValueFlattening) {
-        // For the nullable atomic layout, the size mut be compatible with the platform capabilities
+        // For the nullable atomic layout, the size must be compatible with the platform capabilities
         int nullable_atomic_size = round_up_power_of_2(new_raw_size);
         if (nullable_atomic_size <= (int)MAX_ATOMIC_OP_SIZE) {
           _nullable_atomic_layout_size_in_bytes = nullable_atomic_size;
@@ -1297,8 +1298,8 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
     }
     // If the inline class has an atomic or nullable atomic layout,
     // we want the raw layout to have the same alignment as those atomic layouts so access codes
-    // could remain simple (single instruction without intermediate copy). This might required
-    // to shift all fields in the raw layout, but this operation is possible only if the class
+    // could remain simple (single instruction without intermediate copy). This might require
+    // shifting all fields in the raw layout, but this operation is possible only if the class
     // doesn't have inherited fields (offsets of inherited fields cannot be changed). If a
     // field shift is needed but not possible, all atomic layouts are disabled and only reference
     // and loosely consistent are supported.
@@ -1343,9 +1344,9 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       _payload_size_in_bytes = nullable_non_atomic_layout_size_in_bytes();
     }
 
-    // if the inline class has a null-free atomic layout, the the layout used in heap allocated standalone
+    // If the inline class has a null-free atomic layout, then the layout used in heap allocated standalone
     // instances must have at least equal to the atomic layout to allow safe read/write atomic
-    // operation
+    // operation.
     if (has_null_free_atomic_layout() && payload_layout_size_in_bytes() < null_free_atomic_layout_size_in_bytes()) {
       _payload_size_in_bytes = null_free_atomic_layout_size_in_bytes();
     }
@@ -1499,11 +1500,11 @@ void FieldLayoutBuilder::generate_acmp_maps() {
             // Important note: the implementation assumes that for nullable flat fields, if the
             // null marker is zero (field is null), then all the fields of the flat field are also
             // zeroed. So, nullable flat field are not encoded different than null-free flat fields,
-            // all fields are included in the map, plus the null marker
+            // all fields are included in the map, plus the null marker.
             // If it happens that the assumption above is wrong, then nullable flat fields would
             // require a dedicated section in the acmp map, and be handled differently: null_marker
             // comparison first, and if null markers are identical and non-zero, then conditional
-            // comparison of the other fields
+            // comparison of the other fields.
           }
         }
         break;
@@ -1606,7 +1607,7 @@ void FieldLayoutBuilder::epilogue() {
   // Tests verifying integrity of field layouts are using the output of -XX:+PrintFieldLayout
   // which prints the details of LayoutRawBlocks used to compute the layout.
   // The code below checks that offsets in the _field_info meta-data match offsets
-  // in the LayoutRawBlocks
+  // in the LayoutRawBlocks.
   LayoutRawBlock* b = _layout->blocks();
   while(b != _layout->last_block()) {
     if (b->block_kind() == LayoutRawBlock::REGULAR || b->block_kind() == LayoutRawBlock::FLAT) {

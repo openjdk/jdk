@@ -215,7 +215,7 @@ import java.util.Objects;
  */
 @jdk.internal.ValueBased
 @jdk.internal.MigratedValueClass
-public final class Instant
+public final /*value*/ class Instant
         implements Temporal, TemporalAdjuster, Comparable<Instant>, Serializable {
 
     /**

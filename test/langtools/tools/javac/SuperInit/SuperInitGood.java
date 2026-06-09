@@ -29,8 +29,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @run main SuperInitGood
- * @build SuperCallRemover
- * @compile/fail/ref=SuperInitGoodWarnings.out -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover SuperInitGood.java
  */
 
 import java.util.concurrent.atomic.AtomicReference;

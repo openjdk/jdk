@@ -180,9 +180,6 @@ class PhiNode : public TypeNode {
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
-  bool can_push_inline_types_down(PhaseGVN* phase, bool can_reshape, ciInlineKlass*& inline_klass);
-  InlineTypeNode* push_inline_types_down(PhaseGVN* phase, bool can_reshape, ciInlineKlass* inline_klass);
-
   bool is_split_through_mergemem_terminating() const;
 
   void verify_type_stability(const PhaseGVN* phase, const Type* union_of_input_types, const Type* new_type) const NOT_DEBUG_RETURN;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,11 @@ public class ReflectionFactory {
      * @param cl the class to instantiate
      * @param constructorToCall the constructor to call
      * @return an accessible constructor
+     * @throws UnsupportedOperationException if the constructor to call is
+     *         not suitable for the class to instantiate, such as if the
+     *         constructor is not of the given class or one of its supertypes,
+     *         or this constructor would skip initialization of
+     *         strictly-initialized fields
      */
     public Constructor<?> newConstructorForSerialization(Class<?> cl,
                                                          Constructor<?> constructorToCall)
@@ -78,11 +83,14 @@ public class ReflectionFactory {
 
     /**
      * Returns an accessible no-arg constructor for a class.
-     * The no-arg constructor is found searching the class and its supertypes.
+    * The no-arg constructor is found searching the class and its supertypes,
+    * and must ensure that all strictly-initialized fields
+     * declared in the class and its supertypes are properly initialized.
      *
      * @param cl the class to instantiate
-     * @return a no-arg constructor for the class or {@code null} if
-     *     the class or supertypes do not have a suitable no-arg constructor
+     * @return a no-arg constructor for the class, or {@code null} if the
+     *         class or supertypes do not have a suitable no-arg constructor
+     *         or if the class is a value class
      */
     public final Constructor<?> newConstructorForSerialization(Class<?> cl)
     {
