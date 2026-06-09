@@ -139,7 +139,7 @@ public class TestHasTruncationWrap {
     // A third reproducer from JDK-8385855, leads to wrong result since 6u.
     // We make use of the CmpU in the RangeCheck of an array access.
     // To flip the condition, we just use a try/catch.
-    static final int[] test2_A = new int[2];
+    public static final int[] test2_A = new int[2];
     public static int test2_gold0 = test2(-2);
     public static int test2_gold1 = test2(2);
 
@@ -171,6 +171,57 @@ public class TestHasTruncationWrap {
     }
 
     // ---- More general tests, Checking that truncated iv loops become CountedLoops ---------
+
+    @DontInline
+    public static int dontinline(int i) {
+        return i + 1;
+    }
+
+    public static int lo = 11;
+    public static int hi = 33;
+
+    // testIR0: just a regular int loop
+    public static int testIR0_gold = testIR0();
+
+    @Run(test = "testIR0")
+    private static void runIR0() {
+        int val = testIR0();
+        if (val != testIR0_gold) { throw new RuntimeException("wrong value: " + testIR0_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR0() {
+        int init  = lo;
+        int limit = hi;
+        int sum = 0;
+        for (int i = init; i < limit; i++) {
+            sum = dontinline(sum);
+        }
+        return sum;
+    }
+
+    // testIR1: short truncation, with checks before loop.
+    public static int testIR1_gold = testIR1();
+
+    @Run(test = "testIR1")
+    private static void runIR1() {
+        int val = testIR1();
+        if (val != testIR1_gold) { throw new RuntimeException("wrong value: " + testIR1_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR1() {
+        int init  = lo;
+        int limit = hi;
+        if (init < -100 || limit > 100 || init >= limit) { return -1; }
+        int sum = 0;
+        for (int i = init; i < limit; i = (short)(i+1)) {
+            sum = dontinline(sum);
+        }
+        return sum;
+    }
 
     // TODO: ensure coverage
     // - char, byte and short truncation
