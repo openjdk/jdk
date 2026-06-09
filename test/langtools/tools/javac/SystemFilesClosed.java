@@ -91,8 +91,9 @@ public class SystemFilesClosed {
                 .redirectError(ProcessBuilder.Redirect.INHERIT)
                 .start();
         List<String> lines;
+        String realPath = base.toRealPath().toString();
         try (InputStream stdout = process.getInputStream(); BufferedReader reader = new BufferedReader(new InputStreamReader(stdout))) {
-            lines = reader.lines().filter(line -> line.contains(targetSystem)).toList();
+            lines = reader.lines().filter(line -> line.contains(realPath)).toList();
         }
         process.waitFor();
         Assertions.assertEquals(0, lines.size());
