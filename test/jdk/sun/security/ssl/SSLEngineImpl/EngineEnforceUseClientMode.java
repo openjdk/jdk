@@ -28,8 +28,9 @@
 
 /*
  * @test
- * @bug 4980882 8207250 8237474
- * @summary SSLEngine should enforce setUseClientMode
+ * @bug 4980882 8207250 8237474 8386159
+ * @summary SSLEngine's client/server mode can't be changed once
+ *          handshaking has begun
  * @library /javax/net/ssl/templates
  * @run main/othervm EngineEnforceUseClientMode
  * @author Brad R. Wetmore
