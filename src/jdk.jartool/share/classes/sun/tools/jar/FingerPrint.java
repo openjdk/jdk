@@ -30,13 +30,14 @@ import java.lang.reflect.AccessFlag;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
@@ -175,16 +176,27 @@ final class FingerPrint {
     }
 
     private static ClassAttributes getClassAttributes(byte[] bytes) {
-        var cm = ClassFile.of().parse(bytes);
+        ClassModel cm = ClassFile.of().parse(bytes);
         ClassAttributes attrs = new ClassAttributes(
                 cm.flags(),
                 cm.thisClass().asInternalName(),
                 cm.superclass().map(ClassEntry::asInternalName).orElse(null),
-                // TODO cm.isInterface() ? cm.interfaces().stream().map(ClassEntry::asInternalName).toList() : List.of(),
-                cm.interfaces().stream().map(ClassEntry::asInternalName).toList(),
+                getInternalNamesOfInterfaces(cm),
                 cm.majorVersion());
         cm.forEach(attrs);
         return attrs;
+    }
+
+    private static Set<String> getInternalNamesOfInterfaces(ClassModel cm) {
+        boolean isInterface = cm.flags().has(AccessFlag.INTERFACE);
+        // only care for names of interfaces extended by an interface
+        if (isInterface) {
+            return cm.interfaces().stream().map(ClassEntry::asInternalName).collect(Collectors.toSet());
+        }
+        // keep existing behavior by ignoring names of interfaces implemented by classes
+        else {
+            return Set.of();
+        }
     }
 
     private static final class Field {
@@ -257,7 +269,7 @@ final class FingerPrint {
         private final String name;
         private String outerClassName;
         private final String superName;
-        private final List<String> interfaceNames;
+        private final Set<String> interfaceNames;
         private final int majorVersion;
         private final int access;
         private final boolean publicClass;
@@ -265,7 +277,7 @@ final class FingerPrint {
         private final Set<Field> fields = new HashSet<>();
         private final Set<Method> methods = new HashSet<>();
 
-        public ClassAttributes(AccessFlags access, String name, String superName, List<String> interfaceNames, int majorVersion) {
+        public ClassAttributes(AccessFlags access, String name, String superName, Set<String> interfaceNames, int majorVersion) {
             this.majorVersion = majorVersion; // JDK-8296329: extract major version only
             this.access = access.flagsMask();
             this.name = name;
