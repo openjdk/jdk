@@ -33,11 +33,11 @@
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -55,23 +55,16 @@ public class SystemFilesClosed {
 
     @Test
     void testSystemFilesClosed() throws Exception {
-        String javaHome = System.getProperty("java.home");
-        Path jrtfsPath = Path.of(javaHome, "lib", "jrt-fs.jar");
-        Path modulesPath = Path.of(javaHome, "lib", "modules");
-        if (Files.notExists(modulesPath)) {
-            System.out.printf("%s doesn't exist.", modulesPath.toString());
-            System.out.println();
-            System.out.println("It is most probably an exploded build. Skip testing.");
-            return;
-        }
-
-        Path target = base.resolve("lib");
-        if (Files.notExists(target)) {
-            Files.createDirectories(target);
-        }
-        Files.copy(jrtfsPath, target.resolve("jrt-fs.jar"), StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(modulesPath, target.resolve("modules"), StandardCopyOption.REPLACE_EXISTING);
         String targetSystem = base.toString();
+        try (PrintStream err = new PrintStream(OutputStream.nullOutputStream())) {
+            int ret = java.util.spi.ToolProvider.findFirst("jlink")
+                    .orElseThrow()
+                    .run(System.out, err, "--add-modules", "java.base", "--output", targetSystem);
+            if (ret != 0) {
+                System.out.println("It is most probably an exploded build. Skip testing.");
+                return;
+            }
+        }
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         SimpleJavaFileObject compilationUnit = new SimpleJavaFileObject(URI.create("string:///Test.java"), JavaFileObject.Kind.SOURCE) {
