@@ -213,12 +213,13 @@ public class TestHasTruncationWrap {
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIR1() {
-        int init  = lo;
-        int limit = hi;
-        if (init < -100 || limit > 100 || init >= limit) { return -1; }
+        int i     = (short)lo;
+        int limit = (short)hi;
+        if (i >= limit) { return -1; }
         int sum = 0;
-        for (int i = init; i < limit; i = (short)(i+1)) {
-            sum = dontinline(sum);
+        while (i < limit) {
+            sum = dontinline(sum); // work to keep loop alive
+            i = (short)(i+1); // truncated iv
         }
         return sum;
     }
