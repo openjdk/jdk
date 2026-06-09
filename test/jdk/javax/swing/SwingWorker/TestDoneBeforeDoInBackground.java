@@ -39,7 +39,7 @@ import jdk.test.lib.Utils;
 
 public class TestDoneBeforeDoInBackground {
 
-    private static final int WAIT_TIME = (int)Utils.adjustTimeout(200);
+    private static final long WAIT_TIME = Utils.adjustTimeout(200);
     private static final long CLEANUP_TIME = 1000;
 
     private static final AtomicBoolean doInBackgroundStarted = new AtomicBoolean(false);
