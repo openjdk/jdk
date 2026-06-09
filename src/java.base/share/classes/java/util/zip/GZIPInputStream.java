@@ -65,7 +65,7 @@ import java.util.Objects;
  * {@systemProperty jdk.util.gzip.tryReadAheadAfterTrailer} system property is set
  * to {@code true}, then the call to {@code InputStream.available()} is skipped and a read
  * is performed on the underlying stream for a subsequent member. By default,
- * the {@code jdk.util.gzip.tryReadAheadAfterTrailer} system property is unset, and
+ * the {@code jdk.util.gzip.tryReadAheadAfterTrailer} system property is not set, and
  * {@code InputStream.available()} gets called.
  *
  * @spec https://www.rfc-editor.org/info/rfc1952
