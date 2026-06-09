@@ -803,12 +803,18 @@ The following commands are available:
 :   Print all loaded classes.
 
     Classes may be annotated with flags:
-        - `F` = has, or inherits, a non-empty finalize method,
-        - `f` = has final method,
-        - `W` = methods rewritten,
-        - `C` = marked with `@Contended` annotation,
-        - `R` = has been redefined,
-        - `S` = is shared class (if `-location` is specified then either 's' (static) or 'd' (dynamic) for AOT cache origin is appended)
+
+        - `F` = has, or inherits, a non-empty finalize method
+
+        - `f` = has final method
+
+        - `W` = methods rewritten
+
+        - `C` = marked with `@Contended` annotation
+
+        - `R` = has been redefined
+
+        - `S` = is shared class (if `-location` is specified, append: 's' (static) or 'd' (dynamic) for AOT cache origin)
 
     Impact: Medium: Depends on number of loaded classes.
 

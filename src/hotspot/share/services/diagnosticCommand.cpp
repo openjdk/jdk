@@ -969,10 +969,12 @@ public:
     ClassLoaderDataGraph::classes_do(&closure);
 
     if (_location) {
-      if (closure._aot_statics > 0)
+      if (closure._aot_statics > 0) {
         _out->print_cr("\n%d classes shared from static cache: %s", closure._aot_statics, FileMapInfo::current_info()->full_path());
-      if (closure._aot_dynamics > 0)
+      }
+      if (closure._aot_dynamics > 0) {
         _out->print_cr("\n%d classes shared from dynamic cache: %s", closure._aot_dynamics, FileMapInfo::dynamic_info()->full_path());
+      }
     }
   }
 };
