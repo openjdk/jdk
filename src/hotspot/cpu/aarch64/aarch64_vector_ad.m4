@@ -337,6 +337,7 @@ source %{
       case Op_MulReductionVL:
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
+      case Op_VectorBitwiseBlend:
         return false;
       case Op_SaturatingAddV:
       case Op_SaturatingSubV:

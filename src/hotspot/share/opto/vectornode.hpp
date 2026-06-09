@@ -1807,7 +1807,17 @@ class VectorBlendNode : public VectorNode {
 class VectorBitwiseBlendNode : public VectorNode {
  public:
   VectorBitwiseBlendNode(Node* vec_false, Node* vec_true, Node* sel, const TypeVect* vt)
-    : VectorNode(vec_false, vec_true, sel, vt) {}
+    : VectorNode(vec_false, vec_true, sel, vt) {
+    assert(vec_false->bottom_type()->isa_vect() != nullptr &&
+           vec_true->bottom_type()->isa_vect() != nullptr &&
+           sel->bottom_type()->isa_vect() != nullptr,
+           "inputs must all be vectors");
+    uint vlen = vt->length();
+    assert(vec_false->bottom_type()->is_vect()->length() == vlen &&
+           vec_true->bottom_type()->is_vect()->length() == vlen &&
+           sel->bottom_type()->is_vect()->length() == vlen,
+           "mismatched vector length");
+  }
   virtual int Opcode() const;
 };
 

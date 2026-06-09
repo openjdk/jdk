@@ -26,7 +26,7 @@
  * @bug 8382052
  * @key randomness
  * @library /test/lib /
- * @summary IR tests for AArch64 BITWISE_BLEND optimization match rules
+ * @summary IR tests for Vector BITWISE_BLEND optimization
  * @modules jdk.incubator.vector
  *
  * @run driver ${test.main.class}
