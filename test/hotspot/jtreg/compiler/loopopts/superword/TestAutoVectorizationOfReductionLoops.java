@@ -23,10 +23,10 @@
 
 package compiler.loopopts.superword;
 
+import static compiler.lib.generators.Generators.G;
+import compiler.lib.generators.Generator;
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import java.util.Random;
 
 /*
  * @test
@@ -37,7 +37,8 @@ import java.util.Random;
 public class TestAutoVectorizationOfReductionLoops {
     static final int DIM = 16;
     static final int SIZE = 256;
-    static final Random RANDOM = Utils.getRandomInstance();
+    static final Generator<Float> FLT_GEN = G.anyBitsFloats();
+    static final Generator<Double> DBL_GEN = G.anyBitsDouble();
 
     float[] fx;
     float[] fy;
@@ -65,22 +66,17 @@ public class TestAutoVectorizationOfReductionLoops {
         dm2 = new double[SIZE * DIM];
 
         for (int i = 0; i < SIZE; i++) {
-            // `RANDOM.nextFloat()` (and `RANDOM.nextDouble()`) will produce
-            // values in the range [0.0, 1.0), all of which have the same
-            // magnitude, so we instead generate `int` (or `long`) values and
-            // convert them to `float` (or `double`) values.
-
-            fx[i] = Float.intBitsToFloat(RANDOM.nextInt());
-            fy[i] = Float.intBitsToFloat(RANDOM.nextInt());
-            dx[i] = Double.longBitsToDouble(RANDOM.nextLong());
-            dy[i] = Double.longBitsToDouble(RANDOM.nextLong());
+            fx[i] = FLT_GEN.next();
+            fy[i] = FLT_GEN.next();
+            dx[i] = DBL_GEN.next();
+            dy[i] = DBL_GEN.next();
 
             for (int j = 0; j < DIM; j++) {
                 int idx = i * DIM + j;
-                fm[idx] = Float.intBitsToFloat(RANDOM.nextInt());
-                fm2[idx] = Float.intBitsToFloat(RANDOM.nextInt());
-                dm[idx] = Double.longBitsToDouble(RANDOM.nextLong());
-                dm2[idx] = Double.longBitsToDouble(RANDOM.nextLong());
+                fm[idx] = FLT_GEN.next();
+                fm2[idx] = FLT_GEN.next();
+                dm[idx] = DBL_GEN.next();
+                dm2[idx] = DBL_GEN.next();
             }
         }
     }
@@ -263,7 +259,7 @@ public class TestAutoVectorizationOfReductionLoops {
         float[] c = new float[DIM * DIM];
         float[] cExpected = new float[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = RANDOM.nextFloat();
+            c[i] = FLT_GEN.next();
             cExpected[i] = c[i];
         }
         testSgemmTN(DIM, DIM, SIZE, 1.0f, fm, SIZE, fm2, SIZE, 1.0f, c, DIM);
@@ -307,7 +303,7 @@ public class TestAutoVectorizationOfReductionLoops {
         double[] c = new double[DIM * DIM];
         double[] cExpected = new double[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = RANDOM.nextDouble();
+            c[i] = DBL_GEN.next();
             cExpected[i] = c[i];
         }
         testDgemmTN(DIM, DIM, SIZE, 1.0, dm, SIZE, dm2, SIZE, 1.0, c, DIM);
@@ -347,7 +343,7 @@ public class TestAutoVectorizationOfReductionLoops {
         float[] c = new float[DIM * DIM];
         float[] cExpected = new float[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = RANDOM.nextFloat();
+            c[i] = FLT_GEN.next();
             cExpected[i] = c[i];
         }
         testSgebpTN(0, DIM, 0, DIM, 0, SIZE, 1.0f, fm, SIZE, fm2, SIZE, c, DIM);
@@ -387,7 +383,7 @@ public class TestAutoVectorizationOfReductionLoops {
         double[] c = new double[DIM * DIM];
         double[] cExpected = new double[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = RANDOM.nextDouble();
+            c[i] = DBL_GEN.next();
             cExpected[i] = c[i];
         }
         testDgebpTN(0, DIM, 0, DIM, 0, SIZE, 1.0, dm, SIZE, dm2, SIZE, c, DIM);
@@ -427,7 +423,7 @@ public class TestAutoVectorizationOfReductionLoops {
         float[] c = new float[DIM * DIM];
         float[] cExpected = new float[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = RANDOM.nextFloat();
+            c[i] = FLT_GEN.next();
             cExpected[i] = c[i];
         }
         testSgepdotTN(0, 3, 0, 3, 0, SIZE, 1.0f, fm, SIZE, fm2, SIZE, c, DIM);
@@ -467,7 +463,7 @@ public class TestAutoVectorizationOfReductionLoops {
         double[] c = new double[DIM * DIM];
         double[] cExpected = new double[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = RANDOM.nextDouble();
+            c[i] = DBL_GEN.next();
             cExpected[i] = c[i];
         }
         testDgepdotTN(0, 3, 0, 3, 0, SIZE, 1.0, dm, SIZE, dm2, SIZE, c, DIM);
