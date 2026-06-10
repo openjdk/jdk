@@ -782,13 +782,14 @@ public class CompletionSuggestionTest extends KullaTesting {
             throw new IllegalStateException(ex);
         }
 
-        try {
-            Field availableSources = getAnalysis().getClass().getDeclaredField("jdkSourcesOverride");
-            availableSources.setAccessible(true);
-            availableSources.set(getAnalysis(), Arrays.asList(srcZip));
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
-            throw new IllegalStateException(ex);
-        }
+        setJDKSourcesOverride(List.of(srcZip));
+    }
+
+    @Override
+    public void tearDown() {
+        super.tearDown();
+
+        setJDKSourcesOverride(null);
     }
 
     private void dontReadParameterNamesFromClassFile() throws Exception {
@@ -951,6 +952,17 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("String s() { return \"\"; } import java.ut| ", true, "util.");
         assertCompletion("class S { public int length() { return 0; } } new S().len|", true, "length()");
         assertSignature("void f() { } f(|", "void f()");
+    }
+
+    private static void setJDKSourcesOverride(List<Path> paths) throws IllegalStateException {
+        try {
+            //to ensure test stability, don't use JDK's src.zip:
+            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("jdkSourcesOverride");
+            availableSources.setAccessible(true);
+            availableSources.set(null, paths);
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     static {
