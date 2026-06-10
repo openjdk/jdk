@@ -33,8 +33,7 @@ import sun.awt.UngrabEvent;
 
 /**
  * This class provides static utility methods to be used by FX swing interop
- * to access and use jdk internal classes like SunToolkit, AppContext
- * and UngrabEvent.
+ * to access and use jdk internal classes like SunToolkit and UngrabEvent.
  *
  * @since 11
  */

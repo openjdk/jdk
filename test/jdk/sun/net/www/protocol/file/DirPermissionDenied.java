@@ -32,7 +32,6 @@
  */
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -45,43 +44,35 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class DirPermissionDenied {
     private static final Path TEST_DIR = Paths.get(
             "DirPermissionDeniedDirectory");
+    private static URL url;
 
     @Test
-    public void doTest() throws MalformedURLException {
-        URL url = new URL(TEST_DIR.toUri().toString());
-        try {
-            URLConnection uc = url.openConnection();
-            uc.connect();
-        } catch (IOException e) {
-            // OK
-        } catch (Exception e) {
-            throw new RuntimeException("Failed " + e);
-        }
+    public void connectTest() throws IOException {
+        URLConnection uc = url.openConnection();
+        assertThrows(IOException.class, ()-> uc.connect());
+    }
 
-        try {
-            URLConnection uc = url.openConnection();
-            uc.getInputStream();
-        } catch (IOException e) {
-            // OK
-        } catch (Exception e) {
-            throw new RuntimeException("Failed " + e);
-        }
+    @Test
+    public void getInputStreamTest() throws IOException {
+        URLConnection uc = url.openConnection();
+        assertThrows(IOException.class, ()-> uc.getInputStream());
+    }
 
-        try {
-            URLConnection uc = url.openConnection();
-            uc.getContentLengthLong();
-        } catch (IOException e) {
-            // OK
-        } catch (Exception e) {
-            throw new RuntimeException("Failed " + e);
-        }
+    @Test
+    public void getContentLengthLongTest() throws IOException {
+        URLConnection uc = url.openConnection();
+        assertDoesNotThrow(() -> uc.getContentLengthLong());
     }
 
     @BeforeAll
     public static void setup() throws Throwable {
+        url = new URL(TEST_DIR.toUri().toString());
         // mkdir and chmod "333"
         Files.createDirectories(TEST_DIR);
         ProcessTools.executeCommand("chmod", "333", TEST_DIR.toString())

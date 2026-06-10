@@ -428,7 +428,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     }
     // else, regions that were promoted in place had 0 old live data at mark start
 
-    if (region->is_regular() || region->is_regular_pinned()) {
+    if (region->is_regular_or_regular_pinned()) {
       // Only place regular or pinned regions with live data into the candidate set.
       // Pinned regions cannot be evacuated, but we are not actually choosing candidates
       // for the collection set here. That happens later during the next young GC cycle,
@@ -539,7 +539,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     while ((defrag_count < bound_on_additional_regions) &&
            (total_uncollected_old_regions < 7 * span_of_uncollected_regions / 8)) {
       ShenandoahHeapRegion* r = candidates[_last_old_collection_candidate].get_region();
-      assert(r->is_regular() || r->is_regular_pinned(), "Region %zu has wrong state for collection: %s",
+      assert(r->is_regular_or_regular_pinned(), "Region %zu has wrong state for collection: %s",
              r->index(), ShenandoahHeapRegion::region_state_to_string(r->state()));
       const size_t region_garbage = r->garbage();
       const size_t region_free = r->free();

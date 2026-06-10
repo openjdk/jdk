@@ -6395,7 +6395,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       // Check if object matches.
       z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle(this, tmp2, Z_R0_scratch, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, tmp2, tmp2, Z_R0_scratch, slow_path);
       z_cgr(obj, tmp2);
       z_brne(slow_path);
 
