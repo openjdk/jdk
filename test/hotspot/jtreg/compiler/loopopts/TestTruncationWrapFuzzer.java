@@ -63,13 +63,17 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * - Truncation patterns, see TRUNCATIONS and randomIVMutation.
  * - Stride: positive, negative, small and large, see ivMutationWithRandomStride.
  * - Reference (not compiled) vs test (compiled), and result verification.
+ * - Loop Shapes: for, while, do-while, see LOOP_SHAPES.
+ * - Exit checks: random Comparison, see Comparator and Comparison (signed and unsigned).
+ * - For endless loops / loops that would take too long: early exit via opaqueCheck,
+ *   Note: it is verified that this does not hinder optimization, see:
+ *   TestHasTruncationWrap.java -> testIR7.
+ * - Interesting loop bounds: init/limit
+ *   - constant
+ *   - variable, sampled (see getInputTemplate), and modified (no-op, truncate, clamp).
  *
  * TODO:
- * - loop shape: for, top-tested while, bottom tested do-while. Each with < or !=.
- *   - endless loop control: additional loop exit with hidden condition? - verify with IR test here.
  * - pre-loop cmp: none, explicit "init < limit", using min/max or not, using CmpU vs CmpI.
- * - bounds: small, in around short/char/byte, totally random.
- * - reference vs test methods for correctness comparison.
  */
 public class TestTruncationWrapFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -306,6 +310,10 @@ public class TestTruncationWrapFuzzer {
 
             return "i = " + s0 + "i + " + stride + s1;
         }
+
+        public String truncate(String val) {
+            return val + " = " + s0 + val + s1;
+        }
     }
 
     // Different patterns relevant for triggering truncation/wrap.
@@ -323,8 +331,16 @@ public class TestTruncationWrapFuzzer {
         new Truncation("((", ") & 0xffff)")
     };
 
+    private static Truncation randomTruncation() {
+        return TRUNCATIONS[RANDOM.nextInt(TRUNCATIONS.length)];
+    }
+
     private static String randomIVMutation() {
-        return TRUNCATIONS[RANDOM.nextInt(TRUNCATIONS.length)].ivMutationWithRandomStride();
+        return randomTruncation().ivMutationWithRandomStride();
+    }
+
+    private static String randomTruncation(String val) {
+        return randomTruncation().truncate(val);
     }
 
     private static final String[] LOOP_SHAPES = new String[] {
@@ -401,9 +417,69 @@ public class TestTruncationWrapFuzzer {
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
     }
 
+    // Clamp randomly, but not always on both sides.
+    private static String randomClamping(String value) {
+        String clamp = value;
+        if (RANDOM.nextBoolean()) {
+            clamp = "Math.max(" + clamp + ", " + INT_GEN.next() + ")";
+        }
+        if (RANDOM.nextBoolean()) {
+            clamp = "Math.min(" + clamp + ", " + INT_GEN.next() + ")";
+        }
+        return value + " = " + clamp;
+    }
+
+    // We want to be able to modify the incoming init/limit.
+    // - nothing
+    // - truncate
+    // - clamp with min/max, maybe even only one-sided
+    private static String randomModifyValue(String value) {
+        return switch(RANDOM.nextInt(3)) {
+            case 0 -> "// Don't modify " + value + ";\n";
+            case 1 -> randomTruncation(value) + ";\n";
+            case 2 -> randomClamping(value) + ";\n";
+            default -> throw new RuntimeException("not expected");
+        };
+    }
+
+    // Loop init/limit are variables.
+    static class TestMethodGeneratorVars implements TestMethodGenerator {
+        private final int init  = INT_GEN.next();
+        private final int limit = INT_GEN.next();
+
+        private final String ivMutation  = randomIVMutation();
+        private final String loopShape   = randomLoopShape();
+        private final String modifyInit  = randomModifyValue("init");
+        private final String modifyLimit = randomModifyValue("limit");
+
+        private final Comparison exitCheck = new Comparison("i", Comparator.random(), "limit").permuteRandom();
+
+        private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
+            let("init", init),
+            let("limit", limit),
+            let("ivMutation", ivMutation),
+            let("exitCheck", exitCheck),
+            """
+            static int #methodName(int init, int limit) {
+                opaqueReset();
+                int sum = 0;
+            """,
+            modifyInit,
+            modifyLimit,
+            // TODO: extra checks
+            loopShape,
+            """
+                return sum;
+            }
+            """
+        ));
+
+        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
+    }
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = switch(RANDOM.nextInt(1)) {
+        TestMethodGenerator tg = switch(RANDOM.nextInt(2)) {
             case 0 -> new TestMethodGeneratorConst();
+            case 1 -> new TestMethodGeneratorVars();
             default -> throw new RuntimeException("not expected");
         };
         Template.ZeroArgs testInputTemplate = tg.getInputTemplate();
