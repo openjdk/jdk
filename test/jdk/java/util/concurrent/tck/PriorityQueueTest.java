@@ -30,7 +30,7 @@
  * Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  * Other contributors include Andrew Wright, Jeffrey Hayes,
- * Pat Fisher, Mike Judd, Valeh Hajiyev.
+ * Pat Fisher, Mike Judd.
  */
 
 import java.util.Arrays;
