@@ -80,6 +80,10 @@ public class JvmTempDirTest {
 
         Path noExist = Path.of("./noexist");
         runExperiment(noExist, noExist, true); // reverts to /tmp
+
+        Path veryLongDir = Files.createTempDirectory(Path.of("."), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        veryLongDir.toFile().deleteOnExit();
+        runLogTest(veryLongDir);
     }
 
     private static int counter = 0;
@@ -132,7 +136,6 @@ public class JvmTempDirTest {
      * the -Djava.io.tmpdir property.
      */
     private static void launchTests(long pid, Path clientTmpDir, boolean shouldPass) throws Throwable {
-        final String sep = File.separator;
 
         String classpath =
             System.getProperty("test.class.path", "");
@@ -196,5 +199,15 @@ public class JvmTempDirTest {
             }
             System.out.println(" - attach.test property set as expected");
         }
+    }
+
+    private static void runLogTest(Path tmpDir) throws Throwable {
+
+        // Arguments : [-XX:AltTempDir=] -version
+        String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
+        output.shouldContain("[warning][attach] Failed to create temporary file for attach");
+        // Still passes, it's just a warning.
+        output.shouldHaveExitValue(0);
     }
 }
