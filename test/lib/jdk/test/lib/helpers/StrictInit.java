@@ -29,10 +29,10 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.AccessFlag;
 
-/**
- * Annotated field should be marked ACC_STRICT_INIT.
- */
+/// Annotated field should be marked as [AccessFlag#STRICT_INIT].
+/// This is recognized by [StrictProcessor] in specified classes.
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.CLASS)
 public @interface StrictInit {

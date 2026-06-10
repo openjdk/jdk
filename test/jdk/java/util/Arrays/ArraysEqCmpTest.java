@@ -68,6 +68,15 @@ public class ArraysEqCmpTest {
         }
     }
 
+    @AsValueClass
+    record BoxedPoint(Integer x, Integer y) implements Comparable<BoxedPoint> {
+        @Override
+        public int compareTo(BoxedPoint o) {
+            int r = Integer.compare(this.x, o.x);
+            return (r != 0) ? r : Integer.compare(this.y, o.y);
+        }
+    }
+
     static {
         typeToWidth = new HashMap<>();
         typeToWidth.put(boolean.class, Byte.SIZE);
@@ -617,6 +626,24 @@ public class ArraysEqCmpTest {
                 } else throw new IllegalStateException();
             }
         }
+
+        static class ValueBoxedPoints extends ArrayType<BoxedPoint[]> {
+            public ValueBoxedPoints() {
+                super(BoxedPoint[].class);
+            }
+
+            @Override
+            void set(Object a, int i, Object v) {
+                if (v == null) {
+                    ((BoxedPoint[]) a)[i] = null;
+                } else if (v instanceof BoxedPoint) {
+                    ((BoxedPoint[]) a)[i] = (BoxedPoint) v;
+                } else if (v instanceof Integer) {
+                    int val = (Integer) v;
+                    ((BoxedPoint[]) a)[i] = new BoxedPoint(val, val);
+                } else throw new IllegalStateException();
+            }
+        }
     }
 
     static Object[][] arrayTypes;
@@ -638,7 +665,8 @@ public class ArraysEqCmpTest {
                     new Object[]{new ArrayType.Longs(true)},
                     new Object[]{new ArrayType.Floats()},
                     new Object[]{new ArrayType.Doubles()},
-                    new Object[]{new ArrayType.ValuePoints()}
+                    new Object[]{new ArrayType.ValuePoints()},
+                    new Object[]{new ArrayType.ValueBoxedPoints()}
             };
         }
         return arrayTypes;
@@ -670,6 +698,7 @@ public class ArraysEqCmpTest {
                     new Object[]{new ArrayType.BoxedIntegers()},
                     new Object[]{new ArrayType.BoxedIntegersWithReverseComparator()},
                     new Object[]{new ArrayType.ValuePoints()},
+                    new Object[]{new ArrayType.ValueBoxedPoints()},
             };
         }
         return objectArrayTypes;
