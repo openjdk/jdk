@@ -465,7 +465,7 @@ public class TestHasTruncationWrap {
         //    we get init in [0..99], which is in short range.
         int sum = 0;
         int i = init;
-        if (i != limit) { return -1; } // additional "exit check" before loop.
+        if (i == limit) { return sum; } // additional "exit check" before loop.
         do {
             sum = dontinline(sum); // work to keep loop alive
             i = (short)(i+1);
