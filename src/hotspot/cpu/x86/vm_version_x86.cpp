@@ -467,6 +467,19 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_xstate_offset_offset())));
     __ movl(Address(rsi, 0), rbx);
 
+    // Query CPUID 0xD sub-leaf 6/7 offsets for AVX-512 XSAVE components
+    __ movl(rax, 0xD);
+    __ movl(rcx, 6);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm0to15_hi256_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
+    __ movl(rax, 0xD);
+    __ movl(rcx, 7);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm16to31_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
     UseAPX = save_apx;
     __ bind(vector_save_restore);
     //
