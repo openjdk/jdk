@@ -142,11 +142,6 @@ public abstract class JavadocHelper implements AutoCloseable {
                 }
 
                 @Override
-                public StoredElement getHandle(Element forElement) {
-                    return null;
-                }
-
-                @Override
                 public Collection<? extends Path> getSourceLocations() {
                     return List.of();
                 }
@@ -174,7 +169,6 @@ public abstract class JavadocHelper implements AutoCloseable {
      */
     public abstract Element getSourceElement(Element forElement) throws IOException;
 
-    public abstract StoredElement getHandle(Element forElement);
     public abstract Collection<? extends Path> getSourceLocations();
 
     /**Closes the helper.
@@ -184,7 +178,72 @@ public abstract class JavadocHelper implements AutoCloseable {
     @Override
     public abstract void close() throws IOException;
 
-    public record StoredElement(String module, String binaryName, String handle) {}
+    public record StoredElement(String module, String binaryName, String handle) {
+        public static StoredElement getStoredElement(JavacTask mainTask, Element forElement) {
+            TypeElement type = topLevelType(forElement);
+
+            if (type == null)
+                return null;
+
+            Elements elements = mainTask.getElements();
+            ModuleElement module = elements.getModuleOf(type);
+            String moduleName = module == null || module.isUnnamed()
+                    ? null
+                    : module.getQualifiedName().toString();
+            String binaryName = elements.getBinaryName(type).toString();
+            String handle = elementSignature(forElement);
+
+            return new StoredElement(moduleName, binaryName, handle);
+        }
+
+    }
+
+    private static String elementSignature(Element el) {
+        switch (el.getKind()) {
+            case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: case RECORD:
+                return ((TypeElement) el).getQualifiedName().toString();
+            case FIELD:
+                return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
+            case ENUM_CONSTANT:
+                return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName();
+            case EXCEPTION_PARAMETER: case LOCAL_VARIABLE: case PARAMETER: case RESOURCE_VARIABLE:
+                return el.getSimpleName() + ":" + el.asType();
+            case CONSTRUCTOR: case METHOD:
+                StringBuilder header = new StringBuilder();
+                header.append(elementSignature(el.getEnclosingElement()));
+                if (el.getKind() == ElementKind.METHOD) {
+                    header.append(".");
+                    header.append(el.getSimpleName());
+                }
+                header.append("(");
+                String sep = "";
+                ExecutableElement method = (ExecutableElement) el;
+                for (Iterator<? extends VariableElement> i = method.getParameters().iterator(); i.hasNext();) {
+                    VariableElement p = i.next();
+                    header.append(sep);
+                    header.append(p.asType());
+                    sep = ", ";
+                }
+                header.append(")");
+                return header.toString();
+            case PACKAGE, STATIC_INIT, INSTANCE_INIT, TYPE_PARAMETER,
+                 OTHER, MODULE, RECORD_COMPONENT, BINDING_VARIABLE:
+                return el.toString();
+            default:
+                throw Assert.error(el.getKind().name());
+        }
+    }
+
+    private static TypeElement topLevelType(Element el) {
+        if (el.getKind() == ElementKind.PACKAGE)
+            return null;
+
+        while (el != null && el.getEnclosingElement().getKind() != ElementKind.PACKAGE) {
+            el = el.getEnclosingElement();
+        }
+
+        return el != null && (el.getKind().isClass() || el.getKind().isInterface()) ? (TypeElement) el : null;
+    }
 
     private static final class OnDemandJavadocHelper extends JavadocHelper {
         private final JavacTask mainTask;
@@ -233,24 +292,6 @@ public abstract class JavadocHelper implements AutoCloseable {
                 return forElement;
 
             return result;
-        }
-
-        @Override
-        public StoredElement getHandle(Element forElement) {
-            TypeElement type = topLevelType(forElement);
-
-            if (type == null)
-                return null;
-
-            Elements elements = mainTask.getElements();
-            ModuleElement module = elements.getModuleOf(type);
-            String moduleName = module == null || module.isUnnamed()
-                    ? null
-                    : module.getQualifiedName().toString();
-            String binaryName = elements.getBinaryName(type).toString();
-            String handle = elementSignature(forElement);
-
-            return new StoredElement(moduleName, binaryName, handle);
         }
 
         @Override
@@ -822,52 +863,6 @@ public abstract class JavadocHelper implements AutoCloseable {
             }
         }
         //where:
-            private String elementSignature(Element el) {
-                switch (el.getKind()) {
-                    case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: case RECORD:
-                        return ((TypeElement) el).getQualifiedName().toString();
-                    case FIELD:
-                        return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
-                    case ENUM_CONSTANT:
-                        return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName();
-                    case EXCEPTION_PARAMETER: case LOCAL_VARIABLE: case PARAMETER: case RESOURCE_VARIABLE:
-                        return el.getSimpleName() + ":" + el.asType();
-                    case CONSTRUCTOR: case METHOD:
-                        StringBuilder header = new StringBuilder();
-                        header.append(elementSignature(el.getEnclosingElement()));
-                        if (el.getKind() == ElementKind.METHOD) {
-                            header.append(".");
-                            header.append(el.getSimpleName());
-                        }
-                        header.append("(");
-                        String sep = "";
-                        ExecutableElement method = (ExecutableElement) el;
-                        for (Iterator<? extends VariableElement> i = method.getParameters().iterator(); i.hasNext();) {
-                            VariableElement p = i.next();
-                            header.append(sep);
-                            header.append(p.asType());
-                            sep = ", ";
-                        }
-                        header.append(")");
-                        return header.toString();
-                    case PACKAGE, STATIC_INIT, INSTANCE_INIT, TYPE_PARAMETER,
-                         OTHER, MODULE, RECORD_COMPONENT, BINDING_VARIABLE:
-                        return el.toString();
-                    default:
-                        throw Assert.error(el.getKind().name());
-                }
-            }
-
-            private TypeElement topLevelType(Element el) {
-                if (el.getKind() == ElementKind.PACKAGE)
-                    return null;
-
-                while (el != null && el.getEnclosingElement().getKind() != ElementKind.PACKAGE) {
-                    el = el.getEnclosingElement();
-                }
-
-                return el != null && (el.getKind().isClass() || el.getKind().isInterface()) ? (TypeElement) el : null;
-            }
 
             private void fillElementCache(JavacTask task, CompilationUnitTree cut) throws IOException {
                 Trees trees = Trees.instance(task);

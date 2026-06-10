@@ -46,6 +46,7 @@ import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.YieldTree;
+import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -370,8 +371,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private <Suggestion> List<Suggestion> computeSuggestions(OuterWrap code, String inputCode, int cursor, String prefix, ElementSuggestionConvertor<Suggestion> suggestionConvertor) {
         return proc.taskFactory.analyze(code, COMPLETION_EXTRA_PARAMETERS, at -> {
-            try (CloseableSources sources = findSources();
-                 JavadocHelper javadoc = JavadocHelper.create(at.task, sources.paths())) {
+            try (JavadocConfig javadoc = new JavadocConfig(at.task, getAllPaths())) {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
             TreePath tp = pathFor(topLevel, sp, code, cursor);
@@ -715,9 +715,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                 return suggestionConvertor.convert(completionState, result);
             }
-            } catch (IOException ex) {
-                //TODO:
-                ex.printStackTrace();
             }
             return Collections.emptyList();
         });
@@ -1229,7 +1226,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     };
     private final Function<Element, Iterable<? extends Element>> IDENTITY = Collections::singletonList;
 
-    private void addElements(JavadocHelper javadoc, Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, int anchor, String prefix, List<ElementSuggestion> result) {
+    private void addElements(JavadocConfig javadoc, Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, int anchor, String prefix, List<ElementSuggestion> result) {
         for (Element c : elements) {
             if (!accept.test(c) || !simpleContinuationName(c).startsWith(prefix))
                 continue;
@@ -1239,10 +1236,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 continue;
             }
             StoredElement stored = javadoc.getHandle(c);
-            Collection<? extends Path> sourceLocations = javadoc.getSourceLocations();
+            Collection<? extends Path> binaryPaths = javadoc.binaryPaths;
             result.add(new ElementSuggestionImpl(c, null, smart.test(c), anchor, () -> {
                 return proc.taskFactory.analyze(proc.outerMap.wrapInTrialClass(Wrap.methodWrap(";")), task -> {
-                    try (JavadocHelper nestedJavadoc = JavadocHelper.create(task.task, sourceLocations)) {
+                    try (CloseableSources closeableSources = findSources(binaryPaths);
+                         JavadocHelper nestedJavadoc = JavadocHelper.create(task.task, closeableSources.sources())) {
                         return nestedJavadoc.getResolvedDocComment(stored);
                     } catch (IOException ex) {
                         ex.printStackTrace();
@@ -1253,7 +1251,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
-    private void addModuleElements(AnalyzeTask at, JavadocHelper javadoc, int anchor,
+    private void addModuleElements(AnalyzeTask at, JavadocConfig javadoc, int anchor,
                                    String prefix,
                                    List<ElementSuggestion> result) {
         for (ModuleElement me : at.getElements().getAllModuleElements()) {
@@ -1708,7 +1706,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         };
     }
 
-    private void addScopeElements(AnalyzeTask at, JavadocHelper javadoc, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor, Predicate<Element> filter, Predicate<Element> smartFilter, int anchor, String prefix, List<ElementSuggestion> result) {
+    private void addScopeElements(AnalyzeTask at, JavadocConfig javadoc, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor, Predicate<Element> filter, Predicate<Element> smartFilter, int anchor, String prefix, List<ElementSuggestion> result) {
         addElements(javadoc, scopeContent(at, scope, elementConvertor), filter, smartFilter, anchor, prefix, result);
     }
 
@@ -1907,8 +1905,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
             List<Documentation> result = Collections.emptyList();
 
-            try (CloseableSources sources = findSources();
-                 JavadocHelper helper = JavadocHelper.create(at.task, sources.paths())) {
+            try (CloseableSources sources = findSources(getAllPaths());
+                 JavadocHelper helper = JavadocHelper.create(at.task, sources.sources())) {
                 int parameterIndexFin = parameterIndex;
                 result = elements.map(el -> constructDocumentation(at, helper, el, parameterIndexFin, computeJavadoc))
                                  .filter(Objects::nonNull)
@@ -1975,14 +1973,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                  .allMatch(param -> param.getSimpleName().toString().startsWith("arg"));
     }
 
-    private CloseableSources findSources() {
+    private CloseableSources findSources(Collection<? extends Path> forPaths) {
         List<AutoCloseable> toClose = new ArrayList<>();
         List<Path> result = new ArrayList<>();
 
         result.addAll(jdkSources());
 
         if (proc.binarySourceMapping != null) {
-            for (Path binaryPath : getAllPaths()) {
+            for (Path binaryPath : forPaths) {
                 Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(binaryPath);
 
                 if (mappedSources != null) {
@@ -2054,7 +2052,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return jdkSources;
     }
 
-    record CloseableSources(SourceCodeAnalysisImpl analysis, List<Path> paths, List<AutoCloseable> toClose) implements AutoCloseable {
+    record CloseableSources(SourceCodeAnalysisImpl analysis, List<Path> sources, List<AutoCloseable> toClose) implements AutoCloseable {
         @Override
         public void close() {
             analysis.close(toClose());
@@ -2786,5 +2784,23 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             return typeUtils;
         }
 
+    }
+
+    private static class JavadocConfig implements AutoCloseable {
+        public final JavacTask mainTask;
+        public final Collection<? extends Path> binaryPaths;
+
+        public JavadocConfig(JavacTask mainTask, Collection<? extends Path> binaryPaths) {
+            this.mainTask = mainTask;
+            this.binaryPaths = binaryPaths;
+        }
+
+        public StoredElement getHandle(Element el) {
+            return StoredElement.getStoredElement(mainTask, el);
+        }
+
+        @Override
+        public void close() {
+        }
     }
 }
