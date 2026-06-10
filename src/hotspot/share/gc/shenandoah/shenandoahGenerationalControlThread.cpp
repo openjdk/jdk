@@ -53,8 +53,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _requested_generation(nullptr),
   _gc_mode(none),
   _degen_point(ShenandoahGC::_degenerated_unset),
-  _heap(ShenandoahGenerationalHeap::heap()),
-  _age_period(0) {
+  _heap(ShenandoahGenerationalHeap::heap()) {
   shenandoah_assert_generational();
   set_name("ShenControl");
   create_and_start();
@@ -227,15 +226,6 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
     ls.print("Young regions: ");
     young_region_ages.print_on(&ls);
     ls.cr();
-  }
-}
-
-void ShenandoahGenerationalControlThread::maybe_set_aging_cycle() {
-  if (_age_period-- == 0) {
-    _heap->set_aging_cycle(true);
-    _age_period = ShenandoahAgingCyclePeriod - 1;
-  } else {
-    _heap->set_aging_cycle(false);
   }
 }
 
@@ -534,9 +524,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   // At this point:
   //  if (generation == YOUNG), this is a normal young cycle or a bootstrap cycle
   //  if (generation == GLOBAL), this is a GLOBAL cycle
-  // In either case, we want to age old objects if this is an aging cycle
-  maybe_set_aging_cycle();
-
   ShenandoahGCSession session(cause, generation);
   TraceCollectorStats tcs(_heap->monitoring_support()->concurrent_collection_counters());
 
@@ -615,7 +602,6 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   _heap->increment_total_collections(true);
   ShenandoahGCSession session(cause, _heap->global_generation());
-  maybe_set_aging_cycle();
   ShenandoahFullGC gc;
   gc.collect(cause);
   _degen_point = ShenandoahGC::_degenerated_unset;

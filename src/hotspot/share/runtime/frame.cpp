@@ -1237,9 +1237,6 @@ void frame::interpreter_frame_verify_monitor(BasicObjectLock* value) const {
 
 #ifndef PRODUCT
 
-// Returns true iff the address p is readable and *(intptr_t*)p != errvalue
-extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue);
-
 class FrameValuesOopClosure: public OopClosure, public DerivedOopClosure {
 private:
   GrowableArray<oop*>* _oops;
@@ -1269,17 +1266,13 @@ public:
     _derived->push(derived_loc);
   }
 
-  bool is_good(oop* p) {
-    return *p == nullptr || (dbg_is_safe(*p, -1) && dbg_is_safe((*p)->klass_without_asserts(), -1) && oopDesc::is_oop_or_null(*p));
-  }
   void describe(FrameValues& values, int frame_no) {
     for (int i = 0; i < _oops->length(); i++) {
       oop* p = _oops->at(i);
-      values.describe(frame_no, (intptr_t*)p, err_msg("oop%s for #%d", is_good(p) ? "" : " (BAD)", frame_no));
+      values.describe(frame_no, (intptr_t*)p, err_msg("oop for #%d", frame_no));
     }
     for (int i = 0; i < _narrow_oops->length(); i++) {
       narrowOop* p = _narrow_oops->at(i);
-      // we can't check for bad compressed oops, as decoding them might crash
       values.describe(frame_no, (intptr_t*)p, err_msg("narrow oop for #%d", frame_no));
     }
     assert(_base->length() == _derived->length(), "should be the same");
