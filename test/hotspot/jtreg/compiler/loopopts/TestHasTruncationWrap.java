@@ -251,6 +251,69 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
+    // testIR1b: short loop, but values are trivially in short range. Decrement iv.
+    public static int testIR1b_gold = testIR1b();
+
+    @Run(test = "testIR1b")
+    private static void runIR1b() {
+        int val = testIR1b();
+        if (val != testIR1b_gold) { throw new RuntimeException("wrong value: " + testIR1b_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR1b() {
+        short init  = (short)hi;
+        short limit = (short)lo;
+        int sum = 0;
+        for (short i = init; i > limit; i--) {
+            sum = dontinline(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIR1c: short loop, but values are trivially in short range. Incr by 2.
+    public static int testIR1c_gold = testIR1c();
+
+    @Run(test = "testIR1c")
+    private static void runIR1c() {
+        int val = testIR1c();
+        if (val != testIR1c_gold) { throw new RuntimeException("wrong value: " + testIR1c_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR1c() {
+        short init  = (short)lo;
+        short limit = (short)hi;
+        int sum = 0;
+        for (short i = init; i < limit; i+=2) {
+            sum = dontinline(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIR1d: short loop, but values are trivially in short range. Decrement iv by 2.
+    public static int testIR1d_gold = testIR1d();
+
+    @Run(test = "testIR1d")
+    private static void runIR1d() {
+        int val = testIR1d();
+        if (val != testIR1d_gold) { throw new RuntimeException("wrong value: " + testIR1d_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR1d() {
+        short init  = (short)hi;
+        short limit = (short)lo;
+        int sum = 0;
+        for (short i = init; i > limit; i-=2) {
+            sum = dontinline(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
     // testIR2: short loop, ranges proved in short range via CmpI before loop.
     public static int testIR2_gold = testIR2();
 
