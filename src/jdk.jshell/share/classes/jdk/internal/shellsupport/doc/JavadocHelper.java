@@ -140,11 +140,6 @@ public abstract class JavadocHelper implements AutoCloseable {
                 public String getResolvedDocComment(StoredElement forElement) throws IOException {
                     return null;
                 }
-
-                @Override
-                public Collection<? extends Path> getSourceLocations() {
-                    return List.of();
-                }
             };
         }
     }
@@ -168,8 +163,6 @@ public abstract class JavadocHelper implements AutoCloseable {
      * @throws IOException if something goes wrong in the search
      */
     public abstract Element getSourceElement(Element forElement) throws IOException;
-
-    public abstract Collection<? extends Path> getSourceLocations();
 
     /**Closes the helper.
      *
@@ -292,11 +285,6 @@ public abstract class JavadocHelper implements AutoCloseable {
                 return forElement;
 
             return result;
-        }
-
-        @Override
-        public Collection<? extends Path> getSourceLocations() {
-            return sourceLocations;
         }
 
          private String getResolvedDocComment(JavacTask task, TreePath el) throws IOException {
