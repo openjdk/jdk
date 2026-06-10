@@ -24,7 +24,6 @@
 package compiler.loopopts.superword;
 
 import static compiler.lib.generators.Generators.G;
-import compiler.lib.generators.Generator;
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
 
@@ -37,8 +36,6 @@ import jdk.test.lib.Asserts;
 public class TestAutoVectorizationOfReductionLoops {
     static final int DIM = 16;
     static final int SIZE = 256;
-    static final Generator<Float> FLT_GEN = G.anyBitsFloats();
-    static final Generator<Double> DBL_GEN = G.anyBitsDouble();
 
     float[] fx;
     float[] fy;
@@ -66,17 +63,17 @@ public class TestAutoVectorizationOfReductionLoops {
         dm2 = new double[SIZE * DIM];
 
         for (int i = 0; i < SIZE; i++) {
-            fx[i] = FLT_GEN.next();
-            fy[i] = FLT_GEN.next();
-            dx[i] = DBL_GEN.next();
-            dy[i] = DBL_GEN.next();
+            fx[i] = G.floats().next();
+            fy[i] = G.floats().next();
+            dx[i] = G.doubles().next();
+            dy[i] = G.doubles().next();
 
             for (int j = 0; j < DIM; j++) {
                 int idx = i * DIM + j;
-                fm[idx] = FLT_GEN.next();
-                fm2[idx] = FLT_GEN.next();
-                dm[idx] = DBL_GEN.next();
-                dm2[idx] = DBL_GEN.next();
+                fm[idx] = G.floats().next();
+                fm2[idx] = G.floats().next();
+                dm[idx] = G.doubles().next();
+                dm2[idx] = G.doubles().next();
             }
         }
     }
@@ -259,7 +256,7 @@ public class TestAutoVectorizationOfReductionLoops {
         float[] c = new float[DIM * DIM];
         float[] cExpected = new float[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = FLT_GEN.next();
+            c[i] = G.floats().next();
             cExpected[i] = c[i];
         }
         testSgemmTN(DIM, DIM, SIZE, 1.0f, fm, SIZE, fm2, SIZE, 1.0f, c, DIM);
@@ -303,7 +300,7 @@ public class TestAutoVectorizationOfReductionLoops {
         double[] c = new double[DIM * DIM];
         double[] cExpected = new double[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = DBL_GEN.next();
+            c[i] = G.doubles().next();
             cExpected[i] = c[i];
         }
         testDgemmTN(DIM, DIM, SIZE, 1.0, dm, SIZE, dm2, SIZE, 1.0, c, DIM);
@@ -343,7 +340,7 @@ public class TestAutoVectorizationOfReductionLoops {
         float[] c = new float[DIM * DIM];
         float[] cExpected = new float[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = FLT_GEN.next();
+            c[i] = G.floats().next();
             cExpected[i] = c[i];
         }
         testSgebpTN(0, DIM, 0, DIM, 0, SIZE, 1.0f, fm, SIZE, fm2, SIZE, c, DIM);
@@ -383,7 +380,7 @@ public class TestAutoVectorizationOfReductionLoops {
         double[] c = new double[DIM * DIM];
         double[] cExpected = new double[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = DBL_GEN.next();
+            c[i] = G.doubles().next();
             cExpected[i] = c[i];
         }
         testDgebpTN(0, DIM, 0, DIM, 0, SIZE, 1.0, dm, SIZE, dm2, SIZE, c, DIM);
@@ -423,7 +420,7 @@ public class TestAutoVectorizationOfReductionLoops {
         float[] c = new float[DIM * DIM];
         float[] cExpected = new float[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = FLT_GEN.next();
+            c[i] = G.floats().next();
             cExpected[i] = c[i];
         }
         testSgepdotTN(0, 3, 0, 3, 0, SIZE, 1.0f, fm, SIZE, fm2, SIZE, c, DIM);
@@ -463,7 +460,7 @@ public class TestAutoVectorizationOfReductionLoops {
         double[] c = new double[DIM * DIM];
         double[] cExpected = new double[DIM * DIM];
         for (int i = 0; i < DIM * DIM; i++) {
-            c[i] = DBL_GEN.next();
+            c[i] = G.doubles().next();
             cExpected[i] = c[i];
         }
         testDgepdotTN(0, 3, 0, 3, 0, SIZE, 1.0, dm, SIZE, dm2, SIZE, c, DIM);
