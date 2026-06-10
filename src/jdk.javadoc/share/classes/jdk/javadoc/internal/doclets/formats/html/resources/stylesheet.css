@@ -569,8 +569,8 @@ section.class-description > div.horizontal-scroll > :last-child > :is(li, dd):la
 div.inline-note {
     padding: 1px 16px;
     margin: 14px 2px;
-    border: 0 solid var(--note-border-color);
-    border-left-width: 1px;
+    border: 0 solid var(--note-important-border-color);
+    border-left-width: 2px;
     background-color: var(--note-background-color);
     border-radius: 0;
     > :is(p, div, pre, ul, ol):last-child {
@@ -582,6 +582,7 @@ div.inline-note > span.note-header {
     color:var(--note-header-color);
 }
 div.inline-note.note-tag-previewNote {
+    padding: 12px;
     border: 1px solid var(--block-text-color);
     border-radius: 6px;
     font-style: italic;
@@ -589,7 +590,9 @@ div.inline-note.note-tag-previewNote {
         font-style: normal;
     }
 }
-div.inline-note:has(h2, h3, h4, h5, pre),
+div.inline-note:has(h2, h3, h4, h5, pre) {
+    border-left-width: 1px;
+}
 div.inline-note.note-tag-hairline {
     border: 0 solid var(--hairline-border-color);
     border-left-width: var(--hairline-border-width);
@@ -599,8 +602,8 @@ div.inline-note.note-tag-indented {
     padding: 0 17px;
 }
 div.inline-note.note-tag-bordered {
-    border: 0 solid var(--note-border-color);
-    border-left-width: 1px;
+    border: 0 solid var(--note-important-border-color);
+    border-left-width: 2px;
 }
 div.inline-note.note-tag-important {
     padding: 12px 16px;
@@ -660,8 +663,7 @@ dl.notes > div > dd {
     line-height:var(--block-line-height);
 }
 dl.notes > div.long-note:not(.note-tag-indented),
-dl.notes > div.medium-length-note:not(.note-tag-indented):has(pre, h2, h3, h4, h5, p:nth-of-type(3)),
-dl.notes > div.note-tag-hairline,
+dl.notes > div.note-tag-hairline.long-note,
 dl.notes > div.note-tag-bordered,
 dl.notes > div.note-tag-important,
 dl.notes > div.note-tag-critical,
@@ -675,10 +677,16 @@ dl.notes > div.note-tag-previewNote {
         padding: 0 1px;
     }
 }
-dl.notes > div.note-tag-hairline,
-dl.notes > div.long-note,
-dl.notes > div.medium-length-note:has(:where(pre, h2, h3, h4, h5, p:nth-of-type(3))) {
+dl.notes > div.note-tag-hairline.long-note,
+dl.notes > div.long-note {
     border: var(--hairline-border-width) solid var(--hairline-border-color);
+}
+dl.notes > div:not(.long-note).note-tag-hairline > dd,
+dl.notes > div.medium-length-note:not(.note-tag-indented, .note-tag-bordered, .note-tag-important,
+        .note-tag-critical, .note-tag-previewNote) > dd:has(pre, h2, h3, h4, h5, p:nth-of-type(3)) {
+    border-left: var(--hairline-border-width) solid var(--hairline-border-color);
+    margin: 12px 3px;
+    padding: 0 0 0 13px;
 }
 dl.notes > div.note-tag-indented {
     border: none;
