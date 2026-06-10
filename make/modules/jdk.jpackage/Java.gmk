@@ -25,7 +25,7 @@
 
 ################################################################################
 
-DISABLED_WARNINGS_java += dangling-doc-comments suppression
+DISABLED_WARNINGS_java += suppression
 
 COPY += .gif .png .txt .spec .script .prerm .preinst \
     .postrm .postinst .list .sh .desktop .copyright .control .plist .template \

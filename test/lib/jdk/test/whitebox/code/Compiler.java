@@ -35,6 +35,15 @@ public class Compiler {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     /**
+     * Check if C2 was included in the VM build
+     *
+     * @return true if C2 was included in the VM build.
+     */
+    public static boolean isC2Included() {
+        return WB.isC2Included();
+    }
+
+    /**
      * Check if C2 is used as JIT compiler.
      *
      * C2 is enabled if following conditions are true:

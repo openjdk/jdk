@@ -1,0 +1,208 @@
+#
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include Common.gmk
+
+$(info TARGET=$(TARGET))
+$(info HOST=$(HOST))
+$(info BUILD=$(BUILD))
+
+ifeq ($(BASE_OS)-$(BASE_OS_VERSION)-$(ARCH), OL-7-aarch64)
+  KERNEL_HEADERS_RPM := kernel-uek-headers
+else
+  KERNEL_HEADERS_RPM := kernel-headers
+endif
+
+ifneq ($(BASE_OS)-$(BASE_OS_VERSION), OL-6)
+  WAYLAND_RPMS := wayland-devel wayland-protocols-devel
+endif
+
+ZLIB_RPMS := zlib zlib-devel
+ifeq ($(BASE_OS), Fedora)
+  ifneq ($(ARCH), armhfp)
+    ZLIB_RPMS := zlib-ng zlib-ng-devel
+  endif
+endif
+
+
+################################################################################
+
+# RPMs to include
+RPM_LIST := \
+    filesystem \
+    $(KERNEL_HEADERS_RPM) \
+    glibc glibc-devel \
+    cups-libs cups-devel \
+    libX11 libX11-devel \
+    libxcb xorg-x11-proto-devel \
+    alsa-lib alsa-lib-devel \
+    libXext libXext-devel \
+    libXtst libXtst-devel \
+    libXrender libXrender-devel \
+    libXrandr libXrandr-devel \
+    freetype freetype-devel \
+    libXt libXt-devel \
+    libSM libSM-devel \
+    libICE libICE-devel \
+    libXi libXi-devel \
+    libXau libXau-devel \
+    libgcc \
+    $(ZLIB_RPMS) \
+    libffi libffi-devel \
+    fontconfig fontconfig-devel \
+    systemtap-sdt-devel \
+    $(WAYLAND_RPMS) \
+    #
+
+################################################################################
+# Define common directories and files
+
+DOWNLOAD := $(OUTPUT_ROOT)/download
+DOWNLOAD_RPMS := $(DOWNLOAD)/rpms/$(TARGET)-$(BASE_OS)-$(BASE_OS_VERSION)
+SRCDIR := $(OUTPUT_ROOT)/src
+
+################################################################################
+# Marker files
+
+DOWNLOAD_RPMS_MARKER := $(BUILDDIR)/download-rpms.marker
+RPMS_UNPACKED_MARKER := $(BUILDDIR)/rpms_unpacked.marker
+UNPATCHED_SYSROOT_MARKER := $(BUILDDIR)/sysroot_unpatched.marker
+PATCHED_SYSROOT_MARKER := $(BUILDDIR)/sysroot_patched.marker
+
+################################################################################
+# Download RPMs
+
+ifeq ($(ARCH), armhfp)
+  RPM_ARCH := armv7hl
+else
+  RPM_ARCH := $(ARCH)
+endif
+
+RPM_ARCHS := $(RPM_ARCH) noarch
+ifeq ($(ARCH), x86_64)
+  # Enable mixed mode.
+  RPM_ARCHS += i386 i686
+endif
+
+EMPTY :=
+SPACE := $(EMPTY) $(EMPTY)
+COMMA := ,
+DNF_ARCHS := $(foreach arch,$(RPM_ARCHS),--arch $(arch))
+
+# Specify a dummy installation root, otherwise dnf will run into
+# problems trying to reconcile with the local/system state
+DNF_DUMMY_INSTALL_ROOT := $(BUILDDIR)/dnf-dummy-install-root
+
+DNF_REPOS := $(foreach repo, $(BASE_OS_REPOS), \
+    --repofrompath $(repo) \
+    --enablerepo $(word 1,$(subst $(COMMA),$(SPACE),$(repo))))
+
+DNF_DOWNLOAD_FLAGS := \
+    --disablerepo='*' \
+    $(DNF_REPOS) \
+    --resolve \
+    $(DNF_ARCHS) \
+    --forcearch $(RPM_ARCH) \
+    --installroot $(DNF_DUMMY_INSTALL_ROOT) \
+    --releasever $(BASE_OS_VERSION) \
+    #
+
+$(DOWNLOAD_RPMS_MARKER):
+	@mkdir -p $(@D)
+	mkdir -p $(DOWNLOAD_RPMS)
+	echo $(RPM_LIST) | \
+	    xargs dnf download $(DNF_DOWNLOAD_FLAGS) --destdir $(DOWNLOAD_RPMS)
+	touch $@
+
+################################################################################
+# Unpack RPMS
+
+RPM_PATTERNS := $(foreach arch,$(RPM_ARCHS),$(DOWNLOAD_RPMS)/*.$(arch).rpm)
+
+CPIO_EXCLUDES := \
+    "./usr/share/doc/*" \
+    "./usr/share/man/*" \
+    "./usr/X11R6/man/*" \
+    "*/X11/locale/*" \
+    #
+
+$(RPMS_UNPACKED_MARKER): $(DOWNLOAD_RPMS_MARKER)
+	if [ -d $(SYSROOT) ]; then echo "WARNING: Sysroot directory ($(SYSROOT)) already exists, proceeding anyway..."; fi
+	@mkdir -p $(SYSROOT)
+        # The -e test below is needed to skip unmatched glob patterns
+	( \
+	  cd $(SYSROOT); \
+	  for rpm in $(RPM_PATTERNS); do \
+	    if [ ! -e "$$rpm" ]; then continue; fi; \
+	    echo Extracting $$rpm...; \
+	    rpm2cpio $$rpm | \
+	        cpio --extract --make-directories -f $(CPIO_EXCLUDES) \
+	            || exit 1; \
+	  done \
+	)
+	touch $@
+
+################################################################################
+
+$(UNPATCHED_SYSROOT_MARKER): $(RPMS_UNPACKED_MARKER)
+	touch $@
+
+################################################################################
+# Patch sysroot
+
+# Note: MUST create a <sysroot>/usr/lib even if not really needed.
+# gcc will use a path relative to it to resolve lib64. (x86_64).
+# we're creating multi-lib compiler with 32bit libc as well, so we should
+# have it anyway, but just to make sure...
+# Patch GNU ld scripts to force linking against libraries in the sysroot
+# and not the ones installed on the build machine.
+
+LD_SCRIPT_PATCHES := \
+    -e 's|/usr/lib64/||g' \
+    -e 's|/usr/lib/||g' \
+    -e 's|/lib64/||g' \
+    -e 's|/lib/||g' \
+    #
+
+$(PATCHED_SYSROOT_MARKER): $(UNPATCHED_SYSROOT_MARKER)
+	@echo Patching GNU ld scripts
+	@( \
+	  for f in $$(find $(SYSROOT) -name "*.so" -type f 2>/dev/null); do \
+	    if grep -Iq 'GNU ld script' "$$f"; then \
+	      sed $(LD_SCRIPT_PATCHES) "$$f" > "$$f.tmp" && \
+	      mv "$$f.tmp" "$$f"; \
+	    fi; \
+	  done \
+	)
+	@mkdir -p $(SYSROOT)/usr/lib
+	@touch $@
+
+################################################################################
+
+download-rpms: $(DOWNLOAD_RPMS_MARKER)
+unpatched-sysroot: $(UNPATCHED_SYSROOT_MARKER)
+sysroot: $(PATCHED_SYSROOT_MARKER)
+
+.PHONY: download-rpms unpatched-sysroot sysroot

@@ -894,7 +894,8 @@ static Node* mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, ui
     }
 
     if (replace) {
-      shift_node->set_req(2, phase->intcon(masked_shift)); // Replace shift count with masked value.
+      // Replace shift count with masked value and put potential dead nodes on the worklist.
+      shift_node->set_req_X(2, phase->intcon(masked_shift), phase);
 
       // We need to notify the caller that the graph was reshaped, as Ideal needs
       // to return the root of the reshaped graph if any change was made.

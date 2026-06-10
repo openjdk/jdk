@@ -25,7 +25,7 @@
 
 ################################################################################
 
-DISABLED_WARNINGS_java += dangling-doc-comments this-escape suppression
+DISABLED_WARNINGS_java += suppression
 
 COPY += .properties .caps .txt
 

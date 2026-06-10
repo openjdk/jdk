@@ -53,6 +53,7 @@
 #include "opto/vectornode.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
@@ -1217,7 +1218,9 @@ Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phas
     }
   }
 
-  return can_see_stored_value(st, phase);
+  Node* res = can_see_stored_value(st, phase);
+  assert(res == nullptr || is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(type()), "the fold is unsafe");
+  return res;
 }
 
 // If st is a store to the same location as this, return the stored value
@@ -1273,7 +1276,22 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
           return nullptr;
         }
       }
-      return st->in(MemNode::ValueIn);
+
+      // Even if we can see the store, we cannot fold the load if the store is not type safe (e.g.
+      // store a j.l.Object into an array of j.l.String) because folding makes the compiler lose the
+      // type information that the uses of this node may need. This is only necessary for pointers, we
+      // can see the stored value of a LoadS even if it is an int because LoadSNode::Ideal will do the
+      // necessary truncation.
+      // The same phenomenon is not an issue for StoreNodes because they don't use res.
+      Node* res = st->in(MemNode::ValueIn);
+      if (is_Store() || is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(bottom_type())) {
+        return res;
+      }
+
+      // Type-unsafe stores must be due to array polymorphism
+      const TypePtr* adr_type = this->adr_type();
+      assert(adr_type == nullptr || adr_type->isa_aryptr() != nullptr, "unexpected type-unsafe store");
+      return nullptr;
     }
 
     // A load from a freshly-created object always returns zero.
