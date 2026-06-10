@@ -406,16 +406,6 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR3x: short loop, fails to be recognized as CountedLoop.
-    // Compared to testIR3, the check in the loop is an NEQ.
-    public static int testIR3x_gold = testIR3x();
-
-    @Run(test = "testIR3x")
-    private static void runIR3x() {
-        int val = testIR3x();
-        if (val != testIR3x_gold) { throw new RuntimeException("wrong value: " + testIR3x_gold + " vs " + val); }
-    }
-
     // testIR3b: short loop, and range in short range via CmpI before loop (for loop limit).
     // Decr iv.
     public static int testIR3b_gold = testIR3b();
@@ -436,6 +426,16 @@ public class TestHasTruncationWrap {
             sum = dontinline(sum); // work to keep loop alive
         }
         return sum;
+    }
+
+    // testIR3x: short loop, fails to be recognized as CountedLoop.
+    // Compared to testIR3, the check in the loop is an NEQ.
+    public static int testIR3x_gold = testIR3x();
+
+    @Run(test = "testIR3x")
+    private static void runIR3x() {
+        int val = testIR3x();
+        if (val != testIR3x_gold) { throw new RuntimeException("wrong value: " + testIR3x_gold + " vs " + val); }
     }
 
     @Test
@@ -654,6 +654,44 @@ public class TestHasTruncationWrap {
             sum = dontinline(sum); // work to keep loop alive
             i = (short)(i+1);
         } while (i != limit); // exit check at the end.
+        return sum;
+    }
+
+    public static int opaqueCounter;
+
+    @DontInline
+    public static void opaqueReset() {
+        opaqueCounter = 0;
+    }
+
+    @DontInline
+    public static boolean opaqueCheck() {
+        return (opaqueCounter++) >= 100_000;
+    }
+
+    // testIR7: with additional opaque exit check.
+    // Useful to verify that TestTruncationWrapFuzzer.java opaque exit checks
+    // do not prohibit CountedLoop detection.
+    // We start from testIR3 and testIR4, but add the additional opaque exit.
+    public static int testIR7_gold = testIR7();
+
+    @Run(test = "testIR7")
+    private static void runIR7() {
+        int val = testIR7();
+        if (val != testIR7_gold) { throw new RuntimeException("wrong value: " + testIR7_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIR7() {
+        opaqueReset();
+        int init  = Math.max(lo, 0);
+        int limit = Math.min(hi, 100_000); // bad bounds
+        int sum = 0;
+        for (int i = init; i < limit; i = (short)(i+1)) {
+            sum = dontinline(sum);
+            if (opaqueCheck()) { break; }
+        }
         return sum;
     }
 
