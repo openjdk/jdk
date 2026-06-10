@@ -48,6 +48,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import jdk.internal.jshell.tool.ConsoleIOContextTestSupport;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class ToolTabSnippetTest extends UITesting {
@@ -324,15 +326,6 @@ public class ToolTabSnippetTest extends UITesting {
         Path binaryJar = Paths.get("test.jar");
         compiler.jar(compiler.getClassDir(), binaryJar, "jshelltest/JShellTest.class", "jshelltest/JShellTestAux.class");
 
-        try {
-            //to ensure test stability, don't use JDK's src.zip:
-            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("jdkSourcesOverride");
-            availableSources.setAccessible(true);
-            availableSources.set(null, List.of());
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
-            throw new IllegalStateException(ex);
-        }
-
         return binaryJar;
     }
     //where:
@@ -367,5 +360,26 @@ public class ToolTabSnippetTest extends UITesting {
             inputSink.write("CL" + TAB);
             waitOutput(out, "CL\\u001B\\[2Djava.lang.annotation.RetentionPolicy.CLASS \\u0008");
         });
+    }
+
+    @BeforeAll
+    public static void noJDKSources() {
+        setJDKSourcesOverride(List.of());
+    }
+    
+    @AfterAll
+    public static void restoreJDKSources() {
+        setJDKSourcesOverride(null);
+    }
+    
+    private static void setJDKSourcesOverride(List<Path> paths) throws IllegalStateException {
+        try {
+            //to ensure test stability, don't use JDK's src.zip:
+            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("jdkSourcesOverride");
+            availableSources.setAccessible(true);
+            availableSources.set(null, paths);
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }
