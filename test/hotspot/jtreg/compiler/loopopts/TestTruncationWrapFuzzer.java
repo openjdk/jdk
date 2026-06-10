@@ -57,14 +57,14 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
 /**
  * For more basic examples, see TestHasTruncationWrap.java
  *
+ * So far, this test does not have IR verification, only result verification.
+ *
+ * Features:
+ * - Truncation patterns, see TRUNCATIONS and randomIVMutation.
+ * - Stride: positive, negative, small and large, see ivMutationWithRandomStride.
+ * - Reference (not compiled) vs test (compiled), and result verification.
+ *
  * TODO:
- * Template Fuzzing ideas:
- * - Mostly about correctness, not IR rules
- * - truncation:
- *   - short cast
- *   - short shift: ((i + s) << 16) >> 16
- *   - char/byte mask/shift
- * - stride: pos/neg, small integers (rarely also large?)
  * - loop shape: for, top-tested while, bottom tested do-while. Each with < or !=.
  *   - endless loop control: additional loop exit with hidden condition? - verify with IR test here.
  * - pre-loop cmp: none, explicit "init < limit", using min/max or not, using CmpU vs CmpI.
@@ -327,12 +327,55 @@ public class TestTruncationWrapFuzzer {
         return TRUNCATIONS[RANDOM.nextInt(TRUNCATIONS.length)].ivMutationWithRandomStride();
     }
 
+    private static final String[] LOOP_SHAPES = new String[] {
+        """
+        // Loop Shape: For
+        for (int i = init; #exitCheck; #ivMutation) {
+            sum = opaqueIncr(sum);
+            if (opaqueCheck()) { break; }
+        }
+        """,
+        """
+        // Loop Shape: While:
+        int i = init;
+        while (#exitCheck) {
+            sum = opaqueIncr(sum);
+            if (opaqueCheck()) { break; }
+            #ivMutation;
+        }
+        """,
+        """
+        // Loop Shape: Do-While:
+        int i = init;
+        do {
+            sum = opaqueIncr(sum);
+            if (opaqueCheck()) { break; }
+            #ivMutation;
+        } while (#exitCheck);
+        """,
+        """
+        // Loop Shape: Do-While + pre-loop check.
+        int i = init;
+        if (!(#exitCheck)) { return sum; }
+        do {
+            sum = opaqueIncr(sum);
+            if (opaqueCheck()) { break; }
+            #ivMutation;
+        } while (#exitCheck);
+        """
+    };
+
+    private static String randomLoopShape() {
+        return LOOP_SHAPES[RANDOM.nextInt(LOOP_SHAPES.length)];
+    }
+
     // Loop init/limit are constants.
     static class TestMethodGeneratorConst implements TestMethodGenerator {
         private final int init  = INT_GEN.next();
         private final int limit = INT_GEN.next();
 
         private final String ivMutation = randomIVMutation();
+        private final String loopShape = randomLoopShape();
 
         private final Comparison exitCheck = new Comparison("i", Comparator.random(), "limit").permuteRandom();
 
@@ -347,10 +390,9 @@ public class TestTruncationWrapFuzzer {
                 int init  = #init;
                 int limit = #limit;
                 int sum = 0;
-                for (int i = init; #exitCheck; #ivMutation) {
-                    sum = opaqueIncr(sum);
-                    if (opaqueCheck()) { break; }
-                }
+            """,
+            loopShape,
+            """
                 return sum;
             }
             """
