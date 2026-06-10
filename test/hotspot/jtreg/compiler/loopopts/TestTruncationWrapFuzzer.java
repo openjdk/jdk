@@ -272,26 +272,59 @@ public class TestTruncationWrapFuzzer {
         };
     }
 
+    private static record IVMutation(String s0, String s1) {
+        public String withRandomStride() {
+            int stride = switch(RANDOM.nextInt(3)) {
+                case 0 -> INT_GEN.next();
+                case 1 -> RANDOM.nextInt(9) - 4;
+                case 2 -> RANDOM.nextInt(129) - 64;
+                default -> throw new RuntimeException("not expected");
+            };
+
+            return "i = " + s0 + "i + " + stride + s1;
+        }
+    }
+
+    // Different patterns relevant for triggering truncation/wrap.
+    private static final IVMutation[] IV_MUTATIONS = new IVMutation[] {
+        new IVMutation("", ""),
+        new IVMutation("(byte)(", ")"),
+        new IVMutation("(short)(", ")"),
+        new IVMutation("(char)(", ")"),
+        new IVMutation("((", ") << 8) >> 8"),
+        new IVMutation("((", ") << 16) >> 16"),
+        new IVMutation("((", ") << 24) >> 24"),
+        new IVMutation("((", ") & 0x7f)"),
+        new IVMutation("((", ") & 0xff)"),
+        new IVMutation("((", ") & 0x7fff)"),
+        new IVMutation("((", ") & 0xffff)")
+    };
+
+    private static String randomIVMutation() {
+        return IV_MUTATIONS[RANDOM.nextInt(IV_MUTATIONS.length)].withRandomStride();
+    }
+
     // Loop init/limit are constants.
     static class TestMethodGeneratorConst implements TestMethodGenerator {
         private final int init  = INT_GEN.next();
         private final int limit = INT_GEN.next();
 
-        //private final Comparison c1 = new Comparison("n", Comparator.random(), "con1").permuteRandom();
-        //private final Comparison c2 = new Comparison("n", Comparator.random(), "con2").permuteRandom();
+        private final String ivMutation = randomIVMutation();
+
+        private final Comparison exitCheck = new Comparison("i", Comparator.random(), "limit").permuteRandom();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("init", init),
             let("limit", limit),
-            //let("c1", c1),
-            //let("c2", c2),
+            let("ivMutation", ivMutation),
+            let("exitCheck", exitCheck),
             """
             static int #methodName(int unused0, int unused1) {
                 opaqueReset();
                 int init  = #init;
                 int limit = #limit;
                 int sum = 0;
-                for (int i = init; i < limit; i = (short)(i+1)) {
+                for (int i = init; #exitCheck; #ivMutation) {
                     sum = opaqueIncr(sum);
                     if (opaqueCheck()) { break; }
                 }
@@ -492,15 +525,16 @@ public class TestTruncationWrapFuzzer {
             // --- $test start ---
             @Run(test = "$test")
             @Warmup(#warmup)
-            public static void $run() {
-                for (int i = 0; i < 100; i++) {
+            public static void $run(RunInfo info) {
+                int reps = info.isWarmUp() ? 1 : 100;
+                for (int i = 0; i < reps; i++) {
                     // Generate random values for init and limit.
                     """,
                     testInputTemplate.asToken(),
                     """
 
                     // Limit how long we can spin in the loop:
-                    opaqueCounterMax = 100_000 + RANDOM.nextInt(1000);
+                    opaqueCounterMax = 10_000 + RANDOM.nextInt(1000);
 
                     // Run test and compare with interpreter results.
                     var result   =      $test(init, limit);
