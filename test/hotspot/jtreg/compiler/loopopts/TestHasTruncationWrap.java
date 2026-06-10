@@ -333,6 +333,30 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
+    // testIR3b: short loop, fails to be recognized as CountedLoop.
+    // Compared to testIR2, the check in the loop is an NEQ.
+    public static int testIR3b_gold = testIR3b();
+
+    @Run(test = "testIR3b")
+    private static void runIR3b() {
+        int val = testIR3b();
+        if (val != testIR3b_gold) { throw new RuntimeException("wrong value: " + testIR3b_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIR3b() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        int sum = 0;
+	// No useful CmpI before the loop.
+	// And the CmpI of the for limit is NEQ, so not useful either.
+        for (int i = init; i != limit; i = (short)(i+1)) {
+            sum = dontinline(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
     // testIR4: short loop, with a CmpI, but the limit ranges are bad.
     public static int testIR4_gold = testIR4();
 
