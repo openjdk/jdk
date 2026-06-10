@@ -46,6 +46,11 @@ import compiler.lib.ir_framework.*;
  * We have some regression tests for JDK-8385855, as well as some IR tests that ensure that we detect counted
  * loops in many cases, where we have to check that truncation does not lead to wrapping, which would mean
  * the iv would not be linear, but possibly overflow the byte/char/short ranges.
+ *
+ * Note: the optimization around CountedLoopConverter::has_truncation_wrap is a bit fragile, and depends on
+ * the exact loop shape, and if peeling happens or not, etc. The goal of this test is not to prove that we
+ * recognize all truncated cases where one could in theory prove there is no wrap/overflow, but simply to
+ * list some examples of today's state, so we don't get further regressions in the future.
  */
 public class TestHasTruncationWrap {
 
@@ -453,7 +458,7 @@ public class TestHasTruncationWrap {
     // From peeling, the new initial value is a truncated short value, and not init, so
     // the "init >= limit" check is not helpful any more, as far as I can see.
     // Also the backedge value is truncated to short value. But this is not enough to
-    // guarantee that there is no short-overflow (truncation): we do not manage to
+    // guarantee that there is no short-overflow (wrap): we do not manage to
     // prove that i could never be short_max, and then overflow the short range at
     // the next increment.
     public static int testIR5c_gold = testIR5c();
