@@ -1799,12 +1799,12 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_started() {
-  assert(_old_marking_cycles_started == _old_marking_cycles_completed ||
-         _old_marking_cycles_started == _old_marking_cycles_completed + 1,
-         "Wrong marking cycle count (started: %d, completed: %d)",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+  assert(old_marking_cycles_started() == old_marking_cycles_completed() ||
+         old_marking_cycles_started() == old_marking_cycles_completed() + 1,
+         "Wrong marking cycle count (started: %u, completed: %u)",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
-  _old_marking_cycles_started++;
+  _old_marking_cycles_started.store_relaxed(old_marking_cycles_started() + 1);
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
@@ -1825,21 +1825,21 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
 
   // This is the case for the inner caller, i.e. a Full GC.
   assert(concurrent ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 1) ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 2),
-         "for inner caller (Full GC): _old_marking_cycles_started = %u "
-         "is inconsistent with _old_marking_cycles_completed = %u",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 1) ||
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 2),
+         "for inner caller (Full GC): old_marking_cycles_started = %u "
+         "is inconsistent with old_marking_cycles_completed = %u",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
   // This is the case for the outer caller, i.e. the concurrent cycle.
   assert(!concurrent ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 1),
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 1),
          "for outer caller (concurrent cycle): "
-         "_old_marking_cycles_started = %u "
-         "is inconsistent with _old_marking_cycles_completed = %u",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+         "old_marking_cycles_started = %u "
+         "is inconsistent with old_marking_cycles_completed = %u",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
-  _old_marking_cycles_completed += 1;
+  _old_marking_cycles_completed.store_relaxed(old_marking_cycles_completed() + 1);
   if (whole_heap_examined) {
     // Signal that we have completed a visit to all live objects.
     record_whole_heap_examined_timestamp();
@@ -1904,7 +1904,7 @@ bool G1CollectedHeap::wait_full_mark_finished(GCCause::Cause cause,
     // while completed_now < started_after.
     LOG_COLLECT_CONCURRENTLY(cause, "wait");
     MonitorLocker ml(G1OldGCCount_lock);
-    while (gc_counter_less_than(_old_marking_cycles_completed,
+    while (gc_counter_less_than(old_marking_cycles_completed(),
                                 old_marking_started_after)) {
       ml.wait();
     }
@@ -1986,8 +1986,8 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // more recent collection.  That's what we want, rather than having
       // our retry possibly perform an unnecessary collection.
       gc_counter = total_collections();
-      old_marking_started_after = _old_marking_cycles_started;
-      old_marking_completed_after = _old_marking_cycles_completed;
+      old_marking_started_after = old_marking_cycles_started();
+      old_marking_completed_after = old_marking_cycles_completed();
     }
 
     if (cause == GCCause::_wb_breakpoint) {
