@@ -161,14 +161,14 @@ class TestIncrementalComp {
     static Stream<TestCase> cases() {
         return Stream.of(
                 new TestCase("single", Map.of(
-                    Path.of("org.moda", "module-info.java"),
+                    Path.of("org.moda/module-info.java"),
                     """
                     module org.moda {
                         // for reflective access
                         exports org.moda.app;
                     }
                     """,
-                    Path.of("org.moda", "org", "moda", "lib", "Dep.java"),
+                    Path.of("org.moda/org", "moda", "lib", "Dep.java"),
                     """
                     package org.moda.lib;
 
@@ -228,14 +228,14 @@ class TestIncrementalComp {
                     }
 
                     """,
-                    Path.of("org.modb", "module-info.java"),
+                    Path.of("org.modb/module-info.java"),
                     """
                     module org.modb {
                         // for org.modc
                         requires transitive org.moda;
                     }
                     """,
-                    Path.of("org.modc", "module-info.java"),
+                    Path.of("org.modc/module-info.java"),
                     """
                     module org.modc {
                         requires org.modb;
@@ -244,7 +244,7 @@ class TestIncrementalComp {
                         exports org.modc.app;
                     }
                     """,
-                    Path.of("org.modc", "org", "modc", "app", "Main.java"),
+                    Path.of("org.modc/org/modc/app/Main.java"),
                     """
                     package org.modc.app;
 
@@ -258,13 +258,13 @@ class TestIncrementalComp {
                     """
                 ), Set.of("org.moda", "org.modb", "org.modc"), "org.modc"),
                 new TestCase("add_reads", Map.of(
-                    Path.of("org.moda", "module-info.java"),
+                    Path.of("org.moda/module-info.java"),
                     """
                     module org.moda {
                         exports org.moda.lib;
                     }
                     """,
-                    Path.of("org.modb", "module-info.java"),
+                    Path.of("org.modb/module-info.java"),
                     """
                     module org.modb {
                         // no explicit requires
@@ -273,7 +273,7 @@ class TestIncrementalComp {
                         exports org.modb.app;
                     }
                     """,
-                    Path.of("org.modb", "org", "modb", "app", "Main.java"),
+                    Path.of("org.modb/org/modb/app/Main.java"),
                     """
                     package org.modb.app;
 
