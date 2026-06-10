@@ -424,7 +424,6 @@ public class Arguments {
                 log.error(Errors.ModulesourcepathMustBeSpecifiedWithDashMOption);
             } else {
                 java.util.List<String> modules = Arrays.asList(options.get(Option.MODULE).split(","));
-                Set<String> outOfDateModules = new HashSet<>();
                 try {
                     for (String module : modules) {
                         Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
@@ -432,25 +431,8 @@ public class Arguments {
                             log.error(Errors.ModuleNotFoundInModuleSourcePath(module));
                             return false;
                         }
-                        if (isModuleOutOfDate(fm, module, sourceLoc)) {
-                            outOfDateModules.add(module);
-                            addModuleSources(fm, sourceLoc);
-                        }
-                    }
-
-                    // Now also add all dependent modules to the set of compiled files.
-                    // Code in these may need updating because an updated module changed its API.
-                    // We don't need to be recursive here, since a non-updated module
-                    // can not change its API.
-                    if (!outOfDateModules.isEmpty()) {
-                        ParserFactory parserFactory = ParserFactory.instance(context);
-                        for (String module : modules) {
-                            if (!outOfDateModules.contains(module)) {
-                                Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
-                                if (requiresOutOfDateModule(fm, parserFactory, sourceLoc, outOfDateModules)) {
-                                    addModuleSources(fm, sourceLoc);
-                                }
-                            }
+                        for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(Kind.SOURCE), true)) {
+                            fileObjects.add(file);
                         }
                     }
                 } catch (IOException ex) {
@@ -656,42 +638,6 @@ public class Arguments {
         }
 
         return !errors && (log.nerrors == 0);
-    }
-
-    private void addModuleSources(JavaFileManager fm, Location sourceLoc) throws IOException {
-        for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(Kind.SOURCE), true)) {
-            fileObjects.add(file);
-        }
-    }
-
-    private static boolean requiresOutOfDateModule(JavaFileManager fm, ParserFactory parserFactory, Location sourceLoc,
-                                                   Set<String> updatedModules) throws IOException {
-        JavaFileObject moduleInfo = fm.getJavaFileForInput(sourceLoc, "module-info", Kind.SOURCE);
-        JavacParser parser = parserFactory.newParser(moduleInfo.getCharContent(false), false, false, true);
-        JCTree.JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-        JCTree.JCModuleDecl moduleDecl = compilationUnit.getModuleDecl();
-        for (JCTree.JCDirective directive : moduleDecl.getDirectives()) {
-            if (directive instanceof JCTree.JCRequires requires
-                    && updatedModules.contains(TreeInfo.fullName(requires.getModuleName()).toString())) {
-                return true;
-           }
-        }
-        return false;
-    }
-
-    private static boolean isModuleOutOfDate(JavaFileManager fm, String module, Location sourceLoc) throws IOException {
-        // if any class file for the module is out of date, or a source file doesn't have a corresponding
-        // class file, this module is considered out of date.
-        Location classLoc = fm.getLocationForModule(StandardLocation.CLASS_OUTPUT, module);
-        for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(JavaFileObject.Kind.SOURCE), true)) {
-            String className = fm.inferBinaryName(sourceLoc, file);
-            JavaFileObject classFile = fm.getJavaFileForInput(classLoc, className, Kind.CLASS);
-
-            if (classFile == null || classFile.getLastModified() < file.getLastModified()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Fragment releaseNote(Source source, String targetString) {
