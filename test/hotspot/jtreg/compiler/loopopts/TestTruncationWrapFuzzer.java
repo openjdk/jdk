@@ -263,17 +263,40 @@ public class TestTruncationWrapFuzzer {
 
         default Template.ZeroArgs getInputTemplate() {
             return Template.make(() -> scope(
-                """
-                RestrictableGenerator<Integer> gen = Generators.G.ints();
-                int init  = gen.next();
-                int limit = gen.next();
-                """
+                switch (RANDOM.nextInt(5)) {
+                    case 0 -> """
+                              RestrictableGenerator<Integer> gen = Generators.G.ints();
+                              int init  = gen.next();
+                              int limit = gen.next();
+                              """;
+                    case 1 -> """
+                              int init  = (byte)RANDOM.nextInt();
+                              int limit = (byte)RANDOM.nextInt();
+                              """;
+                    case 2 -> """
+                              int init  = (short)RANDOM.nextInt();
+                              int limit = (short)RANDOM.nextInt();
+                              """;
+                    case 3 -> """
+                              int init  = (char)RANDOM.nextInt();
+                              int limit = (char)RANDOM.nextInt();
+                              """;
+                    case 4 -> """
+                              int e0 = RANDOM.nextInt(32);
+                              int e1 = RANDOM.nextInt(32);
+                              int r0 = RANDOM.nextInt(32);
+                              int r1 = RANDOM.nextInt(32);
+                              int init  = (1 << e0) + r0;
+                              int limit = (1 << e1) + r1;
+                              """;
+                    default -> throw new RuntimeException("not expected");
+                }
             ));
         };
     }
 
-    private static record IVMutation(String s0, String s1) {
-        public String withRandomStride() {
+    private static record Truncation(String s0, String s1) {
+        public String ivMutationWithRandomStride() {
             int stride = switch(RANDOM.nextInt(3)) {
                 case 0 -> INT_GEN.next();
                 case 1 -> RANDOM.nextInt(9) - 4;
@@ -286,22 +309,22 @@ public class TestTruncationWrapFuzzer {
     }
 
     // Different patterns relevant for triggering truncation/wrap.
-    private static final IVMutation[] IV_MUTATIONS = new IVMutation[] {
-        new IVMutation("", ""),
-        new IVMutation("(byte)(", ")"),
-        new IVMutation("(short)(", ")"),
-        new IVMutation("(char)(", ")"),
-        new IVMutation("((", ") << 8) >> 8"),
-        new IVMutation("((", ") << 16) >> 16"),
-        new IVMutation("((", ") << 24) >> 24"),
-        new IVMutation("((", ") & 0x7f)"),
-        new IVMutation("((", ") & 0xff)"),
-        new IVMutation("((", ") & 0x7fff)"),
-        new IVMutation("((", ") & 0xffff)")
+    private static final Truncation[] TRUNCATIONS = new Truncation[] {
+        new Truncation("", ""),
+        new Truncation("(byte)(", ")"),
+        new Truncation("(short)(", ")"),
+        new Truncation("(char)(", ")"),
+        new Truncation("((", ") << 8) >> 8"),
+        new Truncation("((", ") << 16) >> 16"),
+        new Truncation("((", ") << 24) >> 24"),
+        new Truncation("((", ") & 0x7f)"),
+        new Truncation("((", ") & 0xff)"),
+        new Truncation("((", ") & 0x7fff)"),
+        new Truncation("((", ") & 0xffff)")
     };
 
     private static String randomIVMutation() {
-        return IV_MUTATIONS[RANDOM.nextInt(IV_MUTATIONS.length)].withRandomStride();
+        return TRUNCATIONS[RANDOM.nextInt(TRUNCATIONS.length)].ivMutationWithRandomStride();
     }
 
     // Loop init/limit are constants.
@@ -335,181 +358,6 @@ public class TestTruncationWrapFuzzer {
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
     }
-
-//    // Cases where a and b are ranges that touch min_int/max_int.
-//    // Note: if con1=0 and con2=1 then this is like the cases:
-//    // - test_Case3a_LTLE_overflow
-//    // - test_Case3b_LTLE_overflow
-//    // - test_Case4a_LELE_assert
-//    //
-//    // Hence, I think this test gives us quite good coverage for the kinds of bugs
-//    // such as JDK-8346420.
-//    static class TestMethodGeneratorWithIf implements TestMethodGenerator {
-//        private final int con1 = INT_GEN.next();
-//        private final int con2 = INT_GEN.next();
-//        private final String m1 = RANDOM.nextBoolean() ? "Integer.MIN_VALUE" : "Integer.MAX_VALUE";
-//        private final String m2 = RANDOM.nextBoolean() ? "Integer.MIN_VALUE" : "Integer.MAX_VALUE";
-//
-//        private final Comparison c1 = new Comparison("n", Comparator.random(), "a").permuteRandom();
-//        private final Comparison c2 = new Comparison("n", Comparator.random(), "b").permuteRandom();
-//
-//        private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
-//            let("con1", con1),
-//            let("con2", con2),
-//            let("m1", m1),
-//            let("m2", m2),
-//            let("c1", c1),
-//            let("c2", c2),
-//            """
-//            static boolean #methodName(int n, int a, int b) {
-//                if (a < b) {
-//                    a = #con1;
-//                    b = #con2;
-//                } else {
-//                    a = #m1;
-//                    b = #m2;
-//                }
-//                if (#c1 || #c2) {
-//                    return true;
-//                }
-//                return false;
-//            }
-//            """
-//        ));
-//
-//        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
-//    }
-//
-//    // Just for good practice: add some case where the ranges are more free.
-//    static class TestMethodGeneratorRanges implements TestMethodGenerator {
-//        private final int n_hi = INT_GEN.next();
-//        private final int n_lo = INT_GEN.next();
-//        private final int a_hi = INT_GEN.next();
-//        private final int a_lo = INT_GEN.next();
-//        private final int b_hi = INT_GEN.next();
-//        private final int b_lo = INT_GEN.next();
-//
-//        private final Comparison c1 = new Comparison("n", Comparator.random(), "a").permuteRandom();
-//        private final Comparison c2 = new Comparison("n", Comparator.random(), "b").permuteRandom();
-//
-//        private final Template.OneArg<String> template = Template.make("methodName", (String methodName) -> scope(
-//            let("n_hi", n_hi),
-//            let("n_lo", n_lo),
-//            let("a_hi", a_hi),
-//            let("a_lo", a_lo),
-//            let("b_hi", b_hi),
-//            let("b_lo", b_lo),
-//            let("c1", c1),
-//            let("c2", c2),
-//            """
-//            static boolean #methodName(int n, int a, int b) {
-//                n = Math.min(#n_hi, Math.max(#n_lo, n));
-//                a = Math.min(#a_hi, Math.max(#a_lo, a));
-//                b = Math.min(#b_hi, Math.max(#b_lo, b));
-//                if (#c1 || #c2) {
-//                    return true;
-//                }
-//                return false;
-//            }
-//            """
-//        ));
-//
-//        public Template.OneArg<String> getTestTemplate() {
-//            return template;
-//        }
-//    }
-//
-//    // Generate some more constrained cases, but with IR rules
-//    static class TestMethodGeneratorConstIR implements TestMethodGenerator {
-//        private final int lo;
-//        private final int hi;
-//        { // instance initializer
-//            // We want to cover all cases for lo and hi combinations. But the
-//            // critical cases happen around int_min and int_max, and when
-//            // lo and hi are close to each other.
-//            switch (RANDOM.nextInt(3)) {
-//                case 0 -> {
-//                    // Full freedom, will eventually cover all cases
-//                    lo = INT_GEN.next();
-//                    hi = INT_GEN.next();
-//                }
-//                case 1 -> {
-//                    // Pick cases around overflow and underflow
-//                    lo = Integer.MAX_VALUE - 5 + RANDOM.nextInt(10);
-//                    hi = Integer.MAX_VALUE - 5 + RANDOM.nextInt(10);
-//                }
-//                default -> {
-//                    // Pick cases where lo and hi are close to each other
-//                    lo = INT_GEN.next();
-//                    hi = lo - 5 + RANDOM.nextInt(10);
-//                }
-//            }
-//        }
-//
-//        // Since we are using constants for lo and hi, the checks should get canonicalized,
-//        // so that n is always in the lhs. We only create cases that are covered by the
-//        // 4 cases of "2 CmpI -> 1 CmpU" optimization in IfNode::fold_compares_helper.
-//        private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
-//        private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
-//        private final boolean swap = RANDOM.nextBoolean();
-//        private final Comparison c1Permuted = (swap ? c_lo : c_hi).permuteRandom();
-//        private final Comparison c2Permuted = (swap ? c_hi : c_lo).permuteRandom();
-//        // n >  lo && n <  hi -> check for inside range
-//        // n <= lo || n >= hi -> chedk for outside range
-//        private final boolean withAnd = RANDOM.nextBoolean();
-//        private final String operator = withAnd ? "&&" : "||";
-//        private final Comparison c1 = withAnd ? c1Permuted : c1Permuted.negateCmp();
-//        private final Comparison c2 = withAnd ? c2Permuted : c2Permuted.negateCmp();
-//
-//        private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
-//            let("lo", lo),
-//            let("hi", hi),
-//            let("c1", c1),
-//            let("c2", c2),
-//            let("op", operator),
-//            """
-//            static boolean #methodName(int n, int a, int b) {
-//                int lo = #lo;
-//                int hi = #hi;
-//                if (#c1 #op #c2) {
-//                    return true;
-//                }
-//                return false;
-//            }
-//            """
-//        ));
-//
-//        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
-//
-//        @Override
-//        public Template.ZeroArgs getInputTemplate() {
-//            return Template.make(() -> scope(
-//                let("lo", lo),
-//                let("hi", hi),
-//                """
-//                Random r = Utils.getRandomInstance();
-//                RestrictableGenerator<Integer> gen = Generators.G.ints();
-//                int a = gen.next();
-//                int b = gen.next();
-//                """,
-//                switch (RANDOM.nextInt(9)) {
-//                    // Random values
-//                    case 0 -> "int n = gen.next();\n";
-//                    // Fuzz around specific values
-//                    case 1 -> "int n = r.nextInt(10) - 5 + #lo;\n";
-//                    case 2 -> "int n = r.nextInt(10) - 5 + #hi;\n";
-//                    case 3 -> "int n = r.nextInt(10) - 5 + (r.nextBoolean() ? #lo : #hi);\n";
-//                    case 4 -> "int n = r.nextInt(10) - 5 + Integer.MAX_VALUE;\n";
-//                    // Only very low or very high values, or in the middle
-//                    case 5 -> "int n = r.nextInt(10) - 10 + Integer.MAX_VALUE;\n";
-//                    case 6 -> "int n = r.nextInt(10) + Integer.MIN_VALUE;\n";
-//                    case 7 -> "int n = r.nextInt(10) - 5 + #lo/2 + #hi/2;\n";
-//                    // Always the same constant
-//                    default -> "int n = " + INT_GEN.next() + ";\n";
-//                }
-//            ));
-//        };
-//    }
 
     public static TemplateToken generateTest(int warmup) {
         TestMethodGenerator tg = switch(RANDOM.nextInt(1)) {
