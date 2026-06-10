@@ -329,8 +329,8 @@ final class TestConfinedSegmentPool {
                 // From the pool
                 arena.allocate(1);
                 assertEquals(1L, confinedSessionSp(arena));
-                // Fallback allocation
-                arena.allocate(16, 1024);
+                // Fallback allocation becase we have already allocated a byte,
+                arena.allocate(POOLED_MEMORY_SIZE, 1);
                 assertEquals(1L, confinedSessionSp(arena));
             }
         }
