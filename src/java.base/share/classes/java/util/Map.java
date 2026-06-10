@@ -49,8 +49,7 @@ import java.io.Serializable;
  * <a href="SequencedCollection.html#encounter">encounter order</a>
  * are generally subtypes of the {@link SequencedMap} interface.
  *
- * {@note [kind=indented]
- * Great care must be exercised if mutable objects are used as map
+ * {@note Great care must be exercised if mutable objects are used as map
  * keys.  The behavior of a map is not specified if the value of an object is
  * changed in a manner that affects {@code equals} comparisons while the
  * object is a key in the map.  A special case of this prohibition is that it

@@ -48,8 +48,7 @@ import java.util.function.Predicate;
  * that all constructors must create a set that contains no duplicate elements
  * (as defined above).
  *
- * {@note [kind=indented]
- * Great care must be exercised if mutable objects are used as set
+ * {@note Great care must be exercised if mutable objects are used as set
  * elements.  The behavior of a set is not specified if the value of an object
  * is changed in a manner that affects {@code equals} comparisons while the
  * object is an element in the set.  A special case of this prohibition is

@@ -73,7 +73,7 @@ import java.util.function.UnaryOperator;
  * The {@code List} interface provides two methods to efficiently insert and
  * remove multiple elements at an arbitrary point in the list.<p>
  *
- * {@note [kind=indented] While it is permissible for lists to contain themselves as elements,
+ * {@note While it is permissible for lists to contain themselves as elements,
  * extreme caution is advised: the {@code equals} and {@code hashCode}
  * methods are no longer well defined on such a list.}
  *
