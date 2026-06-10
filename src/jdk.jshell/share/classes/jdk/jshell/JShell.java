@@ -433,7 +433,7 @@ public class JShell implements AutoCloseable {
          * <p>The result of calling the {@code binarySourceMapping} may be {@code null},
          * which will be treated the same way as an empty collection.
          *
-         * <p>If the result value is of a type the is {@link AutoCloseable}, then it will
+         * <p>If the result value is of a type that is {@link AutoCloseable}, then it will
          * be closed when not needed anymore.
          *
          * @param binarySourceMapping the binary to source mapper, or {@code null} if none.

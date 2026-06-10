@@ -47,8 +47,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import jdk.jshell.JShell;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -136,7 +139,25 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
                       """
                       test.inner.Test
                       Class javadoc.""");
+        assertTrue(closeCalled.get());
+        closeCalled.set(false);
+    }
+
+    @Test
+    public void testClosingAPIUse() {
         getState().addToClasspath(classesDir.toString());
+        String input = "test.inner.Test";
+        AtomicReference<Supplier<String>> documentation = new AtomicReference<>();
+
+        getAnalysis().completionSuggestions(input, input.length(), (state, suggestions) -> {
+            Assertions.assertEquals(1, suggestions.size());
+            documentation.set(suggestions.get(0).documentation());
+            return List.of("");
+        });
+        //holding the documentation supplier, and using it later/outside of the convertor is OK;
+        //will open the sources, and should also close them:
+        assertFalse(closeCalled.get());
+        Assertions.assertEquals("Class javadoc.", documentation.get().get());
         assertTrue(closeCalled.get());
         closeCalled.set(false);
     }
@@ -150,7 +171,7 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
                 case "testSourcesAsDirectory" -> p -> classesDir.equals(p) ? List.of(srcDir) : List.of();
                 case "testSourcesAsZip" ->
                         p -> classesDir.equals(p) ? List.of(srcZip) : List.of();
-                case "testClassPathModification", "testSourcesAsZipNested" -> p -> {
+                case "testClassPathModification", "testSourcesAsZipNested", "testClosingAPIUse" -> p -> {
                     if (!classesDir.equals(p)) {
                         return List.of();
                     }
@@ -230,11 +251,9 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
 
     @Override
     protected void tearDownDone() {
-        if ("testSourcesAsZipNested".equals(testInfo.getTestMethod().orElseThrow().getName())) {
-            assertTrue(closeCalled.get());
-        }
-        if ("testClassPathModification".equals(testInfo.getTestMethod().orElseThrow().getName())) {
-            assertFalse(closeCalled.get());
+        switch(testInfo.getTestMethod().orElseThrow().getName()) {
+            case "testSourcesAsZipNested" -> assertTrue(closeCalled.get());
+            case "testClassPathModification", "testClosingAPIUse" -> assertFalse(closeCalled.get());
         }
         super.tearDownDone();
     }

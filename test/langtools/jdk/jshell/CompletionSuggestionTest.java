@@ -787,9 +787,8 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     @Override
     public void tearDown() {
-        super.tearDown();
-
         setJDKSourcesOverride(null);
+        super.tearDown();
     }
 
     private void dontReadParameterNamesFromClassFile() throws Exception {
