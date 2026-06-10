@@ -942,7 +942,7 @@ bool DwarfFile::ArangesCache::add_entry(const AddressDescriptor& descriptor, uin
 
 bool DwarfFile::ArangesCache::grow() {
   size_t new_capacity = _capacity == 0 ? 128 : _capacity * 1.5;
-  ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY_RETURN_NULL(ArangesEntry, _entries, new_capacity, mtInternal);
+  ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY_RETURN_NULL(_entries, new_capacity, mtInternal);
   if (new_entries == nullptr) {
     return false;
   }

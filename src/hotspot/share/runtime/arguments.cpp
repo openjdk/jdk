@@ -35,7 +35,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
-#include "gc/shared/genArguments.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "jvm.h"
@@ -85,9 +84,6 @@ int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = nullptr;
 int    Arguments::_num_jvm_args                 = 0;
 unsigned int Arguments::_addmods_count          = 0;
-#if INCLUDE_JVMCI
-bool   Arguments::_jvmci_module_added           = false;
-#endif
 char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
@@ -533,9 +529,10 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "InitiatingHeapOccupancyPercent", JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
+  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
@@ -546,16 +543,6 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
-
-  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NewSizeThreadIncrease",        JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseXMMForArrayCopy",           JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -583,6 +570,7 @@ typedef struct {
 
 static AliasedFlag const aliased_jvm_flags[] = {
   { "CreateMinidumpOnCrash",    "CreateCoredumpOnCrash" },
+  G1GC_ONLY({"InitiatingHeapOccupancyPercent" COMMA "G1IHOP" } COMMA)
   { nullptr, nullptr}
 };
 
@@ -851,7 +839,7 @@ static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin orig
   }
   if (JVMFlagAccess::set_ccstr(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
-  FREE_C_HEAP_ARRAY(char, value);
+  FREE_C_HEAP_ARRAY(value);
   return true;
 }
 
@@ -876,9 +864,9 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagO
   }
   (void) JVMFlagAccess::set_ccstr(flag, &value, origin);
   // JVMFlag always returns a pointer that needs freeing.
-  FREE_C_HEAP_ARRAY(char, value);
+  FREE_C_HEAP_ARRAY(value);
   // JVMFlag made its own copy, so I must delete my own temp. buffer.
-  FREE_C_HEAP_ARRAY(char, free_this_too);
+  FREE_C_HEAP_ARRAY(free_this_too);
   return true;
 }
 
@@ -1013,7 +1001,7 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
   if (*bldarray == nullptr) {
     *bldarray = NEW_C_HEAP_ARRAY(char*, new_count, mtArguments);
   } else {
-    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtArguments);
+    *bldarray = REALLOC_C_HEAP_ARRAY(*bldarray, new_count, mtArguments);
   }
   (*bldarray)[*count] = os::strdup_check_oom(arg);
   *count = new_count;
@@ -1489,245 +1477,6 @@ jint Arguments::set_ergonomics_flags() {
   return JNI_OK;
 }
 
-size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
-  // The AggressiveHeap check is a temporary workaround to avoid calling
-  // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
-  // selected. This works because AggressiveHeap implies UseParallelGC
-  // where we know the ratio will be 1. Once the AggressiveHeap option is
-  // removed, this can be cleaned up.
-  size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
-  size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
-  size_t max_allocatable = os::commit_memory_limit();
-
-  return MIN2(limit, max_allocatable / fraction);
-}
-
-// Use static initialization to get the default before parsing
-static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
-
-static size_t clamp_by_size_t_max(uint64_t value) {
-  return (size_t)MIN2(value, (uint64_t)std::numeric_limits<size_t>::max());
-}
-
-void Arguments::set_heap_size() {
-  // Check if the user has configured any limit on the amount of RAM we may use.
-  bool has_ram_limit = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(MinRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(InitialRAMPercentage);
-
-  const physical_memory_size_type avail_mem = os::physical_memory();
-
-  // If the maximum heap size has not been set with -Xmx, then set it as
-  // fraction of the size of physical memory, respecting the maximum and
-  // minimum sizes of the heap.
-  if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    uint64_t min_memory = (uint64_t)(((double)avail_mem * MinRAMPercentage) / 100);
-    uint64_t max_memory = (uint64_t)(((double)avail_mem * MaxRAMPercentage) / 100);
-
-    const size_t reasonable_min = clamp_by_size_t_max(min_memory);
-    size_t reasonable_max = clamp_by_size_t_max(max_memory);
-
-    if (reasonable_min < MaxHeapSize) {
-      // Small physical memory, so use a minimum fraction of it for the heap
-      reasonable_max = reasonable_min;
-    } else {
-      // Not-small physical memory, so require a heap at least
-      // as large as MaxHeapSize
-      reasonable_max = MAX2(reasonable_max, MaxHeapSize);
-    }
-
-    if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit != 0) {
-      // Limit the heap size to ErgoHeapSizeLimit
-      reasonable_max = MIN2(reasonable_max, ErgoHeapSizeLimit);
-    }
-
-    reasonable_max = limit_heap_by_allocatable_memory(reasonable_max);
-
-    if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
-      // An initial heap size was specified on the command line,
-      // so be sure that the maximum size is consistent.  Done
-      // after call to limit_heap_by_allocatable_memory because that
-      // method might reduce the allocation size.
-      reasonable_max = MAX2(reasonable_max, InitialHeapSize);
-    } else if (!FLAG_IS_DEFAULT(MinHeapSize)) {
-      reasonable_max = MAX2(reasonable_max, MinHeapSize);
-    }
-
-#ifdef _LP64
-    if (UseCompressedOops) {
-      // HeapBaseMinAddress can be greater than default but not less than.
-      if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
-        if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
-          // matches compressed oops printing flags
-          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least %zu "
-                                     "(%zuG) which is greater than value given %zu",
-                                     DefaultHeapBaseMinAddress,
-                                     DefaultHeapBaseMinAddress/G,
-                                     HeapBaseMinAddress);
-          FLAG_SET_ERGO(HeapBaseMinAddress, DefaultHeapBaseMinAddress);
-        }
-      }
-
-      uintptr_t heap_end = HeapBaseMinAddress + MaxHeapSize;
-      uintptr_t max_coop_heap = max_heap_for_compressed_oops();
-
-      // Limit the heap size to the maximum possible when using compressed oops
-      if (heap_end < max_coop_heap) {
-        // Heap should be above HeapBaseMinAddress to get zero based compressed
-        // oops but it should be not less than default MaxHeapSize.
-        max_coop_heap -= HeapBaseMinAddress;
-      }
-
-      // If the user has configured any limit on the amount of RAM we may use,
-      // then disable compressed oops if the calculated max exceeds max_coop_heap
-      // and UseCompressedOops was not specified.
-      if (reasonable_max > max_coop_heap) {
-        if (FLAG_IS_ERGO(UseCompressedOops) && has_ram_limit) {
-          log_debug(gc, heap, coops)("UseCompressedOops disabled due to "
-                                     "max heap %zu > compressed oop heap %zu. "
-                                     "Please check the setting of MaxRAMPercentage %5.2f.",
-                                     reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
-          FLAG_SET_ERGO(UseCompressedOops, false);
-        } else {
-          reasonable_max = max_coop_heap;
-        }
-      }
-    }
-#endif // _LP64
-
-    log_trace(gc, heap)("  Maximum heap size %zu", reasonable_max);
-    FLAG_SET_ERGO(MaxHeapSize, reasonable_max);
-  }
-
-  // If the minimum or initial heap_size have not been set or requested to be set
-  // ergonomically, set them accordingly.
-  if (InitialHeapSize == 0 || MinHeapSize == 0) {
-    size_t reasonable_minimum = clamp_by_size_t_max((uint64_t)OldSize + (uint64_t)NewSize);
-    reasonable_minimum = MIN2(reasonable_minimum, MaxHeapSize);
-    reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
-
-    if (InitialHeapSize == 0) {
-      uint64_t initial_memory = (uint64_t)(((double)avail_mem * InitialRAMPercentage) / 100);
-      size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
-      reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
-
-      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize);
-      reasonable_initial = MIN2(reasonable_initial, MaxHeapSize);
-
-      FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
-      log_trace(gc, heap)("  Initial heap size %zu", InitialHeapSize);
-    }
-
-    // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
-    // synchronize with InitialHeapSize to avoid errors with the default value.
-    if (MinHeapSize == 0) {
-      FLAG_SET_ERGO(MinHeapSize, MIN2(reasonable_minimum, InitialHeapSize));
-      log_trace(gc, heap)("  Minimum heap size %zu", MinHeapSize);
-    }
-  }
-}
-
-// This option inspects the machine and attempts to set various
-// parameters to be optimal for long-running, memory allocation
-// intensive jobs.  It is intended for machines with large
-// amounts of cpu and memory.
-jint Arguments::set_aggressive_heap_flags() {
-  // initHeapSize is needed since _initial_heap_size is 4 bytes on a 32 bit
-  // VM, but we may not be able to represent the total physical memory
-  // available (like having 8gb of memory on a box but using a 32bit VM).
-  // Thus, we need to make sure we're using a julong for intermediate
-  // calculations.
-  julong initHeapSize;
-  physical_memory_size_type phys_mem = os::physical_memory();
-  julong total_memory = static_cast<julong>(phys_mem);
-
-  if (total_memory < (julong) 256 * M) {
-    jio_fprintf(defaultStream::error_stream(),
-            "You need at least 256mb of memory to use -XX:+AggressiveHeap\n");
-    vm_exit(1);
-  }
-
-  // The heap size is half of available memory, or (at most)
-  // all of possible memory less 160mb (leaving room for the OS
-  // when using ISM).  This is the maximum; because adaptive sizing
-  // is turned on below, the actual space used may be smaller.
-
-  initHeapSize = MIN2(total_memory / (julong) 2,
-          total_memory - (julong) 160 * M);
-
-  initHeapSize = limit_heap_by_allocatable_memory(initHeapSize);
-
-  if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    if (FLAG_SET_CMDLINE(MaxHeapSize, initHeapSize) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-    if (FLAG_SET_CMDLINE(InitialHeapSize, initHeapSize) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-    if (FLAG_SET_CMDLINE(MinHeapSize, initHeapSize) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-  }
-  if (FLAG_IS_DEFAULT(NewSize)) {
-    // Make the young generation 3/8ths of the total heap.
-    if (FLAG_SET_CMDLINE(NewSize,
-            ((julong) MaxHeapSize / (julong) 8) * (julong) 3) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-    if (FLAG_SET_CMDLINE(MaxNewSize, NewSize) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-  }
-
-#if !defined(_ALLBSD_SOURCE) && !defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.
-  FLAG_SET_DEFAULT(UseLargePages, true);
-#endif
-
-  // Increase some data structure sizes for efficiency
-  if (FLAG_SET_CMDLINE(ResizeTLAB, false) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-  if (FLAG_SET_CMDLINE(TLABSize, 256 * K) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-
-  // See the OldPLABSize comment below, but replace 'after promotion'
-  // with 'after copying'.  YoungPLABSize is the size of the survivor
-  // space per-gc-thread buffers.  The default is 4kw.
-  if (FLAG_SET_CMDLINE(YoungPLABSize, 256 * K) != JVMFlag::SUCCESS) { // Note: this is in words
-    return JNI_EINVAL;
-  }
-
-  // OldPLABSize is the size of the buffers in the old gen that
-  // UseParallelGC uses to promote live data that doesn't fit in the
-  // survivor spaces.  At any given time, there's one for each gc thread.
-  // The default size is 1kw. These buffers are rarely used, since the
-  // survivor spaces are usually big enough.  For specjbb, however, there
-  // are occasions when there's lots of live data in the young gen
-  // and we end up promoting some of it.  We don't have a definite
-  // explanation for why bumping OldPLABSize helps, but the theory
-  // is that a bigger PLAB results in retaining something like the
-  // original allocation order after promotion, which improves mutator
-  // locality.  A minor effect may be that larger PLABs reduce the
-  // number of PLAB allocation events during gc.  The value of 8kw
-  // was arrived at by experimenting with specjbb.
-  if (FLAG_SET_CMDLINE(OldPLABSize, 8 * K) != JVMFlag::SUCCESS) { // Note: this is in words
-    return JNI_EINVAL;
-  }
-
-  // Enable parallel GC and adaptive generation sizing
-  if (FLAG_SET_CMDLINE(UseParallelGC, true) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-
-  // Encourage steady state memory management
-  if (FLAG_SET_CMDLINE(ThresholdTolerance, 100) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-
-  return JNI_OK;
-}
-
 // This must be called after ergonomics.
 void Arguments::set_bytecode_flags() {
   if (!RewriteBytecodes) {
@@ -1810,27 +1559,7 @@ bool Arguments::check_vm_args_consistency() {
   // Note: Needs platform-dependent factoring.
   bool status = true;
 
-  if (TLABRefillWasteFraction == 0) {
-    jio_fprintf(defaultStream::error_stream(),
-                "TLABRefillWasteFraction should be a denominator, "
-                "not %zu\n",
-                TLABRefillWasteFraction);
-    status = false;
-  }
-
   status = CompilerConfig::check_args_consistency(status);
-#if INCLUDE_JVMCI
-  if (status && EnableJVMCI) {
-    // Add the JVMCI module if not using libjvmci or EnableJVMCI
-    // was explicitly set on the command line or in the jimage.
-    if ((!UseJVMCINativeLibrary || FLAG_IS_CMDLINE(EnableJVMCI) || FLAG_IS_JIMAGE_RESOURCE(EnableJVMCI)) && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
-      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
-        return false;
-      }
-    }
-  }
-#endif
-
 #if INCLUDE_JFR
   if (status && (FlightRecorderOptions || StartFlightRecording)) {
     if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", _addmods_count++)) {
@@ -2050,7 +1779,7 @@ int Arguments::process_patch_mod_option(const char* patch_mod_tail) {
       *(module_name + module_len) = '\0';
       // The path piece begins one past the module_equal sign
       add_patch_mod_prefix(module_name, module_equal + 1);
-      FREE_C_HEAP_ARRAY(char, module_name);
+      FREE_C_HEAP_ARRAY(module_name);
       if (!create_numbered_module_property("jdk.module.patch", patch_mod_tail, patch_mod_count++)) {
         return JNI_ENOMEM;
       }
@@ -2201,8 +1930,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
 #endif // !INCLUDE_JVMTI
         JvmtiAgentList::add_xrun(name, options, false);
-        FREE_C_HEAP_ARRAY(char, name);
-        FREE_C_HEAP_ARRAY(char, options);
+        FREE_C_HEAP_ARRAY(name);
+        FREE_C_HEAP_ARRAY(options);
       }
     } else if (match_option(option, "--add-reads=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addreads", tail, addreads_count++)) {
@@ -2220,19 +1949,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
-#if INCLUDE_JVMCI
-      if (!_jvmci_module_added) {
-        const char *jvmci_module = strstr(tail, "jdk.internal.vm.ci");
-        if (jvmci_module != nullptr) {
-          char before = *(jvmci_module - 1);
-          char after  = *(jvmci_module + strlen("jdk.internal.vm.ci"));
-          if ((before == '=' || before == ',') && (after == '\0' || after == ',')) {
-            FLAG_SET_DEFAULT(EnableJVMCI, true);
-            _jvmci_module_added = true;
-          }
-        }
-      }
-#endif
     } else if (match_option(option, "--enable-native-access=", &tail)) {
       if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
         return JNI_ENOMEM;
@@ -2331,7 +2047,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
         JvmtiAgentList::add("instrument", options, false);
-        FREE_C_HEAP_ARRAY(char, options);
+        FREE_C_HEAP_ARRAY(options);
 
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", _addmods_count++)) {
@@ -2460,11 +2176,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (FLAG_SET_CMDLINE(ThreadStackSize, value) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
-               match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
-      if (match_option(option, "-Xmaxjitcodesize", &tail)) {
-        warning("Option -Xmaxjitcodesize was deprecated in JDK 26 and will likely be removed in a future release.");
-      }
+    } else if (match_option(option, "-Xmaxjitcodesize", &tail)) {
+      warning("Ignoring option %s; support was removed in JDK 27", option->optionString);
+    } else if (match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
 
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);
@@ -2600,14 +2314,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         if (FLAG_SET_CMDLINE(BytecodeVerificationRemote, true) != JVMFlag::SUCCESS) {
           return JNI_EINVAL;
         }
-      } else if (strcmp(tail, ":none") == 0) {
-        if (FLAG_SET_CMDLINE(BytecodeVerificationLocal, false) != JVMFlag::SUCCESS) {
-          return JNI_EINVAL;
-        }
-        if (FLAG_SET_CMDLINE(BytecodeVerificationRemote, false) != JVMFlag::SUCCESS) {
-          return JNI_EINVAL;
-        }
-        warning("Options -Xverify:none and -noverify were deprecated in JDK 13 and will likely be removed in a future release.");
       } else if (is_bad_option(option, args->ignoreUnrecognized, "verification")) {
         return JNI_EINVAL;
       }
@@ -2775,46 +2481,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
           "ManagementServer is not supported in this VM.\n");
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
-#if INCLUDE_JVMCI
-    } else if (match_option(option, "-XX:-EnableJVMCIProduct") || match_option(option, "-XX:-UseGraalJIT")) {
-      if (EnableJVMCIProduct) {
-        jio_fprintf(defaultStream::error_stream(),
-                  "-XX:-EnableJVMCIProduct or -XX:-UseGraalJIT cannot come after -XX:+EnableJVMCIProduct or -XX:+UseGraalJIT\n");
-        return JNI_EINVAL;
-      }
-    } else if (match_option(option, "-XX:+EnableJVMCIProduct") || match_option(option, "-XX:+UseGraalJIT")) {
-      bool use_graal_jit = match_option(option, "-XX:+UseGraalJIT");
-      if (use_graal_jit) {
-        const char* jvmci_compiler = get_property("jvmci.Compiler");
-        if (jvmci_compiler != nullptr) {
-          if (strncmp(jvmci_compiler, "graal", strlen("graal")) != 0) {
-            jio_fprintf(defaultStream::error_stream(),
-              "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s\n", jvmci_compiler);
-            return JNI_ERR;
-          }
-        } else if (!add_property("jvmci.Compiler=graal")) {
-            return JNI_ENOMEM;
-        }
-      }
-
-      // Just continue, since "-XX:+EnableJVMCIProduct" or "-XX:+UseGraalJIT" has been specified before
-      if (EnableJVMCIProduct) {
-        continue;
-      }
-      JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
-      // Allow this flag if it has been unlocked.
-      if (jvmciFlag != nullptr && jvmciFlag->is_unlocked()) {
-        if (!JVMCIGlobals::enable_jvmci_product_mode(origin, use_graal_jit)) {
-          jio_fprintf(defaultStream::error_stream(),
-            "Unable to enable JVMCI in product mode\n");
-          return JNI_ERR;
-        }
-      }
-      // The flag was locked so process normally to report that error
-      else if (!process_argument(use_graal_jit ? "UseGraalJIT" : "EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
-        return JNI_EINVAL;
-      }
-#endif // INCLUDE_JVMCI
 #if INCLUDE_JFR
     } else if (match_jfr_option(&option)) {
       return JNI_EINVAL;
@@ -2938,16 +2604,6 @@ jint Arguments::finalize_vm_init_args() {
     return JNI_ERR;
   }
 
-  // This must be done after all arguments have been processed
-  // and the container support has been initialized since AggressiveHeap
-  // relies on the amount of total memory available.
-  if (AggressiveHeap) {
-    jint result = set_aggressive_heap_flags();
-    if (result != JNI_OK) {
-      return result;
-    }
-  }
-
   // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),
   // but like -Xint, leave compilation thresholds unaffected.
   // With tiered compilation disabled, setting CompileThreshold to 0 disables compilation as well.
@@ -2965,7 +2621,7 @@ jint Arguments::finalize_vm_init_args() {
     FLAG_SET_ERGO(InitialTenuringThreshold, MaxTenuringThreshold);
   }
 
-#if !COMPILER2_OR_JVMCI
+#ifndef COMPILER2
   // Don't degrade server performance for footprint
   if (FLAG_IS_DEFAULT(UseLargePages) &&
       MaxHeapSize < LargePageHeapSizeThreshold) {
@@ -2976,12 +2632,16 @@ jint Arguments::finalize_vm_init_args() {
   }
 
   UNSUPPORTED_OPTION(ProfileInterpreter);
-#endif
+#endif // !COMPILER2
 
   // Parse the CompilationMode flag
   if (!CompilationModeFlag::initialize()) {
     return JNI_ERR;
   }
+
+  // Called after ClassLoader::lookup_vm_options() but before class loading begins.
+  // TODO: Obtain and pass correct preview mode flag value here.
+  ClassLoader::set_preview_mode(false);
 
   if (!check_vm_args_consistency()) {
     return JNI_ERR;
@@ -3066,7 +2726,7 @@ class ScopedVMInitArgs : public StackObj {
     for (int i = 0; i < _args.nOptions; i++) {
       os::free(_args.options[i].optionString);
     }
-    FREE_C_HEAP_ARRAY(JavaVMOption, _args.options);
+    FREE_C_HEAP_ARRAY(_args.options);
   }
 
   // Insert options into this option list, to replace option at
@@ -3215,7 +2875,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
   ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
   ::close(fd);
   if (bytes_read < 0) {
-    FREE_C_HEAP_ARRAY(char, buf);
+    FREE_C_HEAP_ARRAY(buf);
     jio_fprintf(defaultStream::error_stream(),
                 "Could not read options file '%s'\n", file_name);
     return JNI_ERR;
@@ -3223,13 +2883,13 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
 
   if (bytes_read == 0) {
     // tell caller there is no option data and that is ok
-    FREE_C_HEAP_ARRAY(char, buf);
+    FREE_C_HEAP_ARRAY(buf);
     return JNI_OK;
   }
 
   retcode = parse_options_buffer(file_name, buf, bytes_read, vm_args);
 
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
   return retcode;
 }
 
@@ -3562,7 +3222,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   char *vmoptions = ClassLoader::lookup_vm_options();
   if (vmoptions != nullptr) {
     code = parse_options_buffer("vm options resource", vmoptions, strlen(vmoptions), &initial_vm_options_args);
-    FREE_C_HEAP_ARRAY(char, vmoptions);
+    FREE_C_HEAP_ARRAY(vmoptions);
     if (code != JNI_OK) {
       return code;
     }
@@ -3781,17 +3441,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 void Arguments::set_compact_headers_flags() {
 #ifdef _LP64
   if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
-    if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
-      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-
-      // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
-    } else if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-      // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
-    } else {
-      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
+      warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
     }
+    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
   }
 #endif
 }
@@ -3802,7 +3455,7 @@ jint Arguments::apply_ergo() {
   if (result != JNI_OK) return result;
 
   // Set heap size based on available physical memory
-  set_heap_size();
+  GCConfig::arguments()->set_heap_size();
 
   GCConfig::arguments()->initialize();
 
@@ -3872,7 +3525,7 @@ jint Arguments::apply_ergo() {
     JVMFlag::printSetFlags(tty);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (!FLAG_IS_DEFAULT(EnableVectorSupport) && !EnableVectorSupport) {
     if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
       warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
@@ -3888,9 +3541,7 @@ jint Arguments::apply_ergo() {
     }
     FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
   }
-#endif // COMPILER2_OR_JVMCI
 
-#ifdef COMPILER2
   if (!FLAG_IS_DEFAULT(UseLoopPredicate) && !UseLoopPredicate && UseProfiledLoopPredicate) {
     warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
     FLAG_SET_ERGO(UseProfiledLoopPredicate, false);

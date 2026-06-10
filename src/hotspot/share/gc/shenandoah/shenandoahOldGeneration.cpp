@@ -78,7 +78,7 @@ public:
   }
 
   void work(uint worker_id) override {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_coalesce_and_fill, ShenandoahPhaseTimings::ScanClusters, worker_id);
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_coalesce_and_fill, ShenandoahPhaseTimings::Work, worker_id);
     for (uint region_idx = worker_id; region_idx < _coalesce_and_fill_region_count; region_idx += _nworkers) {
       ShenandoahHeapRegion* r = _coalesce_and_fill_region_array[region_idx];
       if (r->is_humongous()) {
@@ -318,12 +318,23 @@ void ShenandoahOldGeneration::heap_region_iterate(ShenandoahHeapRegionClosure* c
   ShenandoahHeap::heap()->heap_region_iterate(&old_regions_cl);
 }
 
+void ShenandoahOldGeneration::heap_region_iterator(ShenandoahHeapRegionClosure* cl) {
+  ShenandoahIncludeRegionClosure<OLD_GENERATION> old_regions_cl(cl);
+  ShenandoahHeap::heap()->heap_region_iterator(&old_regions_cl);
+}
+
 void ShenandoahOldGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap::heap()->set_concurrent_old_mark_in_progress(in_progress);
 }
 
 bool ShenandoahOldGeneration::is_concurrent_mark_in_progress() {
   return ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress();
+}
+
+void ShenandoahOldGeneration::record_tops_at_evac_start() {
+  for_each_region([](ShenandoahHeapRegion* region) {
+    region->record_top_at_evac_start();
+  });
 }
 
 void ShenandoahOldGeneration::cancel_marking() {
@@ -662,15 +673,19 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
   }
 }
 
-void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words) const {
-  // Only register the copy of the object that won the evacuation race.
-  _card_scan->register_object_without_lock(obj);
-
-  // Mark the entire range of the evacuated object as dirty.  At next remembered set scan,
-  // we will clear dirty bits that do not hold interesting pointers.  It's more efficient to
-  // do this in batch, in a background GC thread than to try to carefully dirty only cards
-  // that hold interesting pointers right now.
-  _card_scan->mark_range_as_dirty(obj, words);
+void ShenandoahOldGeneration::update_card_table() {
+  for_each_region([this](ShenandoahHeapRegion* region) {
+    if (region->is_regular_or_regular_pinned()) {
+      // Humongous regions are promoted in place, remembered set maintenance is handled there
+      // Regular/pinned regions that are promoted in place have their rset maintenance handled for
+      // the objects in the region when it was promoted. We record TEAS for such a region
+      // when the in-place-promotion is completed. Such a region may be used for additional
+      // promotions in the same cycle it was itself promoted.
+      if (region->top() > region->get_top_at_evac_start()) {
+        _card_scan->update_card_table(region->get_top_at_evac_start(), region->top());
+      }
+    }
+  });
 }
 
 bool ShenandoahOldGeneration::has_unprocessed_collection_candidates() {
@@ -779,11 +794,6 @@ void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
 
 size_t ShenandoahOldGeneration::used() const {
   return _free_set->old_used();
-}
-
-size_t ShenandoahOldGeneration::bytes_allocated_since_gc_start() const {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
-  return 0;
 }
 
 size_t ShenandoahOldGeneration::get_affiliated_region_count() const {

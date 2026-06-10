@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,9 +253,14 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
-    public Map<String, String> getSettings() {
+    Map<String, String> getSettings() {
+        assert Thread.holdsLock(recorder) : "Must have recorder lock when accessing recorder.settings";
+        return settings;
+    }
+
+    public Map<String, String> getSettingsCopy() {
         synchronized (recorder) {
-            return settings;
+            return new LinkedHashMap<>(settings);
         }
     }
 
@@ -353,7 +358,7 @@ public final class PlatformRecording implements AutoCloseable {
         // Recording is RUNNING, create a clone
         PlatformRecording clone = recorder.newTemporaryRecording();
         clone.setShouldWriteActiveRecordingEvent(false);
-        clone.setName(getName());
+        clone.setName(getName(), false);
         clone.setToDisk(true);
         clone.setMaxAge(getMaxAge());
         clone.setMaxSize(getMaxSize());
@@ -371,7 +376,7 @@ public final class PlatformRecording implements AutoCloseable {
             clone.setStartTime(getStartTime());
         }
         if (pathToGcRoots == null) {
-            clone.setSettings(getSettings()); // needed for old object sample
+            clone.setSettings(getSettingsCopy()); // needed for old object sample
             clone.stop(reason); // dumps to destination path here
         } else {
             // Risk of violating lock order here, since
@@ -425,7 +430,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
-    void setState(RecordingState state) {
+    public void setState(RecordingState state) {
         synchronized (recorder) {
             this.state = state;
         }
@@ -449,9 +454,11 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
-    public void setName(String name) {
+    public void setName(String name, boolean checkClosed) {
         synchronized (recorder) {
-            ensureNotClosed();
+            if (checkClosed) {
+                ensureNotClosed();
+            }
             this.name = name;
         }
     }

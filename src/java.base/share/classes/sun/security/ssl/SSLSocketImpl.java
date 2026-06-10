@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@ package sun.security.ssl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -77,10 +77,10 @@ public final class SSLSocketImpl
     /**
      * ERROR HANDLING GUIDELINES
      * (which exceptions to throw and catch and which not to throw and catch)
-     *
+     * <p>
      * - if there is an IOException (SocketException) when accessing the
      *   underlying Socket, pass it through
-     *
+     * <p>
      * - do not throw IOExceptions, throw SSLExceptions (or a subclass)
      */
 
@@ -454,12 +454,12 @@ public final class SSLSocketImpl
                 if (!conContext.isNegotiated) {
                     readHandshakeRecord();
                 }
-            } catch (InterruptedIOException iioe) {
+            } catch (SocketTimeoutException e) {
                 if(resumable){
-                    handleException(iioe);
+                    handleException(e);
                 } else{
                     throw conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                            "Couldn't kickstart handshaking", iioe);
+                            "Couldn't kickstart handshaking", e);
                 }
             } catch (SocketException se) {
                 handleException(se);
@@ -1427,7 +1427,7 @@ public final class SSLSocketImpl
                     return 0;
                 }
             } catch (SSLException |
-                    InterruptedIOException | SocketException se) {
+                     SocketTimeoutException | SocketException se) {
                 // Don't change exception in case of timeouts or interrupts
                 // or SocketException.
                 throw se;
@@ -1486,7 +1486,7 @@ public final class SSLSocketImpl
                     return buffer;
                 }
             } catch (SSLException |
-                    InterruptedIOException | SocketException se) {
+                     SocketTimeoutException | SocketException se) {
                 // Don't change exception in case of timeouts or interrupts
                 // or SocketException.
                 throw se;
@@ -1677,40 +1677,23 @@ public final class SSLSocketImpl
             SSLLogger.warning("handling exception", cause);
         }
 
-        // Don't close the Socket in case of timeouts or interrupts.
-        if (cause instanceof InterruptedIOException) {
-            throw (IOException)cause;
-        }
-
-        // need to perform error shutdown
-        boolean isSSLException = (cause instanceof SSLException);
-        Alert alert;
-        if (isSSLException) {
-            if (cause instanceof SSLHandshakeException) {
-                alert = Alert.HANDSHAKE_FAILURE;
-            } else {
-                alert = Alert.UNEXPECTED_MESSAGE;
+        throw switch (cause) {
+            // Don't close the Socket in case of timeouts.
+            case SocketTimeoutException ste -> ste;
+            // Send TLS alert with "fatal", then throw the socket exception.
+            case SocketException se -> {
+                try {
+                    throw conContext.fatal(Alert.UNEXPECTED_MESSAGE, se);
+                } catch (Exception _) {
+                }
+                yield se;
             }
-        } else {
-            if (cause instanceof IOException) {
-                alert = Alert.UNEXPECTED_MESSAGE;
-            } else {
-                // RuntimeException
-                alert = Alert.INTERNAL_ERROR;
-            }
-        }
-
-        if (cause instanceof SocketException) {
-            try {
-                throw conContext.fatal(alert, cause);
-            } catch (Exception e) {
-                // Just delivering the fatal alert, re-throw the socket exception instead.
-            }
-
-            throw (SocketException)cause;
-        }
-
-        throw conContext.fatal(alert, cause);
+            case SSLHandshakeException sslhe ->
+                    conContext.fatal(Alert.HANDSHAKE_FAILURE, sslhe);
+            case IOException ioe ->
+                    conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
+            default -> conContext.fatal(Alert.INTERNAL_ERROR, cause);
+        };
     }
 
     private Plaintext handleEOF(EOFException eofe) throws IOException {

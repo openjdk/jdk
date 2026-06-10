@@ -49,7 +49,14 @@ void CardTableRS::scan_old_to_young_refs(TenuredGeneration* tg, HeapWord* saved_
 void CardTableRS::maintain_old_to_young_invariant(TenuredGeneration* old_gen,
                                                   bool is_young_gen_empty) {
   if (is_young_gen_empty) {
-    clear_MemRegion(old_gen->prev_used_region());
+    MemRegion prev_used_mr = old_gen->prev_used_region();
+    if (!prev_used_mr.is_empty()) {
+      clear_MemRegion(prev_used_mr);
+    }
+    {
+      MemRegion old_gen_committed{old_gen->space()->bottom(), old_gen->space()->end()};
+      verify_region(old_gen_committed, clean_card_val(), true);
+    }
   } else {
     MemRegion used_mr = old_gen->used_region();
     MemRegion prev_used_mr = old_gen->prev_used_region();
@@ -59,7 +66,9 @@ void CardTableRS::maintain_old_to_young_invariant(TenuredGeneration* old_gen,
     }
     // No idea which card contains old-to-young pointer, so dirtying cards for
     // the entire used part of old-gen conservatively.
-    dirty_MemRegion(used_mr);
+    if (!used_mr.is_empty()) {
+      dirty_MemRegion(used_mr);
+    }
   }
 }
 

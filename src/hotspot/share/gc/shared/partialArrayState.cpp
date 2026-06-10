@@ -114,7 +114,7 @@ PartialArrayStateManager::PartialArrayStateManager(uint max_allocators)
 
 PartialArrayStateManager::~PartialArrayStateManager() {
   reset();
-  FREE_C_HEAP_ARRAY(Arena, _arenas);
+  FREE_C_HEAP_ARRAY(_arenas);
 }
 
 Arena* PartialArrayStateManager::register_allocator() {
