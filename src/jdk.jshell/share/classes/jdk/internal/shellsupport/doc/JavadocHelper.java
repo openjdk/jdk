@@ -118,7 +118,7 @@ public abstract class JavadocHelper implements AutoCloseable {
         StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
         try {
             fm.setLocationFromPaths(StandardLocation.SOURCE_PATH, sourceLocations);
-            return new OnDemandJavadocHelper(mainTask, fm, sourceLocations);
+            return new OnDemandJavadocHelper(mainTask, fm);
         } catch (IOException ex) {
             try {
                 fm.close();
@@ -243,13 +243,11 @@ public abstract class JavadocHelper implements AutoCloseable {
         private final JavaFileManager baseFileManager;
         private final StandardJavaFileManager fm;
         private final Map<String, Pair<JavacTask, TreePath>> signature2Source = new HashMap<>();
-        private final Collection<? extends Path> sourceLocations;
 
-        private OnDemandJavadocHelper(JavacTask mainTask, StandardJavaFileManager fm, Collection<? extends Path> sourceLocations) {
+        private OnDemandJavadocHelper(JavacTask mainTask, StandardJavaFileManager fm) {
             this.mainTask = mainTask;
             this.baseFileManager = ((JavacTaskImpl) mainTask).getContext().get(JavaFileManager.class);
             this.fm = fm;
-            this.sourceLocations = sourceLocations;
         }
 
         @Override
