@@ -406,8 +406,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR3b: short loop, fails to be recognized as CountedLoop.
+    // testIR3x: short loop, fails to be recognized as CountedLoop.
     // Compared to testIR3, the check in the loop is an NEQ.
+    public static int testIR3x_gold = testIR3x();
+
+    @Run(test = "testIR3x")
+    private static void runIR3x() {
+        int val = testIR3x();
+        if (val != testIR3x_gold) { throw new RuntimeException("wrong value: " + testIR3x_gold + " vs " + val); }
+    }
+
+    // testIR3b: short loop, and range in short range via CmpI before loop (for loop limit).
+    // Decr iv.
     public static int testIR3b_gold = testIR3b();
 
     @Run(test = "testIR3b")
@@ -417,8 +427,20 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIR3b() {
+        int limit = Math.max(lo, 0);   // init  in [0..max_int]
+        int init  = Math.min(hi, 100); // limit in [min_int..100]
+        int sum = 0;
+        for (int i = init; i > limit; i = (short)(i-1)) {
+            sum = dontinline(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIR3x() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         int sum = 0;
@@ -641,17 +663,4 @@ public class TestHasTruncationWrap {
     // - dontinline call to prevent empty loop
     // - increment and decrement cases, non-unit stride
     // - Cases with and without compare before loop: positive and negative tests
-    //
-    // Template Fuzzing ideas:
-    // - Mostly about correctness, not IR rules
-    // - truncation:
-    //   - short cast
-    //   - short shift: ((i + s) << 16) >> 16
-    //   - char/byte mask/shift
-    // - stride: pos/neg, small integers (rarely also large?)
-    // - loop shape: for, top-tested while, bottom tested do-while. Each with < or !=.
-    //   - endless loop control: additional loop exit with hidden condition? - verify with IR test here.
-    // - pre-loop cmp: none, explicit "init < limit", using min/max or not, using CmpU vs CmpI.
-    // - bounds: small, in around short/char/byte, totally random.
-    // - reference vs test methods for correctness comparison.
 }
