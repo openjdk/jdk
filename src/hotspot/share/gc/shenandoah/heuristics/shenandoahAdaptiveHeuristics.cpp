@@ -166,7 +166,7 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   // be running the collector more often than necessary because it continues to believe
   // the average cycle time is much higher than it otherwise would be.
   _cycles.record_duration(_cycle_start, elapsed_cycle_time());
- 
+
   double z_score = 0.0;
   const double available = static_cast<double>(_space_info->available());
   const double available_sd = _available.sd();
