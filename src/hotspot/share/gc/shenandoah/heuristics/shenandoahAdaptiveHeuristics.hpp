@@ -83,6 +83,7 @@ protected:
                                              RegionData* data, size_t size,
                                              size_t actual_free) override;
 
+
   ShenandoahCycleDuration _cycles;
 
   // Used to record the last trigger that signaled to start a GC.

@@ -157,7 +157,6 @@ void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start,
   }
 }
 
-
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
 
@@ -210,7 +209,6 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
     }
   }
 }
-
 
 void ShenandoahAdaptiveHeuristics::record_degenerated() {
   ShenandoahHeuristics::record_degenerated();

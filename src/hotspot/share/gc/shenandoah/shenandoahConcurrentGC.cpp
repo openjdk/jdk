@@ -201,10 +201,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
   // the space. This would be the last action if there is nothing to evacuate.  Note that
   // we will not age young-gen objects in the case that we skip evacuation.
-
   entry_cleanup_early();
 
-  // Let's not log status here.  We just rebuilt freeset
   heap->free_set()->log_status_under_lock();
 
   // Processing strong roots

@@ -265,6 +265,7 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
 
 void ShenandoahHeuristics::record_success_concurrent() {
   _gc_times_learned++;
+
   adjust_penalty(Concurrent_Adjust);
 }
 
