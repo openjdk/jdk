@@ -430,10 +430,13 @@ public class JShell implements AutoCloseable {
          * <p>The results of calling {@code binarySourceMapping} may be cached, and the
          * same file may or may not be queried again.
          *
-         * <p>If the result value is {@link AutoCloseable}, then it will
+         * <p>The result of calling the {@code binarySourceMapping} may be {@code null},
+         * which will be treated the same way as an empty collection.
+         *
+         * <p>If the result value is of a type the is {@link AutoCloseable}, then it will
          * be closed when not needed anymore.
          *
-         * @param binarySourceMapping the binary to source mapper
+         * @param binarySourceMapping the binary to source mapper, or {@code null} if none.
          * @return the {@code Builder} instance (for use in chained
          *         initialization)
          * @since 28
