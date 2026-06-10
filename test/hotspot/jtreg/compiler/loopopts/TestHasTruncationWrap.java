@@ -443,8 +443,8 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR5c: short do-while-loop, but the backedge check with NEQ is not strong enough to prevent wrapping.
-    // Compared to testIR5, the check in the loop is an NEQ.
+    // testIR5c: short while-loop.
+    // Similar code pattern to testIR2b.
     public static int testIR5c_gold = testIR5c();
 
     @Run(test = "testIR5c")
@@ -465,11 +465,10 @@ public class TestHasTruncationWrap {
         //    we get init in [0..99], which is in short range.
         int sum = 0;
         int i = init;
-        if (i == limit) { return sum; } // additional "exit check" before loop.
-        do {
+        while (i != limit) { // "exit check" before loop, using NEQ.
             sum = dontinline(sum); // work to keep loop alive
             i = (short)(i+1);
-        } while (i != limit); // exit check at the end, but with NEQ.
+        }
         return sum;
     }
 
