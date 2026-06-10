@@ -42,7 +42,10 @@ package compiler.loopopts;
 import compiler.lib.ir_framework.*;
 
 /**
- * TODO: descr
+ * Tests for CountedLoopConverter::has_truncation_wrap, which deals with wrapped iv, for byte/char/short iv cases.
+ * We have some regression tests for JDK-8385855, as well as some IR tests that ensure that we detect counted
+ * loops in many cases, where we have to check that truncation does not lead to wrapping, which would mean
+ * the iv would not be linear, but possibly overflow the byte/char/short ranges.
  */
 public class TestHasTruncationWrap {
 
@@ -444,9 +447,15 @@ public class TestHasTruncationWrap {
     }
 
     // testIR5c: short do-while-loop.
-    // While the code shape looks very close to testIR2b, somehow the additional "exit check"
-    // does not do the trick, and C2 does not recognize the pattern.
-    // The one-off pre-loop guard and bottom exit check are not enough. Not 100% sure why.
+    // While the code shape looks very close to testIR2b, it does not behave the same.
+    // The while loop below is peeled once. The additional "exit check" is eliminated,
+    // because redundant after "init >= limit" check.
+    // From peeling, the new initial value is a truncated short value, and not init, so
+    // the "init >= limit" check is not helpful any more, as far as I can see.
+    // Also the backedge value is truncated to short value. But this is not enough to
+    // guarantee that there is no short-overflow (truncation): we do not manage to
+    // prove that i could never be short_max, and then overflow the short range at
+    // the next increment.
     public static int testIR5c_gold = testIR5c();
 
     @Run(test = "testIR5c")
@@ -476,8 +485,8 @@ public class TestHasTruncationWrap {
     }
 
     // testIR5d: short while-loop, again similar to testIR2b and testIR5c, but with while-loop form.
-    // Somehow, that does get recognized by C2: the top-check seems to trigger optimizationd differently,
-    // evne though Java semantics would be the same.
+    // No peeling, and so the entry value is init, and so the "init >= limit" check is useful,
+    // and used by has_truncation_wrap. With it, C2 manages to prove no short-overflow.
     public static int testIR5d_gold = testIR5d();
 
     @Run(test = "testIR5d")
