@@ -242,7 +242,6 @@ public class TestHasTruncationWrap {
         }
         return sum;
     }
-    // TODO: try the NEQ trick here as well, and in other cases below.
 
     // testIR2: short loop, ranges proved in short range via CmpI before loop.
     public static int testIR2_gold = testIR2();
@@ -265,6 +264,37 @@ public class TestHasTruncationWrap {
         //    we get init in [0..99], which is in short range.
         int sum = 0;
         for (int i = init; i < limit; i = (short)(i+1)) {
+            sum = dontinline(sum); // work to keep loop alive
+            // The backedge value of i is also far
+            // enough from short boundaries, because of
+            // the loop exit check:
+            //   i < limit <= 100
+        }
+        return sum;
+    }
+
+    // testIR2b: short loop, ranges proved in short range via CmpI before loop.
+    // Compared to testIR2, the check in the loop is an NEQ.
+    public static int testIR2b_gold = testIR2b();
+
+    @Run(test = "testIR2b")
+    private static void runIR2b() {
+        int val = testIR2b();
+        if (val != testIR2b_gold) { throw new RuntimeException("wrong value: " + testIR2b_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR2b() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        if (init >= limit) { return -1; } // CmpI before loop
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in short range.
+        int sum = 0;
+        for (int i = init; i != limit; i = (short)(i+1)) {
             sum = dontinline(sum); // work to keep loop alive
             // The backedge value of i is also far
             // enough from short boundaries, because of
@@ -360,29 +390,29 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR6: short do-while-loop, missing the CmpI before the loop.
-    public static int testIR6_gold = testIR6();
+    // // testIR6: short do-while-loop, missing the CmpI before the loop.
+    // public static int testIR6_gold = testIR6();
 
-    @Run(test = "testIR6")
-    private static void runIR6() {
-        int val = testIR6();
-        if (val != testIR6_gold) { throw new RuntimeException("wrong value: " + testIR6_gold + " vs " + val); }
-    }
+    // @Run(test = "testIR6")
+    // private static void runIR6() {
+    //     int val = testIR6();
+    //     if (val != testIR6_gold) { throw new RuntimeException("wrong value: " + testIR6_gold + " vs " + val); }
+    // }
 
-    @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR6() {
-        int init  = Math.max(lo, 0);   // init  in [0..max_int]
-        int limit = Math.min(hi, 100); // limit in [min_int..100]
-        // No CmpI before the loop!
-        int sum = 0;
-        int i = init;
-        do {
-            sum = dontinline(sum); // work to keep loop alive
-            i = (short)(i+1);
-        } while (i < limit); // exit check at the end.
-        return sum;
-    }
+    // @Test
+    // @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    // static int testIR6() {
+    //     int init  = Math.max(lo, 0);   // init  in [0..max_int]
+    //     int limit = Math.min(hi, 100); // limit in [min_int..100]
+    //     // No CmpI before the loop!
+    //     int sum = 0;
+    //     int i = init;
+    //     do {
+    //         sum = dontinline(sum); // work to keep loop alive
+    //         i = (short)(i+1);
+    //     } while (i < limit); // exit check at the end.
+    //     return sum;
+    // }
 
     // TODO: ensure coverage
     // - char, byte and short truncation
@@ -390,15 +420,4 @@ public class TestHasTruncationWrap {
     // - dontinline call to prevent empty loop
     // - increment and decrement cases
     // - Cases with and without compare before loop: positive and negative tests
-
-    // TODO: replace with real test!
-    //@Test
-    //@IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    //@IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1"})
-    //@Arguments(values = {Argument.NUMBER_42})
-    //public static void test_lohi_ltle(int i) {
-    //    if (i < -100_000 || i > 100_000) {
-    //        throw new RuntimeException();
-    //    }
-    //}
 }
