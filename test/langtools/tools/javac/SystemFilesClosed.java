@@ -33,8 +33,6 @@
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -79,8 +77,9 @@ public class SystemFilesClosed {
         };
 
         try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null)) {
-            compiler.getTask(null, fileManager, null, List.of("--system", targetSystem), null, List.of(compilationUnit))
-                    .call();
+            Assertions.assertEquals(true,
+                    compiler.getTask(null, fileManager, null, List.of("--system", targetSystem), null, List.of(compilationUnit)).call(),
+                    "Compilation task failed");
         }
 
         Process process = new ProcessBuilder()
@@ -94,7 +93,7 @@ public class SystemFilesClosed {
             lines = reader.lines().filter(line -> line.contains(realPath)).toList();
         }
         process.waitFor();
-        Assertions.assertEquals(0, lines.size());
+        Assertions.assertEquals(0, lines.size(), "File(s) remain opened: " + lines);
     }
 
     @BeforeEach
