@@ -677,7 +677,9 @@ public class SemaphoreTest extends JSR166TestCase {
     }
 
     /**
-     * test scenario for JDK-8386085
+     * Test scenario for JDK-8386085
+     * When investigating failures of this test, it is important to know that AbstractQueuedSynchronizer,
+     * AbstractQueuedLongSynchronizer, and StampedLock all share similar code which was fixed for JDK-8386085
      */
     public void testShortTimeoutAcquisition() throws InterruptedException {
         final int width = Runtime.getRuntime().availableProcessors();
