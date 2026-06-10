@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1348,7 +1348,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register Rreceiver,
   test_method_data_pointer(profile_continue);
 
   // Record the receiver type.
-  record_klass_in_profile(Rreceiver, Rscratch1, Rscratch2);
+  profile_receiver_type(Rreceiver, R28_mdx, 0, Rscratch1, Rscratch2);
 
   // The method data pointer needs to be updated to reflect the new target.
   update_mdp_by_constant(in_bytes(VirtualCallData::virtual_call_data_size()));
@@ -1367,7 +1367,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register Rklass, Register Rscr
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(Rklass, Rscratch1, Rscratch2);
+      profile_receiver_type(Rklass, R28_mdx, 0, Rscratch1, Rscratch2);
     }
 
     // The method data pointer needs to be updated.
@@ -1481,88 +1481,6 @@ void InterpreterMacroAssembler::profile_null_seen(Register Rscratch1, Register R
   }
 }
 
-void InterpreterMacroAssembler::record_klass_in_profile(Register Rreceiver,
-                                                        Register Rscratch1, Register Rscratch2) {
-  assert(ProfileInterpreter, "must be profiling");
-  assert_different_registers(Rreceiver, Rscratch1, Rscratch2);
-
-  Label done;
-  record_klass_in_profile_helper(Rreceiver, Rscratch1, Rscratch2, 0, done);
-  bind (done);
-}
-
-void InterpreterMacroAssembler::record_klass_in_profile_helper(
-                                        Register receiver, Register scratch1, Register scratch2,
-                                        int start_row, Label& done) {
-  if (TypeProfileWidth == 0) {
-    increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2);
-    return;
-  }
-
-  int last_row = VirtualCallData::row_limit() - 1;
-  assert(start_row <= last_row, "must be work left to do");
-  // Test this row for both the receiver and for null.
-  // Take any of three different outcomes:
-  //   1. found receiver => increment count and goto done
-  //   2. found null => keep looking for case 1, maybe allocate this cell
-  //   3. found something else => keep looking for cases 1 and 2
-  // Case 3 is handled by a recursive call.
-  for (int row = start_row; row <= last_row; row++) {
-    Label next_test;
-    bool test_for_null_also = (row == start_row);
-
-    // See if the receiver is receiver[n].
-    int recvr_offset = in_bytes(VirtualCallData::receiver_offset(row));
-    test_mdp_data_at(recvr_offset, receiver, next_test, scratch1);
-    // delayed()->tst(scratch);
-
-    // The receiver is receiver[n]. Increment count[n].
-    int count_offset = in_bytes(VirtualCallData::receiver_count_offset(row));
-    increment_mdp_data_at(count_offset, scratch1, scratch2);
-    b(done);
-    bind(next_test);
-
-    if (test_for_null_also) {
-      Label found_null;
-      // Failed the equality check on receiver[n]... Test for null.
-      if (start_row == last_row) {
-        // The only thing left to do is handle the null case.
-        // Scratch1 contains test_out from test_mdp_data_at.
-        cmpdi(CR0, scratch1, 0);
-        beq(CR0, found_null);
-        // Receiver did not match any saved receiver and there is no empty row for it.
-        // Increment total counter to indicate polymorphic case.
-        increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2);
-        b(done);
-        bind(found_null);
-        break;
-      }
-      // Since null is rare, make it be the branch-taken case.
-      cmpdi(CR0, scratch1, 0);
-      beq(CR0, found_null);
-
-      // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, scratch1, scratch2, start_row + 1, done);
-
-      // Found a null. Keep searching for a matching receiver,
-      // but remember that this is an empty (unused) slot.
-      bind(found_null);
-    }
-  }
-
-  // In the fall-through case, we found no matching receiver, but we
-  // observed the receiver[start_row] is null.
-
-  // Fill in the receiver field and increment the count.
-  int recvr_offset = in_bytes(VirtualCallData::receiver_offset(start_row));
-  set_mdp_data_at(recvr_offset, receiver);
-  int count_offset = in_bytes(VirtualCallData::receiver_count_offset(start_row));
-  li(scratch1, DataLayout::counter_increment);
-  set_mdp_data_at(count_offset, scratch1);
-  if (start_row > 0) {
-    b(done);
-  }
-}
 
 // Argument and return type profilig.
 // kills: tmp, tmp2, R0, CR0, CR1
@@ -2346,11 +2264,25 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
   if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
+    Label jvmti_post_done;
+
+    // if (thread->jvmti_thread_state() == nullptr) exit;
+    ld(R11_scratch1, in_bytes(JavaThread::jvmti_thread_state_offset()), R16_thread);
+    cmpdi(CR0, R11_scratch1, 0);
+    beq(CR0, jvmti_post_done);
+
+    // if (interp_only_mode() == false && frame_pop_cnt() == 0) exit;
+    lwz(R12_scratch2, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
+    lwz(R11_scratch1, in_bytes(JvmtiThreadState::frame_pop_cnt_offset()), R11_scratch1);
+    or_(R0, R11_scratch1, R12_scratch2);
+    beq(CR0, jvmti_post_done);
+
     if (!is_native_method) { push(state); } // Expose tos to GC.
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit), check_exceptions);
     if (!is_native_method) { pop(state); }
 
     align(32, 12);
+    bind(jvmti_post_done);
   }
 
   // Dtrace support not implemented.

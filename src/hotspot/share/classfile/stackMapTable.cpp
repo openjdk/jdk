@@ -286,7 +286,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
       }
     }
 
-    // Only modify strict instance fields the frame has uninitialized this
+    // Only modify strict instance fields if the frame has uninitialized this
     if (_prev_frame->flag_this_uninit()) {
       _assert_unset_fields_buffer = _prev_frame->merge_unset_fields(new_fields);
     } else if (new_fields->number_of_entries() > 0) {

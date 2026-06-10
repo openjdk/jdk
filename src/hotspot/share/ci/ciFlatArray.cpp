@@ -100,7 +100,7 @@ ciConstant ciFlatArray::field_value(int index, ciField* field) {
       }
       return ciConstant::make_zero_or_null(field->type()->basic_type());
     }
-    // obj cannot be an ciArray since it is an element of a flat array, so it must be a value class, which arrays are not.
+    // obj cannot be a ciArray since it is an element of a flat array, so it must be a value class, which arrays are not.
     ciInstance* inst = obj->as_instance();
     if (field == nullptr) {
       return ciConstant(T_BOOLEAN, 1);

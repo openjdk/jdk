@@ -27,7 +27,7 @@ package java.lang;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.PreviewFeatures;
-import jdk.internal.value.DeserializeConstructor;
+import jdk.internal.value.Deserializer;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -71,7 +71,8 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  */
 @jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
-public final class Short extends Number implements Comparable<Short>, Constable {
+public final /*value*/ class Short extends Number
+        implements Comparable<Short>, Constable {
 
     /**
      * A constant holding the minimum value a {@code short} can
@@ -383,7 +384,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
-    @DeserializeConstructor
+    @Deserializer("value")
     public Short(short value) {
         this.value = value;
     }

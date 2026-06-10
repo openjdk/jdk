@@ -39,7 +39,7 @@
 class FinalAndVolatile {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Field #2 #3; // #1
@@ -160,7 +160,7 @@ class FinalAndVolatile {
 class StrictAndStatic {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Field #2 #3; // #1
@@ -281,7 +281,7 @@ class StrictAndStatic {
 class StrictNotFinal {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Field #2 #3; // #1
@@ -401,7 +401,7 @@ class StrictNotFinal {
 class NotStaticNotStrict {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Field #2 #3; // #1
@@ -521,7 +521,7 @@ class NotStaticNotStrict {
 class NotStaticNotStrictInAbstract {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Field #2 #3; // #1

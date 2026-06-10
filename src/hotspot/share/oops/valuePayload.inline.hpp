@@ -717,7 +717,7 @@ inline void FlatArrayPayload::set_offset(ptrdiff_t offset) {
   const ptrdiff_t min_offset = base_offset - (length == 0 ? 0 : element_size);
   const ptrdiff_t max_offset = base_offset + length * element_size;
   assert(min_offset <= offset && offset <= max_offset,
-         "Offset out-ouf-bounds: %zd <= %zd <= %zd", min_offset, offset, max_offset);
+         "Offset out-of-bounds: %zd <= %zd <= %zd", min_offset, offset, max_offset);
 
   if (offset == min_offset || offset == max_offset) {
     // Terminal state of iteration, set a bad value.

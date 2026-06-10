@@ -273,7 +273,7 @@ class InstanceKlass: public Klass {
   volatile ClassState _init_state;          // state of class
 
   u1              _reference_type;          // reference type
-  int             _acmp_maps_offset;        // offset to injected static field storing .acmp_maps for values classes
+  int             _acmp_maps_offset;        // offset to injected static field storing .acmp_maps for value classes
                                             // unfortunately, abstract values need one too so it cannot be stored in
                                             // the InlineKlass::Members that only exist for InlineKlass.
 
@@ -398,6 +398,9 @@ class InstanceKlass: public Klass {
 
   bool has_inlined_fields() const { return _misc_flags.has_inlined_fields(); }
   void set_has_inlined_fields()   { _misc_flags.set_has_inlined_fields(true); }
+
+  bool has_null_restricted_static_fields() const { return _misc_flags.has_null_restricted_static_fields(); }
+  void set_has_null_restricted_static_fields()   { _misc_flags.set_has_null_restricted_static_fields(true); }
 
   bool is_naturally_atomic(bool null_free) const;
   void set_is_naturally_atomic()    { _misc_flags.set_is_naturally_atomic(true); }

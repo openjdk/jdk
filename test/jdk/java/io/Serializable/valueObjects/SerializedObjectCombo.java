@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public final class SerializedObjectCombo extends ComboInstance<SerializedObjectC
     private static final ParamSet EXTERNALIZABLE_METHODS_SET = new ParamSet("EXTERNALIZABLE_METHODS",
             ExternalizableMethodFragments.values());
     private static final ParamSet OBJECT_CONSTRUCTOR_SET = new ParamSet("OBJECT_CONSTRUCTOR",
-            ObjectConstructorFragment.ANNOTATED_OBJECT_CONSTRUCTOR_FRAGMENT, ObjectConstructorFragment.NONE);
+            FactoryFragment.values());
     private static final ParamSet VALUE_SET = new ParamSet("VALUE",
             ValueKind.values());
     private static final ParamSet TESTNAME_EXTENDS_SET = new ParamSet("TESTNAME_EXTENDS",
@@ -113,12 +113,10 @@ public final class SerializedObjectCombo extends ComboInstance<SerializedObjectC
     private static final String TEST_SOURCE_TEMPLATE = """
             import java.io.*;
             import java.util.*;
-            import jdk.internal.value.DeserializeConstructor;
-            import jdk.internal.MigratedValueClass;
+            import jdk.internal.value.Deserializer;
 
             #{TOP_FRAGMENTS}
 
-            @MigratedValueClass
             #{CLASSACCESS} #{VALUE} class #{TESTNAME} #{TESTNAME_EXTENDS} #{KIND.IMPLEMENTS} {
                 #{FIELD[0]} f1;
                 #{FIELD[1]} f2;
@@ -785,10 +783,10 @@ public final class SerializedObjectCombo extends ComboInstance<SerializedObjectC
      * if an exception should have been thrown.
      */
     private enum CodeShape implements Predicate<Set<ComboParameter>> {
-        BAD_SO_CONSTRUCTOR("Value class does not have a constructor annotated with DeserializeConstructor",
+        BAD_SO_CONSTRUCTOR("Value class does not have a constructor annotated with Deserializer",
                 InvalidClassException.class,
                 ValueKind.VALUE,
-                ObjectConstructorFragment.ANNOTATED_OBJECT_CONSTRUCTOR_FRAGMENT.negate()
+                FactoryFragment.NONE
                 ),
         BAD_EXT_VALUE("Externalizable can not be a value class",
                 CompileException.class,
@@ -885,13 +883,11 @@ public final class SerializedObjectCombo extends ComboInstance<SerializedObjectC
     enum TopFragments implements ComboParameter, CodeShapePredicate {
         NONE(""),
         ABSTRACT_NO_FIELDS("""
-                @MigratedValueClass
                 abstract #{VALUE} class TOP_#{TESTNAME} implements Serializable {
                     #{CLASSACCESS} TOP_#{TESTNAME}() {}
                 }
                 """),
         ABSTRACT_ONE_FIELD("""
-                @MigratedValueClass
                 abstract #{VALUE} class TOP_#{TESTNAME} implements Serializable {
                     private int t1;
                     #{CLASSACCESS} TOP_#{TESTNAME}() {
@@ -900,13 +896,11 @@ public final class SerializedObjectCombo extends ComboInstance<SerializedObjectC
                 }
                 """),
         NO_FIELDS("""
-                @MigratedValueClass
                 #{VALUE} class TOP_#{TESTNAME} implements Serializable {
                     #{CLASSACCESS} TOP_#{TESTNAME}() {}
                 }
                 """),
         ONE_FIELD("""
-                @MigratedValueClass
                 #{VALUE} class TOP_#{TESTNAME} implements Serializable {
                     private int t1;
                     #{CLASSACCESS} TOP_#{TESTNAME}() {
@@ -998,23 +992,40 @@ public final class SerializedObjectCombo extends ComboInstance<SerializedObjectC
     }
 
     /**
-     * ObjectConstructorFragment Fragments
+     * FactoryFragment Fragments
      */
-    enum ObjectConstructorFragment implements ComboParameter, CodeShapePredicate {
+    enum FactoryFragment implements ComboParameter, CodeShapePredicate {
         NONE(""),
         ANNOTATED_OBJECT_CONSTRUCTOR_FRAGMENT("""
-                    @DeserializeConstructor
+                    @Deserializer({"f1", "f2"})
                     #{CLASSACCESS} #{TESTNAME}(#{FIELD[0]} f1, #{FIELD[1]} f2) {
                         this.f1 = f1;
                         this.f2 = f2;
                         #{FIELD_CONSTRUCTOR_ADDITIONS}
                     }
 
-                    @DeserializeConstructor
+                    @Deserializer({"f1", "f2"})
                     #{CLASSACCESS} #{TESTNAME}(#{FIELD[0]} f1, #{FIELD[1]} f2, int fExtra) {
                         this.f1 = f1;
                         this.f2 = f2;
                         #{FIELD_CONSTRUCTOR_ADDITIONS}
+                    }
+                """),
+        ANNOTATED_FACTORY_METHOD_FRAGMENT("""
+                    private #{TESTNAME}(#{FIELD[0]} f1, #{FIELD[1]} f2) {
+                        this.f1 = f1;
+                        this.f2 = f2;
+                        #{FIELD_CONSTRUCTOR_ADDITIONS}
+                    }
+
+                    @Deserializer({"f1", "f2"})
+                    #{CLASSACCESS} static #{TESTNAME} create#{TESTNAME}(#{FIELD[0]} f1, #{FIELD[1]} f2) {
+                        return new #{TESTNAME}(f1, f2);
+                    }
+
+                    @Deserializer({"f1", "f2"})
+                    #{CLASSACCESS} static #{TESTNAME} create#{TESTNAME}(#{FIELD[0]} f1, #{FIELD[1]} f2, int fExtra) {
+                        return new #{TESTNAME}(f1, f2);
                     }
                 """),
 
@@ -1022,7 +1033,7 @@ public final class SerializedObjectCombo extends ComboInstance<SerializedObjectC
 
         private final String template;
 
-        ObjectConstructorFragment(String template) {
+        FactoryFragment(String template) {
             this.template = template;
         }
 

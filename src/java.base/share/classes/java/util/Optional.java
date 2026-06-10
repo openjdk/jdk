@@ -72,7 +72,7 @@ import java.util.stream.Stream;
 @jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
 @TrustFinalFields
-public final class Optional<T> {
+public final /*value*/ class Optional<T> {
     /**
      * Common instance for {@code empty()}.
      */

@@ -1479,13 +1479,13 @@ public class ClassWriter extends ClassFile {
 
         static class EarlyLarvalFrame extends StackMapTableFrame {
             final StackMapTableFrame base;
-            Set<VarSymbol> unsetFields;
+            List<VarSymbol> unsetFields;
 
-            EarlyLarvalFrame(StackMapTableFrame base, Set<VarSymbol> unsetFields) {
+            EarlyLarvalFrame(StackMapTableFrame base, List<VarSymbol> unsetFields) {
                 super(base.pc);
                 Assert.check(!(base instanceof EarlyLarvalFrame));
                 this.base = base;
-                this.unsetFields = unsetFields == null ? Set.of() : unsetFields;
+                this.unsetFields = unsetFields;
             }
 
             int getFrameType() { return EARLY_LARVAL; }

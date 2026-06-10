@@ -29,8 +29,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @run main LambdaLocalEarlyCrash
- * @build SuperCallRemover
- * @compile -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover LambdaLocalEarlyCrash.java
  */
 
 public class LambdaLocalEarlyCrash {

@@ -28,8 +28,6 @@
 package com.sun.tools.javac.comp;
 
 import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
@@ -212,7 +210,6 @@ public class Flow {
     private final JCDiagnostic.Factory diags;
     private final ExhaustivenessComputer exhaustiveness;
     private Env<AttrContext> attrEnv;
-    private final UnsetFieldsInfo unsetFieldsInfo;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -336,9 +333,6 @@ public class Flow {
         chk = Check.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        unsetFieldsInfo = UnsetFieldsInfo.instance(context);
-        Preview preview = Preview.instance(context);
-        Source source = Source.instance(context);
         exhaustiveness = ExhaustivenessComputer.instance(context);
     }
 
@@ -1874,12 +1868,6 @@ public class Flow {
                 Symbol sym = TreeInfo.symbol(tree);
                 if (sym.kind == VAR) {
                     letInit(tree.pos(), (VarSymbol)sym);
-                    if (isConstructor && sym.isStrict()) {
-                        /* we are initializing a strict field inside of a constructor, we now need to find which fields
-                         * haven't been initialized yet
-                         */
-                        unsetFieldsInfo.addUnsetFieldsInfo(classDef.sym, assign != null ? assign : tree, findUninitStrictFields());
-                    }
                 }
             }
         }
@@ -2107,11 +2095,6 @@ public class Flow {
                 }
                 if (isConstructor &&
                         !TreeInfo.hasConstructorCall(tree, names._this)) {
-                    Set<VarSymbol> unsetFields = findUninitStrictFields();
-                    if (unsetFields != null && !unsetFields.isEmpty()) {
-                        unsetFieldsInfo.addUnsetFieldsInfo(classDef.sym, tree.body, unsetFields);
-                    }
-
                     // Strict fields initializers are executed before the first statement
                     // in the constructor body, unless the constructor is an alternate constructor
                     forEachInitializer(classDef, EARLY_INSTANCE_INITS, def -> {
@@ -2168,16 +2151,6 @@ public class Flow {
                 isConstructor = isConstructorPrev;
                 isCompactOrGeneratedRecordConstructor = isCompactOrGeneratedRecordConstructorPrev;
             }
-        }
-
-        Set<VarSymbol> findUninitStrictFields() {
-            Set<VarSymbol> unsetFields = new LinkedHashSet<>();
-            for (int i = firstadr; i < nextadr; i++) {
-                if (uninits.isMember(i) && vardecls[i].sym.isStrict()) {
-                    unsetFields.add(vardecls[i].sym);
-                }
-            }
-            return unsetFields;
         }
 
         private void clearPendingExits(boolean inMethod) {

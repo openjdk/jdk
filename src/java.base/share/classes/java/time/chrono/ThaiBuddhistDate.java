@@ -98,7 +98,7 @@ import java.util.Objects;
  *
  * <div class="preview-block">
  *      <div class="preview-comment">
- *          When preview features are enabled, {@code ThaiBuddistDate} is a {@linkplain Class#isValue value class}.
+ *          When preview features are enabled, {@code ThaiBuddhistDate} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization, mutexes, or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
@@ -112,7 +112,7 @@ import java.util.Objects;
  */
 @jdk.internal.ValueBased
 @jdk.internal.MigratedValueClass
-public final class ThaiBuddhistDate
+public final /*value*/ class ThaiBuddhistDate
         extends ChronoLocalDateImpl<ThaiBuddhistDate>
         implements ChronoLocalDate, Serializable {
 

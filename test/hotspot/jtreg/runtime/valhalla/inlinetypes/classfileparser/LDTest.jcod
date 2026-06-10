@@ -52,7 +52,7 @@
 class LDTest {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1

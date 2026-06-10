@@ -1,7 +1,7 @@
 class compiler/valhalla/inlinetypes/MyValue1Mismatch {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -107,7 +107,7 @@ class compiler/valhalla/inlinetypes/MyValue1Mismatch {
 class compiler/valhalla/inlinetypes/MyValue2Mismatch {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -213,7 +213,7 @@ class compiler/valhalla/inlinetypes/MyValue2Mismatch {
 class compiler/valhalla/inlinetypes/MyValue3Mismatch {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -319,7 +319,7 @@ class compiler/valhalla/inlinetypes/MyValue3Mismatch {
 class compiler/valhalla/inlinetypes/MyValue4Mismatch {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -452,7 +452,7 @@ class compiler/valhalla/inlinetypes/MyValue4Mismatch {
 class compiler/valhalla/inlinetypes/MyValue5Mismatch {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -588,7 +588,7 @@ class compiler/valhalla/inlinetypes/MyValue5Mismatch {
 class compiler/valhalla/inlinetypes/MyValue6Mismatch {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -724,7 +724,7 @@ class compiler/valhalla/inlinetypes/MyValue6Mismatch {
 class compiler/valhalla/inlinetypes/MyValue7Mismatch {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -830,7 +830,7 @@ class compiler/valhalla/inlinetypes/MyValue7Mismatch {
 class compiler/valhalla/inlinetypes/Verifiable {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -872,7 +872,7 @@ class compiler/valhalla/inlinetypes/Verifiable {
 class compiler/valhalla/inlinetypes/B {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -972,7 +972,7 @@ class compiler/valhalla/inlinetypes/B {
 class compiler/valhalla/inlinetypes/I3 {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -1020,7 +1020,7 @@ class compiler/valhalla/inlinetypes/I3 {
 class compiler/valhalla/inlinetypes/I4 {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -1071,7 +1071,7 @@ class compiler/valhalla/inlinetypes/I4 {
 class compiler/valhalla/inlinetypes/E {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1174,7 +1174,7 @@ class compiler/valhalla/inlinetypes/E {
 class compiler/valhalla/inlinetypes/G {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1280,7 +1280,7 @@ class compiler/valhalla/inlinetypes/G {
 class compiler/valhalla/inlinetypes/J {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1380,7 +1380,7 @@ class compiler/valhalla/inlinetypes/J {
 class compiler/valhalla/inlinetypes/K {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1480,7 +1480,7 @@ class compiler/valhalla/inlinetypes/K {
 class compiler/valhalla/inlinetypes/L {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1583,7 +1583,7 @@ class compiler/valhalla/inlinetypes/L {
 class compiler/valhalla/inlinetypes/P {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1686,7 +1686,7 @@ class compiler/valhalla/inlinetypes/P {
 class compiler/valhalla/inlinetypes/Q {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1786,7 +1786,7 @@ class compiler/valhalla/inlinetypes/Q {
 class compiler/valhalla/inlinetypes/R {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1886,7 +1886,7 @@ class compiler/valhalla/inlinetypes/R {
 class compiler/valhalla/inlinetypes/S {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -1989,7 +1989,7 @@ class compiler/valhalla/inlinetypes/S {
 class compiler/valhalla/inlinetypes/TestMismatchHandlingHelper {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -2603,7 +2603,7 @@ class compiler/valhalla/inlinetypes/TestMismatchHandlingHelper {
 class compiler/valhalla/inlinetypes/A {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -2697,7 +2697,7 @@ class compiler/valhalla/inlinetypes/A {
 class compiler/valhalla/inlinetypes/C {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -2791,7 +2791,7 @@ class compiler/valhalla/inlinetypes/C {
 class compiler/valhalla/inlinetypes/I1 {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -2833,7 +2833,7 @@ class compiler/valhalla/inlinetypes/I1 {
 class compiler/valhalla/inlinetypes/I2 {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -2878,7 +2878,7 @@ class compiler/valhalla/inlinetypes/I2 {
 class compiler/valhalla/inlinetypes/D {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -2975,7 +2975,7 @@ class compiler/valhalla/inlinetypes/D {
 class compiler/valhalla/inlinetypes/F {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -3075,7 +3075,7 @@ class compiler/valhalla/inlinetypes/F {
 class compiler/valhalla/inlinetypes/H {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -3172,7 +3172,7 @@ class compiler/valhalla/inlinetypes/H {
 class compiler/valhalla/inlinetypes/I5 {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -3214,7 +3214,7 @@ class compiler/valhalla/inlinetypes/I5 {
 class compiler/valhalla/inlinetypes/M {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -3340,7 +3340,7 @@ class compiler/valhalla/inlinetypes/M {
 class compiler/valhalla/inlinetypes/N {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -3444,7 +3444,7 @@ class compiler/valhalla/inlinetypes/N {
 class compiler/valhalla/inlinetypes/O {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1
@@ -3548,7 +3548,7 @@ class compiler/valhalla/inlinetypes/O {
 class compiler/valhalla/inlinetypes/I6 {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     class #2; // #1
@@ -3608,7 +3608,7 @@ class compiler/valhalla/inlinetypes/I6 {
 class compiler/valhalla/inlinetypes/P {
   0xCAFEBABE;
   0; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Method #2 #3; // #1

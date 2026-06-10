@@ -98,8 +98,7 @@ package java.lang;
  * @since 16
  */
 @jdk.internal.MigratedValueClass
-@jdk.internal.ValueBased
-public abstract class Record {
+public abstract /*value*/ class Record {
     /**
      * Constructor for record classes to call.
      */

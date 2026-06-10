@@ -121,7 +121,7 @@ public class TestStableArrayMembars {
     // explicitly adds a loadFence() in Java. Hence, there is no way for C2 to correlate those
     // barriers to an eliminated memory access and thus no way to remove them.
     // The barrier elimination only works with tiered compilation as the profiling information
-    // is nessecary to inline the low-frequency Unsafe.put* methods.
+    // is necessary to inline the low-frequency Unsafe.put* methods.
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR },
         applyIfAnd = {"enable-valhalla", "false",
                       "TieredCompilation", "true"})

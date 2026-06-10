@@ -35,7 +35,7 @@ class Cwreflective_OK {
 }
 */
 
-identity class Cwreflective_OK version 71:65535
+identity class Cwreflective_OK version 72:65535
 {
   strict static Field F1__STRICT:"Ljava/lang/String;";
   strict static Field F2__STRICT:I;

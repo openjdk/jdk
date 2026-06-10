@@ -117,7 +117,7 @@ private:
   Node* value_from_mem_phi(Node* mem, BasicType ft, const Type* ftype, const TypeOopPtr* adr_t, AllocateNode* alloc, Node_Stack* value_phis, int level);
   Node* inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr* elem_adr_type, int elem_idx, int offset_in_element, bool null_free, AllocateNode* alloc, SafePointNode* sfpt);
 
-  bool eliminate_boxing_node(CallStaticJavaNode *boxing);
+  bool eliminate_boxing_node(CallStaticJavaNode* call);
   bool eliminate_allocate_node(AllocateNode *alloc);
   void undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc);
   bool scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints);

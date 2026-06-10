@@ -55,7 +55,6 @@ public class DockerRunOptions {
      *
      * @return Default docker run options
      */
-    @SuppressWarnings("initialization")
     public DockerRunOptions(String imageNameAndTag, String javaCmd,
                             String classToRun, String... javaOpts) {
         this.imageNameAndTag = imageNameAndTag;

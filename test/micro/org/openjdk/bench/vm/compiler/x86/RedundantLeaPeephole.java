@@ -71,7 +71,6 @@ public class RedundantLeaPeephole {
     private StoreNHelper[] arrH1 = new StoreNHelper[SIZE];
     private StoreNHelper[] arrH2 = new StoreNHelper[SIZE];
 
-    @SuppressWarnings("initialization")
     private StringEqualsHelper strEqHelper = new StringEqualsHelper("foo");
 
     @Benchmark

@@ -155,7 +155,6 @@ public class StrLenTest extends CLayouts {
         SegmentAllocator current;
         long rem;
 
-        @SuppressWarnings("initialization")
         public RingAllocator(Arena session, int size) {
             this.segment = session.allocate(size, 1);
             reset();

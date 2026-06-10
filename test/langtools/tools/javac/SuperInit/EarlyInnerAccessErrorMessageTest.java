@@ -7,8 +7,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @compile/fail/ref=EarlyInnerAccessErrorMessageTest.out -XDrawDiagnostics EarlyInnerAccessErrorMessageTest.java
- * @build SuperCallRemover
- * @compile/fail/ref=EarlyInnerAccessErrorMessageTestWarnings.out -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyInnerAccessErrorMessageTest.java
  */
 public class EarlyInnerAccessErrorMessageTest {
     int x;

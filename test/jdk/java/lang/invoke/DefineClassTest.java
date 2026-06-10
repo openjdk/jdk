@@ -22,7 +22,6 @@
  */
 
 /* @test
- * @enablePreview
  * @modules java.base/java.lang:open
  * @run junit/othervm test.DefineClassTest
  * @summary Basic test for java.lang.invoke.MethodHandles.Lookup.defineClass
@@ -250,7 +249,7 @@ public class DefineClassTest {
      */
     byte[] generateClass(String className) {
         return ClassFile.of().build(ClassDesc.of(className), clb -> {
-            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
             clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
                 cob.aload(0);
@@ -292,7 +291,7 @@ public class DefineClassTest {
                                         String targetMethod) throws Exception {
 
         return ClassFile.of().build(ClassDesc.of(className), clb -> {
-            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
@@ -311,7 +310,7 @@ public class DefineClassTest {
      */
     byte[] generateNonLinkableClass(String className) {
         return ClassFile.of().build(ClassDesc.of(className), clb -> {
-            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_MissingSuperClass);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);

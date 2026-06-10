@@ -159,6 +159,15 @@ public final class Objects {
      * Object.toString} if that method and {@code hashCode} are not
      * overridden}
      *
+     * @apiNote
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          Note that, like ==, the hash code string exposes information about a value object's
+     *          private fields that might otherwise be hidden by an identity object.
+     *          Developers should be cautious about storing sensitive secrets in value object fields.
+     *      </div>
+     * </div>
+     *
      * @implNote
      * This method constructs a string for an object without calling
      * any overridable methods of the object.

@@ -47,18 +47,66 @@ public class IdentityReflectionTest {
 
     static final boolean PREVIEW = PreviewFeatures.isEnabled();
 
+    static final Class<?>[] valueClasses = {
+        Number.class,
+        Record.class,
+
+        Byte.class,
+        Short.class,
+        Integer.class,
+        Long.class,
+        Float.class,
+        Double.class,
+        Boolean.class,
+        Character.class,
+
+        java.util.Optional.class,
+        java.util.OptionalDouble.class,
+        java.util.OptionalInt.class,
+        java.util.OptionalLong.class,
+
+        java.time.Duration.class,
+        java.time.Instant.class,
+        java.time.LocalDate.class,
+        java.time.LocalDateTime.class,
+        java.time.LocalTime.class,
+        java.time.MonthDay.class,
+        java.time.OffsetDateTime.class,
+        java.time.OffsetTime.class,
+        java.time.Period.class,
+        java.time.Year.class,
+        java.time.YearMonth.class,
+        java.time.ZonedDateTime.class,
+
+        java.time.chrono.HijrahDate.class,
+        java.time.chrono.JapaneseDate.class,
+        java.time.chrono.MinguoDate.class,
+        java.time.chrono.ThaiBuddhistDate.class,
+    };
+
+    static final Class<?>[] identityClasses = {
+        Object.class,
+        String.class,
+        Thread.class,
+        java.math.BigInteger.class,
+        java.math.BigDecimal.class,
+        Integer[].class,
+        Thread[].class,
+    };
+
     @Test
     void testIsValue() {
-        checkIsValue(Integer.class, PREVIEW);
-        checkIsValue(Number.class, PREVIEW);
-        checkIsValue(Thread.class, false);
-        checkIsValue(Object.class, false);
-        checkIsValue(Runnable.class, false);
         checkIsValue(int.class, false);
-        checkIsValue(Integer[].class, false);
-        checkIsValue(Thread[].class, false);
+        checkIsValue(Runnable.class, false);
+        for (Class<?> c : valueClasses) {
+            checkIsValue(c, PREVIEW);
+        }
+        for (Class<?> c : identityClasses) {
+            checkIsValue(c, false);
+        }
     }
 
+    @SuppressWarnings("preview")
     void checkIsValue(Class<?> c, boolean expected) {
         assertEquals(expected, c.isValue(),
                       c + " " + (expected ? "is" : "is not") + " a value class");
@@ -66,16 +114,17 @@ public class IdentityReflectionTest {
 
     @Test
     void testModifiers() {
-        checkIdentityModifier(Integer.class, false);
-        checkIdentityModifier(Number.class, false);
-        checkIdentityModifier(Thread.class, PREVIEW);
-        checkIdentityModifier(Object.class, PREVIEW);
-        checkIdentityModifier(Runnable.class, false);
         checkIdentityModifier(int.class, false);
-        checkIdentityModifier(Integer[].class, PREVIEW);
-        checkIdentityModifier(Thread[].class, PREVIEW);
+        checkIdentityModifier(Runnable.class, false);
+        for (Class<?> c : valueClasses) {
+            checkIdentityModifier(c, false);
+        }
+        for (Class<?> c : identityClasses) {
+            checkIdentityModifier(c, PREVIEW);
+        }
     }
 
+    @SuppressWarnings("preview")
     void checkIdentityModifier(Class<?> c, boolean expected) {
         int mod = c.getModifiers();
         assertEquals(expected, (mod & ClassFile.ACC_IDENTITY) != 0,
@@ -85,16 +134,17 @@ public class IdentityReflectionTest {
 
     @Test
     void testAccessFlags() {
-        checkIdentityAccessFlag(Integer.class, false);
-        checkIdentityAccessFlag(Number.class, false);
-        checkIdentityAccessFlag(Thread.class, PREVIEW);
-        checkIdentityAccessFlag(Object.class, PREVIEW);
-        checkIdentityAccessFlag(Runnable.class, false);
         checkIdentityAccessFlag(int.class, false);
-        checkIdentityAccessFlag(Integer[].class, PREVIEW);
-        checkIdentityAccessFlag(Thread[].class, PREVIEW);
+        checkIdentityAccessFlag(Runnable.class, false);
+        for (Class<?> c : valueClasses) {
+            checkIdentityAccessFlag(c, false);
+        }
+        for (Class<?> c : identityClasses) {
+            checkIdentityAccessFlag(c, PREVIEW);
+        }
     }
 
+    @SuppressWarnings("preview")
     void checkIdentityAccessFlag(Class<?> c, boolean expected) {
         Set<AccessFlag> acc = c.accessFlags();
         assertEquals(expected, acc.contains(AccessFlag.IDENTITY),

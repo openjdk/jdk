@@ -1195,9 +1195,9 @@ void PhiNode::verify_adr_type(bool recursive) const {
   if (Node::in_dump())               return;  // muzzle asserts when printing
 
   assert((_type == Type::MEMORY) == (_adr_type != nullptr), "adr_type for memory phis only");
-  // Flat array element shouldn't get their own memory slice until flat_accesses_share_alias is cleared.
+  // Flat array elements shouldn't get their own memory slice until flat_accesses_share_alias is cleared.
   // It could be the graph has no loads/stores and flat_accesses_share_alias is never cleared. EA could still
-  // creates per element Phis but that wouldn't be a problem as there are no memory accesses for that array.
+  // create per-element Phis but that wouldn't be a problem as there are no memory accesses for that array.
   assert(_adr_type == nullptr || _adr_type->isa_aryptr() == nullptr ||
          _adr_type->is_aryptr()->is_known_instance() ||
          !_adr_type->is_aryptr()->is_flat() ||
@@ -2138,57 +2138,6 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
   return delay;
 }
 
-// Push inline type input nodes (and null) down through the phi recursively (can handle data loops).
-InlineTypeNode* PhiNode::push_inline_types_down(PhaseGVN* phase, bool can_reshape, ciInlineKlass* inline_klass) {
-  assert(inline_klass != nullptr, "must be");
-  InlineTypeNode* vt = InlineTypeNode::make_null(*phase, inline_klass, /* transform = */ false)->clone_with_phis(phase, in(0), nullptr, !_type->maybe_null(), true);
-  if (can_reshape) {
-    // Replace phi right away to be able to use the inline
-    // type node when reaching the phi again through data loops.
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-    for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-      Node* u = fast_out(i);
-      igvn->rehash_node_delayed(u);
-      imax -= u->replace_edge(this, vt);
-      --i;
-    }
-    igvn->rehash_node_delayed(this);
-    assert(outcnt() == 0, "should be dead now");
-  }
-  ResourceMark rm;
-  Node_List casts;
-  for (uint i = 1; i < req(); ++i) {
-    Node* n = in(i);
-    while (n->is_ConstraintCast()) {
-      casts.push(n);
-      n = n->in(1);
-    }
-    if (phase->type(n)->is_zero_type()) {
-      n = InlineTypeNode::make_null(*phase, inline_klass);
-    } else if (n->is_Phi()) {
-      assert(can_reshape, "can only handle phis during IGVN");
-      n = phase->transform(n->as_Phi()->push_inline_types_down(phase, can_reshape, inline_klass));
-    }
-    while (casts.size() != 0) {
-      // Push the cast(s) through the InlineTypeNode
-      // TODO 8302217 Can we avoid cloning? See InlineTypeNode::clone_if_required
-      Node* cast = casts.pop()->clone();
-      cast->set_req_X(1, n->as_InlineType()->get_oop(), phase);
-      n = n->clone();
-      n->as_InlineType()->set_oop(*phase, phase->transform(cast));
-      n = phase->transform(n);
-      if (n->is_top()) {
-        break;
-      }
-    }
-    bool transform = !can_reshape && (i == (req()-1)); // Transform phis on last merge
-    assert(n->is_top() || n->is_InlineType(), "Only InlineType or top at this point.");
-    if (n->is_InlineType()) {
-      vt->merge_with(phase, n->as_InlineType(), i, transform);
-    } // else nothing to do: phis above vt created by clone_with_phis are initialized to top already.
-  }
-  return vt;
-}
 
 // If the Phi's Region is in an irreducible loop, and the Region
 // has had an input removed, but not yet transformed, it could be
@@ -2928,6 +2877,372 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return progress;              // Return any progress
 }
 
+// If an InlineType node references itself through a Phi (oop input):
+//
+//        /------ |
+//   InlineType   |
+// \   /          |
+//  Phi           |
+//   ^____________|
+//
+// and is pushed down through the Phi, the result is a new InlineType node that can be pushed down through the Phi
+// etc.
+//
+// To solve that problem, the code below finds InlineType nodes that are reachable from another InlineType node by
+// following the inline type node's oop inputs through Phis and casts such as, for instance:
+// (InlineType (Cast (Phi (InlineType oop
+// and replaces it with:
+// (InlineType (Cast (Phi oop
+// which requires cloning every Phi and cast nodes in the subgraph between the root InlineType and the leaf
+// InlineType node in this example.
+class PushInlineTypeDown {
+private:
+  // Find the inlineType nodes that can be reached from this Phi without going through another InlineType (those that
+  // must not reference another inline type node from their oop input through Phis and cast nodes)
+  void collect_nodes_from_phi() {
+    _nodes_from_phi.push(_root_phi);
+    for (uint i = 0; i < _nodes_from_phi.size(); ++i) {
+      Node* n = _nodes_from_phi.at(i);
+      if (n->is_Phi()) {
+        for (uint j = 1; j < n->req(); ++j) {
+          Node* in = n->in(j);
+          if (in != nullptr) {
+            _nodes_from_phi.push(in);
+          }
+        }
+      } else if (n->is_ConstraintCast()) {
+        Node* in = n->in(1);
+        if (in != nullptr) {
+          _nodes_from_phi.push(in);
+        }
+      }
+    }
+  }
+
+  void collect_nodes_from_inline_types() {
+    // Only keep InlineType nodes
+    for (int i = _nodes_from_phi.size() - 1; i >= 0; i--) {
+      Node* n = _nodes_from_phi.at(i);
+      if (!n->is_InlineType()) {
+        _nodes_from_phi.remove(i);
+      }
+    }
+    DEBUG_ONLY(_init_nodes = _nodes_from_phi.size());
+    // Find the InlineType nodes reachable from the current set of inline type nodes.
+    for (uint i = 0; i < _nodes_from_phi.size(); ++i) {
+      Node* n = _nodes_from_phi.at(i);
+      if (n->is_Phi()) {
+        for (uint j = 1; j < n->req(); ++j) {
+          Node* in = n->in(j);
+          if (in != nullptr) {
+            _nodes_from_phi.push(in);
+          }
+        }
+      } else if (n->is_ConstraintCast()) {
+        Node* in = n->in(1);
+        if (in != nullptr) {
+          _nodes_from_phi.push(in);
+        }
+      } else if (n->is_InlineType()) {
+        Node* buf = n->as_InlineType()->get_oop();
+        if (buf != nullptr) {
+          _nodes_from_phi.push(buf);
+          _subgraph_to_clone.push(n);
+        }
+      }
+    }
+  }
+
+  void collect_nodes_to_clone() {
+    collect_nodes_from_inline_types();
+
+    // Find the subgraph that must be cloned by following uses from inline types.
+    for (uint i = 0; i < _subgraph_to_clone.size(); ++i) {
+      Node* n = _subgraph_to_clone.at(i);
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* u = n->fast_out(i);
+        if (_nodes_from_phi.member(u)) {
+          _subgraph_to_clone.push(u);
+        }
+      }
+    }
+  }
+
+  void clone_nodes() {
+    for (uint i = 0; i < _subgraph_to_clone.size(); ++i) {
+      Node* n = _subgraph_to_clone.at(i);
+      assert(_clones[n->_idx] == nullptr, "shouldn't be cloned yet");
+      if (n->is_InlineType()) {
+        _clones.map(n->_idx, n->as_InlineType()->get_oop());
+      } else {
+        Node* clone = n->clone();
+        _phase->is_IterGVN()->register_new_node_with_optimizer(clone);
+        _clones.map(n->_idx, clone);
+      }
+    }
+  }
+
+  Node* get_clone(Node* n) const {
+    Node* clone = nullptr;
+    while (true) {
+      Node* m = _clones[n->_idx];
+      if (m == nullptr) {
+        return clone;
+      }
+      clone = m;
+      n = clone;
+    }
+  }
+
+  void update_clone_node_edges() {
+    for (uint i = 0; i < _subgraph_to_clone.size(); ++i) {
+      Node* n = _subgraph_to_clone.at(i);
+      Node* n_clone = get_clone(n);
+      assert(n_clone != nullptr, "must be cloned");
+      if (n->is_Phi()) {
+        for (uint j = 1; j < n->req(); ++j) {
+          Node* in = n->in(j);
+          if (in != nullptr) {
+            Node* in_clone = get_clone(in);
+            if (in_clone != nullptr) {
+              n_clone->set_req(j, in_clone);
+            }
+          }
+        }
+      } else if (n->is_ConstraintCast()) {
+        Node* in = n->in(1);
+        Node* in_clone = get_clone(in);
+        assert(in_clone != nullptr, "must be cloned");
+        n_clone->set_req(1, in_clone);
+      } else if (n->is_InlineType()) {
+        Node* in = n->as_InlineType()->get_oop();
+        Node* in_clone = get_clone(in);
+        if (in_clone != nullptr) {
+          _phase->is_IterGVN()->rehash_node_delayed(n);
+          n->as_InlineType()->set_oop(*_phase, in_clone);
+        }
+      }
+    }
+  }
+
+  void clone_subgraph() {
+    clone_nodes();
+    update_clone_node_edges();
+  }
+
+#ifdef ASSERT
+  void verify_clone() {
+    uint vts_to_skip = 0;
+    uint before_phis = 0;
+    uint before_casts = 0;
+    for (uint i = 0; i < _nodes_from_phi.size(); ++i) {
+      Node *n = _nodes_from_phi.at(i);
+      if (n->is_Phi()) {
+        before_phis++;
+      } else if (n->is_ConstraintCast()) {
+        before_casts++;
+      } else if (n->is_InlineType()) {
+        Node* buf = n->as_InlineType()->get_oop();
+        if (buf != nullptr && i >= _init_nodes) {
+          vts_to_skip++;
+        }
+      }
+    }
+
+    Unique_Node_List after;
+    after.push(_root_phi);
+    for (uint i = 0; i < after.size(); ++i) {
+      Node* n = after.at(i);
+      if (n->is_Phi()) {
+        for (uint j = 1; j < n->req(); ++j) {
+          Node* in = n->in(j);
+          if (in != nullptr) {
+            after.push(in);
+          }
+        }
+      } else if (n->is_ConstraintCast()) {
+        Node* in = n->in(1);
+        if (in != nullptr) {
+          after.push(in);
+        }
+      }
+    }
+    for (int i = after.size() - 1; i >= 0; i--) {
+      Node* n = after.at(i);
+      if (!n->is_InlineType()) {
+        after.remove(i);
+      }
+    }
+    uint after_phis = 0;
+    uint after_casts = 0;
+    uint init_nodes = after.size();
+    for (uint i = 0; i < after.size(); ++i) {
+      Node* n = after.at(i);
+      if (n->is_Phi()) {
+        after_phis++;
+        for (uint j = 1; j < n->req(); ++j) {
+          Node *in = n->in(j);
+          if (in != nullptr) {
+            after.push(in);
+          }
+        }
+      } else if (n->is_ConstraintCast()) {
+        after_casts++;
+        Node* in = n->in(1);
+        if (in != nullptr) {
+          after.push(in);
+        }
+      } else if (n->is_InlineType()) {
+        assert(i < init_nodes, "");
+        Node* buf = n->as_InlineType()->get_oop();
+        if (buf != nullptr) {
+          after.push(buf);
+        }
+      }
+    }
+    assert(after.size() + vts_to_skip == _nodes_from_phi.size(), "");
+    assert(before_casts == after_casts, "no cast should have been dropped");
+    assert(before_phis == after_phis, "no phi should");
+  }
+#endif
+
+  Node* do_transform(PhiNode* phi) {
+    assert(_inline_klass != nullptr, "must be");
+    InlineTypeNode *vt = InlineTypeNode::make_null(*_phase, _inline_klass, /* transform = */ false)->clone_with_phis(
+      _phase, phi->in(0), nullptr, !phi->type()->maybe_null(), true);
+    if (_can_reshape) {
+      // Replace phi right away to be able to use the inline
+      // type node when reaching the phi again through data loops.
+      PhaseIterGVN* igvn = _phase->is_IterGVN();
+      for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
+        Node* u = phi->fast_out(i);
+        igvn->rehash_node_delayed(u);
+        imax -= u->replace_edge(phi, vt);
+        --i;
+      }
+      igvn->rehash_node_delayed(phi);
+      assert(phi->outcnt() == 0, "should be dead now");
+    }
+    ResourceMark rm;
+    Node_List casts;
+    for (uint i = 1; i < phi->req(); ++i) {
+      Node* n = phi->in(i);
+      if (n == nullptr) {
+        continue;
+      }
+      while (n->is_ConstraintCast()) {
+        casts.push(n);
+        n = n->in(1);
+      }
+      if (_phase->type(n)->is_zero_type()) {
+        n = InlineTypeNode::make_null(*_phase, _inline_klass);
+      } else if (n->is_Phi()) {
+        assert(_can_reshape, "can only handle phis during IGVN");
+        n = _phase->transform(do_transform(n->as_Phi()));
+      }
+      while (casts.size() != 0) {
+        // Push the cast(s) through the InlineTypeNode
+        Node *cast = casts.pop()->clone();
+        cast->set_req_X(1, n->as_InlineType()->get_oop(), _phase);
+        n = n->clone();
+        n->as_InlineType()->set_oop(*_phase, _phase->transform(cast));
+        n = _phase->transform(n);
+        if (n->is_top()) {
+          break;
+        }
+      }
+      bool transform = !_can_reshape && (i == (phi->req() - 1)); // Transform phis on last merge
+      assert(n->is_top() || n->is_InlineType(), "Only InlineType or top at this point.");
+      if (n->is_InlineType()) {
+        vt->merge_with(_phase, n->as_InlineType(), i, transform);
+      } // else nothing to do: phis above vt created by clone_with_phis are initialized to top already.
+    }
+    return vt;
+
+  }
+
+  PhiNode* _root_phi;
+  PhaseGVN* _phase;
+  bool _can_reshape;
+  ciInlineKlass* _inline_klass;
+  Unique_Node_List _nodes_from_phi;
+  Unique_Node_List _subgraph_to_clone;
+  Node_List _clones;
+  DEBUG_ONLY(uint _init_nodes);
+
+public:
+
+  PushInlineTypeDown(PhiNode *root_phi, PhaseGVN *phase, bool can_reshape)
+    : _root_phi(root_phi), _phase(phase), _can_reshape(can_reshape), _inline_klass(nullptr) {
+    collect_nodes_from_phi();
+  }
+
+  bool can_do_it() {
+    if (_root_phi->req() <= 2) {
+      // Dead phi.
+      return false;
+    }
+
+    for (uint next = 0; next < _nodes_from_phi.size(); next++) {
+      Node* n = _nodes_from_phi.at(next);
+      if (n->is_Phi()) {
+        assert(n->bottom_type()->isa_ptr(), "broken graph");
+        if (n != _root_phi && !_can_reshape) {
+          return false;
+        }
+        continue;
+      }
+      if (n->is_ConstraintCast()) {
+        if (n->in(0) != nullptr && n->in(0)->is_top()) {
+          // Will die, don't optimize
+          return false;
+        }
+        continue;
+      }
+      const Type* type = _phase->type(n);
+      if (n->is_InlineType()) {
+        if (_inline_klass == nullptr) {
+          _inline_klass = type->inline_klass();
+        } else if (_inline_klass != type->inline_klass()) {
+          return false;
+        }
+        continue;
+      }
+      if (!type->is_zero_type()) {
+        return false;
+      }
+    }
+
+    if (_inline_klass == nullptr) {
+      return false;
+    }
+
+    // Check if cast nodes can be pushed through
+    const Type* t = Type::get_const_type(_inline_klass);
+    for (uint next = 0; next < _nodes_from_phi.size(); next++) {
+      Node* n = _nodes_from_phi.at(next);
+      if (n->is_ConstraintCast()) {
+        if (t->filter(n->bottom_type()) == Type::TOP) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+
+  Node* do_it() {
+    if (_can_reshape) {
+      Node_List clones;
+      collect_nodes_to_clone();
+      clone_subgraph();
+      DEBUG_ONLY(verify_clone());
+    }
+    return do_transform(_root_phi);
+  }
+};
+
+
 // Check recursively if inputs are either an inline type, constant null
 // or another Phi (including self references through data loops). If so,
 // push the inline types down through the phis to enable folding of loads.
@@ -2936,80 +3251,12 @@ Node* PhiNode::try_push_inline_types_down(PhaseGVN* phase, const bool can_reshap
     return this;
   }
 
-  ciInlineKlass* inline_klass;
-  if (can_push_inline_types_down(phase, can_reshape, inline_klass)) {
-    assert(inline_klass != nullptr, "must be");
-    return push_inline_types_down(phase, can_reshape, inline_klass);
+  ResourceMark rm;
+  PushInlineTypeDown push_inline_type_down(this, phase, can_reshape);
+  if (push_inline_type_down.can_do_it()) {
+    return push_inline_type_down.do_it();
   }
   return this;
-}
-
-bool PhiNode::can_push_inline_types_down(PhaseGVN* phase, const bool can_reshape, ciInlineKlass*& inline_klass) {
-  if (req() <= 2) {
-    // Dead phi.
-    return false;
-  }
-  inline_klass = nullptr;
-
-  // TODO 8302217 We need to prevent endless pushing through
-  bool only_phi = (outcnt() != 0);
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    Node* n = fast_out(i);
-    if (n->is_InlineType() && n->in(1) == this) {
-      return false;
-    }
-    if (!n->is_Phi()) {
-      only_phi = false;
-    }
-  }
-  if (only_phi) {
-    return false;
-  }
-
-  ResourceMark rm;
-  Unique_Node_List worklist;
-  worklist.push(this);
-  Node_List casts;
-
-  for (uint next = 0; next < worklist.size(); next++) {
-    Node* phi = worklist.at(next);
-    for (uint i = 1; i < phi->req(); i++) {
-      Node* n = phi->in(i);
-      if (n == nullptr) {
-        return false;
-      }
-      while (n->is_ConstraintCast()) {
-        if (n->in(0) != nullptr && n->in(0)->is_top()) {
-          // Will die, don't optimize
-          return false;
-        }
-        casts.push(n);
-        n = n->in(1);
-      }
-      const Type* type = phase->type(n);
-      if (n->is_InlineType() && (inline_klass == nullptr || inline_klass == type->inline_klass())) {
-        inline_klass = type->inline_klass();
-      } else if (n->is_Phi() && can_reshape && n->bottom_type()->isa_ptr()) {
-        worklist.push(n);
-      } else if (!type->is_zero_type()) {
-        return false;
-      }
-    }
-  }
-  if (inline_klass == nullptr) {
-    return false;
-  }
-
-  // Check if cast nodes can be pushed through
-  const Type* t = Type::get_const_type(inline_klass);
-  while (casts.size() != 0 && t != nullptr) {
-    Node* cast = casts.pop();
-    if (t->filter(cast->bottom_type()) == Type::TOP) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 #ifdef ASSERT
@@ -3018,8 +3265,9 @@ bool PhiNode::can_push_inline_types_down(PhaseGVN* phase) {
     return false;
   }
 
-  ciInlineKlass* inline_klass;
-  return can_push_inline_types_down(phase, true, inline_klass);
+  ResourceMark rm;
+  PushInlineTypeDown push_inline_type_down(this, phase, false);
+  return push_inline_type_down.can_do_it();
 }
 #endif // ASSERT
 

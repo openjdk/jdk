@@ -50,15 +50,12 @@ import java.util.Objects;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
-import jdk.internal.value.DeserializeConstructor;
-import jdk.internal.MigratedValueClass;
-
+import jdk.internal.value.Deserializer;
 
 import jdk.test.lib.hexdump.HexPrinter;
 import jdk.test.lib.hexdump.ObjectStreamPrinter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -310,7 +307,6 @@ public class SimpleValueGraphs implements Serializable {
         }
     }
 
-    @MigratedValueClass
     static value class TreeV implements Tree, Serializable {
 
         @Serial
@@ -318,7 +314,7 @@ public class SimpleValueGraphs implements Serializable {
         private TreeV left;
         private TreeV right;
 
-        @DeserializeConstructor
+        @Deserializer({"left", "right"})
         TreeV(TreeV left, TreeV right) {
             this.left = left;
             this.right = right;
@@ -364,7 +360,7 @@ public class SimpleValueGraphs implements Serializable {
     void testExternalizableNotSer() {
         var obj = new ValueExt();
         var ex = Assertions.assertThrows(InvalidClassException.class, () -> serialize(obj));
-        Assertions.assertEquals("SimpleValueGraphs$ValueExt; Externalizable not valid for value class", ex.getMessage());
+        Assertions.assertEquals("SimpleValueGraphs$ValueExt; cannot serialize value class", ex.getMessage());
     }
 
     @Test
@@ -373,7 +369,7 @@ public class SimpleValueGraphs implements Serializable {
         byte[] bytes = serialize(obj);
         byte[] newBytes = patchBytes(bytes, "IdentExt", "ValueExt");
         var ex = Assertions.assertThrows(InvalidClassException.class, () -> deserialize(newBytes));
-        Assertions.assertTrue(ex.getMessage().contains("Externalizable not valid for value class"));
+        Assertions.assertTrue(ex.getMessage().contains("cannot serialize value class"));
     }
 
     // Exception trying to serialize

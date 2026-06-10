@@ -88,10 +88,7 @@ public class Bits {
     private static final int wordshift = 5;
     private static final int wordmask = wordlen - 1;
 
-    /* every int in the bits array is used to represent 32 bits, so the bits array will have
-     * length == 1 until we need to represent the 33rd bit and so on.
-     */
-    private int[] bits = null;
+    public int[] bits = null;
     // This field will store last version of bits after every change.
     private static final int[] unassignedBits = new int[0];
 

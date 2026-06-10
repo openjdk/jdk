@@ -48,6 +48,7 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.instruction.FieldInstruction;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -167,7 +168,7 @@ class ValueObjectCompilationTests extends CompilationTestCase {
 
     private static final List<TestData> superClassConstraints = List.of(
             new TestData(
-                    "compiler.err.super.class.method.cannot.be.synchronized",
+                    "compiler.err.value.type.has.identity.super.type",
                     """
                     abstract class I {
                         synchronized void foo() {}
@@ -176,7 +177,7 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                     """
             ),
             new TestData(
-                    "compiler.err.concrete.supertype.for.value.class",
+                    "compiler.err.value.type.has.identity.super.type",
                     """
                     class ConcreteSuperType {
                         static abstract value class V extends ConcreteSuperType {}  // Error: concrete super.
@@ -1052,6 +1053,88 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                 }
                 """
         );
+    }
+
+    @Test
+    void testSyntheticCapturesInEarlyInitializers() throws Exception {
+        File dir = assertOK(true, """
+          class Test {
+              class Inner { }
+              value class V {
+                  Object o = new Inner(); // this$0 ref
+                  V() { super(); }
+              }
+              public static void main(String[] args) {
+                  Test t = new Test();
+                  t.new V();
+              }
+          }
+          """);
+        invokeMain("Test", dir);
+
+        dir = assertOK(true, """
+          class Test {
+              static class Box { Box(int i) { } }
+              static void test() {
+                  int x = 42;
+                  value class V {
+                      Object o = new Box(x); // capture ref
+                      V() { super(); }
+                  }
+                  new V();
+              }
+              public static void main(String[] args) {
+                  test();
+              }
+          }
+          """);
+        invokeMain("Test", dir);
+
+        dir = assertOK(true, """
+          import java.util.function.Supplier;
+
+          class Test {
+              static int seen;
+              static class Box { Box(int i) { } }
+              static void test() {
+                  int x = 42;
+                  value class V {
+                      Supplier<Box> s = () -> new Box(x); // lambda capture ref
+                      V() { super(); }
+                  }
+                  new V().s.get();
+              }
+              public static void main(String[] args) {
+                  test();
+              }
+          }
+          """);
+        invokeMain("Test", dir);
+
+        dir = assertOK(true, """
+          import java.util.function.Supplier;
+
+          class Test {
+              static int seen;
+              class Inner { }
+              value class V {
+                  Supplier<Inner> s = () -> new Inner(); // lambda this$0 ref
+                  V() { super(); }
+              }
+              public static void main(String[] args) {
+                  Test t = new Test();
+                  t.new V().s.get();
+              }
+          }
+          """);
+        invokeMain("Test", dir);
+    }
+
+    void invokeMain(String className, File dir) throws Exception {
+        Method method = loadClass(className, dir)
+                .getDeclaredMethod("main", String[].class);
+        method.setAccessible(true);
+        method.invoke(null, (Object) new String[0]);
     }
 
     void checkMnemonicsFor(String source, String expectedMnemonics) throws Exception {

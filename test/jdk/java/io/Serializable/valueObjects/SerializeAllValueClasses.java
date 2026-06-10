@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @run junit/othervm SerializeAllValueClasses
  */
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -123,8 +123,8 @@ public class SerializeAllValueClasses {
         return findAll().stream().map(c -> Arguments.of(c));
     }
 
-    @Test
-    void info() {
+    @BeforeAll
+    static void info() {
         var info = (PreviewFeatures.isEnabled()) ? "  Checking preview classes declared as `value class`" :
             "  Checking identity classes with annotation `jdk.internal.ValueBased.class`";
         System.err.println(info);

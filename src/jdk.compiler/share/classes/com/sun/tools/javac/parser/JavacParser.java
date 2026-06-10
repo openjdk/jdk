@@ -1673,7 +1673,7 @@ public class JavacParser implements Parser {
                         break loop;
                     case LT:
                         if (!isMode(TYPE) && isParameterizedTypePrefix()) {
-                            //this is either an unbound method reference whose qualifier
+                            //this is an unbound method reference whose qualifier
                             //is a generic type i.e. A<S>::m
                             int pos1 = token.pos;
                             accept(LT);

@@ -26,6 +26,7 @@
 #include "ci/ciFlatArray.hpp"
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInlineKlass.hpp"
+#include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeFlow.hpp"
@@ -3526,6 +3527,17 @@ bool TypeInterfaces::eq(ciInstanceKlass* k) const {
   return true;
 }
 
+// Check whether an instance of type k will satisfy this
+bool TypeInterfaces::is_subset(ciInstanceKlass* k) const {
+  assert(k->is_loaded(), "should be loaded");
+  GrowableArray<ciInstanceKlass*>* k_interfaces = k->transitive_interfaces();
+  for (int i = 0; i < _interfaces.length(); i++) {
+    if (!k_interfaces->contains(_interfaces.at(i))) {
+      return false;
+    }
+  }
+  return true;
+}
 
 uint TypeInterfaces::hash() const {
   assert(_initialized, "must be");
@@ -6638,7 +6650,7 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
       if (sub != nullptr) {
         bool improve_to_exact = sub->is_final() && _ptr == NotNull;
         const TypeInstKlassPtr* improved = TypeInstKlassPtr::make(improve_to_exact ? Constant : _ptr, sub, _offset);
-        if (improved->_interfaces->contains(_interfaces)) {
+        if (_interfaces->is_subset(sub)) {
           deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
           return improved;
         }
