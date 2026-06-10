@@ -24,12 +24,9 @@
 /*
  * @test
  * @summary Test javac incremental compilation with modules
- * @library /test/lib
  * @run junit TestIncrementalComp
  */
 
-import jdk.test.lib.util.FileUtils;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -41,30 +38,25 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TestIncrementalComp {
 
-    static final Path TEST_SRC_DIR = Path.of(System.getProperty("test.src"));
-    static final Path TEST_MODULES_DIR = TEST_SRC_DIR.resolve("test_modules");
-    static final Path ALTS_DIR = TEST_SRC_DIR.resolve("alts");
-
     static final ToolProvider JAVAC = ToolProvider.findFirst("javac")
             .orElseThrow();
 
-    record TestCase(String srcDir, Set<String> modules, String mainModule, Map<String, String> addReadsEdges) {
-        TestCase(String srcDir, Set<String> modules, String mainModule) {
-            this(srcDir, modules, mainModule, Map.of());
+    record TestCase(String srcDir, Map<Path, String> sources, Set<String> modules, String mainModule, Map<String, String> addReadsEdges) {
+        TestCase(String srcDir, Map<Path, String> sources, Set<String> modules, String mainModule) {
+            this(srcDir, sources, modules, mainModule, Map.of());
         }
     }
 
@@ -75,12 +67,15 @@ class TestIncrementalComp {
         // set up test sources
         Path localTestModules = workDir.resolve("test_modules");
         Path outDir = workDir.resolve("mods");
-        Files.createDirectories(localTestModules);
-        FileUtils.copyDirectory(TEST_MODULES_DIR.resolve(testCase.srcDir()), localTestModules);
+        for (Map.Entry<Path, String> sourceFile : testCase.sources().entrySet()) {
+            Path filePath = localTestModules.resolve(sourceFile.getKey());
+            Files.createDirectories(filePath.getParent());
+            Files.writeString(filePath, sourceFile.getValue(), CREATE_NEW);
+        }
 
         Path libPath = localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java");
         Files.createDirectories(libPath.getParent());
-        Files.copy(ALTS_DIR.resolve("Lib_int.java"), libPath);
+        Files.writeString(libPath, ALT_LIB_INT, CREATE_NEW);
 
         List<String> javacCommand = new ArrayList<>(List.of(
             "-d", outDir.toString(),
@@ -99,7 +94,7 @@ class TestIncrementalComp {
         invokeMainMethod(outDir, testCase.mainModule(), mainClass, testCase.addReadsEdges());
 
         // modify sources. Dep is not modified
-        Files.copy(ALTS_DIR.resolve("Lib_long.java"), libPath, REPLACE_EXISTING);
+        Files.writeString(libPath, ALT_LIB_LONG, TRUNCATE_EXISTING);
 
         // recompile. Any dependency on the changed file should be recompiled as well
         compile(javacCommand);
@@ -107,15 +102,6 @@ class TestIncrementalComp {
         // should work
         // if this fails because of incremental compilation issues, we can expect to see a NoSuchMethodError
         invokeMainMethod(outDir, testCase.mainModule(), mainClass, testCase.addReadsEdges());
-    }
-
-    static Stream<TestCase> cases() {
-        return Stream.of(
-            new TestCase("single", Set.of("org.moda"), "org.moda"),
-            new TestCase("multi", Set.of("org.moda", "org.modb"), "org.modb"),
-            new TestCase("transitive", Set.of("org.moda", "org.modb", "org.modc"), "org.modc"),
-            new TestCase("add_reads", Set.of("org.moda", "org.modb"), "org.modb", Map.of("org.modb", "org.moda"))
-        );
     }
 
     private static void invokeMainMethod(Path modulePath, String moduleName, String mainClassName,
@@ -153,4 +139,153 @@ class TestIncrementalComp {
         System.err.println(sw);
         assertEquals(0, rc);
     }
-}
+
+    private static final String ALT_LIB_INT = """
+            package org.moda.lib;
+            public class Lib {
+                public static int getVal() {
+                    return 42;
+                }
+            }
+            """;
+
+    private static final String ALT_LIB_LONG = """
+            package org.moda.lib;
+            public class Lib {
+                public static long getVal() {
+                    return 42;
+                }
+            }
+            """;
+
+    static Stream<TestCase> cases() {
+        return Stream.of(
+                new TestCase("single", Map.of(
+                    Path.of("org.moda", "module-info.java"),
+                    """
+                    module org.moda {
+                        // for reflective access
+                        exports org.moda.app;
+                    }
+                    """,
+                    Path.of("org.moda", "org", "moda", "lib", "Dep.java"),
+                    """
+                    package org.moda.lib;
+
+                    public class Dep {
+                        public static long getVal() {
+                            return Lib.getVal();
+                        }
+                    }
+                    """,
+                    Path.of("org.moda", "org", "moda", "app", "Main.java"),
+                    """
+                    package org.moda.app;
+
+                    import org.moda.lib.Dep;
+
+                    public class Main {
+                        public static void main(String[] args) {
+                            System.out.println(Dep.getVal());
+                        }
+                    }
+                    """
+                ), Set.of("org.moda"), "org.moda"),
+                new TestCase("multi", Map.of(
+                    Path.of("org.moda", "module-info.java"),
+                    """
+                    module org.moda {
+                        exports org.moda.lib;
+                    }
+                    """,
+                    Path.of("org.modb", "module-info.java"),
+                    """
+                    module org.modb {
+                        requires org.moda;
+
+                        // for reflective access
+                        exports org.modb.app;
+                    }
+                    """,
+                    Path.of("org.modb", "org", "modb", "app", "Main.java"),
+                    """
+                    package org.modb.app;
+
+                    import org.moda.lib.Lib;
+
+                    public class Main {
+                        public static void main(String[] args) {
+                            System.out.println(Lib.getVal());
+                        }
+                    }
+                    """
+                ), Set.of("org.moda", "org.modb"), "org.modb"),
+                new TestCase("transitive", Map.of(
+                    Path.of("org.moda", "module-info.java"),
+                    """
+                    module org.moda {
+                        exports org.moda.lib;
+                    }
+
+                    """,
+                    Path.of("org.modb", "module-info.java"),
+                    """
+                    module org.modb {
+                        // for org.modc
+                        requires transitive org.moda;
+                    }
+                    """,
+                    Path.of("org.modc", "module-info.java"),
+                    """
+                    module org.modc {
+                        requires org.modb;
+
+                        // for reflective access
+                        exports org.modc.app;
+                    }
+                    """,
+                    Path.of("org.modc", "org", "modc", "app", "Main.java"),
+                    """
+                    package org.modc.app;
+
+                    import org.moda.lib.Lib;
+
+                    public class Main {
+                        public static void main(String[] args) {
+                            System.out.println(Lib.getVal());
+                        }
+                    }
+                    """
+                ), Set.of("org.moda", "org.modb", "org.modc"), "org.modc"),
+                new TestCase("add_reads", Map.of(
+                    Path.of("org.moda", "module-info.java"),
+                    """
+                    module org.moda {
+                        exports org.moda.lib;
+                    }
+                    """,
+                    Path.of("org.modb", "module-info.java"),
+                    """
+                    module org.modb {
+                        // no explicit requires
+
+                        // for reflective access
+                        exports org.modb.app;
+                    }
+                    """,
+                    Path.of("org.modb", "org", "modb", "app", "Main.java"),
+                    """
+                    package org.modb.app;
+
+                    import org.moda.lib.Lib;
+
+                    public class Main {
+                        public static void main(String[] args) {
+                            System.out.println(Lib.getVal());
+                        }
+                    }
+                    """
+                ), Set.of("org.moda", "org.modb"), "org.modb", Map.of("org.modb", "org.moda"))
+            );
+        }
+    }
