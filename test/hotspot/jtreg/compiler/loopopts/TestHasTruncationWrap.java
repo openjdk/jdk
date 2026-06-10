@@ -443,8 +443,9 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR5c: short while-loop.
-    // Similar code pattern to testIR2b.
+    // testIR5c: short do-while-loop.
+    // While the code shape looks very close to testIR2b, somehow the additional "exit check"
+    // does not do the trick, and C2 does not recognize the pattern.
     public static int testIR5c_gold = testIR5c();
 
     @Run(test = "testIR5c")
@@ -454,7 +455,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIR5c() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -465,7 +466,37 @@ public class TestHasTruncationWrap {
         //    we get init in [0..99], which is in short range.
         int sum = 0;
         int i = init;
-        while (i != limit) { // "exit check" before loop, using NEQ.
+        if (i == limit) { return sum; } // additional "exit check" before loop.
+        do {
+            sum = dontinline(sum); // work to keep loop alive
+            i = (short)(i+1);
+        } while (i != limit); // exit check at the end, but with NEQ.
+        return sum;
+    }
+
+    // testIR5d: short while-loop, again similar to testIR2b and testIR5c, but with while-loop form.
+    // Somehow, that does get recognized by C2.
+    public static int testIR5d_gold = testIR5d();
+
+    @Run(test = "testIR5d")
+    private static void runIR5d() {
+        int val = testIR5d();
+        if (val != testIR5d_gold) { throw new RuntimeException("wrong value: " + testIR5d_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR5d() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        if (init >= limit) { return -1; } // CmpI before loop
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in short range.
+        int sum = 0;
+        int i = init;
+        while (i != limit) {
             sum = dontinline(sum); // work to keep loop alive
             i = (short)(i+1);
         }
