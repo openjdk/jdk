@@ -537,7 +537,11 @@ static void set_path_prefix(const char* buf, const wchar_t** prefix,
             && buf[1] == ':' && buf[2] == '\\') {
         *prefix = L"\\\\?\\";
     } else if (buf[0] == '\\' && buf[1] == '\\') {
-        if (buf[2] == '?' && buf[3] == '\\') {
+        /*
+         * Paths with \\?\ or \\.\ are already extended-length paths, so
+         * we do not treat them as UNC.
+         */
+        if ((buf[2] == '?' || buf[2] == '.') && buf[3] == '\\') {
             *prefix = L"";
             *needs_fullpath = 0;
         } else {
