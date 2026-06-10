@@ -71,9 +71,9 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * - Interesting loop bounds: init/limit
  *   - constant
  *   - variable, sampled (see getInputTemplate), and modified (no-op, truncate, clamp).
- *
- * TODO:
- * - pre-loop cmp: none, explicit "init < limit", using min/max or not, using CmpU vs CmpI.
+ * - Extra check dominating the loop: compare against constant of limit.
+ *   Note: has_truncation_wrap can use such checks to constrain the entry type.
+ *   Note2: We've had bugs around this, confusing CmpI/CmpU, see JDK-8385855.
  */
 public class TestTruncationWrapFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -435,11 +435,20 @@ public class TestTruncationWrapFuzzer {
     // - clamp with min/max, maybe even only one-sided
     private static String randomModifyValue(String value) {
         return switch(RANDOM.nextInt(3)) {
-            case 0 -> "// Don't modify " + value + ";\n";
+            case 0 -> "// Don't modify " + value + "\n";
             case 1 -> randomTruncation(value) + ";\n";
             case 2 -> randomClamping(value) + ";\n";
             default -> throw new RuntimeException("not expected");
         };
+    }
+
+    private static String randomExtraCheck() {
+        // We can constrain the init value with limit or a constant.
+        String other = RANDOM.nextBoolean() ? "limit" : INT_GEN.next().toString();
+        Comparison check = new Comparison("init", Comparator.random(), other).permuteRandom();
+        return RANDOM.nextBoolean()
+               ? "// No extra check.\n"
+               : "if (" + check + ") { return -1; }\n";
     }
 
     // Loop init/limit are variables.
@@ -451,6 +460,7 @@ public class TestTruncationWrapFuzzer {
         private final String loopShape   = randomLoopShape();
         private final String modifyInit  = randomModifyValue("init");
         private final String modifyLimit = randomModifyValue("limit");
+        private final String extraCheck  = randomExtraCheck();
 
         private final Comparison exitCheck = new Comparison("i", Comparator.random(), "limit").permuteRandom();
 
@@ -464,9 +474,9 @@ public class TestTruncationWrapFuzzer {
                 opaqueReset();
                 int sum = 0;
             """,
-            modifyInit,
-            modifyLimit,
-            // TODO: extra checks
+            modifyInit,  // modify type of init
+            modifyLimit, // modify type of limit
+            extraCheck,  // extra CmpI/CmpU dominating the loop, might constrain entry value.
             loopShape,
             """
                 return sum;
