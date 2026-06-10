@@ -408,6 +408,14 @@ public class TestHasTruncationWrap {
 
     // testIR3b: short loop, and range in short range via CmpI before loop (for loop limit).
     // Decr iv.
+    // Missed optimization opportunity:
+    //   CountedLoopConverter::LoopStructure::is_infinite_loop
+    // It wrongly fires, and prevents CountedLoop detection.
+    // This check is increment-specific, and fails to accound for decrement:
+    //   if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
+    // I don't think this is intentional, because we have handling for positive and
+    // negative stride in CountedLoopConverter::has_truncation_wrap.
+    // TODO: file RFE
     public static int testIR3b_gold = testIR3b();
 
     @Run(test = "testIR3b")
@@ -417,7 +425,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIR3b() {
         int limit = Math.max(lo, 0);   // init  in [0..max_int]
         int init  = Math.min(hi, 100); // limit in [min_int..100]
@@ -682,8 +690,31 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIR7() {
+        opaqueReset();
+        int init  = Math.max(lo, 0);
+        int limit = Math.min(hi, 100); // good bounds
+        int sum = 0;
+        for (int i = init; i < limit; i = (short)(i+1)) {
+            sum = dontinline(sum);
+            if (opaqueCheck()) { break; }
+        }
+        return sum;
+    }
+
+    // testIR7b
+    public static int testIR7b_gold = testIR7b();
+
+    @Run(test = "testIR7b")
+    private static void runIR7b() {
+        int val = testIR7b();
+        if (val != testIR7b_gold) { throw new RuntimeException("wrong value: " + testIR7b_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIR7b() {
         opaqueReset();
         int init  = Math.max(lo, 0);
         int limit = Math.min(hi, 100_000); // bad bounds
