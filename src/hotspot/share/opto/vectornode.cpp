@@ -2790,10 +2790,7 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
   // outer XorV is commutative.
   Node* a = nullptr;
   Node* andv = nullptr;
-  if (is_masked) {
-    a = in(1);
-    andv = in(2);
-  } else if (in(2)->Opcode() == Op_AndV) {
+  if (is_masked || in(2)->Opcode() == Op_AndV) {
     andv = in(2);
     a = in(1);
   } else {
