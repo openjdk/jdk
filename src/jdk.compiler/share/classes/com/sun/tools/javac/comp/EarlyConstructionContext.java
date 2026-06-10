@@ -33,7 +33,6 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
  * references are disallowed when inside a lambda
  */
 record EarlyConstructionContext(ClassSymbol owner,
-                                boolean onlyWarnings,
                                 boolean restricted,
                                 boolean ctorPrologue) {
 
@@ -41,15 +40,14 @@ record EarlyConstructionContext(ClassSymbol owner,
      * Dummy context. Used when not in early construction context
      */
     static final EarlyConstructionContext NONE =
-            new EarlyConstructionContext(null, false, false, false);
+            new EarlyConstructionContext(null, false, false);
 
     /**
      * Create a root early context
      */
     static EarlyConstructionContext of(ClassSymbol owner,
-                                       boolean onlyWarnings,
                                        boolean restricted) {
-        return new EarlyConstructionContext(owner, onlyWarnings, restricted, !onlyWarnings);
+        return new EarlyConstructionContext(owner, restricted, true);
     }
 
     /**
@@ -60,7 +58,7 @@ record EarlyConstructionContext(ClassSymbol owner,
         if (this == NONE) {
             return this;
         }
-        return new EarlyConstructionContext(owner, onlyWarnings, true,
+        return new EarlyConstructionContext(owner, true,
                 !isClass && ctorPrologue);
     }
 }

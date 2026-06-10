@@ -30,6 +30,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "runtime/task.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahAllocationClock {
@@ -92,7 +93,6 @@ private:
   double _predicted_rate;
 };
 
-
 // This class tracks three moving averages of the allocation rate:
 //  1. Momentary: this is the shortest and acts as a sort of 'spike' detector
 //  2. Recent: larger than momentary, these samples are used to detect 'acceleration' of the rate
@@ -144,6 +144,12 @@ public:
   // Indicate that this many bytes have been allocated (by the mutator).
   void allocated(size_t allocated_bytes);
 
+  // Shenandoah currently evaluates triggers on a dedicated thread to lighten the workload
+  // for allocators. However, this means that when there isn't enough allocations to update
+  // the rate, the heuristics will continue to see a high allocation rate. This method is
+  // for heuristics to periodically force the rate to update and decay the allocation rate.
+  void force_update();
+
   // Returns a snapshot of the parameters necessary to evaluate allocation rate triggers.
   // Note that momentary consumption and accelerated consumption may both be zero, but may
   // not both be non-zero. The `time_delta` parameter is the anticipated duration of the
@@ -164,6 +170,9 @@ public:
   }
 
 private:
+  // Record the sample under the sample lock
+  void take_sample(jlong now, jlong elapsed, size_t unsampled);
+
   double upper_bound_no_lock(const double standard_deviations) const {
     assert(_sample_lock.is_locked(), "Caller must hold lock");
     return _baseline.weighted_average() + standard_deviations * _baseline.weighted_sd();
@@ -171,5 +180,14 @@ private:
 };
 
 typedef ShenandoahAllocRate<> ShenandoahAllocationRate;
+
+// See description of `force_update`
+class ShenandoahDecayAllocRate : public PeriodicTask {
+  static constexpr size_t DECAY_INTERVAL_MS = 100;
+  ShenandoahAllocationRate* _rate;
+public:
+  ShenandoahDecayAllocRate(ShenandoahAllocationRate* rate) : PeriodicTask(DECAY_INTERVAL_MS), _rate(rate) {}
+  void task() override;
+};
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP

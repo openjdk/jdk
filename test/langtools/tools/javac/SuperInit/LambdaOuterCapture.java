@@ -29,8 +29,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @run main LambdaOuterCapture
- * @build SuperCallRemover
- * @compile -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover LambdaOuterCapture.java
  */
 
 public class LambdaOuterCapture {

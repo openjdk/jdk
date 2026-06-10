@@ -26,19 +26,15 @@
 package java.io;
 
 import java.io.ObjectInputFilter.Config;
-import java.io.ObjectStreamClass.ConstructorSupport;
-import java.io.ObjectStreamClass.ClassDataSlot;
+import java.io.ObjectStreamClass.AlternativeDeserialization;
 import java.lang.System.Logger;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
@@ -447,10 +443,12 @@ public class ObjectInputStream
      *
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          <p>An object in the stream that instantiates or extends a Serializable
-     *          {@linkplain Class#isValue value class} can only be deserialized if
-     *          it is a record or a boxed primitive value.  Otherwise,
-     *          {@code readObject} throws an {@code InvalidClassException}.
+     *          <p>An object in the stream that instantiates a concrete
+     *          {@linkplain Class#isValue value class}, or that extends a
+     *          Serializable abstract value class that declares instance fields,
+     *          can only be deserialized if it is a record or a boxed primitive
+     *          value. Otherwise, {@code readObject} throws an
+     *          {@code InvalidClassException}.
      *      </div>
      * </div>
      *
@@ -2131,127 +2129,67 @@ public class ObjectInputStream
             throw new InvalidClassException("invalid class descriptor");
         }
 
-        // Assign the handle and initially set to null or the unsharedMarker
-        passHandle = handles.assign(unshared ? unsharedMarker : null);
+        Object obj;
+        try {
+            obj = desc.isInstantiable() ? desc.newInstance() : null;
+        } catch (Exception ex) {
+            throw new InvalidClassException(desc.forClass().getName(),
+                                            "unable to create instance", ex);
+        }
+
+        passHandle = handles.assign(unshared ? unsharedMarker : obj);
         ClassNotFoundException resolveEx = desc.getResolveException();
         if (resolveEx != null) {
             handles.markException(passHandle, resolveEx);
         }
 
-        try {
-            // Dispatch on the factory mode to read an object from the stream.
-            Object obj = switch (desc.factoryMode()) {
-                case READ_OBJECT_DEFAULT -> readSerialDefaultObject(desc, unshared);
-                case READ_OBJECT_CUSTOM -> readSerialCustomData(desc, unshared);
-                case READ_RECORD -> readRecord(desc, unshared);
-                case READ_EXTERNALIZABLE -> readExternalObject(desc, unshared);
-                case READ_OBJECT_VALUE -> readObjectValue(desc, unshared);
-                case READ_NO_LOCAL_CLASS -> readAbsentLocalClass(desc, unshared);
-                case null -> throw new AssertionError("Unknown factoryMode for: " + desc.getName(),
-                        resolveEx);
-            };
-
-            handles.finish(passHandle);
-
-            if (obj != null &&
-                handles.lookupException(passHandle) == null &&
-                desc.hasReadResolveMethod())
-            {
-                Object rep = desc.invokeReadResolve(obj);
-                if (unshared && rep.getClass().isArray()) {
-                    rep = cloneArray(rep);
-                }
-                if (rep != obj) {
-                    // Filter the replacement object
-                    if (rep != null) {
-                        if (rep.getClass().isArray()) {
-                            filterCheck(rep.getClass(), Array.getLength(rep));
-                        } else {
-                            filterCheck(rep.getClass(), -1);
-                        }
-                    }
-                    handles.setObject(passHandle, obj = rep);
-                }
-            }
-
-            return obj;
-        } catch (UncheckedIOException uioe) {
-            // Consistent re-throw for nested UncheckedIOExceptions
-            throw uioe.getCause();
-        }
-    }
-
-    /**
-     * {@return a value class instance by invoking its constructor with field values read from the stream.
-     * The fields of the class in the stream are matched to the local fields and applied to
-     * the constructor.
-     * If the stream contains superclasses with serializable fields,
-     * an InvalidClassException is thrown with an incompatible class change message.
-     *
-     * @param desc the class descriptor read from the stream, the local class is a value class
-     * @param unshared if the object is not to be shared
-     * @throws InvalidClassException if the stream contains a superclass with serializable fields.
-     * @throws IOException if there are I/O errors while reading from the
-     *         underlying {@code InputStream}
-     */
-    private Object readObjectValue(ObjectStreamClass desc, boolean unshared) throws IOException {
-        final ObjectStreamClass localDesc = desc.getLocalDesc();
-        // Check for un-expected fields in superclasses
-        List<ClassDataSlot> slots = desc.getClassDataLayout();
-        for (int i = 0; i < slots.size()-1; i++) {
-            ClassDataSlot slot = slots.get(i);
-            if (slot.hasData && slot.desc.getFields(false).length > 0) {
-                throw new InvalidClassException("incompatible class change to value class: " +
-                        "stream class has non-empty super type: " + desc.getName());
-            }
-        }
-        // Read values for the value class fields
-        FieldValues fieldValues = new FieldValues(desc, true);
-
-        // Get value object constructor adapted to take primitive value buffer and object array.
-        MethodHandle consMH = ConstructorSupport.deserializationValueCons(desc);
-        try {
-            Object obj = (Object) consMH.invokeExact(fieldValues.primValues, fieldValues.objValues);
+        final boolean isRecord = desc.isRecord();
+        if (isRecord || desc.hasDeserializer()) {
+            assert obj == null;
+            obj = readAlternative(desc);
             if (!unshared)
                 handles.setObject(passHandle, obj);
-            return obj;
-        } catch (Exception e) {
-            throw new InvalidObjectException(e.getMessage(), e);
-        } catch (Error e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new InvalidObjectException("ReflectiveOperationException " +
-                    "during deserialization", t);
+        } else if (desc.isExternalizable()) {
+            readExternalData((Externalizable) obj, desc);
+        } else {
+            readSerialData(obj, desc);
         }
+
+        handles.finish(passHandle);
+
+        if (obj != null &&
+            handles.lookupException(passHandle) == null &&
+            desc.hasReadResolveMethod())
+        {
+            Object rep = desc.invokeReadResolve(obj);
+            if (unshared && rep.getClass().isArray()) {
+                rep = cloneArray(rep);
+            }
+            if (rep != obj) {
+                // Filter the replacement object
+                if (rep != null) {
+                    if (rep.getClass().isArray()) {
+                        filterCheck(rep.getClass(), Array.getLength(rep));
+                    } else {
+                        filterCheck(rep.getClass(), -1);
+                    }
+                }
+                handles.setObject(passHandle, obj = rep);
+            }
+        }
+
+        return obj;
     }
 
     /**
-     * Creates a new object and invokes its readExternal method to read its contents.
-     *
-     * If the class is instantiable, read externalizable data by invoking readExternal()
+     * If obj is non-null, reads externalizable data by invoking readExternal()
      * method of obj; otherwise, attempts to skip over externalizable data.
      * Expects that passHandle is set to obj's handle before this method is
-     * called.  The new object is entered in the handle table immediately,
-     * allowing it to leak before it is completely read.
+     * called.
      */
-    private Object readExternalObject(ObjectStreamClass desc, boolean unshared)
+    private void readExternalData(Externalizable obj, ObjectStreamClass desc)
         throws IOException
     {
-        // For Externalizable objects,
-        // create the instance, publish the ref, and read the data
-        Externalizable obj = null;
-        try {
-            if (desc.isInstantiable()) {
-                obj = (Externalizable) desc.newInstance();
-            }
-        } catch (Exception ex) {
-            throw new InvalidClassException(desc.getName(),
-                    "unable to create instance", ex);
-        }
-
-        if (!unshared)
-            handles.setObject(passHandle, obj);
-
         SerialCallbackContext oldContext = curContext;
         if (oldContext != null)
             oldContext.check();
@@ -2295,43 +2233,40 @@ public class ObjectInputStream
          * externalizable data remains in the stream, a subsequent read will
          * most likely throw a StreamCorruptedException.
          */
-        return obj;
     }
 
     /**
-     * Reads and returns a record.
+     * Reads and returns an alternatively-deserialized object, such as a record
+     * or a wrapper class as a value class.
      * If an exception is marked for any of the fields, the dependency
-     * mechanism marks the record as having an exception.
-     * Null is returned from readRecord and later the exception is thrown at
+     * mechanism marks the object as having an exception.
+     * Null is returned from readFromFactory and later the exception is thrown at
      * the exit of {@link #readObject(Class)}.
      */
-    private Object readRecord(ObjectStreamClass desc, boolean unshared) throws IOException {
-        List<ClassDataSlot> slots = desc.getClassDataLayout();
-        if (slots.size() != 1) {
+    private Object readAlternative(ObjectStreamClass desc) throws IOException {
+        ObjectStreamClass.ClassDataSlot[] slots = desc.getClassDataLayout();
+        if (slots.length != 1) {
             // skip any superclass stream field values
-            for (int i = 0; i < slots.size()-1; i++) {
-                if (slots.get(i).hasData) {
-                    new FieldValues(slots.get(i).desc, true);
+            for (int i = 0; i < slots.length-1; i++) {
+                if (slots[i].hasData) {
+                    new FieldValues(slots[i].desc, true);
                 }
             }
         }
 
         FieldValues fieldValues = new FieldValues(desc, true);
         if (handles.lookupException(passHandle) != null) {
-            return null;     // slot marked with exception, don't create record
+            return null;     // slot marked with exception, don't create object
         }
 
-        // get canonical record constructor adapted to take two arguments:
+        // get the factory adapted to take two arguments:
         // - byte[] primValues
         // - Object[] objValues
         // and return Object
-        MethodHandle ctrMH = ConstructorSupport.deserializationCtr(desc);
+        MethodHandle factoryMH = AlternativeDeserialization.getFactory(desc);
 
         try {
-            Object obj = (Object) ctrMH.invokeExact(fieldValues.primValues, fieldValues.objValues);
-            if (!unshared)
-                handles.setObject(passHandle, obj);
-            return obj;
+            return (Object) factoryMH.invokeExact(fieldValues.primValues, fieldValues.objValues);
         } catch (Exception e) {
             throw new InvalidObjectException(e.getMessage(), e);
         } catch (Error e) {
@@ -2343,207 +2278,114 @@ public class ObjectInputStream
     }
 
     /**
-     * Construct an object from the stream for a class that has only default read object behaviors.
-     * For each object, the fields are read before any are assigned.
-     * The new instance is entered in the handle table if it is unshared,
-     * allowing it to escape before it is initialized.
-     * The `readObject` and `readObjectNoData` methods are not present and are not called.
-     *
-     * @param desc the class descriptor
-     * @param unshared true if the object should be shared
-     * @return the object constructed from the stream data
-     * @throws IOException if there are I/O errors while reading from the
-     *         underlying {@code InputStream}
-     * @throws InvalidClassException if the instance creation fails
-     */
-    private Object readSerialDefaultObject(ObjectStreamClass desc, boolean unshared)
-            throws IOException, InvalidClassException {
-        if (!desc.isInstantiable()) {
-            // No local class to create, read and discard
-            return readAbsentLocalClass(desc, unshared);
-        }
-        try {
-            final Object obj = desc.newInstance();
-            if (!unshared)
-                handles.setObject(passHandle, obj);
-
-            // Best effort Failure Atomicity; slotValues will be non-null if field
-            // values can be set after reading all field data in the hierarchy.
-            List<ClassDataSlot> slots = desc.getClassDataLayout();
-            List<FieldValues> slotValues = new ArrayList<>(slots.size());
-            for (ClassDataSlot s : slots) {
-                if (s.hasData) {
-                    var value = new FieldValues(s.desc, true);
-                    finishBlockData(s.desc);
-                    slotValues.add(value);
-                }
-            }
-
-            if (handles.lookupException(passHandle) != null) {
-                return null;    // some exception for a class, do not return the object
-            }
-
-            // Check that the types are assignable for all slots before assigning.
-            for (FieldValues slotValue : slotValues) {
-                slotValue.defaultCheckFieldValues(obj);
-            }
-            for (FieldValues v : slotValues) {
-                v.defaultSetFieldValues(obj);
-            }
-            return obj;
-        } catch (InstantiationException | InvocationTargetException ex) {
-            throw new InvalidClassException(desc.forClass().getName(),
-                    "unable to create instance", ex);
-        }
-    }
-
-
-    /**
-     * Reads (or attempts to skip, if not instantiatable or is tagged with a
+     * Reads (or attempts to skip, if obj is null or is tagged with a
      * ClassNotFoundException) instance data for each serializable class of
-     * object in stream, from superclass to subclass.
-     * Expects that passHandle is set to current handle before this method is called.
+     * object in stream, from superclass to subclass.  Expects that passHandle
+     * is set to obj's handle before this method is called.
      */
-    private Object readSerialCustomData(ObjectStreamClass desc, boolean unshared)
+    private void readSerialData(Object obj, ObjectStreamClass desc)
         throws IOException
     {
-        if (!desc.isInstantiable()) {
-            // No local class to create, read and discard
-            return readAbsentLocalClass(desc, unshared);
+        ObjectStreamClass.ClassDataSlot[] slots = desc.getClassDataLayout();
+        // Best effort Failure Atomicity; slotValues will be non-null if field
+        // values can be set after reading all field data in the hierarchy.
+        // Field values can only be set after reading all data if there are no
+        // user observable methods in the hierarchy, readObject(NoData). The
+        // top most Serializable class in the hierarchy can be skipped.
+        FieldValues[] slotValues = null;
+
+        boolean hasSpecialReadMethod = false;
+        for (int i = 1; i < slots.length; i++) {
+            ObjectStreamClass slotDesc = slots[i].desc;
+            if (slotDesc.hasReadObjectMethod()
+                  || slotDesc.hasReadObjectNoDataMethod()) {
+                hasSpecialReadMethod = true;
+                break;
+            }
         }
+        // No special read methods, can store values and defer setting.
+        if (!hasSpecialReadMethod)
+            slotValues = new FieldValues[slots.length];
 
-        try {
-            Object obj = desc.newInstance();
-            if (!unshared)
-                handles.setObject(passHandle, obj);
-            // Read data into each of the slots for the class
-            return readSerialCustomSlots(obj, desc.getClassDataLayout());
-        } catch (InstantiationException | InvocationTargetException ex) {
-            throw new InvalidClassException(desc.forClass().getName(),
-                    "unable to create instance", ex);
-        }
-    }
+        for (int i = 0; i < slots.length; i++) {
+            ObjectStreamClass slotDesc = slots[i].desc;
 
-    /**
-     * Reads from the stream using custom or default readObject methods appropriate.
-     * For each slot, either the custom readObject method or the default reader of fields
-     * is invoked. Unused slot specific custom data is discarded.
-     * This function is used by {@link #readSerialCustomData}.
-     *
-     * @param obj the object to assign the values to
-     * @param slots a list of slots to read from the stream
-     * @return the object being initialized
-     * @throws IOException if there are I/O errors while reading from the
-     *         underlying {@code InputStream}
-     */
-    private Object readSerialCustomSlots(Object obj, List<ClassDataSlot> slots) throws IOException {
+            if (slots[i].hasData) {
+                if (obj == null || handles.lookupException(passHandle) != null) {
+                    // Read fields of the current descriptor into a new FieldValues and discard
+                    new FieldValues(slotDesc, true);
+                } else if (slotDesc.hasReadObjectMethod()) {
+                    SerialCallbackContext oldContext = curContext;
+                    if (oldContext != null)
+                        oldContext.check();
+                    try {
+                        curContext = new SerialCallbackContext(obj, slotDesc);
 
-        for (ClassDataSlot slot : slots) {
-            ObjectStreamClass slotDesc = slot.desc;
-            if (slot.hasData) {
-                if (slotDesc.hasReadObjectMethod() &&
-                        handles.lookupException(passHandle) == null) {
-                    // Invoke slot custom readObject method
-                    readSlotViaReadObject(obj, slotDesc);
+                        bin.setBlockDataMode(true);
+                        slotDesc.invokeReadObject(obj, this);
+                    } catch (ClassNotFoundException ex) {
+                        /*
+                         * In most cases, the handle table has already
+                         * propagated a CNFException to passHandle at this
+                         * point; this mark call is included to address cases
+                         * where the custom readObject method has cons'ed and
+                         * thrown a new CNFException of its own.
+                         */
+                        handles.markException(passHandle, ex);
+                    } finally {
+                        curContext.setUsed();
+                        if (oldContext!= null)
+                            oldContext.check();
+                        curContext = oldContext;
+                    }
+
+                    /*
+                     * defaultDataEnd may have been set indirectly by custom
+                     * readObject() method when calling defaultReadObject() or
+                     * readFields(); clear it to restore normal read behavior.
+                     */
+                    defaultDataEnd = false;
                 } else {
                     // Read fields of the current descriptor into a new FieldValues
                     FieldValues values = new FieldValues(slotDesc, true);
-                    if (handles.lookupException(passHandle) == null) {
-                        // Set the instance fields if no previous exception
-                        values.defaultCheckFieldValues(obj);
-                        values.defaultSetFieldValues(obj);
+                    if (slotValues != null) {
+                        slotValues[i] = values;
+                    } else if (obj != null) {
+                        if (handles.lookupException(passHandle) == null) {
+                            // passHandle NOT marked with an exception; set field values
+                            values.defaultCheckFieldValues(obj);
+                            values.defaultSetFieldValues(obj);
+                        }
                     }
-                    finishBlockData(slotDesc);
+                }
+
+                if (slotDesc.hasWriteObjectData()) {
+                    skipCustomData();
+                } else {
+                    bin.setBlockDataMode(false);
                 }
             } else {
-                if (slotDesc.hasReadObjectNoDataMethod() &&
-                        handles.lookupException(passHandle) == null) {
+                if (obj != null &&
+                    slotDesc.hasReadObjectNoDataMethod() &&
+                    handles.lookupException(passHandle) == null)
+                {
                     slotDesc.invokeReadObjectNoData(obj);
                 }
             }
         }
-        return obj;
-    }
 
-    /**
-     * Invoke the readObject method of the class to read and store the state from the stream.
-     *
-     * @param obj an instance of the class being created, only partially initialized.
-     * @param slotDesc the ObjectStreamDescriptor for the current class
-     * @throws IOException if there are I/O errors while reading from the
-     *         underlying {@code InputStream}
-     */
-    private void readSlotViaReadObject(Object obj, ObjectStreamClass slotDesc) throws IOException {
-        assert obj != null : "readSlotViaReadObject called when obj == null";
-
-        SerialCallbackContext oldContext = curContext;
-        if (oldContext != null)
-            oldContext.check();
-        try {
-            curContext = new SerialCallbackContext(obj, slotDesc);
-
-            bin.setBlockDataMode(true);
-            slotDesc.invokeReadObject(obj, this);
-        } catch (ClassNotFoundException ex) {
-            /*
-             * In most cases, the handle table has already
-             * propagated a CNFException to passHandle at this
-             * point; this mark call is included to address cases
-             * where the custom readObject method has cons'ed and
-             * thrown a new CNFException of its own.
-             */
-            handles.markException(passHandle, ex);
-        } finally {
-            curContext.setUsed();
-            if (oldContext!= null)
-                oldContext.check();
-            curContext = oldContext;
-        }
-
-        /*
-         * defaultDataEnd may have been set indirectly by custom
-         * readObject() method when calling defaultReadObject() or
-         * readFields(); clear it to restore normal read behavior.
-         */
-        defaultDataEnd = false;
-
-        finishBlockData(slotDesc);
-    }
-
-
-    /**
-     * Read and discard an entire object, leaving a null reference in the HandleTable.
-     * The descriptor of the class in the stream is used to read the fields from the stream.
-     * There is no instance in which to store the field values.
-     * Custom data following the fields of any slot is read and discarded.
-     * References to nested objects are read and retained in the
-     * handle table using the regular mechanism.
-     * Handles later in the stream may refer to the nested objects.
-     *
-     * @param desc the stream class descriptor
-     * @param unshared the unshared flag, ignored since no object is created
-     * @return null, no object is created
-     * @throws IOException if there are I/O errors while reading from the
-     *         underlying {@code InputStream}
-     */
-    private Object readAbsentLocalClass(ObjectStreamClass desc, boolean unshared)
-            throws IOException {
-        desc.getClassDataLayout().stream()
-                .filter(s -> s.hasData)
-                .forEach(s2 -> {new FieldValues(s2.desc, true); finishBlockData(s2.desc);});
-        return null;
-    }
-
-    // Finish handling of block data by skipping any remaining and setting BlockDataMode = false
-    private void finishBlockData(ObjectStreamClass slotDesc) throws UncheckedIOException {
-        try {
-            if (slotDesc.hasWriteObjectData()) {
-                skipCustomData();
-            } else {
-                bin.setBlockDataMode(false);
+        if (obj != null && slotValues != null && handles.lookupException(passHandle) == null) {
+            // passHandle NOT marked with an exception
+            // Check that the non-primitive types are assignable for all slots
+            // before assigning.
+            for (int i = 0; i < slots.length; i++) {
+                if (slotValues[i] != null)
+                    slotValues[i].defaultCheckFieldValues(obj);
             }
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
+            for (int i = 0; i < slots.length; i++) {
+                if (slotValues[i] != null)
+                    slotValues[i].defaultSetFieldValues(obj);
+            }
         }
     }
 
@@ -2639,37 +2481,32 @@ public class ObjectInputStream
          * @param desc the ObjectStreamClass to read
          * @param recordDependencies if true, record the dependencies
          *                           from current PassHandle and the object's read.
-         * @throws UncheckedIOException if any IOException occurs
          */
-        FieldValues(ObjectStreamClass desc, boolean recordDependencies) throws UncheckedIOException {
-            try {
-                this.desc = desc;
-                int primDataSize = desc.getPrimDataSize();
-                primValues = (primDataSize > 0) ? new byte[primDataSize] : null;
-                if (primDataSize > 0) {
-                    bin.readFully(primValues, 0, primDataSize, false);
-                }
+        FieldValues(ObjectStreamClass desc, boolean recordDependencies) throws IOException {
+            this.desc = desc;
 
+            int primDataSize = desc.getPrimDataSize();
+            primValues = (primDataSize > 0) ? new byte[primDataSize] : null;
+            if (primDataSize > 0) {
+                bin.readFully(primValues, 0, primDataSize, false);
+            }
 
-                int numObjFields = desc.getNumObjFields();
-                objValues = (numObjFields > 0) ? new Object[numObjFields] : null;
-                objHandles = (numObjFields > 0) ? new int[numObjFields] : null;
-                if (numObjFields > 0) {
-                    int objHandle = passHandle;
-                    ObjectStreamField[] fields = desc.getFields(false);
-                    int numPrimFields = fields.length - objValues.length;
-                    for (int i = 0; i < objValues.length; i++) {
-                        ObjectStreamField f = fields[numPrimFields + i];
-                        objValues[i] = readObject0(Object.class, f.isUnshared());
-                        objHandles[i] = passHandle;
-                        if (recordDependencies && f.getField() != null) {
-                            handles.markDependency(objHandle, passHandle);
-                        }
+            int numObjFields = desc.getNumObjFields();
+            objValues = (numObjFields > 0) ? new Object[numObjFields] : null;
+            objHandles = (numObjFields > 0) ? new int[numObjFields] : null;
+            if (numObjFields > 0) {
+                int objHandle = passHandle;
+                ObjectStreamField[] fields = desc.getFields(false);
+                int numPrimFields = fields.length - objValues.length;
+                for (int i = 0; i < objValues.length; i++) {
+                    ObjectStreamField f = fields[numPrimFields + i];
+                    objValues[i] = readObject0(Object.class, f.isUnshared());
+                    objHandles[i] = passHandle;
+                    if (recordDependencies && f.getField() != null) {
+                        handles.markDependency(objHandle, passHandle);
                     }
-                    passHandle = objHandle;
                 }
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe);
+                passHandle = objHandle;
             }
         }
 

@@ -25,14 +25,19 @@
  * @test
  * @summary Test jdk.internal.value.ValueClass against preview-only things
  * @modules java.base/jdk.internal.value
+ * @library /test/lib
  * @enablePreview
- * @run junit ValueClassPreviewTest
+ * @compile ${test.file}
+ * @run driver jdk.test.lib.helpers.StrictProcessor
+ *             ValueClassPreviewTest$StrictStuff
+ * @run junit ${test.main.class}
  */
 
 import java.util.Optional;
 import java.util.OptionalInt;
 
 import jdk.internal.value.ValueClass;
+import jdk.test.lib.helpers.StrictInit;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -86,5 +91,48 @@ class ValueClassPreviewTest {
             arr[i] = Integer.valueOf(i);
         }
         return arr;
+    }
+
+    abstract static value class AbstractValue {
+        int a;
+
+        AbstractValue(int a) {
+            this.a = a;
+        }
+    }
+
+    static value class ChildValue extends AbstractValue {
+        ChildValue(int a) {
+            super(a);
+        }
+    }
+
+    static class StrictStuff {
+        @StrictInit int i;
+
+        StrictStuff() {
+            i = 5;
+            super();
+        }
+    }
+
+    @Test
+    void testHasStrictInstanceField() {
+        assertFalse(ValueClass.hasStrictInstanceField(int.class), "primitive");
+        assertFalse(ValueClass.hasStrictInstanceField(int[].class), "array");
+        assertFalse(ValueClass.hasStrictInstanceField(Runnable.class), "interface");
+        assertTrue(ValueClass.hasStrictInstanceField(Integer.class), "1 prim field");
+        assertTrue(ValueClass.hasStrictInstanceField(Optional.class), "1 ref field");
+        assertFalse(ValueClass.hasStrictInstanceField(Number.class), "no-field AVC");
+        assertTrue(ValueClass.hasStrictInstanceField(AbstractValue.class), "AVC with field");
+        assertFalse(ValueClass.hasStrictInstanceField(ChildValue.class), "no immediately declared field");
+        record EmptyRec() {}
+        value record EmptyValueRec() {}
+        record Rec(String s) {}
+        value record ValueRec(String s) {}
+        assertFalse(ValueClass.hasStrictInstanceField(EmptyRec.class), "empty identity record");
+        assertFalse(ValueClass.hasStrictInstanceField(EmptyValueRec.class), "empty value record");
+        assertTrue(ValueClass.hasStrictInstanceField(Rec.class), "identity record");
+        assertTrue(ValueClass.hasStrictInstanceField(ValueRec.class), "value record");
     }
 }

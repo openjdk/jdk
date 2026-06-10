@@ -25,21 +25,21 @@
 
 JNIEXPORT jobject JNICALL
 Java_compiler_valhalla_inlinetypes_TestJNICalls_testMethod1(JNIEnv *env, jobject receiver, jobject vt) {
-    jclass cls = (*env)->GetObjectClass(env, receiver);
-    jmethodID mid = (*env)->GetMethodID(env, cls, "test1", "(Lcompiler/valhalla/inlinetypes/MyValue1;Z)Lcompiler/valhalla/inlinetypes/MyValue1;");
-    return (*env)->CallObjectMethod(env, receiver, mid, vt, JNI_TRUE);
+  jclass cls = (*env)->GetObjectClass(env, receiver);
+  jmethodID mid = (*env)->GetMethodID(env, cls, "test1", "(Lcompiler/valhalla/inlinetypes/MyValue1;Z)Lcompiler/valhalla/inlinetypes/MyValue1;");
+  return (*env)->CallObjectMethod(env, receiver, mid, vt, JNI_TRUE);
 }
 
 JNIEXPORT jlong JNICALL
 Java_compiler_valhalla_inlinetypes_TestJNICalls_testMethod2(JNIEnv *env, jobject receiver, jobject vt) {
-    jclass cls = (*env)->GetObjectClass(env, vt);
-    jmethodID mid = (*env)->GetMethodID(env, cls, "hash", "()J");
-    return (*env)->CallLongMethod(env, vt, mid);
+  jclass cls = (*env)->GetObjectClass(env, vt);
+  jmethodID mid = (*env)->GetMethodID(env, cls, "hash", "()J");
+  return (*env)->CallLongMethod(env, vt, mid);
 }
 
 JNIEXPORT jint JNICALL
 Java_compiler_valhalla_inlinetypes_TestJNICalls_00024MyValueWithNative_testMethod3(JNIEnv *env, jobject receiver) {
-    jclass cls = (*env)->GetObjectClass(env, receiver);
-    jfieldID fid = (*env)->GetFieldID(env, cls, "x", "I");
-    return (*env)->GetIntField(env, receiver, fid);
+  jclass cls = (*env)->GetObjectClass(env, receiver);
+  jfieldID fid = (*env)->GetFieldID(env, cls, "x", "I");
+  return (*env)->GetIntField(env, receiver, fid);
 }

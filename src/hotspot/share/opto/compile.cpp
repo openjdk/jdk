@@ -2172,8 +2172,6 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
         // Verify that inline type is buffered when replacing by oop
         else if (u->is_InlineType()) {
           // InlineType uses don't need buffering because they are about to be replaced as well
-        } else if (u->is_Phi()) {
-          // TODO 8302217 Remove this once InlineTypeNodes are reliably pushed through
         } else {
           must_be_buffered = true;
         }

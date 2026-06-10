@@ -54,6 +54,7 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Options;
 
 import static com.sun.tools.javac.util.List.of;
@@ -143,13 +144,48 @@ public class LocalProxyVariablesTests {
                     }
                 }
                 """, Set.of("local$x"));
+        doTest(
+                """
+                class Outer {
+                    abstract value class Super {
+                        Super(Object o) { }
+                    }
+                }
+                value class MustPatchNullSuperArg extends Outer.Super {
+                    int i;
+                    int j;
+                    MustPatchNullSuperArg(Outer outer) {
+                        i = 1;
+                        j = i; // forces local proxy for i
+                        outer.super(null);
+                    }
+                }
+                """, "MustPatchNullSuperArg",  Set.of("local$i", "local$0", "local$1"));
+        doTest(
+                """
+                class Test {
+                    static int seed() { return 42; }
+                    static value class V {
+                        int x = seed();
+                        int y = x;
+                        V() { super(); }
+                    }
+                    public static void main(String[] args) {
+                        new V();
+                    }
+                }
+                """, Set.of("local$x"));
     }
 
     void doTest(String src, Set<String> expectedLocalProxyNames) throws Throwable {
+        doTest(src, "", expectedLocalProxyNames);
+    }
+
+    void doTest(String src, String className, Set<String> expectedLocalProxyNames) throws Throwable {
         JavaSource source = new JavaSource(src);
         tool.clear();
         List<JavaFileObject> inputs = of(source);
-        myLocalProxyVarsGen.expectedLocalProxyNames(expectedLocalProxyNames);
+        myLocalProxyVarsGen.expectedLocalProxyNames(expectedLocalProxyNames, className);
         try {
             tool.compile(inputs);
         } catch (Throwable ex) {
@@ -179,11 +215,13 @@ public class LocalProxyVariablesTests {
             context.put(localProxyVarsGenKey, (Factory<LocalProxyVarsGen>) c -> new MyLocalProxyVarsGen(c));
         }
 
-        void expectedLocalProxyNames(Set<String> expectedProxyNames) {
+        void expectedLocalProxyNames(Set<String> expectedProxyNames, String className) {
             // so that we can remove elements from our copy
             this.expectedProxyNames = new HashSet<>(expectedProxyNames);
+            this.className = className;
         }
 
+        String className;
         Set<String> expectedProxyNames;
 
         MyLocalProxyVarsGen(Context context) {
@@ -191,27 +229,40 @@ public class LocalProxyVariablesTests {
         }
 
         @Override
-        public JCTree translateTopLevelClass(JCTree cdef, TreeMaker make) {
-            JCClassDecl transformed = (JCClassDecl)super.translateTopLevelClass(cdef, make);
-            analyzeTransformedClass(transformed);
-            return transformed;
+        public void patchConstructor(JCMethodDecl mdef, TreeMaker make) {
+            super.patchConstructor(mdef, make);
+            // if className is "" then we process any class name, usually there will be only one
+            // if not we check only the class with name equals to className
+            if (className.equals("") || className.equals(mdef.sym.owner.name.toString())) {
+                analyzeTransformedMethod(mdef);
+            }
         }
 
-        /* we need to analyze the tree obtained from invoking `translateTopLevelClass` asap, we can't wait
+        /* we need to analyze the tree obtained from patchConstructor asap, we can't wait
          * until the compilation ends as other phases continue transforming the AST
          */
-        void analyzeTransformedClass(JCClassDecl transformed) {
-            for (JCTree def : transformed.defs) {
-                if (def instanceof JCMethodDecl methodDecl && methodDecl.name.toString().equals("<init>")) {
-                    for (JCStatement stat : methodDecl.body.stats) {
-                        if (stat instanceof JCVariableDecl variableDecl && variableDecl.sym.isSynthetic()) {
-                            Assert.check(expectedProxyNames.contains(variableDecl.name.toString()));
-                            expectedProxyNames.remove(variableDecl.name.toString());
-                        }
+        void analyzeTransformedMethod(JCMethodDecl transformed) {
+            if (transformed instanceof JCMethodDecl methodDecl && methodDecl.name.toString().equals("<init>")) {
+                ListBuffer<JCStatement> statsToAnalyze = new ListBuffer<>();
+                for (JCStatement stat : methodDecl.body.stats) {
+                    /* if the super constructor invocation has arguments, then it could be that some proxy variables
+                     * had been created to store the value of those arguments and all this synthetic code is generated
+                     * inside a block, so we need to see inside blocks
+                     */
+                    if (stat instanceof JCBlock block) {
+                        statsToAnalyze.addAll(block.stats);
+                    } else {
+                        statsToAnalyze.add(stat);
+                    }
+                }
+                for (JCStatement stat : statsToAnalyze) {
+                    if (stat instanceof JCVariableDecl variableDecl && variableDecl.sym.isSynthetic()) {
+                        Assert.check(expectedProxyNames.contains(variableDecl.name.toString()), variableDecl.name.toString() + " was not expected");
+                        expectedProxyNames.remove(variableDecl.name.toString());
                     }
                 }
             }
-            Assert.check(expectedProxyNames.isEmpty());
+            Assert.check(expectedProxyNames.isEmpty(), "not all expected proxy names were found at " + transformed);
         }
     }
 

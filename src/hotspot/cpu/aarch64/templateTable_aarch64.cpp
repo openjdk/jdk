@@ -829,9 +829,6 @@ void TemplateTable::aaload()
     __ b(done);
     __ bind(is_flat_array);
     __ call_VM(r0, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_load), r0, r1);
-    // Ensure the stores to copy the inline field contents are visible
-    // before any subsequent store that publishes this reference.
-    __ membar(Assembler::StoreStore);
     __ bind(done);
   } else {
     __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);

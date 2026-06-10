@@ -1044,10 +1044,10 @@ bool ciMethod::is_compiled_lambda_form() const {
 // ciMethod::is_object_constructor
 //
 bool ciMethod::is_object_constructor() const {
-   return (name() == ciSymbols::object_initializer_name()
-           && signature()->return_type()->is_void());
-   // Note:  We can't test is_static, because that would
-   // require the method to be loaded.  Sometimes it isn't.
+  return (name() == ciSymbols::object_initializer_name()
+          && signature()->return_type()->is_void());
+  // Note:  We can't test is_static, because that would
+  // require the method to be loaded.  Sometimes it isn't.
 }
 
 // ------------------------------------------------------------------

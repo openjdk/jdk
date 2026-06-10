@@ -23,7 +23,6 @@
 
 /* @test
  * @bug 8057919
- * @enablePreview
  * @summary Class.getSimpleName() should work for non-JLS compliant class names
  */
 
@@ -167,7 +166,7 @@ public class GetSimpleNameTest {
             var name = (isInner ? innerName : outerName);
             return ClassFile.of().build(name, clb -> {
                 clb.withSuperclass(CD_Object);
-                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
+                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.with(InnerClassesAttribute.of(
                         InnerClassInfo.of(innerName,
                                 Optional.of(outerName),
@@ -180,7 +179,7 @@ public class GetSimpleNameTest {
             var name = (isInner ? innerName : outerName);
             return ClassFile.of().build(name, clb -> {
                 clb.withSuperclass(CD_Object);
-                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
+                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.with(InnerClassesAttribute.of(
                         InnerClassInfo.of(innerName,
                                 Optional.of(outerName),
@@ -194,7 +193,7 @@ public class GetSimpleNameTest {
             var name = (isInner ? innerName : outerName);
             return ClassFile.of().build(name, clb -> {
                 clb.withSuperclass(CD_Object);
-                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
+                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.with(InnerClassesAttribute.of(
                         InnerClassInfo.of(innerName,
                                 Optional.empty(),
@@ -209,7 +208,7 @@ public class GetSimpleNameTest {
             var name = (isInner ? innerName : outerName);
             return ClassFile.of().build(name, clb -> {
                 clb.withSuperclass(CD_Object);
-                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
+                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.with(InnerClassesAttribute.of(
                         InnerClassInfo.of(innerName,
                                 Optional.empty(),

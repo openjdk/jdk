@@ -33,7 +33,7 @@ class StrictFieldNotSubset extends Parent {
 }
 */
 
-identity class StrictFieldNotSubset extends Parent version 71:65535
+identity class StrictFieldNotSubset extends Parent version 72:65535
 {
   strict Field x:I;
   static strict Field y:I;

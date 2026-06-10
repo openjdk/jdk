@@ -23,11 +23,10 @@
 
 /*
  * @test
- * @bug 8255560 8326879
+ * @bug 8255560
  * @summary Class::isRecord should check that the current class is final and not abstract
  * @library /test/lib
  * @run junit/othervm IsRecordTest
- * @run junit/othervm --enable-preview IsRecordTest
  */
 
 import java.lang.classfile.ClassFile;

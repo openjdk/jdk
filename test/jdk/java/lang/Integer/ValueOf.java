@@ -26,7 +26,6 @@
  * @bug 6807702
  * @summary Basic test for Integer.valueOf
  * @run main ValueOf
- * @run main/othervm --enable-preview ValueOf
  * @run main/othervm -esa -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
  *                   -XX:AutoBoxCacheMax=20000 ValueOf
  */

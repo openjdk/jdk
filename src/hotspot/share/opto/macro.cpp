@@ -704,7 +704,7 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
   };
 
   // Create a new InlineTypeNode and retrieve the field values from memory
-  InlineTypeNode* vt = InlineTypeNode::make_uninitialized(_igvn, vk, false);
+  InlineTypeNode* vt = InlineTypeNode::make_uninitialized(_igvn, vk, null_free);
   transform_later(vt);
   if (null_free) {
     vt->set_null_marker(_igvn);
@@ -1557,26 +1557,36 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   return true;
 }
 
-bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
+bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode* call) {
   // EA should remove all uses of non-escaping boxing node.
-  if (!C->eliminate_boxing() || boxing->proj_out_or_null(TypeFunc::Parms) != nullptr) {
+  if (!C->eliminate_boxing()) {
     return false;
   }
+  for (uint i = TypeFunc::Parms; i < call->tf()->range_cc()->cnt(); ++i) {
+    if (call->proj_out_or_null(i) != nullptr) {
+      return false;
+    }
+  }
 
-  assert(boxing->result_cast() == nullptr, "unexpected boxing node result");
+  _callprojs = call->extract_projections(false /*separate_io_proj*/, false /*do_asserts*/);
 
-  _callprojs = boxing->extract_projections(false /*separate_io_proj*/, false /*do_asserts*/);
-
-  const TypeTuple* r = boxing->tf()->range_sig();
-  assert(r->cnt() > TypeFunc::Parms, "sanity");
-  const TypeInstPtr* t = r->field_at(TypeFunc::Parms)->isa_instptr();
-  assert(t != nullptr, "sanity");
+  process_users_of_allocation(call);
 
   CompileLog* log = C->log();
   if (log != nullptr) {
+    const TypeInstPtr* t = nullptr;
+    if (call->is_boxing_method()) {
+      const TypeTuple* range = call->tf()->range_sig();
+      t = range->field_at(TypeFunc::Parms)->isa_instptr();
+    } else {
+      assert(call->is_unboxing_method(), "Unexpected call");
+      const TypeTuple* domain = call->tf()->domain_sig();
+      t = domain->field_at(TypeFunc::Parms)->isa_instptr();
+      assert(!t->maybe_null(), "missing receiver null check?");
+    }
     log->head("eliminate_boxing type='%d'",
               log->identify(t->instance_klass()));
-    JVMState* p = boxing->jvms();
+    JVMState* p = call->jvms();
     while (p != nullptr) {
       log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
       p = p->caller();
@@ -1584,19 +1594,16 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
     log->tail("eliminate_boxing");
   }
 
-  process_users_of_allocation(boxing);
-
 #ifndef PRODUCT
   if (PrintEliminateAllocations) {
-    tty->print("++++ Eliminated: %d ", boxing->_idx);
-    boxing->method()->print_short_name(tty);
+    tty->print("++++ Eliminated: %d ", call->_idx);
+    call->method()->print_short_name(tty);
     tty->cr();
   }
 #endif
 
   return true;
 }
-
 
 Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = off_heap_plus_addr(base, offset);

@@ -421,29 +421,6 @@ class VerifierSelfTest {
         return lst;
     }
 
-    @Test // JDK-8350029
-    void testInvokeSpecialInterfacePatch() {
-        var runClass = ClassDesc.of("Run");
-        var testClass = ClassDesc.of("Test");
-        var runnableClass = Runnable.class.describeConstable().orElseThrow();
-        var chr = ClassHierarchyResolver.of(List.of(), Map.of(runClass, CD_Object))
-                .orElse(ClassHierarchyResolver.defaultResolver()).cached();
-        var context = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(chr));
-
-        for (var isInterface : new boolean[] {true, false}) {
-            var bytes = context.build(testClass, clb -> clb
-                    .withVersion(JAVA_8_VERSION, 0)
-                    .withSuperclass(runClass)
-                    .withMethodBody("test", MethodTypeDesc.of(CD_void, testClass), ACC_STATIC, cob -> cob
-                            .aload(0)
-                            .invokespecial(runnableClass, "run", MTD_void, isInterface)
-                            .return_()));
-            var errors = context.verify(bytes);
-            assertNotEquals(List.of(), errors, "invokespecial, isInterface = " + isInterface);
-            assertTrue(errors.getFirst().getMessage().contains("interface method to invoke is not in a direct superinterface"), errors.getFirst().getMessage());
-        }
-    }
-
     enum ComparisonInstruction {
         IF_ACMPEQ(Opcode.IF_ACMPEQ, 2),
         IF_ACMPNE(Opcode.IF_ACMPNE, 2),
@@ -507,5 +484,28 @@ class VerifierSelfTest {
                         sink.accept(Arguments.of(inst, kind));
                     }
                 });
+    }
+
+    @Test // JDK-8350029
+    void testInvokeSpecialInterfacePatch() {
+        var runClass = ClassDesc.of("Run");
+        var testClass = ClassDesc.of("Test");
+        var runnableClass = Runnable.class.describeConstable().orElseThrow();
+        var chr = ClassHierarchyResolver.of(List.of(), Map.of(runClass, CD_Object))
+                .orElse(ClassHierarchyResolver.defaultResolver()).cached();
+        var context = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(chr));
+
+        for (var isInterface : new boolean[] {true, false}) {
+            var bytes = context.build(testClass, clb -> clb
+                    .withVersion(JAVA_8_VERSION, 0)
+                    .withSuperclass(runClass)
+                    .withMethodBody("test", MethodTypeDesc.of(CD_void, testClass), ACC_STATIC, cob -> cob
+                            .aload(0)
+                            .invokespecial(runnableClass, "run", MTD_void, isInterface)
+                            .return_()));
+            var errors = context.verify(bytes);
+            assertNotEquals(List.of(), errors, "invokespecial, isInterface = " + isInterface);
+            assertTrue(errors.getFirst().getMessage().contains("interface method to invoke is not in a direct superinterface"), errors.getFirst().getMessage());
+        }
     }
 }

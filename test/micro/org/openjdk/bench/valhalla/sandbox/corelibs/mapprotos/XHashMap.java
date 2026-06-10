@@ -605,7 +605,6 @@ public class XHashMap<K,V> extends XAbstractMap<K,V>
      * @param   m the map whose mappings are to be placed in this map
      * @throws  NullPointerException if the specified map is null
      */
-    @SuppressWarnings("initialization")
     public XHashMap(Map<? extends K, ? extends V> m) {
         this.loadFactor = DEFAULT_LOAD_FACTOR;
         putMapEntries(m, false);

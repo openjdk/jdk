@@ -29,8 +29,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @run main EarlyLocalTest5
- * @build SuperCallRemover
- * @compile -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyLocalTest5.java
  */
 import java.util.concurrent.atomic.AtomicReference;
 

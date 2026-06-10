@@ -85,7 +85,6 @@ public class Smaps {
         Parser(Path smaps) {
             this.ranges = new LinkedList<Range>();
             this.smaps = smaps;
-            super();
             reset();
         }
 

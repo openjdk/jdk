@@ -68,9 +68,8 @@ $(eval $(call SetupTextFileProcessing, JAVA_BASE_VALUECLASS_REPLACEMENTS, \
     SOURCE_BASE_DIR := $(TOPDIR)/src/java.base/share/classes, \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc-valueclasses/java.base/, \
     REPLACEMENTS := \
-        public final class => public final value class ; \
-        public abstract class => public abstract value class ; \
-        abstract class ChronoLocalDateImpl => abstract value class ChronoLocalDateImpl, \
+        /\*value\*/ class => value class ; \
+        /\*value\*/ record => value record ; \
 ))
 
 TARGETS += $(JAVA_BASE_VALUECLASS_REPLACEMENTS)

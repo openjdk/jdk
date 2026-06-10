@@ -136,7 +136,7 @@ import jdk.internal.util.DateTimeHelper;
  */
 @jdk.internal.ValueBased
 @jdk.internal.MigratedValueClass
-public final class OffsetDateTime
+public final /*value*/ class OffsetDateTime
         implements Temporal, TemporalAdjuster, Comparable<OffsetDateTime>, Serializable {
 
     /**

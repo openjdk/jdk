@@ -65,7 +65,7 @@ import java.util.stream.IntStream;
  */
 @jdk.internal.ValueBased
 @jdk.internal.MigratedValueClass
-public final class OptionalInt {
+public final /*value*/ class OptionalInt {
     /**
      * Common instance for {@code empty()}.
      */

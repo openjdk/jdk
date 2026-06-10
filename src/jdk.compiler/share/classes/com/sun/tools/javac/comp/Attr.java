@@ -886,7 +886,7 @@ public class Attr extends JCTree.Visitor {
             tree.type :
             attribType(tree, env);
         try {
-            return checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
+            return tree.type = checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
         } catch (CompletionFailure ex) {
             chk.completionError(tree.pos(), ex);
             return t;
@@ -1196,7 +1196,6 @@ public class Attr extends JCTree.Visitor {
                 // Add an implicit super() call unless an explicit call to
                 // super(...) or this(...) is given
                 // or we are compiling class java.lang.Object.
-                boolean addedSuperInIdentityClass = false;
                 if (isConstructor && owner.type != syms.objectType) {
                     if (!TreeInfo.hasAnyConstructorCall(tree)) {
                         JCStatement supCall = make.at(tree.body.pos).Exec(make.Apply(List.nil(),
@@ -1205,7 +1204,6 @@ public class Attr extends JCTree.Visitor {
                             tree.body.stats = tree.body.stats.append(supCall);
                         } else {
                             tree.body.stats = tree.body.stats.prepend(supCall);
-                            addedSuperInIdentityClass = true;
                         }
                     } else if ((env.enclClass.sym.flags() & ENUM) != 0 &&
                             (tree.mods.flags & GENERATEDCONSTR) == 0 &&
@@ -1243,7 +1241,6 @@ public class Attr extends JCTree.Visitor {
                 if (isConstructor && owner.type != syms.objectType) {
                     boolean hasThisConstructorCall = TreeInfo.hasConstructorCall(tree, names._this);
                     localEnv.info.earlyContext = EarlyConstructionContext.of(owner,
-                            addedSuperInIdentityClass && allowValueClasses,
                             hasThisConstructorCall && allowValueClasses);
                 }
 
@@ -1323,10 +1320,9 @@ public class Attr extends JCTree.Visitor {
                     initEnv.info.enclVar = v;
                     EarlyConstructionContext previousEarlyConstruction = initEnv.info.earlyContext;
                     try {
-                        if (v.owner.kind == TYP && !v.isStatic() && allowValueClasses) {
+                        if (v.isStrictInstance() && allowValueClasses) {
                             // instance strict field init occur in early construction context
-                            initEnv.info.earlyContext = EarlyConstructionContext.of((ClassSymbol)v.owner,
-                                    !v.isStrict(), false);
+                            initEnv.info.earlyContext = EarlyConstructionContext.of((ClassSymbol)v.owner, false);
                         }
                         attribExpr(tree.init, initEnv, v.type);
                         if (tree.isImplicitlyTyped()) {
@@ -2588,11 +2584,8 @@ public class Attr extends JCTree.Visitor {
             argtypes = argtypesBuf.toList();
             typeargtypes = attribTypes(tree.typeargs, localEnv);
 
-            // Done with this()/super() parameters.
-            if (!env.info.earlyContext.onlyWarnings()) {
-                // End of constructor prologue (but only if no initialization warnings are needed)
-                env.info.earlyContext = EarlyConstructionContext.NONE;
-            }
+            // End of constructor prologue. Done with this()/super() parameters.
+            env.info.earlyContext = EarlyConstructionContext.NONE;
 
             // Variable `site' points to the class in which the called
             // constructor is defined.
@@ -5618,11 +5611,6 @@ public class Attr extends JCTree.Visitor {
 
                 if (rs.isSerializable(c.type)) {
                     env.info.isSerializable = true;
-                }
-
-                if (c.isValueClass()) {
-                    Assert.check(env.tree.hasTag(CLASSDEF));
-                    chk.checkConstraintsOfValueClass((JCClassDecl) env.tree, c);
                 }
 
                 attribClassBody(env, c);

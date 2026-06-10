@@ -57,14 +57,12 @@ public class ThreadWrapper implements Runnable {
 
     @SuppressWarnings("this-escape")
     public ThreadWrapper() {
-        super();
         // thread is a platform or virtual thread
         thread = TestThreadFactory.newThread(this);
     }
 
     @SuppressWarnings("this-escape")
     public ThreadWrapper(String name) {
-        super();
         // thread is a platform or virtual thread
         thread = TestThreadFactory.newThread(this, name);
     }

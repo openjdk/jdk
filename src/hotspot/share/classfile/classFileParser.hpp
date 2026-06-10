@@ -230,6 +230,7 @@ class ClassFileParser {
   bool _has_contended_fields;
   bool _has_aot_runtime_setup_method;
   bool _has_strict_static_fields;
+  bool _has_null_restricted_static_fields;
 
   bool _must_be_atomic;
 

@@ -33,7 +33,7 @@ import java.util.Optional;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.FloatToDecimal;
-import jdk.internal.value.DeserializeConstructor;
+import jdk.internal.value.Deserializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -83,7 +83,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  */
 @jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
-public final class Float extends Number
+public final /*value*/ class Float extends Number
         implements Comparable<Float>, Constable, ConstantDesc {
     /**
      * A constant holding the positive infinity of type
@@ -688,7 +688,7 @@ public final class Float extends Number
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
-    @DeserializeConstructor
+    @Deserializer("value")
     public Float(float value) {
         this.value = value;
     }

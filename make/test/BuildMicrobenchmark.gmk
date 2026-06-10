@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n\
 # requires the use of -processor option during benchmark compilation.
 
 # Build microbenchmark suite for the current JDK
+# Need to patch java.base to include preview classes not found in interim javac
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
@@ -103,6 +104,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/sun.security.util.math=ALL-UNNAMED \
         --add-exports java.base/sun.security.util.math.intpoly=ALL-UNNAMED \
         --enable-preview \
+        --patch-module java.base=$(SUPPORT_OUTPUTDIR)/preview/java.base \
         -XDsuppressNotes \
         -processor org.openjdk.jmh.generators.BenchmarkProcessor \
         -s $(MICROBENCHMARK_GENSRC), \

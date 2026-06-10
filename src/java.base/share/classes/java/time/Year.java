@@ -141,7 +141,7 @@ import java.util.Objects;
  */
 @jdk.internal.ValueBased
 @jdk.internal.MigratedValueClass
-public final class Year
+public final /*value*/ class Year
         implements Temporal, TemporalAdjuster, Comparable<Year>, Serializable {
 
     /**

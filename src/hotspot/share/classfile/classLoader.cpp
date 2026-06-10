@@ -703,7 +703,7 @@ static const char* get_preview_path(const char* path) {
   const char file_sep = os::file_separator()[0];
   // 18 represents the length of "META-INF" (8) + "preview" (7) + 2 file separators + \0
   size_t len = strlen(path) + 18;
-  char *preview_path = NEW_RESOURCE_ARRAY(char, len);
+  char* preview_path = NEW_RESOURCE_ARRAY(char, len);
   jio_snprintf(preview_path, len, "%s%cMETA-INF%cpreview", path, file_sep, file_sep);
   return preview_path;
 }

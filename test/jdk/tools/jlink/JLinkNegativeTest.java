@@ -35,7 +35,7 @@
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @library /test/lib ../lib
- * @build tests.*
+ * @build tests.* jdk.test.lib.util.ModuleInfoWriter
  * @run testng JLinkNegativeTest
  */
 
