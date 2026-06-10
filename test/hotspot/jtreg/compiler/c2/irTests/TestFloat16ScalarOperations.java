@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,6 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
-import java.util.Random;
 
 import compiler.lib.generators.Generator;
 import static compiler.lib.generators.Generators.G;
@@ -69,9 +68,9 @@ public class TestFloat16ScalarOperations {
     private static final Float16 RANDOM5 = Float16.valueOf(genF.next());
 
     // We have to ensure that the constants are not special values that lead the operations to
-    // constant fold. For example "x + 0" could constant fold to "x", so we need to avoid that
-    // the add constant is zero.
-    private static Generator<Float> genSmallRangeF = G.uniformFloats(0.1f, 0.9f);
+    // constant fold. For example "x + 0" could constant fold to "x" or "x / 0.5" could fold
+    // to "x * 2", so we need to avoid that the constants are zero or a reciprocal power of two.
+    private static Generator<Float> genSmallRangeF = G.uniformFloats(0.6f, 0.9f);
     private static final Float16 RANDOM_CON_ADD = Float16.valueOf(genSmallRangeF.next());
     private static final Float16 RANDOM_CON_SUB = Float16.valueOf(genSmallRangeF.next());
     private static final Float16 RANDOM_CON_MUL = Float16.valueOf(genSmallRangeF.next());
@@ -99,9 +98,7 @@ public class TestFloat16ScalarOperations {
     private short GOLDEN_QNAN;
 
     public static void main(String args[]) {
-        Scenario s0 = new Scenario(0, "--add-modules=jdk.incubator.vector", "-Xint");
-        Scenario s1 = new Scenario(1, "--add-modules=jdk.incubator.vector");
-        new TestFramework().addScenarios(s1).start();
+        new TestFramework().addFlags("--add-modules=jdk.incubator.vector").start();
     }
 
     public TestFloat16ScalarOperations() {

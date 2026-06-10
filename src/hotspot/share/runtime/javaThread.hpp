@@ -873,7 +873,7 @@ public:
   // Atomic version; invoked by a thread other than the owning thread.
   bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
 
-  bool jni_deferred_suspension() { return AtomicAccess::load(&_jni_deferred_suspension_count); }
+  bool jni_deferred_suspension() const { return AtomicAccess::load(&_jni_deferred_suspension_count); }
   inline void enter_jni_deferred_suspension();
   void exit_jni_deferred_suspension() {
     precond(Thread::current() == this);

@@ -870,6 +870,12 @@ class MacroAssembler: public Assembler {
                        Register tmp6, Register tmp7, Register tmp8, Register tmp9, Register tmp10,
                        Register tmp11, Register tmp12, Register tmp13);
 
+  // non-atomic 64-bit memory increment by simm16
+  void increment_mem64(Register base, RegisterOrConstant ind_or_offs, int val, Register tmp);
+
+  // Bytecode profiling (tmp2 = noreg is allowed, but then recv is killed)
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1, Register tmp2);
+
   // Emitters for CRC32 calculation.
   // A note on invertCRC:
   //   Unfortunately, internal representation of crc differs between CRC32 and CRC32C.

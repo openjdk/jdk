@@ -159,3 +159,19 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_decelerating) {
   EXPECT_DOUBLE_EQ(consumption.momentary_rate(), 1024.0);
   EXPECT_EQ(consumption.momentary_consumption(), 102400UL);
 }
+
+TEST_VM_F(ShenandoahAllocationRateTest, force_updates) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+  for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
+    allocate(rate, 2048);
+  }
+  EXPECT_DOUBLE_EQ(rate.weighted_average(), 2048.0);
+
+  // Now simulate an equal number of seconds passing without any allocations. This
+  // should decay our baseline average back to zero.
+  for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
+    rate.force_update();
+  }
+  EXPECT_DOUBLE_EQ(rate.weighted_average(), 0.0);
+}
+

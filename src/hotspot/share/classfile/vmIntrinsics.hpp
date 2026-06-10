@@ -526,9 +526,12 @@ class methodHandle;
                                                                                                                         \
   /* support for sun.security.provider.SHAKE128Parallel */                                                              \
   do_class(sun_security_provider_sha3_parallel,                "sun/security/provider/SHA3Parallel")                    \
-   do_intrinsic(_double_keccak, sun_security_provider_sha3_parallel, double_keccak_name, double_keccak_signature, F_S)   \
+   do_intrinsic(_double_keccak, sun_security_provider_sha3_parallel, double_keccak_name, double_keccak_signature, F_S)  \
    do_name(     double_keccak_name,                                 "doubleKeccak")                                     \
    do_signature(double_keccak_signature,                            "([J[J)I")                                          \
+   do_intrinsic(_quad_keccak, sun_security_provider_sha3_parallel, quad_keccak_name, quad_keccak_signature, F_S)        \
+   do_name(     quad_keccak_name,                                 "quadKeccak")                                         \
+   do_signature(quad_keccak_signature,                            "([J[J[J[J)I")                                        \
                                                                                                                         \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
@@ -546,6 +549,13 @@ class methodHandle;
    do_name(intPolyAssign_name, "conditionalAssign")                                                                     \
    do_signature(intPolyAssign_signature, "(I[J[J)V")                                                                    \
                                                                                                                         \
+  /* support for sun.security.util.math.intpoly.IntegerPolynomial25519 */                                               \
+  do_class(sun_security_util_math_intpoly_IntegerPolynomial25519, "sun/security/util/math/intpoly/IntegerPolynomial25519") \
+  do_intrinsic(_intpoly_mult_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolyMult_name, intPolyMult_signature, F_R) \
+  do_intrinsic(_intpoly_square_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolySquare_name, intPolySquare_signature, F_R) \
+  do_name(intPolySquare_name, "square")                                                                                  \
+  do_signature(intPolySquare_signature, "([J[J)V")                                                                       \
+                                                                                                                         \
   /* support for java.util.Base64.Encoder*/                                                                             \
   do_class(java_util_Base64_Encoder, "java/util/Base64$Encoder")                                                        \
   do_intrinsic(_base64_encodeBlock, java_util_Base64_Encoder, encodeBlock_name, encodeBlock_signature, F_R)             \
