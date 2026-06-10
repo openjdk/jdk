@@ -282,7 +282,7 @@ public:
   // from a starting position determined by the given worker id.
   void iterate_incremental_part_from(G1HeapRegionClosure* cl, G1HeapRegionClaimer* hr_claimer, uint worker_id) const;
 
-  // Returns the number of regions in the collection set current increment.
+  // Returns the number of regions in the current collection set increment.
   uint num_regions_in_increment() const { return num_regions() - _regions_inc_part_start; }
   // Returns the total number of regions in the current collection set.
   uint num_regions() const { return _num_regions; }

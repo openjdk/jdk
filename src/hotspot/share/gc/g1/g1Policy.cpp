@@ -849,8 +849,8 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
   if (update_stats) {
     // We maintain the invariant that all objects allocated by mutator
     // threads will be allocated out of eden regions. So, we can use
-    // the eden region number allocated since the previous GC to
-    // calculate the application's allocate rate. The only exception
+    // the number of eden regions allocated since the previous GC to
+    // calculate the application's allocation rate. The only exception
     // to that is humongous objects that are allocated separately. But
     // given that humongous object allocations do not really affect
     // either the pause's duration nor when the next pause will take

@@ -84,7 +84,7 @@ void G1CollectionSet::init_region_counts(uint eden_cset_region_count,
   _survivor_region_count = survivor_cset_region_count;
 
   assert(young_region_count() == num_regions(),
-         "Young region count %u should match collection set region number %u", young_region_count(), num_regions());
+         "Young region count %u should match collection set region count %u", young_region_count(), num_regions());
 
   _initial_old_region_count = 0;
   assert(_optional_groups.length() == 0, "Should not have any optional groups yet");
@@ -138,7 +138,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 void G1CollectionSet::start() {
   assert(num_regions() == 0, "Collection set must be empty before starting a new collection set.");
   assert(num_groups() == 0, "Collection set groups must be empty before starting a new collection set.");
-  assert(_optional_groups.length() == 0, "Collection set optional gorups must be empty before starting a new collection set.");
+  assert(_optional_groups.length() == 0, "Collection set optional group must be empty before starting a new collection set.");
 
   continue_incremental_building();
 
@@ -231,7 +231,7 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   assert(index < _max_regions, "Collection set larger than maximum allowed.");
   _regions[index++] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
-  // update to the counts field.
+  // update to the _num_regions field.
   OrderAccess::storestore();
   _num_regions++;
 }
@@ -754,12 +754,12 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
 
 #ifdef ASSERT
 class G1VerifyYoungCSetIndicesClosure : public G1HeapRegionClosure {
-  uint _young_length;
+  uint _num_young_regions;
   uint* _heap_region_indices;
 public:
-  G1VerifyYoungCSetIndicesClosure(uint young_length) : G1HeapRegionClosure(), _young_length(young_length) {
-    _heap_region_indices = NEW_C_HEAP_ARRAY(uint, young_length + 1, mtGC);
-    for (uint i = 0; i < young_length + 1; i++) {
+  G1VerifyYoungCSetIndicesClosure(uint num_young_regions) : G1HeapRegionClosure(), _num_young_regions(num_young_regions) {
+    _heap_region_indices = NEW_C_HEAP_ARRAY(uint, num_young_regions + 1, mtGC);
+    for (uint i = 0; i < num_young_regions + 1; i++) {
       _heap_region_indices[i] = UINT_MAX;
     }
   }
@@ -770,8 +770,9 @@ public:
   virtual bool do_heap_region(G1HeapRegion* r) {
     const uint idx = r->young_index_in_cset();
 
-    assert(idx > 0, "Young index must be set for all regions in the incremental collection set but is not for region %u.", r->hrm_index());
-    assert(idx <= _young_length, "Young cset index %u too large for region %u", idx, r->hrm_index());
+    assert(r->is_young(), "must be, but region %u is not", r->hrm_index());
+    assert(idx > 0, "Young index must be set for all regions in the collection set but is not for region %u.", r->hrm_index());
+    assert(idx <= _num_young_regions, "Young cset index %u too large for region %u", idx, r->hrm_index());
 
     assert(_heap_region_indices[idx] == UINT_MAX,
            "Index %d used by multiple regions, first use by region %u, second by region %u",
