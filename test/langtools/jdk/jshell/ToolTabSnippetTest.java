@@ -366,12 +366,12 @@ public class ToolTabSnippetTest extends UITesting {
     public static void noJDKSources() {
         setJDKSourcesOverride(List.of());
     }
-    
+
     @AfterAll
     public static void restoreJDKSources() {
         setJDKSourcesOverride(null);
     }
-    
+
     private static void setJDKSourcesOverride(List<Path> paths) throws IllegalStateException {
         try {
             //to ensure test stability, don't use JDK's src.zip:
