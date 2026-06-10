@@ -239,10 +239,6 @@ ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
   LINKER_CONFIG_ENABLE_GOLD := --enable-gold=default
 endif
 
-ifeq ($(filter riscv64 ppc64le s390x armhfp, $(ARCH)), )
-  ENABLE_MULTILIB := --enable-multilib
-endif
-
 # Makefile creation. Simply run configure in build dir.
 # Setting CFLAGS to -O2 generates a much faster ld.
 $(BFDMAKES) \
@@ -258,7 +254,6 @@ $(BUILDDIR)/$(BINUTILS_VER)/Makefile: $(BINUTILS_CFG)
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
 	      --program-prefix=$(TARGET)- \
-	      $(ENABLE_MULTILIB) \
 	      --enable-threads \
 	      --enable-plugins \
 	) > $(@D)/log.config 2>&1
@@ -323,10 +318,8 @@ ifeq ($(ARCH), riscv64)
   $(BUILDDIR)/$(GCC_VER)/Makefile: CONFIG += --disable-libsanitizer
 endif
 
-ifneq ($(filter riscv64 ppc64le s390x armhfp x86_64, $(ARCH)), )
-  # We only support 64-bit on these platforms anyway
-  CONFIG += --disable-multilib
-endif
+# We don't need to support multilib
+CONFIG += --disable-multilib
 
 # Want:
 # c,c++
