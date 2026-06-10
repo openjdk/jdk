@@ -674,7 +674,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
           if (cmp->Opcode() != Op_CmpI) {
             // Only CmpI allowed, assumed by signed logic below.
             // We could extend to CmpU in the future, and would
-            // have to implment unsigned range logic below.
+            // have to implement unsigned range logic below.
             return nullptr;
           }
           const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();

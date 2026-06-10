@@ -76,15 +76,15 @@ public class TestHasTruncationWrap {
 
     // A second reproducer from JDK-8385855, leads to wrong result since JDK18 (JDK-8276162).
     // We make use of the CmpU via Integer.compareUnsigned, introduced by JDK-8276162.
-    public static int test1_gold0 = test1(-2);
-    public static int test1_gold1 = test1(2);
+    public static int test1_gold0 = 32767; // test1(-2);
+    public static int test1_gold1 = 3;     // test1(2);
 
     @Run(test = "test1")
     private static void run1() {
         int val0 = test1(-2);
         int val1 = test1( 2);
-        if (val0 != test1_gold0) { throw new RuntimeException("wrong value test( 2): " + test1_gold0 + " vs " + val0); }
-        if (val1 != test1_gold1) { throw new RuntimeException("wrong value test(-2): " + test1_gold1 + " vs " + val1); }
+        if (val0 != test1_gold0) { throw new RuntimeException("wrong value test(-2): " + test1_gold0 + " vs " + val0); }
+        if (val1 != test1_gold1) { throw new RuntimeException("wrong value test( 2): " + test1_gold1 + " vs " + val1); }
     }
 
     @Test
@@ -140,15 +140,15 @@ public class TestHasTruncationWrap {
     // We make use of the CmpU in the RangeCheck of an array access.
     // To flip the condition, we just use a try/catch.
     public static final int[] test2_A = new int[2];
-    public static int test2_gold0 = test2(-2);
-    public static int test2_gold1 = test2(2);
+    public static int test2_gold0 = 32767; // test2(-2);
+    public static int test2_gold1 = 3;     // test2(2);
 
     @Run(test = "test2")
     private static void run2() {
         int val0 = test2(-2);
         int val1 = test2( 2);
-        if (val0 != test2_gold0) { throw new RuntimeException("wrong value test( 2): " + test2_gold0 + " vs " + val0); }
-        if (val1 != test2_gold1) { throw new RuntimeException("wrong value test(-2): " + test2_gold1 + " vs " + val1); }
+        if (val0 != test2_gold0) { throw new RuntimeException("wrong value test(-2): " + test2_gold0 + " vs " + val0); }
+        if (val1 != test2_gold1) { throw new RuntimeException("wrong value test( 2): " + test2_gold1 + " vs " + val1); }
     }
 
     @Test
@@ -446,6 +446,7 @@ public class TestHasTruncationWrap {
     // testIR5c: short do-while-loop.
     // While the code shape looks very close to testIR2b, somehow the additional "exit check"
     // does not do the trick, and C2 does not recognize the pattern.
+    // The one-off pre-loop guard and bottom exit check are not enough. Not 100% sure why.
     public static int testIR5c_gold = testIR5c();
 
     @Run(test = "testIR5c")
@@ -475,7 +476,8 @@ public class TestHasTruncationWrap {
     }
 
     // testIR5d: short while-loop, again similar to testIR2b and testIR5c, but with while-loop form.
-    // Somehow, that does get recognized by C2.
+    // Somehow, that does get recognized by C2: the top-check seems to trigger optimizationd differently,
+    // evne though Java semantics would be the same.
     public static int testIR5d_gold = testIR5d();
 
     @Run(test = "testIR5d")
@@ -558,6 +560,19 @@ public class TestHasTruncationWrap {
     // - char, byte and short truncation
     // - check for IRNode.COUNTED_LOOP
     // - dontinline call to prevent empty loop
-    // - increment and decrement cases
+    // - increment and decrement cases, non-unit stride
     // - Cases with and without compare before loop: positive and negative tests
+    //
+    // Template Fuzzing ideas:
+    // - Mostly about correctness, not IR rules
+    // - truncation:
+    //   - short cast
+    //   - short shift: ((i + s) << 16) >> 16
+    //   - char/byte mask/shift
+    // - stride: pos/neg, small integers (rarely also large?)
+    // - loop shape: for, top-tested while, bottom tested do-while. Each with < or !=.
+    //   - endless loop control: additional loop exit with hidden condition? - verify with IR test here.
+    // - pre-loop cmp: none, explicit "init < limit", using min/max or not, using CmpU vs CmpI.
+    // - bounds: small, in around short/char/byte, totally random.
+    // - reference vs test methods for correctness comparison.
 }
