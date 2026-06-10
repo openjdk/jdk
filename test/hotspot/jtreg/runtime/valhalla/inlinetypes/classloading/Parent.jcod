@@ -1,7 +1,7 @@
 class Parent {
   0xCAFEBABE;
   65535; // minor version
-  71; // version
+  72; // version
   [] { // Constant Pool
     ; // first element is empty
     Utf8 "Parent"; // #1

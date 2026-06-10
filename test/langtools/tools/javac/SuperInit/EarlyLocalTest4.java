@@ -29,8 +29,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @enablePreview
  * @run main EarlyLocalTest4
- * @build SuperCallRemover
- * @compile -Xlint:initialization -Werror -XDrawDiagnostics -processor SuperCallRemover EarlyLocalTest4.java
  */
 public class EarlyLocalTest4 {
 

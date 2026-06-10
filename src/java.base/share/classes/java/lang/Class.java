@@ -350,10 +350,11 @@ public final class Class<T> implements java.io.Serializable,
                         if (isValue()) {
                             sb.append("value ");
                         }
-                        if (isRecord())
+                        if (isRecord()) {
                             sb.append("record");
-                        else
+                        } else {
                             sb.append("class");
+                        }
                     }
                 }
                 sb.append(' ');

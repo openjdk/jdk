@@ -36,7 +36,6 @@
 # Valhalla failures start here:
 
 # Compiler:
-compiler/c2/ReachabilityFenceFlagsTest.java                                                      8382503 generic-all
 
 # Runtime:
 runtime/cds/appcds/aotCode/AOTCodeFlags.java#default_gc 8382398 generic-all

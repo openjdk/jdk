@@ -3681,7 +3681,7 @@ encode %{
     }
     if (tf()->returns_inline_type_as_fields() && !_method->is_method_handle_intrinsic() && _method->return_type()->is_loaded()) {
       // The last return value is not set by the callee but used to pass the null marker to compiled code.
-      // Search for the corresponding projection, get the register and emit code that initialized it.
+      // Search for the corresponding projection, get the register and emit code that initializes it.
       uint con = (tf()->range_cc()->cnt() - 1);
       for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
         ProjNode* proj = fast_out(i)->as_Proj();

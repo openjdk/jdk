@@ -152,7 +152,6 @@ public interface OutputBuffer {
       }
     }
 
-    @SuppressWarnings("initialization")
     private LazyOutputBuffer(Process p, Charset cs, boolean verbose) {
       this.p = p;
       this.verbose = verbose;

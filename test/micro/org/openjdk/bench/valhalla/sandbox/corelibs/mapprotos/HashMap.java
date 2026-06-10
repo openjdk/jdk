@@ -467,7 +467,6 @@ public class HashMap<K,V> extends XAbstractMap<K,V>
      * @param   m the map whose mappings are to be placed in this map
      * @throws  NullPointerException if the specified map is null
      */
-    @SuppressWarnings("initialization")
     public HashMap(Map<? extends K, ? extends V> m) {
         this.loadFactor = DEFAULT_LOAD_FACTOR;
         putMapEntries(m, false);
@@ -1568,7 +1567,6 @@ public class HashMap<K,V> extends XAbstractMap<K,V>
         int expectedModCount;  // for fast-fail
         int count;
 
-        @SuppressWarnings("initialization")
         HashIterator() {
             expectedModCount = modCount;
             current = -1;

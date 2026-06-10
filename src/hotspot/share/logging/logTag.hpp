@@ -163,13 +163,14 @@ class outputStream;
   LOG_TAG(plab) \
   LOG_TAG(placeholders) \
   LOG_TAG(preempt) \
-  LOG_TAG(preload)   /* Trace successfull class preloading */ \
+  LOG_TAG(preload)   /* Trace successful class preloading */ \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
   LOG_TAG(ptrqueue) \
   LOG_TAG(purge) \
   LOG_TAG(record) \
+  LOG_TAG(redact) \
   LOG_TAG(redefine) \
   LOG_TAG(ref) \
   LOG_TAG(refine) \

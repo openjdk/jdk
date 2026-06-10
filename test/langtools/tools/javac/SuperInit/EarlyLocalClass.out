@@ -1,2 +1,2 @@
-EarlyLocalClass.java:17:32: compiler.err.cant.ref.before.ctor.called: this
+EarlyLocalClass.java:15:32: compiler.err.cant.ref.before.ctor.called: this
 1 error

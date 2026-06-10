@@ -34,7 +34,7 @@ class BadChild extends Parent {
 }
 */
 
-identity class BadChild1 extends Parent version 71:65535
+identity class BadChild1 extends Parent version 72:65535
 {
   strict Field x:I;
   strict Field y:I;

@@ -2226,39 +2226,12 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 }
 
 
+// kills recv
 void LIR_Assembler::type_profile_helper(Register mdo, int mdo_offset_bias,
                                         ciMethodData *md, ciProfileData *data,
-                                        Register recv, Register tmp1, Label* update_done) {
-  uint i;
-  for (i = 0; i < VirtualCallData::row_limit(); i++) {
-    Label next_test;
-    // See if the receiver is receiver[n].
-    __ ld(tmp1, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)) - mdo_offset_bias, mdo);
-    __ verify_klass_ptr(tmp1);
-    __ cmpd(CR0, recv, tmp1);
-    __ bne(CR0, next_test);
-
-    __ ld(tmp1, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)) - mdo_offset_bias, mdo);
-    __ addi(tmp1, tmp1, DataLayout::counter_increment);
-    __ std(tmp1, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)) - mdo_offset_bias, mdo);
-    __ b(*update_done);
-
-    __ bind(next_test);
-  }
-
-  // Didn't find receiver; find next empty slot and fill it in.
-  for (i = 0; i < VirtualCallData::row_limit(); i++) {
-    Label next_test;
-    __ ld(tmp1, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)) - mdo_offset_bias, mdo);
-    __ cmpdi(CR0, tmp1, 0);
-    __ bne(CR0, next_test);
-    __ li(tmp1, DataLayout::counter_increment);
-    __ std(recv, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)) - mdo_offset_bias, mdo);
-    __ std(tmp1, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)) - mdo_offset_bias, mdo);
-    __ b(*update_done);
-
-    __ bind(next_test);
-  }
+                                        Register recv, Register tmp) {
+  int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0)) - mdo_offset_bias;
+  __ profile_receiver_type(recv, mdo, mdp_offset, tmp, noreg);
 }
 
 
@@ -2320,15 +2293,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ b(*obj_is_null);
     __ bind(not_null);
 
-    Label update_done;
     Register recv = klass_RInfo;
     __ load_klass(recv, obj);
-    type_profile_helper(mdo, mdo_offset_bias, md, data, recv, Rtmp1, &update_done);
-    const int slot_offset = md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias;
-    __ ld(Rtmp1, slot_offset, mdo);
-    __ addi(Rtmp1, Rtmp1, DataLayout::counter_increment);
-    __ std(Rtmp1, slot_offset, mdo);
-    __ bind(update_done);
+    type_profile_helper(mdo, mdo_offset_bias, md, data, recv, Rtmp1); // kills recv
   } else {
     __ cmpdi(CR0, obj, 0);
     __ beq(CR0, *obj_is_null);
@@ -2427,15 +2394,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ b(done);
       __ bind(not_null);
 
-      Label update_done;
       Register recv = klass_RInfo;
       __ load_klass(recv, value);
-      type_profile_helper(mdo, mdo_offset_bias, md, data, recv, Rtmp1, &update_done);
-      const int slot_offset = md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias;
-      __ ld(Rtmp1, slot_offset, mdo);
-      __ addi(Rtmp1, Rtmp1, DataLayout::counter_increment);
-      __ std(Rtmp1, slot_offset, mdo);
-      __ bind(update_done);
+      type_profile_helper(mdo, mdo_offset_bias, md, data, recv, Rtmp1); // kills recv
     } else {
       __ cmpdi(CR0, value, 0);
       __ beq(CR0, done);
@@ -2648,55 +2609,27 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       // We know the type that will be seen at this call site; we can
       // statically update the MethodData* rather than needing to do
       // dynamic tests on the receiver type.
-
-      // NOTE: we should probably put a lock around this search to
-      // avoid collisions by concurrent compilations.
       ciVirtualCallData* vc_data = (ciVirtualCallData*) data;
-      uint i;
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
+      for (uint i = 0; i < VirtualCallData::row_limit(); i++) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
-          __ ld(tmp1, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) - mdo_offset_bias, mdo);
-          __ addi(tmp1, tmp1, DataLayout::counter_increment);
-          __ std(tmp1, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) - mdo_offset_bias, mdo);
+          __ increment_mem64(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) - mdo_offset_bias,
+                             DataLayout::counter_increment, tmp1);
           return;
         }
       }
 
-      // Receiver type not found in profile data; select an empty slot.
-
-      // Note that this is less efficient than it should be because it
-      // always does a write to the receiver part of the
-      // VirtualCallData rather than just the first time.
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        ciKlass* receiver = vc_data->receiver(i);
-        if (receiver == nullptr) {
-          metadata2reg(known_klass->constant_encoding(), tmp1);
-          __ std(tmp1, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)) - mdo_offset_bias, mdo);
-
-          __ ld(tmp1, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) - mdo_offset_bias, mdo);
-          __ addi(tmp1, tmp1, DataLayout::counter_increment);
-          __ std(tmp1, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) - mdo_offset_bias, mdo);
-          return;
-        }
-      }
+      // Receiver type is not found in profile data.
+      // Fall back to runtime helper to handle the rest at runtime.
+      metadata2reg(known_klass->constant_encoding(), recv);
     } else {
       __ load_klass(recv, recv);
-      Label update_done;
-      type_profile_helper(mdo, mdo_offset_bias, md, data, recv, tmp1, &update_done);
-      // Receiver did not match any saved receiver and there is no empty row for it.
-      // Increment total counter to indicate polymorphic case.
-      __ ld(tmp1, md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias, mdo);
-      __ addi(tmp1, tmp1, DataLayout::counter_increment);
-      __ std(tmp1, md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias, mdo);
-
-      __ bind(update_done);
     }
+    type_profile_helper(mdo, mdo_offset_bias, md, data, recv, tmp1); // kills recv
   } else {
     // Static call
-    __ ld(tmp1, md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias, mdo);
-    __ addi(tmp1, tmp1, DataLayout::counter_increment);
-    __ std(tmp1, md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias, mdo);
+    __ increment_mem64(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias,
+                       DataLayout::counter_increment, tmp1);
   }
 }
 

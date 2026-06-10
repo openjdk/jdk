@@ -241,13 +241,11 @@ public class ValueClassGenerator {
     public static class FieldDesc {
         String name;
         TypeDesc type;
-        String initVal;
         boolean isNullRestricted;
 
-        FieldDesc(String name, TypeDesc type, String initval, boolean isNullRestricted) {
+        FieldDesc(String name, TypeDesc type, boolean isNullRestricted) {
             this.name = name;
             this.type = type;
-            this.initVal = initval;
             this.isNullRestricted = isNullRestricted;
         }
     }
@@ -269,7 +267,6 @@ public class ValueClassGenerator {
 
         String generateFieldsDeclarations() {
             StringBuilder sb = new StringBuilder();
-            int counter = 0;
             for (FieldDesc fd : fields) {
                 if (fd.isNullRestricted) {
                     sb.append("\t@NullRestricted\n");
@@ -404,7 +401,6 @@ public class ValueClassGenerator {
 
         String generatePrecomputedValues() {
             String[] rndVal = new String[NUM_PREDEFINED_VALUES];
-            int nfields = fields.size();
             StringBuilder sb = new StringBuilder();
             // While null is not strictly speaking part of the value set of the class, inserting
             // it in the list of precomputed values makes the code more streamlined when picking up
@@ -466,22 +462,20 @@ public class ValueClassGenerator {
           String fieldName = "field"+i;
           TypeDesc fieldType = primitiveTypes.get(random.nextInt(primitiveTypes.size()));
           if (fieldType.allowDuplicates) allowDuplicates = true;
-          String initval = fieldType.getPrecomputedValueAsString(random.nextInt(NUM_PREDEFINED_VALUES));
-          FieldDesc fd = new FieldDesc(fieldName, fieldType, initval, false);
+          FieldDesc fd = new FieldDesc(fieldName, fieldType, false);
           fields.add(fd);
       }
       for (int i = nPrimitive; i < nfields; i++) {
           String fieldName = "field"+i;
           TypeDesc fieldType = referenceTypes.get(random.nextInt(referenceTypes.size()));
           if (fieldType.allowDuplicates) allowDuplicates = true;
-          String initval = fieldType.getPrecomputedValueAsString(random.nextInt(NUM_PREDEFINED_VALUES));
           boolean isNullRestricted;
           if (fieldType instanceof ValueClassDesc) {
               isNullRestricted = random.nextInt(5) == 1;
           } else {
               isNullRestricted = false;
           }
-          FieldDesc fd = new FieldDesc(fieldName, fieldType, initval, isNullRestricted);
+          FieldDesc fd = new FieldDesc(fieldName, fieldType, isNullRestricted);
           fields.add(fd);
       }
       return allowDuplicates;

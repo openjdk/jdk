@@ -44,7 +44,7 @@ public class StrictIgnore version 66:0 {
 
 // StrictBase is a well formed value class with a strict field, that can
 // be used for subclassing.
-public abstract class StrictBase version 71:65535 {
+public abstract class StrictBase version 72:65535 {
   protected final strict Field x:I;
 
   public Method "<init>":"()V" stack 2 {
@@ -59,7 +59,7 @@ public abstract class StrictBase version 71:65535 {
 
 // PostInitStrict is a bad value class that writes to a strict field after the
 // super constructor call.
-public final class PostInitStrict version 71:65535 {
+public final class PostInitStrict version 72:65535 {
   final strict Field y:I;
 
   public Method "<init>":"()V" stack 2 {
@@ -74,7 +74,7 @@ public final class PostInitStrict version 71:65535 {
 
 // BadStrictSubPreInit is a bad value class that tries to write to an inherited
 // strict field while acting on UninitializedThis.
-public final class BadStrictSubPreInit extends StrictBase version 71:65535 {
+public final class BadStrictSubPreInit extends StrictBase version 72:65535 {
 
   public Method "<init>":"()V" stack 2 {
       aload_0;
@@ -88,7 +88,7 @@ public final class BadStrictSubPreInit extends StrictBase version 71:65535 {
 
 // BadStrictSubPostInit is a bad value class that tries to write to an inherited
 // strict field in "regular" code.
-public final class BadStrictSubPostInit extends StrictBase version 71:65535 {
+public final class BadStrictSubPostInit extends StrictBase version 72:65535 {
 
   public Method "<init>":"()V" stack 2 {
       aload_0;

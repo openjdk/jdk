@@ -59,6 +59,7 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @library /test/lib
  * @build test.TestProcess
  *        jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.util.ModuleInfoWriter
  * @run main/othervm TestProcessHelper
  */
 public class TestProcessHelper {

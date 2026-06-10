@@ -1250,7 +1250,7 @@ public class TestFieldNullMarkers {
             t.field5 = VAL7;
             Asserts.assertEQ(t.field5.val, VAL7.val);
 
-            // Some more values classes with different flavors of primitive fields
+            // Some more value classes with different flavors of primitive fields
             t.field6 = null;
             Asserts.assertEQ(t.field6, null);
             t.field6 = new MyValue8((byte)i);
@@ -1468,4 +1468,3 @@ public class TestFieldNullMarkers {
         t.testDeopt5(val8, val9, val10, val11, false);
     }
 }
-

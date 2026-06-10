@@ -24,7 +24,7 @@
 class NestedEarlyLarval {
   0xCAFEBABE;
   65535;                                   // minor version
-  71;                                      // version
+  72;                                      // version
   [] {                                     // Constant Pool
     ;                                      // first element is empty
     Field #2 #3;                           // #1

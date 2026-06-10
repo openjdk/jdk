@@ -273,17 +273,17 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      *  @param required   An internationalized string describing the type tag
      *                    required.
-     *  @param found      The type that was found.
+     *  @param type       The type that was found.
      */
-    Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Object found) {
+    Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Type type) {
         // this error used to be raised by the parser,
         // but has been delayed to this point:
-        if (found instanceof Type type && type.hasTag(VOID)) {
+        if (type.hasTag(VOID)) {
             log.error(pos, Errors.IllegalStartOfType);
             return syms.errType;
         }
-        log.error(pos, Errors.TypeFoundReq(found, required));
-        return types.createErrorType(found instanceof Type type ? type : syms.errType);
+        log.error(pos, Errors.TypeFoundReq(asTypeParam(type), required));
+        return types.createErrorType(type);
     }
 
     /** Report duplicate declaration error.
@@ -650,7 +650,7 @@ public class Check {
         if (!t.hasTag(CLASS) && !t.hasTag(ARRAY) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
                                 diags.fragment(Fragments.TypeReqClassArray),
-                                asTypeParam(t));
+                                t);
         } else {
             return t;
         }
@@ -664,7 +664,7 @@ public class Check {
         if (!t.hasTag(CLASS) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
                                 diags.fragment(Fragments.TypeReqClass),
-                                asTypeParam(t));
+                                t);
         } else {
             return t;
         }
@@ -675,31 +675,6 @@ public class Check {
                                     ? diags.fragment(Fragments.TypeParameter(t))
                                     : t;
         }
-
-    void checkConstraintsOfValueClass(JCClassDecl tree, ClassSymbol c) {
-        DiagnosticPosition pos = tree.pos();
-        for (Type st : types.closure(c.type)) {
-            if (st == null || st.tsym == null || st.tsym.kind == ERR)
-                continue;
-            if  (st.tsym == syms.objectType.tsym || st.tsym == syms.recordType.tsym || st.isInterface())
-                continue;
-            if (!st.tsym.isAbstract()) {
-                if (c != st.tsym) {
-                    log.error(pos, Errors.ConcreteSupertypeForValueClass(c, st));
-                }
-                continue;
-            }
-            // dealing with an abstract value or value super class below.
-            for (Symbol s : st.tsym.members().getSymbols(NON_RECURSIVE)) {
-                if (s.kind == MTH) {
-                    if ((s.flags() & (SYNCHRONIZED | STATIC)) == SYNCHRONIZED) {
-                        log.error(pos, Errors.SuperClassMethodCannotBeSynchronized(s, c, st));
-                    }
-                    break;
-                }
-            }
-        }
-    }
 
     /** Check that type is a valid qualifier for a constructor reference expression
      */
@@ -2579,15 +2554,11 @@ public class Check {
         checkCompatibleConcretes(pos, c);
 
         Type identitySuper = null;
-        for (Type t : types.closure(c)) {
-            if (t != c) {
-                if (t.isIdentityClass() && (t.tsym.flags() & VALUE_BASED) == 0)
-                    identitySuper = t;
-                if (c.isValueClass() && identitySuper != null && identitySuper.tsym != syms.objectType.tsym) { // Object is special
-                    log.error(pos, Errors.ValueTypeHasIdentitySuperType(c, identitySuper));
-                    break;
-                }
-            }
+        Type superType = types.supertype(c);
+        if (superType.isIdentityClass())
+            identitySuper = superType;
+        if (c.isValueClass() && identitySuper != null && identitySuper.tsym != syms.objectType.tsym) { // Object is special
+            log.error(pos, Errors.ValueTypeHasIdentitySuperType(c, identitySuper));
         }
     }
 

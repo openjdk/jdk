@@ -139,7 +139,7 @@ import java.util.regex.Pattern;
  */
 @jdk.internal.ValueBased
 @jdk.internal.MigratedValueClass
-public final class Duration
+public final /*value*/ class Duration
         implements TemporalAmount, Comparable<Duration>, Serializable {
 
     /**

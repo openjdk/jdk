@@ -88,7 +88,7 @@ void CardTableBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) 
         LIR_Opr oop_val = access.gen()->new_register(T_OBJECT);
         access.gen()->lir()->move(field_val, oop_val);
 
-        assert(!is_array && !on_anonymous, "not suppported");
+        assert(!is_array && !on_anonymous, "not supported");
         post_barrier(inner_access, access.base().opr(), oop_val);
       }
     }

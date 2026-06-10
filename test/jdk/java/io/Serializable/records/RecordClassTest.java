@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 8246774 8326879
+ * @bug 8246774
  * @summary Basic tests for serializing and deserializing record classes
  * @run junit RecordClassTest
- * @run testng/othervm --enable-preview RecordClassTest
  */
 
 import java.io.ByteArrayInputStream;

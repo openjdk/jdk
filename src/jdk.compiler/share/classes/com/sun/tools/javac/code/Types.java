@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -2163,18 +2162,10 @@ public class Types {
      * @return the ArrayType for the given component
      */
     public ArrayType makeArrayType(Type t) {
-        return makeArrayType(t, 1);
-    }
-
-    public ArrayType makeArrayType(Type t, int dimensions) {
         if (t.hasTag(VOID) || t.hasTag(PACKAGE)) {
             Assert.error("Type t must not be a VOID or PACKAGE type, " + t.toString());
         }
-        ArrayType result = new ArrayType(t, syms.arrayClass);
-        for (int i = 1; i < dimensions; i++) {
-            result = new ArrayType(result, syms.arrayClass);
-        }
-        return result;
+        return new ArrayType(t, syms.arrayClass);
     }
     // </editor-fold>
 
@@ -3970,7 +3961,7 @@ public class Types {
             // There is no spec detailing how type annotations are to
             // be inherited.  So set it to noAnnotations for now
             return new ClassType(class1.getEnclosingType(), merged.toList(),
-                                 class1.tsym, List.nil());
+                                 class1.tsym);
         }
 
     /**
@@ -4953,16 +4944,10 @@ public class Types {
     public static class UniqueType {
         public final Type type;
         final Types types;
-        private boolean encodeTypeSig;
-
-        public UniqueType(Type type, Types types, boolean encodeTypeSig) {
-            this.type = type;
-            this.types = types;
-            this.encodeTypeSig = encodeTypeSig;
-        }
 
         public UniqueType(Type type, Types types) {
-            this(type, types, true);
+            this.type = type;
+            this.types = types;
         }
 
         public int hashCode() {
@@ -4972,10 +4957,6 @@ public class Types {
         public boolean equals(Object obj) {
             return (obj instanceof UniqueType uniqueType) &&
                     types.isSameType(type, uniqueType.type);
-        }
-
-        public boolean encodeTypeSig() {
-            return encodeTypeSig;
         }
 
         public String toString() {

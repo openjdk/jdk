@@ -459,7 +459,6 @@ public class TestLWorld {
     }
 
     // merge of inline types in a loop, stored in an object local
-    /* TODO 8302217: Enable again when this is fixed.
     @Test
     public Object test9() {
         Object o = valueField1;
@@ -474,7 +473,6 @@ public class TestLWorld {
     public void test9_verifier() {
         Asserts.assertEQ(test9(), MyValue1.setX(valueField1, valueField1.x + 7));
     }
-    */
 
     // merge of inline types in an object local
     @ForceInline
@@ -2487,7 +2485,7 @@ public class TestLWorld {
     @Test
     @IR(applyIf = {"UseArrayFlattening", "true"},
         counts = {COUNTED_LOOP, "= 2", LOAD_UNKNOWN_INLINE, "= 1"},
-        // Match on PHASEIDEALLOOP2 before load_unkown_inline gets duplicated in pre/main/post
+        // Match on PHASEIDEALLOOP2 before load_unknown_inline gets duplicated in pre/main/post
         phase = {CompilePhase.PHASEIDEALLOOP2})
     public void test85(Object[] src, Object[] dst) {
         for (int i = 0; i < src.length; i++) {

@@ -724,7 +724,9 @@ void Canonicalizer::do_If(If* x) {
     return;
   }
 
-  if (lt->is_constant() && rt->is_constant()) {
+  // Simplify further when we have two constants. However, if we have a substitutability check
+  // we must not constant fold as this would loose the substitutability semantics.
+  if (lt->is_constant() && rt->is_constant() && !x->substitutability_check()) {
     if (x->x()->as_Constant() != nullptr) {
       // pattern: If (lc cond rc) => simplify to: Goto
       BlockBegin* sux = x->x()->as_Constant()->compare(x->cond(), x->y(),

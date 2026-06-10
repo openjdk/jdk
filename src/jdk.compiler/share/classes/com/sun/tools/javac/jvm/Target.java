@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,9 @@ public enum Target {
 
     /** JDK 27. */
     JDK1_27("27", 71, 0),
+
+    /** JDK 28. */
+    JDK1_28("28", 72, 0),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
@@ -224,12 +227,6 @@ public enum Target {
      */
     public boolean hasSealedClasses() {
         return compareTo(JDK1_15) >= 0;
-    }
-
-    /** Does the target VM support value classes
-     */
-    public boolean hasValueClasses() {
-        return compareTo(JDK1_23) >= 0;
     }
 
     /** Is the ACC_STRICT bit redundant and obsolete

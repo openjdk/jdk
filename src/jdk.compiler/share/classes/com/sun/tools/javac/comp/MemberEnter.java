@@ -220,7 +220,7 @@ public class MemberEnter extends JCTree.Visitor {
 
         localEnv.info.scope.leave();
         if (chk.checkUnique(tree.pos(), m, enclScope)) {
-            enclScope.enter(m);
+        enclScope.enter(m);
         }
 
         annotate.annotateLater(tree.mods.annotations, localEnv, m);
@@ -297,9 +297,8 @@ public class MemberEnter extends JCTree.Visitor {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
                 initEnv = initEnv(tree, initEnv);
-                if (v.owner.kind == TYP && !v.isStatic() && allowValueClasses) {
-                    initEnv.info.earlyContext = EarlyConstructionContext.of((ClassSymbol)v.owner,
-                            !v.isStrict(), false);
+                if (v.isStrictInstance() && allowValueClasses) {
+                    initEnv.info.earlyContext = EarlyConstructionContext.of((ClassSymbol)v.owner, false);
                 }
                 v.setLazyConstValue(initEnv(tree, initEnv), env, attr, tree);
             }

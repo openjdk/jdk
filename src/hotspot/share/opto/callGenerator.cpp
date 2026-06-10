@@ -793,7 +793,8 @@ void CallGenerator::do_late_inline_helper() {
       result = (result_size == 1) ? kit.pop() : kit.pop_pair();
     }
 
-    if (call->is_CallStaticJava() && call->as_CallStaticJava()->is_boxing_method()) {
+    if (call->is_CallStaticJava() && call->as_CallStaticJava()->is_boxing_method()
+        && !call->tf()->returns_inline_type_as_fields()) {
       result = kit.must_be_not_null(result, false);
     }
 

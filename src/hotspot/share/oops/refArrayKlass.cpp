@@ -70,7 +70,6 @@ RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_da
   if (!Universe::is_bootstrapping() || vmClasses::Object_klass_is_loaded()) {
     assert(MultiArray_lock->holds_lock(THREAD),
            "must hold lock after bootstrapping");
-    Klass* element_super = element_klass->super();
     super_klass = element_klass->array_klass(CHECK_NULL);
   }
 
@@ -84,7 +83,7 @@ RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_da
   ModuleEntry* module = oak->module();
   assert(module != nullptr, "No module entry for array");
 
-  // Call complete_create_array_klass after all instance variables has been
+  // Call complete_create_array_klass after all instance variables have been
   // initialized.
   ArrayKlass::complete_create_array_klass(oak, super_klass, module, CHECK_NULL);
 

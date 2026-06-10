@@ -190,7 +190,7 @@ void InlineLayoutInfo::print_on(outputStream* st) const {
 // that can be considered naturally atomic when nullable is the empty
 // value classes because the dummy field is re-used as a null-marker.
 bool InstanceKlass::is_naturally_atomic(bool null_free) const {
-  assert(!is_identity_class(), "Doesn't have sense for an identity class");
+  assert(!is_identity_class(), "Doesn't make sense for an identity class");
   if (null_free) {
     // No extra null-marker, just check the layout of the fields
     return _misc_flags.is_naturally_atomic();
@@ -1087,7 +1087,7 @@ static void load_classes_from_loadable_descriptors_attribute(InstanceKlass *ik, 
                                  "(cause: LoadableDescriptors attribute) succeeded",
                                  class_name->as_C_string(), ik->name()->as_C_string());
         if (!klass->is_inline_klass()) {
-          // Non value class are allowed by the current spec, but it could be an indication
+          // Non value classes are allowed by the current spec, but it could be an indication
           // of an issue so let's log a warning
           log_info(class, preload)("Preloading of class %s during linking of class %s "
                                       "(cause: LoadableDescriptors attribute) but loaded class is not a value class",
@@ -4216,7 +4216,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
   // There is no oop so static and nonstatic printing can use the same printer.
   FieldPrinter field_printer(st);
-    st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
+  st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
   ik->do_local_static_fields(&field_printer);
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
   ik->print_nonstatic_fields(&field_printer);

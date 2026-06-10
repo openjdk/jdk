@@ -36,7 +36,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since Valhalla
  */
 @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS)
-public class IdentityException extends RuntimeException {
+public final class IdentityException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = 1L;
 

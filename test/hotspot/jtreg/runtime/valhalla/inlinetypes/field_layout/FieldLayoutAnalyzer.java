@@ -162,7 +162,6 @@ public class FieldLayoutAnalyzer {
             String signature = fieldLine[5];
             String fieldClass = "";
             String layoutKind = "";
-            int nullMarkerOffset = -1;
             if (type == BlockType.FLAT) {
               fieldClass = fieldLine[6];
               layoutKind = fieldLine[7];
@@ -483,7 +482,7 @@ public class FieldLayoutAnalyzer {
       try {
         checkOffsetOnFields(layout.staticFields);
         checkOffsetOnFields(layout.nonStaticFields);
-      } catch(Throwable t) {
+      } catch (Throwable t) {
         System.out.println("Unexpection exception when checking offsets in class " + layout.name);
         throw t;
       }
@@ -507,7 +506,7 @@ public class FieldLayoutAnalyzer {
       try {
         checkNoOverlapOnFields(layout.staticFields);
         checkNoOverlapOnFields(layout.nonStaticFields);
-      } catch(Throwable t) {
+      } catch (Throwable t) {
         System.out.println("Unexpected exception when checking for overlaps/holes in class " + layout.name);
         throw t;
       }
@@ -574,7 +573,7 @@ public class FieldLayoutAnalyzer {
         for (FieldBlock block : layout.staticFields) {
           checkSizeAndAlignmentForField(block, layout);
         }
-      } catch(Throwable t) {
+      } catch (Throwable t) {
         System.out.println("Unexpected exception when checking size and alignment in static fields of class " + layout.name);
         throw t;
       }
@@ -582,7 +581,7 @@ public class FieldLayoutAnalyzer {
         for (FieldBlock block : layout.nonStaticFields) {
           checkSizeAndAlignmentForField(block, layout);
         }
-      } catch(Throwable t) {
+      } catch (Throwable t) {
         System.out.println("Unexpected exception when checking size and alignment in non-static fields of class " + layout.name);
         throw t;
       }
@@ -628,8 +627,9 @@ public class FieldLayoutAnalyzer {
             Asserts.assertEquals(field.signature(), b.signature(), location);
           }
         }
-      } catch(Throwable t) {
+      } catch (Throwable t) {
         System.out.println("Unexpected exception when checking inherited fields in class " + layout.name);
+        throw t;
       }
     }
   }
@@ -666,7 +666,7 @@ public class FieldLayoutAnalyzer {
           }
           superNode.subClasses.add(current);
         }
-      } catch(Throwable t) {
+      } catch (Throwable t) {
         System.out.println("Unexpected exception when generating list of sub-classes of class " + layout.name);
         throw t;
       }
@@ -683,7 +683,7 @@ public class FieldLayoutAnalyzer {
         for (Node subnode : node.subClasses) {
           try {
             checkFieldInClass(block, subnode);
-          } catch(Throwable t) {
+          } catch (Throwable t) {
             System.out.println("Unexpected exception when checking subclass " + subnode.classLayout.name + " of class " + layout.name);
             throw t;
           }
@@ -726,7 +726,7 @@ public class FieldLayoutAnalyzer {
           Asserts.assertNotEquals(block.type(), BlockType.NULL_MARKER);
           Asserts.assertNotEquals(block.type(), BlockType.FLAT);
         }
-      } catch(Throwable t) {
+      } catch (Throwable t) {
         System.out.println("Unexpected exception while checking null markers in class " + layout.name);
         throw t;
       }

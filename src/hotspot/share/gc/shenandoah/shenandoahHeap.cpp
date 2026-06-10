@@ -555,6 +555,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _active_generation(nullptr),
   _initial_size(0),
   _committed(0),
+  _alloc_rate_decay(&_alloc_rate),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),
   _safepoint_workers(nullptr),
@@ -698,6 +699,11 @@ void ShenandoahHeap::post_initialize() {
 
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
+
+  // Periodically decay allocation rate to compensate for not being updated when allocation rate
+  // is low. Heuristics are evaluated unconditionally from a dedicated thread so it will continue
+  // to see the last (possibly stale) allocation rate if the allocation rate is low.
+  _alloc_rate_decay.enroll();
 
   MutexLocker ml(Threads_lock);
 
@@ -1029,7 +1035,6 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   // memory.
   HeapWord* result = _free_set->allocate(req, in_new_region);
 
-  // Record the plab configuration for this result and register the object.
   if (result != nullptr) {
     if (req.is_mutator_alloc()) {
       _alloc_rate.allocated((req.actual_size() + req.waste()) * HeapWordSize);
@@ -1038,33 +1043,10 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
     if (req.is_old()) {
       if (req.is_lab_alloc()) {
         old_generation()->configure_plab_for_current_thread(req);
-      } else {
-        // Register the newly allocated object while we're holding the global lock since there's no synchronization
-        // built in to the implementation of register_object().  There are potential races when multiple independent
-        // threads are allocating objects, some of which might span the same card region.  For example, consider
-        // a card table's memory region within which three objects are being allocated by three different threads:
-        //
-        // objects being "concurrently" allocated:
-        //    [-----a------][-----b-----][--------------c------------------]
-        //            [---- card table memory range --------------]
-        //
-        // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
-        // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
-        // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
-        // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
-        // card region.
-        //
-        // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
-        // last-start representing object b while first-start represents object c.  This is why we need to require all
-        // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-        old_generation()->card_scan()->register_object(result);
-
-        if (req.is_promotion()) {
-          // Shared promotion.
-          const size_t actual_size = req.actual_size() * HeapWordSize;
-          log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
-          old_generation()->expend_promoted(actual_size);
-        }
+      } else if (req.is_promotion()) {
+        const size_t actual_size = req.actual_size() * HeapWordSize;
+        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
+        old_generation()->expend_promoted(actual_size);
       }
     }
   }
@@ -1151,10 +1133,12 @@ public:
 
   void work(uint worker_id) {
     if (_concurrent) {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       SuspendibleThreadSetJoiner stsj;
       do_work();
     } else {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahParallelWorkerSession worker_session(worker_id);
       do_work();
     }
@@ -2312,10 +2296,13 @@ void ShenandoahHeap::stop() {
   // Step 1. Stop reporting on gc thread cpu utilization
   mmu_tracker()->stop();
 
-  // Step 2. Wait until GC worker exits normally (this will cancel any ongoing GC).
+  // Step 2. Stop decaying allocation rate.
+  _alloc_rate_decay.disenroll();
+
+  // Step 3. Wait until GC worker exits normally (this will cancel any ongoing GC).
   control_thread()->stop();
 
-  // Step 3. Shutdown uncommit thread.
+  // Step 4. Shutdown uncommit thread.
   if (_uncommit_thread != nullptr) {
     _uncommit_thread->stop();
   }
@@ -2554,10 +2541,12 @@ public:
 
   void work(uint worker_id) {
     if (CONCURRENT) {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       SuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahParallelWorkerSession worker_session(worker_id);
       do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
     }

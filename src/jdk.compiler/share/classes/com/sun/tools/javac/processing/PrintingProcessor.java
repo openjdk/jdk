@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.StringUtils;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_27)
+@SupportedSourceVersion(SourceVersion.RELEASE_28)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -500,15 +500,12 @@ public class PrintingProcessor extends AbstractProcessor {
             case METHOD:
             case FIELD:
                 Element enclosingElement = e.getEnclosingElement();
-                if (enclosingElement != null) {
-                    if (enclosingElement.getKind().isInterface()) {
-                        modifiers.remove(Modifier.PUBLIC);
-                        modifiers.remove(Modifier.ABSTRACT); // only for methods
-                        modifiers.remove(Modifier.STATIC);   // only for fields
-                        modifiers.remove(Modifier.FINAL);    // only for fields
-                    } else if (enclosingElement.getKind() == RECORD) {
-                        modifiers.remove(Modifier.STRICTFP);
-                    }
+                if (enclosingElement != null &&
+                    enclosingElement.getKind().isInterface()) {
+                    modifiers.remove(Modifier.PUBLIC);
+                    modifiers.remove(Modifier.ABSTRACT); // only for methods
+                    modifiers.remove(Modifier.STATIC);   // only for fields
+                    modifiers.remove(Modifier.FINAL);    // only for fields
                 }
                 break;
 

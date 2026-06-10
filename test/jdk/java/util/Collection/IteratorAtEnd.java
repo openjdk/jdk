@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("unchecked")
 public class IteratorAtEnd {
@@ -96,10 +97,17 @@ public class IteratorAtEnd {
         } catch (Throwable t) { unexpected(t); }
     }
 
+    // A strong list of reference to map keys to avoid
+    // spurious purges in WeakHashMap
+    private static final List<String> MAP_KEYS = IntStream
+            .range(0, 3 * SIZE)
+            .mapToObj(i -> "BASE-" + i)
+            .toList();
+
     static void testMap(Map m) {
         try {
             for (int i = 0; i < 3*SIZE; i++)
-                m.put("BASE-" + i, i);
+                m.put(MAP_KEYS.get(i), i);
             test(m.values());
             test(m.keySet());
             test(m.entrySet());
@@ -108,6 +116,7 @@ public class IteratorAtEnd {
 
     static void test(Collection c) {
         try {
+            assert !c.isEmpty() : "Calling remove on empty iterator will result in IllegalStateException";
             final Iterator it = c.iterator();
             THROWS(NoSuchElementException.class,
                    () -> { while (true) it.next(); });

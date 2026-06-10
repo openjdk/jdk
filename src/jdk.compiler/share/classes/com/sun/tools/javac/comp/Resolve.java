@@ -2048,7 +2048,7 @@ public class Resolve {
                             EarlyConstructionContext context = env1.info.earlyContext;
                             if (env1.enclClass.sym == context.owner()) {
                                 Assert.check(env.tree.hasTag(APPLY));
-                                return earlyRefResult(((JCMethodInvocation)env.tree).meth, context, sym, false);
+                                return new RefBeforeCtorCalledError(sym, false);
                             }
                         }
                     }
@@ -3840,7 +3840,7 @@ public class Resolve {
                         return new StaticError(sym);
                     } else if (env1.enclClass.sym == env1.info.earlyContext.owner()) {
                         // early construction context, stop search
-                        return earlyRefResult(pos, env1.info.earlyContext, sym, false);
+                        return new RefBeforeCtorCalledError(sym, false);
                     } else {
                         // found it
                         return sym;
@@ -3907,7 +3907,7 @@ public class Resolve {
                         EarlyConstructionContext context = env1.info.earlyContext;
                         if (sym.owner == context.owner() &&
                                 !isReceiverParameter(env, tree)) {
-                            sym = earlyRefResult(pos, context, sym, false);
+                            sym = new RefBeforeCtorCalledError(sym, false);
                         }
                     }
                     return sym;
@@ -3926,7 +3926,7 @@ public class Resolve {
                             types.asSuper(env.enclClass.type, c), env.enclClass.sym);
                     EarlyConstructionContext context = env.info.earlyContext;
                     if (context != EarlyConstructionContext.NONE) {
-                        sym = earlyRefResult(pos, context, sym, false);
+                        sym = new RefBeforeCtorCalledError(sym, false);
                     }
                     env.info.defaultSuperCallSite = t;
                     return sym;
@@ -3990,7 +3990,7 @@ public class Resolve {
         } else {
             boolean isEarlyWrite = writeOnlyTarget &&
                     field.owner == context.owner();
-            return earlyRefResult(pos, context, field, isEarlyWrite);
+            return new RefBeforeCtorCalledError(field, isEarlyWrite);
         }
     }
 
@@ -4039,39 +4039,26 @@ public class Resolve {
             return false;
         }
         if ((field.flags_field & HASINIT) != 0 &&
-                !field.isStrict() &&
-                !context.onlyWarnings()) {
+                !field.isStrict()) {
             // Either the declaration of the named variable has no initializer,
-            // or C is a value class (8.1.1.5). Plus, if warnings are enabled, treat
-            // the variable as strict -- as if it was declared in a value class.
-            // To preserve legacy behavior, bad final field writes are never reported as early access.
+            // or C is a value class (8.1.1.5). To preserve legacy behavior,
+            // bad final field writes are never reported as early access.
             return writeOnlyTarget && field.isFinal();
         }
         // At this point we have seen a legal early ref
-        if (!context.onlyWarnings()) {
-            if (writeOnlyTarget) {
-                // Write early ref, this is allowed with flexible constructor bodies
-                preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
-            } else {
-                // Read early ref, this is only allowed under JEP 401, and requires special codegen support
-                preview.checkSourceLevel(pos, Feature.VALUE_CLASSES);
-                if (context.ctorPrologue() && env.enclMethod != null) {
-                    // Track the early read for codegen
-                    localProxyVarsGen.addFieldReadInPrologue(env.enclMethod, field);
-                }
+        if (writeOnlyTarget) {
+            // Write early ref, this is allowed with flexible constructor bodies
+            preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
+        } else {
+            // Read early ref, this is only allowed under JEP 401, and requires special codegen support
+            preview.checkSourceLevel(pos, Feature.VALUE_CLASSES);
+            if (context.ctorPrologue()) {
+                // Track the early read for codegen
+                Symbol owner = env.enclMethod != null ? env.enclMethod.sym : env.enclClass.sym;
+                localProxyVarsGen.addFieldReadInPrologue(owner, field);
             }
         }
         return true;
-    }
-
-    /** Return a symbol modeling the early access, and warn if necessary */
-    private Symbol earlyRefResult(DiagnosticPosition pos, EarlyConstructionContext context, Symbol sym,
-                                  boolean isEarlyWrite) {
-        if (context.onlyWarnings()) {
-            log.warning(pos, LintWarnings.WouldNotBeAllowedInPrologue(sym));
-            return sym;
-        }
-        return new RefBeforeCtorCalledError(sym, isEarlyWrite);
     }
 
 /* ***************************************************************************

@@ -58,13 +58,13 @@ class LayoutRawBlock : public ResourceObj {
  public:
   // Some code relies on the order of values below.
   enum Kind {
-    EMPTY,                 // empty slot, space is taken from this to allocate fields
-    RESERVED,              // reserved for JVM usage (for instance object header)
-    PADDING,               // padding (because of alignment constraints or @Contended)
-    REGULAR,               // primitive or oop field (including not flat inline type fields)
-    FLAT,                  // flat field
-    INHERITED,             // field(s) inherited from super classes
-    NULL_MARKER            // stores the null marker for a flat field
+    EMPTY,         // empty slot, space is taken from this to allocate fields
+    RESERVED,      // reserved for JVM usage (for instance object header)
+    PADDING,       // padding (because of alignment constraints or @Contended)
+    REGULAR,       // primitive or oop field (including not flat inline type fields)
+    FLAT,          // flat field
+    INHERITED,     // field(s) inherited from super classes
+    NULL_MARKER    // stores the null marker for a flat field
   };
 
  private:
@@ -248,8 +248,8 @@ class FieldLayout : public ResourceObj {
 
 // FieldLayoutBuilder is the main entry point for layout computation.
 // This class has two methods to generate layout: one for identity classes
-// and one for inline classes. The rational for having two methods
-// is that each kind of classes has a different set goals regarding
+// and one for inline classes. The rationale for having two methods
+// is that each kind of class has a different set of goals regarding
 // its layout, so instead of mixing two layout strategies into a
 // single method, each kind has its own method (see comments below
 // for more details about the allocation strategies).
