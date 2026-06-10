@@ -84,7 +84,7 @@ void G1CollectionSet::init_region_counts(uint eden_cset_region_count,
   _survivor_region_count = survivor_cset_region_count;
 
   assert(young_region_count() == num_regions(),
-         "Young region length %u should match collection set length %u", young_region_count(), num_regions());
+         "Young region count %u should match collection set region number %u", young_region_count(), num_regions());
 
   _initial_old_region_count = 0;
   assert(_optional_groups.length() == 0, "Should not have any optional groups yet");
@@ -335,9 +335,9 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   // pause are appended to the RHS of the young list, i.e.
   //   [Newly Young Regions ++ Survivors from last pause].
 
-  uint eden_region_length = _g1h->eden_regions_count();
-  uint survivor_region_length = survivors->length();
-  init_region_counts(eden_region_length, survivor_region_length);
+  uint eden_region_count = _g1h->eden_regions_count();
+  uint survivor_region_count = survivors->length();
+  init_region_counts(eden_region_count, survivor_region_count);
 
   verify_young_cset_indices();
 
@@ -345,13 +345,13 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, card_rs_length);
   // Base time already includes the whole remembered set related time, so do not add that here
   // again.
-  double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_region_length) +
-                               _policy->predict_eden_copy_time_ms(eden_region_length);
+  double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_region_count) +
+                               _policy->predict_eden_copy_time_ms(eden_region_count);
   double remaining_time_ms = MAX2(target_pause_time_ms - (predicted_base_time_ms + predicted_eden_time), 0.0);
 
   log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "
                             "predicted eden time: %1.2fms, predicted base time: %1.2fms, target pause time: %1.2fms, remaining time: %1.2fms",
-                            eden_region_length, survivor_region_length,
+                            eden_region_count, survivor_region_count,
                             predicted_eden_time, predicted_base_time_ms, target_pause_time_ms, remaining_time_ms);
 
   // Clear the fields that point to the survivor list - they are all young now.
@@ -633,7 +633,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
 }
 
-double G1CollectionSet::select_candidates_from_optional_groups(double time_remaining_ms, uint& num_groups_selected) {
+double G1CollectionSet::select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected) {
 
   assert(_optional_groups.num_regions() > 0,
          "Should only be called when there are optional regions");
@@ -652,14 +652,14 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
     total_prediction_ms += predicted_time_ms;
     time_remaining_ms -= predicted_time_ms;
 
-    num_groups_selected += group->length();
+    num_regions_selected += group->length();
 
     add_group_to_collection_set(group);
     selected.append(group);
   }
 
   log_debug(gc, ergo, cset)("Completed with groups, selected %u region in %u groups",
-                            num_groups_selected, selected.length());
+                            num_regions_selected, selected.length());
   // Remove selected groups from candidate list.
   if (selected.length() > 0) {
     _optional_groups.remove(&selected);

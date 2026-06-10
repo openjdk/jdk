@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1COLLECTIONSET_HPP
 
 #include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -150,7 +149,7 @@ class G1CollectionSet {
   uint* _regions;
   uint _max_regions;
 
-  uint _num_regions;
+  volatile uint _num_regions;
 
   // Old gen groups selected for evacuation.
   G1CSetCandidateGroupList _groups;
@@ -202,7 +201,7 @@ class G1CollectionSet {
   // Select groups for evacuation from the optional candidates given the remaining time
   // and return the number of actually selected regions.
   uint select_optional_groups(double time_remaining_ms);
-  double select_candidates_from_optional_groups(double time_remaining_ms, uint& num_groups_selected);
+  double select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions
@@ -233,7 +232,7 @@ public:
   G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
 
-  // Initializes the collection set giving the maximum possible length of the collection set.
+  // Initializes the collection set giving the maximum possible number of regions in the collection set.
   void initialize(uint max_regions);
 
   // Drop the collection set and collection set candidates.
@@ -283,9 +282,9 @@ public:
   // from a starting position determined by the given worker id.
   void iterate_incremental_part_from(G1HeapRegionClosure* cl, G1HeapRegionClaimer* hr_claimer, uint worker_id) const;
 
-  // Returns the length of the current increment in number of regions.
+  // Returns the number of regions in the collection set current increment.
   uint num_regions_in_increment() const { return num_regions() - _regions_inc_part_start; }
-  // Returns the length of the whole current collection set in number of regions
+  // Returns the total number of regions in the current collection set.
   uint num_regions() const { return _num_regions; }
 
   // Iterate over the entire collection set (all increments calculated so far), applying
