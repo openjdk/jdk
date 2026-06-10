@@ -729,7 +729,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       result = humongous_obj_allocate(word_size);
       if (result != nullptr) {
         policy()->old_gen_alloc_tracker()->
-          add_allocated_humongous_bytes_since_last_gc(humongous_byte_size);
+          add_allocated_humongous_bytes(humongous_byte_size);
         return result;
       }
 
@@ -2861,7 +2861,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
                 G1ReservePercent);
 
   policy()->old_gen_alloc_tracker()->
-    add_allocated_bytes_since_last_gc(total_old_allocated * HeapWordSize);
+    add_allocated_non_humongous_bytes(total_old_allocated * HeapWordSize);
 
   _gc_tracer_stw->report_evacuation_statistics(create_g1_evac_summary(&_survivor_evac_stats),
                                                create_g1_evac_summary(&_old_evac_stats));

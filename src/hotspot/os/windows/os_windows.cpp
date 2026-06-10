@@ -243,6 +243,16 @@ static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSiz
   return result;
 }
 
+void* os::win32::lookup_kernelbase_symbol(const char* name) {
+  // Pass a small ebuf so dll_load logs failures, but don't use it here to avoid redundancy.
+  char ebuf[1024];
+  static void* const handle = os::dll_load("KernelBase", ebuf, sizeof(ebuf));
+  if (handle == nullptr) {
+    return nullptr;
+  }
+  return os::dll_lookup(handle, name);
+}
+
 // Logging wrapper for MapViewOfFileEx
 static LPVOID mapViewOfFileEx(HANDLE hFileMappingObject, DWORD  dwDesiredAccess, DWORD  dwFileOffsetHigh,
                               DWORD  dwFileOffsetLow, SIZE_T dwNumberOfBytesToMap, LPVOID lpBaseAddress) {
@@ -465,36 +475,63 @@ void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   *stack_size = size;
 }
 
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  MEMORY_BASIC_INFORMATION minfo;
-  committed_start = nullptr;
-  committed_size = 0;
-  address top = start + size;
-  const address start_addr = start;
-  while (start < top) {
-    VirtualQuery(start, &minfo, sizeof(minfo));
-    if ((minfo.State & MEM_COMMIT) == 0) {  // not committed
-      if (committed_start != nullptr) {
-        break;
-      }
-    } else {  // committed
-      if (committed_start == nullptr) {
-        committed_start = start;
-      }
-      size_t offset = start - (address)minfo.BaseAddress;
-      committed_size += minfo.RegionSize - offset;
-    }
-    start = (address)minfo.BaseAddress + minfo.RegionSize;
-  }
+bool os::first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
+  constexpr size_t stripe = 1024;  // query this many pages each time
+  PSAPI_WORKING_SET_EX_INFORMATION wsinfo[stripe];
 
-  if (committed_start == nullptr) {
-    assert(committed_size == 0, "Sanity");
-    return false;
-  } else {
-    assert(committed_start >= start_addr && committed_start < top, "Out of range");
-    // current region may go beyond the limit, trim to the limit
-    committed_size = MIN2(committed_size, size_t(top - committed_start));
+  size_t page_sz = os::vm_page_size();
+  uintx pages_left = size / page_sz;
+
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
+  assert(is_aligned(size, page_sz), "Size must be page aligned");
+
+  resident_start = nullptr;
+
+  uintx loops = (pages_left + stripe - 1) / stripe;
+  uintx resident_pages = 0;
+  address pos = start;
+  bool found_range = false;
+
+  for (uintx index = 0; index < loops && !found_range; index++) {
+    assert(pages_left > 0, "Nothing to do");
+    uintx pages_to_query = MIN2(pages_left, stripe);
+    pages_left -= pages_to_query;
+
+    for (uintx i = 0; i < pages_to_query; i++) {
+      wsinfo[i].VirtualAddress = (PVOID)(pos + i * page_sz);
+    }
+
+    BOOL success = QueryWorkingSetEx(GetCurrentProcess(), wsinfo, pages_to_query * sizeof(PSAPI_WORKING_SET_EX_INFORMATION));
+    if (!success) {
+      return false;
+    }
+
+    for (uintx i = 0; i < pages_to_query; i++) {
+      if (wsinfo[i].VirtualAttributes.Valid == 0) {
+        if (resident_start != nullptr) {
+          found_range = true;
+          break;
+        }
+        // Still searching for start of resident region
+      } else {
+        if (resident_start == nullptr) {
+          // Found first resident page in region
+          resident_start = pos + i * page_sz;
+        }
+        resident_pages++;
+      }
+    }
+    pos += pages_to_query * page_sz;
+  }
+  if (resident_start != nullptr) {
+    assert(resident_pages > 0, "Must have a resident region");
+    assert(resident_pages <= size / page_sz, "Resident size exceeds region size");
+    assert(resident_start >= start && resident_start < start + size, "Out of range");
+    resident_size = page_sz * resident_pages;
     return true;
+  } else {
+    assert(resident_pages == 0, "Should not have a resident region");
+    return false;
   }
 }
 
@@ -3223,9 +3260,9 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
-  HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
+  HANDLE file_mapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
     (DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
-  if (fileMapping == nullptr) {
+  if (file_mapping == nullptr) {
     if (GetLastError() == ERROR_DISK_FULL) {
       vm_exit_during_initialization(err_msg("Could not allocate sufficient disk space for Java heap"));
     }
@@ -3236,9 +3273,9 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     return nullptr;
   }
 
-  LPVOID addr = mapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
+  LPVOID addr = mapViewOfFileEx(file_mapping, FILE_MAP_WRITE, 0, 0, size, base);
 
-  CloseHandle(fileMapping);
+  CloseHandle(file_mapping);
 
   return (char*)addr;
 }
@@ -3251,46 +3288,159 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
+// VirtualAlloc2 / MapViewOfFile3 (Windows 1803+). Resolved in os::init_2() via lookup_kernelbase_symbol.
+os::win32::VirtualAlloc2Fn os::win32::VirtualAlloc2 = nullptr;
+
+os::win32::MapViewOfFile3Fn os::win32::MapViewOfFile3 = nullptr;
+
+static bool is_VirtualAlloc2_supported() {
+  return os::win32::VirtualAlloc2 != nullptr;
+}
+
+static bool is_MapViewOfFile3_supported() {
+  return os::win32::MapViewOfFile3 != nullptr;
+}
+
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
+static char* reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
-      "Alignment must be a multiple of allocation granularity (page size)");
+      "Alignment must be a multiple of allocation granularity");
   assert(is_aligned(size, os::vm_allocation_granularity()),
-      "Size must be a multiple of allocation granularity (page size)");
+      "Size must be a multiple of allocation granularity");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
   char* aligned_base = nullptr;
-  static const int max_attempts = 20;
+  constexpr int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
-    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
-                                         os::reserve_memory(extra_size, mem_tag);
+    char* extra_base = os::reserve_memory(extra_size, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
-    // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
+    os::release_memory(extra_base, extra_size);
 
-    if (file_desc != -1) {
-      os::unmap_memory(extra_base, extra_size);
-    } else {
-      os::release_memory(extra_base, extra_size);
+    // A racing thread may have taken this region instead of us, which is why we loop and retry.
+    aligned_base = os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
+  }
+
+  assert(aligned_base != nullptr,
+      "Did not manage to reserve after %d attempts (size %zu, alignment %zu)", max_attempts, size, alignment);
+
+  return aligned_base;
+}
+
+// Similar to reserve_memory_aligned, other reservation/mapping requests can race with this function.
+static char* map_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+      "Alignment must be a multiple of allocation granularity");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity");
+
+  size_t extra_size = size + alignment;
+  assert(extra_size >= size, "overflow, size is too large to allow alignment");
+
+  char* aligned_base = nullptr;
+  constexpr int max_attempts = 20;
+
+  for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
+    char* extra_base = os::map_memory_to_file(extra_size, file_desc, mem_tag);
+    if (extra_base == nullptr) {
+      return nullptr;
     }
+    aligned_base = align_up(extra_base, alignment);
+    os::unmap_memory(extra_base, extra_size);
 
-    // Attempt to map, into the just vacated space, the slightly smaller aligned area.
-    // Which may fail, hence the loop.
-    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
+    // A racing thread may have taken this region instead of us, which is why we loop and retry.
+    aligned_base = os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag);
   }
 
   assert(aligned_base != nullptr,
       "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
+}
+
+// MapViewOfFile3 supports alignment natively.
+static char* map_memory_aligned_va2(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
+  assert(file_desc != -1, "File descriptor should not be -1");
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+         "Alignment must be a multiple of allocation granularity");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+         "Size must be a multiple of allocation granularity");
+
+  MEM_ADDRESS_REQUIREMENTS requirements = {0};
+  requirements.Alignment = alignment;
+
+  MEM_EXTENDED_PARAMETER param = {0};
+  param.Type = MemExtendedParameterAddressRequirements;
+  param.Pointer = &requirements;
+
+  char* aligned_base = nullptr;
+
+  // File-backed aligned mapping.
+  HANDLE fh = (HANDLE)_get_osfhandle(file_desc);
+  HANDLE file_mapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,(DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
+  DWORD err = GetLastError();
+  if (file_mapping != nullptr) {
+    aligned_base = (char*)os::win32::MapViewOfFile3(
+            file_mapping,
+            GetCurrentProcess(),
+            nullptr,  // let the system choose an aligned address
+            0,        // offset
+            size,
+            0,        // no special allocation type flags
+            PAGE_READWRITE,
+            &param, 1);
+    err = GetLastError();
+    CloseHandle(file_mapping);
+  }
+
+  if (aligned_base != nullptr) {
+    assert(is_aligned(aligned_base, alignment), "Result must be aligned");
+    MemTracker::record_virtual_memory_reserve_and_commit(aligned_base, size, CALLER_PC, mem_tag);
+    return aligned_base;
+  }
+  log_trace(os)("Aligned allocation via MapViewOfFile3 failed, falling back to retry loop. GetLastError->%lu.", err);
+  return map_memory_aligned(size, alignment, file_desc, mem_tag);
+}
+
+// VirtualAlloc2 supports alignment natively.
+static char* reserve_memory_aligned_va2(size_t size, size_t alignment, MemTag mem_tag) {
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+         "Alignment must be a multiple of allocation granularity");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+         "Size must be a multiple of allocation granularity");
+
+  MEM_ADDRESS_REQUIREMENTS requirements = {0};
+  requirements.Alignment = alignment;
+
+  MEM_EXTENDED_PARAMETER param = {0};
+  param.Type = MemExtendedParameterAddressRequirements;
+  param.Pointer = &requirements;
+
+  char* aligned_base = nullptr;
+
+  // Anonymous aligned reservation.
+  aligned_base = (char*)os::win32::VirtualAlloc2(
+          GetCurrentProcess(),
+          nullptr,  // let the system choose an aligned address
+          size,
+          MEM_RESERVE,
+          PAGE_READWRITE,
+          &param, 1);
+
+  if (aligned_base != nullptr) {
+    assert(is_aligned(aligned_base, alignment), "Result must be aligned");
+    MemTracker::record_virtual_memory_reserve(aligned_base, size, CALLER_PC, mem_tag);
+    return aligned_base;
+  }
+  log_trace(os)("Aligned allocation via VirtualAlloc2 failed, falling back to retry loop. GetLastError->%lu.", GetLastError());
+  return reserve_memory_aligned(size, alignment, mem_tag);
 }
 
 size_t os::commit_memory_limit() {
@@ -3340,11 +3490,17 @@ size_t os::reserve_memory_limit() {
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   // exec can be ignored
-  return map_or_reserve_memory_aligned(size, alignment, -1/* file_desc */, mem_tag);
+  if (is_VirtualAlloc2_supported()) {
+    return reserve_memory_aligned_va2(size, alignment, mem_tag);
+  }
+  return reserve_memory_aligned(size, alignment, mem_tag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
-  return map_or_reserve_memory_aligned(size, alignment, fd, mem_tag);
+  if (is_MapViewOfFile3_supported()) {
+    return map_memory_aligned_va2(size, alignment, fd, mem_tag);
+  }
+  return map_memory_aligned(size, alignment, fd, mem_tag);
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -4561,21 +4717,21 @@ jint os::init_2(void) {
 
   // Lookup SetThreadDescription - the docs state we must use runtime-linking of
   // kernelbase.dll, so that is what we do.
-  HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
-  if (_kernelbase != nullptr) {
-    _SetThreadDescription =
-      reinterpret_cast<SetThreadDescriptionFnPtr>(
-                                                  GetProcAddress(_kernelbase,
-                                                                 "SetThreadDescription"));
+  _SetThreadDescription = reinterpret_cast<SetThreadDescriptionFnPtr>(
+      os::win32::lookup_kernelbase_symbol("SetThreadDescription"));
 #ifdef ASSERT
-    _GetThreadDescription =
-      reinterpret_cast<GetThreadDescriptionFnPtr>(
-                                                  GetProcAddress(_kernelbase,
-                                                                 "GetThreadDescription"));
+  _GetThreadDescription = reinterpret_cast<GetThreadDescriptionFnPtr>(
+      os::win32::lookup_kernelbase_symbol("GetThreadDescription"));
 #endif
-  }
   log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == nullptr ? " not" : "");
 
+  // Prepare KernelBase APIs (VirtualAlloc2, MapViewOfFile3) if available (Windows version 1803).
+  os::win32::VirtualAlloc2 = reinterpret_cast<os::win32::VirtualAlloc2Fn>(
+      os::win32::lookup_kernelbase_symbol("VirtualAlloc2"));
+  os::win32::MapViewOfFile3 = reinterpret_cast<os::win32::MapViewOfFile3Fn>(
+      os::win32::lookup_kernelbase_symbol("MapViewOfFile3"));
+  log_debug(os)("VirtualAlloc2 is%s available.", os::win32::VirtualAlloc2 == nullptr ? " not" : "");
+  log_debug(os)("MapViewOfFile3 is%s available.", os::win32::MapViewOfFile3 == nullptr ? " not" : "");
 
   return JNI_OK;
 }

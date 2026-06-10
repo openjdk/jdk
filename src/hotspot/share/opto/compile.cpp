@@ -876,8 +876,10 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 #endif
 
-#ifdef ASSERT
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->final_refinement(this);
+
+#ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeCodeGen);
 #endif
 
