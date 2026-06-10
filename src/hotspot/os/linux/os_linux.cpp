@@ -1567,6 +1567,7 @@ void os::pd_check_temp_directory() {
     }
   } else {
     AltTempDir = nullptr; // avoid checking AltTempDir[0] again.
+  }
 }
 
 const char* os::get_temp_directory() {
