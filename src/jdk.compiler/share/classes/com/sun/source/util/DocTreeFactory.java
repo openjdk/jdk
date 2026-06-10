@@ -282,7 +282,7 @@ public interface DocTreeFactory {
      * @param isInline true if this is an inline tag
      * @return a {@code NoteTree} object
      *
-     * @since 27
+     * @since 28
      */
     NoteTree newNoteTree(String tagName, List<? extends DocTree> attributes, List<? extends DocTree> body, boolean isInline);
 

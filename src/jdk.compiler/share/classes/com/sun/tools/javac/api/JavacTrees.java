@@ -1257,7 +1257,7 @@ public class JavacTrees extends DocTrees {
      *
      * @param customTags a set of tag names of known custom tags
      * @throws NullPointerException if customTags is null
-     * @since 27
+     * @since 28
      */
     public void setCustomTags(Set<String> customTags) {
         this.customTags = Objects.requireNonNull(customTags);

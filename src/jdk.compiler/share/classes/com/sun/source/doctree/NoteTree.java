@@ -37,7 +37,7 @@ import java.util.List;
  *    {&#064;note [attributes] body}
  * </pre>
  *
- * @since 27
+ * @since 28
  */
 public interface NoteTree extends BlockTagTree, InlineTagTree {
 

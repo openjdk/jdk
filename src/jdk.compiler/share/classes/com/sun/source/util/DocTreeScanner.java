@@ -392,7 +392,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * @param p  {@inheritDoc}
      * @return the result of scanning
      *
-     * @since 27
+     * @since 28
      */
     @Override
     public R visitNote(NoteTree node, P p) {
