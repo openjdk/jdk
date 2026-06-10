@@ -334,7 +334,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIR3b: short loop, fails to be recognized as CountedLoop.
-    // Compared to testIR2, the check in the loop is an NEQ.
+    // Compared to testIR3, the check in the loop is an NEQ.
     public static int testIR3b_gold = testIR3b();
 
     @Run(test = "testIR3b")
@@ -414,29 +414,85 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // // testIR6: short do-while-loop, missing the CmpI before the loop.
-    // public static int testIR6_gold = testIR6();
+    // testIR5b: short do-while-loop, but the backedge check with NEQ is not strong enough to prevent wrapping.
+    // Compared to testIR5, the check in the loop is an NEQ.
+    public static int testIR5b_gold = testIR5b();
 
-    // @Run(test = "testIR6")
-    // private static void runIR6() {
-    //     int val = testIR6();
-    //     if (val != testIR6_gold) { throw new RuntimeException("wrong value: " + testIR6_gold + " vs " + val); }
-    // }
+    @Run(test = "testIR5b")
+    private static void runIR5b() {
+        int val = testIR5b();
+        if (val != testIR5b_gold) { throw new RuntimeException("wrong value: " + testIR5b_gold + " vs " + val); }
+    }
 
-    // @Test
-    // @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    // static int testIR6() {
-    //     int init  = Math.max(lo, 0);   // init  in [0..max_int]
-    //     int limit = Math.min(hi, 100); // limit in [min_int..100]
-    //     // No CmpI before the loop!
-    //     int sum = 0;
-    //     int i = init;
-    //     do {
-    //         sum = dontinline(sum); // work to keep loop alive
-    //         i = (short)(i+1);
-    //     } while (i < limit); // exit check at the end.
-    //     return sum;
-    // }
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIR5b() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        if (init >= limit) { return -1; } // CmpI before loop
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in short range.
+        int sum = 0;
+        int i = init;
+        do {
+            sum = dontinline(sum); // work to keep loop alive
+            i = (short)(i+1);
+        } while (i != limit); // exit check at the end, but with NEQ.
+        return sum;
+    }
+
+    // testIR6: short do-while-loop, missing the CmpI before the loop.
+    public static int testIR6_gold = testIR6();
+
+    @Run(test = "testIR6")
+    private static void runIR6() {
+        int val = testIR6();
+        if (val != testIR6_gold) { throw new RuntimeException("wrong value: " + testIR6_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIR6() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        // No CmpI before the loop!
+        // But the loop exit check is strong enough to ignore truncation.
+        int sum = 0;
+        int i = init;
+        do {
+            sum = dontinline(sum); // work to keep loop alive
+            i = (short)(i+1);
+        } while (i < limit); // exit check at the end.
+        return sum;
+    }
+
+    // testIR6b: short do-while-loop, missing the CmpI before the loop.
+    // Compared to testIR6, the check in the loop is an NEQ.
+    public static int testIR6b_gold = testIR6b();
+
+    @Run(test = "testIR6b")
+    private static void runIR6b() {
+        int val = testIR6b();
+        if (val != testIR6b_gold) { throw new RuntimeException("wrong value: " + testIR6b_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIR6b() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        // No CmpI before the loop!
+        // And the loop exit check is NOT strong enough to ignore truncation.
+        int sum = 0;
+        int i = init;
+        do {
+            sum = dontinline(sum); // work to keep loop alive
+            i = (short)(i+1);
+        } while (i != limit); // exit check at the end.
+        return sum;
+    }
 
     // TODO: ensure coverage
     // - char, byte and short truncation
