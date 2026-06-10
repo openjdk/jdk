@@ -25,14 +25,15 @@
 
 /**
  * Provides classes and interfaces, in addition to {@link Class java.lang.Class},
- * for obtaining reflective information about Java programs.  Reflection allows
- * programmatic inspection of structures in loaded classes and interfaces (JVMS
- * {@jvms 4}) in the current Java runtime, represented by <em>reflected
- * objects</em>.  These structures {@linkplain ##LanguageJvmModel may represent}
- * Java language declarations (JLS {@jls 6.1}).  Thus, a reflected object can
- * represent a Java language declaration in a class or interface not available
- * at compile time, allowing {@linkplain ##accessor programmatic use} of this
- * declaration within encapsulation and security restrictions.
+ * for obtaining reflective information about Java programs derived from {@code
+ * class} files.  Reflection allows programmatic inspection of structures in
+ * loaded classes and interfaces (JVMS {@jvms 4}) in the current Java runtime,
+ * represented by <em>reflected objects</em>.  These structures {@linkplain
+ * ##LanguageJvmModel may represent} Java language declarations (JLS {@jls 6.1}).
+ * Thus, a reflected object can represent a Java language declaration in a class
+ * or interface not available at compile time, allowing {@linkplain ##accessor
+ * programmatic use} of this declaration within encapsulation and security
+ * restrictions.
  * <p>
  * {@link Array} provides static methods to dynamically create and
  * access arrays.
@@ -40,20 +41,26 @@
  * <h2 id="accessor">Using the Declarations</h2>
  * The reflection classes provide <em>accessor</em> methods to use the
  * underlying declarations represented by reflected objects.  They are
- * convenient for single invocation; for repeated invocations, consider
- * using {@link MethodHandles.Lookup} to produce a {@link MethodHandle} instead.
+ * convenient for single invocation.  For accurate access control, repeated
+ * invocations, and performance sensitive contexts, consider using {@link
+ * MethodHandles.Lookup} to produce a {@link MethodHandle} instead.
  *
  * <h3 id="access-control">Access Control</h3>
  * An accessor of a reflected object performs access control against the caller
  * every time the accessor is used, unless that reflected object {@linkplain
- * AccessibleObject#setAccessible(boolean) suppresses checks}.  For a class or
- * interface A, core reflection represents a member declared in A and the same
- * member inherited by another reference type from A with equivalent reflective
- * objects, with A as the {@linkplain Member#getDeclaringClass() declaring class
- * or interface}.  Therefore, access checks of such a reflected object assume
- * the use happened on the member in A, while in the Java Language and JVM,
- * the use can happen on an inherited member in another class or interface, and
- * access control proceeds differently. (JLS {@jls 6.6.1}, JVMS {@jvms 5.4.4})
+ * AccessibleObject#setAccessible(boolean) suppresses checks}.  In contrast,
+ * {@link MethodHandles.Lookup} performs a single access check to produce a
+ * {@link MethodHandle} that performs no access check upon invocation.
+ * <p>
+ * For a class or interface A, core reflection represents a member declared in A
+ * and the same member inherited by another reference type from A with
+ * equivalent reflective objects, with A as the {@linkplain
+ * Member#getDeclaringClass() declaring class or interface}.  Therefore, access
+ * checks of such a reflected object assume the use happened on the member in A,
+ * while in the Java Language and JVM, the use can happen on an inherited member
+ * in another reference type, and access control proceeds differently (JLS {@jls
+ * 6.6.1}, JVMS {@jvms 5.4.4}).  In contrast, {@link MethodHandles.Lookup}
+ * performs its access check against the correct reference type of use.
  * <p>
  * Consider this example:
  * {@snippet lang=java :
@@ -66,11 +73,6 @@
  * there is no distinct declaration.  {@link Method#invoke(Object, Object...)
  * invoke} on this {@code Method} object from a caller that can access {@code B}
  * but is not in the same package as {@code A} fails access control incorrectly.
- * <p>
- * In contrast, {@link MethodHandles.Lookup} performs a single access check
- * to produce a {@link MethodHandle} that performs no additional access checks.
- * If the accessed declaration is a member, the single check is performed
- * against the correct class or interface of the member.  In the example above,
  * {@code MethodHandles.lookup().findVirtual(B.class, "act", MethodType.methodType(void.class))}
  * performs the right access checks for the same caller.
  *
