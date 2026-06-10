@@ -392,7 +392,7 @@ public final class FileUtils {
             stream.forEach(sourcePath -> {
                 try {
                     Path destPath = dst.resolve(src.relativize(sourcePath));
-                    if (Files.isDirectory(sourcePath)) {
+                    if (Files.isDirectory(sourcePath, LinkOption.NOFOLLOW_LINKS)) {
                         Files.createDirectories(destPath);
                     } else {
                         Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
