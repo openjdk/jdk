@@ -273,6 +273,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIR1c: short loop, but values are trivially in short range. Incr by 2.
+    // Not safe: lo=32766+2 would wrap past short_max.
     public static int testIR1c_gold = testIR1c();
 
     @Run(test = "testIR1c")
@@ -282,7 +283,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIR1c() {
         short init  = (short)lo;
         short limit = (short)hi;
@@ -294,6 +295,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIR1d: short loop, but values are trivially in short range. Decrement iv by 2.
+    // Not safe: lo=-32767-2 would wrap past short_min.
     public static int testIR1d_gold = testIR1d();
 
     @Run(test = "testIR1d")
@@ -303,7 +305,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIR1d() {
         short init  = (short)hi;
         short limit = (short)lo;
