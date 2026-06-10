@@ -22,6 +22,7 @@
  *
  */
 
+#include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInlineKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciSymbols.hpp"
@@ -29,7 +30,6 @@
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jvm_io.h"
-#include "ci/ciFlatArrayKlass.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -643,7 +643,6 @@ public:
             BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ false), PROB_MAX);
             _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
           }
-          pop_stack();
           assert(!_parse.stopped(), "flat array should have been caught earlier");
           Node* casted_array = _gvn.transform(
             new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
@@ -651,6 +650,7 @@ public:
           _array = casted_array;
           Node* ld = emit_plain_load(casted_array, true);
           ld = _parse.record_profile_for_speculation_at_array_load(ld);
+          pop_stack();
           _parse.push_node(_bt, ld);
           record_array_profile_for_speculation();
           return true;

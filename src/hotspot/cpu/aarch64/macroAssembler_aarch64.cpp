@@ -2220,13 +2220,9 @@ void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
   add(offset, offset, receiver_step);
   sub(rscratch1, offset, end_receiver_offset);
   cbnz(rscratch1, L_loop_search_empty);
+  b(L_polymorphic);
 
-  // Slow: Receiver is not found and table is full.
-  // Increment polymorphic counter instead of receiver slot.
-  mov(offset, poly_count_offset);
-  b(L_count_update);
-
-  // Slowest: try to install receiver
+  // Slow: try to install receiver
   bind(L_found_empty);
 
   // Atomically swing receiver slot: null -> recv.
@@ -2294,7 +2290,6 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_found_recv);
   add(offset, offset, receiver_to_count_step);
 
-  // Finally, update the counter
   bind(L_count_update);
   increment(Address(mdp, offset), DataLayout::counter_increment);
 }
