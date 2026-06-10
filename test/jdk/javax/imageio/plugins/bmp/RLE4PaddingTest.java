@@ -102,7 +102,7 @@ public class RLE4PaddingTest {
 
                 if (srcRgb != dstRgb) {
                     throw new RuntimeException("Test failed due to color" +
-                        "difference: " + Integer.toHexString(dstRgb) +
+                        " difference: " + Integer.toHexString(dstRgb) +
                         " instead of " + Integer.toHexString(srcRgb) +
                         " at [" + x + ", " + y + "]");
                 }
