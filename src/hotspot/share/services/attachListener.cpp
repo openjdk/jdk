@@ -46,6 +46,7 @@
 #include "services/heapDumper.hpp"
 #include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/formatBuffer.hpp"
 
 
@@ -590,10 +591,14 @@ void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
   assert(thread->stack_base() != nullptr && thread->stack_size() > 0,
          "Should already be setup");
 
-  AttachListener::set_default_streaming(
-      get_bool_sys_prop("jdk.attach.vm.streaming",
-                        AttachListener::get_default_streaming(),
-                        thread));
+  bool is_streaming = get_bool_sys_prop("jdk.attach.vm.streaming",
+                                        AttachListener::get_default_streaming(),
+                                        THREAD);
+  // We try to go on with the attach listener, even though reading jdk.attach.vm.streaming failed.
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+  }
+  AttachListener::set_default_streaming(is_streaming);
   log_debug(attach)("default streaming output: %d", AttachListener::get_default_streaming() ? 1 : 0);
 
   if (AttachListener::pd_init() != 0) {
