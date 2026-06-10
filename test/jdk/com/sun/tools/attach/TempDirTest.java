@@ -66,7 +66,7 @@ public class TempDirTest {
 
         // Run the test with all possible combinations of setting java.io.tmpdir.
         // Note that the attach mechanism doesn't really use java.io.tmpdir, but this test verifies
-        // that different java.io.tmpdir settings for client and target doesn't break the attach mechanism.
+        // that different java.io.tmpdir settings for client and target don't break the attach mechanism.
         runExperiment(null, null);
         runExperiment(clientTmpDir, null);
         runExperiment(clientTmpDir, targetTmpDir);

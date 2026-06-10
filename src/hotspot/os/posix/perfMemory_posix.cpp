@@ -146,7 +146,7 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
 
   if (nspid != -1) {
     int val = jio_snprintf(buffer, PATH_MAX, "/proc/%d/root%s", vmid, tmpdir);
-    assert(val != -1, "should not truncate, because length was already checked");
+    assert(val != -1, "should not truncate, because tmpdir length was already limited");
     tmpdir = buffer;
   }
 #endif

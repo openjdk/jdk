@@ -258,7 +258,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     private String findTargetProcessTmpDirectory(long pid) throws IOException {
         final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve("root")
-                        .resolve(vmTemp.startsWith("/") ? vmTemp.substring(1) : vmTemp);
+                                         .resolve(vmTemp.startsWith("/") ? vmTemp.substring(1) : vmTemp);
 
         /* We need to handle at least 4 different cases:
          * 1. Caller and target processes share PID namespace and root
