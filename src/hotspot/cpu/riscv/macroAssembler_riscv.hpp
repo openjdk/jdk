@@ -1203,8 +1203,6 @@ public:
 
 #undef INSN_ENTRY_RELOC
 
-  void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp, Label &succeed, Label *fail);
-  void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp, Label &succeed, Label *fail);
   void cmpxchg(Register addr, Register expected,
                Register new_val,
                Assembler::operand_size size,

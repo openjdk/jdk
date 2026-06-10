@@ -26,7 +26,6 @@
 #define SHARE_CLASSFILE_VMSYMBOLS_HPP
 
 #include "classfile/vmIntrinsics.hpp"
-#include "jvmci/vmSymbols_jvmci.hpp"
 #include "memory/iterator.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/enumIterator.hpp"
@@ -355,9 +354,6 @@ class SerializeClosure;
   template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/UpcallLinker$CallRegs") \
                                                                                                   \
   template(jdk_internal_foreign_NativeMemorySegmentImpl,             "jdk/internal/foreign/NativeMemorySegmentImpl") \
-                                                                                                  \
-  /* Support for JVMCI */                                                                         \
-  JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
                                                                                                   \
   template(java_lang_ClassFrameInfo,                  "java/lang/ClassFrameInfo")                 \
   template(java_lang_StackWalker,                     "java/lang/StackWalker")                    \
@@ -704,12 +700,6 @@ class SerializeClosure;
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \
   template(serializeSecurityPropertiesToByteArray_name, "serializeSecurityPropertiesToByteArray")                 \
   template(serializeAgentPropertiesToByteArray_name,   "serializeAgentPropertiesToByteArray")                     \
-  template(encodeThrowable_name,                       "encodeThrowable")                                         \
-  template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
-  template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
-  template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
-  template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
-  template(decodeAndThrowThrowable_signature,          "(IJZZ)V")                                                 \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \
@@ -784,7 +774,6 @@ ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
   static const int NO_SID    = static_cast<int>(vmSymbolID::NO_SID);    // exclusive lower limit
   static const int FIRST_SID = static_cast<int>(vmSymbolID::FIRST_SID); // inclusive lower limit

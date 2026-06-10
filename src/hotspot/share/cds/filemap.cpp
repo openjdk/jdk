@@ -230,7 +230,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
 
   // Which JIT compier is used
-  _compiler_type = (u1)CompilerConfig::compiler_type();
   _type_profile_level = TypeProfileLevel;
   _type_profile_args_limit = TypeProfileArgsLimit;
   _type_profile_parms_limit = TypeProfileParmsLimit;
@@ -1817,23 +1816,6 @@ bool FileMapHeader::validate() {
                                           " does not equal the current CompactStrings setting (%s).", file_type,
                                           _compact_strings ? "enabled" : "disabled",
                                           CompactStrings   ? "enabled" : "disabled");
-    return false;
-  }
-  bool jvmci_compiler_is_enabled = CompilerConfig::is_jvmci_compiler_enabled();
-  CompilerType compiler_type = CompilerConfig::compiler_type();
-  CompilerType archive_compiler_type = CompilerType(_compiler_type);
-  // JVMCI compiler does different type profiling settigns and generate
-  // different code. We can't use archive which was produced
-  // without it and reverse.
-  // Only allow mix when JIT compilation is disabled.
-  // Interpreter is used by default when dumping archive.
-  bool intepreter_is_used = (archive_compiler_type == CompilerType::compiler_none) ||
-                            (compiler_type == CompilerType::compiler_none);
-  if (!intepreter_is_used &&
-      jvmci_compiler_is_enabled != (archive_compiler_type == CompilerType::compiler_jvmci)) {
-    AOTMetaspace::report_loading_error("The %s's JIT compiler setting (%s)"
-                                          " does not equal the current setting (%s).", file_type,
-                                          compilertype2name(archive_compiler_type), compilertype2name(compiler_type));
     return false;
   }
   if (TrainingData::have_data()) {
