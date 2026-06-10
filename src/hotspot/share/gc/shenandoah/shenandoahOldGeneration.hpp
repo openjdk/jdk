@@ -299,7 +299,6 @@ public:
   // Abandon any regions waiting for mixed collections
   void abandon_collection_candidates();
 
-public:
   enum State {
     FILLING, IDLE, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
   };
@@ -347,7 +346,7 @@ public:
 
   size_t usage_trigger_threshold() const;
 
-  bool can_start_gc() {
+  bool can_start_gc() const {
     return _state == IDLE;
   }
 

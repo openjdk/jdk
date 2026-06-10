@@ -105,7 +105,7 @@ private:
   void run_gc_cycle(const ShenandoahGCRequest& request);
 
   // Returns true if the old generation marking completed (i.e., final mark executed for old generation).
-  bool resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause);
+  void resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause);
 
   // Various service methods handle different gc cycle types
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);

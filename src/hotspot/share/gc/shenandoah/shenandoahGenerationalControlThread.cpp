@@ -382,13 +382,11 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
     case ShenandoahOldGeneration::MARKING: {
       set_gc_mode(servicing_old);
       ShenandoahGCSession session(request.cause, old_generation);
-      const bool marking_complete = resume_concurrent_old_cycle(old_generation, request.cause);
-      if (marking_complete) {
-        assert(old_generation->state() != ShenandoahOldGeneration::MARKING, "Should not still be marking");
+      resume_concurrent_old_cycle(old_generation, request.cause);
+      if (old_generation->state() != ShenandoahOldGeneration::MARKING) {
         _heap->mmu_tracker()->record_old_marking_increment(true);
         _heap->log_heap_status("At end of Concurrent Old Marking finishing increment");
       } else {
-        assert(old_generation->state() == ShenandoahOldGeneration::MARKING, "Should still be marking");
         _heap->mmu_tracker()->record_old_marking_increment(false);
         _heap->log_heap_status("At end of Concurrent Old Marking increment");
       }
@@ -416,7 +414,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
   }
 }
 
-bool ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause) {
+void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause) {
   assert(_heap->is_concurrent_old_mark_in_progress(), "Old mark should be in progress");
   log_debug(gc)("Resuming old generation with " UINT32_FORMAT " marking tasks queued", generation->task_queues()->tasks());
 
@@ -429,20 +427,9 @@ bool ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
     generation->record_success_concurrent(false);
   }
 
-  if (_heap->cancelled_gc()) {
-    // It's possible the gc cycle was cancelled after the last time the collection checked for cancellation. In which
-    // case, the old gc cycle is still completed, and we have to deal with this cancellation. We set the degeneration
-    // point to be outside the cycle because if this is an allocation failure, that is what must be done (there is no
-    // degenerated old cycle). If the cancellation was due to a heuristic wanting to start a young cycle, then we are
-    // not actually going to a degenerated cycle, so don't set the degeneration point here.
-    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle);
-    } else if (cause == GCCause::_shenandoah_concurrent_gc) {
-      _heap->shenandoah_policy()->record_interrupted_old();
-    }
-    return false;
+  if (_heap->cancelled_gc() && cause == GCCause::_shenandoah_concurrent_gc) {
+    _heap->shenandoah_policy()->record_interrupted_old();
   }
-  return true;
 }
 
 // Normal cycle goes via all concurrent phases. If allocation failure (af) happens during
