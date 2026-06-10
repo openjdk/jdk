@@ -1236,7 +1236,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 continue;
             }
             StoredElement stored = javadoc.getHandle(c);
-            Collection<? extends Path> binaryPaths = javadoc.binaryPaths;
+            Collection<? extends Path> binaryPaths = javadoc.getBinaryPaths();
             result.add(new ElementSuggestionImpl(c, null, smart.test(c), anchor, () -> {
                 return proc.taskFactory.analyze(proc.outerMap.wrapInTrialClass(Wrap.methodWrap(";")), task -> {
                     try (CloseableSources closeableSources = findSources(binaryPaths);
@@ -1975,25 +1975,34 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private CloseableSources findSources(Collection<? extends Path> forPaths) {
         List<AutoCloseable> toClose = new ArrayList<>();
-        List<Path> result = new ArrayList<>();
 
-        result.addAll(jdkSources());
+        try {
+            List<Path> sourcePaths = new ArrayList<>();
 
-        if (proc.binarySourceMapping != null) {
-            for (Path binaryPath : forPaths) {
-                Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(binaryPath);
+            sourcePaths.addAll(jdkSources());
 
-                if (mappedSources != null) {
-                    if (mappedSources instanceof AutoCloseable closeable) {
-                        toClose.add(closeable);
+            if (proc.binarySourceMapping != null) {
+                for (Path binaryPath : forPaths) {
+                    Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(binaryPath);
+
+                    if (mappedSources != null) {
+                        if (mappedSources instanceof AutoCloseable closeable) {
+                            toClose.add(closeable);
+                        }
+
+                        mappedSources.forEach(sourcePaths::add);
                     }
-
-                    mappedSources.forEach(result::add);
                 }
             }
-        }
 
-        return new CloseableSources(this, result, toClose);
+            CloseableSources result = new CloseableSources(this, sourcePaths, toClose);
+
+            toClose = List.of();
+
+            return result;
+        } finally {
+            close(toClose);
+        }
     }
 
     private static List<Path> jdkSourcesOverride; //for tests
@@ -2787,8 +2796,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private static class JavadocConfig implements AutoCloseable {
-        public final JavacTask mainTask;
-        public final Collection<? extends Path> binaryPaths;
+        private JavacTask mainTask;
+        private Collection<? extends Path> binaryPaths;
 
         public JavadocConfig(JavacTask mainTask, Collection<? extends Path> binaryPaths) {
             this.mainTask = mainTask;
@@ -2796,11 +2805,25 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
 
         public StoredElement getHandle(Element el) {
+            if (mainTask == null) {
+                throw new IllegalStateException("Already closed.");
+            }
+
             return StoredElement.getStoredElement(mainTask, el);
+        }
+
+        public Collection<? extends Path> getBinaryPaths() {
+            if (binaryPaths == null) {
+                throw new IllegalStateException("Already closed.");
+            }
+
+            return binaryPaths;
         }
 
         @Override
         public void close() {
+            mainTask = null;
+            binaryPaths = null;
         }
     }
 }
