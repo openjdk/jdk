@@ -2315,14 +2315,12 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
   assert(flat_nullfree_not_atomic_count_offset == real_flat_nullfree_not_atomic_count_offset, "poly counter math");
 #endif
 
+  Label L_found_recv;
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
-    ShouldNotReachHere();
-    return;
+    profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ArrayLoadData::base_of_megamorphic_type_data(), ArrayLoadData::row_limit());
   }
 
-  Label L_found_recv;
-  profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ArrayLoadData::base_of_megamorphic_type_data(), ArrayLoadData::row_limit());
   Register offset = rscratch2;
   int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
   Label null_free_non_atomic, null_free_atomic, nullable_atomic_flat, failure, L_count_update;
