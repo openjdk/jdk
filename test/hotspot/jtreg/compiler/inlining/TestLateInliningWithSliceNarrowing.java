@@ -79,10 +79,21 @@ public class TestLateInliningWithSliceNarrowing {
         a.f = 42;
     }
 
+    static int lateLoad(A a) {
+        return a.f;
+    }
+
     static int testLoadFromLateDiscoveredOffsetThenStoreAtConstOffset(A a) {
         long o = lateOffset();
         int val = UNSAFE.getInt(a, o);
         lateStore(a);
+        return val;
+    }
+
+    static int testLoadFromLateDiscoveredOffsetThenLoadFromConstOffset(A a) {
+        long o = lateOffset();
+        int val = UNSAFE.getInt(a, o);
+        lateLoad(a);
         return val;
     }
 
@@ -113,6 +124,11 @@ public class TestLateInliningWithSliceNarrowing {
             {
                 A a = new A();
                 int result = testLoadFromLateDiscoveredOffsetThenStoreAtConstOffset(a);
+                Asserts.assertEquals(0, result);
+            }
+            {
+                A a = new A();
+                int result = testLoadFromLateDiscoveredOffsetThenLoadFromConstOffset(a);
                 Asserts.assertEquals(0, result);
             }
             {
