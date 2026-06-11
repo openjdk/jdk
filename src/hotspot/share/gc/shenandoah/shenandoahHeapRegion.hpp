@@ -280,8 +280,7 @@ private:
   // clears the self_fwd bits. Safety-net reset on region recycle.
   ShenandoahSharedFlag _has_self_forwards;
 
-  // This will generally be used by gc workers, but may also be read by assertions on the  mutator's
-  // on the allocation path. In this case, access is mediated by the protocol based on the _recycling flag.
+  // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
 
 public:
