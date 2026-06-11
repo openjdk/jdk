@@ -13959,6 +13959,7 @@ instruct orL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 
 // Use any_RegP to match R15 (TLS register) without spilling.
 instruct orL_rReg_castP2X(rRegL dst, any_RegP src, rFlagsReg cr) %{
+  predicate(!UseAPX);
   match(Set dst (OrL dst (CastP2X src)));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -13971,6 +13972,7 @@ instruct orL_rReg_castP2X(rRegL dst, any_RegP src, rFlagsReg cr) %{
 %}
 
 instruct orL_rReg_castP2X_ndd(rRegL dst, any_RegP src1, any_RegP src2, rFlagsReg cr) %{
+  predicate(UseAPX);
   match(Set dst (OrL src1 (CastP2X src2)));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);

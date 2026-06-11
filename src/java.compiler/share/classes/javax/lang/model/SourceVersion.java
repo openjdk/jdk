@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,8 @@ public enum SourceVersion {
      *      third preview)
      *  26: no changes (primitive Types in Patterns, instanceof, and
      *      switch in fourth preview)
-     *  27: tbd
+     *  27: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in fifth preview)
      */
 
     /**

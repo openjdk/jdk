@@ -500,9 +500,6 @@
           "Turn on/off card-marking post-write barrier in Shenandoah: "     \
           " true when ShenandoahGCMode is generational, false otherwise")   \
                                                                             \
-  product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
-          "Turn on/off CAS barriers in Shenandoah")                         \
-                                                                            \
   product(bool, ShenandoahCloneBarrier, true, DIAGNOSTIC,                   \
           "Turn on/off clone barriers in Shenandoah")                       \
                                                                             \
