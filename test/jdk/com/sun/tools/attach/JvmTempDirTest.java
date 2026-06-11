@@ -206,7 +206,7 @@ public class JvmTempDirTest {
         // Arguments : [-XX:AltTempDir=] -version
         String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
-        output.shouldContain("[warning][attach] Failed to create temporary file for attach");
+        output.shouldMatch("\\[warning\\]\\[attach *\\] Failed to create temporary file for attach");
         // Still passes, it's just a warning.
         output.shouldHaveExitValue(0);
     }
