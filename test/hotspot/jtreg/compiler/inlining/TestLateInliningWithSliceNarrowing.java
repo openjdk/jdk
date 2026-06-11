@@ -24,7 +24,6 @@
 package compiler.inlining;
 
 import java.lang.reflect.Field;
-import java.util.Objects;
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
 
@@ -35,10 +34,10 @@ import jdk.test.lib.Asserts;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:CompileOnly=${test.main.class}::test*
-                     -XX:CompileCommand=dontinline,${test.main.class}::id
-                     -XX:CompileCommand=delayinline,${test.main.class}::offset*
-                     -XX:CompileCommand=delayinline,${test.main.class}::store
+ * @run main/othervm -Xbatch
+                     -XX:CompileCommand=compileonly,${test.main.class}::test*
+                     -XX:CompileCommand=dontinline,${test.main.class}::notInlined*
+                     -XX:CompileCommand=delayinline,${test.main.class}::late*
                      ${test.main.class}
  */
 
@@ -60,57 +59,52 @@ public class TestLateInliningWithSliceNarrowing {
         }
     }
 
-    // Not inlined.
-    static A id(A a) {
+    static A notInlinedId(A a) {
         return a;
     }
 
-    // Inlined late.
-    static long offset() {
+    static long lateOffset() {
         return F_OFFSET;
     }
 
-    // Inlined late.
-    static long offsetMinusFour() {
+    static long lateOffsetMinusFour() {
         return F_OFFSET - 4;
     }
 
-    // Inlined late.
-    static long offsetDividedByTwo() {
+    static long lateOffsetDividedByTwo() {
         return F_OFFSET / 2;
     }
 
-    // Inlined late.
-    static void store(A a) {
+    static void lateStore(A a) {
         a.f = 42;
     }
 
     static int testLoadFromLateDiscoveredOffsetThenStoreAtConstOffset(A a) {
-        long o = offset();
+        long o = lateOffset();
         int val = UNSAFE.getInt(a, o);
-        store(a);
+        lateStore(a);
         return val;
     }
 
     static int testLoadFromLateDiscoveredOffsetPlusFourThenStoreAtConstOffset(A a) {
-        long o = offsetMinusFour();
+        long o = lateOffsetMinusFour();
         int val = UNSAFE.getInt(a, o + 4);
-        store(a);
+        lateStore(a);
         return val;
     }
 
     static int testLoadFromLateDiscoveredOffsetTimesTwoThenStoreAtConstOffset(A a) {
-        long o = offsetDividedByTwo();
+        long o = lateOffsetDividedByTwo();
         int val = UNSAFE.getInt(a, o * 2);
-        store(a);
+        lateStore(a);
         return val;
     }
 
     static int testLoadFromLateDiscoveredOffsetThenStoreAtConstOffsetThenReloadFromConstOffset(A a) {
-        A a2 = id(a);
-        long o = offset();
+        A a2 = notInlinedId(a);
+        long o = lateOffset();
         int val = UNSAFE.getInt(a, o);
-        store(a);
+        lateStore(a);
         return a2.f + val;
     }
 
