@@ -109,7 +109,7 @@ typedef struct ShenandoahSharedBitmap {
   }
 
   void set(uint mask) {
-    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
+    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_BIT), "sanity");
     ShenandoahSharedValue mask_val = (ShenandoahSharedValue) mask;
     while (true) {
       ShenandoahSharedValue ov = value.load_acquire();
@@ -128,7 +128,7 @@ typedef struct ShenandoahSharedBitmap {
   }
 
   void unset(uint mask) {
-    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
+    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_BIT), "sanity");
     ShenandoahSharedValue mask_val = (ShenandoahSharedValue) mask;
     while (true) {
       ShenandoahSharedValue ov = value.load_acquire();
@@ -156,14 +156,14 @@ typedef struct ShenandoahSharedBitmap {
 
   // Returns true iff all bits set in mask are set in this.value.
   bool is_set_exactly(uint mask) const {
-    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
+    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_BIT), "sanity");
     uint uvalue = value.load_acquire();
     return (uvalue & mask) == mask;
   }
 
   // Returns true iff all bits set in mask are unset in this.value.
   bool is_unset(uint mask) const {
-    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
+    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_BIT), "sanity");
     return (value.load_acquire() & (ShenandoahSharedValue) mask) == 0;
   }
 
@@ -209,7 +209,7 @@ struct ShenandoahSharedEnumFlag {
 
   void set(T v) {
     assert (v >= 0, "sanity");
-    assert (v < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
+    assert (v < (sizeof(EnumValueType) * CHAR_BIT), "sanity");
     value.release_store_fence((EnumValueType)v);
   }
 
@@ -219,13 +219,13 @@ struct ShenandoahSharedEnumFlag {
 
   T cmpxchg(T new_value, T expected) {
     assert (new_value >= 0, "sanity");
-    assert (new_value < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
+    assert (new_value < (sizeof(EnumValueType) * CHAR_BIT), "sanity");
     return (T)value.compare_exchange((EnumValueType)expected, (EnumValueType)new_value);
   }
 
   T xchg(T new_value) {
     assert (new_value >= 0, "sanity");
-    assert (new_value < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
+    assert (new_value < (sizeof(EnumValueType) * CHAR_BIT), "sanity");
     return (T)value.exchange((EnumValueType)new_value);
   }
 
@@ -250,7 +250,7 @@ typedef struct ShenandoahSharedSemaphore {
   shenandoah_padding(1);
 
   static uint max_tokens() {
-    return sizeof(ShenandoahSharedValue) * CHAR_MAX;
+    return sizeof(ShenandoahSharedValue) * CHAR_BIT;
   }
 
   ShenandoahSharedSemaphore(uint tokens) {
