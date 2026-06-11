@@ -24,8 +24,8 @@
 #include "jfr/leakprofiler/chains/bfsClosure.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
-#include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
+#include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/utilities/granularTimer.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
@@ -121,13 +121,14 @@ void BFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
      return;
   }
 
-  if (_use_dfs) {
-    assert(_current_parent != nullptr, "invariant");
-    DFSClosure::find_leaks_from_edge(_edge_store, _mark_bits, _current_parent);
-    return;
-  }
-
   if (!_mark_bits->is_marked(pointee)) {
+
+    if (_use_dfs) {
+      assert(_current_parent != nullptr, "invariant");
+      DFSClosure::find_leaks_from_edge(_edge_store, _mark_bits, _current_parent);
+      return;
+    }
+
     _mark_bits->mark_obj(pointee);
     // is the pointee a sample object?
     if (pointee->mark().is_marked()) {
@@ -189,7 +190,7 @@ bool BFSClosure::is_complete() const {
   if (_edge_queue->bottom() > _next_frontier_idx) {
     // fallback onto DFS as part of processing the frontier
     assert(_dfs_fallback_idx >= _prev_frontier_idx, "invariant");
-    assert(_dfs_fallback_idx < _next_frontier_idx, "invariant");
+    assert(_dfs_fallback_idx <= _next_frontier_idx, "invariant");
     log_dfs_fallback();
     return true;
   }

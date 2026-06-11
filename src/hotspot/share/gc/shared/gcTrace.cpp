@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,10 @@ void GCTracer::report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& he
 
 void GCTracer::report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& summary) const {
   send_meta_space_summary_event(when, summary);
-
   send_metaspace_chunk_free_list_summary(when, Metaspace::NonClassType, summary.metaspace_chunk_free_list_summary());
-  if (UseCompressedClassPointers) {
-    send_metaspace_chunk_free_list_summary(when, Metaspace::ClassType, summary.class_chunk_free_list_summary());
-  }
+#if INCLUDE_CLASS_SPACE
+  send_metaspace_chunk_free_list_summary(when, Metaspace::ClassType, summary.class_chunk_free_list_summary());
+#endif
 }
 
 void YoungGCTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions) {

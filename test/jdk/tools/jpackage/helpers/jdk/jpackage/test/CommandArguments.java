@@ -35,16 +35,17 @@ public class CommandArguments<T> {
     }
 
     public final T clearArguments() {
+        verifyMutable();
         args.clear();
         return thiz();
     }
 
     public final T addArgument(String v) {
-        args.add(v);
-        return thiz();
+        return addArguments(v);
     }
 
     public final T addArguments(List<String> v) {
+        verifyMutable();
         args.addAll(v);
         return thiz();
     }

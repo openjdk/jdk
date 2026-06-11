@@ -22,19 +22,19 @@
  *
  */
 
+#include "logging/log.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/defaultStream.hpp"
-#include "logging/log.hpp"
-#include "logging/logConfiguration.hpp"
 
 #ifdef DTRACE_ENABLED
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 
 #include "mlib_image.h"
 #include "mlib_c_ImageConv.h"
+#include "safe_math.h"
 
 /*
   This define switches between functions of different data types
@@ -285,13 +286,14 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
         pk = k + off;
         sp = sl0;
 
-        k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
-        p2 = sp[0]; p3 = sp[sll]; p4 = sp[2*sll];
-
         dp = dl;
         kh = n - off;
 
         if (kh == 4) {
+
+          k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+          p2 = sp[0]; p3 = sp[sll]; p4 = sp[2*sll];
+
           sp += 3*sll;
 
           for (j = 0; j <= (hsize - 2); j += 2) {
@@ -324,6 +326,10 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           }
 
         } else if (kh == 3) {
+
+          k0 = pk[0]; k1 = pk[1]; k2 = pk[2];
+          p2 = sp[0]; p3 = sp[sll];
+
           sp += 2*sll;
 
           for (j = 0; j <= (hsize - 2); j += 2) {
@@ -356,6 +362,10 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           }
 
         } else if (kh == 2) {
+
+          k0 = pk[0]; k1 = pk[1];
+          p2 = sp[0];
+
           sp += sll;
 
           for (j = 0; j <= (hsize - 2); j += 2) {
@@ -388,6 +398,9 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           }
 
         } else /* if (kh == 1) */ {
+
+          k0 = pk[0];
+
           for (j = 0; j < hsize; j++) {
             p0 = sp[0];
 
@@ -466,6 +479,10 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
     FREE_AND_RETURN_STATUS;
   }
 
+  if (!SAFE_TO_MULT((n + 3), wid)) {
+    status = MLIB_FAILURE;
+    FREE_AND_RETURN_STATUS;
+  }
   bsize = (n + 3)*wid;
 
   if ((bsize > BUFF_SIZE) || (n > MAX_N)) {
@@ -531,14 +548,13 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
           sp = sl;
           dp = dl;
 
-          p2 = buff[0]; p3 = buff[1]; p4 = buff[2];
-          p5 = buff[3]; p6 = buff[4]; p7 = buff[5];
-
-          k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
-          k4 = pk[4]; k5 = pk[5]; k6 = pk[6];
-          pk += kw;
-
           if (kw == 7) {
+
+            p2 = buff[0]; p3 = buff[1]; p4 = buff[2];
+            p5 = buff[3]; p6 = buff[4]; p7 = buff[5];
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4]; k5 = pk[5]; k6 = pk[6];
 
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -578,6 +594,12 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
 
           } else if (kw == 6) {
 
+            p2 = buff[0]; p3 = buff[1]; p4 = buff[2];
+            p5 = buff[3]; p6 = buff[4];
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4]; k5 = pk[5];
+
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
@@ -612,6 +634,12 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             }
 
           } else if (kw == 5) {
+
+            p2 = buff[0]; p3 = buff[1]; p4 = buff[2];
+            p5 = buff[3];
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4];
 
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -648,6 +676,10 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
 
           } else if (kw == 4) {
 
+            p2 = buff[0]; p3 = buff[1]; p4 = buff[2];
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4;
@@ -682,6 +714,10 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             }
 
           } else if (kw == 3) {
+
+            p2 = buff[0]; p3 = buff[1];
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2];
 
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -718,6 +754,10 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
 
           } else /*if (kw == 2)*/ {
 
+            p2 = buff[0];
+
+            k0 = pk[0]; k1 = pk[1];
+
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2;
@@ -751,6 +791,8 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
               }
             }
           }
+
+          pk += kw;
         }
       }
 
@@ -877,16 +919,15 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
             if (kw > MAX_KER) kw = kw/2;
           off += kw;
 
-          p2 = sp[0]; p3 = sp[chan1]; p4 = sp[chan2];
-          p5 = sp[chan2 + chan1]; p6 = sp[chan2 + chan2]; p7 = sp[5*chan1];
-
-          k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
-          k4 = pk[4]; k5 = pk[5]; k6 = pk[6];
-          pk += kw;
-
-          sp += (kw - 1)*chan1;
-
           if (kw == 7) {
+
+            p2 = sp[0]; p3 = sp[chan1]; p4 = sp[chan2];
+            p5 = sp[chan2 + chan1]; p6 = sp[chan2 + chan2]; p7 = sp[5*chan1];
+
+            sp += (kw - 1)*chan1;
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4]; k5 = pk[5]; k6 = pk[6];
 
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -922,6 +963,14 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
 
           } else if (kw == 6) {
 
+            p2 = sp[0]; p3 = sp[chan1]; p4 = sp[chan2];
+            p5 = sp[chan2 + chan1]; p6 = sp[chan2 + chan2];
+
+            sp += (kw - 1)*chan1;
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4]; k5 = pk[5];
+
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4; p3 = p5; p4 = p6;
@@ -955,6 +1004,14 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
             }
 
           } else if (kw == 5) {
+
+            p2 = sp[0]; p3 = sp[chan1]; p4 = sp[chan2];
+            p5 = sp[chan2 + chan1];
+
+            sp += (kw - 1)*chan1;
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4];
 
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -990,6 +1047,12 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
 
           } else if (kw == 4) {
 
+            p2 = sp[0]; p3 = sp[chan1]; p4 = sp[chan2];
+
+            sp += (kw - 1)*chan1;
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2; p1 = p3; p2 = p4;
@@ -1023,6 +1086,12 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
             }
 
           } else if (kw == 3) {
+
+            p2 = sp[0]; p3 = sp[chan1];
+
+            sp += (kw - 1)*chan1;
+
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2];
 
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -1058,6 +1127,12 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
 
           } else if (kw == 2) {
 
+            p2 = sp[0];
+
+            sp += (kw - 1)*chan1;
+
+            k0 = pk[0]; k1 = pk[1];
+
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = p2;
@@ -1092,6 +1167,10 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
 
           } else /*if (kw == 1)*/ {
 
+            k0 = pk[0];
+
+            sp += (kw - 1)*chan1;
+
             if (l < (n - 1) || off < m) {
               for (i = 0; i <= (wid - 2); i += 2) {
                 p0 = sp[0];
@@ -1122,6 +1201,8 @@ mlib_status CONV_FUNC_I(MxN)(mlib_image       *dst,
               }
             }
           }
+
+        pk += kw;
         }
       }
 

@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 
-#include "code/nmethod.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -181,9 +180,6 @@ public:
 };
 
 class ShenandoahNMethodAndDisarmClosure : public NMethodToOopClosure {
-private:
-  BarrierSetNMethod* const _bs;
-
 public:
   inline ShenandoahNMethodAndDisarmClosure(OopClosure* cl);
   inline void do_nmethod(nmethod* nm);
@@ -230,6 +226,17 @@ public:
 };
 
 
+class ShenandoahFlushSATB : public ThreadClosure {
+private:
+  SATBMarkQueueSet& _satb_qset;
+
+public:
+  explicit ShenandoahFlushSATB(SATBMarkQueueSet& satb_qset) : _satb_qset(satb_qset) {}
+
+  inline void do_thread(Thread* thread) override;
+};
+
+
 //
 // ========= Utilities
 //
@@ -245,5 +252,17 @@ public:
   inline void do_oop(oop* p);
 };
 #endif // ASSERT
+
+class ShenandoahMultiThreadClosure : public ThreadClosure {
+  ThreadClosure& _cl1;
+  ThreadClosure& _cl2;
+public:
+  ShenandoahMultiThreadClosure(ThreadClosure& cl1, ThreadClosure& cl2) :
+    _cl1(cl1), _cl2(cl2) {}
+  inline void do_thread(Thread* thread) override {
+    _cl1.do_thread(thread);
+    _cl2.do_thread(thread);
+  }
+};
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP

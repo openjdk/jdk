@@ -63,7 +63,7 @@ public final class BranchHandle extends InstructionHandle {
     }
 
     /**
-     * Set new contents. Old instruction is disposed and may not be used anymore.
+     * Sets new contents. Old instruction is disposed and may not be used anymore.
      */
     @Override // This is only done in order to apply the additional type check; could be merged with super impl.
     public void setInstruction(final Instruction i) { // TODO could be package-protected?

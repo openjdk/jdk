@@ -30,35 +30,35 @@
 <body>
 <h1 id="ValueBased">{@index "Value-based Classes"}</h1>
 
-Some classes, such as <code>java.lang.Integer</code> and
-<code>java.time.LocalDate</code>, are <em>value-based</em>.
+Some classes, such as {@code java.lang.Integer} and
+{@code java.time.LocalDate}, are <em>value-based</em>.
 A value-based class has the following properties:
 <ul>
     <li>the class declares only final instance fields (though these may contain references
         to mutable objects);</li>
-    <li>the class's implementations of <code>equals</code>, <code>hashCode</code>,
-        and <code>toString</code> compute their results solely from the values
+    <li>the class's implementations of {@code equals}, {@code hashCode},
+        and {@code toString} compute their results solely from the values
         of the class's instance fields (and the members of the objects they
         reference), not from the instance's identity;</li>
     <li>the class's methods treat instances as <em>freely substitutable</em>
-        when equal, meaning that interchanging any two instances <code>x</code> and
-        <code>y</code> that are equal according to <code>equals()</code> produces no
+        when equal, meaning that interchanging any two instances {@code x} and
+        {@code y} that are equal according to {@code equals()} produces no
         visible change in the behavior of the class's methods;</li>
     <li>the class performs no synchronization using an instance's monitor;</li>
-    <li>the class does not declare (or has deprecated any) accessible constructors;</li>
+    <li>the class does not declare (or discourages use of) accessible constructors;</li>
     <li>the class does not provide any instance creation mechanism that promises
         a unique identity on each method call&mdash;in particular, any factory
         method's contract must allow for the possibility that if two independently-produced
-        instances are equal according to <code>equals()</code>, they may also be
-        equal according to <code>==</code>;</li>
-    <li>the class is final, and extends either <code>Object</code> or a hierarchy of
+        instances are equal according to {@code equals()}, they may also be
+        equal according to {@code ==};</li>
+    <li>the class is final, and extends either {@code Object} or a hierarchy of
         abstract classes that declare no instance fields or instance initializers
         and whose constructors are empty.</li>
 </ul>
 
 <p>When two instances of a value-based class are equal (according to `equals`), a program
     should not attempt to distinguish between their identities, whether directly via reference
-    equality or indirectly via an appeal to synchronization, identity hashing,
+    equality {@code ==} or indirectly via an appeal to synchronization, identity hashing,
     serialization, or any other identity-sensitive mechanism.</p>
 
 <p>Synchronization on instances of value-based classes is strongly discouraged,

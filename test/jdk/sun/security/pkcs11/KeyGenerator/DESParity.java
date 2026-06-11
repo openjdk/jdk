@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  * @run main/othervm DESParity
  */
 
+import jtreg.SkippedException;
+
 import java.security.Provider;
 import java.util.Random;
 import javax.crypto.SecretKey;
@@ -45,8 +47,7 @@ public class DESParity extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (p.getService("SecretKeyFactory", "DES") == null) {
-            System.out.println("Not supported by provider, skipping");
-            return;
+            throw new SkippedException("Not supported by provider, skipping");
         }
         Random random = new Random();
         SecretKeyFactory kf;
@@ -57,7 +58,7 @@ public class DESParity extends PKCS11Test {
             random.nextBytes(b);
             SecretKeySpec spec = new SecretKeySpec(b, "DES");
             SecretKey key = kf.generateSecret(spec);
-            if (DESKeySpec.isParityAdjusted(key.getEncoded(), 0) == false) {
+            if (!DESKeySpec.isParityAdjusted(key.getEncoded(), 0)) {
                 throw new Exception("DES key not parity adjusted");
             }
         }
@@ -68,7 +69,7 @@ public class DESParity extends PKCS11Test {
             random.nextBytes(b);
             SecretKeySpec spec = new SecretKeySpec(b, "DESede");
             SecretKey key = kf.generateSecret(spec);
-            if (DESedeKeySpec.isParityAdjusted(key.getEncoded(), 0) == false) {
+            if (!DESedeKeySpec.isParityAdjusted(key.getEncoded(), 0)) {
                 throw new Exception("DESede key not parity adjusted");
             }
         }

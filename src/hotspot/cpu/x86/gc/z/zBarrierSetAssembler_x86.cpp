@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -288,7 +289,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   Register scratch = tmp1;
   if (tmp1 == noreg) {
     scratch = r12;
-    __ push(scratch);
+    __ push_ppx(scratch);
   }
 
   assert_different_registers(dst, scratch);
@@ -348,7 +349,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Restore scratch register
   if (tmp1 == noreg) {
-    __ pop(scratch);
+    __ pop_ppx(scratch);
   }
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::load_at");
@@ -462,10 +463,10 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ movptr(rnew_zpointer, rnew_zaddress);
     }
     assert_different_registers(rcx, rnew_zpointer);
-    __ push(rcx);
+    __ push_ppx(rcx);
     __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shlq(rnew_zpointer);
-    __ pop(rcx);
+    __ pop_ppx(rcx);
     __ orq(rnew_zpointer, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
@@ -483,7 +484,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ jcc(Assembler::equal, slow_path);
 
   Register tmp2 = r15_thread;
-  __ push(tmp2);
+  __ push_ppx(tmp2);
 
   // Bump the pointer
   __ movq(tmp2, Address(tmp1, ZStoreBarrierBuffer::current_offset()));
@@ -501,7 +502,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ movptr(tmp1, Address(tmp1, 0));
   __ movptr(Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())), tmp1);
 
-  __ pop(tmp2);
+  __ pop_ppx(tmp2);
 }
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
@@ -528,9 +529,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
-    __ push(rax);
-    __ push(rbx);
-    __ push(rcx);
+    __ push_ppx(rax);
+    __ push_ppx(rbx);
+    __ push_ppx(rcx);
 
     __ lea(rcx, ref_addr);
     __ xorq(rax, rax);
@@ -539,9 +540,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ lock();
     __ cmpxchgq(rbx, Address(rcx, 0));
 
-    __ pop(rcx);
-    __ pop(rbx);
-    __ pop(rax);
+    __ pop_ppx(rcx);
+    __ pop_ppx(rbx);
+    __ pop_ppx(rax);
 
     __ jcc(Assembler::notEqual, slow_path);
 
@@ -583,10 +584,10 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       } else {
         __ movptr(tmp1, src);
       }
-      __ push(rcx);
+      __ push_ppx(rcx);
       __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
       __ shlq(tmp1);
-      __ pop(rcx);
+      __ pop_ppx(rcx);
       __ orq(tmp1, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
     } else {
       Label done;
@@ -1007,10 +1008,10 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
     __ shrq(tmp);
     __ movptr(obj, tmp);
   } else {
-    __ push(rcx);
+    __ push_ppx(rcx);
     __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(obj);
-    __ pop(rcx);
+    __ pop_ppx(rcx);
   }
 
   __ bind(done);
@@ -1089,7 +1090,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Save rax unless it is the result or tmp register
   if (ref != rax && tmp != rax) {
-    __ push(rax);
+    __ push_ppx(rax);
   }
 
   // Setup arguments and call runtime stub
@@ -1109,7 +1110,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Restore rax unless it is the result or tmp register
   if (ref != rax && tmp != rax) {
-    __ pop(rax);
+    __ pop_ppx(rax);
   }
 
   // Stub exit
@@ -1328,8 +1329,25 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ jmp(slow_continuation);
 }
 
-#undef __
 #endif // COMPILER2
+
+#undef __
+#define __ masm->
+
+void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slow_path) {
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ testptr(obj, Address(r15_thread, ZThreadLocalData::mark_bad_mask_offset()));
+  __ jcc(Assembler::notZero, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
+  __ shrq(obj, barrier_Relocation::unpatched);
+}
+
+#undef __
 
 static int patch_barrier_relocation_offset(int format) {
   switch (format) {
@@ -1378,10 +1396,13 @@ static uint16_t patch_barrier_relocation_value(int format) {
   }
 }
 
-void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format, bool log) {
   const int offset = patch_barrier_relocation_offset(format);
   const uint16_t value = patch_barrier_relocation_value(format);
   uint8_t* const patch_addr = (uint8_t*)addr + offset;
+  if (log) {
+    log_trace(aot, codecache, stubs)("patching address " INTPTR_FORMAT " offset %d value 0x%x", p2i(addr), offset, value);
+  }
   if (format == ZBarrierRelocationFormatLoadGoodBeforeShl) {
     if (VM_Version::supports_apx_f()) {
       NativeInstruction* instruction = nativeInstruction_at(addr);
@@ -1410,9 +1431,75 @@ void ZBarrierSetAssembler::patch_barriers() {
   }
 }
 
-
 #undef __
 #define __ masm->
+
+void ZBarrierSetAssembler::register_reloc_addresses(GrowableArray<address> &entries, int begin, int count) {
+  int formats[] = {
+    ZBarrierRelocationFormatLoadBadAfterTest,
+    ZBarrierRelocationFormatStoreBadAfterTest,
+    ZBarrierRelocationFormatStoreGoodAfterOr,
+    -1
+  };
+  int format_idx = 0;
+  int format = formats[format_idx++];
+  for (int i = begin; i < begin + count; i++) {
+    address addr = entries.at(i);
+    // reloc addresses occur in 3 groups terminated with a nullptr
+    if (addr == nullptr) {
+      assert(format_idx < (int)(sizeof(formats) / sizeof(formats[0])),
+             "too many reloc groups");
+      format = formats[format_idx++];
+    } else {
+      switch(format) {
+      case ZBarrierRelocationFormatLoadBadAfterTest:
+        _load_bad_relocations.append(addr);
+        break;
+      case ZBarrierRelocationFormatStoreBadAfterTest:
+        _store_bad_relocations.append(addr);
+        break;
+      case ZBarrierRelocationFormatStoreGoodAfterOr:
+        _store_good_relocations.append(addr);
+        break;
+      default:
+        ShouldNotReachHere();
+        break;
+      }
+      patch_barrier_relocation(addr, format, true);
+    }
+  }
+  assert(format == -1, "unterminated format list");
+}
+
+void ZBarrierSetAssembler::retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries) {
+  assert(start != nullptr, "start address must not be null");
+  assert(end != nullptr, "start address must not be null");
+  assert(start < end, "stub range must not be empty");
+  for (int i = 0; i < _load_bad_relocations.length(); i++) {
+    address addr = _load_bad_relocations.at(i);
+    assert(addr != nullptr, "load bad reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+  for (int i = 0; i < _store_bad_relocations.length(); i++) {
+    address addr = _store_bad_relocations.at(i);
+    assert(addr != nullptr, "store bad reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+  for (int i = 0; i < _store_good_relocations.length(); i++) {
+    address addr = _store_good_relocations.at(i);
+    assert(addr != nullptr, "store good reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+}
 
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
@@ -1451,12 +1538,12 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   // Uncolor presumed zpointer
   assert(obj != rcx, "bad choice of register");
   if (rcx != tmp1 && rcx != tmp2) {
-    __ push(rcx);
+    __ push_ppx(rcx);
   }
   __ movl(rcx, Address(tmp2, tmp1, Address::times_4, 0));
   __ shrq(obj);
   if (rcx != tmp1 && rcx != tmp2) {
-    __ pop(rcx);
+    __ pop_ppx(rcx);
   }
 
   __ jmp(check_zaddress);

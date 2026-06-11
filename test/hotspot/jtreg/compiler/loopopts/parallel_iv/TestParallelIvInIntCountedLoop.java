@@ -32,6 +32,7 @@ import java.util.Random;
 /**
  * @test
  * @bug 8328528
+ * @key randomness
  * @summary test the long typed parallel iv replacing transformation for int counted loop
  * @library /test/lib /
  * @requires vm.compiler2.enabled

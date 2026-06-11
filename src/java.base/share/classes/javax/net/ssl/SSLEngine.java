@@ -1088,7 +1088,17 @@ public abstract class SSLEngine {
 
 
     /**
-     * Initiates handshaking (initial or renegotiation) on this SSLEngine.
+     * Begins handshaking on this {@code SSLEngine}.
+     * <P>
+     * Common reasons include a need to initiate a new protected session,
+     * create new encryption keys, or to change cipher suites. To force
+     * complete reauthentication, the current session should be invalidated
+     * before starting this handshake.
+     * <P>
+     * The behavior of this method is protocol (and possibly implementation)
+     * dependent. For example, in TLSv1.3 calling this method after the
+     * connection has been established will force a key update. For prior TLS
+     * versions it will force a renegotiation (re-handshake).
      * <P>
      * This method is not needed for the initial handshake, as the
      * {@code wrap()} and {@code unwrap()} methods will
@@ -1101,9 +1111,6 @@ public abstract class SSLEngine {
      * Unlike the {@link SSLSocket#startHandshake()
      * SSLSocket#startHandshake()} method, this method does not block
      * until handshaking is completed.
-     * <P>
-     * To force a complete SSL/TLS/DTLS session renegotiation, the current
-     * session should be invalidated prior to calling this method.
      * <P>
      * Some protocols may not support multiple handshakes on an existing
      * engine and may throw an {@code SSLException}.

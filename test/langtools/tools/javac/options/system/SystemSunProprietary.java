@@ -41,6 +41,10 @@ import toolbox.Task.Expect;
 import toolbox.TestRunner;
 import toolbox.ToolBox;
 
+import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,6 +52,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class SystemSunProprietary extends TestRunner {
 
@@ -110,28 +115,34 @@ public class SystemSunProprietary extends TestRunner {
 
     private void expectSunapi(boolean expectDiagnostic, boolean ignoreSymbolFile, String... options)
             throws IOException {
-        List<String> expected =
-                expectDiagnostic
-                        ? List.of(
-                                "Test.java:1:43: compiler.warn.sun.proprietary: sun.misc.Unsafe",
-                                "1 warning")
-                        : List.of("");
         List<String> allOptions = new ArrayList<>();
         allOptions.add("-XDrawDiagnostics");
         Collections.addAll(allOptions, options);
         JavacFileManager fm = new JavacFileManager(new Context(), false, null);
         fm.setSymbolFileEnabled(!ignoreSymbolFile);
-        List<String> log =
-                new JavacTask(tb)
-                        .fileManager(fm)
-                        .options(allOptions)
-                        .outdir(classes)
-                        .files(tb.findJavaFiles(src))
-                        .run(Expect.SUCCESS)
-                        .writeAll()
-                        .getOutputLines(Task.OutputKind.DIRECT);
-        if (!log.equals(expected)) {
-            throw new AssertionError("expected: " + expected + "\nactual: " + log + "\n");
+        new JavacTask(tb)
+                .fileManager(fm)
+                .options(allOptions)
+                .diagnosticListener(d -> sunAPIWarningChecker(d, expectDiagnostic))
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Expect.SUCCESS)
+                .writeAll();
+    }
+
+    void sunAPIWarningChecker(Diagnostic<?> diag, boolean expectDiagnostic) {
+        if (!expectDiagnostic) {
+            throw new AssertionError("Unexpected diagnostic: " + diag.getMessage(Locale.getDefault()));
+        } else {
+            if (diag.getKind() != Kind.WARNING) {
+                throw new AssertionError("Bad diagnostic kind. Expected " + Kind.WARNING + ", found: " + diag.getKind() + "\n");
+            }
+            if (!diag.getCode().equals("compiler.warn.sun.proprietary")) {
+                throw new AssertionError("Bad diagnostic code. Expected \"compiler.warn.sun.proprietary\", found: " + diag.getCode() + "\n");
+            }
+            if (diag.getLineNumber() != 1 || diag.getColumnNumber() != 43) {
+                throw new AssertionError("Bad diagnostic position. Expected 1:43, found: " + diag.getLineNumber() + ":" + diag.getColumnNumber() + "\n");
+            }
         }
     }
 

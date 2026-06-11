@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,17 +34,55 @@ import java.io.EOFException;
 import java.util.Objects;
 
 /**
- * This class implements a stream filter for reading compressed data in
- * the GZIP file format.
+ * This class implements a stream filter for decompressing GZIP file format data.
  *
- * @see         InflaterInputStream
- * @author      David Connelly
+ * <h2><a id="gzip_file_format">GZIP file format</a></h2>
+ * The GZIP file format is specified by RFC 1952. The format, as specified in section 2.2 of
+ * the RFC, consists of a series of "members" that appear one after another in the stream with
+ * no additional information before, between, or after them. Each member consists of a header,
+ * followed by data that is compressed using the {@code deflate} algorithm, and then a trailer.
+ * <p>
+ * This class is capable of reading a stream consisting of a series of members.
+ * <p>
+ * Reading from the stream may read and buffer bytes from the underlying stream.
+ * This includes bytes that follow a member's trailer. Whether or not any additional bytes
+ * have been read past a member's trailer, the read methods on this class yield decompressed
+ * data from at most one member; data from multiple members is not combined in
+ * a single read operation.
+ *
+ * <h2><a id="thread_safety">Thread safety</a></h2>
+ * {@code GZIPInputStream} is not safe for use by multiple concurrent threads. Any multithreaded
+ * concurrent use must be guarded by appropriate synchronization.
+ *
+ * @apiNote
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or with the {@code try}-with-resources statement.
+ *
+ * @spec https://www.rfc-editor.org/info/rfc1952
+ *       RFC 1952: GZIP file format specification version 4.3
+ *
+ * @see InflaterInputStream
+ *
  * @since 1.1
- *
  */
 public class GZIPInputStream extends InflaterInputStream {
     /**
-     * CRC-32 for uncompressed data.
+     * GZIP header magic number.
+     */
+    public static final int GZIP_MAGIC = 0x8b1f;
+
+    /*
+     * File header flags.
+     */
+    private static final int FHCRC      = 2;    // Header CRC
+    private static final int FEXTRA     = 4;    // Extra field
+    private static final int FNAME      = 8;    // File name
+    private static final int FCOMMENT   = 16;   // File comment
+
+    private final byte[] tmpbuf = new byte[128];
+
+    /**
+     * CRC-32 for decompressed data.
      */
     protected CRC32 crc = new CRC32();
 
@@ -66,13 +104,15 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /**
      * Creates a new input stream with the specified buffer size.
+     *
      * @param in the input stream
      * @param size the input buffer size
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
      * @throws    NullPointerException if {@code in} is null
-     * @throws    IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error occurs when reading the member header
+     *                        from the underlying stream
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
@@ -103,25 +143,27 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /**
      * Creates a new input stream with a default buffer size.
+     *
      * @param in the input stream
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
      * @throws    NullPointerException if {@code in} is null
-     * @throws    IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error occurs when reading the member header
+     *                        from the underlying stream
      */
     public GZIPInputStream(InputStream in) throws IOException {
         this(in, 512);
     }
 
     /**
-     * Reads uncompressed data into an array of bytes, returning the number of inflated
+     * Reads decompressed data into an array of bytes, returning the number of decompressed
      * bytes. If {@code len} is not zero, the method will block until some input can be
      * decompressed; otherwise, no bytes are read and {@code 0} is returned.
      * <p>
      * If this method returns a nonzero integer <i>n</i> then {@code buf[off]}
-     * through {@code buf[off+}<i>n</i>{@code -1]} contain the uncompressed
-     * data.  The content of elements {@code buf[off+}<i>n</i>{@code ]} through
+     * through {@code buf[off+}<i>n</i>{@code -1]} contain the decompressed
+     * data. The content of elements {@code buf[off+}<i>n</i>{@code ]} through
      * {@code buf[off+}<i>len</i>{@code -1]} is undefined, contrary to the
      * specification of the {@link java.io.InputStream InputStream} superclass,
      * so an implementation is free to modify these elements during the inflate
@@ -131,18 +173,20 @@ public class GZIPInputStream extends InflaterInputStream {
      *
      * @param buf the buffer into which the data is read
      * @param off the start offset in the destination array {@code buf}
-     * @param len the maximum number of bytes read
-     * @return  the actual number of bytes inflated, or -1 if the end of the
-     *          compressed input stream is reached
+     * @param len the maximum number of bytes to read into {@code buf}
+     * @return  the actual number of bytes decompressed from a GZIP member, or -1 if the
+     *          end-of-stream is reached
      *
      * @throws     NullPointerException If {@code buf} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
      * {@code len} is negative, or {@code len} is greater than
      * {@code buf.length - off}
      * @throws    ZipException if the compressed input data is corrupt.
-     * @throws    IOException if an I/O error has occurred.
+     * @throws    IOException if the stream is closed or an I/O error has occurred.
      *
+     * @see ##gzip_file_format GZIP file format
      */
+    @Override
     public int read(byte[] buf, int off, int len) throws IOException {
         ensureOpen();
         if (eos) {
@@ -165,6 +209,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * with the stream.
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public void close() throws IOException {
         if (!closed) {
             super.close();
@@ -172,20 +217,6 @@ public class GZIPInputStream extends InflaterInputStream {
             closed = true;
         }
     }
-
-    /**
-     * GZIP header magic number.
-     */
-    public static final int GZIP_MAGIC = 0x8b1f;
-
-    /*
-     * File header flags.
-     */
-    private static final int FTEXT      = 1;    // Extra text
-    private static final int FHCRC      = 2;    // Header CRC
-    private static final int FEXTRA     = 4;    // Extra field
-    private static final int FNAME      = 8;    // File name
-    private static final int FCOMMENT   = 16;   // File comment
 
     /*
      * Reads GZIP member header and returns the total byte number
@@ -258,17 +289,23 @@ public class GZIPInputStream extends InflaterInputStream {
             (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
             throw new ZipException("Corrupt GZIP trailer");
 
+        // If there are more bytes available in "in" or
+        // the leftover in the "inf" is > 26 bytes:
+        // this.trailer(8) + next.header.min(10) + next.trailer(8)
         // try concatenated case
-        int m = 8;                  // this.trailer
-        try {
-            m += readHeader(in);    // next.header
-        } catch (IOException ze) {
-            return true;  // ignore any malformed, do nothing
+        if (this.in.available() > 0 || n > 26) {
+            int m = 8;                  // this.trailer
+            try {
+                m += readHeader(in);    // next.header
+            } catch (IOException ze) {
+                return true;  // ignore any malformed, do nothing
+            }
+            inf.reset();
+            if (n > m)
+                inf.setInput(buf, len - n + m, n - m);
+            return false;
         }
-        inf.reset();
-        if (n > m)
-            inf.setInput(buf, len - n + m, n - m);
-        return false;
+        return true;
     }
 
     /*
@@ -302,8 +339,6 @@ public class GZIPInputStream extends InflaterInputStream {
         }
         return b;
     }
-
-    private byte[] tmpbuf = new byte[128];
 
     /*
      * Skips bytes of input data blocking until all bytes are skipped.

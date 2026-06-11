@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@
  * The main API for dates, times, instants, and durations.
  * </p>
  * <p>
- * The classes defined here represent the principle date-time concepts,
+ * The classes defined here represent the principal date-time concepts,
  * including instants, durations, dates, times, time-zones and periods.
  * They are based on the ISO calendar system, which is the <i>de facto</i> world
  * calendar following the proleptic Gregorian rules.
@@ -150,7 +150,7 @@
  * </p>
  * <p>
  * {@link java.time.OffsetTime} stores a time and offset from UTC without a date.
- * This stores a date like '11:30+01:00'.
+ * This stores a time like '11:30+01:00'.
  * The {@link java.time.ZoneOffset ZoneOffset} is of the form '+01:00'.
  * </p>
  * <p>
@@ -249,7 +249,7 @@
  * <p>
  * Multiple calendar systems is an awkward addition to the design challenges.
  * The first principle is that most users want the standard ISO calendar system.
- * As such, the main classes are ISO-only. The second principle is that most of those that want a
+ * As such, the main classes are ISO-only. The second principle is that most of those who want a
  * non-ISO calendar system want it for user interaction, thus it is a UI localization issue.
  * As such, date and time objects should be held as ISO objects in the data model and persistent
  * storage, only being converted to and from a local calendar for display.

@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +23,31 @@
  */
 
 /*
- * @test
- * @library /test/lib /
+ * @test id=debug
+ * @library /test/lib
  * @bug 8356000
  * @requires vm.flagless
  * @requires vm.bits == "64"
- * @run driver compiler.arguments.TestCompilerCounts
+ * @requires vm.debug
+ * @run driver compiler.arguments.TestCompilerCounts debug
+ */
+
+/*
+ * @test id=product
+ * @library /test/lib
+ * @bug 8356000
+ * @requires vm.flagless
+ * @requires vm.bits == "64"
+ * @requires !vm.debug
+ * @run driver compiler.arguments.TestCompilerCounts product
  */
 
 package compiler.arguments;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.function.Function;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestCompilerCounts {
 
@@ -55,6 +62,8 @@ public class TestCompilerCounts {
     static final int MAX_LINEAR_CPUS = Math.min(16, MAX_CPUS);
 
     public static void main(String[] args) throws Throwable {
+        final boolean debug = args[0].startsWith("debug");
+
         // CICompilerCount=0 is incorrect in default modes.
         fail("-XX:CICompilerCount=0");
 
@@ -133,31 +142,51 @@ public class TestCompilerCounts {
             pass(0, opt, "-XX:TieredStopAtLevel=0");
 
             // Non-tiered modes
-            int nonTieredCount = heuristicCount(cpus, false);
-            pass(nonTieredCount, opt, "-XX:TieredStopAtLevel=1");
-            pass(nonTieredCount, opt, "-XX:TieredStopAtLevel=2");
-            pass(nonTieredCount, opt, "-XX:TieredStopAtLevel=3");
-            pass(nonTieredCount, opt, "-XX:-TieredCompilation");
+            int c1OnlyCount = heuristicCount(cpus, Compilation.C1Only, debug);
+            pass(c1OnlyCount, opt, "-XX:TieredStopAtLevel=1", "-XX:NonNMethodCodeHeapSize=" + NonNMethodCodeHeapSize);
+            pass(c1OnlyCount, opt, "-XX:TieredStopAtLevel=2", "-XX:NonNMethodCodeHeapSize=" + NonNMethodCodeHeapSize);
+            pass(c1OnlyCount, opt, "-XX:TieredStopAtLevel=3", "-XX:NonNMethodCodeHeapSize=" + NonNMethodCodeHeapSize);
+            int c2OnlyCount = heuristicCount(cpus, Compilation.C2Only, debug);
+            pass(c2OnlyCount, opt, "-XX:-TieredCompilation", "-XX:NonNMethodCodeHeapSize=" + NonNMethodCodeHeapSize);
 
             // Tiered modes
-            int tieredCount = heuristicCount(cpus, true);
-            pass(tieredCount, opt);
-            pass(tieredCount, opt, "-XX:TieredStopAtLevel=4");
+            int tieredCount = heuristicCount(cpus, Compilation.Tiered, debug);
+            pass(tieredCount, opt, "-XX:NonNMethodCodeHeapSize=" + NonNMethodCodeHeapSize);
+            pass(tieredCount, opt, "-XX:TieredStopAtLevel=4", "-XX:NonNMethodCodeHeapSize=" + NonNMethodCodeHeapSize);
 
             // Also check that heuristics did not set up more threads than CPUs available
-            Asserts.assertTrue(nonTieredCount <= cpus,
-                "Non-tiered count is larger than number of CPUs: " + nonTieredCount + " > " + cpus);
+            Asserts.assertTrue(c1OnlyCount <= cpus,
+                "Non-tiered count is larger than number of CPUs: " + c1OnlyCount + " > " + cpus);
             Asserts.assertTrue(tieredCount <= cpus,
                 "Tiered count is larger than number of CPUs: " + tieredCount + " > " + cpus);
         }
     }
 
+    enum Compilation {
+        C1Only,
+        C2Only,
+        Tiered,
+    }
+
+    // Buffer sizes for calculating the maximum number of compiler threads.
+    static final int NonNMethodCodeHeapSize = 5 * 1024 * 1024;
+    static final int CodeCacheMinimumUseSpace = 400 * 1024;
+    static final int C1BufSize = 64 * 1024 * 8 + (64 * 1024 * 8 / 10);
+    static final int C2BufSize = 6544;
+    static final int TieredBufSize = C1BufSize / 3 + 2 * C2BufSize / 3;
+
     // Direct translation from CompilationPolicy::initialize:
-    public static int heuristicCount(int cpus, boolean tiered) {
+    public static int heuristicCount(int cpus, Compilation comp, boolean debug) {
         int log_cpu = log2(cpus);
         int loglog_cpu = log2(Math.max(log_cpu, 1));
-        int min_count = tiered ? 2 : 1;
-        return Math.max(log_cpu * loglog_cpu * 3 / 2, min_count);
+        int min_count = comp == Compilation.C1Only || comp == Compilation.C2Only ? 1 : 2;
+        int count = Math.max(log_cpu * loglog_cpu * 3 / 2, min_count);
+        int max_count = (NonNMethodCodeHeapSize - (debug ? 3 : 1) * CodeCacheMinimumUseSpace) / switch (comp) {
+            case C1Only -> C1BufSize;
+            case C2Only -> C2BufSize;
+            case Tiered -> TieredBufSize;
+        };
+        return Math.max(Math.min(count, max_count), min_count);
     }
 
     public static int log2(int v) {
@@ -173,5 +202,4 @@ public class TestCompilerCounts {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
     }
-
 }

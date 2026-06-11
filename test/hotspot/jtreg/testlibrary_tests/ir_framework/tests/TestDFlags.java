@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,24 @@
 
 package ir_framework.tests;
 
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 /*
  * @test
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
- * @summary Sanity test remaining framework property flags.
+ * @summary Sanity test remaining framework property/D flags with non-default values. We do two runs, one time with
+ *          VerifyIR=false and one time with VerifyIR=true.
  * @library /test/lib /
- * @run main/othervm -DFlipC1C2=true ir_framework.tests.TestDFlags
- * @run main/othervm -DExcludeRandom=true ir_framework.tests.TestDFlags
- * @run main/othervm -DVerifyVM=true ir_framework.tests.TestDFlags
- * @run main/othervm -DDumpReplay=true ir_framework.tests.TestDFlags
- * @run main/othervm -DVerbose=true ir_framework.tests.TestDFlags
- * @run main/othervm -DShuffleTests=false ir_framework.tests.TestDFlags
- * @run main/othervm -DReproduce=true ir_framework.tests.TestDFlags
- * @run main/othervm -DReportStdout=true ir_framework.tests.TestDFlags
- * @run main/othervm -DGCAfter=true ir_framework.tests.TestDFlags
- * @run main/othervm -DPrintTimes=true ir_framework.tests.TestDFlags
- * @run main/othervm -DVerifyIR=false ir_framework.tests.TestDFlags
+ * @run main/othervm -DFlipC1C2=true -DExcludeRandom=true -DVerifyVM=true -DDumpReplay=true -DVerbose=true
+ *                   -DShuffleTests=false -DReproduce=true -DReportStdout=true -DGCAfter=true -DPrintTimes=true
+ *                   -DIgnoreCompilerControls=true -DExcludeRandom=true -DVerifyIR=true
+ *                   -DPreferCommandLineFlags=true -DPrintRuleMatchingTime=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DFlipC1C2=true -DExcludeRandom=true -DVerifyVM=true -DDumpReplay=true -DVerbose=true
+ *                   -DShuffleTests=false -DReproduce=true -DReportStdout=true -DGCAfter=true -DPrintTimes=true
+ *                   -DIgnoreCompilerControls=true -DExcludeRandom=true -DVerifyIR=false
+ *                   -DPreferCommandLineFlags=true -DPrintRuleMatchingTime=true ir_framework.tests.TestDFlags
  */
 
 public class TestDFlags {
@@ -49,24 +49,28 @@ public class TestDFlags {
     }
 
     @Test
+    @IR(failOn = IRNode.STORE)
     public int c1() {
         return 34;
     }
 
 
     @Test
+    @IR(failOn = IRNode.STORE)
     public void c2() {
         for (int i = 0; i < 100; i++) {
         }
     }
 
     @Test
+    @IR(failOn = IRNode.STORE)
     public void c2_2() {
         for (int i = 0; i < 100; i++) {
         }
     }
 
     @Test
+    @IR(failOn = IRNode.STORE)
     public void c2_3() {
         for (int i = 0; i < 100; i++) {
         }

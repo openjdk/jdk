@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 #ifndef SHARE_OOPS_METHODCOUNTERS_HPP
 #define SHARE_OOPS_METHODCOUNTERS_HPP
 
-#include "oops/metadata.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "oops/metadata.hpp"
 #include "utilities/align.hpp"
 
 class MethodTrainingData;
 
 class MethodCounters : public Metadata {
  friend class VMStructs;
- friend class JVMCIVMStructs;
 
  // Used by CDS. These classes need to access the private default constructor.
  template <class T> friend class CppVtableTesterA;
@@ -54,9 +53,9 @@ class MethodCounters : public Metadata {
   int               _invoke_mask;                 // per-method Tier0InvokeNotifyFreqLog
   int               _backedge_mask;               // per-method Tier0BackedgeNotifyFreqLog
   int               _prev_event_count;            // Total number of events saved at previous callback
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
-#endif
+#endif // COMPILER2
 #if INCLUDE_JVMTI
   u2                _number_of_breakpoints;      // fullspeed debugging support
 #endif
@@ -86,7 +85,7 @@ class MethodCounters : public Metadata {
 
   void clear_counters();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   void interpreter_throwout_increment() {
     if (_interpreter_throwout_count < 65534) {
       _interpreter_throwout_count++;
@@ -98,14 +97,14 @@ class MethodCounters : public Metadata {
   void set_interpreter_throwout_count(u2 count) {
     _interpreter_throwout_count = count;
   }
-#else // COMPILER2_OR_JVMCI
+#else // COMPILER2
   u2  interpreter_throwout_count() const {
     return 0;
   }
   void set_interpreter_throwout_count(u2 count) {
     assert(count == 0, "count must be 0");
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
 #if INCLUDE_JVMTI
   u2   number_of_breakpoints() const   { return _number_of_breakpoints; }
@@ -160,7 +159,7 @@ class MethodCounters : public Metadata {
       return true;
     }
     if (cur == nullptr || cur == reinterpret_cast<MethodTrainingData*>(method_training_data_sentinel())) {
-      return Atomic::cmpxchg(reinterpret_cast<MethodTrainingData**>(&_method_training_data), cur, td) == cur;
+      return AtomicAccess::cmpxchg(reinterpret_cast<MethodTrainingData**>(&_method_training_data), cur, td) == cur;
     }
     return false;
   }

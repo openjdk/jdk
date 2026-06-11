@@ -22,8 +22,8 @@
  *
  */
 
-#include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfr/utilities/jfrTimeConverter.hpp"
 #include "runtime/os.inline.hpp"
 
 static double ft_counter_to_nanos_factor = .0;

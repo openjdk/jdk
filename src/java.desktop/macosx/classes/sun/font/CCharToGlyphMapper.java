@@ -30,18 +30,20 @@ import java.util.HashMap;
 import static sun.font.FontUtilities.isDefaultIgnorable;
 import static sun.font.FontUtilities.isIgnorableWhitespace;
 
-public class CCharToGlyphMapper extends CharToGlyphMapper {
+public final class CCharToGlyphMapper extends CharToGlyphMapper {
     private static native int countGlyphs(final long nativeFontPtr);
 
-    private Cache cache = new Cache();
-    CFont fFont;
-    int numGlyphs = -1;
+    private final Cache rawCache = new Cache(true);
+    private final Cache modCache = new Cache(false);
+    private final CFont fFont;
+    private int numGlyphs = -1;
 
     public CCharToGlyphMapper(CFont font) {
         fFont = font;
         missingGlyph = 0; // for getMissingGlyphCode()
     }
 
+    @Override
     public int getNumGlyphs() {
         if (numGlyphs == -1) {
             numGlyphs = countGlyphs(fFont.getNativeFontPtr());
@@ -49,16 +51,19 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         return numGlyphs;
     }
 
+    @Override
     public boolean canDisplay(char ch) {
         int glyph = charToGlyph(ch, false);
         return glyph != missingGlyph;
     }
 
+    @Override
     public boolean canDisplay(int cp) {
         int glyph = charToGlyph(cp, false);
         return glyph != missingGlyph;
     }
 
+    @Override
     public synchronized boolean charsToGlyphsNS(int count,
                                                 char[] unicodes, int[] glyphs)
     {
@@ -91,28 +96,36 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         return false;
     }
 
+    @Override
     public synchronized int charToGlyph(char unicode) {
         return charToGlyph(unicode, false);
     }
 
     private int charToGlyph(char unicode, boolean raw) {
-        int glyph = cache.get(unicode, raw);
+        Cache cache = raw ? rawCache : modCache;
+        int glyph = cache.get(unicode);
         if (glyph != 0) return glyph;
 
-        final char[] unicodeArray = new char[] { unicode };
-        final int[] glyphArray = new int[1];
-        nativeCharsToGlyphs(fFont.getNativeFontPtr(), 1, unicodeArray, glyphArray);
-        glyph = glyphArray[0];
+        if (isIgnorableWhitespace(unicode) || (isDefaultIgnorable(unicode) && !raw)) {
+            glyph = INVISIBLE_GLYPH_ID;
+        } else {
+            final char[] unicodeArray = new char[]{unicode};
+            final int[] glyphArray = new int[1];
+            nativeCharsToGlyphs(fFont.getNativeFontPtr(), 1, unicodeArray, glyphArray);
+            glyph = glyphArray[0];
+        }
 
         cache.put(unicode, glyph);
 
         return glyph;
     }
 
+    @Override
     public synchronized int charToGlyph(int unicode) {
         return charToGlyph(unicode, false);
     }
 
+    @Override
     public synchronized int charToGlyphRaw(int unicode) {
         return charToGlyph(unicode, true);
     }
@@ -124,17 +137,20 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             int base = unicode - 0x10000;
             surrogates[0] = (char)((base >>> 10) + HI_SURROGATE_START);
             surrogates[1] = (char)((base % 0x400) + LO_SURROGATE_START);
-            cache.get(2, surrogates, glyphs, raw);
+            Cache cache = raw ? rawCache : modCache;
+            cache.get(2, surrogates, glyphs);
             return glyphs[0];
          } else {
              return charToGlyph((char) unicode, raw);
          }
     }
 
+    @Override
     public synchronized void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
-        cache.get(count, unicodes, glyphs, false);
+        modCache.get(count, unicodes, glyphs);
     }
 
+    @Override
     public synchronized void charsToGlyphs(int count, int[] unicodes, int[] glyphs) {
         for (int i = 0; i < count; i++) {
             glyphs[i] = charToGlyph(unicodes[i], false);
@@ -151,24 +167,22 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                                                    int count, char[] unicodes,
                                                    int[] glyphs);
 
-    private class Cache {
+    private final class Cache {
         private static final int FIRST_LAYER_SIZE = 256;
         private static final int SECOND_LAYER_SIZE = 16384; // 16384 = 128x128
 
+        private final boolean raw;
         private final int[] firstLayerCache = new int[FIRST_LAYER_SIZE];
         private SparseBitShiftingTwoLayerArray secondLayerCache;
         private HashMap<Integer, Integer> generalCache;
 
-        Cache() {
+        Cache(boolean raw) {
+            this.raw = raw;
             // <rdar://problem/5331678> need to prevent getting '-1' stuck in the cache
             firstLayerCache[1] = 1;
         }
 
-        public synchronized int get(final int index, final boolean raw) {
-            if (isIgnorableWhitespace(index) || (isDefaultIgnorable(index) && !raw)) {
-                return INVISIBLE_GLYPH_ID;
-            }
-
+        public synchronized int get(final int index) {
             if (index < FIRST_LAYER_SIZE) {
                 // catch common glyphcodes
                 return firstLayerCache[index];
@@ -209,7 +223,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             generalCache.put(index, value);
         }
 
-        private class SparseBitShiftingTwoLayerArray {
+        private final class SparseBitShiftingTwoLayerArray {
             final int[][] cache;
             final int shift;
             final int secondLayerLength;
@@ -239,7 +253,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             }
         }
 
-        public synchronized void get(int count, char[] indices, int[] values, boolean raw)
+        public synchronized void get(int count, char[] indices, int[] values)
         {
             // "missed" is the count of 'char' that are not mapped.
             // Surrogates count for 2.
@@ -261,13 +275,16 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                     }
                 }
 
-                final int value = get(code, raw);
+                final int value = get(code);
                 if (value != 0 && value != -1) {
                     values[i] = value;
                     if (code >= 0x10000) {
                         values[i+1] = INVISIBLE_GLYPH_ID;
                         i++;
                     }
+                } else if (isIgnorableWhitespace(code) || (isDefaultIgnorable(code) && !raw)) {
+                    values[i] = INVISIBLE_GLYPH_ID;
+                    put(code, INVISIBLE_GLYPH_ID);
                 } else {
                     values[i] = 0;
                     put(code, -1);

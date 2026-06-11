@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,11 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 TestApp
  *                 TestApp$Foo
+ *                 TestApp$Foo$A
  *                 TestApp$Foo$Bar
  *                 TestApp$Foo$ShouldBeExcluded
+ *                 TestApp$Foo$ShouldBeExcludedChild
+ *                 TestApp$Foo$Taz
  *                 TestApp$MyInvocationHandler
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
  *                 CustyWithLoop
@@ -41,6 +44,8 @@
  */
 
 import java.io.File;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -61,7 +66,7 @@ public class ExcludedClasses {
 
     public static void main(String[] args) throws Exception {
         Tester tester = new Tester();
-        tester.runAOTWorkflow();
+        tester.runAOTWorkflow("AOT", "--two-step-training");
     }
 
     static class Tester extends CDSAppTester {
@@ -77,7 +82,11 @@ public class ExcludedClasses {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-Xlog:cds+resolve=trace",
+                "-Xlog:aot=debug",
+                "-Xlog:aot+class=debug",
+                "-Xlog:aot+resolve=trace",
+                "-Xlog:aot+verification=trace",
+                "-Xlog:class+load",
             };
         }
 
@@ -90,8 +99,12 @@ public class ExcludedClasses {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) {
-            if (isDumping(runMode)) {
-                out.shouldNotMatch("cds,resolve.*archived field.*TestApp.Foo => TestApp.Foo.ShouldBeExcluded.f:I");
+            if (runMode == RunMode.ASSEMBLY) {
+                out.shouldNotMatch("aot,resolve.*archived field.*TestApp.Foo => TestApp.Foo.ShouldBeExcluded.f:I");
+            } else if (runMode == RunMode.PRODUCTION) {
+                out.shouldContain("jdk.jfr.Event source: jrt:/jdk.jfr");
+                out.shouldMatch("TestApp[$]Foo[$]ShouldBeExcluded source: .*/app.jar");
+                out.shouldMatch("TestApp[$]Foo[$]ShouldBeExcludedChild source: .*/app.jar");
             }
         }
     }
@@ -102,8 +115,8 @@ class TestApp {
     static volatile Object custArrayInstance;
 
     public static void main(String args[]) throws Exception {
-        // In new workflow, classes from custom loaders are passed from the preimage
-        // to the final image. See ClassPrelinker::record_unregistered_klasses().
+        // In AOT workflow, classes from custom loaders are passed from the preimage
+        // to the final image. See FinalImageRecipes::record_all_classes().
         custInstance = initFromCustomLoader();
         custArrayInstance = Array.newInstance(custInstance.getClass(), 0);
         System.out.println(custArrayInstance);
@@ -155,8 +168,11 @@ class TestApp {
             long start = System.currentTimeMillis();
             while (System.currentTimeMillis() - start < 1000) {
                 lambdaHotSpot();
+                lambdaHotSpot2();
+                invokeHandleHotSpot();
                 s.hotSpot2();
                 b.hotSpot3();
+                Taz.hotSpot4();
 
                 // In JDK mainline, generated proxy classes are excluded from the AOT cache.
                 // In Leyden/premain, generated proxy classes included. The following code should
@@ -165,7 +181,7 @@ class TestApp {
                 counter += i.intValue();
 
                 if (custInstance != null) {
-                    // Classes loaded by custom loaders are included included in the AOT cache
+                    // Classes loaded by custom loaders are included in the AOT cache
                     // but their array classes are excluded.
                     counter += custInstance.equals(null) ? 1 : 2;
                 }
@@ -196,12 +212,52 @@ class TestApp {
             }
         }
 
+        interface A {
+            Object get();
+        }
+
+        // Lambdas that refer to excluded classes should not be AOT-resolved
+        static void lambdaHotSpot2() {
+            long start = System.currentTimeMillis();
+            A a = ShouldBeExcluded::new;
+            while (System.currentTimeMillis() - start < 20) {
+                Object obj = (ShouldBeExcluded)a.get();
+            }
+        }
+
+        static void invokeHandleHotSpot() {
+            try {
+                invokeHandleHotSpotImpl();
+            } catch (Throwable t) {
+                throw new RuntimeException("Unexpected", t);
+            }
+        }
+
+        static void invokeHandleHotSpotImpl() throws Throwable {
+            MethodHandle constructorHandle =
+                MethodHandles.lookup().unreflectConstructor(ShouldBeExcluded.class.getConstructor());
+            long start = System.currentTimeMillis();
+            while (System.currentTimeMillis() - start < 20) {
+                // The JVM rewrites this to:
+                // invokehandle  <java/lang/invoke/MethodHandle.invoke()LShouldBeExcluded;>
+                //
+                // The AOT cache must not contain a java.lang.invoke.MethodType that refers to the
+                // ShouldBeExcluded class.
+                ShouldBeExcluded o = (ShouldBeExcluded)constructorHandle.invoke();
+                if (o.getClass() != ShouldBeExcluded.class) {
+                    throw new RuntimeException("Unexpected object: " + o);
+                }
+            }
+        }
+
         static void doit(Runnable r) {
             r.run();
         }
 
         // All subclasses of jdk.jfr.Event are excluded from the CDS archive.
         static class ShouldBeExcluded extends jdk.jfr.Event {
+            public ShouldBeExcluded() {}
+
             int f = (int)(System.currentTimeMillis()) + 123;
             int m() {
                 return f + 456;
@@ -215,6 +271,16 @@ class TestApp {
                     }
                     f();
                 }
+            }
+            int func() {
+                return 1;
+            }
+        }
+
+        static class ShouldBeExcludedChild extends ShouldBeExcluded {
+            @Override
+            int func() {
+                return 2;
             }
         }
 
@@ -234,6 +300,23 @@ class TestApp {
                 }
             }
         }
+
+        static class Taz {
+            static ShouldBeExcluded m() {
+                // Taz should be excluded from the AOT cache because it has a verification constraint that
+                // "ShouldBeExcludedChild must be a subtype of ShouldBeExcluded", but ShouldBeExcluded is
+                // excluded from the AOT cache.
+                return new ShouldBeExcludedChild();
+            }
+            static void hotSpot4() {
+                long start = System.currentTimeMillis();
+                while (System.currentTimeMillis() - start < 20) {
+                    for (int i = 0; i < 50000; i++) {
+                        counter += i;
+                    }
+                    f();
+                }
+            }
+        }
     }
 }
-

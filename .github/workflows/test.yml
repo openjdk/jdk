@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,16 @@ on:
       runs-on:
         required: true
         type: string
+      architecture:
+        required: false
+        type: string
       xcode-toolset-version:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
       debug-suffix:
         required: false
         type: string
@@ -124,10 +131,12 @@ jobs:
 
     steps:
       - name: 'Checkout the JDK source'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
+        with:
+          architecture: ${{ inputs.architecture }}
         if: runner.os == 'Windows'
 
       - name: 'Get the BootJDK'
@@ -147,6 +156,7 @@ jobs:
           platform: ${{ inputs.platform }}
           debug-suffix: ${{ matrix.debug-suffix }}
           static-suffix: ${{ inputs.static-suffix }}
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Install dependencies'
         run: |
@@ -199,6 +209,7 @@ jobs:
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
+        if: ${{ inputs.dry-run == false }}
 
         # This is a separate step, since if the markdown from a step gets bigger than
         # 1024 kB it is skipped, but then the short summary above is still generated
@@ -233,7 +244,7 @@ jobs:
         if: always()
 
       - name: 'Upload test results'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           path: results
           name: ${{ steps.package.outputs.artifact-name }}
@@ -241,7 +252,7 @@ jobs:
 
         # This is the best way I found to abort the job with an error message
       - name: 'Notify about test failures'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
         if: steps.run-tests.outputs.failure == 'true'

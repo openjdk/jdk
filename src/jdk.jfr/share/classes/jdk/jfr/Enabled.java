@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public @interface Enabled {
     /**
      * Returns {@code true} if by default the event should be enabled, {@code false} otherwise.
      *
-     * @return {@code true} if by default the event should be enabled by default, {@code false} otherwise
+     * @return {@code true} if by default the event should be enabled, {@code false} otherwise
      */
     boolean value() default true;
 }

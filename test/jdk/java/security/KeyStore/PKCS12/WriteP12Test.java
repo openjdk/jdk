@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -50,6 +45,7 @@ import java.util.Enumeration;
  * @summary Write different types p12 key store to Check the write related
  *  APIs.
  * @run main WriteP12Test
+ * @enablePreview
  */
 
 public class WriteP12Test {
@@ -128,19 +124,16 @@ public class WriteP12Test {
     private final Certificate testLeadCert;
     private final Certificate caCert;
 
-    WriteP12Test() throws CertificateException {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        caCert = cf.generateCertificate(new ByteArrayInputStream(CA_CERT_STR
-                .getBytes()));
-        testLeadCert = cf.generateCertificate(new ByteArrayInputStream(
-                LEAD_CERT.getBytes()));
-        testerCert = cf.generateCertificate(new ByteArrayInputStream(END_CERT
-                .getBytes()));
+    WriteP12Test() {
+        PEMDecoder pemDecoder = PEMDecoder.of();
+        caCert = pemDecoder.decode(CA_CERT_STR, X509Certificate.class);
+        testLeadCert = pemDecoder.decode(LEAD_CERT, X509Certificate.class);
+        testerCert = pemDecoder.decode(END_CERT, X509Certificate.class);
     }
 
-    public static void main(String[] args) throws CertificateException,
-            UnrecoverableKeyException, KeyStoreException,
-            NoSuchProviderException, NoSuchAlgorithmException, IOException {
+    public static void main(String[] args) throws UnrecoverableKeyException,
+            KeyStoreException, NoSuchProviderException,
+            NoSuchAlgorithmException, IOException, CertificateException {
         WriteP12Test jstest = new WriteP12Test();
         out.println("test WriteP12CertChain");
         /*

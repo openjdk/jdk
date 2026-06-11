@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @test
  * @bug 8328313
- * @requires vm.cds & !vm.graal.enabled & vm.cds.write.archived.java.heap
+ * @requires vm.cds & vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver ModulePathAndFMG
  * @summary test module path changes for full module graph handling.

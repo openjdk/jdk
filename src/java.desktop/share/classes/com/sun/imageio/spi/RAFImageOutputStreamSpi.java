@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,12 @@ public class RAFImageOutputStreamSpi extends ImageOutputStreamSpi {
         super(vendorName, version, outputClass);
     }
 
+    @Override
     public String getDescription(Locale locale) {
         return "Service provider that instantiates a FileImageOutputStream from a RandomAccessFile";
     }
 
+    @Override
     public ImageOutputStream createOutputStreamInstance(Object output,
                                                         boolean useCache,
                                                         File cacheDir) {

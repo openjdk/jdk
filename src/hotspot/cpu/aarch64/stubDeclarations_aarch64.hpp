@@ -29,32 +29,39 @@
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
                                           do_arch_entry,                \
-                                          do_arch_entry_init)           \
+                                          do_arch_entry_init,           \
+                                          do_arch_entry_array)          \
   do_arch_blob(preuniverse, 0)                                          \
 
 
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
   do_arch_blob(initial, 10000)                                          \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
                                            do_arch_blob,                \
                                            do_arch_entry,               \
-                                           do_arch_entry_init)          \
+                                           do_arch_entry_init,          \
+                                           do_arch_entry_array)         \
   do_arch_blob(continuation, 2000)                                      \
 
+// count needed for declaration of vector_iota_indices stub
+#define VECTOR_IOTA_COUNT 6
 
 #define STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,                         \
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
-                                       do_arch_entry_init)              \
+                                       do_arch_entry_init,              \
+                                       do_arch_entry_array)             \
   do_arch_blob(compiler, 70000)                                         \
   do_stub(compiler, vector_iota_indices)                                \
-  do_arch_entry(aarch64, compiler, vector_iota_indices,                 \
-                vector_iota_indices, vector_iota_indices)               \
+  do_arch_entry_array(aarch64, compiler, vector_iota_indices,           \
+                      vector_iota_indices, vector_iota_indices,         \
+                      VECTOR_IOTA_COUNT)                                \
   do_stub(compiler, large_array_equals)                                 \
   do_arch_entry(aarch64, compiler, large_array_equals,                  \
                 large_array_equals, large_array_equals)                 \
@@ -84,8 +91,7 @@
   do_stub(compiler, count_positives)                                    \
   do_arch_entry(aarch64, compiler, count_positives, count_positives,    \
                 count_positives)                                        \
-  do_stub(compiler, count_positives_long)                               \
-  do_arch_entry(aarch64, compiler, count_positives_long,                \
+  do_arch_entry(aarch64, compiler, count_positives,                     \
                 count_positives_long, count_positives_long)             \
   do_stub(compiler, compare_long_string_LL)                             \
   do_arch_entry(aarch64, compiler, compare_long_string_LL,              \
@@ -108,14 +114,16 @@
   do_stub(compiler, string_indexof_linear_ul)                           \
   do_arch_entry(aarch64, compiler, string_indexof_linear_ul,            \
                 string_indexof_linear_ul, string_indexof_linear_ul)     \
-  /* this uses the entry for ghash_processBlocks */                     \
-  do_stub(compiler, ghash_processBlocks_wide)                           \
+  do_stub(compiler, ghash_processBlocks_small)                          \
+  do_arch_entry(aarch64, compiler, ghash_processBlocks_small,           \
+           ghash_processBlocks_small, ghash_processBlocks_small)        \
 
 
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
-                                    do_arch_entry_init)                 \
+                                    do_arch_entry_init,                 \
+                                    do_arch_entry_array)                \
   do_arch_blob(final, 20000 ZGC_ONLY(+85000))                           \
   do_stub(final, copy_byte_f)                                           \
   do_arch_entry(aarch64, final, copy_byte_f, copy_byte_f,               \
@@ -139,9 +147,49 @@
   do_stub(final, spin_wait)                                             \
   do_arch_entry_init(aarch64, final, spin_wait, spin_wait,              \
                      spin_wait, empty_spin_wait)                        \
-  /* stub only -- entries are not stored in StubRoutines::aarch64 */    \
   /* n.b. these are not the same as the generic atomic stubs */         \
   do_stub(final, atomic_entry_points)                                   \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_fetch_add_4_impl, atomic_fetch_add_4_impl)       \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_fetch_add_8_impl, atomic_fetch_add_8_impl)       \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_fetch_add_4_relaxed_impl,                        \
+                atomic_fetch_add_4_relaxed_impl)                        \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_fetch_add_8_relaxed_impl,                        \
+                atomic_fetch_add_8_relaxed_impl)                        \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_xchg_4_impl, atomic_xchg_4_impl)                 \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_xchg_8_impl, atomic_xchg_8_impl)                 \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_1_impl, atomic_cmpxchg_1_impl)           \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_4_impl, atomic_cmpxchg_4_impl)           \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_8_impl, atomic_cmpxchg_8_impl)           \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_1_relaxed_impl,                          \
+                atomic_cmpxchg_1_relaxed_impl)                          \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_4_relaxed_impl,                          \
+                atomic_cmpxchg_4_relaxed_impl)                          \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_8_relaxed_impl,                          \
+                atomic_cmpxchg_8_relaxed_impl)                          \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_4_release_impl,                          \
+                atomic_cmpxchg_4_release_impl)                          \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_8_release_impl,                          \
+                atomic_cmpxchg_8_release_impl)                          \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_4_seq_cst_impl,                          \
+                atomic_cmpxchg_4_seq_cst_impl)                          \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_cmpxchg_8_seq_cst_impl,                          \
+                atomic_cmpxchg_8_seq_cst_impl)                          \
 
 
 #endif // CPU_AARCH64_STUBDECLARATIONS_HPP

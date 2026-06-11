@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, 2025 Loongson Technology Co. Ltd. All rights reserved.
  * Copyright (c) 2025, Rivos Inc. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +25,7 @@
 
 /**
  * @test
- * @bug 8286847 8353600
+ * @bug 8286847 8353600 8342095
  * @key randomness
  * @summary Test vectorization of rotate byte and short
  * @library /test/lib /
@@ -116,11 +117,10 @@ public class TestRotateByteAndShortVector {
         }
     }
 
-    // NOTE: currently, there is no platform supporting RotateLeftV/RotateRightV intrinsic.
-    // If there is some implementation, it could probably in a wrong way which is different
-    // from what java language spec expects.
     @Test
-    @IR(failOn = { IRNode.ROTATE_LEFT_V })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0",
+                   IRNode.ROTATE_LEFT_V, "> 0" },
+        applyIfCPUFeature = {"avx512f", "true"})
     @IR(failOn = { IRNode.ROTATE_RIGHT_V })
     static void testRotateLeftByte(byte[] test, byte[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
@@ -130,7 +130,9 @@ public class TestRotateByteAndShortVector {
 
     @Test
     @IR(failOn = { IRNode.ROTATE_LEFT_V })
-    @IR(failOn = { IRNode.ROTATE_RIGHT_V })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0",
+                   IRNode.ROTATE_RIGHT_V, "> 0" },
+        applyIfCPUFeature = {"avx512f", "true"})
     static void testRotateRightByte(byte[] test, byte[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (byte) ((arr[i] >>> shift) | (arr[i] << -shift));
@@ -138,7 +140,9 @@ public class TestRotateByteAndShortVector {
     }
 
     @Test
-    @IR(failOn = { IRNode.ROTATE_LEFT_V })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                   IRNode.ROTATE_LEFT_V, "> 0" },
+        applyIfCPUFeature = {"avx512f", "true"})
     @IR(failOn = { IRNode.ROTATE_RIGHT_V })
     static void testRotateLeftShort(short[] test, short[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
@@ -148,7 +152,9 @@ public class TestRotateByteAndShortVector {
 
     @Test
     @IR(failOn = { IRNode.ROTATE_LEFT_V })
-    @IR(failOn = { IRNode.ROTATE_RIGHT_V })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                   IRNode.ROTATE_RIGHT_V, "> 0" },
+        applyIfCPUFeature = {"avx512f", "true"})
     static void testRotateRightShort(short[] test, short[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (short) ((arr[i] >>> shift) | (arr[i] << -shift));

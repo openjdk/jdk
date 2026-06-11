@@ -34,14 +34,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
-enum StringDedupMode {
-  NO_DEDUP,      // Do not do anything for String deduplication
-  ENQUEUE_DEDUP, // Enqueue candidate Strings for deduplication, if meet age threshold
-  ALWAYS_DEDUP   // Enqueue Strings for deduplication
-};
-
 class ShenandoahMarkingContext;
-class ShenandoahReferenceProcessor;
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are
@@ -51,6 +44,7 @@ protected:
   ShenandoahGeneration* const _generation;
   ShenandoahObjToScanQueueSet* const _task_queues;
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
+  bool const _string_dedup;
 
 protected:
   ShenandoahMark(ShenandoahGeneration* generation);
@@ -72,28 +66,28 @@ public:
   inline ShenandoahObjToScanQueue* get_queue(uint index) const;
   inline ShenandoahObjToScanQueue* get_old_queue(uint index) const;
 
-  inline ShenandoahGeneration* generation() { return _generation; };
+  ShenandoahGeneration* generation() const { return _generation; };
 
 private:
 // ---------- Marking loop and tasks
 
-  template <class T, ShenandoahGenerationType GENERATION, StringDedupMode STRING_DEDUP>
+  template <class T, ShenandoahGenerationType GENERATION, bool STRING_DEDUP>
   inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id);
 
   template <class T>
-  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, bool weak);
+  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, Klass* klass, bool weak);
 
   template <class T>
   inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow, bool weak);
 
   template <ShenandoahGenerationType GENERATION>
-  inline void count_liveness(ShenandoahLiveData* live_data, oop obj, uint worker_id);
+  inline void count_liveness(ShenandoahLiveData* live_data, oop obj, Klass* klass, uint worker_id);
 
-  template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
+  template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 
-  template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, StringDedup::Requests* const req, bool update_refs);
+  template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req, bool update_refs);
 
   template <ShenandoahGenerationType GENERATION>
   static bool in_generation(ShenandoahHeap* const heap, oop obj);
@@ -105,15 +99,14 @@ private:
                        ShenandoahMarkingContext* const mark_context,
                        bool weak, oop obj);
 
-  template <StringDedupMode STRING_DEDUP>
-  inline void dedup_string(oop obj, StringDedup::Requests* const req);
+  static inline void dedup_string(oop obj, StringDedup::Requests* const req);
 protected:
-  template<bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                 ShenandoahGenerationType generation, StringDedup::Requests* const req);
+  template<bool CANCELLABLE, bool STRING_DEDUP>
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
+                StringDedup::Requests* const req);
 
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                 ShenandoahGenerationType generation, bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
+                 bool cancellable);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP

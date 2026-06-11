@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ import javax.swing.JComponent;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
-import sun.awt.AppContext;
 import sun.awt.CGraphicsDevice;
 import sun.awt.DisplayChangedListener;
 import sun.awt.ExtendedKeyCodes;
@@ -825,7 +824,7 @@ public class LWWindowPeer
                     topmostPlatformWindow != null ? topmostPlatformWindow.getPeer() : null;
 
             // topmostWindowPeer == null condition is added for the backward
-            // compatibility with applets. It can be removed when the
+            // compatibility. It can be removed when the
             // getTopmostPlatformWindowUnderMouse() method will be properly
             // implemented in CPlatformEmbeddedFrame class
             if (topmostWindowPeer == this || topmostWindowPeer == null) {
@@ -1236,9 +1235,7 @@ public class LWWindowPeer
             return false;
         }
 
-        AppContext targetAppContext = AWTAccessor.getComponentAccessor().getAppContext(getTarget());
-        KeyboardFocusManager kfm = AWTAccessor.getKeyboardFocusManagerAccessor()
-                .getCurrentKeyboardFocusManager(targetAppContext);
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         Window currentActive = kfm.getActiveWindow();
 
 

@@ -23,9 +23,7 @@
 
 import jdk.internal.misc.TerminatingThreadLocal;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -37,6 +35,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import jdk.test.lib.thread.VThreadScheduler;
+
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -46,6 +46,7 @@ import static org.testng.Assert.*;
  * @bug 8202788 8291897 8357637
  * @summary TerminatingThreadLocal unit test
  * @modules java.base/java.lang:+open java.base/jdk.internal.misc
+ * @library /test/lib
  * @requires vm.continuations
  * @run testng/othervm TestTerminatingThreadLocal
  */
@@ -139,7 +140,7 @@ public class TestTerminatingThreadLocal {
             // capture carrier Thread
             carrier = pool.submit(Thread::currentThread).get();
 
-            ThreadFactory factory = virtualThreadBuilder(pool)
+            ThreadFactory factory = VThreadScheduler.virtualThreadBuilder(pool)
                     .name("ttl-test-virtual-", 0)
                     .factory();
             try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
@@ -201,25 +202,5 @@ public class TestTerminatingThreadLocal {
         }
 
         assertEquals(terminatedValues, List.of(ttlValue));
-    }
-
-    /**
-     * Returns a builder to create virtual threads that use the given scheduler.
-     */
-    static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
-        try {
-            Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
-            ctor.setAccessible(true);
-            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

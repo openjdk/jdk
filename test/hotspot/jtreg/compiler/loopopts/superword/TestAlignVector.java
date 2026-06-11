@@ -36,6 +36,7 @@ import java.nio.ByteOrder;
 /*
  * @test id=NoAlignVector
  * @bug 8310190
+ * @key randomness
  * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -1063,8 +1064,16 @@ public class TestAlignVector {
                   IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"avx2", "true"})
     // require avx to ensure vectors are larger than what unrolling produces
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.LOAD_VECTOR_L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=32"})
     static Object[] test13aIL(int[] a, long[] b) {
         for (int i = 0; i < RANGE; i++) {
             a[i]++;
@@ -1175,8 +1184,16 @@ public class TestAlignVector {
                   IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+        applyIfCPUFeature = {"avx2", "true"})
     // require avx to ensure vectors are larger than what unrolling produces
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.LOAD_VECTOR_L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=32"})
     static Object[] test13bIL(int[] a, long[] b) {
         for (int i = 1; i < RANGE; i++) {
             a[i]++;

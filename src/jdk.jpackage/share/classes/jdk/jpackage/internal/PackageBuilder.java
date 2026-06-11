@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import static jdk.jpackage.internal.I18N.buildConfigException;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.Package.Stub;
 import jdk.jpackage.internal.model.PackageType;
@@ -43,7 +43,7 @@ final class PackageBuilder {
         this.type = Objects.requireNonNull(type);
     }
 
-    Package create() throws ConfigException {
+    Package create() {
         final var validatedName = validatedName();
 
         Path relativeInstallDir;
@@ -86,7 +86,17 @@ final class PackageBuilder {
                 Optional.ofNullable(aboutURL),
                 Optional.ofNullable(licenseFile),
                 Optional.ofNullable(predefinedAppImage),
+                validatedInstalledPackageLayout(relativeInstallDir),
                 relativeInstallDir);
+    }
+
+    PackageBuilder app(Application v) {
+        app = v;
+        return this;
+    }
+
+    Application app() {
+        return app;
     }
 
     PackageBuilder name(String v) {
@@ -169,12 +179,35 @@ final class PackageBuilder {
         }
     }
 
+    PackageBuilder installedPackageLayout(AppImageLayout v) {
+        installedPackageLayout = v;
+        return this;
+    }
+
+    Optional<AppImageLayout> installedPackageLayout() {
+        return Optional.ofNullable(installedPackageLayout);
+    }
+
     private String validatedName() {
         return name().orElseGet(app::name);
     }
 
-    private static Path mapInstallDir(Path installDir, PackageType pkgType)
-            throws ConfigException {
+    private AppImageLayout validatedInstalledPackageLayout(Path relativeInstallDir) {
+        return installedPackageLayout().orElseGet(() -> {
+            var theInstallDir = relativeInstallDir;
+            if (type instanceof StandardPackageType stdType) {
+                switch (stdType) {
+                    case LINUX_DEB, LINUX_RPM, MAC_DMG, MAC_PKG -> {
+                        theInstallDir = Path.of("/").resolve(theInstallDir);
+                    }
+                    default -> {}
+                }
+            }
+            return app.imageLayout().resolveAt(theInstallDir).resetRootDirectory();
+        });
+    }
+
+    private static Path mapInstallDir(Path installDir, PackageType type) {
         var ex = buildConfigException("error.invalid-install-dir", installDir).create();
 
         if (installDir.getNameCount() == 0) {
@@ -190,15 +223,17 @@ final class PackageBuilder {
             throw ex;
         }
 
-        switch (pkgType) {
-            case StandardPackageType.WIN_EXE, StandardPackageType.WIN_MSI -> {
-                if (installDir.isAbsolute()) {
-                    throw ex;
+        if (type instanceof StandardPackageType stdType) {
+            switch (stdType) {
+                case WIN_EXE, WIN_MSI -> {
+                    if (installDir.isAbsolute()) {
+                        throw ex;
+                    }
                 }
-            }
-            default -> {
-                if (!installDir.isAbsolute()) {
-                    throw ex;
+                default -> {
+                    if (!installDir.isAbsolute()) {
+                        throw ex;
+                    }
                 }
             }
         }
@@ -235,6 +270,7 @@ final class PackageBuilder {
         }
     }
 
+    private Application app;
     private String name;
     private Path fileName;
     private String description;
@@ -243,7 +279,7 @@ final class PackageBuilder {
     private Path licenseFile;
     private Path predefinedAppImage;
     private Path installDir;
+    private AppImageLayout installedPackageLayout;
 
     private final PackageType type;
-    private final Application app;
 }

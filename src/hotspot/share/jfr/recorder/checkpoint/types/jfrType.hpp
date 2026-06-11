@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,11 +109,12 @@ class JfrThreadConstant : public JfrSerializer {
   oop _vthread;
   const char* _name;
   int _length;
+  const bool _to_blob;
   void write_name(JfrCheckpointWriter& writer);
   void write_os_name(JfrCheckpointWriter& writer, bool is_vthread);
  public:
-  JfrThreadConstant(Thread* t, traceid tid, oop vthread = nullptr) :
-    _thread(t), _tid(tid), _vthread(vthread), _name(nullptr), _length(-1) {}
+  JfrThreadConstant(Thread* t, traceid tid, bool to_blob, oop vthread = nullptr) :
+    _thread(t), _tid(tid), _vthread(vthread), _name(nullptr), _length(-1), _to_blob(to_blob) {}
   void serialize(JfrCheckpointWriter& writer);
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,17 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.MacPackagingPipeline.LayoutUtils.packagerLayout;
+
+import java.nio.file.Files;
 import java.util.Objects;
-import jdk.jpackage.internal.model.ConfigException;
+import java.util.Optional;
+import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPackageMixin;
+import jdk.jpackage.internal.summary.SummaryAccumulator;
+import jdk.jpackage.internal.summary.StandardWarning;
 
 final class MacPackageBuilder {
 
@@ -40,15 +47,49 @@ final class MacPackageBuilder {
         return this;
     }
 
+    MacPackageBuilder summary(SummaryAccumulator v) {
+        summary = v;
+        return this;
+    }
+
     PackageBuilder pkgBuilder() {
         return pkgBuilder;
     }
 
-    MacPackage create() throws ConfigException {
-        final var pkg = pkgBuilder.create();
-        return MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
+    MacPackage create() {
+
+        final var app = (MacApplication)pkgBuilder.app();
+
+        var pkg = pkgBuilder.create();
+
+        pkgBuilder.app(MacApplicationBuilder.overrideAppImageLayout(app, packagerLayout(pkg)))
+                .installedPackageLayout(pkg.installedPackageLayout());
+
+        pkg = pkgBuilder.create();
+
+        var macPkg = MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
+        summary().ifPresent(s -> {
+            validatePredefinedAppImage(s, macPkg);
+        });
+        return macPkg;
+    }
+
+    private Optional<SummaryAccumulator> summary() {
+        return Optional.ofNullable(summary);
+    }
+
+    private static void validatePredefinedAppImage(SummaryAccumulator summary, MacPackage pkg) {
+        if (pkg.predefinedAppImageSigned().orElse(false) && !pkg.isRuntimeInstaller()) {
+            pkg.predefinedAppImage().ifPresent(predefinedAppImage -> {
+                var thePackageFile = PackageFile.getPathInAppImage(APPLICATION_LAYOUT);
+                if (!Files.exists(predefinedAppImage.resolve(thePackageFile))) {
+                    summary.put(StandardWarning.MAC_SIGNED_PREDEFINED_APP_IMAGE_WITHOUT_PACKAGE_FILE, thePackageFile);
+                }
+            });
+        }
     }
 
     private final PackageBuilder pkgBuilder;
     private boolean predefinedAppImageSigned;
+    private SummaryAccumulator summary;
 }

@@ -23,23 +23,23 @@
 
 /*
  * @test
- * @bug 8351045 8351996
- * @enablePreview
- * @comment Remove preview if ScopedValue is finalized
+ * @bug 8351045 8351996 8358535
  * @summary tests for class-specific values
+ * @modules java.base/java.lang:+open
  * @library /test/lib
  * @run junit ClassValueTest
  */
 
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
@@ -49,9 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.test.lib.util.ForceGC;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -478,5 +476,68 @@ final class ClassValueTest {
         slowComputationContinue.countDown();
         awaitThreads(t);
         assertEquals(42, clv.get(int.class), "slow computation reinstalled value");
+    }
+
+    // ClassValue cache invalidated and not reinstated when another
+    // unrelated entry is removed
+    @Test
+    public void testCacheRefresh() throws Throwable {
+        // Setup
+        var lookup = MethodHandles.privateLookupIn(ClassValue.class, MethodHandles.lookup());
+        var classValueEntryClass = Class.forName("java.lang.ClassValue$Entry");
+        MethodHandle getCacheCarefully = lookup.findStatic(ClassValue.class, "getCacheCarefully",
+                MethodType.methodType(classValueEntryClass.arrayType(), Class.class));
+        var classValueMapClass = Class.forName("java.lang.ClassValue$ClassValueMap");
+        MethodHandle probeHomeLocation = lookup.findStatic(classValueMapClass, "probeHomeLocation",
+                MethodType.methodType(classValueEntryClass, classValueEntryClass.arrayType(), ClassValue.class));
+        MethodHandle match = lookup.findVirtual(ClassValue.class, "match",
+                MethodType.methodType(boolean.class, classValueEntryClass));
+
+        // Work
+        ClassValue<?> clv = new ClassValue<>() {
+            @Override
+            protected String computeValue(Class<?> type) {
+                return "";
+            }
+        };
+        // A class that shouldn't have arbitrary values stuffing the cache
+        var cleanClass = clv.getClass();
+        clv.get(cleanClass); // create cache on clean class
+        assertTrue(checkDirectCacheMatch(
+                getCacheCarefully,
+                probeHomeLocation,
+                match,
+                clv,
+                cleanClass
+        ));
+        clv.get(int.class);
+        clv.remove(int.class); // invalidate cache on clean class
+        assertFalse(checkDirectCacheMatch(
+                getCacheCarefully,
+                probeHomeLocation,
+                match,
+                clv,
+                cleanClass
+        ));
+        clv.get(cleanClass);
+        assertTrue(checkDirectCacheMatch(
+                getCacheCarefully,
+                probeHomeLocation,
+                match,
+                clv,
+                cleanClass
+        ));
+    }
+
+    private static boolean checkDirectCacheMatch(
+            MethodHandle getCacheCarefully,
+            MethodHandle probeHomeLocation,
+            MethodHandle match,
+            ClassValue<?> clv,
+            Class<?> cl
+    ) throws Throwable {
+        Object cache = getCacheCarefully.invoke(cl);
+        Object entry = probeHomeLocation.invoke(cache, clv);
+        return (boolean) match.invoke(clv, entry);
     }
 }

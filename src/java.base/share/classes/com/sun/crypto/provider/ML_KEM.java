@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,17 @@ public final class ML_KEM {
     private static final int XOF_PAD = 24;
     private static final int MONT_R_BITS = 20;
     private static final int MONT_Q = 3329;
-    private static final int MONT_R_SQUARE_MOD_Q = 152;
     private static final int MONT_Q_INV_MOD_R = 586497;
 
     // toMont((ML_KEM_N / 2)^-1 mod ML_KEM_Q) using R = 2^MONT_R_BITS
     private static final int MONT_DIM_HALF_INVERSE = 1534;
     private static final int BARRETT_MULTIPLIER = 20159;
+    private static final int BARRETT_ADDEND = 1665;
     private static final int BARRETT_SHIFT = 26;
-    private static final int[] MONT_ZETAS_FOR_NTT = new int[]{
+
+    // The values from Appendix A of the FIPS 203 standard converted to the
+    // Montgomery domain, i.e. toMont(zeta^ (bitrev_7(i)) for i = 0..127
+    private static final int[] MONT_ZETAS_FOR_NTT = new int[] {
             1188, 914, -969, 585, -551, 1263, -97, 593,
             -35, -1400, -417, -1253, 742, -281, 185, -819,
             -1226, 895, -530, 52, 25, 1000, 1249, -909,
@@ -72,7 +75,7 @@ public final class ML_KEM {
             -1599, -709, -789, -1317, -57, 1049, -584
     };
 
-    private static final short[] montZetasForVectorNttArr = new short[]{
+    private static final short[] montZetasForVectorNttArr = new short[] {
             // level 0
             -758, -758, -758, -758, -758, -758, -758, -758,
             -758, -758, -758, -758, -758, -758, -758, -758,
@@ -193,26 +196,8 @@ public final class ML_KEM {
             -108, -108, -308, -308, 996, 996, 991, 991,
             958, 958, -1460, -1460, 1522, 1522, 1628, 1628
     };
-    private static final int[] MONT_ZETAS_FOR_INVERSE_NTT = new int[]{
-            584, -1049, 57, 1317, 789, 709, 1599, -1601,
-            -990, 604, 348, 857, 612, 474, 1177, -1014,
-            -88, -982, -191, 668, 1386, 486, -1153, -534,
-            514, 137, 586, -1178, 227, 339, -907, 244,
-            1200, -833, 1394, -30, 1074, 636, -317, -1192,
-            -1259, -355, -425, -884, -977, 1430, 868, 607,
-            184, 1448, 702, 1327, 431, 497, 595, -94,
-            1649, -1497, -620, 42, -172, 1107, -222, 1003,
-            426, -845, 395, -510, 1613, 825, 1269, -290,
-            -1429, 623, -567, 1617, 36, 1007, 1440, 332,
-            -201, 1313, -1382, -744, 669, -1538, 128, -1598,
-            1401, 1183, -553, 714, 405, -1155, -445, 406,
-            -1496, -49, 82, 1369, 259, 1604, 373, 909,
-            -1249, -1000, -25, -52, 530, -895, 1226, 819,
-            -185, 281, -742, 1253, 417, 1400, 35, -593,
-            97, -1263, 551, -585, 969, -914, -1188
-    };
 
-    private static final short[] montZetasForVectorInverseNttArr = new short[]{
+    private static final short[] montZetasForVectorInverseNttArr = new short[] {
             // level 0
             -1628, -1628, -1522, -1522, 1460, 1460, -958, -958,
             -991, -991, -996, -996, 308, 308, 108, 108,
@@ -334,25 +319,28 @@ public final class ML_KEM {
             758, 758, 758, 758, 758, 758, 758, 758
     };
 
-    private static final int[] MONT_ZETAS_FOR_NTT_MULT = new int[]{
-            -1003, 1003, 222, -222, -1107, 1107, 172, -172,
-            -42, 42, 620, -620, 1497, -1497, -1649, 1649,
-            94, -94, -595, 595, -497, 497, -431, 431,
-            -1327, 1327, -702, 702, -1448, 1448, -184, 184,
-            -607, 607, -868, 868, -1430, 1430, 977, -977,
-            884, -884, 425, -425, 355, -355, 1259, -1259,
-            1192, -1192, 317, -317, -636, 636, -1074, 1074,
-            30, -30, -1394, 1394, 833, -833, -1200, 1200,
-            -244, 244, 907, -907, -339, 339, -227, 227,
-            1178, -1178, -586, 586, -137, 137, -514, 514,
-            534, -534, 1153, -1153, -486, 486, -1386, 1386,
-            -668, 668, 191, -191, 982, -982, 88, -88,
-            1014, -1014, -1177, 1177, -474, 474, -612, 612,
-            -857, 857, -348, 348, -604, 604, 990, -990,
-            1601, -1601, -1599, 1599, -709, 709, -789, 789,
-            -1317, 1317, -57, 57, 1049, -1049, -584, 584
+    // modulo MLKEM_Q positive equivalents of the values listed for
+    // the MultiplyNTTs algorithm in the FIPS 203 standard
+    private static final int[] ZETAS_FOR_NTT_MULT = new int[] {
+            17, 3312, 2761, 568, 583, 2746, 2649, 680,
+            1637, 1692, 723, 2606, 2288, 1041, 1100, 2229,
+            1409, 1920, 2662, 667, 3281, 48, 233, 3096,
+            756, 2573, 2156, 1173, 3015, 314, 3050, 279,
+            1703, 1626, 1651, 1678, 2789, 540, 1789, 1540,
+            1847, 1482, 952, 2377, 1461, 1868, 2687, 642,
+            939, 2390, 2308, 1021, 2437, 892, 2388, 941,
+            733, 2596, 2337, 992, 268, 3061, 641, 2688,
+            1584, 1745, 2298, 1031, 2037, 1292, 3220, 109,
+            375, 2954, 2549, 780, 2090, 1239, 1645, 1684,
+            1063, 2266, 319, 3010, 2773, 556, 757, 2572,
+            2099, 1230, 561, 2768, 2466, 863, 2594, 735,
+            2804, 525, 1092, 2237, 403, 2926, 1026, 2303,
+            1143, 2186, 2150, 1179, 2775, 554, 886, 2443,
+            1722, 1607, 1212, 2117, 1874, 1455, 1029, 2300,
+            2110, 1219, 2935, 394, 885, 2444, 2154, 1175
     };
-    private static final short[] montZetasForVectorNttMultArr = new short[]{
+
+    private static final short[] montZetasForVectorNttMultArr = new short[] {
             -1103, 1103, 430, -430, 555, -555, 843, -843,
             -1251, 1251, 871, -871, 1550, -1550, 105, -105,
             422, -422, 587, -587, 177, -177, -235, 235,
@@ -498,7 +486,7 @@ public final class ML_KEM {
     /*
     Main internal algorithms from Section 6 of specification
      */
-    protected ML_KEM_KeyPair generateKemKeyPair(byte[] kem_d, byte[] kem_z) {
+    protected ML_KEM_KeyPair generateKemKeyPair(byte[] kem_d_z) {
         MessageDigest mlKemH;
         try {
             mlKemH = MessageDigest.getInstance(HASH_H_NAME);
@@ -508,7 +496,8 @@ public final class ML_KEM {
         }
 
         //Generate K-PKE keys
-        var kPkeKeyPair = generateK_PkeKeyPair(kem_d);
+        //The 1st 32-byte `d` is used in K-PKE key pair generation
+        var kPkeKeyPair = generateK_PkeKeyPair(kem_d_z);
         //encaps key = kPke encryption key
         byte[] encapsKey = kPkeKeyPair.publicKey.keyBytes;
 
@@ -526,13 +515,22 @@ public final class ML_KEM {
         } catch (DigestException e) {
             // This should never happen.
             throw new RuntimeException(e);
+        } finally {
+            mlKemH.reset();
         }
-        System.arraycopy(kem_z, 0, decapsKey,
+        // The 2nd 32-byte `z` is copied into decapsKey
+        System.arraycopy(kem_d_z, 32, decapsKey,
             kPkePrivateKey.length + encapsKey.length + 32, 32);
 
         return new ML_KEM_KeyPair(
             new ML_KEM_EncapsulationKey(encapsKey),
             new ML_KEM_DecapsulationKey(decapsKey));
+    }
+
+    public byte[] privKeyToPubKey(byte[] decapsKey) {
+        int pkLen = (mlKem_k * ML_KEM_N * 12) / 8 + 32 /* rho */;
+        int skLen = (mlKem_k * ML_KEM_N * 12) / 8;
+        return Arrays.copyOfRange(decapsKey, skLen, skLen + pkLen);
     }
 
     protected ML_KEM_EncapsulateResult encapsulate(
@@ -554,7 +552,6 @@ public final class ML_KEM {
         var randomCoins = Arrays.copyOfRange(kHatAndRandomCoins, 32, 64);
         var cipherText = kPkeEncrypt(new K_PKE_EncryptionKey(encapsulationKey.keyBytes),
                 randomMessage, randomCoins);
-        Arrays.fill(randomCoins, (byte) 0);
         byte[] sharedSecret = Arrays.copyOfRange(kHatAndRandomCoins, 0, 32);
         Arrays.fill(kHatAndRandomCoins, (byte) 0);
 
@@ -605,6 +602,7 @@ public final class ML_KEM {
         var fakeResult = mlKemJ.digest();
         var computedCipherText = kPkeEncrypt(
                 new K_PKE_EncryptionKey(encapsKeyBytes), mCandidate, coins);
+        Arrays.fill(mCandidate, (byte)0);
 
         // The rest of this method implements the following in constant time
         //
@@ -640,18 +638,22 @@ public final class ML_KEM {
 
         MessageDigest mlKemG;
         SHAKE256 mlKemJ;
+        int cbdInputLen = 64 * mlKem_eta1;
+        byte[] cbdInput = new byte[cbdInputLen];
         try {
             mlKemG = MessageDigest.getInstance(HASH_G_NAME);
-            mlKemJ = new SHAKE256(64 * mlKem_eta1);
+            mlKemJ = new SHAKE256(cbdInputLen);
         } catch (NoSuchAlgorithmException e) {
             // This should never happen.
             throw new RuntimeException(e);
         }
 
-        mlKemG.update(seed);
+        // Note: only the 1st 32-byte in the seed is used
+        mlKemG.update(seed, 0, 32);
         mlKemG.update((byte)mlKem_k);
 
         var rhoSigma = mlKemG.digest();
+        mlKemG.reset();
         var rho = Arrays.copyOfRange(rhoSigma, 0, 32);
         var sigma = Arrays.copyOfRange(rhoSigma, 32, 64);
         Arrays.fill(rhoSigma, (byte)0);
@@ -661,22 +663,26 @@ public final class ML_KEM {
         int keyGenN = 0;
         byte[] prfSeed = new byte[sigma.length + 1];
         System.arraycopy(sigma, 0, prfSeed, 0, sigma.length);
-        byte[] cbdInput;
         short[][] keyGenS = new short[mlKem_k][];
         short[][] keyGenE = new short[mlKem_k][];
-        for (int i = 0; i < mlKem_k; i++) {
-            prfSeed[sigma.length] = (byte) (keyGenN++);
-            mlKemJ.update(prfSeed);
-            cbdInput = mlKemJ.digest();
-            keyGenS[i] = centeredBinomialDistribution(mlKem_eta1, cbdInput);
-        }
-        for (int i = 0; i < mlKem_k; i++) {
-            prfSeed[sigma.length] = (byte) (keyGenN++);
-            mlKemJ.update(prfSeed);
-            cbdInput = mlKemJ.digest();
-            keyGenE[i] = centeredBinomialDistribution(mlKem_eta1, cbdInput);
+        try {
+            for (int i = 0; i < mlKem_k; i++) {
+                prfSeed[sigma.length] = (byte) (keyGenN++);
+                mlKemJ.update(prfSeed);
+                mlKemJ.digest(cbdInput, 0, cbdInputLen);
+                keyGenS[i] = centeredBinomialDistribution(mlKem_eta1, cbdInput);
+            }
+            for (int i = 0; i < mlKem_k; i++) {
+                prfSeed[sigma.length] = (byte) (keyGenN++);
+                mlKemJ.update(prfSeed);
+                mlKemJ.digest(cbdInput, 0, cbdInputLen);
+                keyGenE[i] = centeredBinomialDistribution(mlKem_eta1, cbdInput);
+            }
+        }  catch (DigestException e) {
+            throw new ProviderException("Internal error", e);
         }
         Arrays.fill(sigma, (byte)0);
+        Arrays.fill(cbdInput, (byte)0);
 
         short[][] keyGenSHat = mlKemVectorNTT(keyGenS);
         mlKemVectorReduce(keyGenSHat);
@@ -690,7 +696,6 @@ public final class ML_KEM {
         for (int i = 0; i < mlKem_k; i++) {
             encodePoly12(keyGenTHat[i], pkEncoded, i * ((ML_KEM_N * 12) / 8));
             encodePoly12(keyGenSHat[i], skEncoded, i * ((ML_KEM_N * 12) / 8));
-            Arrays.fill(keyGenEHat[i], (short) 0);
             Arrays.fill(keyGenSHat[i], (short) 0);
         }
         System.arraycopy(rho, 0,
@@ -713,39 +718,61 @@ public final class ML_KEM {
         var encryptA = generateA(rho, true);
         short[][] encryptR = new short[mlKem_k][];
         short[][] encryptE1 = new short[mlKem_k][];
+        short[] encryptE2;
         int encryptN = 0;
         byte[] prfSeed = new byte[sigma.length + 1];
         System.arraycopy(sigma, 0, prfSeed, 0, sigma.length);
+        Arrays.fill(sigma, (byte)0);
 
-        var kPkePRFeta1 = new SHAKE256(64 * mlKem_eta1);
-        var kPkePRFeta2 = new SHAKE256(64 * mlKem_eta2);
-        for (int i = 0; i < mlKem_k; i++) {
-            prfSeed[sigma.length] = (byte) (encryptN++);
-            kPkePRFeta1.update(prfSeed);
-            byte[] cbdInput = kPkePRFeta1.digest();
-            encryptR[i] = centeredBinomialDistribution(mlKem_eta1, cbdInput);
-        }
-        for (int i = 0; i < mlKem_k; i++) {
-            prfSeed[sigma.length] = (byte) (encryptN++);
+        int cbdInput1Len = 64 * mlKem_eta1;
+        var kPkePRFeta1 = new SHAKE256(cbdInput1Len);
+        byte[] cbdInput1 = new byte[cbdInput1Len];
+        int cbdInput2Len = 64 * mlKem_eta2;
+        var kPkePRFeta2 = new SHAKE256(cbdInput2Len);
+        byte[] cbdInput2 = new byte[cbdInput2Len];
+        try {
+            for (int i = 0; i < mlKem_k; i++) {
+                prfSeed[sigma.length] = (byte) (encryptN++);
+                kPkePRFeta1.update(prfSeed);
+                kPkePRFeta1.digest(cbdInput1, 0, cbdInput1Len);
+                encryptR[i] = centeredBinomialDistribution(mlKem_eta1, cbdInput1);
+            }
+            for (int i = 0; i < mlKem_k; i++) {
+                prfSeed[sigma.length] = (byte) (encryptN++);
+                kPkePRFeta2.update(prfSeed);
+                kPkePRFeta2.digest(cbdInput2, 0, cbdInput2Len);
+                encryptE1[i] = centeredBinomialDistribution(mlKem_eta2, cbdInput2);
+            }
+            prfSeed[sigma.length] = (byte) encryptN;
             kPkePRFeta2.update(prfSeed);
-            byte[] cbdInput = kPkePRFeta2.digest();
-            encryptE1[i] = centeredBinomialDistribution(mlKem_eta2, cbdInput);
+            kPkePRFeta2.digest(cbdInput2, 0, cbdInput2Len);
+            encryptE2 = centeredBinomialDistribution(mlKem_eta2, cbdInput2);
+        } catch  (DigestException e) {
+            throw new ProviderException("Internal error", e);
+        } finally {
+            kPkePRFeta1.reset();
+            kPkePRFeta2.reset();
+            Arrays.fill(prfSeed, (byte)0);
+            Arrays.fill(cbdInput1, (byte)0);
+            Arrays.fill(cbdInput2, (byte)0);
         }
-        prfSeed[sigma.length] = (byte) encryptN;
-        kPkePRFeta2.reset();
-        kPkePRFeta2.update(prfSeed);
-        byte[] cbdInput = kPkePRFeta2.digest();
-        var encryptE2 = centeredBinomialDistribution(mlKem_eta2, cbdInput);
 
         var encryptRHat = mlKemVectorNTT(encryptR);
         var encryptUHat = mlKemMatrixVectorMuladd(encryptA, encryptRHat, zeroes);
         var encryptU = mlKemVectorInverseNTT(encryptUHat);
         encryptU = mlKemAddVec(encryptU, encryptE1);
+
+        for (int i = 0; i < mlKem_k; i++) {
+            Arrays.fill(encryptE1[i], (short)0);
+        }
+
         var encryptVHat = mlKemVectorScalarMult(encryptTHat, encryptRHat);
         var encryptV = mlKemInverseNTT(encryptVHat);
         encryptV = mlKemAddPoly(encryptV, encryptE2, decompressDecode(message));
         var encryptC1 = encodeVector(mlKem_du, compressVector10_11(encryptU, mlKem_du));
         var encryptC2 = encodePoly(mlKem_dv, compressPoly4_5(encryptV, mlKem_dv));
+        Arrays.fill(encryptE2, (short)0);
+        Arrays.fill(encryptV, (short)0);
 
         byte[] result = new byte[encryptC1.length + encryptC2.length];
         System.arraycopy(encryptC1, 0,
@@ -773,9 +800,11 @@ public final class ML_KEM {
             Arrays.fill(decryptSHat[i], (short) 0);
         }
         decryptV = mlKemSubtractPoly(decryptV, decryptSU);
+        var result = encodeCompress(decryptV);
         Arrays.fill(decryptSU, (short) 0);
+        Arrays.fill(decryptV, (short) 0);
 
-        return encodeCompress(decryptV);
+        return result;
     }
 
     /*
@@ -786,7 +815,7 @@ public final class ML_KEM {
     private short[][][] generateA(byte[] rho, Boolean transposed) {
         short[][][] a = new short[mlKem_k][mlKem_k][];
 
-        int nrPar = 2;
+        int nrPar = 4;
         int rhoLen = rho.length;
         byte[] seedBuf = new byte[XOF_BLOCK_LEN];
         System.arraycopy(rho, 0, seedBuf, 0, rho.length);
@@ -1133,17 +1162,20 @@ public final class ML_KEM {
     }
 
     static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
-        for (int m = 0; m < ML_KEM_N / 2; m++) {
-
-            int a0 = ntta[2 * m];
-            int a1 = ntta[2 * m + 1];
-            int b0 = nttb[2 * m];
-            int b1 = nttb[2 * m + 1];
-            int r = montMul(a0, b0) +
-                    montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
-            result[2 * m] = (short) montMul(r, MONT_R_SQUARE_MOD_Q);
-            result[2 * m + 1] = (short) montMul(
-                    (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
+        for (int m = 0; m < ML_KEM_N; m += 2) {
+            int a0 = ntta[m];
+            int a1 = ntta[m + 1];
+            int b0 = nttb[m];
+            int b1 = nttb[m + 1];
+            long r = a1 * b1;
+            r -= ((r * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q;
+            r *= ZETAS_FOR_NTT_MULT[m >> 1];
+            r += a0 * b0;
+            result[m] = (short) (r - (((r + BARRETT_ADDEND) *
+                    BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q);
+            long r1 = a0 * b1 + a1 * b0;
+            result[m + 1] = (short) (r1 - (((r1 + BARRETT_ADDEND) *
+                    BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q);
         }
     }
 
@@ -1353,22 +1385,16 @@ public final class ML_KEM {
         }
     }
 
-    // The intrinsic implementations assume that the input and output buffers
-    // are such that condensed can be read in 96-byte chunks and
-    // parsed can be written in 64 shorts chunks except for the last chunk
-    // that can be either 48 or 64 shorts. In other words,
-    // if (i - 1) * 64 < parsedLengths <= i * 64 then
-    // parsed.length should be either i * 64 or (i-1) * 64 + 48 and
-    // condensed.length should be at least index + i * 96.
+    // An intrinsic implementation assumes that the input and output buffers
+    // are such that condensed can be read in chunks of 192 bytes and
+    // parsed can be written in chunks of 128 shorts, so callers should allocate
+    // the condensed and parsed arrays accordingly, see the assert()
     private void twelve2Sixteen(byte[] condensed, int index,
                                 short[] parsed, int parsedLength) {
-        int i = parsedLength / 64;
-        int remainder = parsedLength - i * 64;
-        if (remainder != 0) {
-            i++;
-        }
-        assert ((remainder == 0) || (remainder == 48)) &&
-                (index + i * 96 <= condensed.length);
+        int n = (parsedLength + 127) / 128;
+        assert ((parsed.length >= n * 128) &&
+                (condensed.length >= index + n * 192));
+
         implKyber12To16(condensed, index, parsed, parsedLength);
     }
 
@@ -1517,9 +1543,10 @@ public final class ML_KEM {
     }
 
     static void implKyberBarrettReduceJava(short[] poly) {
+        int tmp = 0;
         for (int m = 0; m < ML_KEM_N; m++) {
-            int tmp = ((int) poly[m] * BARRETT_MULTIPLIER) >> BARRETT_SHIFT;
-            poly[m] = (short) (poly[m] - tmp * ML_KEM_Q);
+            tmp = poly[m];
+            poly[m] = (short) (tmp - ((tmp * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q);
         }
     }
 

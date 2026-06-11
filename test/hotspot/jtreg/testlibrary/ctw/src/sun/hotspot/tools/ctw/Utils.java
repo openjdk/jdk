@@ -86,12 +86,10 @@ public class Utils {
             INITIAL_COMP_LEVEL = 1;
         } else {
             String vmName = System.getProperty("java.vm.name");
-            String vmInfo = System.getProperty("java.vm.info");
-            boolean isEmulatedClient = (vmInfo != null) && vmInfo.contains("emulated-client");
-            if (Utils.endsWithIgnoreCase(vmName, " Server VM") && !isEmulatedClient) {
+            if (Utils.endsWithIgnoreCase(vmName, " Server VM")) {
                 INITIAL_COMP_LEVEL = 4;
             } else if (Utils.endsWithIgnoreCase(vmName, " Client VM")
-                    || Utils.endsWithIgnoreCase(vmName, " Minimal VM") || isEmulatedClient) {
+                    || Utils.endsWithIgnoreCase(vmName, " Minimal VM")) {
                 INITIAL_COMP_LEVEL = 1;
             } else {
                 throw new RuntimeException("Unknown VM: " + vmName);

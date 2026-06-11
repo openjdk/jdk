@@ -37,7 +37,9 @@
 /*
  * @test id=default
  * @summary Conformance testing variant of JSR-166 tck tests.
+ * @library /test/lib
  * @build *
+ * @build jdk.test.lib.Platform
  * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000 JSR166TestCase
  */
@@ -46,7 +48,9 @@
  * @test id=forkjoinpool-common-parallelism
  * @summary Test implementation details variant of JSR-166
  *          tck tests with ForkJoinPool common parallelism.
+ * @library /test/lib
  * @build *
+ * @build jdk.test.lib.Platform
  * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
@@ -68,7 +72,9 @@
  * @summary Remaining test implementation details variant of
  *          JSR-166 tck tests apart from ForkJoinPool common
  *          parallelism.
+ * @library /test/lib
  * @build *
+ * @build jdk.test.lib.Platform
  * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
@@ -135,6 +141,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jdk.test.lib.Platform;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
@@ -624,6 +631,13 @@ public class JSR166TestCase extends TestCase {
                 "SynchronousQueue20Test",
                 "ReentrantReadWriteLock20Test"
             };
+
+            if (Platform.isS390x()) {
+                java20TestClassNames = new String[] {
+                    "ForkJoinPool20Test",
+                };
+            }
+
             addNamedTestClasses(suite, java20TestClassNames);
         }
 
@@ -832,7 +846,7 @@ public class JSR166TestCase extends TestCase {
      * by rethrowing, in the test harness thread, any exception recorded
      * earlier by threadRecordFailure.
      *
-     * Triggers test case failure if interrupt status is set in the main thread.
+     * Triggers test case failure if interrupted status is set in the main thread.
      */
     public void tearDown() throws Exception {
         Throwable t = threadFailure.getAndSet(null);
@@ -848,7 +862,7 @@ public class JSR166TestCase extends TestCase {
         }
 
         if (Thread.interrupted())
-            tearDownFail("interrupt status set in main thread");
+            tearDownFail("interrupted status set in main thread");
 
         checkForkJoinPoolThreadLeaks();
     }
@@ -1169,7 +1183,6 @@ public class JSR166TestCase extends TestCase {
      * A debugging tool to print stack traces of most threads, as jstack does.
      * Uninteresting threads are filtered out.
      */
-    @SuppressWarnings("removal")
     static void dumpTestThreads() {
         System.err.println("------ stacktrace dump start ------");
         for (ThreadInfo info : THREAD_MXBEAN.dumpAllThreads(true, true))
@@ -1460,7 +1473,7 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * Spin-waits up to LONG_DELAY_MS milliseconds for the current thread to
-     * be interrupted.  Clears the interrupt status before returning.
+     * be interrupted.  Clears the interrupted status before returning.
      */
     void awaitInterrupted() {
         for (long startTime = 0L; !Thread.interrupted(); ) {

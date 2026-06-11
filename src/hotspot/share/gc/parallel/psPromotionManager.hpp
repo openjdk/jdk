@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,11 @@ class PSPromotionManager {
 
   PSYoungPromotionLAB                 _young_lab;
   PSOldPromotionLAB                   _old_lab;
+  bool                                _young_gen_has_alloc_failure;
   bool                                _young_gen_is_full;
   bool                                _old_gen_is_full;
 
   PSScannerTasksQueue                 _claimed_stack_depth;
-
-  uint                                _target_stack_size;
 
   static PartialArrayStateManager*    _partial_array_state_manager;
   PartialArraySplitter                _partial_array_splitter;
@@ -96,12 +95,11 @@ class PSPromotionManager {
 
   inline static PSPromotionManager* manager_array(uint index);
 
-  template <class T> void  process_array_chunk_work(oop obj,
-                                                    int start, int end);
-  void process_array_chunk(PartialArrayState* state, bool stolen);
-  void push_objArray(oop old_obj, oop new_obj);
+  void trim_stacks_to_threshold(uint threshold);
 
-  void push_depth(ScannerTask task);
+  void process_array_chunk(PartialArrayState* state, bool stolen);
+  void process_array_chunk(objArrayOop obj, size_t start, size_t end);
+  void push_objArray(oop old_obj, oop new_obj);
 
   inline void promotion_trace_event(oop new_obj, Klass* klass, size_t obj_size,
                                     uint age, bool tenured,
@@ -111,6 +109,13 @@ class PSPromotionManager {
 
   template<bool promote_immediately>
   oop copy_unmarked_to_survivor_space(oop o, markWord m);
+
+  inline HeapWord* allocate_in_young_gen(Klass* klass,
+                                         size_t obj_size,
+                                         uint age);
+  inline HeapWord* allocate_in_old_gen(Klass* klass,
+                                       size_t obj_size,
+                                       uint age);
 
  public:
   // Static
@@ -142,16 +147,8 @@ class PSPromotionManager {
   void flush_labs();
   void flush_string_dedup_requests() { _string_dedup_requests.flush(); }
 
-  void drain_stacks(bool totally_drain) {
-    drain_stacks_depth(totally_drain);
-  }
- public:
-  void drain_stacks_cond_depth() {
-    if (claimed_stack_depth()->size() > _target_stack_size) {
-      drain_stacks_depth(false);
-    }
-  }
-  void drain_stacks_depth(bool totally_drain);
+  void trim_stacks();
+  void drain_stacks();
 
   bool stacks_empty() {
     return claimed_stack_depth()->is_empty();
@@ -159,15 +156,12 @@ class PSPromotionManager {
 
   inline void process_popped_location_depth(ScannerTask task, bool stolen);
 
-  static bool should_scavenge(oop* p, bool check_to_space = false);
-  static bool should_scavenge(narrowOop* p, bool check_to_space = false);
-
   template <bool promote_immediately, class T>
   void copy_and_push_safe_barrier(T* p);
 
   template <class T> inline void claim_or_forward_depth(T* p);
 
-  void push_contents(oop obj);
+  void push_contents(oop obj, Klass* klass);
   void push_contents_bounded(oop obj, HeapWord* left, HeapWord* right);
 };
 

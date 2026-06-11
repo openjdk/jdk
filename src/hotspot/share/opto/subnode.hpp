@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,7 @@ public:
   CmpPNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
@@ -328,10 +329,16 @@ struct BoolTest {
   // a simple char array where each element is the ASCII version of a 'mask'
   // enum from above.
   mask commute( ) const { return mask("032147658"[_test]-'0'); }
-  mask negate( ) const { return mask(_test^4); }
+  mask negate( ) const { return negate_mask(_test); }
+  // Return the negative mask for the given mask, for both signed and unsigned comparison.
+  static mask negate_mask(mask btm) { return mask(btm ^ 4); }
+  static mask unsigned_mask(mask btm);
   bool is_canonical( ) const { return (_test == BoolTest::ne || _test == BoolTest::lt || _test == BoolTest::le || _test == BoolTest::overflow); }
-  bool is_less( )  const { return _test == BoolTest::lt || _test == BoolTest::le; }
-  bool is_greater( ) const { return _test == BoolTest::gt || _test == BoolTest::ge; }
+  bool is_less( )  const { return is_less(_test); }
+  bool is_greater( ) const { return is_greater(_test); }
+  static bool is_less(mask btm) { return btm == BoolTest::lt || btm == BoolTest::le; }
+  static bool is_greater(mask btm) { return btm == BoolTest::gt || btm == BoolTest::ge; }
+
   void dump_on(outputStream *st) const;
   mask merge(BoolTest other) const;
 };
@@ -439,18 +446,11 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------InvolutionNode----------------------------------
-// Represents a self-inverse operation, i.e., op(op(x)) = x for any x
-class InvolutionNode : public Node {
-public:
-  InvolutionNode(Node* in) : Node(nullptr, in) {}
-  virtual Node* Identity(PhaseGVN* phase);
-};
 
 //------------------------------NegNode----------------------------------------
-class NegNode : public InvolutionNode {
+class NegNode : public Node {
 public:
-  NegNode(Node* in1) : InvolutionNode(in1) {
+  NegNode(Node* in1) : Node(nullptr, in1) {
     init_class_id(Class_Neg);
   }
 };
@@ -511,6 +511,9 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 
@@ -520,12 +523,20 @@ class SqrtDNode : public Node {
 public:
   SqrtDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
     init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
+    // Treat node only as expensive if a control input is set because it might
+    // be created from SqrtVDNode in VectorNode::push_through_replicate which
+    // does not have control input.
+    if (c != nullptr) {
+      C->add_expensive_node(this);
+    }
   }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------SqrtFNode--------------------------------------
@@ -545,6 +556,9 @@ public:
   const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------SqrtHFNode-------------------------------------
@@ -559,21 +573,22 @@ public:
   const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 
-class ReverseBytesNode : public InvolutionNode {
+class ReverseBytesNode : public Node {
 public:
-  ReverseBytesNode(Node* in) : InvolutionNode(in) {}
+  ReverseBytesNode(Node* in) : Node(nullptr, in) {}
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 //-------------------------------ReverseBytesINode--------------------------------
 // reverse bytes of an integer
 class ReverseBytesINode : public ReverseBytesNode {
 public:
-  ReverseBytesINode(Node* in) : ReverseBytesNode(in) {
-  }
-
+  ReverseBytesINode(Node* in) : ReverseBytesNode(in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -611,23 +626,25 @@ public:
 
 //-------------------------------ReverseINode--------------------------------
 // reverse bits of an int
-class ReverseINode : public InvolutionNode {
+class ReverseINode : public Node {
 public:
-  ReverseINode(Node* in) : InvolutionNode(in) {}
+  ReverseINode(Node* in) : Node(nullptr,in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseLNode--------------------------------
 // reverse bits of a long
-class ReverseLNode : public InvolutionNode {
+class ReverseLNode : public Node {
 public:
-  ReverseLNode(Node* in) : InvolutionNode(in) {}
+  ReverseLNode(Node* in) : Node(nullptr, in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 

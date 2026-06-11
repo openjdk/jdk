@@ -140,7 +140,7 @@ final class ClassInspector {
         return true;
     }
 
-    boolean isThrottled() {
+    boolean isThrottled(MethodDesc staticThrottleMethod) {
         String result = annotationValue(ANNOTATION_THROTTLE, String.class, "off");
         if (result != null) {
             return true;
@@ -150,6 +150,9 @@ final class ClassInspector {
             if (t != null) {
                 return true;
             }
+        }
+        if (isJDK()) {
+            return hasStaticMethod(staticThrottleMethod);
         }
         return false;
     }

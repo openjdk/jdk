@@ -147,7 +147,7 @@ import java.util.stream.Collectors;
  * a compact pattern. This special pattern can appear explicitly for any specific
  * range, or considered as a default pattern for an empty string.
  *
- * <h3>Negative Subpatterns</h3>
+ * <h3><a id="negative_subpatterns">Negative Subpatterns</a></h3>
  * A compact pattern contains a positive and negative subpattern
  * separated by a subpattern boundary character {@code ';'},
  * for example, {@code "0K;-0K"}. Each subpattern has a prefix,
@@ -159,7 +159,10 @@ import java.util.stream.Collectors;
  * the negative prefix and suffix. The number of minimum integer digits,
  * and other characteristics are all the same as the positive pattern.
  * That means that {@code "0K;-00K"} produces precisely the same behavior
- * as {@code "0K;-0K"}.
+ * as {@code "0K;-0K"}. In {@link NumberFormat##leniency lenient parsing}
+ * mode, loose matching of the minus sign pattern is enabled, following the
+ * LDML’s <a href="https://unicode.org/reports/tr35/#Loose_Matching">
+ * loose matching</a> specification.
  *
  * <h4>Escaping Special Characters</h4>
  * Many characters in a compact pattern are taken literally, they are matched
@@ -247,38 +250,43 @@ public final class CompactNumberFormat extends NumberFormat {
 
     /**
      * List of positive prefix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> positivePrefixPatterns;
 
     /**
      * List of negative prefix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> negativePrefixPatterns;
 
     /**
      * List of positive suffix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> positiveSuffixPatterns;
 
     /**
      * List of negative suffix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> negativeSuffixPatterns;
 
     /**
      * List of divisors of this formatter's compact number patterns.
      * Divisor can be either Long or BigInteger (if the divisor value goes
-     * beyond long boundary)
+     * beyond long boundary). This field is a read-only constant
+     * once initialized.
      */
     private transient List<Number> divisors;
 
     /**
      * List of place holders that represent minimum integer digits at each index
-     * for each count.
+     * for each count. This field is a read-only constant once initialized.
      */
     private transient List<Patterns> placeHolderPatterns;
 
@@ -371,7 +379,7 @@ public final class CompactNumberFormat extends NumberFormat {
 
     /**
      * The map for plural rules that maps LDML defined tags (e.g. "one") to
-     * its rule.
+     * its rule. This field is a read-only constant once initialized.
      */
     private transient Map<String, String> rulesMap;
 
@@ -1512,7 +1520,7 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
-    private final transient DigitList digitList = new DigitList();
+    private transient DigitList digitList = new DigitList();
     private static final int STATUS_INFINITE = 0;
     private static final int STATUS_POSITIVE = 1;
     private static final int STATUS_LENGTH   = 2;
@@ -1584,6 +1592,9 @@ public final class CompactNumberFormat extends NumberFormat {
      *   <li> Any other characters are found, that are not the expected symbols,
      *   and are not digits that occur within the numerical portion
      * </ul>
+     * <p>
+     * When lenient, the minus sign in the {@link ##negative_subpatterns
+     * negative subpatterns} is loosely matched against lenient minus sign characters.
      * <p>
      * The subclass returned depends on the value of
      * {@link #isParseBigDecimal}.
@@ -1693,14 +1704,12 @@ public final class CompactNumberFormat extends NumberFormat {
         // Given text does not match the non empty valid compact prefixes
         // check with the default prefixes
         if (!gotPositive && !gotNegative) {
-            if (text.regionMatches(pos.index, defaultPosPrefix, 0,
-                    defaultPosPrefix.length())) {
+            if (decimalFormat.matchAffix(text, position, defaultPosPrefix)) {
                 // Matches the default positive prefix
                 matchedPosPrefix = defaultPosPrefix;
                 gotPositive = true;
             }
-            if (text.regionMatches(pos.index, defaultNegPrefix, 0,
-                    defaultNegPrefix.length())) {
+            if (decimalFormat.matchAffix(text, position, defaultNegPrefix)) {
                 // Matches the default negative prefix
                 matchedNegPrefix = defaultNegPrefix;
                 gotNegative = true;
@@ -1924,7 +1933,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!affix.isEmpty() && !affix.equals(defaultAffix)) {
             // Look ahead only for the longer match than the previous match
             if (matchedAffix.length() < affix.length()) {
-                return text.regionMatches(position, affix, 0, affix.length());
+                return decimalFormat.matchAffix(text, position, affix);
             }
         }
         return false;
@@ -2026,8 +2035,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!gotPos && !gotNeg) {
             String positiveSuffix = defaultDecimalFormat.getPositiveSuffix();
             String negativeSuffix = defaultDecimalFormat.getNegativeSuffix();
-            boolean containsPosSuffix = text.regionMatches(position,
-                    positiveSuffix, 0, positiveSuffix.length());
+            boolean containsPosSuffix = decimalFormat.matchAffix(text, position, positiveSuffix);
             boolean endsWithPosSuffix = containsPosSuffix && text.length() ==
                     position + positiveSuffix.length();
             if (parseStrict ? endsWithPosSuffix : containsPosSuffix) {
@@ -2035,8 +2043,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
             }
-            boolean containsNegSuffix = text.regionMatches(position,
-                    negativeSuffix, 0, negativeSuffix.length());
+            boolean containsNegSuffix = decimalFormat.matchAffix(text, position, negativeSuffix);
             boolean endsWithNegSuffix = containsNegSuffix && text.length() ==
                     position + negativeSuffix.length();
             if (parseStrict ? endsWithNegSuffix : containsNegSuffix) {
@@ -2504,8 +2511,14 @@ public final class CompactNumberFormat extends NumberFormat {
     @Override
     public CompactNumberFormat clone() {
         CompactNumberFormat other = (CompactNumberFormat) super.clone();
+
+        // Cloning reference fields. Other fields (e.g., "positivePrefixPatterns")
+        // are not cloned since they are read-only constants after initialization.
         other.compactPatterns = compactPatterns.clone();
         other.symbols = (DecimalFormatSymbols) symbols.clone();
+        other.decimalFormat = (DecimalFormat) decimalFormat.clone();
+        other.defaultDecimalFormat = (DecimalFormat) defaultDecimalFormat.clone();
+        other.digitList = (DigitList) digitList.clone();
         return other;
     }
 

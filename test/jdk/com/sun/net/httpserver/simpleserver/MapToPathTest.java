@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *          system path
  * @library /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.net.URIBuilder
- * @run testng/othervm MapToPathTest
+ * @run junit/othervm MapToPathTest
  */
 
 import java.io.IOException;
@@ -55,13 +55,14 @@ import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.file.StandardOpenOption.CREATE;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class MapToPathTest {
 
@@ -74,8 +75,8 @@ public class MapToPathTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
@@ -88,7 +89,7 @@ public class MapToPathTest {
         createDirectories(TEST_DIR);
     }
 
-    private void createDirectories(Path testDir) throws IOException {
+    private static void createDirectories(Path testDir) throws IOException {
         //      Create directory tree:
         //
         //      |-- TEST_DIR
@@ -124,40 +125,40 @@ public class MapToPathTest {
             try {
                 var req1 = HttpRequest.newBuilder(uri(server, "/")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 200);
-                assertEquals(res1.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
-                assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(257L));
-                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
+                assertEquals(200, res1.statusCode());
+                assertEquals("text/html; charset=UTF-8", res1.headers().firstValue("content-type").get());
+                assertEquals(Long.toString(257L), res1.headers().firstValue("content-length").get());
+                assertEquals(getLastModified(TEST_DIR), res1.headers().firstValue("last-modified").get());
 
                 var req2 = HttpRequest.newBuilder(uri(server, "/../")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
-                assertEquals(res2.statusCode(), 404);  // cannot escape root
+                assertEquals(404, res2.statusCode());  // cannot escape root
 
                 var req3 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/c://")).build();
                 var res3 = client.send(req3, BodyHandlers.ofString());
-                assertEquals(res3.statusCode(), 404);  // not found
+                assertEquals(404, res3.statusCode());  // not found
 
                 var req4 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/c:.//")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
-                assertEquals(res4.statusCode(), 404);  // not found
+                assertEquals(404, res4.statusCode());  // not found
 
                 var req5 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/c:..//")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
-                assertEquals(res5.statusCode(), 404);  // not found
+                assertEquals(404, res5.statusCode());  // not found
 
                 var req6 = HttpRequest.newBuilder(uri(server, "/foo/file:" + TEST_DIR.getParent())).build();
                 var res6 = client.send(req6, BodyHandlers.ofString());
-                assertEquals(res6.statusCode(), 404);  // not found
+                assertEquals(404, res6.statusCode());  // not found
 
                 var req7 = HttpRequest.newBuilder(uri(server, "/foo/bar/\\..\\../")).build();
                 var res7 = client.send(req7, BodyHandlers.ofString());
-                assertEquals(res7.statusCode(), 404);  // not found
+                assertEquals(404, res7.statusCode());  // not found
 
                 var req8 = HttpRequest.newBuilder(uri(server, "/foo")).build();
                 var res8 = client.send(req8, BodyHandlers.ofString());
-                assertEquals(res8.statusCode(), 301);  // redirect
-                assertEquals(res8.headers().firstValue("content-length").get(), "0");
-                assertEquals(res8.headers().firstValue("location").get(), "/foo/");
+                assertEquals(301, res8.statusCode());  // redirect
+                assertEquals("0", res8.headers().firstValue("content-length").get());
+                assertEquals("/foo/", res8.headers().firstValue("location").get());
             } finally {
                 server.stop(0);
             }
@@ -169,15 +170,15 @@ public class MapToPathTest {
             try {
                 var req1 = HttpRequest.newBuilder(uri(server, "/browse/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 200);
-                assertEquals(res1.body(), "testdir");
-                assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
-                assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(7L));
-                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("file.txt")));
+                assertEquals(200, res1.statusCode());
+                assertEquals("testdir", res1.body());
+                assertEquals("text/plain", res1.headers().firstValue("content-type").get());
+                assertEquals(Long.toString(7L), res1.headers().firstValue("content-length").get());
+                assertEquals(getLastModified(TEST_DIR.resolve("file.txt")), res1.headers().firstValue("last-modified").get());
 
                 var req2 = HttpRequest.newBuilder(uri(server, "/store/file.txt")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
-                assertEquals(res2.statusCode(), 404);  // no context found
+                assertEquals(404, res2.statusCode());  // no context found
             } finally {
                 server.stop(0);
             }
@@ -190,29 +191,29 @@ public class MapToPathTest {
             try {
                 var req1 = HttpRequest.newBuilder(uri(server, "/foo/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 200);
-                assertEquals(res1.body(), "foo");
-                assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
-                assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(3L));
-                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")));
+                assertEquals(200, res1.statusCode());
+                assertEquals("foo", res1.body());
+                assertEquals("text/plain", res1.headers().firstValue("content-type").get());
+                assertEquals(Long.toString(3L), res1.headers().firstValue("content-length").get());
+                assertEquals(getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")), res1.headers().firstValue("last-modified").get());
 
                 var req2 = HttpRequest.newBuilder(uri(server, "/foobar/file.txt")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
-                assertEquals(res2.statusCode(), 404);  // no context found
+                assertEquals(404, res2.statusCode());  // no context found
 
                 var req3 = HttpRequest.newBuilder(uri(server, "/foo/../foobar/file.txt")).build();
                 var res3 = client.send(req3, BodyHandlers.ofString());
-                assertEquals(res3.statusCode(), 404);  // cannot escape context
+                assertEquals(404, res3.statusCode());  // cannot escape context
 
                 var req4 = HttpRequest.newBuilder(uri(server, "/foo/../..")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
-                assertEquals(res4.statusCode(), 404);  // cannot escape root
+                assertEquals(404, res4.statusCode());  // cannot escape root
 
                 var req5 = HttpRequest.newBuilder(uri(server, "/foo/bar")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
-                assertEquals(res5.statusCode(), 301);  // redirect
-                assertEquals(res5.headers().firstValue("content-length").get(), "0");
-                assertEquals(res5.headers().firstValue("location").get(), "/foo/bar/");
+                assertEquals(301, res5.statusCode());  // redirect
+                assertEquals("0", res5.headers().firstValue("content-length").get());
+                assertEquals("/foo/bar/", res5.headers().firstValue("location").get());
             } finally {
                 server.stop(0);
             }
@@ -225,35 +226,35 @@ public class MapToPathTest {
             try {
                 var req1 = HttpRequest.newBuilder(uri(server, "/foo/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 200);
-                assertEquals(res1.body(), "foo");
-                assertEquals(res1.headers().firstValue("content-type").get(), "text/plain");
-                assertEquals(res1.headers().firstValue("content-length").get(), Long.toString(3L));
-                assertEquals(res1.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")));
+                assertEquals(200, res1.statusCode());
+                assertEquals("foo", res1.body());
+                assertEquals("text/plain", res1.headers().firstValue("content-type").get());
+                assertEquals(Long.toString(3L), res1.headers().firstValue("content-length").get());
+                assertEquals(getLastModified(TEST_DIR.resolve("foo").resolve("file.txt")), res1.headers().firstValue("last-modified").get());
 
                 var req2 = HttpRequest.newBuilder(uri(server, "/foobar/")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
-                assertEquals(res2.statusCode(), 404);  // handler prevents mapping to /foo/bar
+                assertEquals(404, res2.statusCode());  // handler prevents mapping to /foo/bar
 
                 var req3 = HttpRequest.newBuilder(uri(server, "/foobar/file.txt")).build();
                 var res3 = client.send(req3, BodyHandlers.ofString());
-                assertEquals(res3.statusCode(), 404);  // handler prevents mapping to /foo/bar/file.txt
+                assertEquals(404, res3.statusCode());  // handler prevents mapping to /foo/bar/file.txt
 
                 var req4 = HttpRequest.newBuilder(uri(server, "/file.txt")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
-                assertEquals(res4.statusCode(), 404);
+                assertEquals(404, res4.statusCode());
 
                 var req5 = HttpRequest.newBuilder(uri(server, "/foo/bar")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
-                assertEquals(res5.statusCode(), 301);  // redirect
-                assertEquals(res5.headers().firstValue("content-length").get(), "0");
-                assertEquals(res5.headers().firstValue("location").get(), "/foo/bar/");
+                assertEquals(301, res5.statusCode());  // redirect
+                assertEquals("0", res5.headers().firstValue("content-length").get());
+                assertEquals("/foo/bar/", res5.headers().firstValue("location").get());
 
                 var req6 = HttpRequest.newBuilder(uri(server, "/foo")).build();
                 var res6 = client.send(req6, BodyHandlers.ofString());
-                assertEquals(res6.statusCode(), 301);  // redirect
-                assertEquals(res6.headers().firstValue("content-length").get(), "0");
-                assertEquals(res6.headers().firstValue("location").get(), "/foo/");
+                assertEquals(301, res6.statusCode());  // redirect
+                assertEquals("0", res6.headers().firstValue("content-length").get());
+                assertEquals("/foo/", res6.headers().firstValue("location").get());
             } finally {
                 server.stop(0);
             }
@@ -276,7 +277,7 @@ public class MapToPathTest {
             try {
                 var req1 = HttpRequest.newBuilder(uri(server, "/foo/bar/c:/baz/")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 404);  // not found
+                assertEquals(404, res1.statusCode());  // not found
             } finally {
                 server.stop(0);
             }
@@ -303,32 +304,32 @@ public class MapToPathTest {
                 out.println("uri.Path=" + uriPath);
                 var req1 = HttpRequest.newBuilder(uri(server, uriPath)).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 200);
-                assertEquals(res1.body(), "root response body");
+                assertEquals(200, res1.statusCode());
+                assertEquals("root response body", res1.body());
             }
             {
                 var req1 = HttpRequest.newBuilder(uri(server, "/foo/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 200);
-                assertEquals(res1.body(), "foo");
+                assertEquals(200, res1.statusCode());
+                assertEquals("foo", res1.body());
 
                 var req2 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/file.txt")).build();
                 var res2 = client.send(req2, BodyHandlers.ofString());
-                assertEquals(res2.statusCode(), 200);
-                assertEquals(res2.body(), "foo/bar/baz");
+                assertEquals(200, res2.statusCode());
+                assertEquals("foo/bar/baz", res2.body());
             }
             {
                 var req1 = HttpRequest.newBuilder(uri(server, "/foobar/file.txt")).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 200);
-                assertEquals(res1.body(), "foobar");
+                assertEquals(200, res1.statusCode());
+                assertEquals("foobar", res1.body());
             }
             for (String uriPath : List.of("/bar/", "/bar/t", "/bar/t/z", "/bar/index.html") ) {
                 out.println("uri.Path=" + uriPath);
                 var req1 = HttpRequest.newBuilder(uri(server, uriPath)).build();
                 var res1 = client.send(req1, BodyHandlers.ofString());
-                assertEquals(res1.statusCode(), 200);
-                assertEquals(res1.body(), "bar response body");
+                assertEquals(200, res1.statusCode());
+                assertEquals("bar response body", res1.body());
             }
         } finally {
             server.stop(0);
@@ -347,18 +348,18 @@ public class MapToPathTest {
                 out.println("uri.Query=" + query);
                 var req = HttpRequest.newBuilder(uri(server, "", query)).build();
                 var res = client.send(req, BodyHandlers.ofString());
-                assertEquals(res.statusCode(), 200);
-                assertEquals(res.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
-                assertEquals(res.headers().firstValue("content-length").get(), Long.toString(257L));
-                assertEquals(res.headers().firstValue("last-modified").get(), getLastModified(TEST_DIR));
+                assertEquals(200, res.statusCode());
+                assertEquals("text/html; charset=UTF-8", res.headers().firstValue("content-type").get());
+                assertEquals(Long.toString(257L), res.headers().firstValue("content-length").get());
+                assertEquals(getLastModified(TEST_DIR), res.headers().firstValue("last-modified").get());
             }
         } finally {
             server.stop(0);
         }
     }
 
-    @AfterTest
-    public void teardown() throws IOException {
+    @AfterAll
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

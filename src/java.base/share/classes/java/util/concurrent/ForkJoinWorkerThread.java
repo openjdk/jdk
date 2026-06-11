@@ -267,10 +267,8 @@ public class ForkJoinWorkerThread extends Thread {
 
         @Override // to record changes
         public void setContextClassLoader(ClassLoader cl) {
-            if (ClassLoader.getSystemClassLoader() != cl) {
-                resetCCL = true;
-                super.setContextClassLoader(cl);
-            }
+            resetCCL = ClassLoader.getSystemClassLoader() != cl;
+            super.setContextClassLoader(cl);
         }
 
         @Override // to re-establish CCL if necessary

@@ -42,6 +42,8 @@ import java.util.function.UnaryOperator;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.TrustFinalFields;
+
 import java.lang.invoke.VarHandle;
 
 /**
@@ -312,6 +314,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
         return next;
     }
 
+    @TrustFinalFields
     private static final class AtomicReferenceFieldUpdaterImpl<T,V>
         extends AtomicReferenceFieldUpdater<T,V> {
         private static final Unsafe U = Unsafe.getUnsafe();
@@ -362,6 +365,9 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
 
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
+
+            if (Modifier.isStatic(modifiers))
+                throw new IllegalArgumentException("Must not be a static field");
 
             // Access to protected field members is restricted to receivers only
             // of the accessing class, or one of its subclasses, and the

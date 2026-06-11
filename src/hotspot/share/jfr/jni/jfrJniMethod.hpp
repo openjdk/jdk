@@ -129,7 +129,9 @@ jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jclass jvm);
 
 jboolean JNICALL jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
 
-void JNICALL jfr_set_cpu_throttle(JNIEnv* env, jclass jvm, jdouble rate, jboolean auto_adapt);
+void JNICALL jfr_set_cpu_rate(JNIEnv* env, jclass jvm, jdouble rate);
+
+void JNICALL jfr_set_cpu_period(JNIEnv* env, jclass jvm, jlong period_nanos);
 
 void JNICALL jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong id, jlong value);
 
@@ -161,6 +163,8 @@ jlong JNICALL jfr_host_total_memory(JNIEnv* env, jclass jvm);
 
 jlong JNICALL jfr_host_total_swap_memory(JNIEnv* env, jclass jvm);
 
+jlong JNICALL jfr_host_memory_usage(JNIEnv* env, jclass jvm);
+
 void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
 
 jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods);
@@ -174,6 +178,8 @@ jboolean JNICALL jfr_is_product(JNIEnv* env, jclass jvm);
 jlongArray JNICALL jfr_set_method_trace_filters(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modifications);
 
 jlongArray JNICALL jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass);
+
+jboolean JNICALL jfr_try_update_epoch(JNIEnv* env, jclass jvm, jobject obj);
 
 #ifdef __cplusplus
 }

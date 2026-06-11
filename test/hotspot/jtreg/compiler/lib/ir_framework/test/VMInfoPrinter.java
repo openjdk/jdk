@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,18 @@
 
 package compiler.lib.ir_framework.test;
 
-import compiler.lib.ir_framework.shared.TestFrameworkSocket;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.whitebox.WhiteBox;
 
 /**
- * Prints some test VM info to the socket.
+ * Prints some Test VM info to the socket.
  */
 public class VMInfoPrinter {
-    public static final String START_VM_INFO = "##### IRMatchingVMInfo - used by TestFramework #####";
-    public static final String END_VM_INFO = "----- END VMInfo -----";
-
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static void emit() {
         StringBuilder vmInfo = new StringBuilder();
-        vmInfo.append(START_VM_INFO).append(System.lineSeparator());
-        vmInfo.append("<key>:<value>").append(System.lineSeparator());
 
         // CPU feature independent info
         String cpuFeatures = WHITE_BOX.getCPUFeatures();
@@ -64,7 +60,7 @@ public class VMInfoPrinter {
               .append(useAVXIsDefault ? 1 : 0)
               .append(System.lineSeparator());
 
-        vmInfo.append(END_VM_INFO);
-        TestFrameworkSocket.write(vmInfo.toString(), "VMInfo");
+        vmInfo.append(MessageTag.END_MARKER);
+        TestVmSocket.sendMultiLine(MessageTag.VM_INFO, vmInfo.toString());
     }
 }

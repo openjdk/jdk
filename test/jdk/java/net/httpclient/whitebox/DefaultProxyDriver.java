@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Verifies that the HTTP Client, by default, uses the system-wide
  * proxy selector, and that that selector supports the standard HTTP proxy
  * system properties.
- * @run testng/othervm
+ * @run junit/othervm
  *     -Dhttp.proxyHost=foo.proxy.com
  *     -Dhttp.proxyPort=9876
  *     -Dhttp.nonProxyHosts=*.direct.com

@@ -24,6 +24,7 @@
 
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -124,7 +125,7 @@ bool StringUtils::is_star_match(const char* star_pattern, const char* str) {
 }
 
 StringUtils::CommaSeparatedStringIterator::~CommaSeparatedStringIterator() {
-  FREE_C_HEAP_ARRAY(char, _list);
+  FREE_C_HEAP_ARRAY(_list);
 }
 
 ccstrlist StringUtils::CommaSeparatedStringIterator::canonicalize(ccstrlist option_value) {

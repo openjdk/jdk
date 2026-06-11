@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,14 +473,6 @@ public class ArgumentHandler extends DebugeeArgumentHandler {
             throw new BadOption("unsupported options: "
                                 + "jvmdi.strict: non default JVMDI strict mode is not supported now" + getJVMDIStrictMode());
         }
-
-/*
-        if (! isLaunchedLocally() && ! isDefaultJVMDIStrictMode()) {
-            throw new BadOption("inconsistent options: "
-                                + "-launch.mode=" + getLaunchMode()
-                                + " and -jvmdi.strict=" + getJVMDIStrictMode());
-        }
- */
 
         super.checkOptions();
     }

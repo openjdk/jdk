@@ -111,14 +111,13 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * <P>
  * The actions string is converted to lowercase before processing.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @spec https://www.rfc-editor.org/info/rfc2732
  *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @see java.security.Permissions
- * @see SocketPermission
  *
  *
  * @author Marianne Mueller
@@ -128,6 +127,7 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * @serial exclude
  */
 
+@Deprecated(since = "26", forRemoval = true)
 public final class SocketPermission extends Permission
     implements java.io.Serializable
 {
@@ -1307,6 +1307,7 @@ else its the cname?
  * @serial include
  */
 
+@SuppressWarnings("removal")
 final class SocketPermissionCollection extends PermissionCollection
     implements Serializable
 {

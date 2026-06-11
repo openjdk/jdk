@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
@@ -36,9 +36,9 @@
 #include "code/debugInfoRec.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
-#include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
@@ -51,8 +51,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
-#include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/constMethod.hpp"
 #include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -64,8 +64,8 @@
 #include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -152,44 +152,62 @@ void Method::release_C_heap_structures() {
 }
 
 address Method::get_i2c_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::throw_AbstractMethodError_entry();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_i2c_entry();
 }
 
 address Method::get_c2i_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::get_handle_wrong_method_abstract_stub();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_entry();
 }
 
 address Method::get_c2i_unverified_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::get_handle_wrong_method_abstract_stub();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_unverified_entry();
 }
 
 address Method::get_c2i_no_clinit_check_entry() {
+  if (is_abstract()) {
+    return nullptr;
+  }
   assert(VM_Version::supports_fast_class_init_checks(), "");
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_no_clinit_check_entry();
 }
 
-char* Method::name_and_sig_as_C_string() const {
-  return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature());
+char* Method::name_and_sig_as_C_string(bool use_double_colon) const {
+  return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature(), use_double_colon);
 }
 
 char* Method::name_and_sig_as_C_string(char* buf, int size) const {
   return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature(), buf, size);
 }
 
-char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature) {
+char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, bool use_double_colon) {
   const char* klass_name = klass->external_name();
   int klass_name_len  = (int)strlen(klass_name);
   int method_name_len = method_name->utf8_length();
-  int len             = klass_name_len + 1 + method_name_len + signature->utf8_length();
+  int separator_len   = use_double_colon ? 2 : 1;
+  int len             = klass_name_len + separator_len + method_name_len + signature->utf8_length();
   char* dest          = NEW_RESOURCE_ARRAY(char, len + 1);
   strcpy(dest, klass_name);
-  dest[klass_name_len] = '.';
-  strcpy(&dest[klass_name_len + 1], method_name->as_C_string());
-  strcpy(&dest[klass_name_len + 1 + method_name_len], signature->as_C_string());
+  if (use_double_colon) {
+    dest[klass_name_len + 0] = ':';
+    dest[klass_name_len + 1] = ':';
+  } else {
+    dest[klass_name_len] = '.';
+  }
+  strcpy(&dest[klass_name_len + separator_len], method_name->as_C_string());
+  strcpy(&dest[klass_name_len + separator_len + method_name_len], signature->as_C_string());
   dest[len] = 0;
   return dest;
 }
@@ -440,7 +458,7 @@ void Method::restore_unshareable_info(TRAPS) {
 #endif
 
 void Method::set_vtable_index(int index) {
-  if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
+  if (in_aot_cache() && !AOTMetaspace::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
     // At runtime initialize_vtable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader to obtain the loader
     // constraints based on the runtime classloaders' context.
@@ -451,7 +469,7 @@ void Method::set_vtable_index(int index) {
 }
 
 void Method::set_itable_index(int index) {
-  if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
+  if (in_aot_cache() && !AOTMetaspace::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader to obtain the loader
     // constraints based on the runtime classloaders' context. The dumptime
@@ -627,7 +645,7 @@ bool Method::init_training_data(MethodTrainingData* td) {
 bool Method::install_training_method_data(const methodHandle& method) {
   MethodTrainingData* mtd = MethodTrainingData::find(method);
   if (mtd != nullptr && mtd->final_profile() != nullptr) {
-    Atomic::replace_if_null(&method->_method_data, mtd->final_profile());
+    AtomicAccess::replace_if_null(&method->_method_data, mtd->final_profile());
     return true;
   }
   return false;
@@ -654,7 +672,7 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
     return;   // return the exception (which is cleared)
   }
 
-  if (!Atomic::replace_if_null(&method->_method_data, method_data)) {
+  if (!AtomicAccess::replace_if_null(&method->_method_data, method_data)) {
     MetadataFactory::free_metadata(loader_data, method_data);
     return;
   }
@@ -705,7 +723,7 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
 
 bool Method::init_method_counters(MethodCounters* counters) {
   // Try to install a pointer to MethodCounters, return true on success.
-  return Atomic::replace_if_null(&_method_counters, counters);
+  return AtomicAccess::replace_if_null(&_method_counters, counters);
 }
 
 void Method::set_exception_handler_entered(int handler_bci) {
@@ -1165,9 +1183,9 @@ void Method::clear_code() {
   // this may be null if c2i adapters have not been made yet
   // Only should happen at allocate time.
   if (adapter() == nullptr) {
-    _from_compiled_entry    = nullptr;
+    _from_compiled_entry = nullptr;
   } else {
-    _from_compiled_entry    = adapter()->get_c2i_entry();
+    _from_compiled_entry = adapter()->get_c2i_entry();
   }
   OrderAccess::storestore();
   _from_interpreted_entry = _i2i_entry;
@@ -1196,7 +1214,7 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   _code = nullptr;
-  if (!CDSConfig::is_dumping_adapters() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
+  if (!CDSConfig::is_dumping_adapters()) {
     _adapter = nullptr;
   }
   _i2i_entry = nullptr;
@@ -1245,7 +1263,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (adapter() != nullptr) {
-    if (adapter()->is_shared()) {
+    if (adapter()->in_aot_cache()) {
       assert(adapter()->is_linked(), "Adapter is shared but not linked");
     } else {
       return;
@@ -1277,9 +1295,14 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // called from the vtable.  We need adapters on such methods that get loaded
   // later.  Ditto for mega-morphic itable calls.  If this proves to be a
   // problem we'll make these lazily later.
-  if (_adapter == nullptr) {
+  if (is_abstract()) {
+    h_method->_from_compiled_entry = SharedRuntime::get_handle_wrong_method_abstract_stub();
+  } else if (_adapter == nullptr) {
     (void) make_adapters(h_method, CHECK);
+#ifndef ZERO
     assert(adapter()->is_linked(), "Adapter must have been linked");
+#endif
+    h_method->_from_compiled_entry = adapter()->get_c2i_entry();
   }
 
   // ONLY USE the h_method now as make_adapter may have blocked
@@ -1300,6 +1323,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
+  assert(!mh->is_abstract(), "abstract methods do not have adapters");
   PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
 
   // Adapters for compiled code are made eagerly here.  They are fairly
@@ -1318,7 +1342,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   }
 
   mh->set_adapter_entry(adapter);
-  mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
 }
 
@@ -1340,7 +1363,7 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  nmethod *code = Atomic::load_acquire(&_code);
+  nmethod *code = AtomicAccess::load_acquire(&_code);
   return code == nullptr || (code->method() == nullptr) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 
@@ -1380,7 +1403,7 @@ void Method::set_code(const methodHandle& mh, nmethod *code) {
       guarantee(false, "Unknown Continuation native intrinsic");
     }
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
-    Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
+    AtomicAccess::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
   } else if (!mh->is_method_handle_intrinsic()) {
     // Instantly compiled code can execute.
     mh->_from_interpreted_entry = mh->get_i2c_entry();
@@ -1881,15 +1904,15 @@ void Method::print_name(outputStream* st) const {
 #endif // !PRODUCT || INCLUDE_JVMTI
 
 
-void Method::print_codes_on(outputStream* st, int flags) const {
-  print_codes_on(0, code_size(), st, flags);
+void Method::print_codes_on(outputStream* st, int flags, bool buffered) const {
+  print_codes_on(0, code_size(), st, flags, buffered);
 }
 
-void Method::print_codes_on(int from, int to, outputStream* st, int flags) const {
+void Method::print_codes_on(int from, int to, outputStream* st, int flags, bool buffered) const {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
   methodHandle mh (thread, (Method*)this);
-  BytecodeTracer::print_method_codes(mh, from, to, st, flags);
+  BytecodeTracer::print_method_codes(mh, from, to, st, flags, buffered);
 }
 
 CompressedLineNumberReadStream::CompressedLineNumberReadStream(u_char* buffer) : CompressedReadStream(buffer) {
@@ -2166,7 +2189,7 @@ bool Method::is_valid_method(const Method* m) {
     return false;
   } else if (!os::is_readable_range(m, m + 1)) {
     return false;
-  } else if (m->is_shared()) {
+  } else if (m->in_aot_cache()) {
     return CppVtables::is_valid_shared_method(m);
   } else if (Metaspace::contains_non_shared(m)) {
     return has_method_vptr((const void*)m);
@@ -2187,7 +2210,7 @@ void Method::print_on(outputStream* st) const {
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
   st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
-  st->print   (" - access:            0x%x  ", access_flags().as_method_flags()); access_flags().print_on(st); st->cr();
+  st->print   (" - access:            0x%x  ", access_flags().as_method_flags()); print_access_flags(st); st->cr();
   st->print   (" - flags:             0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
   st->print   (" - signature:         ");    signature()->print_value_on(st); st->cr();
@@ -2261,8 +2284,8 @@ void Method::print_on(outputStream* st) const {
   }
 }
 
-void Method::print_linkage_flags(outputStream* st) {
-  access_flags().print_on(st);
+void Method::print_linkage_flags(outputStream* st) const {
+  print_access_flags(st);
   if (is_default_method()) {
     st->print("default ");
   }
@@ -2271,6 +2294,22 @@ void Method::print_linkage_flags(outputStream* st) {
   }
 }
 #endif //PRODUCT
+
+void Method::print_access_flags(outputStream* st) const {
+  AccessFlags flags = access_flags();
+  if (flags.is_public      ()) st->print("public ");
+  if (flags.is_private     ()) st->print("private ");
+  if (flags.is_protected   ()) st->print("protected ");
+  if (flags.is_static      ()) st->print("static ");
+  if (flags.is_final       ()) st->print("final ");
+  if (flags.is_synchronized()) st->print("synchronized ");
+  if (flags.is_bridge      ()) st->print("bridge ");
+  if (flags.is_varargs     ()) st->print("varargs ");
+  if (flags.is_native      ()) st->print("native ");
+  if (flags.is_abstract    ()) st->print("abstract ");
+  if (flags.is_strictfp    ()) st->print("strict ");
+  if (flags.is_synthetic   ()) st->print("synthetic ");
+}
 
 void Method::print_value_on(outputStream* st) const {
   assert(is_method(), "must be method");

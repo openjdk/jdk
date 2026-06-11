@@ -183,7 +183,7 @@ void G1CommittedRegionMap::guarantee_mt_safety_active() const {
 
   if (SafepointSynchronize::is_at_safepoint()) {
     guarantee(Thread::current()->is_VM_thread() ||
-              FreeList_lock->owned_by_self(),
+              G1FreeList_lock->owned_by_self(),
               "G1CommittedRegionMap _active-map MT safety protocol at a safepoint");
   } else {
     guarantee(Heap_lock->owned_by_self(),
@@ -204,10 +204,10 @@ void G1CommittedRegionMap::guarantee_mt_safety_inactive() const {
 
   if (SafepointSynchronize::is_at_safepoint()) {
     guarantee(Thread::current()->is_VM_thread() ||
-              FreeList_lock->owned_by_self(),
+              G1FreeList_lock->owned_by_self(),
               "G1CommittedRegionMap MT safety protocol at a safepoint");
   } else {
-    guarantee(Uncommit_lock->owned_by_self(),
+    guarantee(G1Uncommit_lock->owned_by_self(),
               "G1CommittedRegionMap MT safety protocol outside a safepoint");
   }
 }

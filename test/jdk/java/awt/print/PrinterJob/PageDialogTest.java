@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  */
 
 /*
-   @test
-   @bug 6302514
-   @key printer
-   @run main/manual PageDialogTest
-   @summary A toolkit modal dialog should not be blocked by Page/Print dialog.
+ *  @test
+ *  @bug 6302514
+ *  @key printer
+ *  @requires (os.family != "mac")
+ *  @run main/manual PageDialogTest
+ *  @summary A toolkit modal dialog should not be blocked by Page/Print dialog.
 */
 
 import java.awt.BorderLayout;

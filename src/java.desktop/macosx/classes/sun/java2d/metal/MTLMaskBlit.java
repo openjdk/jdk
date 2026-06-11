@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import static sun.java2d.loops.CompositeType.SrcNoEa;
 import static sun.java2d.loops.CompositeType.SrcOver;
 import static sun.java2d.loops.SurfaceType.*;
 
-class MTLMaskBlit extends BufferedMaskBlit {
+final class MTLMaskBlit extends BufferedMaskBlit {
 
     static void register() {
         GraphicsPrimitive[] primitives = {

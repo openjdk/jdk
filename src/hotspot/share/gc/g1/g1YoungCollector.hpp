@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1YOUNGCOLLECTOR_HPP
 #define SHARE_GC_G1_G1YOUNGCOLLECTOR_HPP
 
+#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/gcCause.hpp"
@@ -45,7 +46,6 @@ class G1MonotonicArenaMemoryStats;
 class G1NewTracer;
 class G1ParScanThreadStateSet;
 class G1Policy;
-class G1RedirtyCardsQueueSet;
 class G1RemSet;
 class G1SurvivorRegions;
 class G1YoungGCAllocationFailureInjector;
@@ -55,6 +55,7 @@ class WorkerThreads;
 class outputStream;
 
 class G1YoungCollector {
+  friend class G1YoungGCJFRTracerMark;
   friend class G1YoungGCNotifyPauseMark;
   friend class G1YoungGCTraceTime;
   friend class G1YoungGCVerifierMark;
@@ -79,7 +80,9 @@ class G1YoungCollector {
   G1YoungGCAllocationFailureInjector* allocation_failure_injector() const;
 
   GCCause::Cause _gc_cause;
+  size_t _allocation_word_size;
 
+  G1CollectorState _next_state;
   bool _concurrent_operation_is_full_mark;
 
   // Evacuation failure tracking.
@@ -89,7 +92,7 @@ class G1YoungCollector {
   // returning the total time taken.
   Tickspan run_task_timed(WorkerTask* task);
 
-  void wait_for_root_region_scanning();
+  void complete_root_region_scan();
 
   void calculate_collection_set(G1EvacInfo* evacuation_info, double target_pause_time_ms);
 
@@ -137,9 +140,11 @@ class G1YoungCollector {
   bool evacuation_alloc_failed() const;
 
 public:
-  G1YoungCollector(GCCause::Cause gc_cause);
+  G1YoungCollector(GCCause::Cause gc_cause,
+                   size_t allocation_word_size);
   void collect();
 
+  G1CollectorState next_state() const { return _next_state; }
   bool concurrent_operation_is_full_mark() const { return _concurrent_operation_is_full_mark; }
 };
 

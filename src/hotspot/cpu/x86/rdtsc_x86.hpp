@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,24 @@
 // INVTSC is a minimal requirement for auto-enablement.
 
 class Rdtsc : AllStatic {
+ private:
+  DEBUG_ONLY(static volatile int _initialized;)
+  static jlong _epoch;
+  static jlong _tsc_frequency;
+
+  static jlong set_epoch();
+
+  static jlong initialize_frequency();
+  static bool  initialize_elapsed_counter();
+  static bool  initialize();
+
  public:
   static jlong elapsed_counter(); // provides quick time stamps
   static jlong frequency();       // tsc register
   static bool  is_supported();    // InvariantTSC
   static jlong raw();             // direct rdtsc() access
-  static bool  is_elapsed_counter_enabled(); // turn off with -XX:-UseFastUnorderedTimeStamps
   static jlong epoch();
-  static bool  initialize();
+  static bool  enabled();
 };
 
 #endif // CPU_X86_RDTSC_X86_HPP

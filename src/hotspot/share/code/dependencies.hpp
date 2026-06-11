@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,30 +120,23 @@ class Dependencies: public ResourceObj {
     // An abstract class CX has exactly one concrete subtype CC.
     abstract_with_unique_concrete_subtype,
 
-    // Given a method M1 and a context class CX, the set MM(CX, M1) of
+    // Given a method M1 and a context class CX, the set MM(CX, M1, RC1, RM1) of
     // "concrete matching methods" in CX of M1 is the set of every
     // concrete M2 for which it is possible to create an invokevirtual
     // or invokeinterface call site that can reach either M1 or M2.
     // That is, M1 and M2 share a name, signature, and vtable index.
-    // We wish to notice when the set MM(CX, M1) is just {M1}, or
+    // We wish to notice when the set MM(CX, M1, RC1, RM1) is just {M1}, or
     // perhaps a set of two {M1,M2}, and issue dependencies on this.
 
-    // The set MM(CX, M1) can be computed by starting with any matching
+    // The set MM(CX, M1, RC1, RM1) can be computed by starting with any matching
     // concrete M2 that is inherited into CX, and then walking the
     // subtypes* of CX looking for concrete definitions.
 
-    // The parameters to this dependency are the method M1 and the
-    // context class CX.  M1 must be either inherited in CX or defined
-    // in a subtype* of CX.  It asserts that MM(CX, M1) is no greater
-    // than {M1}.
-    unique_concrete_method_2, // one unique concrete method under CX
-
-    // In addition to the method M1 and the context class CX, the parameters
-    // to this dependency are the resolved class RC1 and the
-    // resolved method RM1. It asserts that MM(CX, M1, RC1, RM1)
-    // is no greater than {M1}. RC1 and RM1 are used to improve the precision
-    // of the analysis.
-    unique_concrete_method_4, // one unique concrete method under CX
+    // The parameters to this dependency are the context class CX, the method M1,
+    // the resolved class RC1, and the resolved method RM1. M1 must be either inherited in CX
+    // or defined in a subtype* of CX. It asserts that MM(CX, M1, RC1, RM1) is
+    // no greater than {M1}. RC1 and RM1 are used to improve the precision of the analysis.
+    unique_concrete_method, // one unique concrete method under CX
 
     // This dependency asserts that interface CX has a unique implementor class.
     unique_implementor, // one unique implementor under CX
@@ -195,69 +188,10 @@ class Dependencies: public ResourceObj {
 
   static void check_valid_dependency_type(DepType dept);
 
-#if INCLUDE_JVMCI
-  // A Metadata* or object value recorded in an OopRecorder
-  class DepValue {
-   private:
-    // Unique identifier of the value within the associated OopRecorder that
-    // encodes both the category of the value (0: invalid, positive: metadata, negative: object)
-    // and the index within a category specific array (metadata: index + 1, object: -(index + 1))
-    int _id;
-
-   public:
-    DepValue() : _id(0) {}
-    DepValue(OopRecorder* rec, Metadata* metadata, DepValue* candidate = nullptr) {
-      assert(candidate == nullptr || candidate->is_metadata(), "oops");
-      if (candidate != nullptr && candidate->as_metadata(rec) == metadata) {
-        _id = candidate->_id;
-      } else {
-        _id = rec->find_index(metadata) + 1;
-      }
-    }
-    DepValue(OopRecorder* rec, jobject obj, DepValue* candidate = nullptr) {
-      assert(candidate == nullptr || candidate->is_object(), "oops");
-      if (candidate != nullptr && candidate->as_object(rec) == obj) {
-        _id = candidate->_id;
-      } else {
-        _id = -(rec->find_index(obj) + 1);
-      }
-    }
-
-    // Used to sort values in ascending order of index() with metadata values preceding object values
-    int sort_key() const { return -_id; }
-
-    bool operator == (const DepValue& other) const   { return other._id == _id; }
-
-    bool is_valid() const             { return _id != 0; }
-    int  index() const                { assert(is_valid(), "oops"); return _id < 0 ? -(_id + 1) : _id - 1; }
-    bool is_metadata() const          { assert(is_valid(), "oops"); return _id > 0; }
-    bool is_object() const            { assert(is_valid(), "oops"); return _id < 0; }
-
-    Metadata*  as_metadata(OopRecorder* rec) const    { assert(is_metadata(), "oops"); return rec->metadata_at(index()); }
-    Klass*     as_klass(OopRecorder* rec) const {
-      Metadata* m = as_metadata(rec);
-      assert(m != nullptr, "as_metadata returned nullptr");
-      assert(m->is_klass(), "oops");
-      return (Klass*) m;
-    }
-    Method*    as_method(OopRecorder* rec) const {
-      Metadata* m = as_metadata(rec);
-      assert(m != nullptr, "as_metadata returned nullptr");
-      assert(m->is_method(), "oops");
-      return (Method*) m;
-    }
-    jobject    as_object(OopRecorder* rec) const      { assert(is_object(), "oops"); return rec->oop_at(index()); }
-  };
-#endif // INCLUDE_JVMCI
-
  private:
   // State for writing a new set of dependencies:
   GrowableArray<int>*       _dep_seen;  // (seen[h->ident] & (1<<dept))
   GrowableArray<ciBaseObject*>*  _deps[TYPE_LIMIT];
-#if INCLUDE_JVMCI
-  bool _using_dep_values;
-  GrowableArray<DepValue>*  _dep_values[TYPE_LIMIT];
-#endif
 
   static const char* _dep_name[TYPE_LIMIT];
   static int         _dep_args[TYPE_LIMIT];
@@ -276,25 +210,8 @@ class Dependencies: public ResourceObj {
     return (seen & (1<<dept)) != 0;
   }
 
-#if INCLUDE_JVMCI
-  bool note_dep_seen(int dept, DepValue x) {
-    assert(dept < BitsPerInt, "oops");
-    // place metadata deps at even indexes, object deps at odd indexes
-    int x_id = x.is_metadata() ? x.index() * 2 : (x.index() * 2) + 1;
-    assert(_dep_seen != nullptr, "deps must be writable");
-    int seen = _dep_seen->at_grow(x_id, 0);
-    _dep_seen->at_put(x_id, seen | (1<<dept));
-    // return true if we've already seen dept/x
-    return (seen & (1<<dept)) != 0;
-  }
-#endif
-
   bool maybe_merge_ctxk(GrowableArray<ciBaseObject*>* deps,
                         int ctxk_i, ciKlass* ctxk);
-#if INCLUDE_JVMCI
-  bool maybe_merge_ctxk(GrowableArray<DepValue>* deps,
-                        int ctxk_i, DepValue ctxk);
-#endif
 
   void sort_all_deps();
   size_t estimate_size_in_bytes();
@@ -316,9 +233,6 @@ class Dependencies: public ResourceObj {
   Dependencies(ciEnv* env) {
     initialize(env);
   }
-#if INCLUDE_JVMCI
-  Dependencies(Arena* arena, OopRecorder* oop_recorder, CompileLog* log);
-#endif
 
  private:
   // Check for a valid context type.
@@ -349,36 +263,10 @@ class Dependencies: public ResourceObj {
   void assert_evol_method(ciMethod* m);
   void assert_leaf_type(ciKlass* ctxk);
   void assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, ciKlass* conck);
-  void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method);
   void assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
   void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
-#if INCLUDE_JVMCI
- private:
-  static void check_ctxk(Klass* ctxk) {
-    assert(ctxk->is_instance_klass(), "java types only");
-  }
-  static void check_ctxk_abstract(Klass* ctxk) {
-    check_ctxk(ctxk);
-    assert(ctxk->is_abstract(), "must be abstract");
-  }
-  static void check_unique_method(Klass* ctxk, Method* m) {
-    assert(!m->can_be_statically_bound(InstanceKlass::cast(ctxk)), "redundant");
-  }
-
-  void assert_common_1(DepType dept, DepValue x);
-  void assert_common_2(DepType dept, DepValue x0, DepValue x1);
-
- public:
-  void assert_evol_method(Method* m);
-  void assert_has_no_finalizable_subclasses(Klass* ctxk);
-  void assert_leaf_type(Klass* ctxk);
-  void assert_unique_implementor(InstanceKlass* ctxk, InstanceKlass* uniqk);
-  void assert_unique_concrete_method(Klass* ctxk, Method* uniqm);
-  void assert_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck);
-  void assert_call_site_target_value(oop callSite, oop methodHandle);
-#endif // INCLUDE_JVMCI
 
   // Define whether a given method or type is concrete.
   // These methods define the term "concrete" as used in this module.
@@ -392,9 +280,6 @@ class Dependencies: public ResourceObj {
   static bool is_concrete_klass(Klass* k);    // k is instantiable
   static bool is_concrete_method(Method* m, Klass* k);  // m is invocable
   static Klass* find_finalizable_subclass(InstanceKlass* ik);
-
-  static bool is_concrete_root_method(Method* uniqm, InstanceKlass* ctxk);
-  static Klass* find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepChange* changes = nullptr);
 
   // These versions of the concreteness queries work through the CI.
   // The CI versions are allowed to skew sometimes from the VM
@@ -423,7 +308,6 @@ class Dependencies: public ResourceObj {
   static Klass* check_leaf_type(InstanceKlass* ctxk);
   static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, NewKlassDepChange* changes = nullptr);
   static Klass* check_unique_implementor(InstanceKlass* ctxk, Klass* uniqk, NewKlassDepChange* changes = nullptr);
-  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, NewKlassDepChange* changes = nullptr);
   static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, Klass* resolved_klass, Method* resolved_method, KlassDepChange* changes = nullptr);
   static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes = nullptr);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = nullptr);
@@ -443,8 +327,7 @@ class Dependencies: public ResourceObj {
 
   // Detecting possible new assertions:
   static Klass*  find_unique_concrete_subtype(InstanceKlass* ctxk);
-  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m,
-                                             Klass** participant = nullptr); // out parameter
+
   static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass* resolved_klass, Method* resolved_method);
 
 #ifdef ASSERT
@@ -649,7 +532,7 @@ class Dependencies: public ResourceObj {
   };
   friend class Dependencies::DepStream;
 
-  static void print_statistics();
+  NOT_PRODUCT(static void print_statistics();)
 };
 
 

@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -97,11 +97,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   };
 
   friend class ClassLoaderDataGraph;
-  template <bool keep_alive>
-  friend class ClassLoaderDataGraphIteratorBase;
-  friend class ClassLoaderDataGraphKlassIteratorAtomic;
-  friend class ClassLoaderDataGraphKlassIteratorStatic;
-  friend class ClassLoaderDataGraphMetaspaceIterator;
+  friend class ClassLoaderDataGraphIteratorAtomic;
   friend class Klass;
   friend class MetaDataFactory;
   friend class Method;

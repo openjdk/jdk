@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicToolBarSeparatorUI;
 
 import com.apple.laf.AquaUtils.*;
 
-public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
+public final class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
     private static final RecyclableSingleton<AquaToolBarSeparatorUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaToolBarSeparatorUI>(AquaToolBarSeparatorUI.class);
 
     public static ComponentUI createUI(final JComponent c) {
@@ -46,6 +46,7 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
 
     BasicStroke dashedStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0.0f, new float[] { 1.0f, 2.0f }, 0.0f);
 
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         g.setColor(c.getForeground());
         ((Graphics2D)g).setStroke(dashedStroke);
@@ -59,6 +60,7 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
         }
     }
 
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
         final JToolBar.Separator sep = (JToolBar.Separator)c;
         if (sep.getOrientation() == SwingConstants.HORIZONTAL) {
@@ -67,6 +69,7 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
         return new Dimension(11, 1);
     }
 
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         final JToolBar.Separator sep = (JToolBar.Separator)c;
         if (sep.getOrientation() == SwingConstants.HORIZONTAL) {
@@ -75,6 +78,7 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
         return new Dimension(11, 1);
     }
 
+    @Override
     public Dimension getMaximumSize(final JComponent c) {
         final JToolBar.Separator sep = (JToolBar.Separator)c;
         if (sep.getOrientation() == SwingConstants.HORIZONTAL) {

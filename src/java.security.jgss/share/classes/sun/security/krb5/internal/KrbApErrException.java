@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,11 @@
 
 package sun.security.krb5.internal;
 
+import java.io.Serial;
+
 public class KrbApErrException extends sun.security.krb5.KrbException {
 
+    @Serial
     private static final long serialVersionUID = 7545264413323118315L;
 
     public KrbApErrException(int i) {

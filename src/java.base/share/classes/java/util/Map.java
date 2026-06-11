@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.util;
+
+import jdk.internal.javac.PreviewFeature;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -114,8 +116,9 @@ import java.io.Serializable;
  *
  * <h2><a id="unmodifiable">Unmodifiable Maps</a></h2>
  * <p>The {@link Map#of() Map.of},
- * {@link Map#ofEntries(Map.Entry...) Map.ofEntries}, and
- * {@link Map#copyOf Map.copyOf}
+ * {@link Map#ofEntries(Map.Entry...) Map.ofEntries},
+ * {@link Map#copyOf Map.copyOf}, and
+ * {@link Map#ofLazy(Set, Function)}
  * static factory methods provide a convenient way to create unmodifiable maps.
  * The {@code Map}
  * instances created by these methods have the following characteristics:
@@ -128,7 +131,8 @@ import java.io.Serializable;
  * Map to behave inconsistently or its contents to appear to change.
  * <li>They disallow {@code null} keys and values. Attempts to create them with
  * {@code null} keys or values result in {@code NullPointerException}.
- * <li>They are serializable if all keys and values are serializable.
+ * <li>Unless otherwise specified, they are serializable if all keys and values
+ * are serializable.
  * <li>They reject duplicate keys at creation time. Duplicate keys
  * passed to a static factory method result in {@code IllegalArgumentException}.
  * <li>The iteration order of mappings is unspecified and is subject to change.
@@ -1746,4 +1750,155 @@ public interface Map<K, V> {
             return (Map<K,V>)Map.ofEntries(map.entrySet().toArray(new Entry[0]));
         }
     }
+
+    /**
+     * {@return a new lazily computed map with the provided {@code keys}}
+     * <p>
+     * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
+     * keys are known at construction. The map's values are lazily computed via the
+     * provided {@code computingFunction} when they are first accessed
+     * (e.g., via {@linkplain Map#get(Object) Map::get}).
+     * <p>
+     * The provided computing function is guaranteed to be invoked
+     * at most once per key, even in a multi-threaded environment. Competing
+     * threads accessing a value already under computation will block until a value
+     * is computed or the computing function completes abnormally.
+     * <p>
+     * If evaluation of the provided computing function throws an unchecked exception (for
+     * a key), the lazy value is not initialized but instead transitions to an error
+     * state whereafter a {@linkplain NoSuchElementException} is thrown with the unchecked
+     * exception as a cause. Subsequent {@linkplain Map#get(Object) Map::get} calls for
+     * the same key throw {@linkplain NoSuchElementException} (without ever invoking the
+     * computing function again) with no cause and with a message that includes the name
+     * of the original unchecked exception's class.
+     * <p>
+     * All failures are handled in this way. There are two special cases that cause
+     * unchecked exceptions to be thrown:
+     * <p>
+     * If the computing function returns {@code null},
+     * a {@linkplain NoSuchElementException} (with a {@linkplain NullPointerException} as
+     * a cause) will be thrown. Hence, just like other unmodifiable maps created via the
+     * {@code Map::of} factories, a lazy map can never contain {@code null} values.
+     * Clients that want to use nullable values can wrap elements into an
+     * {@linkplain Optional} holder.
+     * <p>
+     * If the computing function recursively invokes itself (for the same key) via the
+     * returned lazy map, a {@linkplain NoSuchElementException}
+     * (with an {@linkplain IllegalStateException} as a cause) will be thrown.
+     * <p>
+     * The values of any {@link Map#values()} or {@link Map#entrySet()} views of
+     * the returned map are also lazily computed.
+     * <p>
+     * The returned map's {@linkplain Object Object methods};
+     * {@linkplain Object#equals(Object) equals()},
+     * {@linkplain Object#hashCode() hashCode()}, and
+     * {@linkplain Object#toString() toString()} methods may trigger initialization of
+     * one or more lazy values. If initialization fails for at least one value,
+     * the {@linkplain Object#hashCode() hashCode()} and
+     * {@linkplain Object#toString() toString()} methods throw
+     * {@linkplain NoSuchElementException}, and the {@linkplain Object#equals(Object)}
+     * throw {@linkplain NoSuchElementException} if attempting to compare a value that
+     * could not be computed.
+     * <p>
+     * The returned lazy map strongly references its underlying
+     * computing function used to compute values at least as long as there are
+     * uncomputed values.
+     * <p>
+     * The returned Map is <em>not</em> {@linkplain Serializable}.
+     * <p>
+     * If the provided {@code Set} of {@code keys} is subsequently modified, the returned
+     * {@code Map} will not reflect such modifications.
+     * <p>
+     * The {@code Set} of {@code keys} must use {@linkplain Set#equals(Object) equals()}
+     * as its equivalence relation, or its comparison method must be consistent with
+     * equals, otherwise the behavior is unspecified.
+     * <p>
+     * Here is an example involving an application that caches the values returned by some
+     * {@code expensiveOperation(int param)} for a given set of input parameters. By
+     * using a lazy map, we ensure that the {@code expensiveOperation(int param)} is
+     * called at most once per distinct input parameter. Once created, the retrieval of
+     * values is eligible for constant folding by the JVM:
+     * {@snippet lang = java:
+     * class Application {
+     *
+     *     private static final Map<Integer, Double> CACHE
+     *         = Map.ofLazy(Set.of(0, 1, 3, 42, 97), param -> expensiveOperation(param));
+     *
+     *     public static Optional<Double> cachedExpensiveOperation(int param) {
+     *         return Optional.ofNullable(CACHE.get(param));
+     *     }
+     *
+     *     private static double expensiveOperation(int param) {
+     *       // Calculate the value ...
+     *     }
+     *
+     *      // Eligible for constant folding
+     *      double val = cachedExpensiveOperation(42).orElseThrow();
+     *
+     * }
+     * }
+     * <p>
+     * The returned {@code Map<K, V>} can be thought of as a map backed by a
+     * {@code Map<K, LazyConstant<V>>} field and where the {@linkplain Map#get(Object)}
+     * operation is equivalent to:
+     * {@snippet lang = java:
+     * class LazyMap<K, V> extends AbstractMap<K, V> {
+     *
+     *     private final Map<K, LazyConstant<V>> backingMap;
+     *
+     *     public LazyMap(Set<K> keys, Function<K, V> computingFunction) {
+     *         this.backingMap = keys.stream()
+     *                 .collect(Collectors.toUnmodifiableMap(
+     *                         Function.identity(),
+     *                         k -> LazyConstant.of(() -> computingFunction.apply(k))));
+     *     }
+     *
+     *     @Override
+     *     public V get(Object key) {
+     *         var lazyConstant = backingMap.get(key);
+     *         return lazyConstant == null
+     *                 ? null
+     *                 : lazyConstant.get();
+     *     }
+     * }
+     *}
+     * Except, performance and storage efficiency might be better.
+     * <p>
+     * Values in the returned map are eligible for certain performance optimizations
+     * such as <em>constant folding</em> as described in
+     * {@linkplain LazyConstant##performance LazyConstant}.
+     *
+     * @implNote  after all values have been initialized successfully or transitioned to
+     *            an error state, the computing function is no longer strongly referenced
+     *            and becomes eligible for garbage collection.
+     *
+     * @param keys              the (non-null) keys in the returned computed map
+     * @param computingFunction to invoke whenever an associated value is first accessed
+     * @param <K>               the type of keys maintained by the returned map
+     * @param <V>               the type of mapped values in the returned map
+     * @throws NullPointerException if the provided set of {@code keys} is {@code null},
+     *         if the set of {@code keys} contains a {@code null} element, or
+     *         if the provided {@code computingFunction} is {@code null}
+     *
+     * @see LazyConstant
+     * @since 26
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_CONSTANTS)
+    static <K, V> Map<K, V> ofLazy(Set<? extends K> keys,
+                                   Function<? super K, ? extends V> computingFunction) {
+        // Protect against TOC-TOU attacks.
+        // Also, implicit null check of `keys` and all its elements
+        final Set<K> keyCopies = Set.copyOf(keys);
+        Objects.requireNonNull(computingFunction);
+        // We need to check the instance type using the original `keys` parameter.
+        if (keys instanceof EnumSet<?> && !keyCopies.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            var enumMap = (Map<K, V>) LazyCollections.ofLazyMapWithEnumKeys(keyCopies, computingFunction);
+            return enumMap;
+        } else {
+            // A computed map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
+            return LazyCollections.ofLazyMap(keyCopies, computingFunction);
+        }
+    }
+
 }

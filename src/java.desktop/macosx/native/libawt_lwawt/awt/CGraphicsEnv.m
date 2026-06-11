@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ JNI_COCOA_EXIT(env);
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_CGraphicsEnvironment_deregisterDisplayReconfiguration
-(JNIEnv *env, jobject this, jlong p)
+(JNIEnv *env, jclass clazz, jlong p)
 {
 JNI_COCOA_ENTER(env);
 

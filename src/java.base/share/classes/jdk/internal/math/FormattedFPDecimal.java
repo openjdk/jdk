@@ -47,9 +47,16 @@ public final class FormattedFPDecimal {
     public static final char PLAIN      = 'f';
     public static final char GENERAL    = 'g';
 
-    private long f;
+    /* Whether the decimal exactly represents the double */
+    private boolean exact;
+    /*
+     * When not exact, whether the magnitude of the decimal is larger than
+     * the magnitude of the double. Aka "away from zero".
+     */
+    private boolean away;
     private int e;  // normalized to 0 when f = 0
     private int n;
+    private long f;
     private char[] digits;  // ... and often the decimal separator as well
     private char[] exp;  // [+-][e]ee, that is, sign and minimum 2 digits
 
@@ -68,7 +75,7 @@ public final class FormattedFPDecimal {
         };
     }
 
-    private static FormattedFPDecimal split(double v) {
+    static FormattedFPDecimal split(double v) {
         FormattedFPDecimal fd = new FormattedFPDecimal();
         DoubleToDecimal.split(v, fd);
         return fd;
@@ -119,7 +126,7 @@ public final class FormattedFPDecimal {
 
         // Calculate new e based on updated precision
         final int eNew = expR - prec + 1;  // expR is defined as prec + e - 1
-        fd.set(s, eNew, prec);
+        fd.set(s, eNew, prec, fd.exact, fd.away);
 
         return fd;
     }
@@ -132,15 +139,25 @@ public final class FormattedFPDecimal {
         return n;
     }
 
+    public boolean getAway() {
+        return away;
+    }
+
+    public boolean getExact() {
+        return exact;
+    }
+
     public int getExp() {
         return e;
     }
 
-    public void set(long f, int e, int n) {
+    public void set(long f, int e, int n, boolean exact, boolean away) {
         /* Initially, n = 0 if f = 0, and 10^{n-1} <= f < 10^n if f != 0 */
         this.f = f;
         this.e = e;
         this.n = n;
+        this.exact = exact;
+        this.away = away;
     }
 
     public char[] getExponent() {

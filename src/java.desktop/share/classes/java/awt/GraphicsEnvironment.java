@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,8 +292,7 @@ public abstract class GraphicsEnvironment {
      * be used in constructing new {@code Font}s by name or family name,
      * and is enumerated by {@link #getAvailableFontFamilyNames} and
      * {@link #getAllFonts} within the execution context of this
-     * application or applet. This means applets cannot register fonts in
-     * a way that they are visible to other applets.
+     * application.
      * <p>
      * Reasons that this method might not register the font and therefore
      * return {@code false} are:

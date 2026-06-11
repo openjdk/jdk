@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,8 +452,11 @@ public final class ModuleBootstrap {
         addExtraReads(bootLayer);
         addExtraExportsAndOpens(bootLayer);
 
-        // add enable native access
+        // enable native access to modules specified to --enable-native-access
         addEnableNativeAccess(bootLayer);
+
+        // allow final mutation by modules specified to --enable-final-field-mutation
+        addEnableFinalFieldMutation(bootLayer);
 
         Counters.add("jdk.module.boot.7.adjustModulesTime");
 
@@ -514,10 +517,13 @@ public final class ModuleBootstrap {
      * modular JAR files.
      */
     private static boolean allJrtOrModularJar(Configuration cf) {
-        return !cf.modules().stream()
-                .map(m -> m.reference().location().orElseThrow())
-                .anyMatch(uri -> !uri.getScheme().equalsIgnoreCase("jrt")
-                        && !isJarFile(uri));
+        for (ResolvedModule module : cf.modules()) {
+            URI uri = module.reference().location().orElseThrow();
+            if (!uri.getScheme().equalsIgnoreCase("jrt") && !isJarFile(uri)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -536,11 +542,16 @@ public final class ModuleBootstrap {
      * Returns true if the configuration contains modules with overlapping packages.
      */
     private static boolean containsSplitPackages(Configuration cf) {
-        boolean found = cf.modules().stream()
-                .map(m -> m.reference().descriptor().packages())
-                .flatMap(Set::stream)
-                .allMatch(new HashSet<>()::add);
-        return !found;
+        var allPackages = new HashSet<String>();
+        for (ResolvedModule module: cf.modules()) {
+            Set<String> packages = module.reference().descriptor().packages();
+            int expectedCount = allPackages.size() + packages.size();
+            allPackages.addAll(packages);
+            if (expectedCount > allPackages.size()) {
+                return true; // overlapping packages.
+            }
+        }
+        return false;
     }
 
     /**
@@ -721,7 +732,6 @@ public final class ModuleBootstrap {
      * additional packages specified on the command-line.
      */
     private static void addExtraExportsAndOpens(ModuleLayer bootLayer) {
-
         // --add-exports
         String prefix = "jdk.module.addexports.";
         Map<String, List<String>> extraExports = decode(prefix);
@@ -729,14 +739,12 @@ public final class ModuleBootstrap {
             addExtraExportsOrOpens(bootLayer, extraExports, false);
         }
 
-
         // --add-opens
         prefix = "jdk.module.addopens.";
         Map<String, List<String>> extraOpens = decode(prefix);
         if (!extraOpens.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraOpens, true);
         }
-
     }
 
     private static void addExtraExportsOrOpens(ModuleLayer bootLayer,
@@ -807,6 +815,7 @@ public final class ModuleBootstrap {
     private static final Set<String> USER_NATIVE_ACCESS_MODULES;
     private static final Set<String> JDK_NATIVE_ACCESS_MODULES;
     private static final IllegalNativeAccess ILLEGAL_NATIVE_ACCESS;
+    private static final IllegalFinalFieldMutation ILLEGAL_FINAL_FIELD_MUTATION;
 
     public enum IllegalNativeAccess {
         ALLOW,
@@ -814,14 +823,26 @@ public final class ModuleBootstrap {
         DENY
     }
 
+    public enum IllegalFinalFieldMutation {
+        ALLOW,
+        WARN,
+        DEBUG,
+        DENY
+    }
+
+    static {
+        ILLEGAL_NATIVE_ACCESS = decodeIllegalNativeAccess();
+        USER_NATIVE_ACCESS_MODULES = decodeEnableNativeAccess();
+        JDK_NATIVE_ACCESS_MODULES = ModuleLoaderMap.nativeAccessModules();
+        ILLEGAL_FINAL_FIELD_MUTATION = decodeIllegalFinalFieldMutation();
+    }
+
     public static IllegalNativeAccess illegalNativeAccess() {
         return ILLEGAL_NATIVE_ACCESS;
     }
 
-    static {
-        ILLEGAL_NATIVE_ACCESS = addIllegalNativeAccess();
-        USER_NATIVE_ACCESS_MODULES = decodeEnableNativeAccess();
-        JDK_NATIVE_ACCESS_MODULES = ModuleLoaderMap.nativeAccessModules();
+    public static IllegalFinalFieldMutation illegalFinalFieldMutation() {
+        return ILLEGAL_FINAL_FIELD_MUTATION;
     }
 
     /**
@@ -881,7 +902,7 @@ public final class ModuleBootstrap {
     /**
      * Process the --illegal-native-access option (and its default).
      */
-    private static IllegalNativeAccess addIllegalNativeAccess() {
+    private static IllegalNativeAccess decodeIllegalNativeAccess() {
         String value = getAndRemoveProperty("jdk.module.illegal.native.access");
         // don't use a switch: bootstrapping issues!
         if (value == null) {
@@ -897,6 +918,71 @@ public final class ModuleBootstrap {
                     + " '" + value + "'");
             return null;
         }
+    }
+
+    /**
+     * Process the --illegal-final-field-mutation option.
+     */
+    private static IllegalFinalFieldMutation decodeIllegalFinalFieldMutation() {
+        String value = getAndRemoveProperty("jdk.module.illegal.final.field.mutation");
+        if (value == null) {
+            return IllegalFinalFieldMutation.WARN; // default
+        } else if (value.equals("allow")) {
+            return IllegalFinalFieldMutation.ALLOW;
+        } else if (value.equals("warn")) {
+            return IllegalFinalFieldMutation.WARN;
+        } else if (value.equals("debug")) {
+            return IllegalFinalFieldMutation.DEBUG;
+        } else if (value.equals("deny")) {
+            return IllegalFinalFieldMutation.DENY;
+        } else {
+            fail("Value specified to --illegal-final-field-mutation not recognized:"
+                    + " '" + value + "'");
+            return null;
+        }
+    }
+
+    /**
+     * Process the modules specified to --enable-final-field-mutation and grant the
+     * capability to mutate finals to specified named modules or all unnamed modules.
+     */
+    private static void addEnableFinalFieldMutation(ModuleLayer bootLayer) {
+        for (String name : decodeEnableFinalFieldMutation()) {
+            if (name.equals("ALL-UNNAMED")) {
+                JLA.addEnableFinalMutationToAllUnnamed();
+            } else {
+                Module m = bootLayer.findModule(name).orElse(null);
+                if (m != null) {
+                    JLA.tryEnableFinalMutation(m);
+                } else {
+                    warnUnknownModule("--enable-final-field-mutation", name);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the set of module names specified by --enable-final-field-mutation options.
+     */
+    private static Set<String> decodeEnableFinalFieldMutation() {
+        String prefix = "jdk.module.enable.final.field.mutation.";
+        int index = 0;
+        // the system property is removed after decoding
+        String value = getAndRemoveProperty(prefix + index);
+        Set<String> modules = new HashSet<>();
+        if (value == null) {
+            return modules;
+        }
+        while (value != null) {
+            for (String s : value.split(",")) {
+                if (!s.isEmpty()) {
+                    modules.add(s);
+                }
+            }
+            index++;
+            value = getAndRemoveProperty(prefix + index);
+        }
+        return modules;
     }
 
     /**
@@ -980,9 +1066,12 @@ public final class ModuleBootstrap {
      * Returns true if the configuration contains an incubator module.
      */
     private static boolean containsIncubatorModule(Configuration cf) {
-        return cf.modules().stream()
-                .map(ResolvedModule::reference)
-                .anyMatch(ModuleResolution::hasIncubatingWarning);
+        for (ResolvedModule module : cf.modules()) {
+            if (ModuleResolution.hasIncubatingWarning(module.reference())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 class HandshakeOperation;
 class AsyncHandshakeOperation;
 class JavaThread;
-class UnsafeAccessErrorHandshake;
+class UnsafeAccessErrorHandshakeClosure;
 class ThreadsListHandle;
 
 // A handshake closure is a callback that is executed for a JavaThread
@@ -50,8 +50,10 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual ~HandshakeClosure()                      {}
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
-  virtual bool is_suspend()                        { return false; }
+  virtual bool is_self_suspend()                   { return false; }
+  virtual bool is_suspend_request()                { return false; }
   virtual bool is_async_exception()                { return false; }
+  virtual bool is_enabled(Thread* target)          { return true;  }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -69,6 +71,7 @@ class Handshake : public AllStatic {
   // This version of execute() relies on a ThreadListHandle somewhere in
   // the caller's context to protect target (and we sanity check for that).
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
+  static void execute(HandshakeClosure*       hs_cl, oop vthread);
   // This version of execute() is used when you have a ThreadListHandle in
   // hand and are using it to protect target. If tlh == nullptr, then we
   // sanity check for a ThreadListHandle somewhere in the caller's context
@@ -86,7 +89,7 @@ class JvmtiRawMonitor;
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
-  friend UnsafeAccessErrorHandshake;
+  friend UnsafeAccessErrorHandshakeClosure;
   friend JavaThread;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
@@ -98,7 +101,6 @@ class HandshakeState {
   Monitor _lock;
   // Set to the thread executing the handshake operation.
   Thread* volatile _active_handshaker;
-
   bool claim_handshake();
   bool possibly_can_process_handshake();
   bool can_process_handshake();
@@ -108,7 +110,7 @@ class HandshakeState {
   HandshakeOperation* get_op();
   void remove_op(HandshakeOperation* op);
 
-  void set_active_handshaker(Thread* thread) { Atomic::store(&_active_handshaker, thread); }
+  void set_active_handshaker(Thread* thread) { AtomicAccess::store(&_active_handshaker, thread); }
 
   class MatchOp {
     HandshakeOperation* _op;
@@ -147,7 +149,7 @@ class HandshakeState {
   };
   ProcessResult try_process(HandshakeOperation* match_op);
 
-  Thread* active_handshaker() const { return Atomic::load(&_active_handshaker); }
+  Thread* active_handshaker() const { return AtomicAccess::load(&_active_handshaker); }
 
   // Support for asynchronous exceptions
  private:

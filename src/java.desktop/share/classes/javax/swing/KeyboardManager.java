@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package javax.swing;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.*;
 import sun.awt.EmbeddedFrame;
 
 /**
@@ -130,13 +129,12 @@ class KeyboardManager {
      }
 
      /**
-       * Find the top focusable Window, Applet, or InternalFrame
+       * Find the top focusable Window, or InternalFrame
        */
-     @SuppressWarnings("removal")
      private static Container getTopAncestor(JComponent c) {
         for(Container p = c.getParent(); p != null; p = p.getParent()) {
             if (p instanceof Window && ((Window)p).isFocusableWindow() ||
-                p instanceof Applet || p instanceof JInternalFrame) {
+                p instanceof JInternalFrame) {
 
                 return p;
             }
@@ -332,7 +330,7 @@ class KeyboardManager {
             return;
         }
         Hashtable<Object, Object> keyMap = containerMap.get(topContainer);
-        if (keyMap!=null) {
+        if (keyMap != null) {
             Vector<?> v = (Vector)keyMap.get(JMenuBar.class);
             if (v != null) {
                 v.removeElement(mb);

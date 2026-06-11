@@ -121,7 +121,7 @@ import jdk.internal.misc.Unsafe;
  *     }
  *
  *     waiters.remove();
- *     // ensure correct interrupt status on return
+ *     // ensure correct interrupted status on return
  *     if (wasInterrupted)
  *       Thread.currentThread().interrupt();
  *   }
@@ -207,7 +207,7 @@ public final class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread upon return.
+     * for example, the interrupted status of the thread upon return.
      *
      * @param blocker the synchronization object responsible for this
      *        thread parking
@@ -252,7 +252,7 @@ public final class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread, or the elapsed time
+     * for example, the interrupted status of the thread, or the elapsed time
      * upon return.
      *
      * @param blocker the synchronization object responsible for this
@@ -300,7 +300,7 @@ public final class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread, or the current time
+     * for example, the interrupted status of the thread, or the current time
      * upon return.
      *
      * @param blocker the synchronization object responsible for this
@@ -360,7 +360,7 @@ public final class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread upon return.
+     * for example, the interrupted status of the thread upon return.
      */
     public static void park() {
         if (Thread.currentThread().isVirtual()) {
@@ -395,7 +395,7 @@ public final class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread, or the elapsed time
+     * for example, the interrupted status of the thread, or the elapsed time
      * upon return.
      *
      * @param nanos the maximum number of nanoseconds to wait
@@ -434,7 +434,7 @@ public final class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread, or the current time
+     * for example, the interrupted status of the thread, or the current time
      * upon return.
      *
      * @param deadline the absolute time, in milliseconds from the Epoch,

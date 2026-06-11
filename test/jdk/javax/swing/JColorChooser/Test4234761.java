@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @key headful
  * @bug 4234761
+ * @key headful
  * @summary RGB values sholdn't be changed in transition to HSB tab
- * @author Oleg Mokhovikov
+ * @library /test/lib
+ * @build jtreg.SkippedException
+ * @run main Test4234761
  */
 
 import java.awt.Color;
@@ -35,11 +37,17 @@ import java.beans.PropertyChangeListener;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JTabbedPane;
+import javax.swing.UIManager;
+
+import jtreg.SkippedException;
 
 public class Test4234761 implements PropertyChangeListener {
     private static final Color COLOR = new Color(51, 51, 51);
 
     public static void main(String[] args) {
+        if (UIManager.getLookAndFeel().getName().contains("GTK")) {
+            throw new SkippedException("Test skipped for GTK");
+        }
         JColorChooser chooser = new JColorChooser(COLOR);
         JDialog dialog = Test4177735.show(chooser);
 

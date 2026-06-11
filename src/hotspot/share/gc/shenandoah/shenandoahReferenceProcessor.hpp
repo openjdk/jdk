@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahMarkRefsSuperClosure;
 class WorkerThreads;
@@ -127,16 +128,20 @@ public:
 
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
 private:
+  static AlwaysClearPolicy _always_clear_policy;
+
   ReferencePolicy* _soft_reference_policy;
 
   ShenandoahRefProcThreadLocal* _ref_proc_thread_locals;
 
-  oop _pending_list;
+  Atomic<oop> _pending_list;
   void* _pending_list_tail; // T*
 
-  volatile uint _iterate_discovered_list_id;
+  Atomic<uint> _iterate_discovered_list_id;
 
   ReferenceProcessorStats _stats;
+
+  ShenandoahGeneration* _generation;
 
   template <typename T>
   bool is_inactive(oop reference, oop referent, ReferenceType type) const;
@@ -170,7 +175,7 @@ private:
   void clean_discovered_list(T* list);
 
 public:
-  ShenandoahReferenceProcessor(uint max_workers);
+  ShenandoahReferenceProcessor(ShenandoahGeneration* generation, uint max_workers);
 
   void reset_thread_locals();
   void set_mark_closure(uint worker_id, ShenandoahMarkRefsSuperClosure* mark_closure);

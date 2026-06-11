@@ -38,10 +38,10 @@ class InstanceKlass;
 class JfrClassTransformer : AllStatic {
  private:
   static InstanceKlass* create_new_instance_klass(InstanceKlass* ik, ClassFileStream* stream, TRAPS);
-  static const Klass* klass_being_redefined(const InstanceKlass* ik, JvmtiThreadState* state);
+  static const InstanceKlass* klass_being_redefined(const InstanceKlass* ik, JvmtiThreadState* state);
 
  public:
-  static const Klass* find_existing_klass(const InstanceKlass* ik, JavaThread* thread);
+  static const InstanceKlass* find_existing_klass(const InstanceKlass* ik, JavaThread* thread);
   static InstanceKlass* create_instance_klass(InstanceKlass*& ik, ClassFileStream* stream, bool is_initial_load, JavaThread* thread);
   static void copy_traceid(const InstanceKlass* ik, const InstanceKlass* new_ik);
   static void transfer_cached_class_file_data(InstanceKlass* ik, InstanceKlass* new_ik, const ClassFileParser& parser, JavaThread* thread);

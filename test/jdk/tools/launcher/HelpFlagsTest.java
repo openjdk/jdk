@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -142,7 +142,6 @@ public class HelpFlagsTest extends TestHelper {
         new ToolHelpSpec("jmod",        1,   1,   1,   0,         1,    0,     2),     // -?, -h, --help, -help accepted but not documented.
         new ToolHelpSpec("jnativescan", 1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
         new ToolHelpSpec("jps",         1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
-        new ToolHelpSpec("jrunscript",  1,   1,   1,   0,         1,    1,     7),     // -?, -h, --help -help, Documents -help
         new ToolHelpSpec("jshell",      1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
         new ToolHelpSpec("jstack",      1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
         new ToolHelpSpec("jstat",       1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help

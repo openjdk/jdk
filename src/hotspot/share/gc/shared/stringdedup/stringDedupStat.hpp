@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ private:
   void report_phase_end(const char* phase, Tickspan* elapsed);
 
   void log_times(const char* prefix) const;
+  void log_statistics() const;
 
 public:
   Stat();
@@ -148,7 +149,7 @@ public:
   void report_active_end();
 
   void add(const Stat* const stat);
-  void log_statistics(bool total) const;
+  void emit_statistics(bool total) const;
 
   static void log_summary(const Stat* last_stat, const Stat* total_stat);
 };

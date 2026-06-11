@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
 #include "memory/reservedSpace.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memBaseline.hpp"
-#include "nmt/nmtCommon.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -140,6 +140,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::remove_released_region((address)addr, size);
     }
   }
@@ -171,6 +172,13 @@ class MemTracker : AllStatic {
       NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
+  }
+
+  static inline bool walk_virtual_memory(VirtualMemoryWalker* walker) {
+    assert_post_init();
+    if (!enabled()) return false;
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    return VirtualMemoryTracker::Instance::walk_virtual_memory(walker);
   }
 
   static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {

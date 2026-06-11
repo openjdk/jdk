@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public abstract class HttpContext {
      *
      * @return a {@code Map} containing the attributes of this context
      */
-    public abstract Map<String,Object> getAttributes() ;
+    public abstract Map<String, Object> getAttributes() ;
 
     /**
      * Returns this context's {@link List} of {@linkplain Filter filters}. This

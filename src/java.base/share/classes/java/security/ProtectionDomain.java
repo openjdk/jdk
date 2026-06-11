@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ public class ProtectionDomain {
      * no longer supported. The {@linkplain Policy#getPolicy current policy}
      * is always a {@code Policy} object that grants no permissions.
      *
-     * @param perm the {code Permission} object to check.
+     * @param perm the {@code Permission} object to check.
      *
      * @return {@code true} if {@code perm} is implied by this
      * {@code ProtectionDomain}.

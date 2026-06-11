@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  * questions.
  */
 package sun.net.ftp.impl;
-
-
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -61,6 +59,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+
 import sun.net.ftp.FtpDirEntry;
 import sun.net.ftp.FtpDirParser;
 import sun.net.ftp.FtpProtocolException;
@@ -68,6 +67,7 @@ import sun.net.ftp.FtpReplyCode;
 import sun.net.util.IPAddressUtil;
 import sun.util.logging.PlatformLogger;
 
+import static sun.net.util.ProxyUtil.copyProxy;
 
 public class FtpClient extends sun.net.ftp.FtpClient {
 
@@ -954,7 +954,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     }
 
     public sun.net.ftp.FtpClient setProxy(Proxy p) {
-        proxy = p;
+        proxy = copyProxy(p);
         return this;
     }
 

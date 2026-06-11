@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
-#ifdef COMPILER2
-#include "opto/c2_globals.hpp"
-#endif
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/tribool.hpp"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 
 // These are flag-matching functions:
 inline bool match_F_R(u2 flags) {
@@ -91,6 +91,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
@@ -144,6 +145,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
@@ -314,6 +316,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaF:
     if (!InlineMathNatives || !UseFMA) return true;
     break;
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
     if (!InlineMathNatives || !InlineIntrinsics) return true;
@@ -484,6 +487,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!UseSHA512Intrinsics) return true;
     break;
   case vmIntrinsics::_double_keccak:
+  case vmIntrinsics::_quad_keccak:
   case vmIntrinsics::_sha3_implCompress:
     if (!UseSHA3Intrinsics) return true;
     break;
@@ -522,6 +526,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_intpoly_montgomeryMult_P256:
   case vmIntrinsics::_intpoly_assign:
     if (!UseIntPolyIntrinsics) return true;
+    break;
+  case vmIntrinsics::_intpoly_mult_25519:
+  case vmIntrinsics::_intpoly_square_25519:
+    if (!UseIntPoly25519Intrinsics) return true;
     break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:

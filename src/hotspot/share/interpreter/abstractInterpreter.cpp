@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,22 @@
  *
  */
 
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -137,6 +136,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
       case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      case vmIntrinsics::_dsinh:             return java_lang_math_sinh;
       case vmIntrinsics::_dtanh:             return java_lang_math_tanh;
       case vmIntrinsics::_dcbrt:             return java_lang_math_cbrt;
       case vmIntrinsics::_dabs:              return java_lang_math_abs;
@@ -199,6 +199,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_sin         : return vmIntrinsics::_dsin;
   case java_lang_math_cos         : return vmIntrinsics::_dcos;
   case java_lang_math_tan         : return vmIntrinsics::_dtan;
+  case java_lang_math_sinh        : return vmIntrinsics::_dsinh;
   case java_lang_math_tanh        : return vmIntrinsics::_dtanh;
   case java_lang_math_cbrt        : return vmIntrinsics::_dcbrt;
   case java_lang_math_abs         : return vmIntrinsics::_dabs;
@@ -257,7 +258,8 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
       case Bytecodes::_invokedynamic: {
         assert(invoke_bc.has_index_u4(code), "sanity");
         int method_index = invoke_bc.get_index_u4(code);
-        return cpool->resolved_indy_entry_at(method_index)->is_resolved();
+        bool is_resolved = cpool->resolved_indy_entry_at(method_index)->is_resolved();
+        return !is_resolved;
       }
       case Bytecodes::_invokevirtual:   // fall-through
       case Bytecodes::_invokeinterface: // fall-through
@@ -304,6 +306,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
+    case java_lang_math_sinh    : tty->print("java_lang_math_sinh"    ); break;
     case java_lang_math_tanh    : tty->print("java_lang_math_tanh"    ); break;
     case java_lang_math_cbrt    : tty->print("java_lang_math_cbrt"    ); break;
     case java_lang_math_abs     : tty->print("java_lang_math_abs"     ); break;
@@ -422,11 +425,11 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
 address AbstractInterpreter::deopt_reexecute_entry(Method* method, address bcp) {
   assert(method->contains(bcp), "just checkin'");
   Bytecodes::Code code   = Bytecodes::java_code_at(method, bcp);
-#if defined(COMPILER1) || INCLUDE_JVMCI
+#if defined(COMPILER1)
   if(code == Bytecodes::_athrow ) {
     return Interpreter::rethrow_exception_entry();
   }
-#endif /* COMPILER1 || INCLUDE_JVMCI */
+#endif // COMPILER1
   return Interpreter::deopt_entry(vtos, 0);
 }
 

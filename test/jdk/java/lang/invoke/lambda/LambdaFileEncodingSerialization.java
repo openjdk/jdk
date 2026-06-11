@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,33 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8248231
  * @summary Test to verify lambda serialization uses the correct UTF-8 encoding
  * @library /test/lib
  * @build jdk.test.lib.JDKToolFinder
  *        jdk.test.lib.process.ProcessTools
- * @run testng LambdaFileEncodingSerialization
+ * @run junit LambdaFileEncodingSerialization
  */
 import java.io.File;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.ArrayList;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
+import org.junit.jupiter.api.Test;
 
 public class LambdaFileEncodingSerialization {
 
     private static final String TEST_NAME = "TestLambdaFileEncodingSerialization";
 
     @Test
-    public static void testDeserializeLambdaEncoding() throws Throwable {
+    public void testDeserializeLambdaEncoding() throws Throwable {
 
         String javac = JDKToolFinder.getTestJDKTool("javac");
         String java = JDKToolFinder.getTestJDKTool("java");

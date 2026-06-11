@@ -42,6 +42,7 @@ static jvmtiCapabilities caps;
 
 static volatile int obj_free = 0;
 static volatile long obj_count = 0;
+static volatile bool check_object_free = true;
 
 static jlong timeout = 0;
 static int user_data = 0;
@@ -50,6 +51,9 @@ static const jlong DEBUGEE_CLASS_TAG = (jlong)1024;
 
 void JNICALL
 ObjectFree(jvmtiEnv *jvmti_env, jlong tag) {
+    if (!check_object_free) {
+        return;
+    }
     NSK_COMPLAIN1("Received unexpected ObjectFree event for an object with tag %ld\n\n", (long)tag);
     nsk_jvmti_setFailStatus();
     obj_free++;
@@ -190,6 +194,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         } else {
             NSK_DISPLAY1("Number of objects IterateOverObjectsReachableFromObject has found: %d\n\n", obj_count);
         }
+
+        // Ignore late ObjectFree notifications after the resurrected object has
+        // been validated. At this point the test has already proven that the
+        // tagged object survived finalization and is reachable through the catcher.
+        check_object_free = false;
     } while (0);
 
     NSK_DISPLAY0("Let debugee to finish\n");

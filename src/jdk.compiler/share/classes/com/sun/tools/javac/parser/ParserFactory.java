@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package com.sun.tools.javac.parser;
 import java.util.Locale;
 
 import com.sun.tools.javac.api.JavacTrees;
-import com.sun.tools.javac.code.DeferredLintHandler;
-import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.tree.DocTreeMaker;
@@ -70,7 +68,6 @@ public class ParserFactory {
     final Options options;
     final ScannerFactory scannerFactory;
     final Locale locale;
-    final DeferredLintHandler deferredLintHandler;
 
     private final JavacTrees trees;
 
@@ -88,17 +85,12 @@ public class ParserFactory {
         this.options = Options.instance(context);
         this.scannerFactory = ScannerFactory.instance(context);
         this.locale = context.get(Locale.class);
-        this.deferredLintHandler = DeferredLintHandler.instance(context);
         this.trees = JavacTrees.instance(context);
     }
 
-    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap) {
-        return newParser(input, keepDocComments, keepEndPos, keepLineMap, false);
-    }
-
-    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
+    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap, boolean parseModuleInfo) {
         Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
-        return new JavacParser(this, lexer, keepDocComments, keepLineMap, keepEndPos, parseModuleInfo);
+        return new JavacParser(this, lexer, keepDocComments, keepLineMap, parseModuleInfo);
     }
 
     public JavacTrees getTrees() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,8 @@ class MacroAssembler: public Assembler {
   void incrementl(ArrayAddress   dst, Register rscratch);
 
   void incrementq(AddressLiteral dst, Register rscratch = noreg);
+
+  void movhlf(XMMRegister dst, XMMRegister src, Register rscratch = noreg);
 
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
@@ -351,8 +353,7 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 
-  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
-  // depending on UseCompressedClassPointers).
+  // Compares the narrow Klass pointer of an object to a given narrow Klass.
   void cmp_klass(Register klass, Register obj, Register tmp);
 
   // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
@@ -443,6 +444,9 @@ class MacroAssembler: public Assembler {
   void sign_extend_short(Register reg);
   void sign_extend_byte(Register reg);
 
+  // Clean up a subword typed value to the representation in compliance with JVMS §2.3
+  void narrow_subword_type(Register reg, BasicType bt);
+
   // Division by power of 2, rounding towards 0
   void division_with_shift(Register reg, int shift_value);
 
@@ -471,9 +475,6 @@ class MacroAssembler: public Assembler {
 
   void push_cont_fastpath();
   void pop_cont_fastpath();
-
-  void inc_held_monitor_count();
-  void dec_held_monitor_count();
 
   DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 
@@ -670,6 +671,8 @@ public:
 
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
+
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
 
   // Debugging
 
@@ -989,6 +992,9 @@ public:
   void push_d(XMMRegister r);
   void pop_d(XMMRegister r);
 
+  void push_ppx(Register src);
+  void pop_ppx(Register dst);
+
   void andpd(XMMRegister dst, XMMRegister    src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, Address        src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
@@ -1175,6 +1181,8 @@ public:
   using Assembler::vmovdqa;
   void vmovdqa(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
   void vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vmovdqa(XMMRegister dst, Address        src, int vector_len);
+  void vmovdqa(Address     dst, XMMRegister    src, int vector_len);
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
@@ -1307,13 +1315,29 @@ public:
   void subss(XMMRegister dst, Address        src) { Assembler::subss(dst, src); }
   void subss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
+  void evucomish(XMMRegister dst, XMMRegister    src) { Assembler::evucomish(dst, src); }
+  void evucomish(XMMRegister dst, Address        src) { Assembler::evucomish(dst, src); }
+  void evucomish(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void evucomxsh(XMMRegister dst, XMMRegister    src) { Assembler::evucomxsh(dst, src); }
+  void evucomxsh(XMMRegister dst, Address        src) { Assembler::evucomxsh(dst, src); }
+  void evucomxsh(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
   void ucomiss(XMMRegister dst, XMMRegister    src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, Address        src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
+  void evucomxss(XMMRegister dst, XMMRegister    src) { Assembler::evucomxss(dst, src); }
+  void evucomxss(XMMRegister dst, Address        src) { Assembler::evucomxss(dst, src); }
+  void evucomxss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
   void ucomisd(XMMRegister dst, XMMRegister    src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, Address        src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void evucomxsd(XMMRegister dst, XMMRegister    src) { Assembler::evucomxsd(dst, src); }
+  void evucomxsd(XMMRegister dst, Address        src) { Assembler::evucomxsd(dst, src); }
+  void evucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister    src);
@@ -1368,6 +1392,7 @@ public:
 
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  using Assembler::evpcmpeqd;
   void evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   // Vector compares
@@ -1858,6 +1883,9 @@ public:
   void mov_metadata(Register dst, Metadata* obj);
   void mov_metadata(Address  dst, Metadata* obj, Register rscratch);
 
+  void mov64(Register dst, int64_t imm64);
+  void mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format);
+
   void movptr(Register     dst, Register       src);
   void movptr(Register     dst, Address        src);
   void movptr(Register     dst, AddressLiteral src);
@@ -2045,20 +2073,21 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
-#ifdef COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   void generate_fill_avx3(BasicType type, Register to, Register value,
                           Register count, Register rtmp, XMMRegister xtmp);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   void vallones(XMMRegister dst, int vector_len);
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register reg_rax, Register tmp, Label& slow);
+  void fast_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow);
+  void fast_unlock(Register obj, Register reg_rax, Register tmp, Label& slow);
 
   void save_legacy_gprs();
   void restore_legacy_gprs();
+  void load_aotrc_address(Register reg, address a);
   void setcc(Assembler::Condition comparison, Register dst);
 };
 

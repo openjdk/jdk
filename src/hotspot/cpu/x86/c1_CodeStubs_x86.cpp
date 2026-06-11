@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   Metadata *m = _method->as_constant_ptr()->as_metadata();
   ce->store_parameter(m, 1);
   ce->store_parameter(_bci, 0);
-  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::counter_overflow_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_counter_overflow_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ jmp(_continuation);
@@ -64,7 +64,7 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   if (_info->deoptimize_on_exception()) {
-    address a = Runtime1::entry_for(C1StubId::predicate_failed_trap_id);
+    address a = Runtime1::entry_for(StubId::c1_predicate_failed_trap_id);
     __ call(RuntimeAddress(a));
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
@@ -78,11 +78,11 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   } else {
     ce->store_parameter(_index->as_jint(), 0);
   }
-  C1StubId stub_id;
+  StubId stub_id;
   if (_throw_index_out_of_bounds_exception) {
-    stub_id = C1StubId::throw_index_exception_id;
+    stub_id = StubId::c1_throw_index_exception_id;
   } else {
-    stub_id = C1StubId::throw_range_check_failed_id;
+    stub_id = StubId::c1_throw_range_check_failed_id;
     ce->store_parameter(_array->as_pointer_register(), 1);
   }
   __ call(RuntimeAddress(Runtime1::entry_for(stub_id)));
@@ -97,7 +97,7 @@ PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
 
 void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  address a = Runtime1::entry_for(C1StubId::predicate_failed_trap_id);
+  address a = Runtime1::entry_for(StubId::c1_predicate_failed_trap_id);
   __ call(RuntimeAddress(a));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
@@ -109,7 +109,7 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
     ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   }
   __ bind(_entry);
-  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::throw_div0_exception_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_throw_div0_exception_id)));
   ce->add_call_info_here(_info);
   DEBUG_ONLY(__ should_not_reach_here());
 }
@@ -117,14 +117,14 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
 
 // Implementation of NewInstanceStub
 
-NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, C1StubId stub_id) {
+NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, StubId stub_id) {
   _result = result;
   _klass = klass;
   _klass_reg = klass_reg;
   _info = new CodeEmitInfo(info);
-  assert(stub_id == C1StubId::new_instance_id                 ||
-         stub_id == C1StubId::fast_new_instance_id            ||
-         stub_id == C1StubId::fast_new_instance_init_check_id,
+  assert(stub_id == StubId::c1_new_instance_id                 ||
+         stub_id == StubId::c1_fast_new_instance_id            ||
+         stub_id == StubId::c1_fast_new_instance_init_check_id,
          "need new_instance id");
   _stub_id   = stub_id;
 }
@@ -157,7 +157,7 @@ void NewTypeArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   assert(_length->as_register() == rbx, "length must in rbx,");
   assert(_klass_reg->as_register() == rdx, "klass_reg must in rdx");
-  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::new_type_array_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_new_type_array_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   assert(_result->as_register() == rax, "result must in rax,");
@@ -180,7 +180,7 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   assert(_length->as_register() == rbx, "length must in rbx,");
   assert(_klass_reg->as_register() == rdx, "klass_reg must in rdx");
-  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::new_object_array_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_new_object_array_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   assert(_result->as_register() == rax, "result must in rax,");
@@ -192,11 +192,11 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   ce->store_parameter(_obj_reg->as_register(),  1);
   ce->store_parameter(_lock_reg->as_register(), 0);
-  C1StubId enter_id;
+  StubId enter_id;
   if (ce->compilation()->has_fpu_code()) {
-    enter_id = C1StubId::monitorenter_id;
+    enter_id = StubId::c1_monitorenter_id;
   } else {
-    enter_id = C1StubId::monitorenter_nofpu_id;
+    enter_id = StubId::c1_monitorenter_nofpu_id;
   }
   __ call(RuntimeAddress(Runtime1::entry_for(enter_id)));
   ce->add_call_info_here(_info);
@@ -207,17 +207,17 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  if (_compute_lock) {
-    // lock_reg was destroyed by fast unlocking attempt => recompute it
-    ce->monitor_address(_monitor_ix, _lock_reg);
-  }
+
+  // lock_reg was destroyed by fast unlocking attempt => recompute it
+  ce->monitor_address(_monitor_ix, _lock_reg);
+
   ce->store_parameter(_lock_reg->as_register(), 0);
   // note: non-blocking leaf routine => no call info needed
-  C1StubId exit_id;
+  StubId exit_id;
   if (ce->compilation()->has_fpu_code()) {
-    exit_id = C1StubId::monitorexit_id;
+    exit_id = StubId::c1_monitorexit_id;
   } else {
-    exit_id = C1StubId::monitorexit_nofpu_id;
+    exit_id = StubId::c1_monitorexit_nofpu_id;
   }
   __ call(RuntimeAddress(Runtime1::entry_for(exit_id)));
   __ jmp(_continuation);
@@ -293,7 +293,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
       address ptr = (address)(_pc_start + i);
       int a_byte = (*ptr) & 0xFF;
       __ emit_int8(a_byte);
-      *ptr = 0x90; // make the site look like a nop
+      *ptr = NativeInstruction::nop_instruction_code; // make the site look like a nop
     }
   }
 
@@ -306,10 +306,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     }
     assert(_obj != noreg, "must be a valid register");
     Register tmp = rax;
-    __ push(tmp);
+    __ push_ppx(tmp);
     __ movptr(tmp, Address(_obj, java_lang_Class::klass_offset()));
     __ cmpptr(r15_thread, Address(tmp, InstanceKlass::init_thread_offset()));
-    __ pop(tmp); // pop it right away, no matter which path we take
+    __ pop_ppx(tmp); // pop it right away, no matter which path we take
     __ jccb(Assembler::notEqual, call_patch);
 
     // access_field patches may execute the patched code before it's
@@ -342,14 +342,46 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 
   address entry = __ pc();
+  // NativeGeneralJump::insert_unconditional will be writing a jmp rel32 at _pc_start over the existing instructions.
+  // There are 2 cases:
+  // - the existing instruction is a mov r64 imm64 from LIR_Assembler::klass2reg_with_patching
+  // - or there are nops there (from higher in this function).
+  // In the first case, since a jmp rel32 is 5-byte long, but a mov r64 imm64 is 10-byte long
+  // (resp. 11 if using a REX2 prefix), so we are left with the last 5 (resp. 6) bytes of the
+  // immediate operand (which are all 0x00). When debugging, this confuses the disassembler
+  // because it tries to recognize an instruction starting immediately after the jmp rel32,
+  // leading to wrong instructions, and possibly failure to disassemble further the whole function.
+  //
+  // To be disassembler-friendly, let's replace the leftover 0x00 with nops.
+  // There are 2 shapes:
+  // - without REX2 prefix: REX prefix | MOV r64
+  // - with REX2 prefix: REX2 prefix | REX prefix | MOV r64
+  // then, we know the 8 bytes after are the immediate operand.
+  if (NativeInstruction* ni = nativeInstruction_at(_pc_start); ni->is_mov_literal64()) {
+    int length_before_immediate = ni->has_rex2_prefix() ? 3 : 2;
+    assert(*(long long int*)(_pc_start + length_before_immediate) == 0, "imm64 must be 0 in mov r64, imm64");
+    // We don't need to replace the NativeGeneralJump::instruction_size first bytes, since insert_unconditional
+    // will overwrite.
+    for (int i = NativeGeneralJump::instruction_size; i < length_before_immediate + BytesPerLong; ++i) {
+      _pc_start[i] = NativeInstruction::nop_instruction_code;
+    }
+  }
+#ifdef ASSERT
+  else {  // and we make sure otherwise, we indeed have just nops.
+    for (int i = 0; i < NativeGeneralJump::instruction_size; ++i) {
+      assert(_pc_start[i] == NativeInstruction::nop_instruction_code, "patching over an unexpected instruction");
+    }
+  }
+#endif
+
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
-    case access_field_id:  target = Runtime1::entry_for(C1StubId::access_field_patching_id); break;
-    case load_klass_id:    target = Runtime1::entry_for(C1StubId::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
-    case load_mirror_id:   target = Runtime1::entry_for(C1StubId::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
-    case load_appendix_id:      target = Runtime1::entry_for(C1StubId::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
+    case access_field_id:  target = Runtime1::entry_for(StubId::c1_access_field_patching_id); break;
+    case load_klass_id:    target = Runtime1::entry_for(StubId::c1_load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
+    case load_mirror_id:   target = Runtime1::entry_for(StubId::c1_load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
+    case load_appendix_id:      target = Runtime1::entry_for(StubId::c1_load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
   __ bind(call_patch);
@@ -379,7 +411,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   ce->store_parameter(_trap_request, 0);
-  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::deoptimize_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_deoptimize_id)));
   ce->add_call_info_here(_info);
   DEBUG_ONLY(__ should_not_reach_here());
 }
@@ -389,9 +421,9 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   address a;
   if (_info->deoptimize_on_exception()) {
     // Deoptimize, do not throw the exception, because it is probably wrong to do it here.
-    a = Runtime1::entry_for(C1StubId::predicate_failed_trap_id);
+    a = Runtime1::entry_for(StubId::c1_predicate_failed_trap_id);
   } else {
-    a = Runtime1::entry_for(C1StubId::throw_null_pointer_exception_id);
+    a = Runtime1::entry_for(StubId::c1_throw_null_pointer_exception_id);
   }
 
   ce->compilation()->implicit_exception_table()->append(_offset, __ offset());

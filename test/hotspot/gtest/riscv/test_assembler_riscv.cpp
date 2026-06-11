@@ -26,13 +26,12 @@
 
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
+#include "cppstdlib/limits.hpp"
 #include "memory/resourceArea.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "runtime/orderAccess.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
-
-#include <limits>
 
 typedef int64_t (*zicond_func)(int64_t cmp1, int64_t cmp2, int64_t dst, int64_t src);
 typedef void (MacroAssembler::*cmov_func)(Register cmp1, Register cmp2, Register dst, Register src);

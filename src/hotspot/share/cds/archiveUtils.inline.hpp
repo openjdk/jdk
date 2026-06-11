@@ -28,9 +28,9 @@
 #include "cds/archiveUtils.hpp"
 
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "oops/array.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/growableArray.hpp"
@@ -80,7 +80,7 @@ Array<T>* ArchiveUtils::archive_ptr_array(GrowableArray<T>* tmp_array) {
   for (int i = 0; i < tmp_array->length(); i++) {
       T ptr = tmp_array->at(i);
       if (ptr != nullptr && !builder->is_in_buffer_space(ptr)) {
-        if (is_dynamic_dump && MetaspaceShared::is_in_shared_metaspace(ptr)) {
+        if (is_dynamic_dump && AOTMetaspace::in_aot_cache(ptr)) {
           // We have a pointer that lives in the dynamic archive but points into
           // the static archive.
         } else {

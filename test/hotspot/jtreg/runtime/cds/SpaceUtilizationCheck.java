@@ -59,7 +59,7 @@ public class SpaceUtilizationCheck {
         Pattern pattern = Pattern.compile("(..) space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
         WhiteBox wb = WhiteBox.getWhiteBox();
         long reserve_alignment = wb.metaspaceSharedRegionAlignment();
-        System.out.println("MetaspaceShared::core_region_alignment() = " + reserve_alignment);
+        System.out.println("AOTMetaspace::core_region_alignment() = " + reserve_alignment);
 
         // Look for output like this. The pattern will only match the first 2 regions, which is what we need to check
         //
@@ -90,7 +90,7 @@ public class SpaceUtilizationCheck {
                     }
                     if (unused > reserve_alignment) {
                         // [1] Check for unused space
-                        throw new RuntimeException("Unused space (" + unused + ") must be smaller than MetaspaceShared::core_region_alignment() (" +
+                        throw new RuntimeException("Unused space (" + unused + ") must be smaller than AOTMetaspace::core_region_alignment() (" +
                                                    reserve_alignment + ")");
                     }
                     if (last_region >= 0 && address != last_region) {
