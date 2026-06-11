@@ -124,8 +124,8 @@ public class TestTruncationWrapFuzzer {
             }
 
             @DontInline
-            public static int opaqueIncr(int i) {
-                return i + 1;
+            public static int opaqueSum(int i, int j) {
+                return i + j + 1;
             }
             """
         ));
@@ -333,8 +333,9 @@ public class TestTruncationWrapFuzzer {
     private static final String[] LOOP_SHAPES = new String[] {
         """
         // Loop Shape: For
-        for (int i = init; #exitCheck; #ivMutation) {
-            sum = opaqueIncr(sum);
+        int i;
+        for (i = init; #exitCheck; #ivMutation) {
+            sum = opaqueSum(sum, #addValue);
             if (opaqueCheck()) { break; }
         }
         """,
@@ -342,7 +343,7 @@ public class TestTruncationWrapFuzzer {
         // Loop Shape: While:
         int i = init;
         while (#exitCheck) {
-            sum = opaqueIncr(sum);
+            sum = opaqueSum(sum, #addValue);
             if (opaqueCheck()) { break; }
             #ivMutation;
         }
@@ -351,7 +352,7 @@ public class TestTruncationWrapFuzzer {
         // Loop Shape: Do-While:
         int i = init;
         do {
-            sum = opaqueIncr(sum);
+            sum = opaqueSum(sum, #addValue);
             if (opaqueCheck()) { break; }
             #ivMutation;
         } while (#exitCheck);
@@ -361,7 +362,7 @@ public class TestTruncationWrapFuzzer {
         int i = init;
         if (!(#exitCheck)) { return sum; }
         do {
-            sum = opaqueIncr(sum);
+            sum = opaqueSum(sum, #addValue);
             if (opaqueCheck()) { break; }
             #ivMutation;
         } while (#exitCheck);
@@ -379,6 +380,7 @@ public class TestTruncationWrapFuzzer {
 
         private final String ivMutation = randomIVMutation();
         private final String loopShape = randomLoopShape();
+        private final String addValue = RANDOM.nextBoolean() ? "0" : "i";
 
         private final Comparison exitCheck = new Comparison("i", Comparator.random(), "limit").permuteRandom();
 
@@ -387,6 +389,7 @@ public class TestTruncationWrapFuzzer {
             let("limit", limit),
             let("ivMutation", ivMutation),
             let("exitCheck", exitCheck),
+            let("addValue", addValue),
             """
             static int #methodName(int unused0, int unused1) {
                 opaqueReset();
@@ -396,7 +399,7 @@ public class TestTruncationWrapFuzzer {
             """,
             loopShape,
             """
-                return sum;
+                return sum + #addValue;
             }
             """
         ));
@@ -442,6 +445,7 @@ public class TestTruncationWrapFuzzer {
     static class TestMethodGeneratorVars implements TestMethodGenerator {
         private final String ivMutation  = randomIVMutation();
         private final String loopShape   = randomLoopShape();
+        private final String addValue = RANDOM.nextBoolean() ? "0" : "i";
         private final String modifyInit  = randomModifyValue("init");
         private final String modifyLimit = randomModifyValue("limit");
         private final String extraCheck  = randomExtraCheck();
@@ -451,6 +455,7 @@ public class TestTruncationWrapFuzzer {
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("ivMutation", ivMutation),
             let("exitCheck", exitCheck),
+            let("addValue", addValue),
             """
             static int #methodName(int init, int limit) {
                 opaqueReset();
@@ -461,7 +466,7 @@ public class TestTruncationWrapFuzzer {
             extraCheck,  // extra CmpI/CmpU dominating the loop, might constrain entry value.
             loopShape,
             """
-                return sum;
+                return sum + #addValue;
             }
             """
         ));

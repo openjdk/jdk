@@ -181,8 +181,13 @@ public class TestHasTruncationWrap {
     // ---- More general tests, Checking that truncated iv loops become CountedLoops ---------
 
     @DontInline
-    public static int dontinline(int i) {
+    public static int opaqueSum(int i) {
         return i + 1;
+    }
+
+    @DontInline
+    public static int opaqueSum(int i, int j) {
+        return i + j + 1;
     }
 
     public static int lo = 11;
@@ -204,7 +209,7 @@ public class TestHasTruncationWrap {
         int limit = hi;
         int sum = 0;
         for (int i = init; i < limit; i++) {
-            sum = dontinline(sum);
+            sum = opaqueSum(sum);
         }
         return sum;
     }
@@ -225,7 +230,7 @@ public class TestHasTruncationWrap {
         int limit = hi;
         int sum = 0;
         for (int i = init; i != limit; i++) {
-            sum = dontinline(sum);
+            sum = opaqueSum(sum);
         }
         return sum;
     }
@@ -246,7 +251,7 @@ public class TestHasTruncationWrap {
         short limit = (short)hi;
         int sum = 0;
         for (short i = init; i < limit; i++) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
         }
         return sum;
     }
@@ -267,7 +272,7 @@ public class TestHasTruncationWrap {
         short limit = (short)lo;
         int sum = 0;
         for (short i = init; i > limit; i--) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
         }
         return sum;
     }
@@ -289,7 +294,7 @@ public class TestHasTruncationWrap {
         short limit = (short)hi;
         int sum = 0;
         for (short i = init; i < limit; i+=2) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
         }
         return sum;
     }
@@ -311,7 +316,7 @@ public class TestHasTruncationWrap {
         short limit = (short)lo;
         int sum = 0;
         for (short i = init; i > limit; i-=2) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
         }
         return sum;
     }
@@ -337,7 +342,7 @@ public class TestHasTruncationWrap {
         //    we get init in [0..99], which is in short range.
         int sum = 0;
         for (int i = init; i < limit; i = (short)(i+1)) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             // The backedge value of i is also far
             // enough from short boundaries, because of
             // the loop exit check:
@@ -368,7 +373,7 @@ public class TestHasTruncationWrap {
         //    we get init in [0..99], which is in short range.
         int sum = 0;
         for (int i = init; i != limit; i = (short)(i+1)) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             // The backedge value of i is also far
             // enough from short boundaries, because of
             // the loop exit check:
@@ -401,7 +406,7 @@ public class TestHasTruncationWrap {
         // -> and intersected with its previous type [0..max_int]
         //    we get init in [0..99], which is in short range.
         for (int i = init; i < limit; i = (short)(i+1)) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
         }
         return sum;
     }
@@ -431,7 +436,7 @@ public class TestHasTruncationWrap {
         int init  = Math.min(hi, 100); // limit in [min_int..100]
         int sum = 0;
         for (int i = init; i > limit; i = (short)(i-1)) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
         }
         return sum;
     }
@@ -455,7 +460,7 @@ public class TestHasTruncationWrap {
 	// No useful CmpI before the loop.
 	// And the CmpI of the for limit is NEQ, so not useful either.
         for (int i = init; i != limit; i = (short)(i+1)) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
         }
         return sum;
     }
@@ -481,7 +486,7 @@ public class TestHasTruncationWrap {
         // -> and intersected with its previous type [0..max_int]
         //    we get init in [0..99_999], which is NOT in short range.
         for (int i = init; i < limit; i = (short)(i+1)) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             // Also: the backedge range is not good because
             // the exit check is not strong enough for short:
             //   i < limit <= 100_000
@@ -511,7 +516,7 @@ public class TestHasTruncationWrap {
         int sum = 0;
         int i = init;
         do {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             i = (short)(i+1);
         } while (i < limit); // exit check at the end.
         return sum;
@@ -540,7 +545,7 @@ public class TestHasTruncationWrap {
         int sum = 0;
         int i = init;
         do {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             i = (short)(i+1);
         } while (i != limit); // exit check at the end, but with NEQ.
         return sum;
@@ -578,7 +583,7 @@ public class TestHasTruncationWrap {
         int i = init;
         if (i == limit) { return sum; } // additional "exit check" before loop.
         do {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             i = (short)(i+1);
         } while (i != limit); // exit check at the end, but with NEQ.
         return sum;
@@ -608,7 +613,7 @@ public class TestHasTruncationWrap {
         int sum = 0;
         int i = init;
         while (i != limit) {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             i = (short)(i+1);
         }
         return sum;
@@ -633,7 +638,7 @@ public class TestHasTruncationWrap {
         int sum = 0;
         int i = init;
         do {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             i = (short)(i+1);
         } while (i < limit); // exit check at the end.
         return sum;
@@ -659,7 +664,7 @@ public class TestHasTruncationWrap {
         int sum = 0;
         int i = init;
         do {
-            sum = dontinline(sum); // work to keep loop alive
+            sum = opaqueSum(sum); // work to keep loop alive
             i = (short)(i+1);
         } while (i != limit); // exit check at the end.
         return sum;
@@ -697,7 +702,7 @@ public class TestHasTruncationWrap {
         int limit = Math.min(hi, 100); // good bounds
         int sum = 0;
         for (int i = init; i < limit; i = (short)(i+1)) {
-            sum = dontinline(sum);
+            sum = opaqueSum(sum, i);
             if (opaqueCheck()) { break; }
         }
         return sum;
@@ -720,7 +725,7 @@ public class TestHasTruncationWrap {
         int limit = Math.min(hi, 100_000); // bad bounds
         int sum = 0;
         for (int i = init; i < limit; i = (short)(i+1)) {
-            sum = dontinline(sum);
+            sum = opaqueSum(sum, i);
             if (opaqueCheck()) { break; }
         }
         return sum;
@@ -729,7 +734,7 @@ public class TestHasTruncationWrap {
     // TODO: ensure coverage
     // - char, byte and short truncation
     // - check for IRNode.COUNTED_LOOP
-    // - dontinline call to prevent empty loop
+    // - opaqueSum call to prevent empty loop
     // - increment and decrement cases, non-unit stride
     // - Cases with and without compare before loop: positive and negative tests
 }
