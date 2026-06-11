@@ -125,8 +125,8 @@ ReservedSpace MemoryReserver::reserve_memory_special(char* requested_address,
                                                      size_t size,
                                                      size_t alignment,
                                                      size_t page_size,
-                                                     MemTag mem_tag,
-                                                     bool exec) {
+                                                     bool exec,
+                                                     MemTag mem_tag) {
   log_trace(pagesize)("Attempt special mapping: size: " EXACTFMT ", alignment: " EXACTFMT,
                       EXACTFMTARGS(size),
                       EXACTFMTARGS(alignment));
@@ -173,7 +173,7 @@ ReservedSpace MemoryReserver::reserve(char* requested_address,
     // explicit large pages and these have to be committed up front to ensure
     // no reservations are lost.
     do {
-      ReservedSpace reserved = reserve_memory_special(requested_address, size, alignment, page_size, mem_tag, executable);
+      ReservedSpace reserved = reserve_memory_special(requested_address, size, alignment, page_size, executable, mem_tag);
       if (reserved.is_reserved()) {
         // Successful reservation using large pages.
         return reserved;
