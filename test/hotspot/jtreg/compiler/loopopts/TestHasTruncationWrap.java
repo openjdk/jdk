@@ -420,7 +420,6 @@ public class TestHasTruncationWrap {
     //   if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
     // I don't think this is intentional, because we have handling for positive and
     // negative stride in CountedLoopConverter::has_truncation_wrap.
-    // TODO: file RFE
     public static int testIRShort3b_gold = testIRShort3b();
 
     @Run(test = "testIRShort3b")
@@ -997,8 +996,7 @@ public class TestHasTruncationWrap {
         if (val != testIRShift16_gold) { throw new RuntimeException("wrong value: " + testIRShift16_gold + " vs " + val); }
     }
 
-    // TODO: why does this fail to compile?
-    @Test(allowNotCompilable = true)
+    @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIRShift16() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
@@ -1050,7 +1048,10 @@ public class TestHasTruncationWrap {
     // testIRShift8: 24-bit loop, and range in 24-bit range via CmpI before loop (for loop limit).
     // Note: this shift value is strange, we probably wanted to implement byte truncation
     //       with shift=24, but instead we have 24-bit signed truncation.
-    // TODO: why does this not work?
+    // Note2: this pattern would have been supported by TruncatedIncrement::build, but it gets
+    //        modified by LShiftINode::Ideal:
+    //          RShiftI(AddI(LShiftI(Phi, 8), 256), 8)
+    //        The same is explicitly excluded for shift 16, to preserve short/byte idioms.
     public static int testIRShift8_gold = testIRShift8();
 
     @Run(test = "testIRShift8")
@@ -1060,7 +1061,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIRShift8() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -1080,8 +1081,10 @@ public class TestHasTruncationWrap {
     }
 
     // testIRShift8BadBounds: 24-bit loop, with a CmpI, but the limit ranges are bad.
-    // TODO: I'm not so sure about the bad bounds argument here...
-    // Why can't 1_000 fit in 24-bit?
+    // Note: same issues as for testIRShift8.
+    // Note2: the range argument seems a bit strange here, but it turns out that
+    //        TruncatedIncrement::build maps shift=8 to BYTE, which just shows that
+    //        the implementation confused the shift=24 with shift=8.
     public static int testIRShift8BadBounds_gold = testIRShift8BadBounds();
 
     @Run(test = "testIRShift8BadBounds")
