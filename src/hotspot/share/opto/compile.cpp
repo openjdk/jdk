@@ -4611,6 +4611,9 @@ void Compile::log_inline_id(CallGenerator* cg) {
 }
 
 void Compile::log_inline_failure(const char* msg) {
+  if (inline_printer()->is_suspended()) {
+    return;
+  }
   if (C->log() != nullptr) {
     C->log()->inline_fail(msg);
   }

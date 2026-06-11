@@ -437,6 +437,21 @@ CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* cal
   return cg;
 }
 
+class LateInlineVectorFallbackCallGenerator : public LateInlineCallGenerator {
+ public:
+  LateInlineVectorFallbackCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
+    LateInlineCallGenerator(method, inline_cg) {}
+
+  virtual bool is_vector_late_inline_fallback() const { return true; }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    LateInlineVectorFallbackCallGenerator* cg =
+        new LateInlineVectorFallbackCallGenerator(method(), _inline_cg);
+    cg->set_call_node(call->as_CallStaticJava());
+    return cg;
+  }
+};
+
 class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
  private:
   CallGenerator* _fallback_cg;
@@ -451,7 +466,8 @@ class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
 
   virtual JVMState* generate(JVMState* jvms) {
     JVMState* new_jvms = LateInlineCallGenerator::generate(jvms);
-    CallGenerator* fallback = CallGenerator::for_late_inline(method(), _fallback_cg)->with_call_node(call_node());
+    CallGenerator* fallback =
+        (new LateInlineVectorFallbackCallGenerator(method(), _fallback_cg))->with_call_node(call_node());
     Compile::current()->add_vector_late_inline(fallback);
     return new_jvms;
   }
@@ -730,6 +746,8 @@ void CallGenerator::do_late_inline_helper() {
       C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded (boxing method)");
     } else if (is_vector_reboxing_late_inline()) {
       C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded (vector reboxing method)");
+    } else if (is_vector_late_inline_fallback()) {
+      C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded (vector intrinsic fallback)");
     } else {
       C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded");
     }

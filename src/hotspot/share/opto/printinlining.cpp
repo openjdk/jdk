@@ -35,6 +35,10 @@ outputStream* InlinePrinter::record(ciMethod* callee, JVMState* state, InliningR
   if (!is_enabled()) {
     return &_nullStream;
   }
+  if (is_suspended()) {
+    locate(state, callee);
+    return &_nullStream;
+  }
   outputStream* stream = locate(state, callee)->add(result);
   if (msg != nullptr) {
     stream->print("%s", msg);
