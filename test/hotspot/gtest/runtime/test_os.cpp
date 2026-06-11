@@ -1200,16 +1200,22 @@ TEST_VM(os, map_unmap_memory) {
 
 TEST_VM(os, map_memory_to_file_aligned) {
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const size_t size = strlen(letters) + 1;
+  const size_t content_size = strlen(letters) + 1;
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity, 1 * M };
 
   int fd = os::open("map_memory_to_file.txt", O_RDWR | O_CREAT, 0666);
   EXPECT_TRUE(fd > 0);
-  EXPECT_TRUE(os::write(fd, letters, size));
+  ASSERT_TRUE(os::write(fd, letters, content_size));
 
-  char* result = os::map_memory_to_file_aligned(os::vm_allocation_granularity(), os::vm_allocation_granularity(), fd, mtTest);
-  ASSERT_NOT_NULL(result);
-  EXPECT_EQ(strcmp(letters, result), 0);
-  os::unmap_memory(result, os::vm_allocation_granularity());
+  const size_t size = granularity;
+  for (size_t alignment : alignments) {
+    char* result = os::map_memory_to_file_aligned(size, alignment, fd, mtTest);
+    ASSERT_NOT_NULL(result) << "Mapping failed for alignment=" << alignment;
+    EXPECT_TRUE(is_aligned(result, alignment)) << "Failed to aligned to " << alignment;
+    EXPECT_EQ(strcmp(letters, result), 0) << "Text mismatch at alignment=" << alignment;
+    os::unmap_memory(result, size);
+  }
   ::close(fd);
 }
 
@@ -1219,4 +1225,37 @@ TEST_VM(os, dll_load_null_error_buf) {
   // This should not crash.
   void* lib = os::dll_load("NoSuchLib", nullptr, 0);
   ASSERT_NULL(lib);
+}
+
+TEST_VM(os, reserve_memory_aligned_basic) {
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity };
+
+  for (size_t alignment : alignments) {
+    const size_t size = alignment;
+    char* result = os::reserve_memory_aligned(size, alignment, mtTest);
+    ASSERT_NE(result, (char*)nullptr) << "reserve_memory_aligned failed for alignment=" << alignment;
+    EXPECT_TRUE(is_aligned(result, alignment)) << "Result " << result << " not aligned to " << alignment;
+
+    ASSERT_TRUE(os::commit_memory(result, size, false));
+    memset(result, 0xCD, size);
+    EXPECT_EQ((unsigned char)result[0], 0xCD);
+
+    os::release_memory(result, size);
+  }
+}
+
+TEST_VM(os, reserve_memory_aligned_large) {
+  const size_t alignment = 1 * M;
+  const size_t size = alignment;
+
+  char* result = os::reserve_memory_aligned(size, alignment, mtTest);
+  ASSERT_NE(result, (char*)nullptr);
+  EXPECT_TRUE(is_aligned(result, alignment));
+
+  ASSERT_TRUE(os::commit_memory(result, size, false));
+  memset(result, 0xEF, size);
+  EXPECT_EQ((unsigned char)result[size - 1], 0xEF);
+
+  os::release_memory(result, size);
 }

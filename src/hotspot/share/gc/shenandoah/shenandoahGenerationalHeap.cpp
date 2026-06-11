@@ -347,7 +347,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   oop copy_val = cast_to_oop(copy);
 
   // Update the age of the evacuated object
-  if (TO_GENERATION == YOUNG_GENERATION && is_aging_cycle()) {
+  if (TO_GENERATION == YOUNG_GENERATION) {
     increase_object_age(copy_val, from_region_age + 1);
   }
 
@@ -975,7 +975,7 @@ public:
         // There have been allocations in this region since the start of the cycle.
         // Any objects new to this region must not assimilate elevated age.
         r->reset_age();
-      } else if (ShenandoahGenerationalHeap::heap()->is_aging_cycle()) {
+      } else {
         r->increment_age();
       }
     }

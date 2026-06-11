@@ -28,7 +28,6 @@
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
@@ -512,151 +511,6 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
   __ bind(done);
 }
 
-// Special Shenandoah CAS implementation that handles false negatives
-// due to concurrent evacuation.
-void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
-                                                Register res, Address addr, Register oldval, Register newval,
-                                                bool exchange, Register tmp1, Register tmp2) {
-  assert(ShenandoahCASBarrier, "Should only be used when CAS barrier is enabled");
-  assert(oldval == rax, "must be in rax for implicit use in cmpxchg");
-  assert_different_registers(oldval, tmp1, tmp2);
-  assert_different_registers(newval, tmp1, tmp2);
-
-  Label L_success, L_failure;
-
-  // Remember oldval for retry logic below
-  if (UseCompressedOops) {
-    __ movl(tmp1, oldval);
-  } else {
-    __ movptr(tmp1, oldval);
-  }
-
-  // Step 1. Fast-path.
-  //
-  // Try to CAS with given arguments. If successful, then we are done.
-
-  if (UseCompressedOops) {
-    __ lock();
-    __ cmpxchgl(newval, addr);
-  } else {
-    __ lock();
-    __ cmpxchgptr(newval, addr);
-  }
-  __ jcc(Assembler::equal, L_success);
-
-  // Step 2. CAS had failed. This may be a false negative.
-  //
-  // The trouble comes when we compare the to-space pointer with the from-space
-  // pointer to the same object. To resolve this, it will suffice to resolve
-  // the value from memory -- this will give both to-space pointers.
-  // If they mismatch, then it was a legitimate failure.
-  //
-  // Before reaching to resolve sequence, see if we can avoid the whole shebang
-  // with filters.
-
-  // Filter: when offending in-memory value is null, the failure is definitely legitimate
-  __ testptr(oldval, oldval);
-  __ jcc(Assembler::zero, L_failure);
-
-  // Filter: when heap is stable, the failure is definitely legitimate
-  const Register thread = r15_thread;
-  Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
-  __ jcc(Assembler::zero, L_failure);
-
-  if (UseCompressedOops) {
-    __ movl(tmp2, oldval);
-    __ decode_heap_oop(tmp2);
-  } else {
-    __ movptr(tmp2, oldval);
-  }
-
-  // Decode offending in-memory value.
-  // Test if-forwarded
-  __ testb(Address(tmp2, oopDesc::mark_offset_in_bytes()), markWord::marked_value);
-  __ jcc(Assembler::noParity, L_failure);  // When odd number of bits, then not forwarded
-  __ jcc(Assembler::zero, L_failure);      // When it is 00, then also not forwarded
-
-  // Load and mask forwarding pointer
-  __ movptr(tmp2, Address(tmp2, oopDesc::mark_offset_in_bytes()));
-  __ shrptr(tmp2, 2);
-  __ shlptr(tmp2, 2);
-
-  if (UseCompressedOops) {
-    __ decode_heap_oop(tmp1); // decode for comparison
-  }
-
-  // Now we have the forwarded offender in tmp2.
-  // Compare and if they don't match, we have legitimate failure
-  __ cmpptr(tmp1, tmp2);
-  __ jcc(Assembler::notEqual, L_failure);
-
-  // Step 3. Need to fix the memory ptr before continuing.
-  //
-  // At this point, we have from-space oldval in the register, and its to-space
-  // address is in tmp2. Let's try to update it into memory. We don't care if it
-  // succeeds or not. If it does, then the retrying CAS would see it and succeed.
-  // If this fixup fails, this means somebody else beat us to it, and necessarily
-  // with to-space ptr store. We still have to do the retry, because the GC might
-  // have updated the reference for us.
-
-  if (UseCompressedOops) {
-    __ encode_heap_oop(tmp2); // previously decoded at step 2.
-  }
-
-  if (UseCompressedOops) {
-    __ lock();
-    __ cmpxchgl(tmp2, addr);
-  } else {
-    __ lock();
-    __ cmpxchgptr(tmp2, addr);
-  }
-
-  // Step 4. Try to CAS again.
-  //
-  // This is guaranteed not to have false negatives, because oldval is definitely
-  // to-space, and memory pointer is to-space as well. Nothing is able to store
-  // from-space ptr into memory anymore. Make sure oldval is restored, after being
-  // garbled during retries.
-  //
-  if (UseCompressedOops) {
-    __ movl(oldval, tmp2);
-  } else {
-    __ movptr(oldval, tmp2);
-  }
-
-  if (UseCompressedOops) {
-    __ lock();
-    __ cmpxchgl(newval, addr);
-  } else {
-    __ lock();
-    __ cmpxchgptr(newval, addr);
-  }
-  if (!exchange) {
-    __ jccb(Assembler::equal, L_success); // fastpath, peeking into Step 5, no need to jump
-  }
-
-  // Step 5. If we need a boolean result out of CAS, set the flag appropriately.
-  // and promote the result. Note that we handle the flag from both the 1st and 2nd CAS.
-  // Otherwise, failure witness for CAE is in oldval on all paths, and we can return.
-
-  if (exchange) {
-    __ bind(L_failure);
-    __ bind(L_success);
-  } else {
-    assert(res != noreg, "need result register");
-
-    Label exit;
-    __ bind(L_failure);
-    __ xorptr(res, res);
-    __ jmpb(exit);
-
-    __ bind(L_success);
-    __ movptr(res, 1);
-    __ bind(exit);
-  }
-}
-
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
@@ -926,7 +780,7 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
                                              Register src, bool src_narrow,
                                              Register tmp) {
 
-  ShenandoahBarrierStubC2::store_pre(masm, node, tmp, dst, noreg, noreg, dst_narrow);
+  ShenandoahBarrierStubC2::store_pre(masm, node, dst, tmp, noreg, noreg, dst_narrow);
 
   // Need to encode into tmp, because we cannot clobber src.
   if (dst_narrow && !src_narrow) {
@@ -961,7 +815,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
   assert_different_registers(oldval, tmp, addr.base(), addr.index());
   assert_different_registers(newval, tmp, addr.base(), addr.index());
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp, addr, noreg, noreg, narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, tmp, noreg, noreg, narrow);
 
   // CAS!
   __ lock();
@@ -982,7 +836,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register newval, Address addr, Register tmp, bool narrow) {
   assert_different_registers(newval, tmp, addr.base(), addr.index());
 
-  ShenandoahBarrierStubC2::load_store_pre(masm, node, tmp, addr, noreg, noreg, narrow);
+  ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, tmp, noreg, noreg, narrow);
 
   if (narrow) {
     __ xchgl(newval, addr);

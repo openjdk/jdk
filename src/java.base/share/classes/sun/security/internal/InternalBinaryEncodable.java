@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,17 @@
  * questions.
  */
 
-package java.security;
+package sun.security.internal;
 
-import jdk.internal.javac.PreviewFeature;
-
-import javax.crypto.EncryptedPrivateKeyInfo;
-import java.security.cert.X509CRL;
-import java.security.cert.X509Certificate;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.BinaryEncodable;
 
 /**
- * This interface is implemented by security API classes that contain
- * binary-encodable key or certificate material.
- * These APIs or their subclasses typically provide methods to convert
- * their instances to and from byte arrays in the Distinguished
- * Encoding Rules (DER) format.
- *
- * @see AsymmetricKey
- * @see KeyPair
- * @see PKCS8EncodedKeySpec
- * @see X509EncodedKeySpec
- * @see EncryptedPrivateKeyInfo
- * @see X509Certificate
- * @see X509CRL
- * @see PEM
- *
- * @since 25
+ * This class is a non-public subtype of BinaryEncodable.  This type
+ * allows the BinaryEncodable list of permitted subtypes to change
+ * over time without causing pre-existing switches to fail because of an
+ * unrecognized subtype.
  */
 
-@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-public sealed interface DEREncodable permits AsymmetricKey, KeyPair,
-    PKCS8EncodedKeySpec, X509EncodedKeySpec, EncryptedPrivateKeyInfo,
-    X509Certificate, X509CRL, PEM {
+public final class InternalBinaryEncodable implements BinaryEncodable {
+    private InternalBinaryEncodable() {}
 }
