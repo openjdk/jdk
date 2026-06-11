@@ -42,7 +42,8 @@ class MemoryReserver : AllStatic {
                                               size_t size,
                                               size_t alignment,
                                               size_t page_size,
-                                              bool exec);
+                                              bool exec,
+                                              MemTag mem_tag);
 
 public:
   // Final destination
