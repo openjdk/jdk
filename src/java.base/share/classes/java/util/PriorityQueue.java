@@ -226,7 +226,13 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     public PriorityQueue(Collection<? extends E> c,
                          Comparator<? super E> comparator) {
         this.comparator = comparator;
-        initFromCollection(c);
+        if (c instanceof SortedSet<? extends E> ss && comparator == ss.comparator()) {
+            initElementsFromCollection(ss);
+        } else if (c instanceof PriorityQueue<? extends E> pq && comparator == pq.comparator()) {
+            initFromPriorityQueue(pq);
+        } else {
+            initFromCollection(c);
+        }
     }
 
     /**

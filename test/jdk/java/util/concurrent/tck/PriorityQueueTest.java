@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.TreeSet;
 
 import junit.framework.Test;
 
@@ -195,6 +196,60 @@ public class PriorityQueueTest extends JSR166TestCase {
         @SuppressWarnings("unchecked")
         PriorityQueue<Item> q2 = new PriorityQueue<>(SIZE, cmp);
         q2.addAll(Arrays.asList(items));
+        for (int i = 0; i < SIZE; ++i)
+            mustEqual(q1.poll(), q2.poll());
+    }
+
+    /**
+     * Initializing from null Collection throws NPE
+     */
+    public void testConstructor10() {
+        try {
+            new PriorityQueue<Item>((Collection<Item>)null, new MyReverseComparator());
+            shouldThrow();
+        } catch (NullPointerException success) {}
+    }
+
+    /**
+     * Initializing from PriorityQueue and its comparator
+     */
+    public void testConstructor11() {
+        Item[] items = seqItems(SIZE);
+        MyReverseComparator cmp = new MyReverseComparator();
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q1 = new PriorityQueue<>(cmp);
+        q1.addAll(Arrays.asList(items));
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q2 = new PriorityQueue<>(q1, q1.comparator());
+        for (int i = 0; i < SIZE; ++i)
+            mustEqual(q1.poll(), q2.poll());
+    }
+
+    /**
+     * Initializing from SortedSet and its comparator
+     */
+    public void testConstructor12() {
+        Item[] items = seqItems(SIZE);
+        MyReverseComparator cmp = new MyReverseComparator();
+        @SuppressWarnings("unchecked")
+        TreeSet<Item> s = new TreeSet<>(cmp);
+        s.addAll(Arrays.asList(items));
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q = new PriorityQueue<>(s, s.comparator());
+        for (int i = 0; i < SIZE; ++i)
+            mustEqual(q.poll(), s.removeFirst());
+    }
+
+    /**
+     * Initializing with null comparator
+     */
+    public void testConstructor13() {
+        Item[] items = seqItems(SIZE);
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q1 = new PriorityQueue<>((Comparator<Item>) null);
+        q1.addAll(Arrays.asList(items));
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q2 = new PriorityQueue<>(Arrays.asList(items), null);
         for (int i = 0; i < SIZE; ++i)
             mustEqual(q1.poll(), q2.poll());
     }
