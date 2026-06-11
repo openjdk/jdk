@@ -21,24 +21,18 @@
  * questions.
  */
 
-//
-// SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.
-//
-
 /*
  * @test
  * @bug 4980882 8207250 8237474 8386159
  * @summary SSLEngine's client/server mode can't be changed once
  *          handshaking has begun
  * @library /javax/net/ssl/templates
- * @run main/othervm EngineEnforceUseClientMode
  * @author Brad R. Wetmore
  */
 
 import javax.net.ssl.*;
 
-public class EngineEnforceUseClientMode extends SSLEngineTemplate {
+public class EngineTestClientMode extends SSLEngineTemplate {
 
     private static boolean debug = Boolean.getBoolean("test.debug");
 
@@ -161,7 +155,7 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
 
     public static void main(String args[]) throws Exception {
 
-        EngineEnforceUseClientMode test = new EngineEnforceUseClientMode();
+        EngineTestClientMode test = new EngineTestClientMode();
         test.createAdditionalSSLEngines();
         test.runTest();
 
@@ -174,7 +168,7 @@ public class EngineEnforceUseClientMode extends SSLEngineTemplate {
      * **********************************************************
      */
 
-    public EngineEnforceUseClientMode() throws Exception {
+    public EngineTestClientMode() throws Exception {
         super();
     }
 
