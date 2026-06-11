@@ -729,6 +729,16 @@ void CallGenerator::do_late_inline_helper() {
     }
     C->set_inlining_progress(true);
     C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
+    Node* result_proj = call->proj_out_or_null(TypeFunc::Parms);
+    if (C->inlining_incrementally() && result_proj != nullptr && UseNewCode) {
+      for (DUIterator_Fast imax, i = result_proj->fast_outs(imax); i < imax; i++) {
+        Node* use = result_proj->fast_out(i);
+        if (use->is_AddP() && use->in(AddPNode::Offset) == result_proj) {
+          C->set_do_cleanup(true);
+          break;
+        }
+      }
+    }
     kit.replace_call(call, result, true, do_asserts);
   }
 }
