@@ -5396,7 +5396,7 @@ class StubGenerator: public StubCodeGenerator {
   // in base using post-increment addressing
   template<int N>
   void vs_ldpq_post(const VSeq<N>& v, Register base) {
-    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ ldpq(v[i], v[i+1], __ post(base, 32));
     }
@@ -5407,7 +5407,7 @@ class StubGenerator: public StubCodeGenerator {
   // supplied in base using post-increment addressing
   template<int N>
   void vs_stpq_post(const VSeq<N>& v, Register base) {
-    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ stpq(v[i], v[i+1], __ post(base, 32));
     }
@@ -5418,7 +5418,7 @@ class StubGenerator: public StubCodeGenerator {
   // using post-increment addressing.
   template<int N>
   void vs_ld2_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
-    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ ld2(v[i], v[i+1], T, __ post(base, 32));
     }
@@ -5429,7 +5429,7 @@ class StubGenerator: public StubCodeGenerator {
   // post-increment addressing.
   template<int N>
   void vs_st2_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
-    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ st2(v[i], v[i+1], T, __ post(base, 32));
     }
