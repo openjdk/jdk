@@ -30,7 +30,11 @@ import jdk.test.lib.Asserts;
 /**
  * @test
  * @bug 8374783
- * @summary TBD
+ * @summary Test that address type refinements after an incremental inlining
+ *          step are propagated by IGVN before the next step. Failing to
+ *          propagate such refinements could lead to slice mismatches between
+ *          field-derived and IGVN-recorded address types when parsing bytecode
+ *          in subsequent inlining steps.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main ${test.main.class}
@@ -83,6 +87,10 @@ public class TestLateInliningWithSliceNarrowing {
         return a.f;
     }
 
+    // Test that when lateStore() is inlined, the IGVN-recorded type of the
+    // accessed memory address (captured by an AddP) has been updated to reflect
+    // the compiler-known offset discovered by inlining lateOffset(). Failure to
+    // do so leads to a slice mismatch when parsing the inlined store.
     static int testLoadFromLateDiscoveredOffsetThenStoreAtConstOffset(A a) {
         long o = lateOffset();
         int val = UNSAFE.getInt(a, o);
@@ -90,6 +98,10 @@ public class TestLateInliningWithSliceNarrowing {
         return val;
     }
 
+    // Test that when lateLoad() is inlined, the IGVN-recorded type of the
+    // accessed memory address (captured by an AddP) has been updated to reflect
+    // the compiler-known offset discovered by inlining lateOffset(). Failure to
+    // do so leads to a slice mismatch when parsing the inlined load.
     static int testLoadFromLateDiscoveredOffsetThenLoadFromConstOffset(A a) {
         long o = lateOffset();
         int val = UNSAFE.getInt(a, o);
@@ -97,6 +109,10 @@ public class TestLateInliningWithSliceNarrowing {
         return val;
     }
 
+    // Test a variation of the above where lateOffsetMinusFour() is not used
+    // directly by an AddP node. This test does not require updating the
+    // IGVN-recorded type of the accessed memory address for correctness,
+    // because lateStore() does not reuse the corresponding AddP node.
     static int testLoadFromLateDiscoveredOffsetPlusFourThenStoreAtConstOffset(A a) {
         long o = lateOffsetMinusFour();
         int val = UNSAFE.getInt(a, o + 4);
@@ -104,6 +120,8 @@ public class TestLateInliningWithSliceNarrowing {
         return val;
     }
 
+    // Test a variation of the above using a different arithmetic operation,
+    // with the same expectations.
     static int testLoadFromLateDiscoveredOffsetTimesTwoThenStoreAtConstOffset(A a) {
         long o = lateOffsetDividedByTwo();
         int val = UNSAFE.getInt(a, o * 2);
@@ -111,6 +129,10 @@ public class TestLateInliningWithSliceNarrowing {
         return val;
     }
 
+    // Test a variation of the first test where failing to update the
+    // IGVN-recorded type of the accessed memory address would result in a slice
+    // mismatch that will lead to an incorrect memory graph (the memory input of
+    // the last load would bypass the memory output of the store).
     static int testLoadFromLateDiscoveredOffsetThenStoreAtConstOffsetThenReloadFromConstOffset(A a) {
         A a2 = notInlinedId(a);
         long o = lateOffset();
