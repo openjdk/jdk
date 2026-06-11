@@ -30,7 +30,6 @@
  * @library /test/lib /
  * @compile ../lib/ir_framework/TestFramework.java
  * @compile ../lib/generators/Generators.java
- * @compile ../lib/verify/Verify.java
  * @run driver ${test.main.class}
  */
 
@@ -39,7 +38,6 @@ package compiler.rangechecks;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.HashSet;
 import java.util.Set;
 
 import jdk.test.lib.Utils;
@@ -146,7 +144,6 @@ public class TestTruncationWrapFuzzer {
             "compiler.rangecheck.templated", "Generated",
             // List of imports.
             Set.of("compiler.lib.generators.*",
-                   "compiler.lib.verify.*",
                    "java.util.Random",
                    "jdk.test.lib.Utils"),
             // classpath, so the Test VM has access to the compiled class files.
@@ -155,7 +152,9 @@ public class TestTruncationWrapFuzzer {
             testTemplateTokens);
     }
 
-    // TODO: remove what is not needed
+    // This is copied from TestFoldComparesFuzzer.java, and we should
+    // refactor this out into the template framework library, in a
+    // future RFE.
     enum Comparator {
         ULT(" <  0", false),
         ULE(" <= 0", false),
@@ -223,14 +222,6 @@ public class TestTruncationWrapFuzzer {
         static Comparator random() {
             return values()[RANDOM.nextInt(values().length)];
         }
-
-        static Comparator randomGreater() {
-            return RANDOM.nextBoolean() ? GE : GT;
-        }
-
-        static Comparator randomLess() {
-            return RANDOM.nextBoolean() ? LE : LT;
-        }
     }
 
     record Comparison(String lhs, Comparator cmp, String rhs, boolean negated) {
@@ -255,10 +246,6 @@ public class TestTruncationWrapFuzzer {
 
         Comparison complementRandom() {
             return RANDOM.nextBoolean() ? this : new Comparison(lhs, cmp.negate(), rhs, true);
-        }
-
-        Comparison negateCmp() {
-            return new Comparison(lhs, cmp.negate(), rhs, negated);
         }
     }
 
@@ -453,9 +440,6 @@ public class TestTruncationWrapFuzzer {
 
     // Loop init/limit are variables.
     static class TestMethodGeneratorVars implements TestMethodGenerator {
-        private final int init  = INT_GEN.next();
-        private final int limit = INT_GEN.next();
-
         private final String ivMutation  = randomIVMutation();
         private final String loopShape   = randomLoopShape();
         private final String modifyInit  = randomModifyValue("init");
@@ -465,8 +449,6 @@ public class TestTruncationWrapFuzzer {
         private final Comparison exitCheck = new Comparison("i", Comparator.random(), "limit").permuteRandom();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
-            let("init", init),
-            let("limit", limit),
             let("ivMutation", ivMutation),
             let("exitCheck", exitCheck),
             """
