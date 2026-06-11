@@ -30,6 +30,8 @@
  * @run main ${test.main.class}
  */
 
+package compiler.integerArithmetic;
+
 public class TestDivByZeroInLiveCFGPath {
     static long lFld;
     static int iArr[] = new int[400];

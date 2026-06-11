@@ -37,6 +37,8 @@
  * @run main ${test.main.class}
  */
 
+package compiler.c2;
+
 public class TestDeadPathManyDeadDataNodes {
     private static int field;
     private static boolean boolField2;
