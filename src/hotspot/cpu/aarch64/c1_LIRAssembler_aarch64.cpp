@@ -997,23 +997,15 @@ void LIR_Assembler::store_unordered(Address addr, LIR_Opr src,
         // ptr or a 64 bit method pointer.
         ShouldNotReachHere();
       case T_ADDRESS: // fall through
-      case T_LONG:
-        __ str(src_reg, addr);
-        break;
-      case T_INT:
-        __ strw(src_reg, addr);
-        break;
-
+      case T_LONG:    // fall through
+      case T_INT:     // fall through
       case T_BYTE:    // fall through
+      case T_CHAR:    // fall through
+      case T_SHORT:   // fall through
       case T_BOOLEAN: {
-        __ strb(src_reg, addr);
+        __ store(src_reg, addr, type);
         break;
       }
-
-      case T_CHAR:    // fall through
-      case T_SHORT:
-        __ strh(src_reg, addr);
-        break;
 
       default:
         ShouldNotReachHere();
