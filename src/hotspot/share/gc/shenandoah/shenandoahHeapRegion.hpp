@@ -521,15 +521,15 @@ public:
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
 
-  bool need_bitmap_reset() const {
+  inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
   }
 
-  void set_needs_bitmap_reset() {
+  inline void set_needs_bitmap_reset() {
     _needs_bitmap_reset = true;
   }
 
-  void unset_needs_bitmap_reset() {
+  inline void unset_needs_bitmap_reset() {
     _needs_bitmap_reset = false;
   }
 

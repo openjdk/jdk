@@ -572,17 +572,6 @@ void ShenandoahHeapRegion::recycle_internal() {
   clear_live_data();
   reset_alloc_metadata();
   heap->marking_context()->reset_top_at_mark_start(this);
-
-  // Once this region is recycled, it can be used for allocations. However, we maintain an
-  // invariant that no marks exist above top. Note that gc threads will reset the bitmaps
-  // in a phase that follows recycling trash. If this region is used for allocation after
-  // it has been recycled but before its bitmap is reset, this invariant will be violated.
-  // We therefore record here that this region is _scheduled_ to have its bitmap reset and
-  // we update our invariants to allow for this temporary condition. Alternatively, we could
-  // have mutators reset the bitmap for this region if it wins the race against gc threads,
-  // but that could hurt allocation latency.
-  set_needs_bitmap_reset();
-
   set_update_watermark(bottom());
   clear_has_self_forwards();
   if (is_old()) {
@@ -853,7 +842,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
     size_t idx = this->index();
     HeapWord* top_bitmap = ctx->top_bitmap(this);
 
-    assert(_needs_bitmap_reset || ctx->is_bitmap_range_within_region_clear(top_bitmap, _end),
+    assert(ctx->is_bitmap_range_within_region_clear(top_bitmap, _end),
            "Region %zu, bitmap should be clear between top_bitmap: " PTR_FORMAT " and end: " PTR_FORMAT, idx,
            p2i(top_bitmap), p2i(_end));
   }
