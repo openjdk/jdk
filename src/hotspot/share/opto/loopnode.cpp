@@ -2610,12 +2610,12 @@ IdealLoopTree* CountedLoopConverter::convert() {
   PhaseIterGVN* igvn = &_phase->igvn();
   PhaseIdealLoop::LoopExitTest& exit_test = _structure.exit_test();
 
+  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
+
   if (exit_test.should_speculatively_narrow_limit()) {
     Node* guard_bool = exit_test.speculatively_narrow_limit(*igvn);
     insert_loop_limit_check_predicate(_head->in(LoopNode::EntryControl)->as_IfTrue(), guard_bool);
   }
-
-  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   if (_should_insert_stride_overflow_limit_check) {
     insert_stride_overflow_limit_check();
@@ -2625,7 +2625,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
     insert_init_trip_limit_check();
   }
 
-  Node* back_control = _phase->loop_exit_control(_loop);
+  Node* back_control = _structure.back_control();
   if (_head->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
     Node* backedge_sfpt = _head->in(LoopNode::LoopBackControl);
     if (_phase->is_deleteable_safept(backedge_sfpt)) {
