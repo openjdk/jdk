@@ -1215,9 +1215,11 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
         and applies only to command-line arguments in the `jdk.JVMInformation`
         event and to the `java.command` system property in the
-        `jdk.InitialSystemProperty` event. Other events, such as `jdk.ProcessStart`
-        (child processes), are not redacted. Use `-XX:FlightRecorderOptions:help`
-        to see the default filters used by the `redact-argument` option.
+        `jdk.InitialSystemProperty` event, and to matching command-line argument
+        text in the values of `jdk.InitialEnvironmentVariable` events. Other
+        events, such as `jdk.ProcessStart` (child processes), are not redacted.
+        Use `-XX:FlightRecorderOptions:help` to see the default filters used by
+        the `redact-argument` option.
 
     `redact-key=`key-filter
     :   Replace the value of environment variables and system properties

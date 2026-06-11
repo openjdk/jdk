@@ -46,6 +46,7 @@ using StringFlag = JfrRedactedEvents::StringFlag;
 using StringKeyValueArray = GrowableArray<JfrRedactedEvents::StringKeyValue*>*;
 
 static const char REDACTED[] = "[REDACTED]";
+static const char REDACTED_MARKER = (char)0xFF;
 static const char DELIMITER[] = " ";
 static const char REDACT_ARGUMENT_EQUAL[] = "redact-argument=";
 
@@ -187,6 +188,47 @@ char* JfrRedactedEvents::new_redacted_text() {
   return result;
 }
 
+bool JfrRedactedEvents::redact(String* value, const String* redaction) {
+  if (strchr(redaction->text(), REDACTED_MARKER)) {
+    return false;
+  }
+  const char* sensitive = strstr(value->text(), redaction->text());
+  if (sensitive == nullptr) {
+    return false;
+  }
+  size_t index = (size_t)(sensitive - value->text());
+  size_t source = index + redaction->length();
+  value->set(index++, REDACTED_MARKER);
+  while (source < value->length()) {
+    value->set(index++, value->at(source++));
+  }
+  value->set_length(index);
+  return true;
+}
+
+String* JfrRedactedEvents::redact_environment_variable_value(const char* value) {
+  if (strchr(value, REDACTED_MARKER)) {
+    return new String(REDACTED);
+  }
+  String* temp = new String(value);
+  bool changed = false;
+  for (int i = 0; i < _redacted_arguments->length(); i++) {
+    while (redact(temp, _redacted_arguments->at(i))) {
+      changed = true;
+    }
+  }
+  stringStream result;
+  for (size_t i = 0; i < temp->length(); i++) {
+    if (temp->at(i) == REDACTED_MARKER) {
+      result.print(REDACTED);
+    } else {
+      result.put(temp->at(i));
+    }
+  }
+  delete temp;
+  return changed ? new String(result.base()) : nullptr;
+}
+
 bool JfrRedactedEvents::emit_initial_environment_variables(bool log) {
   if (_initial_environment_variables == nullptr) {
     ensure_initialized();
@@ -206,6 +248,16 @@ bool JfrRedactedEvents::emit_initial_environment_variables(bool log) {
           value = REDACTED;
           if (log) {
             log_debug(jfr, redact)("Redacted initial environment variable named '%s'", key->text());
+          }
+        } else {
+          String* redacted_value = redact_environment_variable_value(value);
+          if (redacted_value != nullptr) {
+            if (log) {
+              log_debug(jfr, redact)("Redacted argument in initial environment variable value named '%s'", key->text());
+            }
+            _initial_environment_variables->append(new StringKeyValue(key, redacted_value->text()));
+            delete redacted_value;
+            continue;
           }
         }
         _initial_environment_variables->append(new StringKeyValue(key, value));
@@ -261,6 +313,9 @@ void JfrRedactedEvents::emit_initial_system_properties(bool log) {
 bool JfrRedactedEvents::match_flag(const char* flag_name, const char* arg) {
   if (flag_name == nullptr || arg == nullptr) {
     return false;
+  }
+  if (strncmp(arg, "-XX:", 4) == 0) {
+    arg += 4;
   }
   while (*flag_name) {
     if (*arg != *flag_name) {
@@ -396,7 +451,8 @@ void JfrRedactedEvents::ensure_initialized() {
   StringArray* flags_args = make_jvm_args_array(Arguments::jvm_flags_array(), Arguments::num_jvm_flags());
   _redacted_flags_command_line = redact_command_line(flags_args);
   delete flags_args;
-
+  // Reduces (not removes) risk of overlap when redacting arguments in environment variable values
+  _redacted_arguments->sort();
   _initialized = true;
 }
 
@@ -422,8 +478,8 @@ String* JfrRedactedEvents::redact_command_line(StringArray* arguments) {
       for (int j = arg_index; j < next_index; j++) {
         result->add(REDACTED);
         const char* arg = arguments->at(j)->text();
-        if (arg != nullptr && strncmp(arg, "-XX:", 4) == 0) {
-          _redacted_arguments->add(arg + 4);
+        if (arg != nullptr) {
+          _redacted_arguments->add(arg);
         }
       }
       arg_index = next_index;
@@ -512,6 +568,9 @@ StringArray* JfrRedactedEvents::make_jvm_args_array(char** jvm_args_array, int a
       size_t length = _redacted_flight_recorder_options->length();
       // Length must be at least 26 or the JVM will not start.
       result->add(new String(argument, 26, text, length));
+      if (strstr(argument, REDACT_ARGUMENT_EQUAL) != nullptr) {
+        _redacted_arguments->add(argument);
+      }
       continue;
     }
     if (strncmp(argument, "-D", 2) == 0) {
@@ -523,6 +582,7 @@ StringArray* JfrRedactedEvents::make_jvm_args_array(char** jvm_args_array, int a
         bool redact = match_key(_key_filters, key_tmp->text());
         delete key_tmp;
         if (redact) {
+          _redacted_arguments->add(argument);
           size_t unsensitive_length = (size_t)(eq - argument) + 1;
           result->add(new String(argument, unsensitive_length, REDACTED, REDACTED_LENGTH));
           continue;

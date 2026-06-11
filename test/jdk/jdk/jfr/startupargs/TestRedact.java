@@ -169,6 +169,7 @@ public class TestRedact {
         testRedactKey();
         testRedactArgument();
         testRedactMultiple();
+        testOptionVariable();
         testWildcards();
         testDefaults();
         testRedactFile();
@@ -388,6 +389,38 @@ public class TestRedact {
         e.assertRedactedKey("bar");
         e.assertRedactedArgument("Baz");
         e.assertRedactedArgument("Quz");
+    }
+
+    private static void testOptionVariable() throws Exception {
+        // Simulate shell expansion with the three options:
+        // SYSTEM_PROPS, JVM_OPTIONS and PROGRAM_OPTIONS
+        Execution e1 = run(
+                Map.of("SYSTEM_PROPS",
+                        "-Dsecret=apple",
+                       "JVM_OPTIONS",
+                        "-XX:FlightRecorderOptions:stackdepth=32,redact-argument=+Aracuan",
+                       "PROGRAM_OPTIONS", "Aracuan"),
+                Map.of("secret","apple"),
+                "-XX:FlightRecorderOptions:stackdepth=32,redact-argument=+Aracuan",
+                "Aracuan"
+            );
+        e1.assertRedactedKey("SYSTEM_PROPS");
+        e1.assertRedactedKey("JVM_OPTIONS");
+        e1.assertRedactedKey("PROGRAM_OPTIONS");
+        e1.assertRedactedKey("secret");
+        e1.assertRedactedArgument("Aracuan");
+
+        Execution e2 = run(
+                Map.of("PROGRAM_OPTIONS", "BLUE RED GREEN GREDELINE"),
+                Map.of(),
+                "-XX:FlightRecorderOptions:redact-argument=+*red*",
+                "BLUE", "RED", "GREEN", "GREDELINE"
+            );
+        String programOptions = e2.environment().get("PROGRAM_OPTIONS");
+        if (!programOptions.equals("BLUE [REDACTED] GREEN [REDACTED]")) {
+            e2.print();
+            throw new Exception("Missing redaction inside option variable");
+        }
     }
 
     private static void testRedactKey() throws Exception {

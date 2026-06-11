@@ -95,6 +95,11 @@ class JfrRedactedEvents: public AllStatic {
       assert(index < _length, "out of bounds");
       _text[index] = c;
     }
+    void set_length(size_t length) {
+      assert(length <= _length, "out of bounds");
+      _text[length] = '\0';
+      _length = length;
+    }
     size_t length() const {
       return _length;
     }
@@ -105,7 +110,7 @@ class JfrRedactedEvents: public AllStatic {
       return s == nullptr ? nullptr : s->text();
     }
    private:
-    const size_t _length;
+    size_t _length;
     char* _text;
   };
 
@@ -141,7 +146,15 @@ class JfrRedactedEvents: public AllStatic {
     void add(const char* s, size_t length) {
       _array->append(new String(s, length));
     }
+    void sort() {
+      _array->sort(compare);
+    }
    private:
+    static int compare(String** a, String** b) {
+      size_t al = (*a)->length();
+      size_t bl = (*b)->length();
+      return al > bl ? -1 : (al < bl ? 1 : 0);
+    }
     GrowableArray<String*>* const _array;
   };
 
@@ -216,7 +229,9 @@ class JfrRedactedEvents: public AllStatic {
   static int match_arguments(StringArray* filter_array, StringArray* arguments, int arg_index);
   static bool match_key(StringArray* array, const char* text);
   static bool read_file(StringArray* target, const char* filename);
+  static bool redact(String* source, const String* redaction);
   static String* redact_command_line(StringArray* arguments);
+  static String* redact_environment_variable_value(const char* value);
   static StringArray* split(const char* text, char separator);
 };
 
