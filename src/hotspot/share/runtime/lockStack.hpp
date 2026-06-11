@@ -136,8 +136,8 @@ class OMCache {
   ObjectMonitor* _monitor = nullptr;
 
  public:
-  static constexpr ByteSize om_cache_obj_offset() { return byte_offset_of(OMCache, _obj); }
-  static constexpr ByteSize om_cache_monitor_offset() { return byte_offset_of(OMCache, _monitor); }
+  static constexpr ByteSize obj_offset() { return byte_offset_of(OMCache, _obj); }
+  static constexpr ByteSize monitor_offset() { return byte_offset_of(OMCache, _monitor); }
 
   explicit OMCache(JavaThread* jt);
 

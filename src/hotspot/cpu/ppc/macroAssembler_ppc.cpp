@@ -2765,8 +2765,8 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     const Register thread_id  = UseObjectMonitorTable ? tmp3 : tmp1;
     // Offsets into the current thread's object monitor cache (omc).
     const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
-    const ByteSize omc_monitor_offset = OMCache::om_cache_monitor_offset();
-    const ByteSize omc_obj_offset     = OMCache::om_cache_obj_offset();
+    const ByteSize omc_monitor_offset = OMCache::monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
     Label monitor_locked;
 
@@ -2784,7 +2784,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
       // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ld(R0,      in_bytes(thr_omc_offset + omc_obj_offset    ), R16_thread);
+      ld(R0, in_bytes(thr_omc_offset + omc_obj_offset), R16_thread);
       ld(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
       cmpd(CR0, R0, obj);
       beq(CR0, monitor_found);
@@ -2815,6 +2815,10 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
       bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
       cmpd(CR0, tmp3, obj);
       bne(CR0, slow_path);
+
+      // Store the monitor in the current thread's object monitor cache (omc).
+      std(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
+      std(obj, in_bytes(thr_omc_offset + omc_obj_offset), R16_thread);
 
       bind(monitor_found);
 
@@ -2853,12 +2857,8 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
     bind(monitor_locked);
     if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock. On failure to acquire the lock,
-      // the slow path will reset the entry accordingly (see CacheSetter).
+      // Cache the monitor for unlock.
       std(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
-      // Store the monitor in the current thread's object monitor cache (omc).
-      std(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
-      std(obj,     in_bytes(thr_omc_offset + omc_obj_offset    ), R16_thread);
     }
   }
 
