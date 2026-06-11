@@ -33,7 +33,7 @@
 
 /*
  * @test id=vanilla
- * @bug 8340093 8342095 8381617
+ * @bug 8340093 8342095 8370677 8381617
  * @summary Test vectorization of reduction loops.
  * @modules jdk.incubator.vector
  * @library /test/lib /
@@ -42,7 +42,7 @@
 
 /*
  * @test id=force-vectorization
- * @bug 8340093 8342095 8381617
+ * @bug 8340093 8342095 8370677 8381617
  * @summary Test vectorization of reduction loops.
  * @modules jdk.incubator.vector
  * @library /test/lib /

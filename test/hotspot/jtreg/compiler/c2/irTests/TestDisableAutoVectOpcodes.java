@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8275275
+ * @bug 8275275 8370677
  * @summary Fix performance regression after auto-vectorization on aarch64 NEON.
  * @requires os.arch=="aarch64"
  * @library /test/lib /

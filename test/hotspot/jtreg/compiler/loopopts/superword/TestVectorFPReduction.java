@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8320725
+ * @bug 8320725 8370677
  * @summary Ensure strictly ordered AddReductionVF/VD and MulReductionVF/VD nodes
             are generated when these operations are auto-vectorized
  * @library /test/lib /
